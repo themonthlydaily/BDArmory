@@ -25,11 +25,36 @@ namespace BDArmory.UI
 
         //gui params
         private float _windowHeight; //auto adjusting
-        private readonly float _windowWidth = 250;
+        private readonly float _windowWidth = 500;
 
         private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
 
         private MissileFire _wmToSwitchTeam;
+
+        // booleans to track state of buttons affecting everyone
+        private bool _freeForAll = false;
+        private bool _autoPilotEnabled = false;
+        private bool _guardModeEnabled = false;
+
+        // button styles for info buttons
+        private static GUIStyle redLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+        private static GUIStyle yellowLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+        private static GUIStyle greenLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+        private static GUIStyle blueLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+
+        static LoadedVesselSwitcher()
+        {
+
+            redLight.normal.textColor = Color.red;
+            yellowLight.normal.textColor = Color.yellow;
+            greenLight.normal.textColor = Color.green;
+            blueLight.normal.textColor = Color.blue;
+            redLight.fontStyle = FontStyle.Bold;
+            yellowLight.fontStyle = FontStyle.Bold;
+            greenLight.fontStyle = FontStyle.Bold;
+            blueLight.fontStyle = FontStyle.Bold;
+        }
+
 
         private void Awake()
         {
@@ -148,6 +173,45 @@ namespace BDArmory.UI
             v.Dispose();
         }
 
+        private void ToggleGuardModes()
+        {
+            _guardModeEnabled = !_guardModeEnabled;
+            using (var teamManagers = weaponManagers.GetEnumerator())
+                while (teamManagers.MoveNext())
+                    using (var wm = teamManagers.Current.Value.GetEnumerator())
+                        while (wm.MoveNext())
+                        {
+                            if (wm.Current == null) continue;
+                            wm.Current.guardMode = _guardModeEnabled;
+                        }
+        }
+
+        private void ToggleAutopilots()
+        {
+            // toggle the state
+            _autoPilotEnabled = !_autoPilotEnabled;
+
+            using (var teamManagers = weaponManagers.GetEnumerator())
+                while (teamManagers.MoveNext())
+                    using (var wm = teamManagers.Current.Value.GetEnumerator())
+                        while (wm.MoveNext())
+                        {
+                            if (wm.Current == null) continue;
+                            if (wm.Current.AI == null) continue;
+                            if (_autoPilotEnabled)
+                            {
+                                wm.Current.AI.ActivatePilot();
+                                BDArmory.Misc.Misc.fireNextNonEmptyStage(wm.Current.vessel);
+                            }
+                            else
+                            {
+                                wm.Current.AI.DeactivatePilot();
+                            }
+                        }
+        }
+
+
+
         private void OnGUI()
         {
             if (_ready)
@@ -170,6 +234,31 @@ namespace BDArmory.UI
                 {
                     if (_wmToSwitchTeam)
                         _wmToSwitchTeam.NextTeam();
+                    else
+                    {
+                        // if no team is specified toggle between FFA and all friends
+                        // FFA button starts timer running
+                        //ResetSpeeds();
+                        _freeForAll = !_freeForAll;
+                        char T = 'A';
+                        // switch everyone to their own teams
+                        var allPilots = new List<MissileFire>();
+                        using (var teamManagers = weaponManagers.GetEnumerator())
+                            while (teamManagers.MoveNext())
+                                using (var wm = teamManagers.Current.Value.GetEnumerator())
+                                    while (wm.MoveNext())
+                                    {
+                                        if (wm.Current == null) continue;
+                                        allPilots.Add(wm.Current);
+
+                                    }
+                        foreach (var pilot in allPilots)
+                        {
+                            Debug.Log("[BDArmory] assigning " + pilot.vessel.GetDisplayName() + " to team " + T.ToString());
+                            pilot.SetTeam(BDTeam.Get(T.ToString()));
+                            if (_freeForAll) T++;
+                        }
+                    }
                     _teamSwitchDirty = false;
                     _wmToSwitchTeam = null;
                 }
@@ -183,53 +272,153 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            GUI.DragWindow(new Rect(0, 0, _windowWidth - _buttonHeight - 4, _titleHeight));
-            if (GUI.Button(new Rect(_windowWidth - _buttonHeight - 4, 4, _buttonHeight, _buttonHeight), "X",
+            GUI.DragWindow(new Rect(0, 0, _windowWidth - 4 * (_buttonHeight) - _margin, _titleHeight));
+
+            // enablge guard mode for all pilots
+            if (GUI.Button(new Rect(_windowWidth - 4 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "G", _guardModeEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            {
+                // switch everyon onto different teams
+                ToggleGuardModes();
+            }
+
+            // enable autopilot for all
+            if (GUI.Button(new Rect(_windowWidth - 3 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "P", _autoPilotEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            {
+                // Toggle autopilots for everyone
+                ToggleAutopilots();
+            }
+
+            // toggle between FFA and putting everyone on the same team
+            if (GUI.Button(new Rect(_windowWidth - 2 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "T", _freeForAll ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            {
+                // switch everyon onto different teams
+                _teamSwitchDirty = true;
+                _wmToSwitchTeam = null;
+            }
+
+            // close the window
+            if (GUI.Button(new Rect(_windowWidth - _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "X",
                 BDArmorySetup.BDGuiSkin.button))
             {
                 BDArmorySetup.Instance.showVSGUI = false;
                 return;
             }
+
             float height = _titleHeight;
-            float vesselButtonWidth = _windowWidth - 2 * _margin - 3 * _buttonHeight;
+            float vesselButtonWidth = _windowWidth - 2 * _margin - 6 * _buttonHeight;
 
             using (var teamManagers = weaponManagers.GetEnumerator())
                 while (teamManagers.MoveNext())
                 {
                     height += _margin;
-                    GUI.Label(new Rect(_margin, height, _windowWidth - 2 * _margin, _buttonHeight), $"{teamManagers.Current.Key}:", BDArmorySetup.BDGuiSkin.label);
-                    height += _buttonHeight;
+
 
                     using (var wm = teamManagers.Current.Value.GetEnumerator())
                         while (wm.MoveNext())
                         {
                             if (wm.Current == null) continue;
-
-                            Rect buttonRect = new Rect(_margin, height, vesselButtonWidth, _buttonHeight);
+                            // team at the start of the line
+                            GUI.Label(new Rect(_margin, height, _buttonHeight, _buttonHeight), $"{teamManagers.Current.Key}:", BDArmorySetup.BDGuiSkin.label);
+                            Rect buttonRect = new Rect(_margin + _buttonHeight, height, vesselButtonWidth, _buttonHeight);
                             GUIStyle vButtonStyle = wm.Current.vessel.isActiveVessel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
-                            string status = UpdateVesselStatus(wm.Current, vButtonStyle);
 
-                            if (GUI.Button(buttonRect, status + wm.Current.vessel.GetName(), vButtonStyle))
+                            // current target 
+                            string targetName = "";
+                            Vessel targetVessel = wm.Current.vessel;
+                            bool incomingThreat = false;
+                            if (wm.Current.incomingThreatVessel != null)
+                            {
+                                incomingThreat = true;
+                                targetName = "<<<" + wm.Current.incomingThreatVessel.GetName();
+                                targetVessel = wm.Current.incomingThreatVessel;
+                            }
+                            else if (wm.Current.currentTarget)
+                            {
+                                targetName = ">>>" + wm.Current.currentTarget.Vessel.GetName();
+                                targetVessel = wm.Current.currentTarget.Vessel;
+                            }
+
+                            string status = UpdateVesselStatus(wm.Current, vButtonStyle);
+                            string vesselName = wm.Current.vessel.GetName();
+
+                            string postStatus = "";
+                            if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
+                            {
+                                postStatus += " " + wm.Current.AI.currentStatus;
+                            }
+                            float targetDistance = 5000;
+                            if (wm.Current.currentTarget != null)
+                            {
+                                targetDistance = Vector3.Distance(wm.Current.vessel.GetWorldPos3D(), wm.Current.currentTarget.position);
+                            }
+
+                            if (targetName != "")
+                            {
+                                postStatus += " " + targetName;
+                            }
+
+                            if (GUI.Button(buttonRect, status + vesselName + postStatus, vButtonStyle))
                                 ForceSwitchVessel(wm.Current.vessel);
+
+                            // selects current target
+                            if (targetName != "")
+                            {
+                                Rect targettingButtonRect = new Rect(_margin + vesselButtonWidth + _buttonHeight, height,
+                                    _buttonHeight, _buttonHeight);
+                                GUIStyle targButton = BDArmorySetup.BDGuiSkin.button;
+                                if (wm.Current.currentGun != null && wm.Current.currentGun.recentlyFiring)
+                                {
+                                    if (targetDistance < 500)
+                                    {
+                                        targButton = redLight;
+                                    }
+                                    else if (targetDistance < 1000)
+                                    {
+                                        targButton = yellowLight;
+                                    }
+                                    else
+                                    {
+                                        targButton = blueLight;
+                                    }
+                                }
+                                if (GUI.Button(targettingButtonRect, incomingThreat ? "><" : "[]", targButton))
+                                    ForceSwitchVessel(targetVessel);
+                            }
 
                             //guard toggle
                             GUIStyle guardStyle = wm.Current.guardMode ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
-                            Rect guardButtonRect = new Rect(_margin + vesselButtonWidth, height, _buttonHeight, _buttonHeight);
+                            Rect guardButtonRect = new Rect(_margin + vesselButtonWidth + 2 * _buttonHeight, height, _buttonHeight, _buttonHeight);
                             if (GUI.Button(guardButtonRect, "G", guardStyle))
                                 wm.Current.ToggleGuardMode();
 
                             //AI toggle
                             if (wm.Current.AI != null)
                             {
-                                GUIStyle aiStyle = wm.Current.AI.pilotEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
-                                Rect aiButtonRect = new Rect(_margin + vesselButtonWidth + _buttonHeight, height, _buttonHeight,
+                                GUIStyle aiStyle = new GUIStyle(wm.Current.AI.pilotEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                                if (wm.Current.underFire)
+                                {
+                                    var distance = Vector3.Distance(wm.Current.vessel.GetWorldPos3D(), wm.Current.incomingThreatPosition);
+                                    if (distance < 500)
+                                    {
+                                        aiStyle.normal.textColor = Color.red;
+                                    }
+                                    else if (distance < 1000)
+                                    {
+                                        aiStyle.normal.textColor = Color.yellow;
+                                    }
+                                    else
+                                    {
+                                        aiStyle.normal.textColor = Color.blue;
+                                    }
+                                }
+                                Rect aiButtonRect = new Rect(_margin + vesselButtonWidth + 3 * _buttonHeight, height, _buttonHeight,
                                     _buttonHeight);
                                 if (GUI.Button(aiButtonRect, "P", aiStyle))
                                     wm.Current.AI.TogglePilot();
                             }
 
                             //team toggle
-                            Rect teamButtonRect = new Rect(_margin + vesselButtonWidth + _buttonHeight * 2, height,
+                            Rect teamButtonRect = new Rect(_margin + vesselButtonWidth + 4 * _buttonHeight, height,
                                 _buttonHeight, _buttonHeight);
                             if (GUI.Button(teamButtonRect, "T", BDArmorySetup.BDGuiSkin.button))
                             {
@@ -243,6 +432,17 @@ namespace BDArmory.UI
                                     _teamSwitchDirty = true;
                                 }
                             }
+                            // boom
+                            Rect killButtonRect = new Rect(_margin + vesselButtonWidth + 5 * _buttonHeight, height, _buttonHeight, _buttonHeight);
+                            if (GUI.Button(killButtonRect, "X", BDArmorySetup.BDGuiSkin.button))
+                            {
+                                // must use right button
+                                if (Event.current.button == 1)
+                                {
+                                    Misc.Misc.ForceDeadVessel(wm.Current.vessel);
+                                }
+                            }
+
 
                             height += _buttonHeight + _buttonGap;
                         }
