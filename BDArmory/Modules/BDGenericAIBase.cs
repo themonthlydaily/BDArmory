@@ -86,7 +86,13 @@ namespace BDArmory.Modules
         {
             if (!weaponManager || !vessel || !vessel.transform || vessel.packed || !vessel.mainBody)
                 return;
-
+            // nobody is controlling any more possibly due to G forces?
+            if(!vessel.isCommandable)
+            {
+                s.NeutralizeStick();
+                vessel.Autopilot.Disable();
+                return;
+            }
             debugString.Length = 0;
 
             // generally other AI and guard mode expects this target to be engaged
@@ -121,7 +127,8 @@ namespace BDArmory.Modules
             GameEvents.onVesselDestroy.Add(RemoveAutopilot);
 
             assignedPositionWorld = vessel.ReferenceTransform.position;
-
+            // I need to make sure gear is deployed on startup so it'll get properly retracted.
+            vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
             RefreshPartWindow();
         }
 

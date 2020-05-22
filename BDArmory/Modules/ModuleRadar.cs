@@ -478,10 +478,13 @@ namespace BDArmory.Modules
 
             yield return new WaitForFixedUpdate();
 
+            // DISABLE RADAR
+            /*
             if (radarEnabled)
             {
                 EnableRadar();
             }
+            */
 
             yield return null;
 

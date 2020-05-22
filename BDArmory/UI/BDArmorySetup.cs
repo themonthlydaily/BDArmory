@@ -142,9 +142,11 @@ namespace BDArmory.UI
             { "Neutral", new BDTeam("Neutral", neutral: true) }
         };
 
+
+
         //competition mode
-        float competitionDist = 8000;
-        string compDistGui = "8000";
+        float competitionDist = 1000;
+        string compDistGui = "1000";
 
         #region Textures
 
@@ -1494,11 +1496,24 @@ namespace BDArmory.UI
                     }
                     line++;
 
+                    if (GUI.Button(SLeftRect(line), "Reset Scores")) // resets competition scores
+                    {
+                        BDACompetitionMode.Instance.ResetCompetitionScores();
+                    }
+
                     if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetition")))//"Start Competition"
                     {
+
                         competitionDist = Mathf.Max(competitionDist, 0);
                         compDistGui = competitionDist.ToString();
                         BDACompetitionMode.Instance.StartCompetitionMode(competitionDist);
+                        SaveConfig();
+                        windowSettingsEnabled = false;
+                    }
+                    line++;
+                    if(GUI.Button(SLeftRect(line),"Rapid Deploy"))
+                    {
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
                         SaveConfig();
                         windowSettingsEnabled = false;
                     }

@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using BDArmory.FX;
 using BDArmory.Modules;
 using BDArmory.UI;
-using KSP.UI.Screens;
 using UniLinq;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using KSP.IO;
+using KSP.UI.Screens;
+using BDArmory.FX;
+using BDArmory.Core;
 
 namespace BDArmory.Misc
 {
@@ -345,8 +347,7 @@ namespace BDArmory.Misc
             return json.Replace('<', '{').Replace('>', '}');
         }
 
-
-        // this stupid thing makes all the BD armory parts explode when User clicks the kill button
+        // this stupid thing makes all the BD armory parts explode
         [KSPField]
         private static string explModelPath = "BDArmory/Models/explosion/explosion";
         [KSPField]
@@ -357,7 +358,7 @@ namespace BDArmory.Misc
             Debug.Log("[BDArmory] GM Killed Vessel " + v.GetDisplayName());
             foreach (MissileFire missileFire in v.FindPartModulesImplementing<MissileFire>())
             {
-                Core.PartExploderSystem.AddPartToExplode(missileFire.part);
+                PartExploderSystem.AddPartToExplode(missileFire.part);
                 ExplosionFx.CreateExplosion(missileFire.part.transform.position, 0.2f, explModelPath, explSoundPath, true, 0, missileFire.part);
             }
         }

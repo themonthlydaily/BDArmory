@@ -42,6 +42,7 @@ namespace BDArmory.Modules
         float startTime;
         int missilesAway;
 
+
         public bool hasLoadedRippleData;
         float rippleTimer;
 
@@ -533,6 +534,11 @@ namespace BDArmory.Modules
             }
         }
 
+        public void SetTeamByName(string teamName)
+        {
+            
+        }
+
         [KSPEvent(active = true, guiActiveEditor = true, guiActive = false)]
         public void NextTeam()
         {
@@ -544,6 +550,7 @@ namespace BDArmory.Modules
             teamList.Sort();
             SetTeam(BDTeam.Get(teamList[(teamList.IndexOf(Team.Name) + 1) % teamList.Count]));
         }
+
 
         [KSPEvent(guiActive = false, guiActiveEditor = true, active = true, guiName = "#LOC_BDArmory_SelectTeam")]//Select Team
         public void SelectTeam()
@@ -1168,6 +1175,8 @@ namespace BDArmory.Modules
                 }
                 else
                 {
+                    // DISABLE RADAR
+                    /*
                     if (!vesselRadarData || !(vesselRadarData.radarCount > 0))
                     {
                         List<ModuleRadar>.Enumerator rd = radars.GetEnumerator();
@@ -1180,6 +1189,7 @@ namespace BDArmory.Modules
                         }
                         rd.Dispose();
                     }
+                    */
 
                     if (vesselRadarData &&
                         (!vesselRadarData.locked ||
@@ -2880,7 +2890,8 @@ namespace BDArmory.Modules
         void RefreshModules()
         {
             radars = vessel.FindPartModulesImplementing<ModuleRadar>();
-
+            // DISABLE RADARS
+            /*
             List<ModuleRadar>.Enumerator rad = radars.GetEnumerator();
             while (rad.MoveNext())
             {
@@ -2889,7 +2900,7 @@ namespace BDArmory.Modules
                 if (rad.Current.radarEnabled) rad.Current.EnableRadar();
             }
             rad.Dispose();
-
+            */
             jammers = vessel.FindPartModulesImplementing<ModuleECMJammer>();
             targetingPods = vessel.FindPartModulesImplementing<ModuleTargetingCamera>();
             wmModules = vessel.FindPartModulesImplementing<IBDWMModule>();
@@ -3953,14 +3964,15 @@ namespace BDArmory.Modules
             }
 
             //scan and acquire new target
-            if (Time.time - targetScanTimer > targetScanInterval)
+            //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
+            if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,1f)) // stupid hack to stop them retargetting too quickly
             {
                 targetScanTimer = Time.time;
 
                 if (!guardFiringMissile)
                 {
-                    SetTarget(null);
 
+                    SetTarget(null);
                     SmartFindTarget();
 
                     if (guardTarget == null || selectedWeapon == null)

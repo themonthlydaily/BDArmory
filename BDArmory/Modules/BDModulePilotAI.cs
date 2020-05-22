@@ -62,11 +62,11 @@ namespace BDArmory.Modules
         Vector3 upDirection = Vector3.up;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude"),//Default Alt.
-            UI_FloatRange(minValue = 500f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 500f, maxValue = 150000f, stepIncrement = 25f, scene = UI_Scene.All)]
         public float defaultAltitude = 1500;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude"),//Min Altitude
-            UI_FloatRange(minValue = 150f, maxValue = 6000, stepIncrement = 50f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 150f, maxValue = 60000, stepIncrement = 50f, scene = UI_Scene.All)]
         public float minAltitude = 500f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SteerFactor"),//Steer Factor
@@ -124,7 +124,7 @@ namespace BDArmory.Modules
         Dictionary<string, float> altMaxValues = new Dictionary<string, float>
         {
             { nameof(defaultAltitude), 100000f },
-            { nameof(minAltitude), 30000f },
+            { nameof(minAltitude), 60000f },
             { nameof(steerMult), 200f },
             { nameof(steerKiAdjust), 20f },
             { nameof(steerDamping), 100f },
@@ -330,6 +330,7 @@ namespace BDArmory.Modules
 
         protected override void AutoPilot(FlightCtrlState s)
         {
+
             finalMaxSteer = maxSteer;
 
             //default brakes off full throttle
@@ -344,6 +345,7 @@ namespace BDArmory.Modules
             steerMode = SteerModes.NormalFlight;
             useVelRollTarget = false;
 
+            // landed and still, chill out
             if (vessel.LandedOrSplashed && standbyMode && weaponManager && (BDATargetManager.GetClosestTarget(this.weaponManager) == null || BDArmorySettings.PEACE_MODE)) //TheDog: replaced querying of targetdatabase with actual check if a target can be detected
             {
                 //s.mainThrottle = 0;
@@ -1240,6 +1242,10 @@ namespace BDArmory.Modules
 
             if (vessel.LandedOrSplashed && vessel.srfSpeed < takeOffSpeed)
             {
+                if (vessel.Splashed)
+                {
+                    vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
+                }
                 assignedPositionWorld = vessel.transform.position;
                 return;
             }
@@ -1248,13 +1254,14 @@ namespace BDArmory.Modules
 
             float radarAlt = MissileGuidance.GetRadarAltitude(vessel);
 
+
             Vector3 forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane((vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100, upDirection);
             float terrainDiff = MissileGuidance.GetRaycastRadarAltitude(forwardPoint) - radarAlt;
             terrainDiff = Mathf.Max(terrainDiff, 0);
 
             float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100);
 
-            if (radarAlt > 70)
+            if (radarAlt > 70 || (vessel.altitude < vessel.terrainAltitude) || vessel.Splashed)
             {
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
             }
@@ -1542,7 +1549,12 @@ namespace BDArmory.Modules
             {
                 diveAngleCorrection = 0;
             }
-
+            // ****** REMOVE ******
+            if(vessel.mainBody.bodyName == "Jool")
+            {
+                minAltitude = 40000f;
+                defaultAltitude = 60000f;
+            }
             return Math.Max(minAltitude, 100 + turnRadius * diveAngleCorrection);
         }
 

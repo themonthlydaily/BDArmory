@@ -12,6 +12,7 @@ namespace BDArmory.Misc
 
         public bool Neutral;
 
+
         public List<string> Allies = new List<string>();
 
         public BDTeam(string name, List<string> allies = null, bool neutral = false)
