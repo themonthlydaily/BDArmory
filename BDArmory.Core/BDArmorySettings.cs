@@ -46,7 +46,7 @@
         [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = false;                    //Used for debug fields not nomrally shown to regular users
 
         [BDAPersistantSettingsField] public static float RECOIL_FACTOR = 0.75f;
-        [BDAPersistantSettingsField] public static float DMG_MULTIPLIER = 100f;
+        [BDAPersistantSettingsField] public static float DMG_MULTIPLIER = 300f;
         [BDAPersistantSettingsField] public static float BALLISTIC_DMG_FACTOR = 1f;
         [BDAPersistantSettingsField] public static float HITPOINT_MULTIPLIER = 2.0f;
         [BDAPersistantSettingsField] public static float EXP_DMG_MOD_BALLISTIC;
