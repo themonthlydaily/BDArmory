@@ -501,37 +501,42 @@ namespace BDArmory.Bullets
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
-            if (this.sourceVessel.GetName() != hitPart.vessel.GetName()) { 
-                Debug.Log("[BDArmory]: Weapon from " + this.sourceVessel.GetName() + " damaged " + hitPart.vessel.GetName());
+            var aName = this.sourceVessel.GetName();
+            var tName = hitPart.vessel.GetName();
 
-                if (BDACompetitionMode.Instance.Scores.ContainsKey(this.sourceVessel.GetName()))
+            if (aName != tName) {
+                //Debug.Log("[BDArmory]: Weapon from " + aName + " damaged " + tName);
+
+                var whoShotWhoKey = aName + ":" + tName;
+                if (BDACompetitionMode.Instance.whoShotWho.ContainsKey(whoShotWhoKey))
                 {
-                    BDACompetitionMode.Instance.Scores[this.sourceVessel.GetName()] += 1;
-                    // keep track of hits for point keeping
-                    var whoShotWhoKey = this.sourceVessel.GetName() + ":" + hitPart.vessel.GetName();
-                    if (BDACompetitionMode.Instance.whoShotWho.ContainsKey(whoShotWhoKey))
-                    {
-                        BDACompetitionMode.Instance.whoShotWho[whoShotWhoKey] += 1;
-                    }
-                    else
-                    {
-                        BDACompetitionMode.Instance.whoShotWho[whoShotWhoKey] = 1;
-                    }
+                    BDACompetitionMode.Instance.whoShotWho[whoShotWhoKey] += 1;
+                }
+                else
+                {
+                    BDACompetitionMode.Instance.whoShotWho[whoShotWhoKey] = 1;
                 }
 
-                BDACompetitionMode.Instance.whoKilledVessels[hitPart.vessel.GetName()] = this.sourceVessel.GetName();
-                BDACompetitionMode.Instance.lastHitTime[hitPart.vessel.GetName()] = Planetarium.GetUniversalTime();
-                // competition logic for 'Pinata' mode - this means a pilot can't be named 'Pinata'
-                if (hitPart.vessel.GetName() == "Pinata")
+                // update scoring structure on attacker
+                if (BDACompetitionMode.Instance.Scores.ContainsKey(aName))
                 {
-                    // remember everyone who hits the Pinata at least once
-                    if(BDACompetitionMode.Instance.PinataHits.ContainsKey(this.sourceVessel.GetName()) )
+                    var aData = BDACompetitionMode.Instance.Scores[aName];
+                    aData.Score += 1;
+                    // keep track of who shot who for point keeping
+
+                    // competition logic for 'Pinata' mode - this means a pilot can't be named 'Pinata'
+                    if (hitPart.vessel.GetName() == "Pinata")
                     {
-                        BDACompetitionMode.Instance.PinataHits[this.sourceVessel.GetName()]++;
-                    } else
-                    {
-                        BDACompetitionMode.Instance.PinataHits[this.sourceVessel.GetName()] = 1;
+                        aData.PinataHits++;
                     }
+
+                }
+                // update scoring structure on the defender.
+                if (BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                {
+                    var tData = BDACompetitionMode.Instance.Scores[tName];
+                    tData.WhoShotMe = aName;
+                    tData.lastHitTime = Planetarium.GetUniversalTime();
                 }
             }
 

@@ -385,9 +385,10 @@ namespace BDArmory.UI
                             int currentScore = 0;
                             
                             string vesselName = wm.Current.vessel.GetName();
+                            BDArmory.Control.ScoringData scoreData = null; 
                             if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
                             {
-                                currentScore = BDACompetitionMode.Instance.Scores[vesselName];
+                                scoreData = BDACompetitionMode.Instance.Scores[vesselName];
                             }
                             string postStatus = " (" + currentScore.ToString() + ")";
 
@@ -512,8 +513,8 @@ namespace BDArmory.UI
                                 // must use right button
                                 if (Event.current.button == 1)
                                 {
-                                    if (!BDACompetitionMode.Instance.whoKilledVessels.ContainsKey(vesselName) || BDACompetitionMode.Instance.whoKilledVessels[vesselName] == "") {
-                                        BDACompetitionMode.Instance.whoKilledVessels[vesselName] = "SCOTT"; // only do this if it's not already damaged
+                                    if (scoreData.WhoShotMe == "") {
+                                        scoreData.WhoShotMe = "BIG RED BUTTON"; // only do this if it's not already damaged
                                     }
                                     Misc.Misc.ForceDeadVessel(wm.Current.vessel);
                                 }
@@ -527,23 +528,28 @@ namespace BDArmory.UI
             foreach (string key in BDACompetitionMode.Instance.DeathOrder.Keys)
             {
                 string postString = "";
-
-                if (BDACompetitionMode.Instance.whoKilledVessels.ContainsKey(key))
+                if (BDACompetitionMode.Instance.Scores.ContainsKey(key))
                 {
-                    postString = " KILLED BY " + BDACompetitionMode.Instance.whoKilledVessels[key];
+
+                    postString = " KILLED BY " + BDACompetitionMode.Instance.Scores[key].WhoShotMe;
                 }
-                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].ToString() + ")" + postString, BDArmorySetup.BDGuiSkin.label);
+                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString() + ")" + postString, BDArmorySetup.BDGuiSkin.label);
                 height += _buttonHeight + _buttonGap;
             }
-            if(!BDACompetitionMode.Instance.pinataAlive && BDACompetitionMode.Instance.PinataHits.Count > 0)
+            if(!BDACompetitionMode.Instance.pinataAlive)
             {
                 string postString = "";
-                foreach (var killer in BDACompetitionMode.Instance.PinataHits.Keys)
-                {
-                    postString += " " + killer;
+                foreach(var killer in BDACompetitionMode.Instance.Scores.Keys) {
+                    if(BDACompetitionMode.Instance.Scores[killer].PinataHits > 0)
+                    {
+                        postString += " " + killer;
+                    }
                 }
-                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "PInata Killers: " + postString, BDArmorySetup.BDGuiSkin.label);
-                height += _buttonHeight + _buttonGap;
+                if (postString != "")
+                {
+                    GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "PInata Killers: " + postString, BDArmorySetup.BDGuiSkin.label);
+                    height += _buttonHeight + _buttonGap;
+                }
             }
 
             height += _margin;
@@ -624,17 +630,17 @@ namespace BDArmory.UI
 
         public Dictionary<string, int> partcounts = new Dictionary<string, int>();
         private Dictionary<string, double> lastLanded = new Dictionary<string, double>();
-        private double partCountChack = 0;
+        private double partCountCheck = 0;
 
         public void UpdateCamera()
         {
             double timeSinceLastCheck = Planetarium.GetUniversalTime() - lastCameraCheck;
 
             bool updateParts = false;
-            if(Planetarium.GetUniversalTime() - partCountChack > 2)
+            if(Planetarium.GetUniversalTime() - partCountCheck > 2)
             {
                 updateParts = true;
-                partCountChack = Planetarium.GetUniversalTime();
+                partCountCheck = Planetarium.GetUniversalTime();
             }
             if (timeSinceLastCheck > 0.25)
             {
