@@ -157,7 +157,7 @@ namespace BDArmory.Control
 
         public void ResetCompetitionScores()
         {
-            DoMassTrim();
+            DoPreflightChecks();
             // reinitilize everything when the button get hit.
             // ammo names
             // 50CalAmmo, 30x173Ammo, 20x102Ammo, CannonShells
@@ -444,8 +444,9 @@ namespace BDArmory.Control
             return pilots;
         }
 
-        private void DoMassTrim()
+        private void DoPreflightChecks()
         {
+            // in rapid deployment this verified masses etc. 
             var oreID = PartResourceLibrary.Instance.GetDefinition("Ore").id;
             var pilots = getAllPilots();
             var lowestMass = 100000000000000f;
@@ -502,9 +503,9 @@ namespace BDArmory.Control
                 }
                 var mass = pilot.vessel.GetTotalMass();
 
-                Debug.Log("[BDACompetitionMode] UNSHIELDED:" + notShieldedCount.ToString() + ":" + pilot.vessel.GetName());
+                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] UNSHIELDED:" + notShieldedCount.ToString() + ":" + pilot.vessel.GetName());
 
-                Debug.Log("[BDACompetitionMode] MASS:" + mass.ToString() + ":" + pilot.vessel.GetName());
+                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] MASS:" + mass.ToString() + ":" + pilot.vessel.GetName());
                 if(mass < lowestMass)
                 {
                     lowestMass = mass;
@@ -543,7 +544,7 @@ namespace BDArmory.Control
                                 if (oreAmount > 1500) oreAmount = 1500;
                                 resources.Current.amount = oreAmount;
                             }
-                            Debug.Log("[BDACompetitionMode] RESOURCEUPDATE:" + pilot.vessel.GetName() + ":" + resources.Current.amount);
+                            Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] RESOURCEUPDATE:" + pilot.vessel.GetName() + ":" + resources.Current.amount);
                             massAdded = true;
                         }
                     }
@@ -883,7 +884,7 @@ namespace BDArmory.Control
                 competitionStatus = "";
             HashSet<string> alive = new HashSet<string>();
             string doaUpdate = "ALIVE: ";
-            Debug.Log("[BDArmoryCompetitionMode] Calling Update");
+            //Debug.Log("[BDArmoryCompetitionMode] Calling Update");
             // check all the planes
             List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
             while (v.MoveNext())
@@ -917,7 +918,7 @@ namespace BDArmory.Control
                     {
                         if (DeathOrder.ContainsKey(vesselName))
                         {
-                            Debug.Log("[BDArmoryCompetitionMode] Dead vessel found alive " + vesselName);
+                            Debug.Log("[BDArmoryCompetition] Dead vessel found alive " + vesselName);
                             //DeathOrder.Remove(vesselName);
                         }
                         // vessel is still alive
@@ -1079,7 +1080,7 @@ namespace BDArmory.Control
             }
             v.Dispose();
             string aliveString = string.Join(",", alive.ToArray());
-            Debug.Log("[BDACompetitionMode] ALIVE: " + aliveString);
+            Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] ALIVE: " + aliveString);
             // If we find a vessel named "Pinata" that's a special case object
             // this should probably be configurable.
             if (!pinataAlive && alive.Contains("Pinata"))
@@ -1181,7 +1182,7 @@ namespace BDArmory.Control
             }
 
             FindVictim();
-            Debug.Log("[BDArmoryCompetitionMode] Done With Update");
+            Debug.Log("[BDArmoryCompetition] Done With Update");
         }
 
         public void LogResults()
