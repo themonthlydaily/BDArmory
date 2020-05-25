@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using BDArmory.Core;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -61,9 +62,6 @@ namespace BDArmory.Control
         private double gracePeriod = -1;
         private double decisionTick = -1;
         private int dumpedResults = 4;
-
-
-
 
 
         // count up until killing the object 
@@ -157,7 +155,7 @@ namespace BDArmory.Control
 
         public void ResetCompetitionScores()
         {
-            DoPreflightChecks();
+
             // reinitilize everything when the button get hit.
             // ammo names
             // 50CalAmmo, 30x173Ammo, 20x102Ammo, CannonShells
@@ -169,6 +167,7 @@ namespace BDArmory.Control
                 ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("CannonShells").id);
             }
             CompetitionID = (int)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
+            DoPreflightChecks();
             Scores.Clear();
             DeathOrder.Clear();
             whoShotWho.Clear();
@@ -177,7 +176,7 @@ namespace BDArmory.Control
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             gracePeriod = competitionStartTime + 60;
-            decisionTick = competitionStartTime + 120; // every 60 seconds we do nasty things
+            decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
             // now find all vessels with weapons managers
             using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedVessels.MoveNext())
@@ -446,6 +445,97 @@ namespace BDArmory.Control
 
         private void DoPreflightChecks()
         {
+            var pilots = getAllPilots();
+            foreach (var pilot in pilots)
+            {
+                if (pilot.vessel == null) continue;
+
+                enforcePartCount(pilot.vessel);
+            }
+        }
+        // "JetEngine", "miniJetEngine", "turboFanEngine", "turboJet", "turboFanSize2", "RAPIER"
+        static string[] allowedEngineList = { "JetEngine", "miniJetEngine", "turboFanEngine", "turboJet", "turboFanSize2", "RAPIER" };
+        static HashSet<string> allowedEngines = new HashSet<string>(allowedEngineList);
+
+        // allow duplicate landing gear
+        static string[] allowedLandingGearList = { "GearLarge", "GearFixed", "GearFree", "GearMedium", "GearSmall", "SmallGearBay" };
+        static HashSet<string> allowedLandingGear = new HashSet<string>(allowedLandingGearList);
+
+        // don't allow "SaturnAL31"
+        static string[] bannedPartList = { "SaturnAL31" };
+        static HashSet<string> bannedParts = new HashSet<string>(bannedPartList);
+
+        // ammo boxes
+        static string[] ammoPartList = { "baha20mmAmmo", "baha30mmAmmo", "baha50CalAmmo", "BDAcUniversalAmmoBox", "UniversalAmmoBoxBDA" };
+        static HashSet<string> ammoParts = new HashSet<string>(ammoPartList);
+
+        public void enforcePartCount(Vessel vessel)
+        {
+            List<Part>.Enumerator parts = vessel.parts.GetEnumerator();
+            Dictionary<string, int> partCounts = new Dictionary<string, int>();
+            List<Part> partsToKill = new List<Part>();
+            List<Part> ammoBoxes = new List<Part>();
+            int engineCount = 0;
+            while (parts.MoveNext())
+            {
+                if (parts.Current == null) continue;
+                var partName = parts.Current.name;
+                //Debug.Log("Part " + vessel.GetName() + " " + partName);
+                if(partCounts.ContainsKey(partName))
+                {
+                    partCounts[partName]++;
+                } else
+                {
+                    partCounts[partName] = 1;
+                }
+                if(allowedEngines.Contains(partName))
+                {
+                    engineCount++;
+                }
+                if(bannedParts.Contains(partName))
+                {
+                    partsToKill.Add(parts.Current);
+                }
+                if(allowedLandingGear.Contains(partName))
+                {
+                    // duplicates allowed
+                    continue;
+                }
+                if(ammoParts.Contains(partName))
+                {
+                    // can only figure out limits after counting engines.
+                    ammoBoxes.Add(parts.Current);
+                    continue;
+                }
+                if(partCounts[partName] > 1)
+                {
+                    partsToKill.Add(parts.Current);
+                }
+            }
+            if(engineCount == 0)
+            {
+                engineCount = 1;
+            }
+
+            while (ammoBoxes.Count > engineCount * 3)
+            {
+                partsToKill.Add(ammoBoxes[ammoBoxes.Count - 1]);
+                ammoBoxes.RemoveAt(ammoBoxes.Count - 1);
+            }
+            if(partsToKill.Count > 0)
+            {
+                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] Vessel Breaking Part Count Rules " + vessel.GetName());
+                foreach(var part in partsToKill)
+                {
+                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] KILLPART:" + part.name + ":" + vessel.GetName());
+                    PartExploderSystem.AddPartToExplode(part);
+                }
+            }
+            
+        }
+
+        private void DoRapidDeploymentMassTrim()
+        {
             // in rapid deployment this verified masses etc. 
             var oreID = PartResourceLibrary.Instance.GetDefinition("Ore").id;
             var pilots = getAllPilots();
@@ -680,31 +770,7 @@ namespace BDArmory.Control
                         break;
                     case "RemoveDebris":
                         // remove anything that doesn't contain BD Armory modules
-                        var debrisToKill = new List<Vessel>();
-                        foreach (var vessel in FlightGlobals.Vessels)
-                        {
-                            bool activePilot = false;
-                            using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                                while (wms.MoveNext())
-                                    if (wms.Current != null)
-                                    {
-                                        activePilot = true;
-                                    }
-                            if (!activePilot)
-                                using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
-                                    while (wms.MoveNext())
-                                        if (wms.Current != null)
-                                        {
-                                            activePilot = true;
-                                        }
-                            if (!activePilot)
-                                debrisToKill.Add(vessel);
-                        }
-                        foreach(var vessel in debrisToKill)
-                        {
-                            Debug.Log("[RemoveObjects] " + vessel.GetName());
-                            vessel.Die();
-                        }
+                        RemoveDebris();
                         break;
                     case "RemoveFairings":
                         // removes the fairings after deplyment to stop the physical objects consuming CPU
@@ -731,6 +797,57 @@ namespace BDArmory.Control
             competitionStarting = false;
         }
 
+        private void RemoveDebris()
+        {
+            // only call this if enabled
+            // remove anything that doesn't contain BD Armory modules
+            var debrisToKill = new List<Vessel>();
+            foreach (var vessel in FlightGlobals.Vessels)
+            {
+                bool activePilot = false;
+                if (vessel.GetName() == "Pinata")
+                {
+                    activePilot = true;
+                }
+                else
+                {
+                    int foundActiveParts = 0;
+                    using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                        while (wms.MoveNext())
+                            if (wms.Current != null)
+                            {
+                                foundActiveParts++;
+                                break;
+                            }
+
+                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
+                        while (wms.MoveNext())
+                            if (wms.Current != null)
+                            {
+                                foundActiveParts++;
+                                break;
+                            }
+
+                    using (var wms = vessel.FindPartModulesImplementing<ModuleCommand>().GetEnumerator())
+                        while (wms.MoveNext())
+                            if (wms.Current != null)
+                            {
+                                foundActiveParts++;
+                                break;
+                            }
+                    activePilot = foundActiveParts == 3;
+                }
+                if (!activePilot)
+                    debrisToKill.Add(vessel);
+            }
+            foreach (var vessel in debrisToKill)
+            {
+                Debug.Log("[RemoveObjects] " + vessel.GetName());
+                vessel.Die();
+            }
+        }
+
+
         // ask the GM to find a 'victim' which means a slow pilot who's not shooting very much
         // obviosly this is evil. 
         // it's enabled by right clicking the M button.
@@ -740,33 +857,7 @@ namespace BDArmory.Control
             if (decisionTick < 0) return;
             if (Planetarium.GetUniversalTime() < decisionTick) return;
             decisionTick = Planetarium.GetUniversalTime() + 60;
-            // only call this if enabled
-            // remove anything that doesn't contain BD Armory modules
-            var debrisToKill = new List<Vessel>();
-            foreach (var vessel in FlightGlobals.Vessels)
-            {
-                bool activePilot = false;
-                using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                    while (wms.MoveNext())
-                        if (wms.Current != null)
-                        {
-                            activePilot = true;
-                        }
-                if (!activePilot)
-                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
-                        while (wms.MoveNext())
-                            if (wms.Current != null)
-                            {
-                                activePilot = true;
-                            }
-                if (!activePilot)
-                    debrisToKill.Add(vessel);
-            }
-            foreach (var vessel in debrisToKill)
-            {
-                Debug.Log("[RemoveObjects] " + vessel.GetName());
-                vessel.Die();
-            }
+            RemoveDebris();
             if (!killerGMenabled) return;
             if (Planetarium.GetUniversalTime() - competitionStartTime < 150) return;
             // arbitrary and capbricious decisions of life and death
@@ -1080,7 +1171,7 @@ namespace BDArmory.Control
             }
             v.Dispose();
             string aliveString = string.Join(",", alive.ToArray());
-            Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] ALIVE: " + aliveString);
+            Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString);
             // If we find a vessel named "Pinata" that's a special case object
             // this should probably be configurable.
             if (!pinataAlive && alive.Contains("Pinata"))

@@ -680,7 +680,7 @@ namespace BDArmory.UI
 
                                 // avoid lingering on dying things
                                 bool recentlyLanded = false;
-                                if(v.Current.LandedOrSplashed)
+                                if(!recentlyLanded && v.Current.LandedOrSplashed)
                                 {
                                     recentlyLanded = true;
                                     lastLanded[v.Current.GetName()] = Planetarium.GetUniversalTime();
@@ -696,7 +696,7 @@ namespace BDArmory.UI
 
                                 if(!recentlyLanded && v.Current.verticalSpeed < -3)
                                 {
-                                    crashTime = (float)(- v.Current.terrainAltitude / v.Current.verticalSpeed);
+                                    crashTime = (float)(- Math.Abs(v.Current.terrainAltitude) / v.Current.verticalSpeed);
                                 }
                                 if (wms.Current.currentTarget != null)
                                 {
@@ -757,9 +757,15 @@ namespace BDArmory.UI
                                 }
                                 if(updateParts)
                                 {
+                                    if(partcounts[v.Current.GetName()] != currentParts)
+                                    {
+                                        // part count has changed, check that we're still legal.
+                                        BDACompetitionMode.Instance.enforcePartCount(v.Current);
+                                    }
                                     partcounts[v.Current.GetName()] = currentParts;
-                                }
 
+                                }
+                                vesselScore = Math.Abs(vesselScore);
 
                                 // if the score is better then update this
                                 if (vesselScore < bestScore)
