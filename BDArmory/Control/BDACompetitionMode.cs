@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using BDArmory.Core;
@@ -22,6 +23,7 @@ namespace BDArmory.Control
         public string WhoShotMe;
         public double lastHitTime;
         public double lastFiredTime;
+        public double lastLandedTime;
         public double AverageSpeed;
         public double AverageAltitude;
         public int averageCount;
@@ -63,6 +65,7 @@ namespace BDArmory.Control
         private double decisionTick = -1;
         private int dumpedResults = 4;
 
+        public bool OneOfAKind = false;
 
         // count up until killing the object 
         public Dictionary<string, int> KillTimer = new Dictionary<string, int>();
@@ -458,8 +461,8 @@ namespace BDArmory.Control
         static HashSet<string> allowedEngines = new HashSet<string>(allowedEngineList);
 
         // allow duplicate landing gear
-        static string[] allowedLandingGearList = { "GearLarge", "GearFixed", "GearFree", "GearMedium", "GearSmall", "SmallGearBay" };
-        static HashSet<string> allowedLandingGear = new HashSet<string>(allowedLandingGearList);
+        static string[] allowedDuplicateList = { "GearLarge", "GearFixed", "GearFree", "GearMedium", "GearSmall", "SmallGearBay", "fuelLine", "strutConnector" };
+        static HashSet<string> allowedLandingGear = new HashSet<string>(allowedDuplicateList);
 
         // don't allow "SaturnAL31"
         static string[] bannedPartList = { "SaturnAL31" };
@@ -471,6 +474,7 @@ namespace BDArmory.Control
 
         public void enforcePartCount(Vessel vessel)
         {
+            if (!OneOfAKind) return;
             List<Part>.Enumerator parts = vessel.parts.GetEnumerator();
             Dictionary<string, int> partCounts = new Dictionary<string, int>();
             List<Part> partsToKill = new List<Part>();
@@ -1117,11 +1121,31 @@ namespace BDArmory.Control
                     }
 
 
-                    // compute average speed and altitude
+                    // update the vessel scoring structure
                     if(vData != null)
                     {
                         vData.AverageSpeed += v.Current.srfSpeed;
                         vData.AverageAltitude += v.Current.altitude;
+                        vData.averageCount++;
+                        var partCount = v.Current.parts.Count();
+                        if(partCount != vData.previousPartCount)
+                        {
+                            // part count has changed, check for broken stuff
+                            enforcePartCount(v.Current);
+                        }
+                        vData.previousPartCount = v.Current.parts.Count();
+                        if (vData.lastLandedTime != 0)
+                        {
+                            // record time we became landed
+                            if (v.Current.LandedOrSplashed)
+                            {
+                                vData.lastLandedTime = Planetarium.GetUniversalTime();
+                            }
+                        } else if(!v.Current.LandedOrSplashed)
+                        {
+                            // no longer landed
+                            vData.lastLandedTime = 0; 
+                        }
                     }
 
                     bool shouldKillThis = false;

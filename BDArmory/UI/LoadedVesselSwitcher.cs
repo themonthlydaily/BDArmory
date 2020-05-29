@@ -9,6 +9,8 @@ using KSP.Localization;
 using BDArmory.FX;
 using Expansions;
 using System;
+using VehiclePhysics;
+using System.Net;
 
 namespace BDArmory.UI
 {
@@ -385,10 +387,12 @@ namespace BDArmory.UI
                             int currentScore = 0;
                             
                             string vesselName = wm.Current.vessel.GetName();
+
                             BDArmory.Control.ScoringData scoreData = null; 
                             if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
                             {
                                 scoreData = BDACompetitionMode.Instance.Scores[vesselName];
+                                currentScore = scoreData.Score;
                             }
                             string postStatus = " (" + currentScore.ToString() + ")";
 
@@ -418,11 +422,13 @@ namespace BDArmory.UI
                             {
                                 postStatus += " " + targetName;
                             }
-                            if (cameraScores.ContainsKey(vesselName))
+                            
+                            /*if (cameraScores.ContainsKey(vesselName))
                             {
                                 int sc = (int)(cameraScores[vesselName]);
                                 postStatus += " [" + sc.ToString() + "]";
                             }
+                            */
 
                             if (GUI.Button(buttonRect, status + vesselName + postStatus, vButtonStyle))
                                 ForceSwitchVessel(wm.Current.vessel);
@@ -501,11 +507,15 @@ namespace BDArmory.UI
                             Rect killButtonRect = new Rect(_margin + vesselButtonWidth + 5 * _buttonHeight , height, _buttonHeight, _buttonHeight);
                             GUIStyle xStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
                             var currentParts = wm.Current.vessel.parts.Count;
-                            if (partcounts.ContainsKey(vesselName))
+                            if(scoreData != null)
                             {
-                                if (currentParts < partcounts[vesselName])
+                                if(currentParts < scoreData.previousPartCount)
                                 {
                                     xStyle.normal.textColor = Color.red;
+                                }
+                                else if (Planetarium.GetUniversalTime() - scoreData.lastHitTime < 4)
+                                {
+                                    xStyle.normal.textColor = Color.yellow;
                                 }
                             }
                             if (GUI.Button(killButtonRect, "X", xStyle))
@@ -628,20 +638,11 @@ namespace BDArmory.UI
                 ForceSwitchVessel(previousVessel);
         }
 
-        public Dictionary<string, int> partcounts = new Dictionary<string, int>();
-        private Dictionary<string, double> lastLanded = new Dictionary<string, double>();
-        private double partCountCheck = 0;
-
         public void UpdateCamera()
         {
             double timeSinceLastCheck = Planetarium.GetUniversalTime() - lastCameraCheck;
 
-            bool updateParts = false;
-            if(Planetarium.GetUniversalTime() - partCountCheck > 2)
-            {
-                updateParts = true;
-                partCountCheck = Planetarium.GetUniversalTime();
-            }
+
             if (timeSinceLastCheck > 0.25)
             {
                 lastCameraCheck = Planetarium.GetUniversalTime();
@@ -677,24 +678,34 @@ namespace BDArmory.UI
                                 float vesselScore = 1000;
                                 float targetDistance = 5000 + (float)(rng.NextDouble() * 100.0);
                                 float crashTime = 30;
-
+                                string vesselName = v.Current.GetName();
                                 // avoid lingering on dying things
+                                bool recentlyDamaged = false;
                                 bool recentlyLanded = false;
-                                if(!recentlyLanded && v.Current.LandedOrSplashed)
+
+                                // check for damage & landed status
+                                
+                                if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
                                 {
-                                    recentlyLanded = true;
-                                    lastLanded[v.Current.GetName()] = Planetarium.GetUniversalTime();
-                                }
-                                if(lastLanded.ContainsKey(v.Current.GetName()))
-                                {
-                                    if(Planetarium.GetUniversalTime() - lastLanded[v.Current.GetName()] < 10)
+                                    var currentParts = v.Current.parts.Count;
+                                    var vdat = BDACompetitionMode.Instance.Scores[vesselName];
+                                    if (currentParts < vdat.previousPartCount)
                                     {
-                                        recentlyLanded = true;
+                                        recentlyDamaged = true;
+                                    }
+
+                                    if (vdat.lastLandedTime != 0)
+                                    {
+                                        var timeSinceLanded = Planetarium.GetUniversalTime() - vdat.lastLandedTime;
+                                        if (timeSinceLanded < 2)
+                                        {
+                                            recentlyLanded = true;
+                                        }
                                     }
                                 }
+                                vesselScore = Math.Abs(vesselScore);
 
-
-                                if(!recentlyLanded && v.Current.verticalSpeed < -3)
+                                if (!recentlyLanded && v.Current.verticalSpeed < -3)
                                 {
                                     crashTime = (float)(- Math.Abs(v.Current.terrainAltitude) / v.Current.verticalSpeed);
                                 }
@@ -734,6 +745,14 @@ namespace BDArmory.UI
                                 {
                                     vesselScore *= 0.5f;
                                 }
+                                if(recentlyDamaged)
+                                {
+                                    vesselScore *= 0.3f; // because taking hits is very interesting;
+                                }
+                                if(!recentlyLanded && wms.Current.vessel.LandedOrSplashed)
+                                {
+                                    vesselScore *= 3; // not interesting.
+                                }
                                 // if we're the active vessel add a penalty over time to force it to switch away eventually
                                 if (wms.Current.vessel.isActiveVessel)
                                 {
@@ -741,31 +760,6 @@ namespace BDArmory.UI
                                     foundActiveVessel = true;
                                 }
 
-                                if(recentlyLanded)
-                                {
-                                    vesselScore *= 2.0f;
-                                }
-
-                                // check for damage 
-                                var currentParts = v.Current.parts.Count;
-                                if (partcounts.ContainsKey(v.Current.GetName()))
-                                {
-                                    if(currentParts < partcounts[v.Current.GetName()])
-                                    {
-                                        vesselScore *= 0.1f;
-                                    }
-                                }
-                                if(updateParts)
-                                {
-                                    if(partcounts[v.Current.GetName()] != currentParts)
-                                    {
-                                        // part count has changed, check that we're still legal.
-                                        BDACompetitionMode.Instance.enforcePartCount(v.Current);
-                                    }
-                                    partcounts[v.Current.GetName()] = currentParts;
-
-                                }
-                                vesselScore = Math.Abs(vesselScore);
 
                                 // if the score is better then update this
                                 if (vesselScore < bestScore)
