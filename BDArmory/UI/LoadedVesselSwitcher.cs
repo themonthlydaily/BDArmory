@@ -523,8 +523,8 @@ namespace BDArmory.UI
                                 // must use right button
                                 if (Event.current.button == 1)
                                 {
-                                    if (scoreData.WhoShotMe == "") {
-                                        scoreData.WhoShotMe = "BIG RED BUTTON"; // only do this if it's not already damaged
+                                    if (scoreData.lastPersonWhoHitMe == "") {
+                                        scoreData.lastPersonWhoHitMe = "BIG RED BUTTON"; // only do this if it's not already damaged
                                     }
                                     Misc.Misc.ForceDeadVessel(wm.Current.vessel);
                                 }
@@ -541,7 +541,7 @@ namespace BDArmory.UI
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(key))
                 {
 
-                    postString = " KILLED BY " + BDACompetitionMode.Instance.Scores[key].WhoShotMe;
+                    postString = " KILLED BY " + BDACompetitionMode.Instance.Scores[key].lastPersonWhoHitMe;
                 }
                 GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString() + ")" + postString, BDArmorySetup.BDGuiSkin.label);
                 height += _buttonHeight + _buttonGap;
@@ -694,7 +694,7 @@ namespace BDArmory.UI
                                         recentlyDamaged = true;
                                     }
 
-                                    if (vdat.lastLandedTime != 0)
+                                    if (vdat.landedState)
                                     {
                                         var timeSinceLanded = Planetarium.GetUniversalTime() - vdat.lastLandedTime;
                                         if (timeSinceLanded < 2)

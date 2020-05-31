@@ -535,8 +535,9 @@ namespace BDArmory.Bullets
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(tName))
                 {
                     var tData = BDACompetitionMode.Instance.Scores[tName];
-                    tData.WhoShotMe = aName;
+                    tData.lastPersonWhoHitMe = aName;
                     tData.lastHitTime = Planetarium.GetUniversalTime();
+                    tData.everyoneWhoHitMe.Add(aName);
                 }
             }
 

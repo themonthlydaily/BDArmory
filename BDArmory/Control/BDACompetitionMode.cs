@@ -20,14 +20,17 @@ namespace BDArmory.Control
         public int Score;
         public int PinataHits;
         public int DeathOrder;
-        public string WhoShotMe;
+        public string lastPersonWhoHitMe;
         public double lastHitTime;
         public double lastFiredTime;
+        public bool landedState;
         public double lastLandedTime;
+        public double landerKillTimer;
         public double AverageSpeed;
         public double AverageAltitude;
         public int averageCount;
         public int previousPartCount;
+        public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
     }
 
 
@@ -127,7 +130,7 @@ namespace BDArmory.Control
                             ScoringData vData = Scores[message];
                             if (Planetarium.GetUniversalTime() - vData.lastHitTime < 2)
                             {
-                                postFix = " is taking damage from " + vData.WhoShotMe;
+                                postFix = " is taking damage from " + vData.lastPersonWhoHitMe;
                             }
                         }
                         message = FlightGlobals.ActiveVessel.GetName() + postFix;
@@ -191,7 +194,7 @@ namespace BDArmory.Control
                         continue;
                     // put these in the scoring dictionary - these are the active participants
                     ScoringData vDat = new ScoringData();
-                    vDat.WhoShotMe = "";
+                    vDat.lastPersonWhoHitMe = "";
                     vDat.lastFiredTime = Planetarium.GetUniversalTime();
                     vDat.previousPartCount = loadedVessels.Current.parts.Count();
                     Scores[loadedVessels.Current.GetName()] = vDat;
@@ -266,6 +269,7 @@ namespace BDArmory.Control
 
             foreach (var pilot in readyToLaunch)
             {
+                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[1]);
                 pilot.CommandTakeOff();
                 if (pilot.weaponManager.guardMode)
                 {
@@ -930,9 +934,9 @@ namespace BDArmory.Control
             {
                 if (!Scores.ContainsKey(worstVessel.GetName()))
                 {
-                    if (Scores[worstVessel.GetName()].WhoShotMe == "")
+                    if (Scores[worstVessel.GetName()].lastPersonWhoHitMe == "")
                     {
-                        Scores[worstVessel.GetName()].WhoShotMe = "GM";
+                        Scores[worstVessel.GetName()].lastPersonWhoHitMe = "GM";
                     }
                 }
                 Debug.Log("[BDArmory] killing " + worstVessel.GetName());
@@ -1077,7 +1081,52 @@ namespace BDArmory.Control
                             }
                         }
                     }
+
+                    // update the vessel scoring structure
+                    if (vData != null)
+                    {
+                        var partCount = v.Current.parts.Count();
+                        if (partCount != vData.previousPartCount)
+                        {
+                            // part count has changed, check for broken stuff
+                            enforcePartCount(v.Current);
+                        }
+                        vData.previousPartCount = v.Current.parts.Count();
+
+                        if (v.Current.LandedOrSplashed)
+                        {
+                            if (!vData.landedState)
+                            {
+                                // was flying, is now landed
+                                vData.lastLandedTime = Planetarium.GetUniversalTime();
+                                vData.landedState = true;
+                                if (vData.landerKillTimer == 0)
+                                {
+                                    vData.landerKillTimer = Planetarium.GetUniversalTime();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (vData.landedState)
+                            {
+                                vData.lastLandedTime = Planetarium.GetUniversalTime();
+                                vData.landedState = false;
+                            }
+                            if (vData.landerKillTimer != 0)
+                            {
+                                // safely airborne for 15 seconds
+                                if (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15)
+                                {
+                                    vData.landerKillTimer = 0;
+                                }
+                            }
+                        }
+                    }
+
+                    // after this poitn we're checking things that might result in kills.
                     if (Planetarium.GetUniversalTime() < gracePeriod) continue;
+                    
                     // keep track if they're shooting for the GM
                     if (mf.currentGun != null)
                     {
@@ -1112,7 +1161,7 @@ namespace BDArmory.Control
                                 mf.guardMode = false;
                                 if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
                                 {
-                                    competitionStatus = vesselName + " damaged by " + vData.WhoShotMe + " and lost weapons";
+                                    competitionStatus = vesselName + " damaged by " + vData.lastPersonWhoHitMe + " and lost weapons";
                                 } else {                                
                                     competitionStatus = vesselName + " is out of Ammunition";
                                 }
@@ -1120,33 +1169,22 @@ namespace BDArmory.Control
                         }
                     }
 
-
                     // update the vessel scoring structure
-                    if(vData != null)
+                    if (vData != null)
                     {
                         vData.AverageSpeed += v.Current.srfSpeed;
                         vData.AverageAltitude += v.Current.altitude;
                         vData.averageCount++;
-                        var partCount = v.Current.parts.Count();
-                        if(partCount != vData.previousPartCount)
+                        if(vData.landedState)
                         {
-                            // part count has changed, check for broken stuff
-                            enforcePartCount(v.Current);
-                        }
-                        vData.previousPartCount = v.Current.parts.Count();
-                        if (vData.lastLandedTime != 0)
-                        {
-                            // record time we became landed
-                            if (v.Current.LandedOrSplashed)
+                            if(Planetarium.GetUniversalTime() - vData.landerKillTimer > 15)
                             {
-                                vData.lastLandedTime = Planetarium.GetUniversalTime();
+                                vesselsToKill.Add(mf.vessel);
+                                competitionStatus = vesselName + " landed too long.";
                             }
-                        } else if(!v.Current.LandedOrSplashed)
-                        {
-                            // no longer landed
-                            vData.lastLandedTime = 0; 
                         }
                     }
+
 
                     bool shouldKillThis = false;
 
@@ -1158,12 +1196,6 @@ namespace BDArmory.Control
                     }
 
                     if (vData == null) shouldKillThis = true;
-
-                    // if vessel is landed after grace period, kill it.
-                    if (v.Current.LandedOrSplashed)
-                    {
-                        shouldKillThis = true;
-                    }
 
                     // 15 second time until kill, maybe they recover?
                     if (KillTimer.ContainsKey(vesselName))
@@ -1179,7 +1211,7 @@ namespace BDArmory.Control
                         if (KillTimer[vesselName] > 15)
                         {
                             vesselsToKill.Add(mf.vessel);
-                            competitionStatus = vesselName + " landed too long.";
+                            competitionStatus = vesselName + " exceeded kill timer";
                         }
                         else if (KillTimer[vesselName] < 0)
                         {
@@ -1191,6 +1223,7 @@ namespace BDArmory.Control
                         if (shouldKillThis)
                             KillTimer[vesselName] = updateTickLength;
                     }
+                    
                 }
             }
             v.Dispose();
@@ -1228,6 +1261,7 @@ namespace BDArmory.Control
                     {
                         if (!DeathOrder.ContainsKey(key))
                         {
+                            
                             // adding pilot into death order
                             DeathOrder[key] = DeathOrder.Count;
                             pilotActions[key] = " is Dead";
@@ -1235,13 +1269,26 @@ namespace BDArmory.Control
 
                             if (Scores.ContainsKey(key))
                             {
-                                whoKilledMe = Scores[key].WhoShotMe;
+                                if (Planetarium.GetUniversalTime() - Scores[key].lastHitTime < 10)
+                                {
+                                    // if last hit was recent that person gets the kill
+                                    whoKilledMe = Scores[key].lastPersonWhoHitMe;
+                                    // twice - so 2 points
+                                    Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
+                                    Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                }
+                                else if (Scores[key].everyoneWhoHitMe.Count > 0)
+                                {
+                                    whoKilledMe = String.Join(",", Scores[key].everyoneWhoHitMe);
+                                    foreach (var killer in Scores[key].everyoneWhoHitMe)
+                                    {
+                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
+                                    }
+                                }
                             }
-                            if (whoKilledMe != "")
+                            if (whoKilledMe == "")
                             {
-                                competitionStatus = key + " was killed by " + whoKilledMe;
-                                Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
-
+                                competitionStatus = key + " was killed by " + whoKilledMe;        
                             }
                             else
                             {
@@ -1284,10 +1331,10 @@ namespace BDArmory.Control
                 var killerName = "";
                 if(Scores.ContainsKey(vesselName))
                 {
-                    killerName = Scores[vesselName].WhoShotMe;
+                    killerName = Scores[vesselName].lastPersonWhoHitMe;
                     if (killerName == "")
                     {
-                        Scores[vesselName].WhoShotMe = "Landed Too Long"; // only do this if it's not already damaged
+                        Scores[vesselName].lastPersonWhoHitMe = "Landed Too Long"; // only do this if it's not already damaged
                         killerName = "Landed Too Long"; 
                     }
                 }
