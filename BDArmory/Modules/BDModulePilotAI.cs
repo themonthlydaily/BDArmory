@@ -408,7 +408,7 @@ namespace BDArmory.Modules
                     startDiveAngleCorrectionWhileGainingAlt = Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis); // sin(th) (measured from horizontal with positive upwards)
                     startDiveAngleCorrectionWhileGainingAlt = 1.0f - (float)Mathf.Sqrt(Math.Max(0.0f, 1.0f - startDiveAngleCorrectionWhileGainingAlt * startDiveAngleCorrectionWhileGainingAlt)); // 1-cos(th)
                 }
-                TakeOff(s, minAltNeeded);
+                TakeOff(s);
                 turningTimer = 0;
             }
             else
@@ -1270,7 +1270,7 @@ namespace BDArmory.Modules
             FlyToPosition(s, target);
         }
 
-        void TakeOff(FlightCtrlState s, float minAltNeeded = 0.0f)
+        void TakeOff(FlightCtrlState s)
         {
             debugString.Append($"Taking off/Gaining altitude");
             debugString.Append(Environment.NewLine);
@@ -1307,7 +1307,7 @@ namespace BDArmory.Modules
 
             FlyToPosition(s, forwardPoint + (upDirection * (rise + terrainDiff)));
 
-            if (radarAlt > Math.Max(minAltitude, minAltNeeded))
+            if (radarAlt > minAltitude && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0) // Above minAltitude and pointing upwards: we're done.
             {
                 belowMinAltitude = false;
                 belowMinAltitudeReported = false;
