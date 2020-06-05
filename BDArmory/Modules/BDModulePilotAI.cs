@@ -21,6 +21,11 @@ namespace BDArmory.Modules
         SteerModes steerMode = SteerModes.NormalFlight;
 
         bool belowMinAltitude;
+        bool belowMinAltitudeReported = false;
+        float minAltReachedWhileGainingAlt;
+        float startAltWhileGainingAlt;
+        float startDiveAngleCorrectionWhileGainingAlt; // 1-cos(theta)
+        float turnRadiusTwiddleFactor = 2.0f; // 2 seems to be a good starting point for decently maneuverable planes. This twiddle factor accounts for how long the AI twiddles it's thumbs (spinning, evading, etc.) while avoiding the ground.
         bool extending;
 
         bool requestedExtend;
@@ -152,6 +157,8 @@ namespace BDArmory.Modules
 
         //manueuverability and g loading data
         float maxDynPresGRecorded;
+        float dynDynPresGRecorded;
+        float dynMaxVelocityMagSqr;
 
         float maxPosG;
         float cosAoAAtMaxPosG;
@@ -392,7 +399,16 @@ namespace BDArmory.Modules
                 {
                     currentStatus = "Gain Alt.";
                 }
-                TakeOff(s);
+                if (!vessel.LandedOrSplashed && !belowMinAltitudeReported)
+                {
+                    Debug.Log("[BDArmory] " + vessel.vesselName + " is below " + minAltNeeded + ", turnRadius:" + turnRadius + ", gaining altitude."); // Spam the debug log.
+                    belowMinAltitudeReported = true; // Only report once, per "gain alt" event. Also, the rest of this should only be updated at the start of the "gain alt".
+                    startAltWhileGainingAlt = MissileGuidance.GetRadarAltitude(vessel);
+                    minAltReachedWhileGainingAlt = startAltWhileGainingAlt;
+                    startDiveAngleCorrectionWhileGainingAlt = Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis); // sin(th) (measured from horizontal with positive upwards)
+                    startDiveAngleCorrectionWhileGainingAlt = 1.0f - (float)Mathf.Sqrt(Math.Max(0.0f, 1.0f - startDiveAngleCorrectionWhileGainingAlt * startDiveAngleCorrectionWhileGainingAlt)); // 1-cos(th)
+                }
+                TakeOff(s, minAltNeeded);
                 turningTimer = 0;
             }
             else
@@ -1254,7 +1270,7 @@ namespace BDArmory.Modules
             FlyToPosition(s, target);
         }
 
-        void TakeOff(FlightCtrlState s)
+        void TakeOff(FlightCtrlState s, float minAltNeeded = 0.0f)
         {
             debugString.Append($"Taking off/Gaining altitude");
             debugString.Append(Environment.NewLine);
@@ -1291,9 +1307,17 @@ namespace BDArmory.Modules
 
             FlyToPosition(s, forwardPoint + (upDirection * (rise + terrainDiff)));
 
-            if (radarAlt > minAltitude)
+            if (radarAlt > Math.Max(minAltitude, minAltNeeded))
             {
                 belowMinAltitude = false;
+                belowMinAltitudeReported = false;
+                float oldTwiddleFactor = turnRadiusTwiddleFactor;
+
+                if (startAltWhileGainingAlt > minAltReachedWhileGainingAlt && startDiveAngleCorrectionWhileGainingAlt > 0.004f) // Ignore adjustments from shallow (~5°) "gain alt"s.
+                {
+                    turnRadiusTwiddleFactor = 0.8f * turnRadiusTwiddleFactor + 0.2f * ((startAltWhileGainingAlt - minAltReachedWhileGainingAlt) / startDiveAngleCorrectionWhileGainingAlt) / turnRadius; // Adjust the twiddle factor based on how well the plane actually turned (using exponential averaging).
+                    Debug.Log("[BDArmory] " + vessel.vesselName + " reached " + minAltReachedWhileGainingAlt + ". Measured turn radius was " + ((startAltWhileGainingAlt - minAltReachedWhileGainingAlt) / startDiveAngleCorrectionWhileGainingAlt) + ", calculated turn radius was " + turnRadius + ". Adjusting twiddle factor from " + oldTwiddleFactor + " to " + turnRadiusTwiddleFactor);
+                }
             }
         }
 
@@ -1371,6 +1395,21 @@ namespace BDArmory.Modules
 
             if (maxPosG > maxDynPresGRecorded)
                 maxDynPresGRecorded = maxPosG;
+
+            dynDynPresGRecorded *= 0.999f; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
+            if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
+                dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
+
+            dynMaxVelocityMagSqr *= 0.9999f; // Decay the max recorded squared velocity slower than the dynamic pressure G-force decays (to give a larger turning circle estimation).
+            if (!vessel.LandedOrSplashed && (float)vessel.Velocity().sqrMagnitude > dynMaxVelocityMagSqr)
+                dynMaxVelocityMagSqr = (float)vessel.Velocity().sqrMagnitude;
+
+            if (!vessel.LandedOrSplashed && belowMinAltitude)
+            {
+                float radarAlt = MissileGuidance.GetRadarAltitude(vessel);
+                if (radarAlt < minAltReachedWhileGainingAlt)
+                    minAltReachedWhileGainingAlt = radarAlt; // As long as we're not on the ground, measure the minimum altitude reached while below minimum altitude (this gets reset when "gain alt" activates).
+            }
 
             float aoADiff = cosAoAAtMaxPosG - cosAoAAtMaxNegG;
 
@@ -1537,14 +1576,11 @@ namespace BDArmory.Modules
 
         void CalculateAccelerationAndTurningCircle()
         {
-            maxLiftAcceleration = maxDynPresGRecorded;
-            maxLiftAcceleration *= (float)vessel.dynamicPressurekPa;       //maximum acceleration from lift that the vehicle can provide
+            maxLiftAcceleration = dynDynPresGRecorded * (float)vessel.dynamicPressurekPa; //maximum acceleration from lift that the vehicle can provide
 
-            maxLiftAcceleration = Math.Min(maxLiftAcceleration, maxAllowedGForce * 9.81f);       //limit it to whichever is smaller, what we can provide or what we can handle
-            maxLiftAcceleration = maxAllowedGForce * 9.81f;
+            maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, 9.81f, maxAllowedGForce * 9.81f); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
-            if (maxLiftAcceleration > 0)
-                turnRadius = (float)vessel.Velocity().sqrMagnitude / maxLiftAcceleration;     //radius that we can turn in assuming constant velocity, assuming simple circular motion
+            turnRadius = dynMaxVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
         }
 
         float MinAltitudeNeeded()         //min altitude adjusted for G limits; let's try _not_ to overcook dives and faceplant into the ground
@@ -1569,12 +1605,12 @@ namespace BDArmory.Modules
                 diveAngleCorrection = 0;
             }
             // ****** REMOVE ******
-            if(vessel.mainBody.bodyName == "Jool")
+            if (vessel.mainBody.bodyName == "Jool")
             {
                 minAltitude = 40000f;
                 defaultAltitude = 60000f;
             }
-            return Math.Max(minAltitude, 100 + turnRadius * diveAngleCorrection);
+            return Math.Max(minAltitude, 150 + turnRadiusTwiddleFactor * turnRadius * diveAngleCorrection); // Add in twiddle factor that accounts for time spent turning in the wrong direction (re-orienting the plane, avoiding, etc.).
         }
 
         Vector3 DefaultAltPosition()
