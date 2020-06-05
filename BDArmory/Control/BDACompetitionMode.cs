@@ -1276,17 +1276,18 @@ namespace BDArmory.Control
                                     // twice - so 2 points
                                     Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
                                     Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                    whoKilledMe += " (BOOM! HEADSHOT!)";
                                 }
                                 else if (Scores[key].everyoneWhoHitMe.Count > 0)
                                 {
-                                    whoKilledMe = String.Join(",", Scores[key].everyoneWhoHitMe);
+                                    whoKilledMe = String.Join(", ", Scores[key].everyoneWhoHitMe);
                                     foreach (var killer in Scores[key].everyoneWhoHitMe)
                                     {
                                         Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                                     }
                                 }
                             }
-                            if (whoKilledMe == "")
+                            if (whoKilledMe != "")
                             {
                                 competitionStatus = key + " was killed by " + whoKilledMe;        
                             }

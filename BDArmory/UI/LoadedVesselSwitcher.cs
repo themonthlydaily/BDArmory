@@ -705,9 +705,9 @@ namespace BDArmory.UI
                                 }
                                 vesselScore = Math.Abs(vesselScore);
 
-                                if (!recentlyLanded && v.Current.verticalSpeed < -3)
+                                if (!recentlyLanded && v.Current.verticalSpeed < -5)
                                 {
-                                    crashTime = (float)(- Math.Abs(v.Current.terrainAltitude) / v.Current.verticalSpeed);
+                                    crashTime = (float)(- Math.Abs(v.Current.radarAltitude) / v.Current.verticalSpeed);
                                 }
                                 if (wms.Current.currentTarget != null)
                                 {
