@@ -1396,11 +1396,11 @@ namespace BDArmory.Modules
             if (maxPosG > maxDynPresGRecorded)
                 maxDynPresGRecorded = maxPosG;
 
-            dynDynPresGRecorded *= 0.999f; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
+            dynDynPresGRecorded *= 0.9999f; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed). 0.9999f gives a half-life of about 2mins.
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
 
-            dynMaxVelocityMagSqr *= 0.9999f; // Decay the max recorded squared velocity slower than the dynamic pressure G-force decays (to give a larger turning circle estimation).
+            dynMaxVelocityMagSqr *= 0.9999f; // Decay the max recorded squared velocity at the same rate so as to keep the ratio of dynMaxVelocityMagSqr/dynDynPresGRecorded constant unless one of them gets updated.
             if (!vessel.LandedOrSplashed && (float)vessel.Velocity().sqrMagnitude > dynMaxVelocityMagSqr)
                 dynMaxVelocityMagSqr = (float)vessel.Velocity().sqrMagnitude;
 
