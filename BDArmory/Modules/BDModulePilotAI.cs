@@ -1735,9 +1735,9 @@ namespace BDArmory.Modules
                 ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
                 terrainAlertDistance = rayHit.distance;
                 terrainAlertNormal = rayHit.normal;
-                if (!Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15)) // Nothing directly ahead, so we're just avoiding terrain.
+                if (!Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15)) // Nothing directly ahead, so we're just barely avoiding terrain.
                 {
-                    // Change the terrain normal and direction as we want to just fly over it instead of banking away it.
+                    // Change the terrain normal and direction as we want to just fly over it instead of banking away from it.
                     terrainAlertNormal = upDirection;
                     terrainAlertDirection = vessel.srf_vel_direction;
                 }
