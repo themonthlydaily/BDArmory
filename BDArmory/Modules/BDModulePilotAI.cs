@@ -413,13 +413,16 @@ namespace BDArmory.Modules
                     switch (gainAltReason)
                     {
                         case GainAltReason.BelowMinAltitude:
-                            currentStatus = "Gain Alt. (below " + (int)minAltitude + "m)";
+                            currentStatus = "Gain Alt. (" + (int)minAltitude + "m)";
                             break;
                         case GainAltReason.DivingTooLow:
                             currentStatus = "Gain Alt. (diving " + (int)vessel.radarAltitude + "m)";
                             break;
                         case GainAltReason.TerrainAhead:
-                            currentStatus = "Gain Alt. (terrain ahead " + (int)terrainAlertDistance + "m)";
+                            currentStatus = "Terrain (" + (int)terrainAlertDistance + "m)";
+                            break;
+                        case GainAltReason.VesselAhead:
+                            currentStatus = "Avoiding others";
                             break;
                         default:
                             currentStatus = "Gain Alt.";
@@ -1345,10 +1348,10 @@ namespace BDArmory.Modules
 
             if (gainAltReason == GainAltReason.TerrainAhead || gainAltReason == GainAltReason.VesselAhead && !vessel.LandedOrSplashed)
             {
-                float adjustmentFactor = (terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange;
-                // First, aim up to 30° towards the surface normal.
-                Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 30.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
-                // Then, adjust the pitch for our speed.
+                float adjustmentFactor = Mathf.Pow((terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange, 2.0f);
+                // First, aim up to 90° towards the surface normal.
+                Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 90.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
+                // Then, adjust the vertical pitch for our speed.
                 // correctionDirection = Vector3.RotateTowards(correctionDirection, upDirection, ((float)vessel.srfSpeed - 100.0f) / 10.0f * Mathf.Deg2Rad, 0.0f);
                 float alpha = Time.deltaTime;
                 terrainAlertCorrectionDirection = (1 - alpha) * terrainAlertCorrectionDirection + alpha * correctionDirection; // Update our target direction over several frames.
