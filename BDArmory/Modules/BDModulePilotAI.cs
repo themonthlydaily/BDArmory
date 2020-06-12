@@ -27,7 +27,7 @@ namespace BDArmory.Modules
         // float startAltWhileGainingAlt = 0.0f;
         // float startDiveAngleCorrectionWhileGainingAlt; // 1-cos(theta)
         float turnRadiusTwiddleFactor = 2.0f; // 2 seems to be a good starting point for decently maneuverable planes. This twiddle factor accounts for how long the AI twiddles it's thumbs (spinning, evading, etc.) while avoiding the ground.
-        public enum GainAltReason { None, BelowMinAltitude, DivingTooLow, TerrainAhead };
+        public enum GainAltReason { None, BelowMinAltitude, DivingTooLow, TerrainAhead, VesselAhead };
         GainAltReason gainAltReason = GainAltReason.None;
         float terrainAlertThreatRange;
         float terrainAlertDistance = -1.0f; // Distance to terrain intercept.
@@ -1343,7 +1343,7 @@ namespace BDArmory.Modules
             else
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
 
-            if (gainAltReason == GainAltReason.TerrainAhead && !vessel.LandedOrSplashed)
+            if (gainAltReason == GainAltReason.TerrainAhead || gainAltReason == GainAltReason.VesselAhead && !vessel.LandedOrSplashed)
             {
                 float adjustmentFactor = (terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange;
                 // First, aim up to 30° towards the surface normal.
@@ -1356,11 +1356,17 @@ namespace BDArmory.Modules
             }
             else
             {
-                Vector3 forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane((vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100, upDirection);
-                float terrainDiff = MissileGuidance.GetRaycastRadarAltitude(forwardPoint) - radarAlt;
-                terrainDiff = Mathf.Max(terrainDiff, 0);
+                // Get surface normal relative to our velocity direction below the vessel and where the vessel is heading.
+                RaycastHit rayHit;
+                Vector3 relativeDownDirection = Vector3.Cross(Vector3.Cross(upDirection, vessel.srf_vel_direction), vessel.srf_vel_direction).normalized;
+                Vector3 forwardPoint = vessel.transform.position + (vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100; // Forward point not adjusted for terrain.
+                Ray ray = new Ray(forwardPoint, relativeDownDirection); // Check ahead and below.
+                Vector3 terrainBelowAheadNormal = (Physics.Raycast(ray, out rayHit, terrainAlertDistance + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below point ahead.
+                ray = new Ray(vessel.transform.position, relativeDownDirection); // Check here below.
+                Vector3 terrainBelowNormal = (Physics.Raycast(ray, out rayHit, terrainAlertDistance + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below here.
+                forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane(forwardPoint, Vector3.Dot(upDirection, terrainBelowAheadNormal) > Vector3.Dot(upDirection, terrainBelowNormal) ? terrainBelowAheadNormal : terrainBelowNormal).normalized * 100; // Forward point adjusted for terrain (using the steepest of here or ahead).
                 float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100); // Up to 45° rise angle above terrain changes at 465m/s.
-                FlyToPosition(s, forwardPoint + (upDirection * (rise + terrainDiff)));
+                FlyToPosition(s, forwardPoint + upDirection * rise);
             }
 
 
@@ -1692,43 +1698,51 @@ namespace BDArmory.Modules
             if (gainAltReason != GainAltReason.TerrainAhead)
                 terrainAlertCorrectionDirection = vessel.srf_vel_direction; // Start out with the correction being nothing.
             // First, look directly below (relative to our velocity) for immediate danger. (Since the SphereCast doesn't detect objects overlapping at the start point).
-            // Vector3 relativeDownDirection = Vector3.Cross(Vector3.Cross(upDirection, vessel.srf_vel_direction), vessel.srf_vel_direction).normalized;
-            // Ray ray = new Ray(vessel.transform.position, relativeDownDirection);
-            // if (Physics.Raycast(ray, out rayHit, detectionRadius, 1 << 15)) // We're almost touching the ground
-            // {
-            //     terrainAlertDistance = rayHit.distance;
-            //     terrainAlertNormal = rayHit.normal;
-            //     terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized;
-            //     Debug.Log("[DEBUG] Terrain Alert! Terrain Alert! Terrain Alert! " + terrainAlertDistance + "m.");
-            //     gainAltReason = GainAltReason.TerrainAhead;
-            //     belowMinAltitude = true;
-            //     return minAltitude;
-            // }
-            // First, check if we're really close to the terrain.
-            Collider[] hitColliders = Physics.OverlapSphere(vessel.transform.position, detectionRadius, 1 << 15);
-            if (hitColliders.Length > 0)
+            Vector3 relativeDownDirection = Vector3.Cross(Vector3.Cross(upDirection, vessel.srf_vel_direction), vessel.srf_vel_direction).normalized;
+            Ray ray = new Ray(vessel.transform.position, relativeDownDirection);
+            if (Physics.Raycast(ray, out rayHit, detectionRadius, 1 << 15)) // We're almost touching the ground
             {
-                Vector3 closestPoint = hitColliders[0].ClosestPoint(vessel.transform.position);
-                float closestDistanceSqr = (vessel.transform.position - closestPoint).sqrMagnitude;
-                for (int i = 1; i < hitColliders.Length; ++i)
-                {
-                    Vector3 hitPoint = hitColliders[i].ClosestPoint(vessel.transform.position);
-                    float hitDistanceSqr = (vessel.transform.position - hitPoint).sqrMagnitude;
-                    if (hitDistanceSqr < closestDistanceSqr)
-                    {
-                        closestDistanceSqr = hitDistanceSqr;
-                        closestPoint = hitPoint;
-                    }
-                }
-                terrainAlertDistance = Mathf.Sqrt(closestDistanceSqr);
-                terrainAlertNormal = (vessel.transform.position - closestPoint).normalized; // Away from the surface.
-                terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized; // Our velocity tangential to the surface.
+                terrainAlertDistance = rayHit.distance;
+                terrainAlertNormal = rayHit.normal;
+                terrainAlertDirection = Vector3.ProjectOnPlane(vessel.srf_vel_direction, terrainAlertNormal).normalized;
+                Debug.Log("[DEBUG] Terrain Alert! Terrain Alert! Terrain Alert! " + terrainAlertDistance + "m.");
                 gainAltReason = GainAltReason.TerrainAhead;
                 belowMinAltitude = true;
                 return minAltitude;
             }
+            // First, check if we're really close to the terrain.
+            // Collider[] hitColliders = Physics.OverlapSphere(vessel.transform.position, detectionRadius, 1 << 15);
+            // if (hitColliders.Length > 0)
+            // {
+            //     for (int i = 0; i < hitColliders.Length; ++i)
+            //     {
+            //         float distance;
+            //         Vector3 direction;
+            //         Physics.ComputePenetration(,,,,,, direction, distance);
+            //         Debug.Log("[DEBUG] " + vessel.vesselName + " (" + vessel.name + ")" + " hitCollider name " + hitColliders[i].name + " distance ");
+            //     }
+            //     Vector3 closestPoint = hitColliders[0].ClosestPoint(vessel.transform.position);
+            //     float closestDistanceSqr = (vessel.transform.position - closestPoint).sqrMagnitude;
+            //     for (int i = 1; i < hitColliders.Length; ++i)
+            //     {
+            //         Vector3 hitPoint = hitColliders[i].ClosestPoint(vessel.transform.position);
+            //         float hitDistanceSqr = (vessel.transform.position - hitPoint).sqrMagnitude;
+            //         if (hitDistanceSqr < closestDistanceSqr)
+            //         {
+            //             closestDistanceSqr = hitDistanceSqr;
+            //             closestPoint = hitPoint;
+            //         }
+            //     }
+            //     terrainAlertDistance = Mathf.Sqrt(closestDistanceSqr);
+            //     terrainAlertNormal = (vessel.transform.position - closestPoint).normalized; // Away from the surface.
+            //     terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized; // Our velocity tangential to the surface.
+            //     Debug.Log("[DEBUG] vp " + (Vector3d)vessel.transform.position + " cp " + (Vector3d)closestPoint + " td " + terrainAlertDirection + " d " + terrainAlertDistance);
+            //     gainAltReason = GainAltReason.TerrainAhead;
+            //     belowMinAltitude = true;
+            //     return minAltitude;
+            // }
             // Next, cast a sphere forwards to check for upcoming dangers.
-            Ray ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
+            ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
             if (Physics.SphereCast(ray, detectionRadius, out rayHit, terrainAlertThreatRange, 1 << 15)) // Found something. 
             {
                 // Check if there's anything directly ahead.
@@ -1751,6 +1765,32 @@ namespace BDArmory.Modules
                     belowMinAltitude = true;
                     return minAltitude;
                 }
+            }
+
+            // Check for collisions with other vessels.
+            bool vesselCollision = false;
+            Vector3 badDirection;
+            List<Vessel>.Enumerator vs = BDATargetManager.LoadedVessels.GetEnumerator();
+            while (vs.MoveNext())
+            {
+                if (vs.Current == null) continue;
+                if (vs.Current == vessel || vs.Current.Landed ||
+                    !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position,
+                            vesselTransform.up) > 0)) continue;
+                if (!PredictCollisionWithVessel(vs.Current, 2.5f, 0.5f, out badDirection)) continue;
+                // the 'isLeadingFormation' check was bad anyway, as releasing one member would unset it, while still having other followers, moving it here
+                if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
+                vesselCollision = true;
+                terrainAlertDistance = (vs.Current.transform.position - vessel.transform.position).magnitude;
+                terrainAlertDirection = badDirection; // badDirection is the direction PredictCollisionWithVessel says we want to go.
+                terrainAlertNormal = badDirection;
+                break;
+            }
+            vs.Dispose();
+            if (vesselCollision)
+            {
+                gainAltReason = GainAltReason.VesselAhead;
+                return minAltitude; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
             }
 
             // Check for being too low.
