@@ -21,11 +21,21 @@ namespace BDArmory.Modules
         SteerModes steerMode = SteerModes.NormalFlight;
 
         bool belowMinAltitude;
-        bool belowMinAltitudeReported = false;
-        float minAltReachedWhileGainingAlt;
-        float startAltWhileGainingAlt;
-        float startDiveAngleCorrectionWhileGainingAlt; // 1-cos(theta)
+        // bool belowMinAltitudeReported = false;
+        bool initialTakeOff = true;
+        // float minAltReachedWhileGainingAlt;
+        // float startAltWhileGainingAlt = 0.0f;
+        // float startDiveAngleCorrectionWhileGainingAlt; // 1-cos(theta)
         float turnRadiusTwiddleFactor = 2.0f; // 2 seems to be a good starting point for decently maneuverable planes. This twiddle factor accounts for how long the AI twiddles it's thumbs (spinning, evading, etc.) while avoiding the ground.
+        public enum GainAltReason { None, BelowMinAltitude, DivingTooLow, TerrainAhead };
+        GainAltReason gainAltReason = GainAltReason.None;
+        float terrainAlertThreatRange;
+        float terrainAlertDistance = -1.0f; // Distance to terrain intercept.
+        Vector3 terrainAlertDirection; // Terrain slope in the direction of the velocity at the terrain intercept.
+        Vector3 terrainAlertNormal; // Approximate surface normal at the terrain intercept.
+        Vector3 terrainAlertCorrectionDirection; // The direction to go to avoid the terrain.
+        float terrainAlertCoolDown = 0; // Cool down period before allowing other special modes to take effect (currently just "orbitting").
+
         bool extending;
 
         bool requestedExtend;
@@ -67,7 +77,7 @@ namespace BDArmory.Modules
         Vector3 upDirection = Vector3.up;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude"),//Default Alt.
-            UI_FloatRange(minValue = 500f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 150f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
         public float defaultAltitude = 1500;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude"),//Min Altitude
@@ -156,9 +166,9 @@ namespace BDArmory.Modules
         public bool standbyMode = false;
 
         //manueuverability and g loading data
-        float maxDynPresGRecorded;
-        float dynDynPresGRecorded;
-        float dynMaxVelocityMagSqr;
+        // float maxDynPresGRecorded;
+        float dynDynPresGRecorded = 1.0f; // Start at reasonable non-zero value.
+        float dynMaxVelocityMagSqr = 1.0f; // Start at reasonable non-zero value.
 
         float maxPosG;
         float cosAoAAtMaxPosG;
@@ -350,6 +360,9 @@ namespace BDArmory.Modules
 
             finalMaxSteer = maxSteer;
 
+            if (terrainAlertCoolDown > 0)
+                terrainAlertCoolDown -= Time.deltaTime;
+
             //default brakes off full throttle
             //s.mainThrottle = 1;
 
@@ -379,7 +392,7 @@ namespace BDArmory.Modules
             debugString.Append($"minAltNeeded: {minAltNeeded}");
             debugString.Append(Environment.NewLine);
 
-            if (MissileGuidance.GetRadarAltitude(vessel) < minAltNeeded)
+            if ((float)vessel.radarAltitude < minAltNeeded)
             {
                 belowMinAltitude = true;
             }
@@ -397,17 +410,49 @@ namespace BDArmory.Modules
             {
                 if (command != PilotCommands.Follow)
                 {
-                    currentStatus = "Gain Alt.";
+                    switch (gainAltReason)
+                    {
+                        case GainAltReason.BelowMinAltitude:
+                            currentStatus = "Gain Alt. (below " + (int)minAltitude + "m)";
+                            break;
+                        case GainAltReason.DivingTooLow:
+                            currentStatus = "Gain Alt. (diving " + (int)vessel.radarAltitude + "m)";
+                            break;
+                        case GainAltReason.TerrainAhead:
+                            currentStatus = "Gain Alt. (terrain ahead " + (int)terrainAlertDistance + "m)";
+                            break;
+                        default:
+                            currentStatus = "Gain Alt.";
+                            break;
+                    }
                 }
-                if (!vessel.LandedOrSplashed && !belowMinAltitudeReported)
-                {
-                    Debug.Log("[BDArmory] " + vessel.vesselName + " is below " + minAltNeeded + ", turnRadius:" + turnRadius + ", gaining altitude."); // Spam the debug log.
-                    belowMinAltitudeReported = true; // Only report once, per "gain alt" event. Also, the rest of this should only be updated at the start of the "gain alt".
-                    startAltWhileGainingAlt = MissileGuidance.GetRadarAltitude(vessel);
-                    minAltReachedWhileGainingAlt = startAltWhileGainingAlt;
-                    startDiveAngleCorrectionWhileGainingAlt = Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis); // sin(th) (measured from horizontal with positive upwards)
-                    startDiveAngleCorrectionWhileGainingAlt = 1.0f - (float)Mathf.Sqrt(Math.Max(0.0f, 1.0f - startDiveAngleCorrectionWhileGainingAlt * startDiveAngleCorrectionWhileGainingAlt)); // 1-cos(th)
-                }
+                // if (!vessel.LandedOrSplashed && !belowMinAltitudeReported)
+                // {
+                //     belowMinAltitudeReported = true; // Only report once, per "gain alt" event. Also, the rest of this should only be updated at the start of the "gain alt".
+                //     startAltWhileGainingAlt = (float)vessel.radarAltitude;
+                //     minAltReachedWhileGainingAlt = startAltWhileGainingAlt;
+
+                // switch (gainAltReason)
+                // {
+                //     case GainAltReason.BelowMinAltitude:
+                //         Debug.Log("[BDArmory] " + vessel.vesselName + " is below minimum altitude.");
+                //         break;
+                //     case GainAltReason.DivingTooLow:
+                //         float sinTheta = Math.Min(0.0f, Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis)); // sin(th) (measured from horizontal with positive upwards)
+                //         float oneMinusCosTheta = 1.0f - (float)Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
+                //         startDiveAngleCorrectionWhileGainingAlt = oneMinusCosTheta;
+                //         Vector3 projectedDirection = Vector3.ProjectOnPlane(vesselTransform.up, upDirection).normalized;
+                //         Vector3 projectedPositionAtMinimum = vessel.transform.position + projectedDirection * turnRadiusTwiddleFactor * turnRadius * sinTheta - (turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta) * upDirection;
+                //         float predictedMinAltitude = MissileGuidance.GetRadarAltitudeAtPos(projectedPositionAtMinimum);
+                //         Debug.Log("[BDArmory] " + vessel.vesselName + " is diving too low! Start altitude: " + startAltWhileGainingAlt + ", predicted min altitude: " + predictedMinAltitude);
+                //         break;
+                //     case GainAltReason.TerrainAhead:
+                //         Debug.Log("[BDArmory] " + vessel.vesselName + " has terrain ahead in " + terrainAlertDistance + "!");
+                //         break;
+                //     default:
+                //         break;
+                // }
+                // }
                 TakeOff(s);
                 turningTimer = 0;
             }
@@ -558,7 +603,7 @@ namespace BDArmory.Modules
             else
             {
                 evasiveTimer = 0;
-                if (!extending)
+                if (!extending && !(terrainAlertCoolDown > 0))
                 {
                     currentStatus = "Orbiting";
                     FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
@@ -577,6 +622,7 @@ namespace BDArmory.Modules
 
         bool FlyAvoidCollision(FlightCtrlState s)
         {
+            return false; // FIXME
             if (collisionDetectionTimer > 2)
             {
                 collisionDetectionTimer = 0;
@@ -749,7 +795,7 @@ namespace BDArmory.Modules
                             {
                                 //figuring how much to lead the target's movement to get there after its movement assuming we can manage a constant speed turn
                                 //this only runs if we're not aiming and not that far from the target
-                                float curVesselMaxAccel = Math.Min(maxDynPresGRecorded * (float)vessel.dynamicPressurekPa, maxAllowedGForce * 9.81f);
+                                float curVesselMaxAccel = Math.Min(dynDynPresGRecorded * (float)vessel.dynamicPressurekPa, maxAllowedGForce * 9.81f);
                                 if (curVesselMaxAccel > 0)
                                 {
                                     float timeToTurn = (float)vessel.srfSpeed * angleToTarget * Mathf.Deg2Rad / curVesselMaxAccel;
@@ -776,7 +822,7 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < targetVessel.altitude || MissileGuidance.GetRadarAltitude(vessel) < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
+                else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < targetVessel.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
                     target = vesselTransform.position + GetLimitedClimbDirectionForSpeed(vectorToTarget);
@@ -835,7 +881,7 @@ namespace BDArmory.Modules
 
             steerMode = SteerModes.Aiming;
             Vector3 planarDirection = Vector3.ProjectOnPlane(direction, upDirection);
-            float angle = (Mathf.Clamp(MissileGuidance.GetRadarAltitude(vessel) - minAltitude, 0, 1500) / 1500) * 90;
+            float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
             angle = Mathf.Clamp(angle, 0, 55) * Mathf.Deg2Rad;
 
             Vector3 targetDirection = Vector3.RotateTowards(planarDirection, -upDirection, angle, 0);
@@ -974,7 +1020,10 @@ namespace BDArmory.Modules
             //
             if (belowMinAltitude)
             {
-                rollTarget = vessel.upAxis * 100;
+                if (gainAltReason == GainAltReason.TerrainAhead)
+                    rollTarget = terrainAlertNormal * 100;
+                else
+                    rollTarget = vessel.upAxis * 100;
             }
             if (useVelRollTarget && !belowMinAltitude)
             {
@@ -1287,37 +1336,61 @@ namespace BDArmory.Modules
 
             steerMode = SteerModes.Aiming;
 
-            float radarAlt = MissileGuidance.GetRadarAltitude(vessel);
-
-
-            Vector3 forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane((vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100, upDirection);
-            float terrainDiff = MissileGuidance.GetRaycastRadarAltitude(forwardPoint) - radarAlt;
-            terrainDiff = Mathf.Max(terrainDiff, 0);
-
-            float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100);
+            float radarAlt = (float)vessel.radarAltitude;
 
             if (radarAlt > 70 || (vessel.altitude < vessel.terrainAltitude) || vessel.Splashed)
-            {
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
+            else
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
+
+            if (gainAltReason == GainAltReason.TerrainAhead && !vessel.LandedOrSplashed)
+            {
+                float adjustmentFactor = (terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange;
+                // First, aim up to 30° towards the surface normal.
+                Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 30.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
+                // Then, adjust the pitch for our speed.
+                // correctionDirection = Vector3.RotateTowards(correctionDirection, upDirection, ((float)vessel.srfSpeed - 100.0f) / 10.0f * Mathf.Deg2Rad, 0.0f);
+                float alpha = Time.deltaTime;
+                terrainAlertCorrectionDirection = (1 - alpha) * terrainAlertCorrectionDirection + alpha * correctionDirection; // Update our target direction over several frames.
+                FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
             }
             else
             {
-                vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
+                Vector3 forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane((vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100, upDirection);
+                float terrainDiff = MissileGuidance.GetRaycastRadarAltitude(forwardPoint) - radarAlt;
+                terrainDiff = Mathf.Max(terrainDiff, 0);
+                float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100); // Up to 45° rise angle above terrain changes at 465m/s.
+                FlyToPosition(s, forwardPoint + (upDirection * (rise + terrainDiff)));
             }
 
-            FlyToPosition(s, forwardPoint + (upDirection * (rise + terrainDiff)));
 
-            if (radarAlt > minAltitude && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0) // Above minAltitude and pointing upwards: we're done.
+            bool exitCondition = true;
+
+            switch (gainAltReason)
+            {
+                case GainAltReason.BelowMinAltitude:
+                case GainAltReason.DivingTooLow:
+                    exitCondition = radarAlt > minAltitude && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0; // Above minimum altitude and pointing upwards.
+                    break;
+                case GainAltReason.TerrainAhead:
+                    exitCondition = terrainAlertDistance < 0.0f; // Not intercepting terrain.
+                    break;
+                default:
+                    break;
+            }
+            if (exitCondition)
             {
                 belowMinAltitude = false;
-                belowMinAltitudeReported = false;
-                float oldTwiddleFactor = turnRadiusTwiddleFactor;
+                // belowMinAltitudeReported = false;
+                gainAltReason = GainAltReason.None;
+                terrainAlertCoolDown = 2.0f; // 2s cool down after avoiding terrain.
+                // float oldTwiddleFactor = turnRadiusTwiddleFactor;
 
-                if (startAltWhileGainingAlt > minAltReachedWhileGainingAlt && startDiveAngleCorrectionWhileGainingAlt > 0.004f) // Ignore adjustments from shallow (~5°) "gain alt"s.
-                {
-                    turnRadiusTwiddleFactor = 0.8f * turnRadiusTwiddleFactor + 0.2f * ((startAltWhileGainingAlt - minAltReachedWhileGainingAlt) / startDiveAngleCorrectionWhileGainingAlt) / turnRadius; // Adjust the twiddle factor based on how well the plane actually turned (using exponential averaging).
-                    Debug.Log("[BDArmory] " + vessel.vesselName + " reached " + minAltReachedWhileGainingAlt + ". Measured turn radius was " + ((startAltWhileGainingAlt - minAltReachedWhileGainingAlt) / startDiveAngleCorrectionWhileGainingAlt) + ", calculated turn radius was " + turnRadius + ". Adjusting twiddle factor from " + oldTwiddleFactor + " to " + turnRadiusTwiddleFactor);
-                }
+                // if (gainAltReason != GainAltReason.TerrainAhead && startAltWhileGainingAlt > minAltReachedWhileGainingAlt && startDiveAngleCorrectionWhileGainingAlt > 0.004f) // Ignore adjustments from shallow (~5°) "gain alt"s.
+                // {
+                //     turnRadiusTwiddleFactor = 0.9f * turnRadiusTwiddleFactor + 0.1f * ((startAltWhileGainingAlt - minAltReachedWhileGainingAlt) / startDiveAngleCorrectionWhileGainingAlt) / turnRadius; // Adjust the twiddle factor based on how well the plane actually turned (using exponential averaging).
+                //     Debug.Log("[BDArmory] " + vessel.vesselName + " reached " + minAltReachedWhileGainingAlt + ". Measured turn radius was " + ((startAltWhileGainingAlt - minAltReachedWhileGainingAlt) / startDiveAngleCorrectionWhileGainingAlt) + ", calculated turn radius was " + turnRadius + ". Adjusting twiddle factor from " + oldTwiddleFactor + " to " + turnRadiusTwiddleFactor);
+                // }
             }
         }
 
@@ -1340,6 +1413,7 @@ namespace BDArmory.Modules
         }
 
         void UpdateGAndAoALimits(FlightCtrlState s)
+
         {
             if (vessel.dynamicPressurekPa <= 0 || vessel.srfSpeed < takeOffSpeed || belowMinAltitude && -Vector3.Dot(vessel.ReferenceTransform.forward, vessel.upAxis) < 0.8f)
             {
@@ -1393,23 +1467,23 @@ namespace BDArmory.Modules
                 return;
             }
 
-            if (maxPosG > maxDynPresGRecorded)
-                maxDynPresGRecorded = maxPosG;
+            // if (maxPosG > maxDynPresGRecorded)
+            //     maxDynPresGRecorded = maxPosG;
 
-            dynDynPresGRecorded *= 0.9999f; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed). 0.9999f gives a half-life of about 2mins.
+            dynDynPresGRecorded *= 0.999615f; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed). Half-life of about 30s.
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
 
-            dynMaxVelocityMagSqr *= 0.9999f; // Decay the max recorded squared velocity at the same rate so as to keep the ratio of dynMaxVelocityMagSqr/dynDynPresGRecorded constant unless one of them gets updated.
+            dynMaxVelocityMagSqr *= 0.999615f; // Decay the max recorded squared velocity at the same rate as the dynamic pressure G-force decays to keep the turnRadius constant if they otherwise haven't changed.
             if (!vessel.LandedOrSplashed && (float)vessel.Velocity().sqrMagnitude > dynMaxVelocityMagSqr)
                 dynMaxVelocityMagSqr = (float)vessel.Velocity().sqrMagnitude;
 
-            if (!vessel.LandedOrSplashed && belowMinAltitude)
-            {
-                float radarAlt = MissileGuidance.GetRadarAltitude(vessel);
-                if (radarAlt < minAltReachedWhileGainingAlt)
-                    minAltReachedWhileGainingAlt = radarAlt; // As long as we're not on the ground, measure the minimum altitude reached while below minimum altitude (this gets reset when "gain alt" activates).
-            }
+            // if (!vessel.LandedOrSplashed && belowMinAltitude)
+            // {
+            //     float radarAlt = (float)vessel.radarAltitude;
+            //     if (radarAlt < minAltReachedWhileGainingAlt)
+            //         minAltReachedWhileGainingAlt = radarAlt; // As long as we're not on the ground, measure the minimum altitude reached while below minimum altitude (this gets reset when "gain alt" activates).
+            // }
 
             float aoADiff = cosAoAAtMaxPosG - cosAoAAtMaxNegG;
 
@@ -1583,35 +1657,114 @@ namespace BDArmory.Modules
             turnRadius = dynMaxVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
         }
 
-        float MinAltitudeNeeded()         //min altitude adjusted for G limits; let's try _not_ to overcook dives and faceplant into the ground
+        float MinAltitudeNeeded() // min altitude adjusted for G limits and terrain
         {
-            //for a pure vertical dive, turnRadius will be the altitude that we need to turn.  However, for shallower dives we don't need that much.  Let's account for that.
-            //actual altitude needed will be radius * (1 - cos(theta)), where theta is the angle of the arc from dive entry to the turning circle to the bottom
-            //we can calculate that from the velocity vector mag dotted with the up vector
+            if (initialTakeOff && vessel.radarAltitude > 50)
+                initialTakeOff = false;
 
-            float diveAngleCorrection = -Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis); //normalize the vector and dot it with upAxis
-                                                                                                          //this gives us sin(theta)
-            if (diveAngleCorrection > 0)         //we're headed downwards
+            // If we're on the ground or taking off, don't check for other stuff.
+            if (vessel.LandedOrSplashed || initialTakeOff) // Initial take-off.
             {
-                diveAngleCorrection *= diveAngleCorrection;
-                diveAngleCorrection = 1 - diveAngleCorrection;
-                diveAngleCorrection = Math.Max(0f, diveAngleCorrection);    //remember to check to make sure numerical errors haven't crept in!  Can't have NaN showing up
-                diveAngleCorrection = Mathf.Sqrt(diveAngleCorrection);      //convert sin(theta) to cos(theta)
+                gainAltReason = GainAltReason.None;
+                return minAltitude;
+            }
 
-                diveAngleCorrection = 1 - diveAngleCorrection;      //and convert to 1 - cos(theta)
-            }
-            else
+            // Check for diving too low. For this we use the altitude at the projected minimum instead of where we are.
+            // float sinTheta = Math.Min(0.0f, Vector3.Dot(vessel.srf_velocity / vessel.srfSpeed, vessel.upAxis)); // sin(th) (measured from horizontal with positive upwards)
+            // if (sinTheta < 0.0f)
+            // {
+            //     float oneMinusCosTheta = 1.0f - (float)Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
+            //     Vector3 projectedDirection = Vector3.ProjectOnPlane(vesselTransform.up, upDirection).normalized;
+            //     Vector3 projectedPositionAtMinimum = vessel.transform.position + projectedDirection * turnRadiusTwiddleFactor * turnRadius * sinTheta - (turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta) * upDirection;
+            //     float predictedMinAltitude = MissileGuidance.GetRadarAltitudeAtPos(projectedPositionAtMinimum);
+            //     if (predictedMinAltitude < 150.0f) // We're diving too low!
+            //     {
+            //         gainAltReason = GainAltReason.DivingTooLow;
+            //         return 150.0f + turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta;
+            //     }
+            // }
+
+            // Check for terrain ahead.
+            terrainAlertDistance = -1.0f; // First reset the alert.
+            terrainAlertThreatRange = 150.0f + turnRadiusTwiddleFactor * turnRadius; // The distance to the terrain to consider. TODO tweak this, maybe include twiddle parameter to learn.
+            float detectionRadius = 30.0f; // Should cover most vessels.
+            RaycastHit rayHit;
+            if (gainAltReason != GainAltReason.TerrainAhead)
+                terrainAlertCorrectionDirection = vessel.srf_vel_direction; // Start out with the correction being nothing.
+            // First, look directly below (relative to our velocity) for immediate danger. (Since the SphereCast doesn't detect objects overlapping at the start point).
+            // Vector3 relativeDownDirection = Vector3.Cross(Vector3.Cross(upDirection, vessel.srf_vel_direction), vessel.srf_vel_direction).normalized;
+            // Ray ray = new Ray(vessel.transform.position, relativeDownDirection);
+            // if (Physics.Raycast(ray, out rayHit, detectionRadius, 1 << 15)) // We're almost touching the ground
+            // {
+            //     terrainAlertDistance = rayHit.distance;
+            //     terrainAlertNormal = rayHit.normal;
+            //     terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized;
+            //     Debug.Log("[DEBUG] Terrain Alert! Terrain Alert! Terrain Alert! " + terrainAlertDistance + "m.");
+            //     gainAltReason = GainAltReason.TerrainAhead;
+            //     belowMinAltitude = true;
+            //     return minAltitude;
+            // }
+            // First, check if we're really close to the terrain.
+            Collider[] hitColliders = Physics.OverlapSphere(vessel.transform.position, detectionRadius, 1 << 15);
+            if (hitColliders.Length > 0)
             {
-                diveAngleCorrection = 0;
+                Vector3 closestPoint = hitColliders[0].ClosestPoint(vessel.transform.position);
+                float closestDistanceSqr = (vessel.transform.position - closestPoint).sqrMagnitude;
+                for (int i = 1; i < hitColliders.Length; ++i)
+                {
+                    Vector3 hitPoint = hitColliders[i].ClosestPoint(vessel.transform.position);
+                    float hitDistanceSqr = (vessel.transform.position - hitPoint).sqrMagnitude;
+                    if (hitDistanceSqr < closestDistanceSqr)
+                    {
+                        closestDistanceSqr = hitDistanceSqr;
+                        closestPoint = hitPoint;
+                    }
+                }
+                terrainAlertDistance = Mathf.Sqrt(closestDistanceSqr);
+                terrainAlertNormal = (vessel.transform.position - closestPoint).normalized; // Away from the surface.
+                terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized; // Our velocity tangential to the surface.
+                gainAltReason = GainAltReason.TerrainAhead;
+                belowMinAltitude = true;
+                return minAltitude;
             }
-            // ****** REMOVE ******
-            if (vessel.mainBody.bodyName == "Jool")
+            // Next, cast a sphere forwards to check for upcoming dangers.
+            Ray ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
+            if (Physics.SphereCast(ray, detectionRadius, out rayHit, terrainAlertThreatRange, 1 << 15)) // Found something. 
             {
-                minAltitude = 40000f;
-                defaultAltitude = 60000f;
+                // Check if there's anything directly ahead.
+                ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
+                terrainAlertDistance = rayHit.distance;
+                terrainAlertNormal = rayHit.normal;
+                if (!Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15)) // Nothing directly ahead, so we're just avoiding terrain.
+                {
+                    // Change the terrain normal and direction as we want to just fly over it instead of banking away it.
+                    terrainAlertNormal = upDirection;
+                    terrainAlertDirection = vessel.srf_vel_direction;
+                }
+                else
+                    terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized;
+                float sinTheta = Math.Min(0.0f, Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, terrainAlertNormal)); // sin(theta) (measured relative to the plane of the surface).
+                float oneMinusCosTheta = 1.0f - Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
+                if (terrainAlertDistance < 150.0f + turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta) // Only do something about it if the estimated turn amount is a problem.
+                {
+                    gainAltReason = GainAltReason.TerrainAhead;
+                    belowMinAltitude = true;
+                    return minAltitude;
+                }
             }
-            return Math.Max(minAltitude, 150 + turnRadiusTwiddleFactor * turnRadius * diveAngleCorrection); // Add in twiddle factor that accounts for time spent turning in the wrong direction (re-orienting the plane, avoiding, etc.).
+
+            // Check for being too low.
+            if ((float)vessel.radarAltitude < minAltitude)
+            {
+                gainAltReason = GainAltReason.BelowMinAltitude;
+                return minAltitude;
+            }
+
+            // No conditions, so just return minAltitude.
+            gainAltReason = GainAltReason.None;
+            return minAltitude;
         }
+
 
         Vector3 DefaultAltPosition()
         {
@@ -1643,7 +1796,7 @@ namespace BDArmory.Modules
                 vertFactor += 0.4f;
             vertFactor -= weaponManager.underFire ? 0.5f : 0;   //being under fire encourages going downwards as well, to gain energy
 
-            float alt = MissileGuidance.GetRadarAltitude(vessel);
+            float alt = (float)vessel.radarAltitude;
 
             if (vertFactor > 2)
                 vertFactor = 2;
@@ -1673,7 +1826,7 @@ namespace BDArmory.Modules
                 targetPosition += upDirection * Math.Min(distance, 1000) * vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection)));
             }
 
-            if (MissileGuidance.GetRadarAltitude(vessel) > minAlt * 1.1f)
+            if ((float)vessel.radarAltitude > minAlt * 1.1f)
             {
                 return targetPosition;
             }
@@ -1702,7 +1855,7 @@ namespace BDArmory.Modules
         bool DetectCollision(Vector3 direction, out Vector3 badDirection)
         {
             badDirection = Vector3.zero;
-            if (MissileGuidance.GetRadarAltitude(vessel) < 20) return false;
+            if ((float)vessel.radarAltitude < 20) return false;
 
             direction = direction.normalized;
             int layerMask = 1 << 15;
