@@ -1348,12 +1348,12 @@ namespace BDArmory.Modules
 
             if (gainAltReason == GainAltReason.TerrainAhead || gainAltReason == GainAltReason.VesselAhead && !vessel.LandedOrSplashed)
             {
-                float adjustmentFactor = Mathf.Pow((terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange, 2.0f); // 0-1 quadratic based on how close we are to the terrain.
+                float adjustmentFactor = (terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange;
                 // First, aim up to 90° towards the surface normal.
                 Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 90.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
                 // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
                 Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
-                correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (180.0f - (float)vessel.srfSpeed) / 6.0f * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to 30° back towards horizontal.
+                correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (120.0f - (float)vessel.srfSpeed) / 2.0f * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to 60° back towards horizontal.
                 float alpha = Time.deltaTime;
                 terrainAlertCorrectionDirection = (1 - alpha) * terrainAlertCorrectionDirection + alpha * correctionDirection; // Update our target direction over several frames.
                 FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
@@ -1699,7 +1699,7 @@ namespace BDArmory.Modules
 
             // Check for terrain ahead.
             terrainAlertDistance = -1.0f; // First reset the alert.
-            turnRadiusTwiddleFactor = 3.0f; // DEBUG We're going to adjust this based on the orientation of the vessel.
+            turnRadiusTwiddleFactor = 4.5f; // Worst value. We're going to adjust this based on the orientation of the vessel.
             terrainAlertThreatRange = 150.0f + turnRadiusTwiddleFactor * turnRadius; // The distance to the terrain to consider. TODO tweak this, maybe include twiddle parameter to learn.
             float detectionRadius = 30.0f; // Should cover most vessels.
             RaycastHit rayHit;
@@ -1752,7 +1752,7 @@ namespace BDArmory.Modules
                     terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized;
                 float sinTheta = Math.Min(0.0f, Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, terrainAlertNormal)); // sin(theta) (measured relative to the plane of the surface).
                 float oneMinusCosTheta = 1.0f - Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
-                turnRadiusTwiddleFactor = 2.0f - Vector3.Dot(terrainAlertNormal, -vessel.transform.forward); // This would depend on roll rate, i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver.
+                turnRadiusTwiddleFactor = 3.0f - 1.5f * Vector3.Dot(terrainAlertNormal, -vessel.transform.forward); // This would depend on roll rate, i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver.
                 if (terrainAlertDistance < 150.0f + turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta) // Only do something about it if the estimated turn amount is a problem.
                 {
                     gainAltReason = GainAltReason.TerrainAhead;
