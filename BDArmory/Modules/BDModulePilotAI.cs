@@ -1348,11 +1348,12 @@ namespace BDArmory.Modules
 
             if (gainAltReason == GainAltReason.TerrainAhead || gainAltReason == GainAltReason.VesselAhead && !vessel.LandedOrSplashed)
             {
-                float adjustmentFactor = Mathf.Pow((terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange, 2.0f);
+                float adjustmentFactor = Mathf.Pow((terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange, 2.0f); // 0-1 quadratic based on how close we are to the terrain.
                 // First, aim up to 90° towards the surface normal.
                 Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 90.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
-                // Then, adjust the vertical pitch for our speed.
-                // correctionDirection = Vector3.RotateTowards(correctionDirection, upDirection, ((float)vessel.srfSpeed - 100.0f) / 10.0f * Mathf.Deg2Rad, 0.0f);
+                // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
+                // Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
+                // correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (180.0f - (float)vessel.srfSpeed) / 3.0f * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to 60° back towards horizontal.
                 float alpha = Time.deltaTime;
                 terrainAlertCorrectionDirection = (1 - alpha) * terrainAlertCorrectionDirection + alpha * correctionDirection; // Update our target direction over several frames.
                 FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
@@ -1361,13 +1362,16 @@ namespace BDArmory.Modules
             {
                 // Get surface normal relative to our velocity direction below the vessel and where the vessel is heading.
                 RaycastHit rayHit;
-                Vector3 relativeDownDirection = Vector3.Cross(Vector3.Cross(upDirection, vessel.srf_vel_direction), vessel.srf_vel_direction).normalized;
-                Vector3 forwardPoint = vessel.transform.position + (vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100; // Forward point not adjusted for terrain.
+                Vector3 relativeRightDirection = Vector3.Cross(upDirection, vessel.srf_vel_direction);
+                Vector3 relativeDownDirection = Vector3.Cross(relativeRightDirection, vessel.srf_vel_direction).normalized;
+                Vector3 forwardDirection = (vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100; // Forward direction not adjusted for terrain.
+                Vector3 forwardPoint = vessel.transform.position + forwardDirection * 100; // Forward point not adjusted for terrain.
                 Ray ray = new Ray(forwardPoint, relativeDownDirection); // Check ahead and below.
-                Vector3 terrainBelowAheadNormal = (Physics.Raycast(ray, out rayHit, terrainAlertDistance + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below point ahead.
+                Vector3 terrainBelowAheadNormal = (Physics.Raycast(ray, out rayHit, minAltitude + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below point ahead.
                 ray = new Ray(vessel.transform.position, relativeDownDirection); // Check here below.
-                Vector3 terrainBelowNormal = (Physics.Raycast(ray, out rayHit, terrainAlertDistance + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below here.
-                forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane(forwardPoint, Vector3.Dot(upDirection, terrainBelowAheadNormal) > Vector3.Dot(upDirection, terrainBelowNormal) ? terrainBelowAheadNormal : terrainBelowNormal).normalized * 100; // Forward point adjusted for terrain (using the steepest of here or ahead).
+                Vector3 terrainBelowNormal = (Physics.Raycast(ray, out rayHit, minAltitude + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below here.
+                Vector3 normalToUse = Vector3.Dot(vessel.srf_vel_direction, terrainBelowNormal) < Vector3.Dot(vessel.srf_vel_direction, terrainBelowAheadNormal) ? terrainBelowNormal : terrainBelowAheadNormal; // Use the normal that has the steepest slope relative to our velocity.
+                forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane(forwardDirection, normalToUse).normalized * 100; // Forward point adjusted for terrain.
                 float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100); // Up to 45° rise angle above terrain changes at 465m/s.
                 FlyToPosition(s, forwardPoint + upDirection * rise);
             }
@@ -1707,17 +1711,17 @@ namespace BDArmory.Modules
             Ray rayForwardDown = new Ray(vessel.transform.position, (vessel.srf_vel_direction + relativeDownDirection).normalized);
             Ray rayForwardLeft = new Ray(vessel.transform.position, (vessel.srf_vel_direction - relativeRightDirection).normalized);
             Ray rayForwardRight = new Ray(vessel.transform.position, (vessel.srf_vel_direction + relativeRightDirection).normalized);
-            if(Physics.Raycast(rayForwardDown, out rayHit, 1.5f * detectionRadius, 1 << 15)) // sqrt(2) should be sufficient, so 1.5 will cover it.
+            if (Physics.Raycast(rayForwardDown, out rayHit, 1.5f * detectionRadius, 1 << 15)) // sqrt(2) should be sufficient, so 1.5 will cover it.
             {
                 terrainAlertDistance = rayHit.distance;
                 terrainAlertNormal = rayHit.normal;
             }
-            if(Physics.Raycast(rayForwardLeft, out rayHit, 1.5f * detectionRadius, 1 << 15) && rayHit.distance < terrainAlertDistance)
+            if (Physics.Raycast(rayForwardLeft, out rayHit, 1.5f * detectionRadius, 1 << 15) && rayHit.distance < terrainAlertDistance)
             {
                 terrainAlertDistance = rayHit.distance;
                 terrainAlertNormal = rayHit.normal;
             }
-            if(Physics.Raycast(rayForwardDown, out rayHit, 1.5f * detectionRadius, 1 << 15) && rayHit.distance < terrainAlertDistance)
+            if (Physics.Raycast(rayForwardDown, out rayHit, 1.5f * detectionRadius, 1 << 15) && rayHit.distance < terrainAlertDistance)
             {
                 terrainAlertDistance = rayHit.distance;
                 terrainAlertNormal = rayHit.normal;
