@@ -1346,7 +1346,7 @@ namespace BDArmory.Modules
             else
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
 
-            if (gainAltReason == GainAltReason.TerrainAhead || gainAltReason == GainAltReason.VesselAhead && !vessel.LandedOrSplashed)
+            if (gainAltReason == GainAltReason.TerrainAhead && !vessel.LandedOrSplashed)
             {
                 float adjustmentFactor = (terrainAlertThreatRange - terrainAlertDistance) / terrainAlertThreatRange;
                 // First, aim up to 90° towards the surface normal.
@@ -1357,6 +1357,10 @@ namespace BDArmory.Modules
                 float alpha = Time.deltaTime;
                 terrainAlertCorrectionDirection = (1 - alpha) * terrainAlertCorrectionDirection + alpha * correctionDirection; // Update our target direction over several frames.
                 FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
+            }
+            else if (gainAltReason == GainAltReason.VesselAhead)
+            { // Go where PredictCollisionWithVessel told us to go.
+                FlyToPosition(s, vessel.transform.position + terrainAlertDirection * 100);
             }
             else
             {
@@ -1775,16 +1779,14 @@ namespace BDArmory.Modules
                 // the 'isLeadingFormation' check was bad anyway, as releasing one member would unset it, while still having other followers, moving it here
                 if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
                 vesselCollision = true;
-                terrainAlertDistance = (vs.Current.transform.position - vessel.transform.position).magnitude;
                 terrainAlertDirection = badDirection; // badDirection is the direction PredictCollisionWithVessel says we want to go.
-                terrainAlertNormal = badDirection;
-                break;
+                break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
             }
             vs.Dispose();
             if (vesselCollision)
             {
                 gainAltReason = GainAltReason.VesselAhead;
-                return minAltitude; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
+                return minAltitude;
             }
 
             // Check for being too low.
