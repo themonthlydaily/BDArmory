@@ -1396,7 +1396,7 @@ namespace BDArmory.Modules
                 belowMinAltitude = false;
                 // belowMinAltitudeReported = false;
                 gainAltReason = GainAltReason.None;
-                terrainAlertCoolDown = 2.0f; // 2s cool down after avoiding terrain.
+                terrainAlertCoolDown = 1.0f; // 1s cool down after avoiding terrain.
                 // float oldTwiddleFactor = turnRadiusTwiddleFactor;
 
                 // if (gainAltReason != GainAltReason.TerrainAhead && startAltWhileGainingAlt > minAltReachedWhileGainingAlt && startDiveAngleCorrectionWhileGainingAlt > 0.004f) // Ignore adjustments from shallow (~5°) "gain alt"s.
