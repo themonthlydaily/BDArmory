@@ -1240,7 +1240,7 @@ namespace BDArmory.Modules
 
             float radarAlt = (float)vessel.radarAltitude;
 
-            if (initialTakeOff && radarAlt > 50.0f)
+            if (initialTakeOff && radarAlt > terrainAlertDetectionRadius)
                 initialTakeOff = false;
 
             // Get surface normal relative to our velocity direction below the vessel and where the vessel is heading.
