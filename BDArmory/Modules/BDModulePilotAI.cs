@@ -213,6 +213,7 @@ namespace BDArmory.Modules
         bool regainEnergy = false;
 
         //collision detection (for other vessels)
+        float vesselCollisionAvoidancePeriod = 2.0f; // Avoid for 2s.
         int collisionDetectionTicker = 0;
         float collisionDetectionTimer = 0;
         Vector3 collisionAvoidDirection;
@@ -1364,7 +1365,7 @@ namespace BDArmory.Modules
 
         bool FlyAvoidOthers(FlightCtrlState s) // Check for collisions with other vessels and try to avoid them.
         { // Mostly a re-hash of FlyAvoidCollision, but with terrain detection removed.
-            if (collisionDetectionTimer > 1) // Avoid for 1s.
+            if (collisionDetectionTimer > vesselCollisionAvoidancePeriod)
             {
                 collisionDetectionTimer = 0;
                 collisionDetectionTicker = 20;
