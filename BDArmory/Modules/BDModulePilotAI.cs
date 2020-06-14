@@ -1227,7 +1227,7 @@ namespace BDArmory.Modules
 
             if (vessel.LandedOrSplashed && vessel.srfSpeed < takeOffSpeed)
             {
-                currentStatus = "Taking off";
+                currentStatus = initialTakeOff ? "Taking off" : vessel.Splashed ? "Splashed" : "Landed";
                 if (vessel.Splashed)
                 { vessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false); }
                 assignedPositionWorld = vessel.transform.position;
