@@ -220,7 +220,7 @@ namespace BDArmory.Modules
 
         // Terrain avoidance and below minimum altitude globals.
         int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
-        int terrainAlertFrequency = 1; // The frequency (number of frames) at which to check for terrain alerts. FIXME This could be an in-game setting.
+        int terrainAlertFrequency = 1; // The frequency (number of frames) at which to check for terrain alerts. Note: this is scaled by (int)(1+(radarAlt/500)^2) to avoid wasting too many cycles. FIXME: This could be an in-game setting.
         bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
         bool avoidingTerrain = false; // True when avoiding terrain.
         bool initialTakeOff = true; // False after the initial take-off.
@@ -293,6 +293,8 @@ namespace BDArmory.Modules
 
             belowMinAltitude = vessel.LandedOrSplashed;
             prevTargetDir = vesselTransform.up;
+            if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
+                initialTakeOff = false;
         }
 
         void Update()
@@ -1268,7 +1270,8 @@ namespace BDArmory.Modules
             if (initialTakeOff) return false; // Don't do anything during the initial take-off.
 
             ++terrainAlertTicker;
-            if (terrainAlertTicker >= terrainAlertFrequency)
+            int terrainAlertTickerThreshold = terrainAlertFrequency * (int)(1 + Mathf.Pow((float)vessel.radarAltitude / 500.0f, 2.0f));
+            if (terrainAlertTicker >= terrainAlertTickerThreshold)
             {
                 terrainAlertTicker = 0;
 
@@ -1276,6 +1279,8 @@ namespace BDArmory.Modules
                 if (!avoidingTerrain)
                     terrainAlertCorrectionDirection = vessel.srf_vel_direction; // Start out with the correction being nothing.
                 avoidingTerrain = false; // Reset the alert.
+                if (vessel.radarAltitude > minAltitude)
+                    belowMinAltitude = false; // Also, reset the belowMinAltitude alert if it's active because of avoiding terrain.
                 terrainAlertDistance = -1.0f; // Reset the terrain alert distance.
                 float turnRadiusTwiddleFactor = turnRadiusTwiddleFactorMax; // A twiddle factor based on the orientation of the vessel, since it often takes considerable time to re-orient before avoiding the terrain. Start with the worst value.
                 terrainAlertThreatRange = 150.0f + turnRadiusTwiddleFactor * turnRadius; // The distance to the terrain to consider.
@@ -1348,8 +1353,8 @@ namespace BDArmory.Modules
                 Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
                 correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (135.0f - (float)vessel.srfSpeed) / 1.5f * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to 90° back towards horizontal.
                 float alpha = Time.deltaTime;
-                for (int i = 0; i < terrainAlertFrequency; ++i)
-                    terrainAlertCorrectionDirection = ((1 - alpha) * terrainAlertCorrectionDirection + alpha * correctionDirection).normalized; // Update our target direction over several frames.
+                float beta = Mathf.Pow(1.0f - alpha, terrainAlertTickerThreshold);
+                terrainAlertCorrectionDirection = (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames. (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
                 FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
 
                 // Update status and book keeping.
