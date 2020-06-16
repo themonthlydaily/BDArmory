@@ -1399,7 +1399,7 @@ namespace BDArmory.Modules
                 {
                     if (vs.Current == null) continue;
                     if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
-                    if (!PredictCollisionWithVessel(vs.Current, 2.5f, 50.0f / Mathf.Max((float)vessel.srfSpeed, 100.0f), out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
+                    if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + 20 * Time.deltaTime, 50.0f / Mathf.Max((float)vessel.srfSpeed, 100.0f), out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
                     if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
                     vesselCollision = true;
                     break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
