@@ -221,7 +221,6 @@ namespace BDArmory.Modules
 
         // Terrain avoidance and below minimum altitude globals.
         int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
-        int terrainAlertFrequency = BDArmorySettings.TERRAIN_ALERT_FREQUENCY; // The frequency (number of frames) at which to check for terrain alerts. Note: this is scaled by (int)(1+(radarAlt/500)^2) to avoid wasting too many cycles.
         bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
         bool avoidingTerrain = false; // True when avoiding terrain.
         bool initialTakeOff = true; // False after the initial take-off.
@@ -1271,7 +1270,7 @@ namespace BDArmory.Modules
             if (initialTakeOff) return false; // Don't do anything during the initial take-off.
 
             ++terrainAlertTicker;
-            int terrainAlertTickerThreshold = terrainAlertFrequency * (int)(1 + Mathf.Pow((float)vessel.radarAltitude / 500.0f, 2.0f));
+            int terrainAlertTickerThreshold = BDArmorySettings.TERRAIN_ALERT_FREQUENCY * (int)(1 + Mathf.Pow((float)vessel.radarAltitude / 500.0f, 2.0f));
             if (terrainAlertTicker >= terrainAlertTickerThreshold)
             {
                 terrainAlertTicker = 0;
