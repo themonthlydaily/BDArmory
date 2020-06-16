@@ -221,7 +221,7 @@ namespace BDArmory.Modules
 
         // Terrain avoidance and below minimum altitude globals.
         int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
-        int terrainAlertFrequency = 1; // The frequency (number of frames) at which to check for terrain alerts. Note: this is scaled by (int)(1+(radarAlt/500)^2) to avoid wasting too many cycles. FIXME: This could be an in-game setting.
+        int terrainAlertFrequency = BDArmorySettings.TERRAIN_ALERT_FREQUENCY; // The frequency (number of frames) at which to check for terrain alerts. Note: this is scaled by (int)(1+(radarAlt/500)^2) to avoid wasting too many cycles.
         bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
         bool avoidingTerrain = false; // True when avoiding terrain.
         bool initialTakeOff = true; // False after the initial take-off.
