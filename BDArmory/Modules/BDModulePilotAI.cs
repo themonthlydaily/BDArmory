@@ -214,6 +214,7 @@ namespace BDArmory.Modules
 
         //collision detection (for other vessels)
         float vesselCollisionAvoidancePeriod = 2.0f; // Avoid for 2s.
+        int vesselCollisionAvoidanceTickerFreq = 20; // Number of frames between vessel-vessel collision checks.
         int collisionDetectionTicker = 0;
         float collisionDetectionTimer = 0;
         Vector3 collisionAvoidDirection;
@@ -482,7 +483,7 @@ namespace BDArmory.Modules
                 if (evasiveTimer > 3)
                 {
                     evasiveTimer = 0;
-                    collisionDetectionTicker = 21; //check for collision again after exiting evasion routine
+                    collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
                 }
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
@@ -1373,7 +1374,7 @@ namespace BDArmory.Modules
             if (collisionDetectionTimer > vesselCollisionAvoidancePeriod)
             {
                 collisionDetectionTimer = 0;
-                collisionDetectionTicker = 20;
+                collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq;
             }
             if (collisionDetectionTimer > 0)
             {
@@ -1387,7 +1388,7 @@ namespace BDArmory.Modules
                 FlyToPosition(s, target);
                 return true;
             }
-            else if (collisionDetectionTicker > 20) // Only check every 20 frames (as before).
+            else if (collisionDetectionTicker > vesselCollisionAvoidanceTickerFreq) // Only check every vesselCollisionAvoidanceTickerFreq frames.
             {
                 collisionDetectionTicker = 0;
 
@@ -1399,7 +1400,7 @@ namespace BDArmory.Modules
                 {
                     if (vs.Current == null) continue;
                     if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
-                    if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + 20 * Time.deltaTime, 50.0f / Mathf.Max((float)vessel.srfSpeed, 100.0f), out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
+                    if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime, 50.0f / Mathf.Max((float)vessel.srfSpeed, 100.0f), out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
                     if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
                     vesselCollision = true;
                     break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
