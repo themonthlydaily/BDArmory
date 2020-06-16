@@ -1347,7 +1347,7 @@ namespace BDArmory.Modules
             if (avoidingTerrain)
             {
                 belowMinAltitude = true; // Inform other parts of the code to behave as if we're below minimum altitude.
-                float adjustmentFactor = Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f);
+                float adjustmentFactor = 1.0f; // Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f);
                 // First, aim up to 90° towards the surface normal.
                 Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 90.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
                 // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
