@@ -581,7 +581,7 @@ namespace BDArmory.Modules
             }
 
             float time = Mathf.Min(interval, maxTime);
-            while (time <= maxTime)
+            while (time < maxTime)
             {
                 Vector3 tPos = AIUtils.PredictPosition(v, time);
                 Vector3 myPos = AIUtils.PredictPosition(vessel, time);
