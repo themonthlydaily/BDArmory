@@ -245,6 +245,8 @@ namespace BDArmory.Modules
 
         float finalMaxSteer = 1;
 
+        public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
+
         #region RMB info in editor
 
         // <color={XKCDColors.HexFormat.Lime}>Yes</color>
@@ -275,9 +277,6 @@ namespace BDArmory.Modules
         }
 
         #endregion RMB info in editor
-
-
-        public bool outOfAmmo = false;
 
         protected override void Start()
         {
