@@ -222,6 +222,7 @@ namespace BDArmory.Modules
         // Terrain avoidance and below minimum altitude globals.
         int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
         bool belowMinAltitude; // True when below minAltitude or avoiding terrain.
+        bool gainAltInhibited = false; // Inhibit gain altitude to minimum altitude when chasing or evading someone as long as we're pointing upwards.
         bool avoidingTerrain = false; // True when avoiding terrain.
         bool initialTakeOff = true; // False after the initial take-off.
         float terrainAlertDetectionRadius = 30.0f; // Sphere radius that the vessel occupies. Should cover most vessels. FIXME This could be based on the vessel's maximum width/height.
@@ -399,6 +400,18 @@ namespace BDArmory.Modules
             if ((float)vessel.radarAltitude < minAltitude)
             { belowMinAltitude = true; }
 
+            if (gainAltInhibited && (!belowMinAltitude || !(currentStatus == "Engaging" || currentStatus == "Evading" || currentStatus.StartsWith("Gain Alt"))))
+            { // Allow switching between "Engaging", "Evading" and "Gain Alt." while below minimum altitude without disabling the gain altitude inhibitor.
+                gainAltInhibited = false;
+                // Debug.Log("DEBUG " + vessel.vesselName + " is no longer inhibiting gain alt");
+            }
+
+            if (!gainAltInhibited && belowMinAltitude && (currentStatus == "Engaging" || currentStatus == "Evading"))
+            { // Vessel went below minimum altitude while "Engaging" or "Evading", enable the gain altitude inhibitor.
+                gainAltInhibited = true;
+                // Debug.Log("DEBUG " + vessel.vesselName + " was " + currentStatus + " and went below min altitude, inhibiting gain alt.");
+            }
+
             if (vessel.srfSpeed < minSpeed)
             { regainEnergy = true; }
             else if (!belowMinAltitude && vessel.srfSpeed > Mathf.Min(minSpeed + 20f, idleSpeed))
@@ -408,7 +421,7 @@ namespace BDArmory.Modules
             CheckLandingGear();
             if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || FlyAvoidOthers(s)))
             { turningTimer = 0; }
-            else if (belowMinAltitude)
+            else if (belowMinAltitude && !(gainAltInhibited && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0)) // If we're below minimum altitude, gain altitude unless we're being inhibited and gaining altitude.
             {
                 if (command != PilotCommands.Follow)
                 {
