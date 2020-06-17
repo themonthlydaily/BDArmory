@@ -276,6 +276,9 @@ namespace BDArmory.Modules
 
         #endregion RMB info in editor
 
+
+        public bool outOfAmmo = false;
+
         protected override void Start()
         {
             base.Start();
