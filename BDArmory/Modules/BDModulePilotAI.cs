@@ -1133,18 +1133,18 @@ namespace BDArmory.Modules
                     Vector3 breakTarget = threatRelativePosition * 2f;       //for the most part, we want to turn _towards_ the threat in order to increase the rel ang vel and get under its guns
 
                     if (threatDirectionFactor > 0.9f)     //within 28 degrees in front
-                    {
+                    { // This adds +-1 to the left or right relative to the breakTarget vector, regardless of the size of breakTarget (that seems wrong)
                         breakTarget += Vector3.Cross(threatRelativePosition.normalized, Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 2)) * vessel.upAxis);
                         debugString.Append($" from directly ahead!");
                     }
                     else if (threatDirectionFactor < -0.9) //within ~28 degrees behind
                     {
-                        float threatDistance = threatRelativePosition.magnitude;
-                        if (threatDistance > 400)
-                        {
+                        float threatDistanceSqr = threatRelativePosition.sqrMagnitude;
+                        if (threatDistanceSqr > 400 * 400)
+                        { // This sets breakTarget 1500m ahead and 500m down, then adds a 1000m offset at 90° to ahead based on missionTime. If the target is kinda close, brakes are also applied.
                             breakTarget = vesselTransform.position + vesselTransform.up * 1500 - 500 * vessel.upAxis;
                             breakTarget += Mathf.Sin((float)vessel.missionTime / 2) * vesselTransform.right * 1000 - Mathf.Cos((float)vessel.missionTime / 2) * vesselTransform.forward * 1000;
-                            if (threatDistance > 800)
+                            if (threatDistanceSqr > 800 * 800)
                                 debugString.Append($" from behind afar; engaging barrel roll");
                             else
                             {
@@ -1154,7 +1154,7 @@ namespace BDArmory.Modules
                             }
                         }
                         else
-                        {
+                        { // This set breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first 1.5s, then sets the breakTarget to be 150m right or left of the attacker.
                             breakTarget = threatRelativePosition;
                             if (evasiveTimer < 1.5f)
                                 breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
@@ -1167,15 +1167,15 @@ namespace BDArmory.Modules
                     }
                     else
                     {
-                        float threatDistance = threatRelativePosition.magnitude;
-                        if (threatDistance < 400)
-                        {
+                        float threatDistanceSqr = threatRelativePosition.sqrMagnitude;
+                        if (threatDistanceSqr < 400 * 400) // Within 400m to the side.
+                        { // This sets breakTarget to be behind the attacker (relative to the evader) with a small offset to the left or right.
                             breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 100;
 
                             steerMode = SteerModes.Aiming;
                         }
-                        else
-                        {
+                        else // More than 400m to the side.
+                        { // This sets breakTarget to be 1500m ahead, then adds a 1000m offset at 90° to ahead.
                             breakTarget = vesselTransform.position + vesselTransform.up * 1500;
                             breakTarget += Mathf.Sin((float)vessel.missionTime / 2) * vesselTransform.right * 1000 - Mathf.Cos((float)vessel.missionTime / 2) * vesselTransform.forward * 1000;
                             debugString.Append($" from far side; engaging barrel roll");
