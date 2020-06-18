@@ -438,6 +438,13 @@ namespace BDArmory.Modules
             }
             UpdateGAndAoALimits(s);
             AdjustPitchForGAndAoALimits(s);
+
+            // Perform the check here since we're now allowing evading/engaging while below mininum altitude.
+            if (belowMinAltitude && vessel.radarAltitude > minAltitude && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0) // We're good.
+            {
+                terrainAlertCoolDown = 1.0f; // 1s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
+                belowMinAltitude = false;
+            }
         }
 
         void UpdateAI(FlightCtrlState s)
@@ -814,7 +821,7 @@ namespace BDArmory.Modules
 
         void FlyToPosition(FlightCtrlState s, Vector3 targetPosition)
         {
-            if (!belowMinAltitude)
+            if (!belowMinAltitude) // Includes avoidingTerrain
             {
                 if (weaponManager && Time.time - weaponManager.timeBombReleased < 1.5f)
                 {
@@ -1188,6 +1195,12 @@ namespace BDArmory.Modules
                     else
                         breakTarget += -150 * vessel.upAxis;   //dive a bit to escape
 
+                    float breakTargetVerticalComponent = Vector3.Dot(breakTarget - vessel.transform.position, upDirection);
+                    if (belowMinAltitude && breakTargetVerticalComponent < 0) // If we're below minimum altitude, enforce the evade direction to gain altitude.
+                    {
+                        breakTarget += -2f * breakTargetVerticalComponent * upDirection;
+                    }
+
                     FlyToPosition(s, breakTarget);
                     return;
                 }
@@ -1272,12 +1285,6 @@ namespace BDArmory.Modules
             forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane(forwardDirection, normalToUse).normalized * 100; // Forward point adjusted for terrain.
             float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100); // Up to 45° rise angle above terrain changes at 465m/s.
             FlyToPosition(s, forwardPoint + upDirection * rise);
-
-            if (radarAlt > minAltitude && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0) // We're good.
-            {
-                terrainAlertCoolDown = 1.0f; // 1s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
-                belowMinAltitude = false;
-            }
         }
 
         bool FlyAvoidTerrain(FlightCtrlState s) // Check for terrain ahead.
@@ -1361,7 +1368,7 @@ namespace BDArmory.Modules
             if (avoidingTerrain)
             {
                 belowMinAltitude = true; // Inform other parts of the code to behave as if we're below minimum altitude.
-                float adjustmentFactor = 1.0f; // Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f);
+                float adjustmentFactor = Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f); // Don't yank too hard as it kills our speed too much.
                 // First, aim up to 90° towards the surface normal.
                 Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 90.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
                 // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
