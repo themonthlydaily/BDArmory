@@ -1368,12 +1368,13 @@ namespace BDArmory.Modules
             if (avoidingTerrain)
             {
                 belowMinAltitude = true; // Inform other parts of the code to behave as if we're below minimum altitude.
+                float maxAngle = 70.0f * Mathf.Deg2Rad; // Maximum angle (towards surface normal) to aim.
                 float adjustmentFactor = Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f); // Don't yank too hard as it kills our speed too much.
-                // First, aim up to 90° towards the surface normal.
-                Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, 90.0f * Mathf.Deg2Rad * adjustmentFactor, 0.0f);
+                // First, aim up to maxAngle towards the surface normal.
+                Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, maxAngle * adjustmentFactor, 0.0f);
                 // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
                 Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
-                correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (135.0f - (float)vessel.srfSpeed) / 1.5f * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to 90° back towards horizontal.
+                correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) * maxAngle * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to maxAngle back towards horizontal depending on speed < 120m/s.
                 float alpha = Time.deltaTime;
                 float beta = Mathf.Pow(1.0f - alpha, terrainAlertTickerThreshold);
                 terrainAlertCorrectionDirection = (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames. (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
