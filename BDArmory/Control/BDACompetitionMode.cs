@@ -437,6 +437,8 @@ namespace BDArmory.Control
         private List<IBDAIControl> getAllPilots()
         {
             var pilots = new List<IBDAIControl>();
+            HashSet<string> vesselNames = new HashSet<string>();
+            int count = 0;
             using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedVessels.MoveNext())
                 {
@@ -446,6 +448,11 @@ namespace BDArmory.Control
                     if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral)
                         continue;
                     pilots.Add(pilot);
+                    if (vesselNames.Contains(loadedVessels.Current.vesselName))
+                    {
+                        loadedVessels.Current.vesselName += "_" + (++count);
+                    }
+                    vesselNames.Add(loadedVessels.Current.vesselName);
                 }
             return pilots;
         }
