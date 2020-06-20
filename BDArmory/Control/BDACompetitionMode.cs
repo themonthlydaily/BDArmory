@@ -1155,8 +1155,10 @@ namespace BDArmory.Control
                         
                         if (totalAmmo == 0)
                         {
-                            // disable guard mode when out of ammo
-                            if (mf.guardMode)
+                            var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>();
+                            if (vesselAI != null)
+                                vesselAI.outOfAmmo = true;
+                            if (!(vesselAI != null && vesselAI.allowRamming) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
                             {
                                 mf.guardMode = false;
                                 if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
@@ -1166,9 +1168,6 @@ namespace BDArmory.Control
                                     competitionStatus = vesselName + " is out of Ammunition";
                                 }
                             }
-                            var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>();
-                            if (vesselAI != null)
-                                vesselAI.outOfAmmo = true;
                         }
                     }
 

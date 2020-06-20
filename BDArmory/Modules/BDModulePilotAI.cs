@@ -237,6 +237,9 @@ namespace BDArmory.Modules
         float turnRadiusTwiddleFactorMin = 2.0f; // Minimum twiddle factor for the turn radius. Depends on roll rate and how the vessel behaves under fire. FIXME This could be a slider for the user to set.
         float turnRadiusTwiddleFactorMax = 4.0f; // Maximum twiddle factor for the turn radius. Depends on roll rate and how the vessel behaves under fire. FIXME This could be a slider for the user to set.
 
+        // Ramming
+        bool ramming = false; // Whether or not we're currently trying to ram someone.
+
         //wing command
         bool useRollHint;
         private Vector3d debugFollowPosition;
@@ -246,6 +249,7 @@ namespace BDArmory.Modules
 
         float finalMaxSteer = 1;
 
+        public bool allowRamming = true;
         public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
 
         #region RMB info in editor
@@ -419,7 +423,7 @@ namespace BDArmory.Modules
 
             UpdateVelocityRelativeDirections();
             CheckLandingGear();
-            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || FlyAvoidOthers(s)))
+            if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
             { turningTimer = 0; }
             else if (belowMinAltitude && !(gainAltInhibited && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0)) // If we're below minimum altitude, gain altitude unless we're being inhibited and gaining altitude.
             {
@@ -566,10 +570,14 @@ namespace BDArmory.Modules
 
                 if (!extending)
                 {
-                    currentStatus = "Engaging";
-                    debugString.Append($"Flying to target");
-                    debugString.Append(Environment.NewLine);
-                    FlyToTargetVessel(s, targetVessel);
+                    if (!outOfAmmo || !RamTarget(s, targetVessel)) // If we're out of ammo, see if we can ram someone, otherwise, behave as normal.
+                    {
+                        ramming = false;
+                        currentStatus = "Engaging";
+                        debugString.Append($"Flying to target");
+                        debugString.Append(Environment.NewLine);
+                        FlyToTargetVessel(s, targetVessel);
+                    }
                 }
             }
             else
@@ -617,6 +625,23 @@ namespace BDArmory.Modules
 
             badDirection = Vector3.zero;
             return false;
+        }
+
+        bool RamTarget(FlightCtrlState s, Vessel v)
+        {
+            if (v == null) return false; // We don't have a target.
+            if (Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) * (float)v.srfSpeed / (float)vessel.srfSpeed > 0.95f) return false; // We're not approaching them fast enough.
+            float timeToImpact;
+            Vector3 aamTarget = MissileGuidance.GetAirToAirTargetModular(v.transform.position, v.srf_velocity, v.acceleration, vessel, out timeToImpact);
+            if (Vector3.Angle(aamTarget - vessel.transform.position, vessel.srf_vel_direction) > 180f) return false; // The target isn't infront of us, let the regular FlyToVessel do its job.
+
+            // Let's try to ram someone!
+            if (!ramming)
+                ramming = true;
+            currentStatus = "Ramming speed!";
+            FlyToPosition(s, aamTarget);
+            AdjustThrottle(maxSpeed, false, true); // Ramming speed!
+            return true;
         }
 
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
