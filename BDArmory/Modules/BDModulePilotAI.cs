@@ -462,7 +462,7 @@ namespace BDArmory.Modules
                 lastTargetPosition = requestedExtendTpos;
             }
 
-            if (evasiveTimer > 0 || (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire)))
+            if (evasiveTimer > 0 || (weaponManager && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.
             {
                 if (evasiveTimer < 1)
                 {
@@ -631,15 +631,17 @@ namespace BDArmory.Modules
         {
             if (v == null) return false; // We don't have a target.
             if (Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) * (float)v.srfSpeed / (float)vessel.srfSpeed > 0.95f) return false; // We're not approaching them fast enough.
-            float timeToImpact;
-            Vector3 aamTarget = MissileGuidance.GetAirToAirTargetModular(v.transform.position, v.srf_velocity, v.acceleration, vessel, out timeToImpact);
-            if (Vector3.Angle(aamTarget - vessel.transform.position, vessel.srf_vel_direction) > 180f) return false; // The target isn't infront of us, let the regular FlyToVessel do its job.
+            Vector3 relVelocity = v.Velocity() - vessel.Velocity();
+            Vector3 relPosition = v.transform.position - vessel.transform.position;
+            float timeToCPA = Mathf.Clamp(-Vector3.Dot(relPosition, relVelocity) / relVelocity.sqrMagnitude, 0f, 5f); // Don't look more than 5s ahead.
 
             // Let's try to ram someone!
             if (!ramming)
                 ramming = true;
             currentStatus = "Ramming speed!";
-            FlyToPosition(s, aamTarget);
+            float controlLag = 10f / 45f; // Lag time in response of control surfaces. FIXME This should be tunable.
+            Vector3 predictedPosition = AIUtils.PredictPosition(v, timeToCPA) - Mathf.Pow(controlLag, 2f) * (timeToCPA / controlLag - 1 + Mathf.Exp(-timeToCPA / controlLag)) * vessel.acceleration; // Predicted position, compensated for control surface lag.
+            FlyToPosition(s, predictedPosition);
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
             return true;
         }
@@ -1166,7 +1168,7 @@ namespace BDArmory.Modules
 
                     if (threatDirectionFactor > 0.9f)     //within 28 degrees in front
                     { // This adds +-1 to the left or right relative to the breakTarget vector, regardless of the size of breakTarget (that seems wrong)
-                        breakTarget += Vector3.Cross(threatRelativePosition.normalized, Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 2)) * vessel.upAxis);
+                        breakTarget += 500f / threatRelativePosition.magnitude * Vector3.Cross(threatRelativePosition.normalized, Mathf.Sign(Mathf.Sin((float)vessel.missionTime / 2)) * vessel.upAxis);
                         debugString.Append($" from directly ahead!");
                     }
                     else if (threatDirectionFactor < -0.9) //within ~28 degrees behind
