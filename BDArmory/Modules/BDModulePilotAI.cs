@@ -234,8 +234,10 @@ namespace BDArmory.Modules
         float terrainAlertCoolDown = 0; // Cool down period before allowing other special modes to take effect (currently just "orbitting").
         Vector3 relativeVelocityRightDirection; // Right relative to current velocity and upDirection.
         Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
-        float turnRadiusTwiddleFactorMin = 2.0f; // Minimum twiddle factor for the turn radius. Depends on roll rate and how the vessel behaves under fire. FIXME This could be a slider for the user to set.
-        float turnRadiusTwiddleFactorMax = 4.0f; // Maximum twiddle factor for the turn radius. Depends on roll rate and how the vessel behaves under fire. FIXME This could be a slider for the user to set.
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_turnRadiusTwiddleFactors"),//Turn radius twiddle factors
+            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+        float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
 
         // Ramming
         bool ramming = false; // Whether or not we're currently trying to ram someone.
@@ -283,6 +285,25 @@ namespace BDArmory.Modules
 
         #endregion RMB info in editor
 
+        public void OnRangeUpdated(BaseField field, object obj)
+        {
+            if (turnRadiusTwiddleFactorMax < turnRadiusTwiddleFactorMin) { turnRadiusTwiddleFactorMax = turnRadiusTwiddleFactorMin; } // Enforce min < max for turn radius twiddle factor.
+            // if (DynamicDampeningMax < DynamicDampeningMin) { DynamicDampeningMax = DynamicDampeningMin; } // Enforce min < max for dynamic steer dampening.
+        }
+
+        protected void SetSliderClamps(string fieldNameMin, string fieldNameMax)
+        {
+            // Enforce min <= max for pairs of sliders
+            UI_FloatRange field = (UI_FloatRange)Fields[fieldNameMin].uiControlEditor;
+            field.onFieldChanged = OnRangeUpdated;
+            field = (UI_FloatRange)Fields[fieldNameMin].uiControlFlight;
+            field.onFieldChanged = OnRangeUpdated;
+            field = (UI_FloatRange)Fields[fieldNameMax].uiControlEditor;
+            field.onFieldChanged = OnRangeUpdated;
+            field = (UI_FloatRange)Fields[fieldNameMax].uiControlFlight;
+            field.onFieldChanged = OnRangeUpdated;
+        }
+
         protected override void Start()
         {
             base.Start();
@@ -292,6 +313,8 @@ namespace BDArmory.Modules
                 maxAllowedCosAoA = (float)Math.Cos(maxAllowedAoA * Math.PI / 180.0);
                 lastAllowedAoA = maxAllowedAoA;
             }
+            SetSliderClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
+            // SetSliderClamps("DynamicSteerDampeningMin", "DynamicSteerDampeningMax");
         }
 
         public override void ActivatePilot()
