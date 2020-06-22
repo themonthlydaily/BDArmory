@@ -227,13 +227,15 @@ namespace BDArmory.Modules
         bool initialTakeOff = true; // False after the initial take-off.
         float terrainAlertDetectionRadius = 30.0f; // Sphere radius that the vessel occupies. Should cover most vessels. FIXME This could be based on the vessel's maximum width/height.
         float terrainAlertThreatRange; // The distance to the terrain to consider (based on turn radius).
-        float terrainAlertDistance; // Distance to the terrain.
+        float terrainAlertDistance; // Distance to the terrain (in the direction of the terrain normal).
         Vector3 terrainAlertNormal; // Approximate surface normal at the terrain intercept.
         Vector3 terrainAlertDirection; // Terrain slope in the direction of the velocity at the terrain intercept.
         Vector3 terrainAlertCorrectionDirection; // The direction to go to avoid the terrain.
         float terrainAlertCoolDown = 0; // Cool down period before allowing other special modes to take effect (currently just "orbitting").
         Vector3 relativeVelocityRightDirection; // Right relative to current velocity and upDirection.
         Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
+        Vector3 terrainAlertDebugPos, terrainAlertDebugDir, terrainAlertDebugPos2, terrainAlertDebugDir2; // Debug vector3's for drawing lines.
+        bool terrainAlertDebugDraw2 = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_turnRadiusTwiddleFactors"),//Turn radius twiddle factors
             UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
@@ -1313,6 +1315,8 @@ namespace BDArmory.Modules
         bool FlyAvoidTerrain(FlightCtrlState s) // Check for terrain ahead.
         {
             if (initialTakeOff) return false; // Don't do anything during the initial take-off.
+            bool initialCorrection = !avoidingTerrain;
+            float controlLagTime = 1.5f; // Time to fully adjust control surfaces. (Typical values seem to be 0.286s -- 1s for neutral to deployed according to wing lift comparison.) FIXME maybe this could also be a slider.
 
             ++terrainAlertTicker;
             int terrainAlertTickerThreshold = BDArmorySettings.TERRAIN_ALERT_FREQUENCY * (int)(1 + Mathf.Pow((float)vessel.radarAltitude / 500.0f, 2.0f) / Mathf.Max(1.0f, (float)vessel.srfSpeed / 150.0f)); // Scale with altitude^2 / speed.
@@ -1321,14 +1325,12 @@ namespace BDArmory.Modules
                 terrainAlertTicker = 0;
 
                 // Reset/initialise some variables.
-                if (!avoidingTerrain)
-                    terrainAlertCorrectionDirection = vessel.srf_vel_direction; // Start out with the correction being nothing.
                 avoidingTerrain = false; // Reset the alert.
                 if (vessel.radarAltitude > minAltitude)
                     belowMinAltitude = false; // Also, reset the belowMinAltitude alert if it's active because of avoiding terrain.
                 terrainAlertDistance = -1.0f; // Reset the terrain alert distance.
                 float turnRadiusTwiddleFactor = turnRadiusTwiddleFactorMax; // A twiddle factor based on the orientation of the vessel, since it often takes considerable time to re-orient before avoiding the terrain. Start with the worst value.
-                terrainAlertThreatRange = 150.0f + turnRadiusTwiddleFactor * turnRadius; // The distance to the terrain to consider.
+                terrainAlertThreatRange = 150.0f + turnRadiusTwiddleFactor * turnRadius + (float)vessel.srfSpeed * controlLagTime; // The distance to the terrain to consider.
 
                 // First, look 45° down, up, left and right from our velocity direction for immediate danger. (This should cover most immediate dangers.)
                 Ray rayForwardUp = new Ray(vessel.transform.position, (vessel.srf_vel_direction - relativeVelocityDownDirection).normalized);
@@ -1338,22 +1340,22 @@ namespace BDArmory.Modules
                 RaycastHit rayHit;
                 if (Physics.Raycast(rayForwardDown, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15)) // sqrt(2) should be sufficient, so 1.5 will cover it.
                 {
-                    terrainAlertDistance = rayHit.distance;
+                    terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
                 }
                 if (Physics.Raycast(rayForwardUp, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
-                    terrainAlertDistance = rayHit.distance;
+                    terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
                 }
                 if (Physics.Raycast(rayForwardLeft, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
-                    terrainAlertDistance = rayHit.distance;
+                    terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
                 }
-                if (Physics.Raycast(rayForwardDown, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
+                if (Physics.Raycast(rayForwardRight, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
-                    terrainAlertDistance = rayHit.distance;
+                    terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
                 }
                 if (terrainAlertDistance > 0)
@@ -1369,8 +1371,10 @@ namespace BDArmory.Modules
                     {
                         // Check if there's anything directly ahead.
                         ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
-                        terrainAlertDistance = rayHit.distance;
+                        terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction); // Distance to terrain along direction of terrain normal.
                         terrainAlertNormal = rayHit.normal;
+                        terrainAlertDebugPos = rayHit.point;
+                        terrainAlertDebugDir = rayHit.normal;
                         if (!Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15)) // Nothing directly ahead, so we're just barely avoiding terrain.
                         {
                             // Change the terrain normal and direction as we want to just fly over it instead of banking away from it.
@@ -1379,11 +1383,32 @@ namespace BDArmory.Modules
                         }
                         else
                         { terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized; }
-                        float sinTheta = Math.Min(0.0f, Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, terrainAlertNormal)); // sin(theta) (measured relative to the plane of the surface).
+                        float sinTheta = Math.Min(0.0f, Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal)); // sin(theta) (measured relative to the plane of the surface).
                         float oneMinusCosTheta = 1.0f - Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
                         turnRadiusTwiddleFactor = (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2.0f - (turnRadiusTwiddleFactorMax - turnRadiusTwiddleFactorMin) / 2.0f * Vector3.Dot(terrainAlertNormal, -vessel.transform.forward); // This would depend on roll rate (i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver) and probably other things.
-                        if (terrainAlertDistance < 150.0f + turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta) // Only do something about it if the estimated turn amount is a problem.
-                        { avoidingTerrain = true; }
+                        float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, controlLagTime * turnRadiusTwiddleFactor) - vessel.transform.position, terrainAlertNormal)); // Include twiddle factor as more re-orienting requires more control surface movement.
+                        float terrainAlertThreshold = 150.0f + turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
+                        if (terrainAlertDistance < terrainAlertThreshold) // Only do something about it if the estimated turn amount is a problem.
+                        {
+                            avoidingTerrain = true;
+
+                            // Shoot new ray in direction theta/2 (i.e., the point where we should be parallel to the surface) above velocity direction to check if the terrain slope is increasing.
+                            float phi = -Mathf.Asin(sinTheta) / 2f;
+                            Vector3 upcoming = Vector3.RotateTowards(vessel.srf_vel_direction, terrainAlertNormal, phi, 0f);
+                            ray = new Ray(vessel.transform.position, upcoming);
+                            terrainAlertDebugDraw2 = false;
+                            if (Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15))
+                            {
+                                if (rayHit.distance < terrainAlertDistance / Mathf.Sin(phi)) // Hit terrain closer than expected => terrain slope is increasing relative to our velocity direction.
+                                {
+                                    terrainAlertDebugDraw2 = true;
+                                    terrainAlertDebugPos2 = rayHit.point;
+                                    terrainAlertDebugDir2 = rayHit.normal;
+                                    terrainAlertNormal = rayHit.normal; // Use the normal of the steeper terrain (relative to our velocity).
+                                    terrainAlertDirection = (vessel.srf_vel_direction - Vector3.Dot(vessel.srf_vel_direction, terrainAlertNormal) * terrainAlertNormal).normalized;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1392,15 +1417,15 @@ namespace BDArmory.Modules
             {
                 belowMinAltitude = true; // Inform other parts of the code to behave as if we're below minimum altitude.
                 float maxAngle = 70.0f * Mathf.Deg2Rad; // Maximum angle (towards surface normal) to aim.
-                float adjustmentFactor = Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f); // Don't yank too hard as it kills our speed too much.
+                float adjustmentFactor = 1f; // Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f); // Don't yank too hard as it kills our speed too much. (This doesn't seem necessary.)
                 // First, aim up to maxAngle towards the surface normal.
                 Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, maxAngle * adjustmentFactor, 0.0f);
                 // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
                 Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
-                correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) * maxAngle * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to maxAngle back towards horizontal depending on speed < 120m/s.
+                correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) / 2.0f * maxAngle * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to maxAngle/2 back towards horizontal depending on speed < 120m/s.
                 float alpha = Time.deltaTime;
                 float beta = Mathf.Pow(1.0f - alpha, terrainAlertTickerThreshold);
-                terrainAlertCorrectionDirection = (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames. (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
+                terrainAlertCorrectionDirection = initialCorrection ? terrainAlertCorrectionDirection : (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames (if it's not the initial correction). (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
                 FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
 
                 // Update status and book keeping.
@@ -1439,7 +1464,7 @@ namespace BDArmory.Modules
 
                 // Check for collisions with other vessels.
                 bool vesselCollision = false;
-                Vector3 collisionAvoidDirection = vessel.srf_vel_direction;
+                collisionAvoidDirection = vessel.srf_vel_direction;
                 List<Vessel>.Enumerator vs = BDATargetManager.LoadedVessels.GetEnumerator();
                 while (vs.MoveNext())
                 {
@@ -1972,6 +1997,20 @@ namespace BDArmory.Modules
 
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget, 2, Color.blue);
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right) + angVelRollTarget, 2, Color.green);
+            if (avoidingTerrain)
+            {
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, terrainAlertDebugPos, 2, Color.cyan);
+                BDGUIUtils.DrawLineBetweenWorldPositions(terrainAlertDebugPos, terrainAlertDebugPos + 100 * terrainAlertDebugDir, 2, Color.cyan);
+                if (terrainAlertDebugDraw2)
+                {
+                    BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, terrainAlertDebugPos2, 2, Color.yellow);
+                    BDGUIUtils.DrawLineBetweenWorldPositions(terrainAlertDebugPos2, terrainAlertDebugPos2 + 100 * terrainAlertDebugDir2, 2, Color.yellow);
+                }
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction - relativeVelocityDownDirection).normalized, 1, Color.grey);
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction + relativeVelocityDownDirection).normalized, 1, Color.grey);
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction - relativeVelocityRightDirection).normalized, 1, Color.grey);
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction + relativeVelocityRightDirection).normalized, 1, Color.grey);
+            }
         }
     }
 }
