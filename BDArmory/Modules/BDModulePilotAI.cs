@@ -283,23 +283,28 @@ namespace BDArmory.Modules
 
         #endregion RMB info in editor
 
-        public void OnRangeUpdated(BaseField field, object obj)
+        protected void SetSliderClamps(string fieldNameMin, string fieldNameMax)
+        {
+            // Enforce min <= max for pairs of sliders
+            UI_FloatRange field = (UI_FloatRange)Fields[fieldNameMin].uiControlEditor;
+            field.onFieldChanged = OnMinUpdated;
+            field = (UI_FloatRange)Fields[fieldNameMin].uiControlFlight;
+            field.onFieldChanged = OnMinUpdated;
+            field = (UI_FloatRange)Fields[fieldNameMax].uiControlEditor;
+            field.onFieldChanged = OnMaxUpdated;
+            field = (UI_FloatRange)Fields[fieldNameMax].uiControlFlight;
+            field.onFieldChanged = OnMaxUpdated;
+        }
+        public void OnMinUpdated(BaseField field, object obj)
         {
             if (turnRadiusTwiddleFactorMax < turnRadiusTwiddleFactorMin) { turnRadiusTwiddleFactorMax = turnRadiusTwiddleFactorMin; } // Enforce min < max for turn radius twiddle factor.
             // if (DynamicDampeningMax < DynamicDampeningMin) { DynamicDampeningMax = DynamicDampeningMin; } // Enforce min < max for dynamic steer dampening.
         }
 
-        protected void SetSliderClamps(string fieldNameMin, string fieldNameMax)
+        public void OnMaxUpdated(BaseField field, object obj)
         {
-            // Enforce min <= max for pairs of sliders
-            UI_FloatRange field = (UI_FloatRange)Fields[fieldNameMin].uiControlEditor;
-            field.onFieldChanged = OnRangeUpdated;
-            field = (UI_FloatRange)Fields[fieldNameMin].uiControlFlight;
-            field.onFieldChanged = OnRangeUpdated;
-            field = (UI_FloatRange)Fields[fieldNameMax].uiControlEditor;
-            field.onFieldChanged = OnRangeUpdated;
-            field = (UI_FloatRange)Fields[fieldNameMax].uiControlFlight;
-            field.onFieldChanged = OnRangeUpdated;
+            if (turnRadiusTwiddleFactorMin > turnRadiusTwiddleFactorMax) { turnRadiusTwiddleFactorMin = turnRadiusTwiddleFactorMax; } // Enforce min < max for turn radius twiddle factor.
+            // if (DynamicDampeningMin < DynamicDampeningMax) { DynamicDampeningMin = DynamicDampeningMax; } // Enforce min < max for dynamic steer dampening.
         }
 
         protected override void Start()
