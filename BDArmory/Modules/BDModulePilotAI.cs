@@ -115,7 +115,7 @@ namespace BDArmory.Modules
         public float maxAllowedAoA = 35;
         float maxAllowedCosAoA;
         float lastAllowedAoA;
-        
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Dampening Factor"),//Max G
             UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float dynamicSteerDampeningFactor = 10;
@@ -123,7 +123,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Dampening Min"),//Dynamic steer dampening Clamp min
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampeningMin = 1f;
-        
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Dampening Max"),//Dynamic steer dampening Clamp max
             UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampeningMax = 8f;
@@ -135,10 +135,10 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Extend Toggle", advancedTweakable = true),//Extend Toggle
         UI_Toggle(enabledText = "Extend Enabled", disabledText = "Extend Disabled", scene = UI_Scene.All),]
         public bool canExtend = true;
-        
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Dampening", advancedTweakable = true), //Toggle Dynamic Steer Dampening
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
-        public bool dynamicSteerDampening = false; 
+        public bool dynamicSteerDampening = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning", advancedTweakable = true),//Unclamp tuning 
             UI_Toggle(enabledText = "#LOC_BDArmory_UnclampTuning_enabledText", disabledText = "#LOC_BDArmory_UnclampTuning_disabledText", scene = UI_Scene.All),]//Unclamped--Clamped
@@ -321,13 +321,13 @@ namespace BDArmory.Modules
         public void OnMinUpdated(BaseField field, object obj)
         {
             if (turnRadiusTwiddleFactorMax < turnRadiusTwiddleFactorMin) { turnRadiusTwiddleFactorMax = turnRadiusTwiddleFactorMin; } // Enforce min < max for turn radius twiddle factor.
-            // if (DynamicDampeningMax < DynamicDampeningMin) { DynamicDampeningMax = DynamicDampeningMin; } // Enforce min < max for dynamic steer dampening.
+            if (DynamicDampeningMax < DynamicDampeningMin) { DynamicDampeningMax = DynamicDampeningMin; } // Enforce min < max for dynamic steer dampening.
         }
 
         public void OnMaxUpdated(BaseField field, object obj)
         {
             if (turnRadiusTwiddleFactorMin > turnRadiusTwiddleFactorMax) { turnRadiusTwiddleFactorMin = turnRadiusTwiddleFactorMax; } // Enforce min < max for turn radius twiddle factor.
-            // if (DynamicDampeningMin < DynamicDampeningMax) { DynamicDampeningMin = DynamicDampeningMax; } // Enforce min < max for dynamic steer dampening.
+            if (DynamicDampeningMin > DynamicDampeningMax) { DynamicDampeningMin = DynamicDampeningMax; } // Enforce min < max for dynamic steer dampening.
         }
 
         protected override void Start()
@@ -340,7 +340,7 @@ namespace BDArmory.Modules
                 lastAllowedAoA = maxAllowedAoA;
             }
             SetSliderClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
-            // SetSliderClamps("DynamicSteerDampeningMin", "DynamicSteerDampeningMax");
+            SetSliderClamps("DynamicDampeningMin", "DynamicDampeningMax");
         }
 
         public override void ActivatePilot()
@@ -896,7 +896,7 @@ namespace BDArmory.Modules
         bool useVelRollTarget;
 
         void FlyToPosition(FlightCtrlState s, Vector3 targetPosition)
-        {  
+        {
             if (!belowMinAltitude) // Includes avoidingTerrain
             {
                 if (weaponManager && Time.time - weaponManager.timeBombReleased < 1.5f)
@@ -1057,7 +1057,7 @@ namespace BDArmory.Modules
             s.yaw = Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer);
             s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer);
         }
-        
+
         void FlyExtend(FlightCtrlState s, Vector3 tPosition)
         {
             if (weaponManager)
@@ -1874,33 +1874,15 @@ namespace BDArmory.Modules
                 return targetPosition;
             }
         }
-        
-         //adjusts steer dampening in relativity to a vessels angle to its target position
-        public float SteerDampening(float angleToTarget)
-        {  
-  
-            //check if max is les than min    
-            if (DynamicDampeningMax < DynamicDampeningMin)
-                return steerDamping; //returns base value
 
+        private float SteerDampening(float angleToTarget)
+        { //adjusts steer dampening in relativity to a vessels angle to its target position
             //check for valid angle to target
-            if (this == null || !dynamicSteerDampening || angleToTarget == 180)
-            {
-                return steerDamping; 
-            }
-            else
-            {
-                try
-                {
-                    float Steerdamping2 = Mathf.Clamp((float)(Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampeningFactor) * DynamicDampeningMax), DynamicDampeningMin, DynamicDampeningMax);
-                   return Steerdamping2;   
-                }
-                catch
-                {
-                    return steerDamping;
-                }
-            }
-            
+            if (!dynamicSteerDampening)
+            { return steerDamping; }
+            else if (angleToTarget >= 180)
+            { return DynamicDampeningMin; }
+            { return Mathf.Clamp((float)(Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampeningFactor) * DynamicDampeningMax), DynamicDampeningMin, DynamicDampeningMax); }
         }
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
