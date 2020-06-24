@@ -67,6 +67,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool TAG_MODE = false;
         [BDAPersistantSettingsField] public static bool PAINTBALL_MODE = false;
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
+<<<<<<< HEAD
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = true;
         [BDAPersistantSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;               // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
         [BDAPersistantSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 3;               // Controls the minimum time between automated camera switches
@@ -88,5 +89,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                 //Disables the kill timers used in Runway Project.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
+=======
+        [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = false;
+        [BDAPersistantSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
+>>>>>>> 4ba0ce20... Added UI toggle and sliders for fuel/ammo ration
     }
 }

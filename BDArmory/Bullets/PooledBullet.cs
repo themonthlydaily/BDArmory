@@ -584,16 +584,24 @@ namespace BDArmory.Bullets
                         tData.damageFromBullets[aName] += damage;
                     else
                         tData.damageFromBullets.Add(aName, damage);
+                }
 
-                    Vessel attacker = FlightGlobals.Vessels.Find(v => v.vesselName.Equals(aName));
-                    Vessel defender = FlightGlobals.Vessels.Find(v => v.vesselName.Equals(tName));
-                    if (attacker != null && defender != null)
+                // steal resources if enabled
+                {
+                    if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
                     {
-                        StealResource(attacker, defender, "LiquidFuel", 0.5);
-                        StealResource(attacker, defender, "Oxidizer", 0.5);
-                        StealResource(attacker, defender, "20x102Ammo", 0.1);
-                        StealResource(attacker, defender, "30x173Ammo", 0.1);
-                        StealResource(attacker, defender, "50CalAmmo", 0.1);
+                        float fuelRation = BDArmorySettings.RESOURCE_STEAL_FUEL_RATION;
+                        float ammoRation = BDArmorySettings.RESOURCE_STEAL_AMMO_RATION;
+                        Vessel attacker = FlightGlobals.Vessels.Find(v => v.vesselName.Equals(aName));
+                        Vessel defender = FlightGlobals.Vessels.Find(v => v.vesselName.Equals(tName));
+                        if (attacker != null && defender != null)
+                        {
+                            StealResource(attacker, defender, "LiquidFuel", fuelRation);
+                            StealResource(attacker, defender, "Oxidizer", fuelRation);
+                            StealResource(attacker, defender, "20x102Ammo", ammoRation);
+                            StealResource(attacker, defender, "30x173Ammo", ammoRation);
+                            StealResource(attacker, defender, "50CalAmmo", ammoRation);
+                        }
                     }
                 }
             }

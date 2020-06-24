@@ -1621,6 +1621,15 @@ namespace BDArmory.UI
             GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnConcurrentVessels")}:  ({(BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0 ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS.ToString() : "Inf")})", leftLabel);//Max Concurrent Vessels (CS)
             BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS, 0f, 20f);
             line++;
+            BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(line), BDArmorySettings.RESOURCE_STEAL_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_ResourceStealEnabled"));//"Resource Steal Enabled"
+            line++;
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_FuelStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_FUEL_RATION})", leftLabel);//Fuel Steal Ration
+            BDArmorySettings.RESOURCE_STEAL_FUEL_RATION = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_FUEL_RATION, 0f, 1f);
+            line++;
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_AmmoStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_AMMO_RATION})", leftLabel);//Ammo Steal Ration
+            BDArmorySettings.RESOURCE_STEAL_AMMO_RATION = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_AMMO_RATION, 0f, 1f);
+            line++;
+            line++;
 
             GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnLivesPerVessel")}:  ({(BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0 ? BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL.ToString() : "Inf")})", leftLabel);//Respawns (CS)
             BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL, 0f, 20f);
