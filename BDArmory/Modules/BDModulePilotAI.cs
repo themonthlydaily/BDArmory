@@ -265,7 +265,6 @@ namespace BDArmory.Modules
         public bool allowRamming = true; // Allow switching to ramming mode.
         public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
 
-
         //wing command
         bool useRollHint;
         private Vector3d debugFollowPosition;
@@ -676,22 +675,82 @@ namespace BDArmory.Modules
             return false;
         }
 
+        float ClosestTimeToCPA(Vessel v, float maxTime)
+        { // Find the closest future time to closest point of approach considering accelerations in addition to velocities. This uses the generalisation of Cardano's solution to finding roots of cubics to find where the derivative of the separation is a minimum.
+            if (v == null) return 0f; // We don't have a target.
+            Vector3 relPosition = v.transform.position - vessel.transform.position;
+            Vector3 relVelocity = v.Velocity() - vessel.Velocity();
+            Vector3 relAcceleration = v.acceleration - vessel.acceleration;
+            float A = Vector3.Dot(relAcceleration, relAcceleration) / 2f;
+            float B = Vector3.Dot(relVelocity, relAcceleration) * 3f / 2f;
+            float C = Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration);
+            float D = Vector3.Dot(relPosition, relVelocity);
+            if (A == 0) // Not actually a cubic. Relative acceleration is zero, so return the much simpler linear timeToCPA.
+            {
+                return Mathf.Clamp(-Vector3.Dot(relPosition, relVelocity) / relVelocity.sqrMagnitude, 0f, maxTime);
+            }
+            float D0 = Mathf.Pow(B, 2f) - 3f * A * C;
+            float D1 = 2 * Mathf.Pow(B, 3f) - 9f * A * B * C + 27f * Mathf.Pow(A, 2f) * D;
+            float E = Mathf.Pow(D1, 2f) - 4f * Mathf.Pow(D0, 3f); // = -27*A^2*discriminant
+            // float discriminant = 18f * A * B * C * D - 4f * Mathf.Pow(B, 3f) * D + Mathf.Pow(B, 2f) * Mathf.Pow(C, 2f) - 4f * A * Mathf.Pow(C, 3f) - 27f * Mathf.Pow(A, 2f) * Mathf.Pow(D, 2f);
+            if (E > 0)
+            { // Single solution (E is positive)
+                float F = (D1 + Mathf.Sign(D1) * Mathf.Sqrt(E)) / 2f;
+                float G = Mathf.Sign(F) * Mathf.Pow(Mathf.Abs(F), 1f / 3f);
+                float time = -1f / 3f / A * (B + G + D0 / G);
+                return Mathf.Clamp(time, 0f, maxTime);
+            }
+            else if (E < 0)
+            { // Triple solution (E is negative)
+                float F_real = D1 / 2f;
+                float F_imag = Mathf.Sign(D1) * Mathf.Sqrt(-E) / 2f;
+                float F_abs = Mathf.Sqrt(Mathf.Pow(F_real, 2f) + Mathf.Pow(F_imag, 2f));
+                float F_ang = Mathf.Atan2(F_imag, F_real);
+                float G_abs = Mathf.Pow(F_abs, 1f / 3f);
+                float G_ang = F_ang / 3f;
+                float time = -1f;
+                for (int i = 0; i < 3; ++i)
+                {
+                    float G = G_abs * Mathf.Cos(G_ang + 2f * (float)i * Mathf.PI / 3f);
+                    float t = -1f / 3f / A * (B + G + D0 * G / Mathf.Pow(G_abs, 2f));
+                    if (t > 0f && Mathf.Sign(Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration) + 3f * t * Vector3.Dot(relVelocity, relAcceleration) + 3f / 2f * Mathf.Pow(t, 2f) * Vector3.Dot(relAcceleration, relAcceleration)) > 0)
+                    { // It's a minimum and in the future.
+                        if (time < 0f || t < time) // Update the closest time.
+                            time = t;
+                    }
+                }
+                return Mathf.Clamp(time, 0f, maxTime);
+            }
+            else
+            { // Repeated root
+                if (Mathf.Abs(Mathf.Pow(B, 2) - 2f * A * C) < 1e-7)
+                { // A triple-root.
+                    return Mathf.Clamp(-B / 3f / A, 0f, maxTime);
+                }
+                else
+                { // Double root and simple root.
+                    return Mathf.Clamp(Mathf.Max((9f * A * D - B * C) / 2 / (Mathf.Pow(B, 2f) - 3f * A * C), (4f * A * B * C - 9f * Mathf.Pow(A, 2f) * D - Mathf.Pow(B, 3f)) / A / (Mathf.Pow(B, 2f) - 3f * A * C)), 0f, maxTime);
+                }
+            }
+        }
+
         bool RamTarget(FlightCtrlState s, Vessel v)
         {
             if (v == null) return false; // We don't have a target.
             if (Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) * (float)v.srfSpeed / (float)vessel.srfSpeed > 0.95f) return false; // We're not approaching them fast enough.
             Vector3 relVelocity = v.Velocity() - vessel.Velocity();
             Vector3 relPosition = v.transform.position - vessel.transform.position;
-            float timeToCPA = Mathf.Clamp(-Vector3.Dot(relPosition, relVelocity) / relVelocity.sqrMagnitude, 0f, 5f); // Don't look more than 5s ahead.
+            float timeToCPA = ClosestTimeToCPA(v, 10f);
 
             // Let's try to ram someone!
             if (!ramming)
                 ramming = true;
             currentStatus = "Ramming speed!";
-            float controlLag = 10f / 45f; // Lag time in response of control surfaces. FIXME This should be tunable.
+            float controlLag = 0.2f; // Lag time in response of control surfaces. FIXME This should be tunable.
             Vector3 predictedPosition = AIUtils.PredictPosition(v, timeToCPA) - Mathf.Pow(controlLag, 2f) * (timeToCPA / controlLag - 1 + Mathf.Exp(-timeToCPA / controlLag)) * vessel.acceleration; // Predicted position, compensated for control surface lag.
             FlyToPosition(s, predictedPosition);
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
+
             return true;
         }
 
@@ -1019,6 +1078,10 @@ namespace BDArmory.Modules
             {
                 rollTarget = Vector3.ProjectOnPlane(rollTarget, vesselTransform.up);
             }
+
+            //ramming
+            if (ramming)
+                rollTarget = Vector3.ProjectOnPlane(targetPosition - vesselTransform.position + rollUp * Mathf.Clamp((targetPosition - vesselTransform.position).magnitude / 500f, 0f, 1f) * upDirection, vesselTransform.up);
 
             //v/q
             float dynamicAdjustment = Mathf.Clamp(16 * (float)(vessel.srfSpeed / vessel.dynamicPressurekPa), 0, 1.2f);
