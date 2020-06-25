@@ -4383,7 +4383,7 @@ namespace BDArmory.Modules
             }
         }
 
-        bool CheckAmmo(ModuleWeapon weapon)
+        public bool CheckAmmo(ModuleWeapon weapon)
         {
             string ammoName = weapon.ammoName;
             List<Part>.Enumerator p = vessel.parts.GetEnumerator();

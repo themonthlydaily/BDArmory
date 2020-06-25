@@ -424,7 +424,6 @@ namespace BDArmory.Modules
 
         protected override void AutoPilot(FlightCtrlState s)
         {
-
             finalMaxSteer = maxSteer;
 
             if (terrainAlertCoolDown > 0)
@@ -482,7 +481,7 @@ namespace BDArmory.Modules
             { turningTimer = 0; }
             else if (belowMinAltitude && !(gainAltInhibited && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0)) // If we're below minimum altitude, gain altitude unless we're being inhibited and gaining altitude.
             {
-                if (command != PilotCommands.Follow)
+                if (initialTakeOff || command != PilotCommands.Follow)
                 {
                     TakeOff(s);
                     turningTimer = 0;
@@ -758,6 +757,24 @@ namespace BDArmory.Modules
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
 
             return true;
+        }
+
+        public bool HasAmmoAndGuns()
+        { // Check if the vessel has both ammo and guns.
+            if (outOfAmmo) return true; // It's already been checked, don't look again.
+            bool hasAmmoAndGuns = false;
+            if (weaponManager)
+            {
+                using (var weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                    while (weapon.MoveNext())
+                    {
+                        if (weapon.Current == null) continue; // First entry is the "no weapon" option.
+                        if (weapon.Current.GetWeaponClass() != WeaponClasses.Gun) continue; // Ignore non-guns.
+                        if (weaponManager.CheckAmmo(weapon.Current) || BDArmorySettings.INFINITE_AMMO) { hasAmmoAndGuns = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
+                    }
+                outOfAmmo = !hasAmmoAndGuns; // Set outOfAmmo if we don't have any guns with compatible ammo.
+            }
+            return hasAmmoAndGuns;
         }
 
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)

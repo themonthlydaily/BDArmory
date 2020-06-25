@@ -1153,27 +1153,15 @@ namespace BDArmory.Control
                     // does it have ammunition: no ammo => Disable guard mode
                     if (!BDArmorySettings.INFINITE_AMMO)
                     {
-                        double totalAmmo = 0;
-                        foreach (var ammoID in ammoIds)
+                        var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                        if( (vesselAI == null || (!vesselAI.HasAmmoAndGuns() && !vesselAI.allowRamming)) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
                         {
-                            v.Current.GetConnectedResourceTotals(ammoID, out double ammoCurrent, out double ammoMax);
-                            totalAmmo += ammoCurrent;
-                        }
-                        
-                        if (totalAmmo == 0)
-                        {
-                            var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>();
-                            if (vesselAI != null)
-                                vesselAI.outOfAmmo = true;
-                            if (!(vesselAI != null && vesselAI.allowRamming) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
+                            mf.guardMode = false;
+                            if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
                             {
-                                mf.guardMode = false;
-                                if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
-                                {
-                                    competitionStatus = vesselName + " damaged by " + vData.lastPersonWhoHitMe + " and lost weapons";
-                                } else {                                
-                                    competitionStatus = vesselName + " is out of Ammunition";
-                                }
+                                competitionStatus = vesselName + " damaged by " + vData.lastPersonWhoHitMe + " and lost weapons";
+                            } else {
+                                competitionStatus = vesselName + " is out of Ammunition";
                             }
                         }
                     }
