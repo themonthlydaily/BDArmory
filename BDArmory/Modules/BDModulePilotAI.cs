@@ -237,9 +237,9 @@ namespace BDArmory.Modules
         bool useBrakes = true;
         bool regainEnergy = false;
 
-        //collision detection (for other vessels)
-        float vesselCollisionAvoidancePeriod = 2.0f; // Avoid for 2s.
-        int vesselCollisionAvoidanceTickerFreq = 20; // Number of frames between vessel-vessel collision checks.
+        //collision detection (for other vessels). Look ahead period is vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime
+        float vesselCollisionAvoidancePeriod = 1.5f; // Avoid for 1.5s.
+        int vesselCollisionAvoidanceTickerFreq = 10; // Number of frames between vessel-vessel collision checks.
         int collisionDetectionTicker = 0;
         float collisionDetectionTimer = 0;
         Vector3 collisionAvoidDirection;
@@ -648,7 +648,7 @@ namespace BDArmory.Modules
             }
         }
 
-        bool PredictCollisionWithVessel(Vessel v, float maxTime, float interval, out Vector3 badDirection)
+        bool PredictCollisionWithVessel(Vessel v, float maxTime, out Vector3 badDirection)
         {
             if (vessel == null || v == null || v == weaponManager?.incomingMissileVessel
                 || v.rootPart.FindModuleImplementing<MissileBase>() != null) //evasive will handle avoiding missiles
@@ -657,25 +657,24 @@ namespace BDArmory.Modules
                 return false;
             }
 
-            float time = Mathf.Min(interval, maxTime);
-            while (time < maxTime)
+            // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
+            float timeToCPA = ClosestTimeToCPA(v, maxTime); // This uses the same kinematics as AIUtils.PredictPosition.
+            if (timeToCPA > 0 && timeToCPA < maxTime)
             {
-                Vector3 tPos = AIUtils.PredictPosition(v, time);
-                Vector3 myPos = AIUtils.PredictPosition(vessel, time);
-                if (Vector3.SqrMagnitude(tPos - myPos) < 900f)
+                Vector3 tPos = AIUtils.PredictPosition(v, timeToCPA);
+                Vector3 myPos = AIUtils.PredictPosition(vessel, timeToCPA);
+                if (Vector3.SqrMagnitude(tPos - myPos) < 900f) // Within 30m of each other. Danger Will Robinson!
                 {
                     badDirection = tPos - vesselTransform.position;
                     return true;
                 }
-
-                time = Mathf.MoveTowards(time, maxTime, interval);
             }
 
             badDirection = Vector3.zero;
             return false;
         }
 
-        float ClosestTimeToCPA(Vessel v, float maxTime)
+        public float ClosestTimeToCPA(Vessel v, float maxTime)
         { // Find the closest future time to closest point of approach considering accelerations in addition to velocities. This uses the generalisation of Cardano's solution to finding roots of cubics to find where the derivative of the separation is a minimum.
             if (v == null) return 0f; // We don't have a target.
             Vector3 relPosition = v.transform.position - vessel.transform.position;
@@ -1560,7 +1559,7 @@ namespace BDArmory.Modules
                 {
                     if (vs.Current == null) continue;
                     if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
-                    if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime, 50.0f / Mathf.Max((float)vessel.srfSpeed, 100.0f), out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
+                    if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime, out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
                     if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
                     vesselCollision = true;
                     break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
