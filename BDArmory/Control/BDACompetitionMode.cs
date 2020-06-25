@@ -2568,5 +2568,8 @@ namespace BDArmory.Control
             // Filter stuff based on the message, then log it to the debug log.
             Debug.Log(message);
         }
+
+
     }
+
 }

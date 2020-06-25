@@ -88,5 +88,9 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                 //Disables the kill timers used in Runway Project.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
+        [BDAPersistantSettingsField] public static bool HEART_BLEED_ENABLED = false;
+        [BDAPersistantSettingsField] public static float HEART_BLEED_RATE = 0.01f;
+        [BDAPersistantSettingsField] public static float HEART_BLEED_INTERVAL = 10f;
+        [BDAPersistantSettingsField] public static float HEART_BLEED_THRESHOLD = 10f;
     }
 }
