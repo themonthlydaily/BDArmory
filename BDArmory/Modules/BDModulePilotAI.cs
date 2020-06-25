@@ -624,7 +624,7 @@ namespace BDArmory.Modules
 
                 if (!extending)
                 {
-                    if (!outOfAmmo || !RamTarget(s, targetVessel)) // If we're out of ammo, see if we can ram someone, otherwise, behave as normal.
+                    if (HasAmmoAndGuns() || !RamTarget(s, targetVessel)) // If we're out of ammo, see if we can ram someone, otherwise, behave as normal.
                     {
                         ramming = false;
                         currentStatus = "Engaging";
@@ -761,7 +761,7 @@ namespace BDArmory.Modules
 
         public bool HasAmmoAndGuns()
         { // Check if the vessel has both ammo and guns.
-            if (outOfAmmo) return true; // It's already been checked, don't look again.
+            if (outOfAmmo) return false; // It's already been checked and found to be true, don't look again.
             bool hasAmmoAndGuns = false;
             if (weaponManager)
             {

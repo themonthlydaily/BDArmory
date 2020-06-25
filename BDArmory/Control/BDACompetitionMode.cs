@@ -1154,7 +1154,7 @@ namespace BDArmory.Control
                     if (!BDArmorySettings.INFINITE_AMMO)
                     {
                         var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                        if( (vesselAI == null || (!vesselAI.HasAmmoAndGuns() && !vesselAI.allowRamming)) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
+                        if( (vesselAI == null || (vesselAI.outOfAmmo && !vesselAI.allowRamming)) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
                         {
                             mf.guardMode = false;
                             if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
