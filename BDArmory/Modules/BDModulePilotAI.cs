@@ -116,17 +116,21 @@ namespace BDArmory.Modules
         float maxAllowedCosAoA;
         float lastAllowedAoA;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Dampening Factor"),//Max G
-            UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
-        public float dynamicSteerDampeningFactor = 10;
-
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Dampening Min"),//Dynamic steer dampening Clamp min
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Damping Min", advancedTweakable = true),//Dynamic steer damping Clamp min
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
-        public float DynamicDampeningMin = 1f;
+        public float DynamicDampingMin = 1f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Dampening Max"),//Dynamic steer dampening Clamp max
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Damping Max", advancedTweakable = true),//Dynamic steer damping Clamp max
             UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
-        public float DynamicDampeningMax = 8f;
+        public float DynamicDampingMax = 8f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping Factor", advancedTweakable = true),//Max G
+            UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+        public float dynamicSteerDampingFactor = 10;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_turnRadiusTwiddleFactors"),//Turn radius twiddle factors (category seems to have no effect)
+            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+        float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -136,9 +140,9 @@ namespace BDArmory.Modules
         UI_Toggle(enabledText = "Extend Enabled", disabledText = "Extend Disabled", scene = UI_Scene.All),]
         public bool canExtend = true;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Dampening", advancedTweakable = true), //Toggle Dynamic Steer Dampening
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping", advancedTweakable = true), //Toggle Dynamic Steer Damping
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
-        public bool dynamicSteerDampening = false;
+        public bool dynamicSteerDamping = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning", advancedTweakable = true),//Unclamp tuning 
             UI_Toggle(enabledText = "#LOC_BDArmory_UnclampTuning_enabledText", disabledText = "#LOC_BDArmory_UnclampTuning_disabledText", scene = UI_Scene.All),]//Unclamped--Clamped
@@ -159,9 +163,11 @@ namespace BDArmory.Modules
             { nameof(idleSpeed), 3000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
-            { nameof(dynamicSteerDampeningFactor), 100f },
-            { nameof(DynamicDampeningMin), 100f },
-            { nameof(DynamicDampeningMax), 100f }
+            { nameof(DynamicDampingMin), 100f },
+            { nameof(DynamicDampingMax), 100f },
+            { nameof(dynamicSteerDampingFactor), 100f },
+            { nameof(turnRadiusTwiddleFactorMin), 5f},
+            { nameof(turnRadiusTwiddleFactorMax), 5f}
         };
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
@@ -256,10 +262,6 @@ namespace BDArmory.Modules
         Vector3 terrainAlertDebugPos, terrainAlertDebugDir, terrainAlertDebugPos2, terrainAlertDebugDir2; // Debug vector3's for drawing lines.
         bool terrainAlertDebugDraw2 = false;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_turnRadiusTwiddleFactors"),//Turn radius twiddle factors
-            UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
-        float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
-
         // Ramming
         bool ramming = false; // Whether or not we're currently trying to ram someone.
         public bool allowRamming = true; // Allow switching to ramming mode.
@@ -293,9 +295,14 @@ namespace BDArmory.Modules
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Idle Speed</color> - Cruising speed when not in combat");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Max G</color> - AI will try not to perform maneuvers at higher G than this");
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Max AoA</color> - AI will try not to exceed this angle of attack");
+            sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Turn Radius Tuning (min/max)</color> - Compensating factor for not being able to perform the perfect turn when oriented correctly/incorrectly");
             if (GameSettings.ADVANCED_TWEAKABLES)
             {
+                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Dynamic Steer Damping (min/max)</color> - Dynamically adjust the steer damping factor based on angle to target");
+                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Dynamic Steer Damping Factor</color> - Strength of dynamic steer damping adjustment");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Orbit</color> - Which direction to orbit when idling over a location");
+                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Extending</color> - Toggle extending behaviour");
+                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Dynamic Steer Damping</color> - Toggle dynamic steer damping");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Unclamp tuning</color> - Increases variable limits, no direct effect on behaviour");
             }
             sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Standby Mode</color> - AI will not take off until an enemy is detected");
@@ -320,13 +327,13 @@ namespace BDArmory.Modules
         public void OnMinUpdated(BaseField field, object obj)
         {
             if (turnRadiusTwiddleFactorMax < turnRadiusTwiddleFactorMin) { turnRadiusTwiddleFactorMax = turnRadiusTwiddleFactorMin; } // Enforce min < max for turn radius twiddle factor.
-            if (DynamicDampeningMax < DynamicDampeningMin) { DynamicDampeningMax = DynamicDampeningMin; } // Enforce min < max for dynamic steer dampening.
+            if (DynamicDampingMax < DynamicDampingMin) { DynamicDampingMax = DynamicDampingMin; } // Enforce min < max for dynamic steer damping.
         }
 
         public void OnMaxUpdated(BaseField field, object obj)
         {
             if (turnRadiusTwiddleFactorMin > turnRadiusTwiddleFactorMax) { turnRadiusTwiddleFactorMin = turnRadiusTwiddleFactorMax; } // Enforce min < max for turn radius twiddle factor.
-            if (DynamicDampeningMin > DynamicDampeningMax) { DynamicDampeningMin = DynamicDampeningMax; } // Enforce min < max for dynamic steer dampening.
+            if (DynamicDampingMin > DynamicDampingMax) { DynamicDampingMin = DynamicDampingMax; } // Enforce min < max for dynamic steer damping.
         }
 
         protected override void Start()
@@ -339,7 +346,7 @@ namespace BDArmory.Modules
                 lastAllowedAoA = maxAllowedAoA;
             }
             SetSliderClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
-            SetSliderClamps("DynamicDampeningMin", "DynamicDampeningMax");
+            SetSliderClamps("DynamicDampingMin", "DynamicDampingMax");
         }
 
         public override void ActivatePilot()
@@ -1088,7 +1095,7 @@ namespace BDArmory.Modules
 
             float rollError = Misc.Misc.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
             float steerRoll = (steerMult * 0.0015f * rollError);
-            float rollDamping = (.10f * SteerDampening(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)) * -localAngVel.y);
+            float rollDamping = (.10f * SteerDamping(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)) * -localAngVel.y);
             steerRoll -= rollDamping;
             steerRoll *= dynamicAdjustment;
 
@@ -1098,8 +1105,8 @@ namespace BDArmory.Modules
                 pitchError = pitchError * Mathf.Clamp01((21 - Mathf.Exp(Mathf.Abs(rollError) / 30)) / 20);
             }
 
-            float steerPitch = (0.015f * steerMult * pitchError) - (SteerDampening(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)) * -localAngVel.x * (1 + steerKiAdjust));
-            float steerYaw = (0.005f * steerMult * yawError) - (SteerDampening(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)) * 0.2f * -localAngVel.z * (1 + steerKiAdjust));
+            float steerPitch = (0.015f * steerMult * pitchError) - (SteerDamping(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)) * -localAngVel.x * (1 + steerKiAdjust));
+            float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)) * 0.2f * -localAngVel.z * (1 + steerKiAdjust));
 
             pitchIntegral += pitchError;
             yawIntegral += yawError;
@@ -1938,14 +1945,13 @@ namespace BDArmory.Modules
             }
         }
 
-        private float SteerDampening(float angleToTarget)
-        { //adjusts steer dampening in relativity to a vessels angle to its target position
-            //check for valid angle to target
-            if (!dynamicSteerDampening)
+        private float SteerDamping(float angleToTarget)
+        { //adjusts steer damping relative to a vessel's angle to its target position
+            if (!dynamicSteerDamping) // Check if enabled.
             { return steerDamping; }
-            else if (angleToTarget >= 180)
-            { return DynamicDampeningMin; }
-            { return Mathf.Clamp((float)(Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampeningFactor) * DynamicDampeningMax), DynamicDampeningMin, DynamicDampeningMax); }
+            else if (angleToTarget >= 180) // Check for valid angle to target.
+            { return DynamicDampingMin; }
+            { return Mathf.Clamp((float)(Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampingFactor) * DynamicDampingMax), DynamicDampingMin, DynamicDampingMax); }
         }
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
