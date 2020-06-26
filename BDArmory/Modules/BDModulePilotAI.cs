@@ -127,13 +127,17 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingMax = 8f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping Factor", advancedTweakable = true),//Max G
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dyn Steer Damping Factor", advancedTweakable = true),//Max G
             UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float dynamicSteerDampingFactor = 10;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_turnRadiusTwiddleFactors", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
             UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Control Surface Lag", advancedTweakable = true),//Control surface lag (for getting an accurate intercept for ramming).
+            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+        float controlSurfaceLag = 0.2f; // Lag time in response of control surfaces.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -180,7 +184,8 @@ namespace BDArmory.Modules
             { nameof(DynamicDampingMax), 100f },
             { nameof(dynamicSteerDampingFactor), 100f },
             { nameof(turnRadiusTwiddleFactorMin), 5f},
-            { nameof(turnRadiusTwiddleFactorMax), 5f}
+            { nameof(turnRadiusTwiddleFactorMax), 5f},
+            { nameof(controlSurfaceLag), 1f}
         };
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
@@ -313,8 +318,9 @@ namespace BDArmory.Modules
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Extend Multiplier</color> - scale the time spent extending");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Evasion Multiplier</color> - scale the time spent evading");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Dynamic Steer Damping (min/max)</color> - Dynamically adjust the steer damping factor based on angle to target");
-                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Dynamic Steer Damping Factor</color> - Strength of dynamic steer damping adjustment");
+                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Dyn Steer Damping Factor</color> - Strength of dynamic steer damping adjustment");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Turn Radius Tuning (min/max)</color> - Compensating factor for not being able to perform the perfect turn when oriented correctly/incorrectly");
+                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Control Surface Lag</color> - Lag time in response of control surfaces");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Orbit</color> - Which direction to orbit when idling over a location");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Extend Toggle</color> - Toggle extending multiplier behaviour");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Evasion Toggle</color> - Toggle evasion multiplier behaviour");
@@ -769,8 +775,7 @@ namespace BDArmory.Modules
             if (!ramming)
                 ramming = true;
             currentStatus = "Ramming speed!";
-            float controlLag = 0.2f; // Lag time in response of control surfaces. FIXME This should be tunable.
-            Vector3 predictedPosition = AIUtils.PredictPosition(v, timeToCPA) - Mathf.Pow(controlLag, 2f) * (timeToCPA / controlLag - 1 + Mathf.Exp(-timeToCPA / controlLag)) * vessel.acceleration; // Predicted position, compensated for control surface lag.
+            Vector3 predictedPosition = AIUtils.PredictPosition(v, timeToCPA) - Mathf.Pow(controlSurfaceLag, 2f) * (timeToCPA / controlSurfaceLag - 1 + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * vessel.acceleration; // Predicted position, compensated for control surface lag.
             FlyToPosition(s, predictedPosition);
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
 
