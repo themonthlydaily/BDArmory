@@ -1430,6 +1430,8 @@ namespace BDArmory.UI
                     OnPeaceEnabled();
                 }
             }
+            
+            BDArmorySettings.ALLOW_RAMMING_OVERRIDE = GUI.Toggle(SRightRect(line), BDArmorySettings.ALLOW_RAMMING_OVERRIDE, Localizer.Format("#LOC_BDArmory_Settings_AllowRammingOverride"));// Ramming Override
             line++;
             line++;
 
