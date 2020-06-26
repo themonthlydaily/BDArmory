@@ -483,6 +483,9 @@ namespace BDArmory.Control
         static string[] ammoPartList = { "baha20mmAmmo", "baha30mmAmmo", "baha50CalAmmo", "BDAcUniversalAmmoBox", "UniversalAmmoBoxBDA" };
         static HashSet<string> ammoParts = new HashSet<string>(ammoPartList);
 
+        // outOfAmmo register
+        static HashSet<string> outOfAmmo = new HashSet<string>(); // For tracking which planes are out of ammo.
+
         public void enforcePartCount(Vessel vessel)
         {
             if (!OneOfAKind) return;
@@ -1154,16 +1157,20 @@ namespace BDArmory.Control
                     if (!BDArmorySettings.INFINITE_AMMO)
                     {
                         var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                        if( (vesselAI == null || (vesselAI.outOfAmmo && !vesselAI.allowRamming)) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
+                        if (vesselAI != null && vesselAI.outOfAmmo && !outOfAmmo.Contains(vesselName)) // Report being out of ammo/guns once.
                         {
-                            mf.guardMode = false;
+                            outOfAmmo.Add(vesselName);
                             if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
                             {
                                 competitionStatus = vesselName + " damaged by " + vData.lastPersonWhoHitMe + " and lost weapons";
-                            } else {
+                            }
+                            else
+                            {
                                 competitionStatus = vesselName + " is out of Ammunition";
                             }
                         }
+                        if ((vesselAI == null || (vesselAI.outOfAmmo && !vesselAI.allowRamming)) && mf.guardMode) // disable guard mode when out of ammo/guns if ramming is not allowed.
+                            mf.guardMode = false;
                     }
 
                     // update the vessel scoring structure
