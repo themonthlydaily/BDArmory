@@ -437,6 +437,8 @@ namespace BDArmory.Control
         private List<IBDAIControl> getAllPilots()
         {
             var pilots = new List<IBDAIControl>();
+            HashSet<string> vesselNames = new HashSet<string>();
+            int count = 0;
             using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedVessels.MoveNext())
                 {
@@ -446,6 +448,11 @@ namespace BDArmory.Control
                     if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral)
                         continue;
                     pilots.Add(pilot);
+                    if (vesselNames.Contains(loadedVessels.Current.vesselName))
+                    {
+                        loadedVessels.Current.vesselName += "_" + (++count);
+                    }
+                    vesselNames.Add(loadedVessels.Current.vesselName);
                 }
             return pilots;
         }
@@ -1146,29 +1153,16 @@ namespace BDArmory.Control
                     // does it have ammunition: no ammo => Disable guard mode
                     if (!BDArmorySettings.INFINITE_AMMO)
                     {
-                        double totalAmmo = 0;
-                        foreach (var ammoID in ammoIds)
+                        var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                        if( (vesselAI == null || (vesselAI.outOfAmmo && !vesselAI.allowRamming)) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
                         {
-                            v.Current.GetConnectedResourceTotals(ammoID, out double ammoCurrent, out double ammoMax);
-                            totalAmmo += ammoCurrent;
-                        }
-                        
-                        if (totalAmmo == 0)
-                        {
-                            // disable guard mode when out of ammo
-                            if (mf.guardMode)
+                            mf.guardMode = false;
+                            if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
                             {
-                                mf.guardMode = false;
-                                if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
-                                {
-                                    competitionStatus = vesselName + " damaged by " + vData.lastPersonWhoHitMe + " and lost weapons";
-                                } else {                                
-                                    competitionStatus = vesselName + " is out of Ammunition";
-                                }
+                                competitionStatus = vesselName + " damaged by " + vData.lastPersonWhoHitMe + " and lost weapons";
+                            } else {
+                                competitionStatus = vesselName + " is out of Ammunition";
                             }
-                            var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>();
-                            if (vesselAI != null)
-                                vesselAI.outOfAmmo = true;
                         }
                     }
 
