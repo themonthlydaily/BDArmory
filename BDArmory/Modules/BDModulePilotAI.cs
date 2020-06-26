@@ -140,23 +140,19 @@ namespace BDArmory.Modules
         public bool ClockwiseOrbit = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Extend Toggle", advancedTweakable = true),//Extend Toggle
-        UI_Toggle(enabledText = "Extend Enabled", disabledText = "Extend Disabled", scene = UI_Scene.All),]
+        UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
         public bool canExtend = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Evasion Toggle", advancedTweakable = true), //Toggle Evasion
-         UI_Toggle(enabledText = "Evasion Enabled", disabledText = "Evasion Disabled", scene = UI_Scene.All),]
-        public bool evasionToggle = true;
-        
-         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Allow Ramming", advancedTweakable = true), //Toggle Evasion
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
-        public bool allowVesselRamming = true;
+        public bool evasionToggle = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping", advancedTweakable = true), //Toggle Dynamic Steer Damping
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
         public bool dynamicSteerDamping = false;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Allow Ramming", advancedTweakable = true), //Toggle Allow Ramming
-         UI_Toggle(enabledText = "Ramming Enabled", disabledText = "Ramming Disabled", scene = UI_Scene.All),]
+         UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
         public bool allowRamming = true; // Allow switching to ramming mode.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning", advancedTweakable = true),//Unclamp tuning 
@@ -762,6 +758,7 @@ namespace BDArmory.Modules
 
         bool RamTarget(FlightCtrlState s, Vessel v)
         {
+            if (BDArmorySettings.DISABLE_RAMMING || !allowRamming) return false; // Override from BDArmory settings and local config.
             if (v == null) return false; // We don't have a target.
             if (Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) * (float)v.srfSpeed / (float)vessel.srfSpeed > 0.95f) return false; // We're not approaching them fast enough.
             Vector3 relVelocity = v.Velocity() - vessel.Velocity();

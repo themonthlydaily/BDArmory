@@ -1395,7 +1395,9 @@ namespace BDArmory.UI
             BDArmorySettings.SHELL_COLLISIONS = GUI.Toggle(SRightRect(line), BDArmorySettings.SHELL_COLLISIONS, Localizer.Format("#LOC_BDArmory_Settings_ShellCollisions"));//"Shell Collisions"
             line++;
             BDArmorySettings.BULLET_DECALS = GUI.Toggle(SLeftRect(line), BDArmorySettings.BULLET_DECALS, Localizer.Format("#LOC_BDArmory_Settings_BulletHoleDecals"));//"Bullet Hole Decals"
-            BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SRightRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
+            BDArmorySettings.DISABLE_RAMMING = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_RAMMING, Localizer.Format("#LOC_BDArmory_Settings_DisableRamming"));// Disable Ramming
+            line++;
+            BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
             line++;
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -1430,8 +1432,6 @@ namespace BDArmory.UI
                     OnPeaceEnabled();
                 }
             }
-            
-            BDArmorySettings.ALLOW_RAMMING_OVERRIDE = GUI.Toggle(SRightRect(line), BDArmorySettings.ALLOW_RAMMING_OVERRIDE, Localizer.Format("#LOC_BDArmory_Settings_AllowRammingOverride"));// Ramming Override
             line++;
             line++;
 
