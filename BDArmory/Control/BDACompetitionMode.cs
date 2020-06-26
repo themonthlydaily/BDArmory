@@ -434,7 +434,7 @@ namespace BDArmory.Control
         // 41:TogglePilot
         // 45:ToggleGuard
 
-        private List<IBDAIControl> getAllPilots()
+        public List<IBDAIControl> getAllPilots()
         {
             var pilots = new List<IBDAIControl>();
             HashSet<string> vesselNames = new HashSet<string>();
@@ -1154,6 +1154,7 @@ namespace BDArmory.Control
                     if (!BDArmorySettings.INFINITE_AMMO)
                     {
                         var vesselAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                        vesselAI.allowRamming = (BDArmorySettings.ALLOW_RAMMING_OVERRIDE && vesselAI.allowVesselRamming); //check if ramming is enabled
                         if( (vesselAI == null || (vesselAI.outOfAmmo && !vesselAI.allowRamming)) && mf.guardMode) // disable guard mode when out of ammo if ramming is not allowed.
                         {
                             mf.guardMode = false;
