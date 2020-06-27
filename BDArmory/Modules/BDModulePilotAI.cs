@@ -775,7 +775,9 @@ namespace BDArmory.Modules
             if (!ramming)
                 ramming = true;
             currentStatus = "Ramming speed!";
-            Vector3 predictedPosition = AIUtils.PredictPosition(v, timeToCPA) - Mathf.Pow(controlSurfaceLag, 2f) * (timeToCPA / controlSurfaceLag - 1 + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * vessel.acceleration; // Predicted position, compensated for control surface lag.
+            Vector3 predictedPosition = AIUtils.PredictPosition(v, timeToCPA); // Predicted position at CPA.
+            if (controlSurfaceLag > 0)
+                predictedPosition += -Mathf.Pow(controlSurfaceLag, 2f) * (timeToCPA / controlSurfaceLag - 1f + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * vessel.acceleration; // Compensation for control surface lag.
             FlyToPosition(s, predictedPosition);
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
 
