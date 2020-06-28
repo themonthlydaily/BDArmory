@@ -136,8 +136,8 @@ namespace BDArmory.Modules
         float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Control Surface Lag", advancedTweakable = true),//Control surface lag (for getting an accurate intercept for ramming).
-            UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.05f, scene = UI_Scene.All)]
-        float controlSurfaceLag = 0.2f; // Lag time in response of control surfaces.
+            UI_FloatRange(minValue = 0f, maxValue = 0.2f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+        float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -185,7 +185,7 @@ namespace BDArmory.Modules
             { nameof(dynamicSteerDampingFactor), 100f },
             { nameof(turnRadiusTwiddleFactorMin), 5f},
             { nameof(turnRadiusTwiddleFactorMax), 5f},
-            { nameof(controlSurfaceLag), 1f}
+            { nameof(controlSurfaceLag), 0.2f}
         };
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
@@ -769,6 +769,7 @@ namespace BDArmory.Modules
             if (Vector3.Dot(vessel.srf_vel_direction, v.srf_vel_direction) * (float)v.srfSpeed / (float)vessel.srfSpeed > 0.95f) return false; // We're not approaching them fast enough.
             Vector3 relVelocity = v.Velocity() - vessel.Velocity();
             Vector3 relPosition = v.transform.position - vessel.transform.position;
+            Vector3 relAcceleration = v.acceleration - vessel.acceleration;
             float timeToCPA = ClosestTimeToCPA(v, 10f);
 
             // Let's try to ram someone!
@@ -777,7 +778,7 @@ namespace BDArmory.Modules
             currentStatus = "Ramming speed!";
             Vector3 predictedPosition = AIUtils.PredictPosition(v, timeToCPA); // Predicted position at CPA.
             if (controlSurfaceLag > 0)
-                predictedPosition += -Mathf.Pow(controlSurfaceLag, 2f) * (timeToCPA / controlSurfaceLag - 1f + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * vessel.acceleration; // Compensation for control surface lag.
+                predictedPosition += Mathf.Pow(controlSurfaceLag, 2f) * (timeToCPA / controlSurfaceLag - 1f + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * relAcceleration; // Compensation for control surface lag.
             FlyToPosition(s, predictedPosition);
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
 
