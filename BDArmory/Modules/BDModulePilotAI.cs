@@ -594,14 +594,14 @@ namespace BDArmory.Modules
                 if (!targetVessel.LandedOrSplashed)
                 {
                     Vector3 targetVesselRelPos = targetVessel.vesselTransform.position - vesselTransform.position;
-                    if (vessel.altitude < defaultAltitude && Vector3.Angle(targetVesselRelPos, -upDirection) < 35)
+                    if (canExtend && vessel.altitude < defaultAltitude && Vector3.Angle(targetVesselRelPos, -upDirection) < 35) // Target is at a steep angle below us and we're below default altitude, extend to get a better angle instead of attacking now.
                     {
                         //dangerous if low altitude and target is far below you - don't dive into ground!
                         extending = true;
                         lastTargetPosition = targetVessel.vesselTransform.position;
                     }
 
-                    if (Vector3.Angle(targetVessel.vesselTransform.position - vesselTransform.position, vesselTransform.up) > 35)
+                    if (Vector3.Angle(targetVessel.vesselTransform.position - vesselTransform.position, vesselTransform.up) > 35) // If target is outside of 35° cone ahead of us then keep flying straight.
                     {
                         turningTimer += Time.deltaTime;
                     }
@@ -616,23 +616,21 @@ namespace BDArmory.Modules
                     float targetForwardDot = Vector3.Dot(targetVesselRelPos.normalized, vesselTransform.up);
                     float targetVelFrac = (float)(targetVessel.srfSpeed / vessel.srfSpeed);      //this is the ratio of the target vessel's velocity to this vessel's srfSpeed in the forward direction; this allows smart decisions about when to break off the attack
 
-                    if (targetVelFrac < 0.8f && targetForwardDot < 0.2f && targetVesselRelPos.magnitude < 400)
+                    if (canExtend && targetVelFrac < 0.8f && targetForwardDot < 0.2f && targetVesselRelPos.magnitude < 400) // Target is outside of ~78° cone ahead, closer than 400m and slower than us, so we won't be able to turn to attack it now.
                     {
                         extending = true;
                         lastTargetPosition = targetVessel.vesselTransform.position - vessel.Velocity();       //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
                         weaponManager.ForceScan();
                     }
-                    if (turningTimer > 15)
+                    if (canExtend && turningTimer > 15)
                     {
                         //extend if turning circles for too long
-                        //extending = true;
                         RequestExtend(targetVessel.vesselTransform.position);
                         turningTimer = 0;
                         weaponManager.ForceScan();
-                        //lastTargetPosition = targetVessel.transform.position;
                     }
                 }
-                else //extend if too close for agm attack
+                else //extend if too close for agm attack (agm = air-to-ground missiles -- not actually checked, target is on the ground/water)
                 {
                     float extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
                     float srfDist = (GetSurfacePosition(targetVessel.transform.position) - GetSurfacePosition(vessel.transform.position)).sqrMagnitude;
@@ -948,9 +946,7 @@ namespace BDArmory.Modules
                 && distanceToTarget < MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange
                 && vessel.srfSpeed > idleSpeed)
             {
-                //extending = true;
-                //lastTargetPosition = v.transform.position;
-                RequestExtend(lastTargetPosition);
+                RequestExtend(lastTargetPosition); // Get far enough away to use the missile.
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -1178,35 +1174,28 @@ namespace BDArmory.Modules
                     extending = false;
                 }
 
-                float extendDistance;
+                float extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
+                float desiredMinAltitude = (float)vessel.radarAltitude + (defaultAltitude - (float)vessel.radarAltitude) * extendMult; // Desired minimum altitude after extending.
 
-                if (canExtend == false)
-                {
-                    extendDistance = 0;
-                }
-                else
-                {
-                    extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult;
-                }
-
-                if (weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb)
+                if (weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
                 {
                     extendDistance = 4500;
+                    desiredMinAltitude = defaultAltitude;
                 }
 
-                if (targetVessel != null && !targetVessel.LandedOrSplashed)      //this is just asking for trouble at 800m
+                if (targetVessel != null && !targetVessel.LandedOrSplashed) // We have a flying target, only extend a short distance.     //this is just asking for trouble at 800m
                 {
-                    extendDistance = 300;
+                    extendDistance = 300 * extendMult;
                 }
 
                 Vector3 srfVector = Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection);
                 float srfDist = srfVector.magnitude;
-                if (srfDist < extendDistance)
+                if (srfDist < extendDistance) // Extend from position is closer (horizontally) than the extend distance.
                 {
                     Vector3 targetDirection = srfVector.normalized * extendDistance;
-                    Vector3 target = vessel.transform.position + targetDirection;
-                    target = GetTerrainSurfacePosition(target) + (vessel.upAxis * Mathf.Min(defaultAltitude, MissileGuidance.GetRaycastRadarAltitude(vesselTransform.position)));
-                    target = FlightPosition(target, (defaultAltitude * extendMult));
+                    Vector3 target = vessel.transform.position + targetDirection; // Target extend position horizontally.
+                    target = GetTerrainSurfacePosition(target) + (vessel.upAxis * Mathf.Min(defaultAltitude, MissileGuidance.GetRaycastRadarAltitude(vesselTransform.position))); // Adjust for terrain changes at target extend position.
+                    target = FlightPosition(target, desiredMinAltitude); // Further adjustments for speed, situation, etc. and desired minimum altitude after extending.
                     if (regainEnergy)
                     {
                         RegainEnergy(s, target - vesselTransform.position);
@@ -1217,12 +1206,12 @@ namespace BDArmory.Modules
                         FlyToPosition(s, target);
                     }
                 }
-                else
+                else // We're far enough away, stop extending.
                 {
                     extending = false;
                 }
             }
-            else
+            else // No weapon manager.
             {
                 extending = false;
             }
