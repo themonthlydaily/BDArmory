@@ -1949,8 +1949,10 @@ namespace BDArmory.Modules
         {
             if (fireTransforms == null || fireTransforms[0] == null) return;
 
-            Transform refTransform = EditorLogic.RootPart.GetReferenceTransform();
+            Part rootPart = EditorLogic.RootPart;
+            if (rootPart == null) return;
 
+            Transform refTransform = rootPart.GetReferenceTransform();
             if (!refTransform) return;
 
             Vector3 fwdPos = fireTransforms[0].position + (5 * fireTransforms[0].forward);
