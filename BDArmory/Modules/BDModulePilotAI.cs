@@ -541,7 +541,7 @@ namespace BDArmory.Modules
 
             if (evasiveTimer > 0 || (weaponManager && evasionToggle && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.
             {
-                if (evasiveTimer < 1 * evasionMult)
+                if (evasiveTimer < 1f * evasionMult)
                 {
                     threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
 
@@ -582,7 +582,7 @@ namespace BDArmory.Modules
                 evasiveTimer += Time.fixedDeltaTime;
                 turningTimer = 0;
 
-                if (evasiveTimer > 3 * evasionMult)
+                if (evasiveTimer > 3f * evasionMult)
                 {
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
@@ -1337,9 +1337,9 @@ namespace BDArmory.Modules
                             }
                         }
                         else
-                        { // This set breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first 1.5s, then sets the breakTarget to be 150m right or left of the attacker.
+                        { // This set breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
                             breakTarget = threatRelativePosition;
-                            if (evasiveTimer < 1.5f)
+                            if (evasiveTimer < 1.5f * evasionMult)
                                 breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
                             else
                                 breakTarget += -Math.Sign(Mathf.Sin((float)vessel.missionTime * 2)) * vesselTransform.right * 150;
