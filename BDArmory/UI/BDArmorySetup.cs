@@ -1623,10 +1623,10 @@ namespace BDArmory.UI
             BDArmorySettings.HEART_BLEED_RATE = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_RATE, 0.01f, 0.1f);
             line++;
             GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedInterval")}:  ({BDArmorySettings.HEART_BLEED_INTERVAL})", leftLabel);//Heart Bleed Interval
-            BDArmorySettings.HEART_BLEED_INTERVAL = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_INTERVAL, 1f, 60f);
+            BDArmorySettings.HEART_BLEED_INTERVAL = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_INTERVAL, 1f, 60f);
             line++;
             GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedThreshold")}:  ({BDArmorySettings.HEART_BLEED_THRESHOLD})", leftLabel);//Heart Bleed Threshold
-            BDArmorySettings.HEART_BLEED_THRESHOLD = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f);
+            BDArmorySettings.HEART_BLEED_THRESHOLD = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f);
             line++;
 
 
