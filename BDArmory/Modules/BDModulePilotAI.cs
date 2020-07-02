@@ -133,11 +133,11 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_turnRadiusTwiddleFactors", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
             UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
-        float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
+        public float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Control Surface Lag", advancedTweakable = true),//Control surface lag (for getting an accurate intercept for ramming).
             UI_FloatRange(minValue = 0f, maxValue = 0.2f, stepIncrement = 0.01f, scene = UI_Scene.All)]
-        float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
+        public float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -183,9 +183,9 @@ namespace BDArmory.Modules
             { nameof(DynamicDampingMin), 100f },
             { nameof(DynamicDampingMax), 100f },
             { nameof(dynamicSteerDampingFactor), 100f },
-            { nameof(turnRadiusTwiddleFactorMin), 5f},
-            { nameof(turnRadiusTwiddleFactorMax), 5f},
-            { nameof(controlSurfaceLag), 0.2f}
+            { nameof(turnRadiusTwiddleFactorMin), 10f},
+            { nameof(turnRadiusTwiddleFactorMax), 10f},
+            { nameof(controlSurfaceLag), 1f}
         };
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
