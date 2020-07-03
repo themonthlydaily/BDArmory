@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -385,6 +385,7 @@ namespace BDArmory.UI
 
                             string status = UpdateVesselStatus(wm.Current, vButtonStyle);
                             int currentScore = 0;
+                            int currentRamScore = 0;
                             
                             string vesselName = wm.Current.vessel.GetName();
 
@@ -393,8 +394,10 @@ namespace BDArmory.UI
                             {
                                 scoreData = BDACompetitionMode.Instance.Scores[vesselName];
                                 currentScore = scoreData.Score;
+                                currentRamScore = scoreData.totalDamagedParts;
                             }
                             string postStatus = " (" + currentScore.ToString() + ")";
+                            if (currentRamScore > 0) postStatus += " (" + currentRamScore.ToString() + ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
                             {
@@ -513,7 +516,7 @@ namespace BDArmory.UI
                                 {
                                     xStyle.normal.textColor = Color.red;
                                 }
-                                else if (Planetarium.GetUniversalTime() - scoreData.lastHitTime < 4)
+                                else if (Planetarium.GetUniversalTime() - scoreData.lastHitTime < 4 || Planetarium.GetUniversalTime() - scoreData.lastRammedTime < 4)
                                 {
                                     xStyle.normal.textColor = Color.yellow;
                                 }
@@ -523,7 +526,7 @@ namespace BDArmory.UI
                                 // must use right button
                                 if (Event.current.button == 1)
                                 {
-                                    if (scoreData.lastPersonWhoHitMe == "") {
+                                    if (scoreData.LastPersonWhoDamagedMe() == "") {
                                         scoreData.lastPersonWhoHitMe = "BIG RED BUTTON"; // only do this if it's not already damaged
                                     }
                                     Misc.Misc.ForceDeadVessel(wm.Current.vessel);
@@ -540,10 +543,14 @@ namespace BDArmory.UI
                 string postString = "";
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(key))
                 {
-
-                    postString = " KILLED BY " + BDACompetitionMode.Instance.Scores[key].lastPersonWhoHitMe;
+                    if (BDACompetitionMode.Instance.Scores[key].lastRammedTime < BDACompetitionMode.Instance.Scores[key].lastHitTime)
+                        postString = " KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                    if (BDACompetitionMode.Instance.Scores[key].lastRammedTime > BDACompetitionMode.Instance.Scores[key].lastHitTime)
+                        postString = " RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
                 }
-                GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString() + ")" + postString, BDArmorySetup.BDGuiSkin.label);
+                
+                if (BDACompetitionMode.Instance.Scores[key].totalDamagedParts > 0) GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString() + ")" + " (" + BDACompetitionMode.Instance.Scores[key].totalDamagedParts + ")" + postString, BDArmorySetup.BDGuiSkin.label);
+                else GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString() + ")" + postString, BDArmorySetup.BDGuiSkin.label);
                 height += _buttonHeight + _buttonGap;
             }
             if(!BDACompetitionMode.Instance.pinataAlive)
@@ -557,7 +564,7 @@ namespace BDArmory.UI
                 }
                 if (postString != "")
                 {
-                    GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "PInata Killers: " + postString, BDArmorySetup.BDGuiSkin.label);
+                    GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), "Pinata Killers: " + postString, BDArmorySetup.BDGuiSkin.label);
                     height += _buttonHeight + _buttonGap;
                 }
             }
