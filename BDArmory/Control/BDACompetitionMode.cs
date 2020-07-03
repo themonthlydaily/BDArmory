@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -11,6 +11,7 @@ using BDArmory.Modules;
 using BDArmory.UI;
 using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
+using Object = UnityEngine.Object;
 
 namespace BDArmory.Control
 {
@@ -20,9 +21,15 @@ namespace BDArmory.Control
         public int Score;
         public int PinataHits;
         public int DeathOrder;
+        public int totalDamagedParts = 0;
         public string lastPersonWhoHitMe;
+        public string lastPersonWhoRammedMe;
         public double lastHitTime;
         public double lastFiredTime;
+        public double lastRammedTime;
+        public double lastPossibleRammingTime = -1;
+        public Vessel rammedVessel;
+        public Vessel rammingVessel;
         public bool landedState;
         public double lastLandedTime;
         public double landerKillTimer;
@@ -30,7 +37,39 @@ namespace BDArmory.Control
         public double AverageAltitude;
         public int averageCount;
         public int previousPartCount;
+        public int partCountBeforeRam;
+        public int closestVesselPartCountBeforeRam;
         public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
+        public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
+        public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
+
+        public string LastPersonWhoDamagedMe()
+        {
+            //check if vessel got rammed
+            if (lastHitTime > lastRammedTime)
+                return lastPersonWhoHitMe;
+            if (lastHitTime < lastRammedTime)
+                return lastPersonWhoRammedMe;
+            return "";
+        }
+
+        public HashSet<string> EveryOneWhoDamagedMe()
+        {
+            foreach (var hit in everyoneWhoHitMe)
+            {
+                everyoneWhoDamagedMe.Add(hit);
+            }
+
+            foreach (var ram in everyoneWhoRammedMe)
+            {
+                if (!everyoneWhoDamagedMe.Contains(ram))
+                {
+                    everyoneWhoDamagedMe.Add(ram);
+                }
+            }
+            
+            return everyoneWhoDamagedMe;
+        }
     }
 
 
@@ -58,6 +97,7 @@ namespace BDArmory.Control
 
         public Dictionary<string, int> DeathOrder = new Dictionary<string, int>();
         public Dictionary<string, int> whoShotWho = new Dictionary<string, int>();
+        public Dictionary<string, int> whoRammedWho = new Dictionary<string, int>();
 
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
@@ -177,6 +217,7 @@ namespace BDArmory.Control
             Scores.Clear();
             DeathOrder.Clear();
             whoShotWho.Clear();
+            whoRammedWho.Clear();
             KillTimer.Clear();
             dumpedResults = 5;
             competitionStartTime = Planetarium.GetUniversalTime();
@@ -195,6 +236,7 @@ namespace BDArmory.Control
                     // put these in the scoring dictionary - these are the active participants
                     ScoringData vDat = new ScoringData();
                     vDat.lastPersonWhoHitMe = "";
+                    vDat.lastPersonWhoRammedMe = "";
                     vDat.lastFiredTime = Planetarium.GetUniversalTime();
                     vDat.previousPartCount = loadedVessels.Current.parts.Count();
                     Scores[loadedVessels.Current.GetName()] = vDat;
@@ -203,7 +245,8 @@ namespace BDArmory.Control
 
         //Competition mode
         public bool competitionStarting;
-        string competitionStatus = "";
+        public string competitionStatus = "";
+        public bool competitionIsActive = false;
         Coroutine competitionRoutine;
 
         public void StartCompetitionMode(float distance)
@@ -238,6 +281,7 @@ namespace BDArmory.Control
             }
 
             competitionStarting = false;
+            competitionIsActive = false;
         }
 
 
@@ -266,6 +310,9 @@ namespace BDArmory.Control
                     Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
                     readyToLaunch.Add(pilot);
                 }
+            
+            //start logging ramming
+            competitionIsActive = true;
 
             foreach (var pilot in readyToLaunch)
             {
@@ -291,6 +338,7 @@ namespace BDArmory.Control
                 competitionStatus = "Competition: Failed!  One or more teams is empty.";
                 yield return new WaitForSeconds(2);
                 competitionStarting = false;
+                competitionIsActive = false;
                 yield break;
             }
 
@@ -1134,7 +1182,7 @@ namespace BDArmory.Control
                         }
                     }
 
-                    // after this poitn we're checking things that might result in kills.
+                    // after this point we're checking things that might result in kills.
                     if (Planetarium.GetUniversalTime() < gracePeriod) continue;
                     
                     // keep track if they're shooting for the GM
@@ -1162,7 +1210,7 @@ namespace BDArmory.Control
                             outOfAmmo.Add(vesselName);
                             if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
                             {
-                                competitionStatus = vesselName + " damaged by " + vData.lastPersonWhoHitMe + " and lost weapons";
+                                competitionStatus = vesselName + " damaged by " + vData.LastPersonWhoDamagedMe() + " and lost weapons";
                             }
                             else
                             {
@@ -1273,19 +1321,24 @@ namespace BDArmory.Control
 
                             if (Scores.ContainsKey(key))
                             {
-                                if (Planetarium.GetUniversalTime() - Scores[key].lastHitTime < 10)
+                                if (Planetarium.GetUniversalTime() - Scores[key].lastHitTime < 10 || Planetarium.GetUniversalTime() - Scores[key].lastRammedTime < 10)
                                 {
                                     // if last hit was recent that person gets the kill
-                                    whoKilledMe = Scores[key].lastPersonWhoHitMe;
+                                    whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
                                     // twice - so 2 points
                                     Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
                                     Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
                                     whoKilledMe += " (BOOM! HEADSHOT!)";
                                 }
-                                else if (Scores[key].everyoneWhoHitMe.Count > 0)
+                                else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
                                 {
-                                    whoKilledMe = String.Join(", ", Scores[key].everyoneWhoHitMe);
-                                    foreach (var killer in Scores[key].everyoneWhoHitMe)
+                                    //check if anyone got rammed
+                                    if (Scores[key].everyoneWhoRammedMe.Count != 0)
+                                        whoKilledMe = String.Join(", ", Scores[key].everyoneWhoRammedMe);
+                                    else
+                                    if(whoKilledMe != "") whoKilledMe += String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = String.Join(", ", Scores[key].everyoneWhoHitMe);
+                                    
+                                    foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
                                         Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                                     }
@@ -1336,7 +1389,7 @@ namespace BDArmory.Control
                 var killerName = "";
                 if(Scores.ContainsKey(vesselName))
                 {
-                    killerName = Scores[vesselName].lastPersonWhoHitMe;
+                    killerName = Scores[vesselName].LastPersonWhoDamagedMe();
                     if (killerName == "")
                     {
                         Scores[vesselName].lastPersonWhoHitMe = "Landed Too Long"; // only do this if it's not already damaged
@@ -1389,6 +1442,11 @@ namespace BDArmory.Control
             foreach(string key in whoShotWho.Keys)
             {
                 Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHO:" + whoShotWho[key] + ":" + key);
+            }
+
+            foreach (string key in whoRammedWho.Keys)
+            {
+                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHORAMMEDWHO" + whoRammedWho[key] + ":" + key);
             }
         }
     }
