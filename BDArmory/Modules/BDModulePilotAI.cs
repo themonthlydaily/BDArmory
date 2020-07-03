@@ -149,7 +149,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Evasion Toggle", advancedTweakable = true), //Toggle Evasion
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
-        public bool evasionToggle = false;
+        public bool evasionToggle = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping", advancedTweakable = true), //Toggle Dynamic Steer Damping
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
@@ -284,6 +284,11 @@ namespace BDArmory.Modules
         bool ramming = false; // Whether or not we're currently trying to ram someone.
         public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
 
+        // Collision Logging
+        BDACompetitionMode BdComp;
+        public Vessel closestVessel;
+        float closestVesselMagnitude = 100000;
+
         //wing command
         bool useRollHint;
         private Vector3d debugFollowPosition;
@@ -361,6 +366,7 @@ namespace BDArmory.Modules
 
         protected override void Start()
         {
+            BdComp = FindObjectOfType<BDACompetitionMode>();
             base.Start();
 
             if (HighLogic.LoadedSceneIsFlight)
@@ -438,7 +444,13 @@ namespace BDArmory.Modules
 
         void FixedUpdate()
         {
-            //floating origin and velocity offloading corrections
+            //ramming log
+            if(BdComp.competitionIsActive) RammingLog();
+
+            //competition ends if loaded scene is not flight (prevents null refs from ramming log)
+            if (!HighLogic.LoadedSceneIsFlight) BdComp.competitionIsActive = false;
+            
+                //floating origin and velocity offloading corrections
             if (lastTargetPosition != null && (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero()))
             {
                 lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
@@ -539,7 +551,7 @@ namespace BDArmory.Modules
                 lastTargetPosition = requestedExtendTpos;
             }
 
-            if (evasiveTimer > 0 || (weaponManager && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.
+            if (evasiveTimer > 0 || (weaponManager && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.            {
             {
                 if (evasiveTimer < 1f * (evasionToggle ? evasionMult : 1f))
                 {
@@ -1680,6 +1692,139 @@ namespace BDArmory.Modules
             debugString.Append($"climb limit angle: {angle}");
             debugString.Append(Environment.NewLine);
             return Vector3.RotateTowards(planarDirection, direction, angle * Mathf.Deg2Rad, 0);
+        }
+        
+        private Vessel GetClosestVessel()
+        {
+            //get vessels from BDATargetManger
+            using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
+              while (loadedVessels.MoveNext())
+              {
+                  //check if this is a valid vessel
+                  if (loadedVessels.Current == vessel || loadedVessels.Current.FindPartModuleImplementing<MissileFire>() == null) continue;
+                
+                //update closest vessel
+                if (Vector3.Magnitude(loadedVessels.Current.vesselTransform.position - vesselTransform.position) < closestVesselMagnitude)
+                { 
+                    closestVessel = loadedVessels.Current;
+                    closestVesselMagnitude = Vector3.Magnitude(loadedVessels.Current.vesselTransform.position - vesselTransform.position);
+                }
+              }
+
+            //reset closest vessel magnitude so it doesn't return the same vessel
+            closestVesselMagnitude = 100000;
+            return closestVessel;
+        }
+
+        private float GetRadius(Vessel v)
+        {
+            //get vessel size
+            Vector3 size = v.vesselSize;
+
+            //get largest dimension
+            float radius;
+
+            if (size.x > size.y && size.x > size.z)
+            {
+                radius = size.x / 2;
+            }
+            else if (size.y > size.x && size.y > size.z)
+            {
+                radius = size.y / 2;
+            }
+            else if (size.z > size.x && size.z > size.y)
+            {
+                radius = size.z / 2;
+            }
+            else
+            {
+                radius = size.x / 2;
+            }
+
+            return radius;
+        }
+
+        private bool GetPossibleCollision(Vessel v)
+        {
+            Vector3 vesselPosition = vessel.transform.position;
+            float relativePosition = Vector3.Magnitude(v.transform.position - vesselPosition);
+
+            //"sphere" cast (if closest vessels radius is within current radius + offset => return true)
+            if (relativePosition - (GetRadius(vessel) - GetRadius(v) + 20) <= 0)
+                return true;
+            
+            return false;
+        }
+        
+        //ramming log on a local scale (pipes vData values to bdComp)
+        public void RammingLog()
+        { 
+            //initialization
+            GetClosestVessel();
+            if (closestVessel == null) return;
+            string vesselName = vessel.GetName();
+            ScoringData vData = null;
+            if (BdComp.Scores.ContainsKey(vesselName))
+                vData = BdComp.Scores[vesselName];
+            else return;
+
+            //Debug
+            //Debug.Log("_______________________________________");
+            //Debug.Log("[BDModulePilotAI]vessel:" + vesselName);
+            //Debug.Log("[BDModulePilotAI]closest vessel:" + closestVessel.GetDisplayName());
+            //Debug.Log("[BDModulePilotAI]last possible ramming time:" + vData.lastPossibleRammingTime);
+            //Debug.Log("[BDModulePilotAI]everyone who rammed me length:" + vData.everyoneWhoRammedMe.Count);
+            //Debug.Log("[BDModulePilotAI]radius:" + GetRadius(vessel));
+
+            //detect planes within collision radius
+            bool possibleCollision = GetPossibleCollision(closestVessel);
+            
+            //start timer and get part values
+            if (possibleCollision && (int)vData.lastPossibleRammingTime == -1)
+            {
+                //get part counts and set ramming timer
+                vData.partCountBeforeRam = vessel.parts.Count;
+                vData.closestVesselPartCountBeforeRam = closestVessel.parts.Count;
+                vData.lastPossibleRammingTime = Planetarium.GetUniversalTime();
+                                
+                //get ramming and rammed vessel (for now this is based off of their angular relativity to their target vessels COM)
+                float angleToTargetVessel = Vector3.Angle(closestVessel.CoM - vessel.transform.position, vessel.transform.up);
+                float closestVesselAngleToTarget = Vector3.Angle(vessel.CoM - closestVessel.transform.position, closestVessel.transform.up);
+                if (angleToTargetVessel < closestVesselAngleToTarget) { vData.rammingVessel = vessel; vData.rammedVessel = closestVessel; } else { vData.rammedVessel = vessel; vData.rammingVessel = closestVessel; }
+            }
+
+            //check if this vessel was hit => reset timer
+            if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int)vData.lastPossibleRammingTime != -1)
+                vData.lastPossibleRammingTime = -1;
+            
+            //1 second after plane is detected, check for damaged parts
+            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.5 && (int)vData.lastPossibleRammingTime != -1)
+            {
+                
+                //this vessel got rammed and lost parts are detected
+                if (vessel.parts.Count < vData.partCountBeforeRam && vData.rammedVessel == vessel)
+                {
+                    vData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime);
+                    if (!vData.everyoneWhoRammedMe.Contains(vData.rammingVessel.GetName())) {vData.everyoneWhoRammedMe.Add(vData.rammingVessel.GetName());}
+                    vData.lastPersonWhoRammedMe = vData.rammingVessel.GetName();
+                }
+                                
+                //this vessel rammed and lost parts are detected on other vessel
+                else if (vData.rammedVessel.parts.Count < vData.closestVesselPartCountBeforeRam && vData.rammingVessel == vessel)
+                {
+                    BdComp.competitionStatus = vData.rammedVessel.GetDisplayName() + " RAMMED BY " + vessel.GetDisplayName() + " AND LOST: " + Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count) + " PARTS ";
+                    Debug.Log(vData.rammedVessel.GetDisplayName() + " RAMMED BY " + vessel.GetDisplayName() + " AND LOST: " + Math.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count) + " PARTS ");
+                    vData.totalDamagedParts += Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count); 
+                    var damagedParts = Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count);
+                    if(BdComp.whoRammedWho.ContainsKey(vesselName + ":" + vData.rammedVessel.GetName()))
+                        BdComp.whoRammedWho[vesselName + ":" + vData.rammedVessel.GetName()] += damagedParts;
+                    else 
+                        BdComp.whoRammedWho.Add(vesselName + ":" + vData.rammedVessel.GetName(), damagedParts);
+                }
+                
+                //reset ramming timer
+                vData.lastPossibleRammingTime = -1;
+            }
         }
 
         void UpdateGAndAoALimits(FlightCtrlState s)
