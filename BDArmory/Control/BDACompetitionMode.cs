@@ -311,9 +311,6 @@ namespace BDArmory.Control
                     readyToLaunch.Add(pilot);
                 }
             
-            //start logging ramming
-            competitionIsActive = true;
-
             foreach (var pilot in readyToLaunch)
             {
                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[1]);
@@ -450,6 +447,7 @@ namespace BDArmory.Control
             yield return new WaitForSeconds(2);
             competitionStatus = "";
             competitionStarting = false;
+            competitionIsActive = true; //start logging ramming now that the competition has officially started
         }
 
         public static Dictionary<int, KSPActionGroup> KM_dictAG = new Dictionary<int, KSPActionGroup> {
@@ -1378,6 +1376,7 @@ namespace BDArmory.Control
                     dumpedResults--;
                     //competitionStartTime = -1;
                 }
+                competitionIsActive = false;
             } else
             {
                 dumpedResults = 5;

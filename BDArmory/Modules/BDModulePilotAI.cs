@@ -147,10 +147,6 @@ namespace BDArmory.Modules
         UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
         public bool canExtend = true;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Evasion Toggle", advancedTweakable = true), //Toggle Evasion
-         UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
-        public bool evasionToggle = true;
-
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping", advancedTweakable = true), //Toggle Dynamic Steer Damping
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
         public bool dynamicSteerDamping = false;
@@ -286,8 +282,6 @@ namespace BDArmory.Modules
 
         // Collision Logging
         BDACompetitionMode BdComp;
-        public Vessel closestVessel;
-        float closestVesselMagnitude = 100000;
 
         //wing command
         bool useRollHint;
@@ -328,7 +322,6 @@ namespace BDArmory.Modules
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Control Surface Lag</color> - Lag time in response of control surfaces");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Orbit</color> - Which direction to orbit when idling over a location");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Extend Toggle</color> - Toggle extending multiplier behaviour");
-                sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Evasion Toggle</color> - Toggle evasion multiplier behaviour");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Dynamic Steer Damping</color> - Toggle dynamic steer damping");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Allow Ramming</color> - Toggle ramming behaviour when out of guns/ammo");
                 sb.AppendLine($"<color={XKCDColors.HexFormat.Cyan}>- Unclamp tuning</color> - Increases variable limits, no direct effect on behaviour");
@@ -366,13 +359,13 @@ namespace BDArmory.Modules
 
         protected override void Start()
         {
-            BdComp = FindObjectOfType<BDACompetitionMode>();
             base.Start();
 
             if (HighLogic.LoadedSceneIsFlight)
             {
                 maxAllowedCosAoA = (float)Math.Cos(maxAllowedAoA * Math.PI / 180.0);
                 lastAllowedAoA = maxAllowedAoA;
+                BdComp = FindObjectOfType<BDACompetitionMode>(); // Only get this for flight scenes.
             }
             SetSliderClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
             SetSliderClamps("DynamicDampingMin", "DynamicDampingMax");
@@ -444,17 +437,14 @@ namespace BDArmory.Modules
 
         void FixedUpdate()
         {
-            //ramming log
-            if(BdComp.competitionIsActive) RammingLog();
-
-            //competition ends if loaded scene is not flight (prevents null refs from ramming log)
-            if (!HighLogic.LoadedSceneIsFlight) BdComp.competitionIsActive = false;
-            
-                //floating origin and velocity offloading corrections
+            //floating origin and velocity offloading corrections
             if (lastTargetPosition != null && (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero()))
             {
                 lastTargetPosition -= FloatingOrigin.OffsetNonKrakensbane;
             }
+
+            //ramming log
+            if (HighLogic.LoadedSceneIsFlight && BdComp.competitionIsActive) RammingLog(); // Only log ramming in flight scenes. (Note: the 'competitionIsActive' check could be removed to allow checking for ramming outside of competitions.)
         }
 
         protected override void AutoPilot(FlightCtrlState s)
@@ -551,9 +541,9 @@ namespace BDArmory.Modules
                 lastTargetPosition = requestedExtendTpos;
             }
 
-            if (evasiveTimer > 0 || (weaponManager && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.            {
+            if (evasiveTimer > 0 || (weaponManager && evasionMult > 0f && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.            {
             {
-                if (evasiveTimer < 1f * (evasionToggle ? evasionMult : 1f))
+                if (evasiveTimer < 1f * evasionMult)
                 {
                     threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
 
@@ -594,7 +584,7 @@ namespace BDArmory.Modules
                 evasiveTimer += Time.fixedDeltaTime;
                 turningTimer = 0;
 
-                if (evasiveTimer > 3f * (evasionToggle ? evasionMult : 1f))
+                if (evasiveTimer > 3f * evasionMult)
                 {
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
@@ -1352,7 +1342,7 @@ namespace BDArmory.Modules
                         else
                         { // This set breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
                             breakTarget = threatRelativePosition;
-                            if (evasiveTimer < 1.5f * (evasionToggle ? evasionMult : 1f))
+                            if (evasiveTimer < 1.5f * evasionMult)
                                 breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
                             else
                                 breakTarget += -Math.Sign(Mathf.Sin((float)vessel.missionTime * 2)) * vesselTransform.right * 150;
@@ -1693,26 +1683,26 @@ namespace BDArmory.Modules
             debugString.Append(Environment.NewLine);
             return Vector3.RotateTowards(planarDirection, direction, angle * Mathf.Deg2Rad, 0);
         }
-        
+
         private Vessel GetClosestVessel()
         {
+            Vessel closestVessel = null;
+            float closestVesselMagnitude = 100000;
             //get vessels from BDATargetManger
             using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
-              while (loadedVessels.MoveNext())
-              {
-                  //check if this is a valid vessel
-                  if (loadedVessels.Current == vessel || loadedVessels.Current.FindPartModuleImplementing<MissileFire>() == null) continue;
-                
-                //update closest vessel
-                if (Vector3.Magnitude(loadedVessels.Current.vesselTransform.position - vesselTransform.position) < closestVesselMagnitude)
-                { 
-                    closestVessel = loadedVessels.Current;
-                    closestVesselMagnitude = Vector3.Magnitude(loadedVessels.Current.vesselTransform.position - vesselTransform.position);
-                }
-              }
+                while (loadedVessels.MoveNext())
+                {
+                    //check if this is a valid vessel
+                    if (loadedVessels.Current == vessel || loadedVessels.Current.FindPartModuleImplementing<MissileFire>() == null) continue;
 
-            //reset closest vessel magnitude so it doesn't return the same vessel
-            closestVesselMagnitude = 100000;
+                    //update closest vessel
+                    if (Vector3.Magnitude(loadedVessels.Current.vesselTransform.position - vesselTransform.position) < closestVesselMagnitude)
+                    {
+                        closestVessel = loadedVessels.Current;
+                        closestVesselMagnitude = Vector3.Magnitude(loadedVessels.Current.vesselTransform.position - vesselTransform.position);
+                    }
+                }
+
             return closestVessel;
         }
 
@@ -1752,15 +1742,15 @@ namespace BDArmory.Modules
             //"sphere" cast (if closest vessels radius is within current radius + offset => return true)
             if (relativePosition - (GetRadius(vessel) - GetRadius(v) + 20) <= 0)
                 return true;
-            
+
             return false;
         }
-        
+
         //ramming log on a local scale (pipes vData values to bdComp)
         public void RammingLog()
-        { 
+        {
             //initialization
-            GetClosestVessel();
+            Vessel closestVessel = GetClosestVessel();
             if (closestVessel == null) return;
             string vesselName = vessel.GetName();
             ScoringData vData = null;
@@ -1768,17 +1758,9 @@ namespace BDArmory.Modules
                 vData = BdComp.Scores[vesselName];
             else return;
 
-            //Debug
-            //Debug.Log("_______________________________________");
-            //Debug.Log("[BDModulePilotAI]vessel:" + vesselName);
-            //Debug.Log("[BDModulePilotAI]closest vessel:" + closestVessel.GetDisplayName());
-            //Debug.Log("[BDModulePilotAI]last possible ramming time:" + vData.lastPossibleRammingTime);
-            //Debug.Log("[BDModulePilotAI]everyone who rammed me length:" + vData.everyoneWhoRammedMe.Count);
-            //Debug.Log("[BDModulePilotAI]radius:" + GetRadius(vessel));
-
             //detect planes within collision radius
             bool possibleCollision = GetPossibleCollision(closestVessel);
-            
+
             //start timer and get part values
             if (possibleCollision && (int)vData.lastPossibleRammingTime == -1)
             {
@@ -1786,7 +1768,7 @@ namespace BDArmory.Modules
                 vData.partCountBeforeRam = vessel.parts.Count;
                 vData.closestVesselPartCountBeforeRam = closestVessel.parts.Count;
                 vData.lastPossibleRammingTime = Planetarium.GetUniversalTime();
-                                
+
                 //get ramming and rammed vessel (for now this is based off of their angular relativity to their target vessels COM)
                 float angleToTargetVessel = Vector3.Angle(closestVessel.CoM - vessel.transform.position, vessel.transform.up);
                 float closestVesselAngleToTarget = Vector3.Angle(vessel.CoM - closestVessel.transform.position, closestVessel.transform.up);
@@ -1796,32 +1778,32 @@ namespace BDArmory.Modules
             //check if this vessel was hit => reset timer
             if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int)vData.lastPossibleRammingTime != -1)
                 vData.lastPossibleRammingTime = -1;
-            
+
             //1 second after plane is detected, check for damaged parts
             if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.5 && (int)vData.lastPossibleRammingTime != -1)
             {
-                
+
                 //this vessel got rammed and lost parts are detected
                 if (vessel.parts.Count < vData.partCountBeforeRam && vData.rammedVessel == vessel)
                 {
                     vData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime);
-                    if (!vData.everyoneWhoRammedMe.Contains(vData.rammingVessel.GetName())) {vData.everyoneWhoRammedMe.Add(vData.rammingVessel.GetName());}
+                    if (!vData.everyoneWhoRammedMe.Contains(vData.rammingVessel.GetName())) { vData.everyoneWhoRammedMe.Add(vData.rammingVessel.GetName()); }
                     vData.lastPersonWhoRammedMe = vData.rammingVessel.GetName();
                 }
-                                
+
                 //this vessel rammed and lost parts are detected on other vessel
                 else if (vData.rammedVessel.parts.Count < vData.closestVesselPartCountBeforeRam && vData.rammingVessel == vessel)
                 {
                     BdComp.competitionStatus = vData.rammedVessel.GetDisplayName() + " RAMMED BY " + vessel.GetDisplayName() + " AND LOST: " + Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count) + " PARTS ";
                     Debug.Log(vData.rammedVessel.GetDisplayName() + " RAMMED BY " + vessel.GetDisplayName() + " AND LOST: " + Math.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count) + " PARTS ");
-                    vData.totalDamagedParts += Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count); 
+                    vData.totalDamagedParts += Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count);
                     var damagedParts = Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count);
-                    if(BdComp.whoRammedWho.ContainsKey(vesselName + ":" + vData.rammedVessel.GetName()))
+                    if (BdComp.whoRammedWho.ContainsKey(vesselName + ":" + vData.rammedVessel.GetName()))
                         BdComp.whoRammedWho[vesselName + ":" + vData.rammedVessel.GetName()] += damagedParts;
-                    else 
+                    else
                         BdComp.whoRammedWho.Add(vesselName + ":" + vData.rammedVessel.GetName(), damagedParts);
                 }
-                
+
                 //reset ramming timer
                 vData.lastPossibleRammingTime = -1;
             }
