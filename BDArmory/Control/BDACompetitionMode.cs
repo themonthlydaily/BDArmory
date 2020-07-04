@@ -1351,18 +1351,29 @@ namespace BDArmory.Control
                                 {
                                     // if last hit was recent that person gets the kill
                                     whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
-                                    // twice - so 2 points
-                                    Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
-                                    Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
-                                    whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
+                                    {
+                                        // twice - so 2 points
+                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
+                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
+                                    {
+                                        // if ram killed
+                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
+                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    
                                 }
                                 else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
                                 {
                                     //check if anyone got rammed
                                     if (Scores[key].everyoneWhoRammedMe.Count != 0)
-                                        whoKilledMe = String.Join(", ", Scores[key].everyoneWhoRammedMe);
-                                    else
-                                    if (whoKilledMe != "") whoKilledMe += String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = String.Join(", ", Scores[key].everyoneWhoHitMe);
+                                        whoKilledMe = "Ram Hits: " + String.Join(", ", Scores[key].everyoneWhoRammedMe) + " ";
+                                    else if (Scores[key].everyoneWhoHitMe.Count != 0)
+                                        if(whoKilledMe != "") whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = String.Join(", ", Scores[key].everyoneWhoHitMe);
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
@@ -1372,7 +1383,10 @@ namespace BDArmory.Control
                             }
                             if (whoKilledMe != "")
                             {
-                                competitionStatus = key + " was killed by " + whoKilledMe;
+                                if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
+                                    competitionStatus = key + " was killed by " + whoKilledMe; 
+                                else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
+                                    competitionStatus = key + " was rammed by " + whoKilledMe;
                             }
                             else
                             {
