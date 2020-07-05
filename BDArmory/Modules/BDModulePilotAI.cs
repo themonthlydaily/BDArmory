@@ -1527,8 +1527,11 @@ namespace BDArmory.Modules
                         ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
                         terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction); // Distance to terrain along direction of terrain normal.
                         terrainAlertNormal = rayHit.normal;
-                        terrainAlertDebugPos = rayHit.point;
-                        terrainAlertDebugDir = rayHit.normal;
+                        if (BDArmorySettings.DRAW_DEBUG_LINES)
+                        {
+                            terrainAlertDebugPos = rayHit.point;
+                            terrainAlertDebugDir = rayHit.normal;
+                        }
                         if (!Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15)) // Nothing directly ahead, so we're just barely avoiding terrain.
                         {
                             // Change the terrain normal and direction as we want to just fly over it instead of banking away from it.
@@ -1550,14 +1553,18 @@ namespace BDArmory.Modules
                             float phi = -Mathf.Asin(sinTheta) / 2f;
                             Vector3 upcoming = Vector3.RotateTowards(vessel.srf_vel_direction, terrainAlertNormal, phi, 0f);
                             ray = new Ray(vessel.transform.position, upcoming);
-                            terrainAlertDebugDraw2 = false;
+                            if (BDArmorySettings.DRAW_DEBUG_LINES)
+                                terrainAlertDebugDraw2 = false;
                             if (Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15))
                             {
                                 if (rayHit.distance < terrainAlertDistance / Mathf.Sin(phi)) // Hit terrain closer than expected => terrain slope is increasing relative to our velocity direction.
                                 {
-                                    terrainAlertDebugDraw2 = true;
-                                    terrainAlertDebugPos2 = rayHit.point;
-                                    terrainAlertDebugDir2 = rayHit.normal;
+                                    if (BDArmorySettings.DRAW_DEBUG_LINES)
+                                    {
+                                        terrainAlertDebugDraw2 = true;
+                                        terrainAlertDebugPos2 = rayHit.point;
+                                        terrainAlertDebugDir2 = rayHit.normal;
+                                    }
                                     terrainAlertNormal = rayHit.normal; // Use the normal of the steeper terrain (relative to our velocity).
                                     terrainAlertDirection = Vector3.ProjectOnPlane(vessel.srf_vel_direction, terrainAlertNormal).normalized;
                                 }
@@ -1583,8 +1590,11 @@ namespace BDArmory.Modules
                             terrainAlertDirection = Vector3.ProjectOnPlane(vessel.srf_vel_direction, upDirection).normalized;
                             avoidingTerrain = true;
 
-                            terrainAlertDebugPos = vessel.transform.position + vessel.srf_vel_direction * (float)vessel.altitude / -sinTheta;
-                            terrainAlertDebugDir = upDirection;
+                            if (BDArmorySettings.DRAW_DEBUG_LINES)
+                            {
+                                terrainAlertDebugPos = vessel.transform.position + vessel.srf_vel_direction * (float)vessel.altitude / -sinTheta;
+                                terrainAlertDebugDir = upDirection;
+                            }
                         }
                     }
                 }
