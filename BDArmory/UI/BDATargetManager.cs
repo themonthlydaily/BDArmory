@@ -897,8 +897,7 @@ namespace BDArmory.UI
             using (var target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
-                    if (target.Current == null) continue;
-                    if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
+                    if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
                     {
                         float theta = Vector3.Angle(mf.vessel.srf_vel_direction, target.Current.velocity);
                         float distance = (mf.vessel.transform.position - target.Current.position).magnitude;
