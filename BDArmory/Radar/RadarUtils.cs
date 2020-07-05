@@ -29,7 +29,7 @@ namespace BDArmory.Radar
         private static Texture2D drawTextureVentral;
         public static Texture2D GetTextureVentral { get { return drawTextureVentral; } }
 
-        // additional anti-exploit 45° offset renderings
+        // additional anti-exploit 45ï¿½ offset renderings
         private static Texture2D drawTextureFrontal45;
         public static Texture2D GetTextureFrontal45 { get { return drawTextureFrontal45; } }
         private static Texture2D drawTextureLateral45;
@@ -141,7 +141,7 @@ namespace BDArmory.Radar
                 ti.radarJammingDistance = ((vesseljammer.jammerStrength / ti.radarBaseSignature / 100) + 1.0f) * vesseljammer.jammerStrength;
 
                 //4) lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
-                // lockbreak_factor = baseSig/modifiedSig x (1 – lopckBreakStrength/baseSig/100)
+                // lockbreak_factor = baseSig/modifiedSig x (1 ï¿½ lopckBreakStrength/baseSig/100)
                 ti.radarLockbreakFactor = (ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100));
             }
 
@@ -161,7 +161,7 @@ namespace BDArmory.Radar
             if (vci)
             {
                 // lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
-                // lockbreak_factor = baseSig/modifiedSig x (1 – lopckBreakStrength/baseSig/100)
+                // lockbreak_factor = baseSig/modifiedSig x (1 ï¿½ lopckBreakStrength/baseSig/100)
                 chaffFactor = vci.GetChaffMultiplier();
             }
 
@@ -235,7 +235,7 @@ namespace BDArmory.Radar
             // pass3: Ventral
             RenderSinglePass(t, inEditorZoom, t.forward, vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral);
 
-            //additional 45° offset renderings:
+            //additional 45ï¿½ offset renderings:
             RenderSinglePass(t, inEditorZoom, (t.up + t.right), vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal45);
             RenderSinglePass(t, inEditorZoom, (t.right + t.forward), vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral45);
             RenderSinglePass(t, inEditorZoom, (t.forward - t.up), vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral45);
@@ -907,22 +907,22 @@ namespace BDArmory.Radar
                             }
                             else
                             {
-                                List<ModuleWeapon>.Enumerator weapon = loadedvessels.Current.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator();
-                                while (weapon.MoveNext())
-                                {
-                                    if (!weapon.Current.recentlyFiring) continue;
-                                    if (Vector3.Dot(weapon.Current.fireTransforms[0].forward, vesselDirection) > 0) continue;
-
-                                    if ((Vector3.Angle(weapon.Current.fireTransforms[0].forward, -predictedRelativeDirection) < 6500 / vesselDistance)
-                                        && (!results.firingAtMe || (weapon.Current.vessel.ReferenceTransform.position - position).sqrMagnitude < (results.threatPosition - position).sqrMagnitude))
+                                using (List<ModuleWeapon>.Enumerator weapon = loadedvessels.Current.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                                    while (weapon.MoveNext())
                                     {
-                                        results.firingAtMe = true;
-                                        results.threatPosition = weapon.Current.vessel.transform.position;
-                                        results.threatVessel = weapon.Current.vessel;
-                                        results.threatWeaponManager = weapon.Current.weaponManager;
-                                        break;
+                                        if (!weapon.Current.recentlyFiring) continue;
+                                        if (Vector3.Dot(weapon.Current.fireTransforms[0].forward, vesselDirection) > 0) continue;
+
+                                        if ((Vector3.Angle(weapon.Current.fireTransforms[0].forward, -predictedRelativeDirection) < 6500 / vesselDistance)
+                                            && (!results.firingAtMe || (weapon.Current.vessel.ReferenceTransform.position - position).sqrMagnitude < (results.threatPosition - position).sqrMagnitude))
+                                        {
+                                            results.firingAtMe = true;
+                                            results.threatPosition = weapon.Current.vessel.transform.position;
+                                            results.threatVessel = weapon.Current.vessel;
+                                            results.threatWeaponManager = weapon.Current.weaponManager;
+                                            break;
+                                        }
                                     }
-                                }
                             }
                         }
                     }

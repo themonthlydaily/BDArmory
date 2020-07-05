@@ -1652,17 +1652,16 @@ namespace BDArmory.Modules
                 // Check for collisions with other vessels.
                 bool vesselCollision = false;
                 collisionAvoidDirection = vessel.srf_vel_direction;
-                List<Vessel>.Enumerator vs = BDATargetManager.LoadedVessels.GetEnumerator();
-                while (vs.MoveNext())
-                {
-                    if (vs.Current == null) continue;
-                    if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
-                    if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime, out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
-                    if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
-                    vesselCollision = true;
-                    break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
-                }
-                vs.Dispose();
+                using (List<Vessel>.Enumerator vs = BDATargetManager.LoadedVessels.GetEnumerator())
+                    while (vs.MoveNext())
+                    {
+                        if (vs.Current == null) continue;
+                        if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
+                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime, out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
+                        if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
+                        vesselCollision = true;
+                        break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
+                    }
                 if (vesselCollision)
                 {
                     Vector3 axis = -Vector3.Cross(vesselTransform.up, collisionAvoidDirection);
