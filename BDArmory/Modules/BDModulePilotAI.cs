@@ -1780,7 +1780,7 @@ namespace BDArmory.Modules
                 vData.lastPossibleRammingTime = -1;
 
             //check for damaged parts
-            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.35 + BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET * 0.01 && (int)vData.lastPossibleRammingTime != -1)
+            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.75 && (int)vData.lastPossibleRammingTime != -1)
             {
 
                 //this vessel got rammed and lost parts are detected
