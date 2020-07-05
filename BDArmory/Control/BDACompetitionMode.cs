@@ -1373,7 +1373,7 @@ namespace BDArmory.Control
                                     if (Scores[key].everyoneWhoRammedMe.Count != 0)
                                         whoKilledMe = "Ram Hits: " + String.Join(", ", Scores[key].everyoneWhoRammedMe) + " ";
                                     else if (Scores[key].everyoneWhoHitMe.Count != 0)
-                                        if(whoKilledMe != "") whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = String.Join(", ", Scores[key].everyoneWhoHitMe);
+                                        if(whoKilledMe != "") whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
