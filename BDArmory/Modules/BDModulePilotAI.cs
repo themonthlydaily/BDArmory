@@ -1750,7 +1750,7 @@ namespace BDArmory.Modules
             float relativePosition = Vector3.Magnitude(v.transform.position - vesselPosition);
 
             //"sphere" cast (if closest vessels radius is within current radius + offset => return true)
-            if (relativePosition - (GetRadius(vessel) - GetRadius(v) + 20) <= 0)
+            if (relativePosition - (GetRadius(vessel) + GetRadius(v) + BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET) <= 0)
                 return true;
 
             return false;
@@ -1789,8 +1789,8 @@ namespace BDArmory.Modules
             if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int)vData.lastPossibleRammingTime != -1)
                 vData.lastPossibleRammingTime = -1;
 
-            //1 second after plane is detected, check for damaged parts
-            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.5 && (int)vData.lastPossibleRammingTime != -1)
+            //check for damaged parts
+            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.75 && (int)vData.lastPossibleRammingTime != -1)
             {
 
                 //this vessel got rammed and lost parts are detected
