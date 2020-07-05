@@ -1746,12 +1746,14 @@ namespace BDArmory.Modules
         private bool GetPossibleCollision(Vessel v)
         {
             Vector3 vesselPosition = vessel.transform.position;
-            float relativePosition = Vector3.Magnitude(v.transform.position - vesselPosition);
-
-            //"sphere" cast (if closest vessels radius is within current radius + offset => return true)
-            if (relativePosition - (GetRadius(vessel) + GetRadius(v) + BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET) <= 0)
-                return true;
-
+            float closestTimeToCPA = ClosestTimeToCPA(v, 1f); // 1s might be overkill
+            if (closestTimeToCPA < 1f)
+            {
+                float relativePosition = Vector3.Magnitude(AIUtils.PredictPosition(v, closestTimeToCPA) - AIUtils.PredictPosition(vessel, closestTimeToCPA));
+                //"sphere" cast at predicted closest point (if closest vessels radius is within current radius + offset => return true)
+                if (relativePosition < GetRadius(vessel) + GetRadius(v) + BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET)
+                    return true;
+            }
             return false;
         }
 
@@ -1760,28 +1762,41 @@ namespace BDArmory.Modules
         {
             //initialization
             Vessel closestVessel = GetClosestVessel();
-            if (closestVessel == null) return;
             string vesselName = vessel.GetName();
             ScoringData vData = null;
             if (BdComp.Scores.ContainsKey(vesselName))
                 vData = BdComp.Scores[vesselName];
             else return;
-
-            //detect planes within collision radius
-            bool possibleCollision = GetPossibleCollision(closestVessel);
-
-            //start timer and get part values
-            if (possibleCollision && (int)vData.lastPossibleRammingTime == -1)
+            
+            //check if this is a vessel 
+            if (closestVessel != null)
             {
-                //get part counts and set ramming timer
-                vData.partCountBeforeRam = vessel.parts.Count;
-                vData.closestVesselPartCountBeforeRam = closestVessel.parts.Count;
-                vData.lastPossibleRammingTime = Planetarium.GetUniversalTime();
+                
+                //detect planes within collision radius
+                bool possibleCollision = GetPossibleCollision(closestVessel);
 
-                //get ramming and rammed vessel (for now this is based off of their angular relativity to their target vessels COM)
-                float angleToTargetVessel = Vector3.Angle(closestVessel.CoM - vessel.transform.position, vessel.transform.up);
-                float closestVesselAngleToTarget = Vector3.Angle(vessel.CoM - closestVessel.transform.position, closestVessel.transform.up);
-                if (angleToTargetVessel < closestVesselAngleToTarget) { vData.rammingVessel = vessel; vData.rammedVessel = closestVessel; } else { vData.rammedVessel = vessel; vData.rammingVessel = closestVessel; }
+                //start timer and get part values
+                if (possibleCollision && (int) vData.lastPossibleRammingTime == -1)
+                {
+                    //get part counts and set ramming timer
+                    vData.partCountBeforeRam = vessel.parts.Count;
+                    vData.closestVesselPartCountBeforeRam = closestVessel.parts.Count;
+                    vData.lastPossibleRammingTime = Planetarium.GetUniversalTime();
+
+                    //get ramming and rammed vessel (for now this is based off of their angular relativity to their target vessels COM)
+                    float angleToTargetVessel = Vector3.Angle(closestVessel.CoM - vessel.transform.position, vessel.transform.up);
+                    float closestVesselAngleToTarget = Vector3.Angle(vessel.CoM - closestVessel.transform.position, closestVessel.transform.up);
+                    if (angleToTargetVessel < closestVesselAngleToTarget)
+                    {
+                        vData.rammingVessel = vessel;
+                        vData.rammedVessel = closestVessel;
+                    }
+                    else
+                    {
+                        vData.rammedVessel = vessel;
+                        vData.rammingVessel = closestVessel;
+                    }
+                }
             }
 
             //check if this vessel was hit => reset timer
