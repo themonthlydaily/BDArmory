@@ -3041,8 +3041,8 @@ namespace BDArmory.Modules
             //============VESSEL THREATS============
             if (!targetMissiles)
             {
-                //then try to engage enemies with least friendlies already engaging them
-                potentialTarget = BDATargetManager.GetLeastEngagedTarget(this);
+                // select target based on competition style
+                potentialTarget = BDArmorySettings.FFA_COMBAT_STYLE ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetLeastEngagedTarget(this);
                 if (potentialTarget)
                 {
                     targetsTried.Add(potentialTarget);

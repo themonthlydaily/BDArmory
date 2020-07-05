@@ -323,7 +323,7 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel,  Ray ray, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
@@ -349,7 +349,7 @@ namespace BDArmory.UI
                 {
                     // for AGM heat guidance
                     continue;
-                } 
+                }
 
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
 
@@ -884,6 +884,32 @@ namespace BDArmory.UI
                 }
             }
             target.Dispose();
+            return finalTarget;
+        }
+
+        // Select a target based on promixity, but biased towards targets ahead and the current target.
+        public static TargetInfo GetClosestTargetWithBiasAndHysteresis(MissileFire mf)
+        {
+            TargetInfo finalTarget = null;
+            float finalTargetScore = 0f;
+            float hysteresis = 1.1f; // 10% hysteresis
+            float bias = 2f; // bias for targets ahead vs behind
+            using (var target = TargetList(mf.Team).GetEnumerator())
+                while (target.MoveNext())
+                {
+                    if (target.Current == null) continue;
+                    if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
+                    {
+                        float theta = Vector3.Angle(mf.vessel.srf_vel_direction, target.Current.velocity);
+                        float distance = (mf.vessel.transform.position - target.Current.position).magnitude;
+                        float targetScore = (target.Current == mf.currentTarget ? hysteresis : 1f) * ((bias - 1f) * Mathf.Pow(Mathf.Cos(theta / 2f), 2f) + 1f) / distance;
+                        if (finalTarget == null || targetScore > finalTargetScore)
+                        {
+                            finalTarget = target.Current;
+                            finalTargetScore = targetScore;
+                        }
+                    }
+                }
             return finalTarget;
         }
 

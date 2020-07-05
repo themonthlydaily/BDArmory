@@ -42,6 +42,7 @@
         [BDAPersistantSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistantSettingsField] public static bool PEACE_MODE = false;
         [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = false;
+        [BDAPersistantSettingsField] public static bool FFA_COMBAT_STYLE = false;                // Free-for-all combat style instead of teams (changes target selection behaviour)
         [BDAPersistantSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
         [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = false;                    //Used for debug fields not nomrally shown to regular users
