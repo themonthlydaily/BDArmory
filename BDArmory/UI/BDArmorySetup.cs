@@ -1420,6 +1420,12 @@ namespace BDArmory.UI
             terrainAlertFrequency = GUI.HorizontalSlider(SRightRect(line), terrainAlertFrequency, 1f, 5f);
             BDArmorySettings.TERRAIN_ALERT_FREQUENCY = (int)terrainAlertFrequency;
             line++;
+            
+                GUI.Label(SLeftRect(line), $"Collision Logging Radius Offset:  ({BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET})", leftLabel);
+            float ramLoggingRadiusOffset = BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET;
+            ramLoggingRadiusOffset = GUI.HorizontalSlider(SRightRect(line), ramLoggingRadiusOffset, 10f, 100f);
+            BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET = (int) ramLoggingRadiusOffset;
+            line++;
             line++;
 
             bool origPm = BDArmorySettings.PEACE_MODE;
