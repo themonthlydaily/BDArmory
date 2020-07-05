@@ -137,7 +137,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Control Surface Lag", advancedTweakable = true),//Control surface lag (for getting an accurate intercept for ramming).
             UI_FloatRange(minValue = 0f, maxValue = 0.2f, stepIncrement = 0.01f, scene = UI_Scene.All)]
-        public float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
+        public float controlSurfaceLag = 0f; // Lag time in response of control surfaces.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -1740,7 +1740,7 @@ namespace BDArmory.Modules
             float relativePosition = Vector3.Magnitude(v.transform.position - vesselPosition);
 
             //"sphere" cast (if closest vessels radius is within current radius + offset => return true)
-            if (relativePosition - (GetRadius(vessel) - GetRadius(v) + 20) <= 0)
+            if (relativePosition - (GetRadius(vessel) - GetRadius(v) + BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET) <= 0)
                 return true;
 
             return false;
@@ -1779,8 +1779,8 @@ namespace BDArmory.Modules
             if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int)vData.lastPossibleRammingTime != -1)
                 vData.lastPossibleRammingTime = -1;
 
-            //1 second after plane is detected, check for damaged parts
-            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.5 && (int)vData.lastPossibleRammingTime != -1)
+            //check for damaged parts
+            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.35 + BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET * 0.01 && (int)vData.lastPossibleRammingTime != -1)
             {
 
                 //this vessel got rammed and lost parts are detected
