@@ -1426,6 +1426,12 @@ namespace BDArmory.UI
             
             line++;
 
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging")}:  ({BDArmorySettings.REMOTE_LOGGING_ENABLED})", leftLabel); // Remote logging.
+            bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
+            BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SRightRect(line), BDArmorySettings.REMOTE_LOGGING_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+            line++;
+            line++;
+
             bool origPm = BDArmorySettings.PEACE_MODE;
             BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
             if (BDArmorySettings.PEACE_MODE && !origPm)

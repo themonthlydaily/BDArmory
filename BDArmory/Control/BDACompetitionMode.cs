@@ -92,6 +92,9 @@ namespace BDArmory.Control
         public Dictionary<string, int> whoShotWho = new Dictionary<string, int>();
         public Dictionary<string, int> whoRammedWho = new Dictionary<string, int>();
 
+        public Dictionary<string, string> longestHitWeapon = new Dictionary<string, string>();
+        public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
+
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
 
@@ -110,7 +113,7 @@ namespace BDArmory.Control
         private HashSet<int> ammoIds = new HashSet<int>();
 
         // time competition was started
-        int CompetitionID;
+        public int CompetitionID;
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
@@ -1827,6 +1830,16 @@ namespace BDArmory.Control
                         rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false; // Set potential collisions to false.
                     }
                 }
+            }
+        }
+
+        public void TrackHit(string attacker, string weaponName, double hitDistance)
+        {
+            if (!longestHitDistance.ContainsKey(attacker) || hitDistance > longestHitDistance[attacker])
+            {
+                Debug.Log(string.Format("[BDACompetitionMode] Tracked hit for {0} with {1} at {2}", attacker, weaponName, hitDistance));
+                longestHitWeapon[attacker] = weaponName;
+                longestHitDistance[attacker] = hitDistance;
             }
         }
 

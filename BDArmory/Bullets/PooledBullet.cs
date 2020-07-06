@@ -99,6 +99,8 @@ namespace BDArmory.Bullets
 
         private Vector3[] linePositions = new Vector3[2];
 
+        private double distanceTraveled = 0;
+
         void OnEnable()
         {
             startPosition = transform.position;
@@ -213,6 +215,9 @@ namespace BDArmory.Bullets
 
             //calculate flight time for drag purposes
             flightTimeElapsed += Time.fixedDeltaTime;
+
+            // calculate flight distance for achievement purposes
+            distanceTraveled += currentVelocity.magnitude * Time.fixedDeltaTime;
 
             //Drag types currently only affect Impactvelocity
             //Numerical Integration is currently Broken
@@ -516,6 +521,8 @@ namespace BDArmory.Bullets
                 {
                     BDACompetitionMode.Instance.whoShotWho[whoShotWhoKey] = 1;
                 }
+
+                BDACompetitionMode.Instance.TrackHit(aName, bullet.name, distanceTraveled);
 
                 // update scoring structure on attacker
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(aName))
