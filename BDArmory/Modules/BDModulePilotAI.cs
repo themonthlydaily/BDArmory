@@ -1834,7 +1834,7 @@ namespace BDArmory.Modules
             }
 
             //if more than one vessel is within the collision logging radius => check for closest vessel
-            if (vessel == vData.rammingVessel && vessel != vData.otherVesselScoringData.rammingVessel && (int) vData.lastPossibleRammingTime != -1 && vData.otherVesselScoringData.rammingVessel)
+            if (vessel == vData.rammingVessel && vData.otherVesselScoringData.rammingVessel && vessel != vData.otherVesselScoringData.rammingVessel && (int) vData.lastPossibleRammingTime != -1)
             {
                 //if vessel is closer => change ramming vessel to this vessel
                 if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammingVessel.transform.position))
