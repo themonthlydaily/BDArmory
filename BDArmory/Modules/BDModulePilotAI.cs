@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
 using BDArmory.Control;
 using BDArmory.Core;
@@ -10,6 +11,7 @@ using BDArmory.Guidances;
 using BDArmory.Misc;
 using BDArmory.Targeting;
 using BDArmory.UI;
+using Expansions.Missions;
 using UnityEngine;
 
 namespace BDArmory.Modules
@@ -1768,10 +1770,11 @@ namespace BDArmory.Modules
                 vData = BdComp.Scores[vesselName];
             else return;
             
+            
             //check if this is a vessel 
             if (closestVessel != null)
             {
-                
+
                 //detect planes within collision radius
                 bool possibleCollision = GetPossibleCollision(closestVessel);
 
@@ -1782,6 +1785,7 @@ namespace BDArmory.Modules
                     vData.partCountBeforeRam = vessel.parts.Count;
                     vData.closestVesselPartCountBeforeRam = closestVessel.parts.Count;
                     vData.lastPossibleRammingTime = Planetarium.GetUniversalTime();
+                    vData.otherVesselScoringData = BdComp.Scores[closestVessel.GetName()];
 
                     //get ramming and rammed vessel (for now this is based off of their angular relativity to their target vessels COM)
                     float angleToTargetVessel = Vector3.Angle(closestVessel.CoM - vessel.transform.position, vessel.transform.up);
@@ -1798,10 +1802,34 @@ namespace BDArmory.Modules
                     }
                 }
             }
+            
+            //check if other vessel has been destroyed
+            if ((int) vData.lastPossibleRammingTime > -1 && vessel == vData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
+            {
+                //add parts left on other vessel before ram to vessel score
+                vData.totalDamagedParts += vData.closestVesselPartCountBeforeRam;
+                if (BdComp.whoRammedWho.ContainsKey(vesselName + ":" + vData.rammedVessel.GetName()))
+                    BdComp.whoRammedWho[vesselName + ":" + vData.rammedVessel.GetName()] += vData.closestVesselPartCountBeforeRam;
+                else
+                    BdComp.whoRammedWho.Add(vesselName + ":" + vData.rammedVessel.GetName(), vData.closestVesselPartCountBeforeRam);
+                
+                //add this vessels name to scoring data
+                vData.otherVesselScoringData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.otherVesselScoringData.lastPossibleRammingTime);
+                if (!vData.otherVesselScoringData.everyoneWhoRammedMe.Contains(vesselName)) { vData.otherVesselScoringData.everyoneWhoRammedMe.Add(vesselName); }
+                vData.otherVesselScoringData.lastPersonWhoRammedMe = vesselName;
 
-            //check if this vessel was hit => reset timer
-            if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int)vData.lastPossibleRammingTime != -1)
+                //reset both timers
+                vData.otherVesselScoringData.lastPossibleRammingTime = -1;
                 vData.lastPossibleRammingTime = -1;
+            }
+
+            //check if this vessel was hit => reset timer  
+            if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int) vData.lastPossibleRammingTime != -1)
+            {
+                  vData.lastPossibleRammingTime = -1;
+                  vData.otherVesselScoringData.lastPossibleRammingTime = -1; 
+                  
+            }
 
             //check for damaged parts
             if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.75 && (int)vData.lastPossibleRammingTime != -1)
