@@ -1804,7 +1804,7 @@ namespace BDArmory.Modules
             }
             
             //check if other vessel has been destroyed
-            if ((int) vData.lastPossibleRammingTime > -1 && vessel == vData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
+            if ((int) vData.lastPossibleRammingTime > -1 && vessel == vData.rammingVessel && vessel == vData.otherVesselScoringData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
             {
                 //add parts left on other vessel before ram to vessel score
                 vData.totalDamagedParts += vData.closestVesselPartCountBeforeRam;
@@ -1825,14 +1825,25 @@ namespace BDArmory.Modules
 
             //check if this vessel was hit => reset timer  
             if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int) vData.lastPossibleRammingTime != -1)
-            {
-                  vData.lastPossibleRammingTime = -1;
-                  vData.otherVesselScoringData.lastPossibleRammingTime = -1; 
+            { 
+                vData.lastPossibleRammingTime = -1;
+                vData.otherVesselScoringData.lastPossibleRammingTime = -1; 
                   
             }
 
+            //if more than one vessel is within the collision logging radius => check for closest vessel
+            if (vessel == vData.rammingVessel && vessel != vData.otherVesselScoringData.rammingVessel && (int) vData.lastPossibleRammingTime != -1)
+            {
+                //if vessel is closer => change ramming vessel to this vessel
+                if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammingVessel.transform.position))
+                {
+                    vData.otherVesselScoringData.rammingVessel = vessel;
+                    
+                }
+            }
+
             //check for damaged parts
-            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > 0.75 && (int)vData.lastPossibleRammingTime != -1)
+            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE && (int) vData.lastPossibleRammingTime != -1)
             {
 
                 //this vessel got rammed and lost parts are detected
@@ -1844,7 +1855,7 @@ namespace BDArmory.Modules
                 }
 
                 //this vessel rammed and lost parts are detected on other vessel
-                else if (vData.rammedVessel.parts.Count < vData.closestVesselPartCountBeforeRam && vData.rammingVessel == vessel)
+                else if (vData.rammedVessel.parts.Count < vData.closestVesselPartCountBeforeRam && vData.rammingVessel == vessel && vData.otherVesselScoringData.rammingVessel == vessel)
                 {
                     BdComp.competitionStatus = vData.rammedVessel.GetDisplayName() + " RAMMED BY " + vessel.GetDisplayName() + " AND LOST: " + Mathf.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count) + " PARTS ";
                     Debug.Log(vData.rammedVessel.GetDisplayName() + " RAMMED BY " + vessel.GetDisplayName() + " AND LOST: " + Math.Abs(vData.closestVesselPartCountBeforeRam - vData.rammedVessel.parts.Count) + " PARTS ");
