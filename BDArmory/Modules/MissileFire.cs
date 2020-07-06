@@ -4022,6 +4022,7 @@ namespace BDArmory.Modules
                     StartCoroutine(ResetMissileThreatDistanceRoutine());
                 }
                 incomingThreatPosition = results.threatPosition;
+                incomingThreatVessel = results.threatVessel;
 
                 if (results.threatVessel)
                 {
@@ -4042,6 +4043,7 @@ namespace BDArmory.Modules
                 FireECM();
 
                 incomingThreatPosition = results.threatPosition;
+                incomingThreatVessel = results.threatVessel;
 
                 if (results.threatVessel)
                 {
@@ -4073,6 +4075,7 @@ namespace BDArmory.Modules
                 StartCoroutine(UnderAttackRoutine());
 
                 incomingThreatPosition = results.threatPosition;
+                incomingThreatVessel = results.threatVessel;
                 if (ufRoutine != null)
                 {
                     StopCoroutine(ufRoutine);
