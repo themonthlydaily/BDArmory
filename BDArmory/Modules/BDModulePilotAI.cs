@@ -1802,32 +1802,27 @@ namespace BDArmory.Modules
                     }
                 }
             }
-
-            if (vData.otherVesselScoringData != null)
+            
+            //check if rammed vessel has been destroyed
+            if ((int) vData.lastPossibleRammingTime > -1 && vessel == vData.rammingVessel && vessel == vData.otherVesselScoringData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
             {
-                //check if rammed vessel has been destroyed
-                if ((int) vData.lastPossibleRammingTime > -1 && vessel == vData.rammingVessel && vessel == vData.otherVesselScoringData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
+                //add parts left on other vessel before ram to vessel score
+                vData.totalDamagedParts += vData.closestVesselPartCountBeforeRam;
+                if (BdComp.whoRammedWho.ContainsKey(vesselName + ":" + vData.rammedVessel.GetName())) BdComp.whoRammedWho[vesselName + ":" + vData.rammedVessel.GetName()] += vData.closestVesselPartCountBeforeRam;
+                else BdComp.whoRammedWho.Add(vesselName + ":" + vData.rammedVessel.GetName(), vData.closestVesselPartCountBeforeRam);
+
+                //add this vessels name to scoring data
+                vData.otherVesselScoringData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.otherVesselScoringData.lastPossibleRammingTime);
+                if (!vData.otherVesselScoringData.everyoneWhoRammedMe.Contains(vesselName))
                 {
-                    //add parts left on other vessel before ram to vessel score
-                    vData.totalDamagedParts += vData.closestVesselPartCountBeforeRam;
-                    if (BdComp.whoRammedWho.ContainsKey(vesselName + ":" + vData.rammedVessel.GetName()))
-                        BdComp.whoRammedWho[vesselName + ":" + vData.rammedVessel.GetName()] += vData.closestVesselPartCountBeforeRam;
-                    else
-                        BdComp.whoRammedWho.Add(vesselName + ":" + vData.rammedVessel.GetName(), vData.closestVesselPartCountBeforeRam);
-
-                    //add this vessels name to scoring data
-                    vData.otherVesselScoringData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.otherVesselScoringData.lastPossibleRammingTime);
-                    if (!vData.otherVesselScoringData.everyoneWhoRammedMe.Contains(vesselName))
-                    {
-                        vData.otherVesselScoringData.everyoneWhoRammedMe.Add(vesselName);
-                    }
-
-                    vData.otherVesselScoringData.lastPersonWhoRammedMe = vesselName;
-
-                    //reset both timers
-                    vData.otherVesselScoringData.lastPossibleRammingTime = -1;
-                    vData.lastPossibleRammingTime = -1;
+                    vData.otherVesselScoringData.everyoneWhoRammedMe.Add(vesselName);
                 }
+
+                vData.otherVesselScoringData.lastPersonWhoRammedMe = vesselName;
+
+                //reset both timers
+                vData.otherVesselScoringData.lastPossibleRammingTime = -1;
+                vData.lastPossibleRammingTime = -1;
             }
 
             //check if this vessel was hit => reset timer  
@@ -1839,7 +1834,7 @@ namespace BDArmory.Modules
             }
 
             //if more than one vessel is within the collision logging radius => check for closest vessel
-            if (vessel == vData.rammingVessel && vessel != vData.otherVesselScoringData.rammingVessel && (int) vData.lastPossibleRammingTime != -1)
+            if (vessel == vData.rammingVessel && vessel != vData.otherVesselScoringData.rammingVessel && (int) vData.lastPossibleRammingTime != -1 && vData.otherVesselScoringData.rammingVessel)
             {
                 //if vessel is closer => change ramming vessel to this vessel
                 if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammingVessel.transform.position))
@@ -1859,6 +1854,24 @@ namespace BDArmory.Modules
                     vData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime);
                     if (!vData.everyoneWhoRammedMe.Contains(vData.rammingVessel.GetName())) { vData.everyoneWhoRammedMe.Add(vData.rammingVessel.GetName()); }
                     vData.lastPersonWhoRammedMe = vData.rammingVessel.GetName();
+
+                    //check if the ramming vessel has been destroyed => award points for it
+                    if (vData.rammingVessel.FindPartModuleImplementing<MissileFire>() == null)
+                    {
+                        BdComp.competitionStatus = vesselName + " RAMMED BY " + vData.rammingVessel.GetName() + " AND LOST: " + Mathf.Abs(vData.partCountBeforeRam - vessel.parts.Count) + " PARTS ";
+                        Debug.Log(vesselName + " RAMMED BY " + vData.rammingVessel.GetDisplayName() + " AND LOST: " + Math.Abs(vData.partCountBeforeRam - vessel.parts.Count) + " PARTS ");
+                        vData.otherVesselScoringData.totalDamagedParts += Mathf.Abs(vData.partCountBeforeRam - vessel.parts.Count);
+                        var damagedParts = Mathf.Abs(vData.partCountBeforeRam - vessel.parts.Count);
+                        if (BdComp.whoRammedWho.ContainsKey(vData.rammingVessel.GetName() + ":" + vesselName))
+                            BdComp.whoRammedWho[vData.rammingVessel.GetName() + ":" + vesselName] += damagedParts;
+                        else
+                            BdComp.whoRammedWho.Add(vData.rammingVessel.GetName() + ":" + vesselName, damagedParts);
+
+                        //reset both timers
+                        vData.lastPossibleRammingTime = -1;
+                        vData.otherVesselScoringData.lastPossibleRammingTime = -1;
+                        
+                    }
                 }
 
                 //this vessel rammed and lost parts are detected on other vessel
