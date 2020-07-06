@@ -1427,6 +1427,12 @@ namespace BDArmory.UI
             ramLoggingRadiusOffset = GUI.HorizontalSlider(SRightRect(line), ramLoggingRadiusOffset, 10f, 100f);
             BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET = (int) ramLoggingRadiusOffset;
             line++;
+            
+                GUI.Label(SLeftRect(line), $"Collision Logging Update Rate:  ({BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE})", leftLabel);
+            float ramLoggingCollisionUpdate = BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE;
+            ramLoggingCollisionUpdate = GUI.HorizontalSlider(SRightRect(line), ramLoggingCollisionUpdate, 0.1f, 1f);
+            BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE = ramLoggingCollisionUpdate;
+            line++;
             line++;
 
             bool origPm = BDArmorySettings.PEACE_MODE;
