@@ -30,6 +30,7 @@ namespace BDArmory.Control
         public double lastPossibleRammingTime = -1;
         public Vessel rammedVessel;
         public Vessel rammingVessel;
+        public ScoringData otherVesselScoringData;
         public bool landedState;
         public double lastLandedTime;
         public double landerKillTimer;
@@ -42,7 +43,7 @@ namespace BDArmory.Control
         public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
         public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
-
+        
         public string LastPersonWhoDamagedMe()
         {
             //check if vessel got rammed
