@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
 using BDArmory.Control;
 using BDArmory.Core;
@@ -11,7 +10,6 @@ using BDArmory.Guidances;
 using BDArmory.Misc;
 using BDArmory.Targeting;
 using BDArmory.UI;
-using Expansions.Missions;
 using UnityEngine;
 
 namespace BDArmory.Modules
@@ -1812,7 +1810,7 @@ namespace BDArmory.Modules
                 else BdComp.whoRammedWho.Add(vesselName + ":" + vData.rammedVessel.GetName(), vData.closestVesselPartCountBeforeRam);
 
                 //add this vessels name to scoring data
-                vData.otherVesselScoringData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.otherVesselScoringData.lastPossibleRammingTime);
+                vData.otherVesselScoringData.lastRammedTime = vData.otherVesselScoringData.lastPossibleRammingTime;
                 if (!vData.otherVesselScoringData.everyoneWhoRammedMe.Contains(vesselName))
                 {
                     vData.otherVesselScoringData.everyoneWhoRammedMe.Add(vesselName);
@@ -1851,7 +1849,7 @@ namespace BDArmory.Modules
                 //this vessel got rammed and lost parts are detected
                 if (vessel.parts.Count < vData.partCountBeforeRam && vData.rammedVessel == vessel)
                 {
-                    vData.lastRammedTime = Planetarium.GetUniversalTime() - (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime);
+                    vData.lastRammedTime = vData.lastPossibleRammingTime;
                     if (!vData.everyoneWhoRammedMe.Contains(vData.rammingVessel.GetName())) { vData.everyoneWhoRammedMe.Add(vData.rammingVessel.GetName()); }
                     vData.lastPersonWhoRammedMe = vData.rammingVessel.GetName();
 
