@@ -24,7 +24,7 @@ namespace BDArmory.Modules
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
-
+ 
         public bool IsExtending
         {
             get { return extending || requestedExtend; }
@@ -1784,7 +1784,9 @@ namespace BDArmory.Modules
                     vData.closestVesselPartCountBeforeRam = closestVessel.parts.Count;
                     vData.lastPossibleRammingTime = Planetarium.GetUniversalTime();
                     vData.otherVesselScoringData = BdComp.Scores[closestVessel.GetName()];
-
+                    vData.closestTimeToCPA = ClosestTimeToCPA(closestVessel, 5);
+                    
+                    
                     //get ramming and rammed vessel (for now this is based off of their angular relativity to their target vessels COM)
                     float angleToTargetVessel = Vector3.Angle(closestVessel.CoM - vessel.transform.position, vessel.transform.up);
                     float closestVesselAngleToTarget = Vector3.Angle(vessel.CoM - closestVessel.transform.position, closestVessel.transform.up);
@@ -1802,7 +1804,7 @@ namespace BDArmory.Modules
             }
             
             //check if rammed vessel has been destroyed
-            if ((int) vData.lastPossibleRammingTime > -1 && vessel == vData.rammingVessel && vessel == vData.otherVesselScoringData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
+            if ((int) vData.lastPossibleRammingTime != -1 && vessel == vData.rammingVessel && vessel == vData.otherVesselScoringData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
             {
                 //add parts left on other vessel before ram to vessel score
                 vData.totalDamagedParts += vData.closestVesselPartCountBeforeRam;
@@ -1834,16 +1836,29 @@ namespace BDArmory.Modules
             //if more than one vessel is within the collision logging radius => check for closest vessel
             if (vessel == vData.rammingVessel && vData.otherVesselScoringData.rammingVessel && vessel != vData.otherVesselScoringData.rammingVessel && (int) vData.lastPossibleRammingTime != -1)
             {
-                //if vessel is closer => change ramming vessel to this vessel
-                if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammingVessel.transform.position))
+                //if this vessel is closer => change ramming vessel to this vessel
+                if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammingVessel.transform.position) && vData.rammedVessel != vData.otherVesselScoringData.rammingVessel)
                 {
                     vData.otherVesselScoringData.rammingVessel = vessel;
+                    vData.otherVesselScoringData.otherVesselScoringData = BdComp.Scores[vesselName];
+                    vData.closestTimeToCPA = ClosestTimeToCPA(closestVessel, 5);
+                    vData.otherVesselScoringData.closestTimeToCPA = vData.closestTimeToCPA;
+
+                }
+                //if other vessel was ramming someone but is closer to this vessel => change rammed vessel to this other vessel and ramming vessel to this vessel
+                else if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammedVessel.transform.position) && vData.rammedVessel == vData.otherVesselScoringData.rammingVessel)
+                {
+                    vData.otherVesselScoringData.rammingVessel = vessel;
+                    vData.otherVesselScoringData.rammedVessel = vData.rammedVessel;
+                    vData.otherVesselScoringData.otherVesselScoringData = BdComp.Scores[vesselName];
+                    vData.closestTimeToCPA = ClosestTimeToCPA(closestVessel, 5);
+                    vData.otherVesselScoringData.closestTimeToCPA = vData.closestTimeToCPA;
                     
                 }
             }
 
             //check for damaged parts
-            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE && (int) vData.lastPossibleRammingTime != -1)
+            if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > vData.closestTimeToCPA + BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE && (int) vData.lastPossibleRammingTime != -1)
             {
 
                 //this vessel got rammed and lost parts are detected
@@ -2215,7 +2230,7 @@ namespace BDArmory.Modules
             { return DynamicDampingMin; }
             { return Mathf.Clamp((float)(Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampingFactor) * DynamicDampingMax), DynamicDampingMin, DynamicDampingMax); }
         }
-
+        
         public override bool IsValidFixedWeaponTarget(Vessel target)
         {
             if (!vessel) return false;
