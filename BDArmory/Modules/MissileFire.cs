@@ -4005,6 +4005,7 @@ namespace BDArmory.Modules
         void UpdateGuardViewScan()
         {
             ViewScanResults results = RadarUtils.GuardScanInDirection(this, transform, guardAngle, guardRange);
+            incomingThreatVessel = null;
 
             if (results.foundMissile)
             {
@@ -4357,18 +4358,18 @@ namespace BDArmory.Modules
         void ToggleTurret()
         {
             using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
-            while (weapon.MoveNext())
-            {
-                if (weapon.Current == null) continue;
-                if (selectedWeapon == null || weapon.Current.GetShortName() != selectedWeapon.GetShortName())
+                while (weapon.MoveNext())
                 {
-                    weapon.Current.DisableWeapon();
+                    if (weapon.Current == null) continue;
+                    if (selectedWeapon == null || weapon.Current.GetShortName() != selectedWeapon.GetShortName())
+                    {
+                        weapon.Current.DisableWeapon();
+                    }
+                    else
+                    {
+                        weapon.Current.EnableWeapon();
+                    }
                 }
-                else
-                {
-                    weapon.Current.EnableWeapon();
-                }
-            }
         }
 
         #endregion Turret
