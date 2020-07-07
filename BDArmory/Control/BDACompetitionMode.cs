@@ -28,6 +28,7 @@ namespace BDArmory.Control
         public double lastFiredTime;
         public double lastRammedTime;
         public double lastPossibleRammingTime = -1;
+        public float closestTimeToCPA;
         public Vessel rammedVessel;
         public Vessel rammingVessel;
         public ScoringData otherVesselScoringData;
