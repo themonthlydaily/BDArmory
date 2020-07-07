@@ -880,20 +880,20 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-                            if (distanceToTarget > 3500f || vessel.srfSpeed < takeOffSpeed)
+                            if (distanceToTarget > 3500f || angleToTarget > 90f || vessel.srfSpeed < takeOffSpeed)
                             {
                                 finalMaxSteer = GetSteerLimiterForSpeedAndPower();
                             }
                             else
                             {
                                 //figuring how much to lead the target's movement to get there after its movement assuming we can manage a constant speed turn
-                                //this only runs if we're not aiming and not that far from the target
+                                //this only runs if we're not aiming and not that far from the target and the target is in front of us
                                 float curVesselMaxAccel = Math.Min(dynDynPresGRecorded * (float)vessel.dynamicPressurekPa, maxAllowedGForce * 9.81f);
                                 if (curVesselMaxAccel > 0)
                                 {
                                     float timeToTurn = (float)vessel.srfSpeed * angleToTarget * Mathf.Deg2Rad / curVesselMaxAccel;
                                     target += v.Velocity() * timeToTurn;
-                                    //target += 0.5f * v.acceleration * timeToTurn * timeToTurn;
+                                    target += 0.5f * v.acceleration * timeToTurn * timeToTurn;
                                 }
                             }
                         }
