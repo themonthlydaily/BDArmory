@@ -10,6 +10,7 @@ using BDArmory.Guidances;
 using BDArmory.Misc;
 using BDArmory.Targeting;
 using BDArmory.UI;
+using Expansions.Missions;
 using UnityEngine;
 
 namespace BDArmory.Modules
@@ -1767,10 +1768,11 @@ namespace BDArmory.Modules
             if (BdComp.Scores.ContainsKey(vesselName))
                 vData = BdComp.Scores[vesselName];
             else return;
+            vData.isRamming = ramming;
 
 
-            //check if this is a vessel 
-            if (closestVessel != null)
+        //check if this is a vessel 
+        if (closestVessel != null)
             {
 
                 //detect planes within collision radius
@@ -1790,15 +1792,31 @@ namespace BDArmory.Modules
                     //get ramming and rammed vessel (for now this is based off of their angular relativity to their target vessels COM)
                     float angleToTargetVessel = Vector3.Angle(closestVessel.CoM - vessel.transform.position, vessel.transform.up);
                     float closestVesselAngleToTarget = Vector3.Angle(vessel.CoM - closestVessel.transform.position, closestVessel.transform.up);
-                    if (angleToTargetVessel < closestVesselAngleToTarget)
+                    if ((!vData.isRamming && !vData.otherVesselScoringData.isRamming) || (vData.isRamming && vData.otherVesselScoringData.isRamming))
                     {
-                        vData.rammingVessel = vessel;
-                        vData.rammedVessel = closestVessel;
+                        if (angleToTargetVessel < closestVesselAngleToTarget)
+                        {
+                            vData.rammingVessel = vessel;
+                            vData.rammedVessel = closestVessel;
+                        }
+                        else
+                        {
+                            vData.rammedVessel = vessel;
+                            vData.rammingVessel = closestVessel;
+                        }
                     }
                     else
                     {
-                        vData.rammedVessel = vessel;
-                        vData.rammingVessel = closestVessel;
+                        if (vData.isRamming && !vData.otherVesselScoringData.isRamming)
+                        {
+                            vData.rammingVessel = vessel;
+                            vData.rammedVessel = closestVessel;
+                        }
+                        else
+                        {
+                            vData.rammedVessel = vessel;
+                            vData.rammingVessel = closestVessel;
+                        }
                     }
                 }
             }
@@ -1839,20 +1857,17 @@ namespace BDArmory.Modules
                 //if this vessel is closer => change ramming vessel to this vessel
                 if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammingVessel.transform.position) && vData.rammedVessel != vData.otherVesselScoringData.rammingVessel)
                 {
-                    vData.otherVesselScoringData.rammingVessel = vessel;
-                    vData.otherVesselScoringData.otherVesselScoringData = BdComp.Scores[vesselName];
-                    vData.closestTimeToCPA = ClosestTimeToCPA(closestVessel, 5f);
-                    vData.otherVesselScoringData.closestTimeToCPA = vData.closestTimeToCPA;
+                    vData.otherVesselScoringData.otherVesselScoringData.lastPossibleRammingTime = -1;
+                    vData.otherVesselScoringData.lastPossibleRammingTime = -1;
+                    vData.lastPossibleRammingTime = -1;
 
                 }
                 //if other vessel was ramming someone but is closer to this vessel => change rammed vessel to this other vessel and ramming vessel to this vessel
                 else if (Vector3.Magnitude(vData.rammedVessel.transform.position - vessel.transform.position) < Vector3.Magnitude(vData.rammedVessel.transform.position - vData.otherVesselScoringData.rammedVessel.transform.position) && vData.rammedVessel == vData.otherVesselScoringData.rammingVessel)
                 {
-                    vData.otherVesselScoringData.rammingVessel = vessel;
-                    vData.otherVesselScoringData.rammedVessel = vData.rammedVessel;
-                    vData.otherVesselScoringData.otherVesselScoringData = BdComp.Scores[vesselName];
-                    vData.closestTimeToCPA = ClosestTimeToCPA(closestVessel, 5f);
-                    vData.otherVesselScoringData.closestTimeToCPA = vData.closestTimeToCPA;
+                    vData.otherVesselScoringData.otherVesselScoringData.lastPossibleRammingTime = -1;
+                    vData.otherVesselScoringData.lastPossibleRammingTime = -1;
+                    vData.lastPossibleRammingTime = -1;
 
                 }
             }
