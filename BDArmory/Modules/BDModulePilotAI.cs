@@ -1771,8 +1771,8 @@ namespace BDArmory.Modules
             vData.isRamming = ramming;
 
 
-        //check if this is a vessel 
-        if (closestVessel != null)
+            //check if this is a vessel 
+            if (closestVessel != null)
             {
 
                 //detect planes within collision radius
@@ -1820,7 +1820,7 @@ namespace BDArmory.Modules
                     }
                 }
             }
-
+            
             //check if rammed vessel has been destroyed
             if ((int)vData.lastPossibleRammingTime != -1 && vessel == vData.rammingVessel && vessel == vData.otherVesselScoringData.rammingVessel && (vData.rammedVessel.FindPartModuleImplementing<MissileFire>() == null || vData.rammedVessel == null))
             {
@@ -1828,29 +1828,29 @@ namespace BDArmory.Modules
                 vData.totalDamagedParts += vData.closestVesselPartCountBeforeRam;
                 if (BdComp.whoRammedWho.ContainsKey(vesselName + ":" + vData.rammedVessel.GetName())) BdComp.whoRammedWho[vesselName + ":" + vData.rammedVessel.GetName()] += vData.closestVesselPartCountBeforeRam;
                 else BdComp.whoRammedWho.Add(vesselName + ":" + vData.rammedVessel.GetName(), vData.closestVesselPartCountBeforeRam);
-
+                        
                 //add this vessels name to scoring data
                 vData.otherVesselScoringData.lastRammedTime = vData.otherVesselScoringData.lastPossibleRammingTime;
                 if (!vData.otherVesselScoringData.everyoneWhoRammedMe.Contains(vesselName))
                 {
                     vData.otherVesselScoringData.everyoneWhoRammedMe.Add(vesselName);
                 }
-
+                
                 vData.otherVesselScoringData.lastPersonWhoRammedMe = vesselName;
-
+                        
                 //reset both timers
                 vData.otherVesselScoringData.lastPossibleRammingTime = -1;
                 vData.lastPossibleRammingTime = -1;
             }
-
+            
             //check if this vessel was hit => reset timer  
             if (vData.rammedVessel == vessel && vData.lastHitTime > vData.lastPossibleRammingTime && (int)vData.lastPossibleRammingTime != -1)
             {
                 vData.lastPossibleRammingTime = -1;
                 vData.otherVesselScoringData.lastPossibleRammingTime = -1;
-
+            
             }
-
+            
             //if more than one vessel is within the collision logging radius => check for closest vessel
             if (vessel == vData.rammingVessel && vData.otherVesselScoringData.rammingVessel && vessel != vData.otherVesselScoringData.rammingVessel && (int)vData.lastPossibleRammingTime != -1)
             {
@@ -1870,8 +1870,13 @@ namespace BDArmory.Modules
                     vData.lastPossibleRammingTime = -1;
 
                 }
+                //if this vessel isn't closer to the target than other vessel => reset ramming timer
+                else
+                {
+                    vData.lastPossibleRammingTime = -1;
+                }
             }
-
+            
             //check for damaged parts
             if (Planetarium.GetUniversalTime() - vData.lastPossibleRammingTime > vData.closestTimeToCPA + BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE && (int)vData.lastPossibleRammingTime != -1)
             {
