@@ -32,6 +32,7 @@ namespace BDArmory.Control
         public Vessel rammedVessel;
         public Vessel rammingVessel;
         public ScoringData otherVesselScoringData;
+        public bool isRamming;
         public bool landedState;
         public double lastLandedTime;
         public double landerKillTimer;
