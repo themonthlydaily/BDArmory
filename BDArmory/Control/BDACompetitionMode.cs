@@ -33,6 +33,8 @@ namespace BDArmory.Control
         public Vessel rammingVessel;
         public ScoringData otherVesselScoringData;
         public bool isRamming;
+        public bool isHeadOn;
+        public bool hasReachedVessel;
         public bool landedState;
         public double lastLandedTime;
         public double landerKillTimer;
@@ -190,7 +192,7 @@ namespace BDArmory.Control
                 else
                 {
                     lastCompetitionStatus = competitionStatus;
-                    lastCompetitionStatusTimer = 5f; // Show for 5s.
+                    lastCompetitionStatusTimer = 10f; // Show for 5s.
                 }
 
                 GUI.Label(cShadowRect, message, cShadowStyle);
