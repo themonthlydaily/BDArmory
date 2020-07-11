@@ -1564,15 +1564,16 @@ namespace BDArmory.Control
             foreach (var vesselName in rammingInformation.Keys)
             {
                 var vessel = rammingInformation[vesselName].vessel;
-                if (vessel == null) continue; // Vessel has been destroyed.
-                var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                if (pilotAI == null) continue; // Pilot AI has been destroyed.
+                var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                 foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                    if (otherVessel == null) continue; // Vessel has been destroyed.
-                    var otherPilotAI = otherVessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                    if (otherPilotAI == null) continue; // Pilot AI has been destroyed.
+                    var otherPilotAI = otherVessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                    if (pilotAI == null || otherPilotAI == null) // One of the vessels or pilot AIs has been destroyed.
+                    {
+                        rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTime; // Set the timeToCPA to maxTime, so that it's not considered for new potential collisions.
+                        continue;
+                    }
                     if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].lastUpdateTime > rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA / 2f) // When half the time is gone, update it.
                     {
                         float timeToCPA = pilotAI.ClosestTimeToCPA(otherPilotAI.vessel, maxTime); // Look up to maxTime ahead.
@@ -1671,7 +1672,7 @@ namespace BDArmory.Control
         // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
         private void AnalyseCollision(EventReport data)
         {
-            float collisionMargin = 1.5f; // * BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET; // Reduced collision margin for the actual collision. It seems we can't just use the sum of radii vs separation as detached parts can shift these apart.
+            float collisionMargin = 2f; // Compare the separation to this factor times the sum of radii to account for inaccuracies in the vessels size and position. Hopefully, this won't include other nearby vessels.
             var vessel = data.origin.vessel;
             if (vessel == null) // Can vessel be null here?
             {
@@ -1681,13 +1682,14 @@ namespace BDArmory.Control
             bool hitVessel = false;
             if (rammingInformation.ContainsKey(vessel.vesselName)) // If the part was attached to a vessel,
             {
+                var destroyedPotentialColliders = new List<string>();
                 foreach (var otherVesselName in rammingInformation[vessel.vesselName].targetInformation.Keys) // for each other vessel,
                     if (rammingInformation[vessel.vesselName].targetInformation[otherVesselName].potentialCollision) // if it was potentially about to collide,
                     {
                         var otherVessel = rammingInformation[vessel.vesselName].targetInformation[otherVesselName].vessel;
-                        if (otherVessel == null) // Vessel that was potentially colliding has been destroyed. Assume it was in the collision.
+                        if (otherVessel == null) // Vessel that was potentially colliding has been destroyed. It's more likely that an alive potential collider is the real collider, so remember it in case there are no living potential colliders.
                         {
-                            rammingInformation[vessel.vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
+                            destroyedPotentialColliders.Add(otherVesselName);
                             continue;
                         }
                         var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
@@ -1699,6 +1701,14 @@ namespace BDArmory.Control
                             hitVessel = true;
                         }
                     }
+                if (!hitVessel) // No other living vessels were potential targets, add in the destroyed ones (if any).
+                {
+                    foreach (var otherVesselName in destroyedPotentialColliders) // Note: if there are more than 1, then multiple craft could be credited with the kill, but this is unlikely.
+                    {
+                        rammingInformation[vessel.vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
+                        hitVessel = true;
+                    }
+                }
                 if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
                 {
                     Debug.Log("DEBUG " + vessel.vesselName + " hit something else.");
@@ -1719,6 +1729,9 @@ namespace BDArmory.Control
             foreach (var vesselName in rammingInformation.Keys)
             {
                 var vessel = rammingInformation[vesselName].vessel;
+                // Look through the other vessels to see which ones are flagged as colliding with this vessel.
+                // If there are multiple, the credit for the collision may go to several vessels.
+                // An alternative would be to first make a list of the colliding vessels and choose the one that's closest, with destroyed vessels being considered furthest away. (This still wouldn't guarantee uniqueness though if multiple destroyed vessels are within range.)
                 foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
                     if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) continue; // Other vessel wasn't involved in a collision with this vessel.
@@ -1841,13 +1854,8 @@ namespace BDArmory.Control
                 }
                 else if (partsCheck[vesselName] > 0)
                 {
-                    Debug.Log("DEBUG Parts Check: " + vesselName + " has been destroyed.");
+                    Debug.Log("DEBUG Parts Check: " + vesselName + " has been destroyed, losing " + partsCheck[vesselName] + " parts.");
                     partsCheck[vesselName] = 0;
-                    // foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys) // DEBUG
-                    // {
-                    //     rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
-                    //     rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false; // Set potential collisions to false.
-                    // }
                 }
             }
         }
