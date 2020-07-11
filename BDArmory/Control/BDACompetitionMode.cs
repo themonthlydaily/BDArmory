@@ -1668,6 +1668,7 @@ namespace BDArmory.Control
         // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
         private void AnalyseCollision(EventReport data)
         {
+            float collisionMargin = BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET / 2f;
             var vessel = data.origin.vessel;
             if (vessel == null) // Can vessel be null here?
             {
@@ -1685,7 +1686,7 @@ namespace BDArmory.Control
                             continue;
                         }
                         var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
-                        if (separation < GetRadius(vessel) + GetRadius(otherVessel)) // and their separation is less than the sum of their radii, // FIXME Is this sufficient? It ought to be.
+                        if (separation < GetRadius(vessel) + GetRadius(otherVessel) + collisionMargin) // and their separation is less than the sum of their radii, // FIXME Is this sufficient? It ought to be.
                         {
                             rammingInformation[vessel.vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
                             rammingInformation[otherVesselName].targetInformation[vessel.vesselName].collisionDetected = true; // The information is symmetric.
@@ -1796,6 +1797,34 @@ namespace BDArmory.Control
             }
         }
 
+        Dictionary<string, int> partsCheck;
+        void CheckForMissingParts()
+        {
+            if (partsCheck == null)
+            {
+                partsCheck = new Dictionary<string, int>();
+                foreach (var vesselName in rammingInformation.Keys)
+                    partsCheck.Add(vesselName, rammingInformation[vesselName].vessel.parts.Count);
+            }
+            foreach (var vesselName in rammingInformation.Keys)
+            {
+                var vessel = rammingInformation[vesselName].vessel;
+                if (vessel != null)
+                {
+                    if (partsCheck[vesselName] != vessel.parts.Count)
+                    {
+                        Debug.Log("DEBUG Parts Check: " + vesselName + " has lost " + (partsCheck[vesselName] - vessel.parts.Count) + " parts.");
+                        partsCheck[vesselName] = vessel.parts.Count;
+                    }
+                }
+                else if (partsCheck[vesselName] > 0)
+                {
+                    Debug.Log("DEBUG Parts Check: " + vesselName + " has been destroyed.");
+                    partsCheck[vesselName] = 0;
+                }
+            }
+        }
+
         // Main calling function to control ramming logging.
         private void LogRamming()
         {
@@ -1804,6 +1833,7 @@ namespace BDArmory.Control
             UpdateTimesToCPAs();
             CheckForPotentialCollisions();
             CheckForDamagedParts();
+            CheckForMissingParts(); // DEBUG
         }
     }
 }
