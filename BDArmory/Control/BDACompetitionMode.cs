@@ -1730,7 +1730,7 @@ namespace BDArmory.Control
             {
                 var vessel = rammingInformation[vesselName].vessel;
                 // Look through the other vessels to see which ones are flagged as colliding with this vessel.
-                // If there are multiple, the credit for the collision may go to several vessels.
+                // If there are multiple, the credit for the collision may go to several vessels, but the parts lost count may depend on the order of the vessels processed.
                 // An alternative would be to first make a list of the colliding vessels and choose the one that's closest, with destroyed vessels being considered furthest away. (This still wouldn't guarantee uniqueness though if multiple destroyed vessels are within range.)
                 foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
