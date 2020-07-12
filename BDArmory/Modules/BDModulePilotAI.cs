@@ -1689,7 +1689,6 @@ namespace BDArmory.Modules
         }
 
         void UpdateGAndAoALimits(FlightCtrlState s)
-
         {
             if (vessel.dynamicPressurekPa <= 0 || vessel.srfSpeed < takeOffSpeed || belowMinAltitude && -Vector3.Dot(vessel.ReferenceTransform.forward, vessel.upAxis) < 0.8f)
             {
