@@ -1886,7 +1886,7 @@ namespace BDArmory.Control
             if (logToCompetitionStatus)
             {
                 if (!headOn)
-                    competitionStatus = rammedVesselName + " got RAMMED by " + rammingVesselName + " and lost " + rammedPartsLost + " parts.";
+                    competitionStatus = rammedVesselName + " got RAMMED by " + rammingVesselName + " and lost " + rammedPartsLost + " parts. (" + rammingVesselName + " lost " + rammingPartsLost + " parts.)";
                 else
                     competitionStatus = rammedVesselName + " and " + rammingVesselName + " RAMMED each other and lost " + rammedPartsLost + " and " + rammingPartsLost + " parts, respectively.";
             }
