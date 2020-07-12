@@ -252,9 +252,9 @@ namespace BDArmory.Modules
         bool useBrakes = true;
         bool regainEnergy = false;
 
-        //collision detection (for other vessels). Look ahead period is vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime
+        //collision detection (for other vessels). Look ahead period is vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime
         float vesselCollisionAvoidancePeriod = 1.5f; // Avoid for 1.5s.
-        int vesselCollisionAvoidanceTickerFreq = 10; // Number of frames between vessel-vessel collision checks.
+        int vesselCollisionAvoidanceTickerFreq = 10; // Number of fixedDeltaTime steps between vessel-vessel collision checks.
         int collisionDetectionTicker = 0;
         float collisionDetectionTimer = 0;
         Vector3 collisionAvoidDirection;
@@ -441,12 +441,13 @@ namespace BDArmory.Modules
             }
         }
 
+        // This is triggered every Time.fixedDeltaTime.
         protected override void AutoPilot(FlightCtrlState s)
         {
             finalMaxSteer = maxSteer;
 
             if (terrainAlertCoolDown > 0)
-                terrainAlertCoolDown -= Time.deltaTime;
+                terrainAlertCoolDown -= Time.fixedDeltaTime;
 
             //default brakes off full throttle
             //s.mainThrottle = 1;
@@ -599,7 +600,7 @@ namespace BDArmory.Modules
 
                     if (Vector3.Angle(targetVessel.vesselTransform.position - vesselTransform.position, vesselTransform.up) > 35) // If target is outside of 35° cone ahead of us then keep flying straight.
                     {
-                        turningTimer += Time.deltaTime;
+                        turningTimer += Time.fixedDeltaTime;
                     }
                     else
                     {
@@ -1604,14 +1605,14 @@ namespace BDArmory.Modules
                 // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
                 Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
                 correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) / 2.0f * maxAngle * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to maxAngle/2 back towards horizontal depending on speed < 120m/s.
-                float alpha = Time.deltaTime;
+                float alpha = Time.fixedDeltaTime * 2f; // 0.04 seems OK.
                 float beta = Mathf.Pow(1.0f - alpha, terrainAlertTickerThreshold);
                 terrainAlertCorrectionDirection = initialCorrection ? terrainAlertCorrectionDirection : (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames (if it's not the initial correction). (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
                 FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
 
                 // Update status and book keeping.
                 currentStatus = "Terrain (" + (int)terrainAlertDistance + "m)";
-                terrainAlertCoolDown = 1.0f; // 1s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
+                terrainAlertCoolDown = 0.5f; // 0.5s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
                 return true;
             }
 
@@ -1651,7 +1652,7 @@ namespace BDArmory.Modules
                     {
                         if (vs.Current == null) continue;
                         if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
-                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.deltaTime, out collisionAvoidDirection)) continue; // Adjust "interval" parameter based on vessel speed.
+                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime, out collisionAvoidDirection)) continue;
                         if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
                         vesselCollision = true;
                         break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
