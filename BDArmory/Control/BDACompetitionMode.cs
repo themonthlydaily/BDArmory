@@ -79,8 +79,6 @@ namespace BDArmory.Control
     {
         public static BDACompetitionMode Instance;
 
-
-
         // keep track of scores, these probably need to be somewhere else
         public Dictionary<string, ScoringData> Scores = new Dictionary<string, ScoringData>();
         //public Dictionary<string, int> Scores = new Dictionary<string, int>();
@@ -1042,6 +1040,7 @@ namespace BDArmory.Control
         // the competition update system
         // cleans up dead vessels, tries to track kills (badly)
         // all of these are based on the vessel name which is probably sub optimal
+        // This is triggered every Time.deltaTime.
         public void DoUpdate()
         {
             // should be called every frame during flight scenes
