@@ -353,6 +353,12 @@ namespace BDArmory.Control
             using (var pilotList = pilots.GetEnumerator())
                 while (pilotList.MoveNext())
                 {
+                    if (pilotList.Current.Value == null)
+                    {
+                        competitionStatus = "Competition: Teams got adjusted during competition start-up, aborting.";
+                        StopCompetition();
+                        yield break;
+                    }
                     leaders.Add(pilotList.Current.Value[0]);
                     pilotList.Current.Value[0].weaponManager.wingCommander.CommandAllFollow();
                 }
@@ -375,7 +381,11 @@ namespace BDArmory.Control
             using (var leader = leaders.GetEnumerator())
                 while (leader.MoveNext())
                     if (leader.Current == null)
+                    {
+                        competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
                         StopCompetition();
+                        yield break;
+                    }
 
             competitionStatus = "Competition: Sending pilots to start position.";
             Vector3 center = Vector3.zero;
@@ -403,22 +413,43 @@ namespace BDArmory.Control
             {
                 waiting = false;
 
+                foreach (var leader in leaders)
+                    if (leader == null)
+                    {
+                        competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
+                        StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
+                        yield break;
+                    }
+
+
                 using (var leader = leaders.GetEnumerator())
                     while (leader.MoveNext())
                     {
-                        if (leader.Current == null)
-                            StopCompetition();
-
                         using (var otherLeader = leaders.GetEnumerator())
                             while (otherLeader.MoveNext())
                             {
                                 if (leader.Current == otherLeader.Current)
                                     continue;
-                                if ((leader.Current.transform.position - otherLeader.Current.transform.position).sqrMagnitude < sqrDistance)
-                                    waiting = true;
+                                try // Somehow, if a vessel gets destroyed during competition start, the following can throw a null reference exception despite checking for nulls!
+                                {
+                                    if ((leader.Current.transform.position - otherLeader.Current.transform.position).sqrMagnitude < sqrDistance)
+                                        waiting = true;
+                                }
+                                catch
+                                {
+                                    competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
+                                    StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
+                                    yield break;
+                                }
                             }
 
                         // Increase the distance for large teams
+                        if (!pilots.ContainsKey(leader.Current.weaponManager.Team))
+                        {
+                            competitionStatus = "Competition: The teams were changed during competition start-up, aborting.";
+                            StopCompetition();
+                            yield break;
+                        }
                         var sqrTeamDistance = (800 + 100 * pilots[leader.Current.weaponManager.Team].Count) * (800 + 100 * pilots[leader.Current.weaponManager.Team].Count);
                         using (var pilot = pilots[leader.Current.weaponManager.Team].GetEnumerator())
                             while (pilot.MoveNext())
@@ -434,6 +465,22 @@ namespace BDArmory.Control
             }
 
             //start the match
+            foreach (var teamPilots in pilots.Values)
+            {
+                if (teamPilots == null)
+                {
+                    competitionStatus = "Competition: Teams have been changed during competition start-up, aborting.";
+                    StopCompetition();
+                    yield break;
+                }
+                foreach (var pilot in teamPilots)
+                    if (pilot == null)
+                    {
+                        competitionStatus = "Competition: A pilot has disappeared from team during competition start-up, aborting.";
+                        StopCompetition(); // Check that the team pilots haven't been changed during the competition startup.
+                        yield break;
+                    }
+            }
             using (var teamPilots = pilots.GetEnumerator())
                 while (teamPilots.MoveNext())
                     using (var pilot = teamPilots.Current.Value.GetEnumerator())
@@ -1598,7 +1645,7 @@ namespace BDArmory.Control
         }
 
         // Get the upcoming collisions ordered by predicted separation^2 (for Scott to adjust camera views).
-        public IOrderedEnumerable<KeyValuePair<Tuple<string, string>, Tuple<float, float>>> UpcomingCollisions(float distanceThreshold, bool sortByDistance=true)
+        public IOrderedEnumerable<KeyValuePair<Tuple<string, string>, Tuple<float, float>>> UpcomingCollisions(float distanceThreshold, bool sortByDistance = true)
         {
             var upcomingCollisions = new Dictionary<Tuple<string, string>, Tuple<float, float>>();
             foreach (var vesselName in rammingInformation.Keys)

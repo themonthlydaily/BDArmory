@@ -34,7 +34,6 @@ namespace BDArmory.UI
         private double lastCameraCheck = 0;
         private bool lostActiveVessel = false;
         private Vessel lastActiveVessel = null;
-        private float lastVesselScore = 100000;
         private float updateTimer = 0;
 
 
@@ -335,7 +334,7 @@ namespace BDArmory.UI
 
             if (GUI.Button(new Rect(_windowWidth - 2 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "T", _freeForAll ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
-                // switch everyon onto different teams
+                // switch everyone onto different teams
                 _teamSwitchDirty = true;
                 _wmToSwitchTeam = null;
             }
@@ -672,7 +671,6 @@ namespace BDArmory.UI
                     {
                         // active vessel was changed 
                         lastCameraSwitch = Planetarium.GetUniversalTime();
-                        lastVesselScore = 1000000;
                         lostActiveVessel = false;
                     }
                 }
