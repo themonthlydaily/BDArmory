@@ -21,21 +21,12 @@ namespace BDArmory.Control
     {
         public int Score;
         public int PinataHits;
-        public int DeathOrder;
-        public int totalDamagedParts = 0;
+        public int totalDamagedPartsDueToRamming = 0;
         public string lastPersonWhoHitMe;
         public string lastPersonWhoRammedMe;
         public double lastHitTime;
         public double lastFiredTime;
         public double lastRammedTime;
-        public double lastPossibleRammingTime = -1;
-        public float closestTimeToCPA;
-        public Vessel rammedVessel;
-        public Vessel rammingVessel;
-        public ScoringData otherVesselScoringData;
-        public bool isRamming;
-        public bool isHeadOn;
-        public bool hasReachedVessel;
         public bool landedState;
         public double lastLandedTime;
         public double landerKillTimer;
@@ -43,9 +34,6 @@ namespace BDArmory.Control
         public double AverageAltitude;
         public int averageCount;
         public int previousPartCount;
-        public int partCountBeforeRam;
-        public int closestVesselPartCountBeforeRam;
-        public string debugState;
         public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
         public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
@@ -1062,6 +1050,10 @@ namespace BDArmory.Control
         {
             // should be called every frame during flight scenes
             if (competitionStartTime < 0) return;
+            // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
+            // if (competitionIsActive)
+            //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))
+            //         Debug.Log("DEBUG Upcoming potential collision between " + upcomingCollision.Key.Item1 + " and " + upcomingCollision.Key.Item2 + " at distance " + Mathf.Sqrt(upcomingCollision.Value.Item1) + "m in " + upcomingCollision.Value.Item2 + "s.");
             if (Planetarium.GetUniversalTime() < nextUpdateTick)
                 return;
             int updateTickLength = 2;
@@ -1568,9 +1560,9 @@ namespace BDArmory.Control
         }
 
         // Update the ramming information dictionary with expected times to closest point of approach.
+        private float maxTimeToCPA = 5f; // Don't look more than 5s ahead.
         public void UpdateTimesToCPAs()
         {
-            float maxTime = 5f;
             double currentTime = Planetarium.GetUniversalTime();
             foreach (var vesselName in rammingInformation.Keys)
             {
@@ -1583,18 +1575,18 @@ namespace BDArmory.Control
                     var otherPilotAI = otherVessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                     if (pilotAI == null || otherPilotAI == null) // One of the vessels or pilot AIs has been destroyed.
                     {
-                        rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTime; // Set the timeToCPA to maxTime, so that it's not considered for new potential collisions.
-                        rammingInformation[otherVesselName].targetInformation[vesselName].timeToCPA = maxTime; // Set the timeToCPA to maxTime, so that it's not considered for new potential collisions.
+                        rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTimeToCPA; // Set the timeToCPA to maxTimeToCPA, so that it's not considered for new potential collisions.
+                        rammingInformation[otherVesselName].targetInformation[vesselName].timeToCPA = maxTimeToCPA; // Set the timeToCPA to maxTimeToCPA, so that it's not considered for new potential collisions.
                     }
                     else
                     {
                         if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].lastUpdateTime > rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA / 2f) // When half the time is gone, update it.
                         {
-                            float timeToCPA = pilotAI.ClosestTimeToCPA(otherPilotAI.vessel, maxTime); // Look up to maxTime ahead.
-                            if (timeToCPA > 0f && timeToCPA < maxTime) // If the closest approach is within the next maxTime, log it.
+                            float timeToCPA = pilotAI.ClosestTimeToCPA(otherPilotAI.vessel, maxTimeToCPA); // Look up to maxTimeToCPA ahead.
+                            if (timeToCPA > 0f && timeToCPA < maxTimeToCPA) // If the closest approach is within the next maxTimeToCPA, log it.
                                 rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = timeToCPA;
                             else // Otherwise set it to the max value.
-                                rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTime;
+                                rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTimeToCPA;
                             // This is symmetric, so update the symmetric value and set the lastUpdateTime for both so that we don't bother calculating the same thing twice.
                             rammingInformation[otherVesselName].targetInformation[vesselName].timeToCPA = rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA;
                             rammingInformation[vesselName].targetInformation[otherVesselName].lastUpdateTime = currentTime;
@@ -1605,10 +1597,29 @@ namespace BDArmory.Control
             }
         }
 
+        // Get the upcoming collisions ordered by predicted separation^2 (for Scott to adjust camera views).
+        public IOrderedEnumerable<KeyValuePair<Tuple<string, string>, Tuple<float, float>>> UpcomingCollisions(float distanceThreshold, bool sortByDistance=true)
+        {
+            var upcomingCollisions = new Dictionary<Tuple<string, string>, Tuple<float, float>>();
+            foreach (var vesselName in rammingInformation.Keys)
+                foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                    if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && String.Compare(vesselName, otherVesselName) < 0)
+                        if (rammingInformation[vesselName].vessel != null && rammingInformation[otherVesselName].vessel != null)
+                        {
+                            var predictedSqrSeparation = Vector3.SqrMagnitude(rammingInformation[vesselName].vessel.CoM - rammingInformation[otherVesselName].vessel.CoM);
+                            if (predictedSqrSeparation < distanceThreshold * distanceThreshold)
+                                upcomingCollisions.Add(
+                                    new Tuple<string, string>(vesselName, otherVesselName),
+                                    new Tuple<float, float>(predictedSqrSeparation, rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA)
+                                );
+                        }
+            return upcomingCollisions.OrderBy(d => sortByDistance ? d.Value.Item1 : d.Value.Item2);
+        }
+
         // Check for potential collisions in the near future and update data structures as necessary.
+        private float potentialCollisionDetectionTime = 1f; // 1s ought to be plenty.
         private void CheckForPotentialCollisions()
         {
-            float detectionTime = BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE;
             float collisionMargin = 4f; // Sum of radii is less than this factor times the separation.
             double currentTime = Planetarium.GetUniversalTime();
             foreach (var vesselName in rammingInformation.Keys)
@@ -1619,7 +1630,7 @@ namespace BDArmory.Control
                 Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                    if (rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < detectionTime) // Closest point of approach is within the detectionTime.
+                    if (rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < potentialCollisionDetectionTime) // Closest point of approach is within the detection time.
                     {
                         if (vessel != null && otherVessel != null) // If one of the vessels has been destroyed, don't calculate new potential collisions, but allow the timer on existing potential collisions to run out so that collision analysis can still use it.
                         {
@@ -1664,7 +1675,7 @@ namespace BDArmory.Control
                             }
                         }
                     }
-                    else if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > 2f * detectionTime) // Potential collision is no longer relevant.
+                    else if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > 2f * potentialCollisionDetectionTime) // Potential collision is no longer relevant.
                     {
                         rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false;
                         rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false;
@@ -1755,7 +1766,7 @@ namespace BDArmory.Control
                 }
                 if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
                 {
-                    if(BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] " + vesselName + " hit something else.");
+                    if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] " + vesselName + " hit something else.");
                     foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                     {
                         rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
@@ -1782,7 +1793,7 @@ namespace BDArmory.Control
                 foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
                     if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) continue; // Other vessel wasn't involved in a collision with this vessel.
-                    if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE) // We've waited long enough for the parts that are going to explode to explode.
+                    if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > potentialCollisionDetectionTime) // We've waited long enough for the parts that are going to explode to explode.
                     {
                         // First, check the vessels marked as colliding with this vessel for lost parts. If at least one other lost parts or was destroyed, exclude any that didn't lose parts (set collisionDetected to false).
                         bool someOneElseLostParts = false;
@@ -1838,7 +1849,7 @@ namespace BDArmory.Control
                 {
                     var otherVesselName = otherVesselNameKVP.Key;
                     if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) continue; // Other vessel wasn't involved in a collision with this vessel.
-                    if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE) // We've waited long enough for the parts that are going to explode to explode.
+                    if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > potentialCollisionDetectionTime) // We've waited long enough for the parts that are going to explode to explode.
                     {
                         var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
                         var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>();
@@ -1928,22 +1939,31 @@ namespace BDArmory.Control
         // Write ramming information to the Scores dictionary.
         private void LogRammingToScoreData(string rammingVesselName, string rammedVesselName, double timeOfCollision, int partsLost)
         {
+            // Log attributes for the ramming vessel.
             if (!Scores.ContainsKey(rammingVesselName))
             {
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] Scores does not contain the key " + rammingVesselName);
                 return;
             }
             var vData = Scores[rammingVesselName];
-            vData.totalDamagedParts += partsLost;
+            vData.totalDamagedPartsDueToRamming += partsLost;
             var key = rammingVesselName + ":" + rammedVesselName;
             if (whoRammedWho.ContainsKey(key))
                 whoRammedWho[key] += partsLost;
             else
                 whoRammedWho.Add(key, partsLost);
-            vData.lastRammedTime = timeOfCollision;
-            vData.lastPersonWhoRammedMe = rammedVesselName;
-            vData.everyoneWhoRammedMe.Add(rammedVesselName);
-            vData.everyoneWhoDamagedMe.Add(rammedVesselName);
+
+            // Log attributes for the rammed vessel.
+            if (!Scores.ContainsKey(rammedVesselName))
+            {
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] Scores does not contain the key " + rammedVesselName);
+                return;
+            }
+            var tData = Scores[rammedVesselName];
+            tData.lastRammedTime = timeOfCollision;
+            tData.lastPersonWhoRammedMe = rammingVesselName;
+            tData.everyoneWhoRammedMe.Add(rammingVesselName);
+            tData.everyoneWhoDamagedMe.Add(rammingVesselName);
         }
 
         Dictionary<string, int> partsCheck;
