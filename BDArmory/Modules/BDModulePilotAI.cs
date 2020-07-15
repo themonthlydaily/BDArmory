@@ -153,7 +153,7 @@ namespace BDArmory.Modules
         public string PitchLabel = "";
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitch", advancedTweakable = true),
-         UI_Toggle(scene = UI_Scene.All, enabledText = "Enabled", disabledText = "Disabled")]
+         UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled")]
         public bool dynamicDampingPitch;
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitchMin", advancedTweakable = true), //Dynamic steer damping Clamp min
@@ -173,7 +173,7 @@ namespace BDArmory.Modules
         public string YawLabel = "";
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYaw", advancedTweakable = true),
-            UI_Toggle(scene = UI_Scene.All, enabledText = "Enabled", disabledText = "Disabled")]
+            UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled")]
         public bool dynamicDampingYaw;
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYawMin", advancedTweakable = true), //Dynamic steer damping Clamp min
@@ -193,7 +193,7 @@ namespace BDArmory.Modules
         public string RollLabel = "";
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRoll", advancedTweakable = true),
-            UI_Toggle(scene = UI_Scene.All, enabledText = "Enabled", disabledText = "Disabled")]
+            UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled")]
         public bool dynamicDampingRoll;
 
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRollMin", advancedTweakable = true), //Dynamic steer damping Clamp min
@@ -209,12 +209,12 @@ namespace BDArmory.Modules
         public float dynamicSteerDampingRollFactor = 10;
         
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicSteerDamping", advancedTweakable = true), 
-         UI_Toggle(scene = UI_Scene.All, disabledText = "Disabled", enabledText = "Enabled")] //Toggle Dynamic Steer Damping
+         UI_Toggle(scene = UI_Scene.All, disabledText = "#LOC_BDArmory_Disabled", enabledText = "#LOC_BDArmory_Enabled")] //Toggle Dynamic Steer Damping
         public bool dynamicSteerDamping;
         private bool dynamicDamping;
         
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_3AxisDynamicSteerDamping", advancedTweakable = true),
-         UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All)]
+         UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         public bool CustomDynamicAxisFields;
         private bool CustomDynamicAxisField;
         
@@ -223,11 +223,11 @@ namespace BDArmory.Modules
         public bool ClockwiseOrbit = true;
         
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendToggle", advancedTweakable = true),//Extend Toggle
-            UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool canExtend = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AllowRamming", advancedTweakable = true), //Toggle Allow Ramming
-         UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
+         UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool allowRamming = true; // Allow switching to ramming mode.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning", advancedTweakable = true),//Unclamp tuning 
