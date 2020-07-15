@@ -116,108 +116,105 @@ namespace BDArmory.Modules
         float maxAllowedCosAoA;
         float lastAllowedAoA;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Extend Multiplier", advancedTweakable = true), //Extend Distance Multiplier
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendMultiplier", advancedTweakable = true), //Extend Distance Multiplier
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float extendMult = 1f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Evasion Multiplier", advancedTweakable = true), //Evade Distance Multiplier
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOD_BDArmory_EvasionMultiplier", advancedTweakable = true), //Evade Distance Multiplier
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float evasionMult = 1f;
         
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_turnRadiusTwiddleFactors", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactors", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
          UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
         
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Control Surface Lag", advancedTweakable = true),//Control surface lag (for getting an accurate intercept for ramming).
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ControlSurfaceLag", advancedTweakable = true),//Control surface lag (for getting an accurate intercept for ramming).
          UI_FloatRange(minValue = 0f, maxValue = 0.2f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
         
         //dynamic Damping
-        [KSPField(guiName = "Dynamic Damping"), UI_Label(scene = UI_Scene.All)]
+        [KSPField(guiName = "#LOC_BDArmory_DynamicDamping"), UI_Label(scene = UI_Scene.All)]
         public string DynamicDampingLabel = "";
         
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Damping Min", advancedTweakable = true), //Dynamic steer damping Clamp min
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicDampingMin", advancedTweakable = true), //Dynamic steer damping Clamp min
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingMin = 1f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Damping Max", advancedTweakable = true), //Dynamic steer damping Clamp max
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicDampingMax", advancedTweakable = true), //Dynamic steer damping Clamp max
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingMax = 8f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dyn Steer Damping Factor", advancedTweakable = true),
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicDampingFactor", advancedTweakable = true),
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingFactor = 10;
 
         //dynamic Pitch
-        [KSPField(guiName = "Dynamic Pitch"), UI_Label(scene = UI_Scene.All)]
+        [KSPField(guiName = "#LOC_BDArmory_DynamicDampingPitch"), UI_Label(scene = UI_Scene.All)]
         public string PitchLabel = "";
         
-        [KSPField(isPersistant = true, guiName = "Dynamic Pitch", advancedTweakable = true),
-         UI_Toggle(scene = UI_Scene.All, enabledText = "enabled", disabledText = "disabled")]
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitch", advancedTweakable = true),
+         UI_Toggle(scene = UI_Scene.All, enabledText = "Enabled", disabledText = "Disabled")]
         public bool dynamicDampingPitch;
         
-        [KSPField(isPersistant = true, guiName = "Dynamic Damping Pitch Min", advancedTweakable = true), //Dynamic steer damping Clamp min
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitchMin", advancedTweakable = true), //Dynamic steer damping Clamp min
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingPitchMin = 1f;
 
-        [KSPField(isPersistant = true, guiName = "Dynamic Damping Pitch Max", advancedTweakable = true), //Dynamic steer damping Clamp max
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitchMax", advancedTweakable = true), //Dynamic steer damping Clamp max
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingPitchMax = 8f;
 
-        [KSPField(isPersistant = true, guiName = "Dyn Steer Damping Pitch Factor", advancedTweakable = true),
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitchFactor", advancedTweakable = true),
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingPitchFactor = 10;
         
         //dynamic Yaw
-        [KSPField(guiName = "Dynamic Yaw"), UI_Label(scene = UI_Scene.All)]
+        [KSPField(guiName = "#LOC_BDArmory_DynamicDampingYaw"), UI_Label(scene = UI_Scene.All)]
         public string YawLabel = "";
         
-        [KSPField(isPersistant = true, guiName = "Dynamic Yaw", advancedTweakable = true),
-            UI_Toggle(scene = UI_Scene.All, enabledText = "enabled", disabledText = "disabled")]
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYaw", advancedTweakable = true),
+            UI_Toggle(scene = UI_Scene.All, enabledText = "Enabled", disabledText = "Disabled")]
         public bool dynamicDampingYaw;
         
-        [KSPField(isPersistant = true, guiName = "Dynamic Damping Yaw Min", advancedTweakable = true), //Dynamic steer damping Clamp min
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYawMin", advancedTweakable = true), //Dynamic steer damping Clamp min
             UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingYawMin = 1f;
 
-        [KSPField(isPersistant = true, guiName = "Dynamic Damping Yaw Max", advancedTweakable = true), //Dynamic steer damping Clamp max
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYawMax", advancedTweakable = true), //Dynamic steer damping Clamp max
             UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingYawMax = 8f;
 
-        [KSPField(isPersistant = true, guiName = "Dyn Steer Damping Yaw Factor", advancedTweakable = true),
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYawFactor", advancedTweakable = true),
             UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingYawFactor = 10;
 
         //dynamic Roll
-        [KSPField(guiName = "Dynamic Roll"), UI_Label(scene = UI_Scene.All)]
+        [KSPField(guiName = "#LOC_BDArmory_DynamicDampingRoll"), UI_Label(scene = UI_Scene.All)]
         public string RollLabel = "";
         
-        [KSPField(isPersistant = true, guiName = "Dynamic Roll", advancedTweakable = true),
-            UI_Toggle(scene = UI_Scene.All, enabledText = "enabled", disabledText = "disabled")]
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRoll", advancedTweakable = true),
+            UI_Toggle(scene = UI_Scene.All, enabledText = "Enabled", disabledText = "Disabled")]
         public bool dynamicDampingRoll;
 
-        [KSPField(isPersistant = true, guiName = "Dynamic Damping Roll Min", advancedTweakable = true), //Dynamic steer damping Clamp min
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRollMin", advancedTweakable = true), //Dynamic steer damping Clamp min
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingRollMin = 1f;
 
-        [KSPField(isPersistant = true, guiName = "Dynamic Damping Roll Max", advancedTweakable = true), //Dynamic steer damping Clamp max
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRollMax", advancedTweakable = true), //Dynamic steer damping Clamp max
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float DynamicDampingRollMax = 8f;
 
-        [KSPField(isPersistant = true, guiName = "Dyn Steer Damping Roll Factor", advancedTweakable = true), //Dynamic steer dampening Factor
+        [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRollFactor", advancedTweakable = true), //Dynamic steer dampening Factor
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingRollFactor = 10;
         
-        [KSPField(guiName = "Dynamic Damping toggle", guiActive = true), UI_Label(scene = UI_Scene.All)]
-        public string dynamicDampingToggleLabel = "";
-        
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping", advancedTweakable = true), 
-         UI_Toggle(scene = UI_Scene.All, disabledText = "disabled", enabledText = "enabled")] //Toggle Dynamic Steer Damping
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicSteerDamping", advancedTweakable = true), 
+         UI_Toggle(scene = UI_Scene.All, disabledText = "Disabled", enabledText = "Enabled")] //Toggle Dynamic Steer Damping
         public bool dynamicSteerDamping;
         private bool dynamicDamping;
         
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Custom Dynamic Dampening Axis Fields", advancedTweakable = true),
-         UI_Toggle(enabledText = "enabled", disabledText = "disabled", scene = UI_Scene.All)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_3AxisDynamicSteerDamping", advancedTweakable = true),
+         UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All)]
         public bool CustomDynamicAxisFields;
         private bool CustomDynamicAxisField;
         
@@ -225,11 +222,11 @@ namespace BDArmory.Modules
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
         public bool ClockwiseOrbit = true;
         
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Extend Toggle", advancedTweakable = true),//Extend Toggle
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendToggle", advancedTweakable = true),//Extend Toggle
             UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
         public bool canExtend = true;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Allow Ramming", advancedTweakable = true), //Toggle Allow Ramming
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AllowRamming", advancedTweakable = true), //Toggle Allow Ramming
          UI_Toggle(enabledText = "Enabled", disabledText = "Disabled", scene = UI_Scene.All),]
         public bool allowRamming = true; // Allow switching to ramming mode.
 
