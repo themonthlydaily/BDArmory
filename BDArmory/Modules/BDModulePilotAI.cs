@@ -120,7 +120,7 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float extendMult = 1f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOD_BDArmory_EvasionMultiplier", advancedTweakable = true), //Evade Distance Multiplier
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMultiplier", advancedTweakable = true), //Evade Distance Multiplier
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float evasionMult = 1f;
         
@@ -154,7 +154,7 @@ namespace BDArmory.Modules
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitch", advancedTweakable = true),
          UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled")]
-        public bool dynamicDampingPitch;
+        public bool dynamicDampingPitch = true;
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingPitchMin", advancedTweakable = true), //Dynamic steer damping Clamp min
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
@@ -174,7 +174,7 @@ namespace BDArmory.Modules
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYaw", advancedTweakable = true),
             UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled")]
-        public bool dynamicDampingYaw;
+        public bool dynamicDampingYaw = true;
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingYawMin", advancedTweakable = true), //Dynamic steer damping Clamp min
             UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
@@ -194,7 +194,7 @@ namespace BDArmory.Modules
         
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRoll", advancedTweakable = true),
             UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled")]
-        public bool dynamicDampingRoll;
+        public bool dynamicDampingRoll = true;
 
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_DynamicDampingRollMin", advancedTweakable = true), //Dynamic steer damping Clamp min
          UI_FloatRange(minValue = 1f, maxValue = 8f, stepIncrement = 0.5f, scene = UI_Scene.All)]
@@ -210,13 +210,13 @@ namespace BDArmory.Modules
         
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DynamicSteerDamping", advancedTweakable = true), 
          UI_Toggle(scene = UI_Scene.All, disabledText = "#LOC_BDArmory_Disabled", enabledText = "#LOC_BDArmory_Enabled")] //Toggle Dynamic Steer Damping
-        public bool dynamicSteerDamping;
-        private bool dynamicDamping;
+        public bool dynamicSteerDamping = false;
+        private bool dynamicDamping = false;
         
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_3AxisDynamicSteerDamping", advancedTweakable = true),
          UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
-        public bool CustomDynamicAxisFields;
-        private bool CustomDynamicAxisField;
+        public bool CustomDynamicAxisFields = false;
+        private bool CustomDynamicAxisField = false;
         
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -553,10 +553,10 @@ namespace BDArmory.Modules
             SetSliderClamps("DynamicDampingPitchMin", "DynamicDampingPitchMax");
             SetSliderClamps("DynamicDampingYawMin", "DynamicDampingYawMax");
             SetSliderClamps("DynamicDampingRollMin", "DynamicDampingRollMax");
-            HideCustomAxisFields();
-            InitSteerDamping();
             dynamicDamping = dynamicSteerDamping;
             CustomDynamicAxisField = CustomDynamicAxisFields;
+            HideCustomAxisFields();
+            InitSteerDamping();
         }
 
         public override void ActivatePilot()
@@ -626,8 +626,8 @@ namespace BDArmory.Modules
             //hide custom dynamic axis fields when it isn't toggled
             if (CustomDynamicAxisFields != CustomDynamicAxisField)
             {
-                HideCustomAxisFields();
                 CustomDynamicAxisField = CustomDynamicAxisFields;
+                HideCustomAxisFields();
             }
         }
 
@@ -743,7 +743,7 @@ namespace BDArmory.Modules
 
             if (evasiveTimer > 0 || (weaponManager && evasionMult > 0f && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.            {
             {
-                if (evasiveTimer < 1f * evasionMult)
+                if (evasiveTimer < 3f * evasionMult)
                 {
                     threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
 
