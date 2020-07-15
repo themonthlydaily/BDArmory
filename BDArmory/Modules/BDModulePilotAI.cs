@@ -65,8 +65,6 @@ namespace BDArmory.Modules
 
         Vector3 upDirection = Vector3.up;
 
-        [KSPField(isPersistant = true)] public bool CustomDynamicAxisFields;
-        
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude"), //Default Alt.
          UI_FloatRange(minValue = 150f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
         public float defaultAltitude = 1500;
@@ -147,7 +145,7 @@ namespace BDArmory.Modules
         public float DynamicDampingMax = 8f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dyn Steer Damping Factor", advancedTweakable = true),
-         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingFactor = 10;
 
         //dynamic Pitch
@@ -167,7 +165,7 @@ namespace BDArmory.Modules
         public float DynamicDampingPitchMax = 8f;
 
         [KSPField(isPersistant = true, guiName = "Dyn Steer Damping Pitch Factor", advancedTweakable = true),
-         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingPitchFactor = 10;
         
         //dynamic Yaw
@@ -187,7 +185,7 @@ namespace BDArmory.Modules
         public float DynamicDampingYawMax = 8f;
 
         [KSPField(isPersistant = true, guiName = "Dyn Steer Damping Yaw Factor", advancedTweakable = true),
-            UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingYawFactor = 10;
 
         //dynamic Roll
@@ -207,7 +205,7 @@ namespace BDArmory.Modules
         public float DynamicDampingRollMax = 8f;
 
         [KSPField(isPersistant = true, guiName = "Dyn Steer Damping Roll Factor", advancedTweakable = true), //Dynamic steer dampening Factor
-         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float dynamicSteerDampingRollFactor = 10;
         
         [KSPField(guiName = "Dynamic Damping toggle", guiActive = true), UI_Label(scene = UI_Scene.All)]
@@ -216,6 +214,12 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Dynamic Steer Damping", advancedTweakable = true), 
          UI_Toggle(scene = UI_Scene.All, disabledText = "disabled", enabledText = "enabled")] //Toggle Dynamic Steer Damping
         public bool dynamicSteerDamping;
+        private bool dynamicDamping;
+        
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Custom Dynamic Dampening Axis Fields", advancedTweakable = true),
+         UI_Toggle(enabledText = "enabled", disabledText = "disabled", scene = UI_Scene.All)]
+        public bool CustomDynamicAxisFields;
+        private bool CustomDynamicAxisField;
         
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -272,13 +276,7 @@ namespace BDArmory.Modules
             UI_Toggle(enabledText = "#LOC_BDArmory_On", disabledText = "#LOC_BDArmory_Off")]//On--Off
         public bool standbyMode = false;
 
-        [KSPEvent(isPersistent = true, guiActive = true, guiActiveEditor = true, guiName = "Custom Dynamic Dampening Axis Fields", active = true, advancedTweakable = true)]
-        public void DynCustomAxisFields()
-        {
-            CustomDynamicAxisFields = !CustomDynamicAxisFields;
-            InitDynamicSteerDamping();
-        }
-
+        
         //manueuverability and g loading data
         // float maxDynPresGRecorded;
         float dynDynPresGRecorded = 1.0f; // Start at reasonable non-zero value.
@@ -457,14 +455,9 @@ namespace BDArmory.Modules
             if (DynamicDampingRollMin > DynamicDampingRollMax) { DynamicDampingRollMin = DynamicDampingRollMax; }
         }
 
-        public void InitDynamicSteerDamping()
+        public void HideCustomAxisFields()
         {
-            
-            var DynamicDampingLabel = Fields["DynamicDampingLabel"];
-            var DampingMin = Fields["DynamicDampingMin"];
-            var DampingMax = Fields["DynamicDampingMax"];
-            var DampingFactor = Fields["dynamicSteerDampingFactor"];
-            
+
             var DynamicPitchLabel = Fields["PitchLabel"]; 
             var DynamicDampingPitch = Fields["dynamicDampingPitch"];
             var DynamicDampingPitchMaxField = Fields["DynamicDampingPitchMax"];
@@ -484,53 +477,66 @@ namespace BDArmory.Modules
             var DynamicDampingRollMaxField = Fields["DynamicDampingRollMax"];
             var DynamicDampingRollMinField = Fields["DynamicDampingRollMin"];
             var DynamicDampingRollFactorField = Fields["dynamicSteerDampingRollFactor"];
-           
-            
-            DynamicDampingLabel.guiActive = !CustomDynamicAxisFields;
-            DynamicDampingLabel.guiActiveEditor = !CustomDynamicAxisFields;
-            DampingMin.guiActive = !CustomDynamicAxisFields;
-            DampingMin.guiActiveEditor = !CustomDynamicAxisFields;
-            DampingMax.guiActive = !CustomDynamicAxisFields;
-            DampingMax.guiActiveEditor = !CustomDynamicAxisFields;
-            DampingFactor.guiActive = !CustomDynamicAxisFields;
-            DampingFactor.guiActiveEditor = !CustomDynamicAxisFields;
-            
-            
-            DynamicPitchLabel.guiActive = CustomDynamicAxisFields;
-            DynamicPitchLabel.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingPitch.guiActive = CustomDynamicAxisFields; 
-            DynamicDampingPitch.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingPitchMinField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingPitchMinField.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingPitchMaxField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingPitchMaxField.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingPitchFactorField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingPitchFactorField.guiActiveEditor = CustomDynamicAxisFields;
+
+            DynamicPitchLabel.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicPitchLabel.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingPitch.guiActive = CustomDynamicAxisFields && dynamicSteerDamping; 
+            DynamicDampingPitch.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingPitchMinField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingPitchMinField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingPitchMaxField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingPitchMaxField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingPitchFactorField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingPitchFactorField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
             
 
-            DynamicYawLabel.guiActive = CustomDynamicAxisFields;
-            DynamicYawLabel.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingYaw.guiActive = CustomDynamicAxisFields; 
-            DynamicDampingYaw.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingYawMinField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingYawMinField.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingYawMaxField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingYawMaxField.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingYawFactorField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingYawFactorField.guiActiveEditor = CustomDynamicAxisFields;
+            DynamicYawLabel.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicYawLabel.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingYaw.guiActive = CustomDynamicAxisFields && dynamicSteerDamping; 
+            DynamicDampingYaw.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingYawMinField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingYawMinField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingYawMaxField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingYawMaxField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingYawFactorField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingYawFactorField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
             
 
-            DynamicRollLabel.guiActive = CustomDynamicAxisFields;
-            DynamicRollLabel.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingRoll.guiActive = CustomDynamicAxisFields;
-            DynamicDampingRoll.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingRollMinField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingRollMinField.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingRollMaxField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingRollMaxField.guiActiveEditor = CustomDynamicAxisFields;
-            DynamicDampingRollFactorField.guiActive = CustomDynamicAxisFields;
-            DynamicDampingRollFactorField.guiActiveEditor = CustomDynamicAxisFields;
+            DynamicRollLabel.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicRollLabel.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRoll.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRoll.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRollMinField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRollMinField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRollMaxField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRollMaxField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRollFactorField.guiActive = CustomDynamicAxisFields && dynamicSteerDamping;
+            DynamicDampingRollFactorField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
+
+            InitSteerDamping();
             
+            Misc.Misc.RefreshAssociatedWindows(FindObjectOfType<BDGenericAIBase>().part);
+        }
+        
+        public void InitSteerDamping()
+        {
+            
+            var DynamicDampingLabel = Fields["DynamicDampingLabel"];
+            var DampingMin = Fields["DynamicDampingMin"];
+            var DampingMax = Fields["DynamicDampingMax"];
+            var DampingFactor = Fields["dynamicSteerDampingFactor"];
+            var customDynamicAxisField = Fields["CustomDynamicAxisFields"];
+
+            customDynamicAxisField.guiActive = dynamicDamping;
+            customDynamicAxisField.guiActiveEditor = dynamicDamping;
+            DynamicDampingLabel.guiActive = dynamicSteerDamping && !CustomDynamicAxisFields;
+            DynamicDampingLabel.guiActiveEditor = dynamicSteerDamping && !CustomDynamicAxisFields;
+            DampingMin.guiActive = dynamicSteerDamping && !CustomDynamicAxisFields;
+            DampingMin.guiActiveEditor = dynamicSteerDamping && !CustomDynamicAxisFields;
+            DampingMax.guiActive = dynamicSteerDamping && !CustomDynamicAxisFields;
+            DampingMax.guiActiveEditor = dynamicSteerDamping && !CustomDynamicAxisFields;
+            DampingFactor.guiActive = dynamicSteerDamping && !CustomDynamicAxisFields;
+            DampingFactor.guiActiveEditor = dynamicSteerDamping && !CustomDynamicAxisFields;
             
             Misc.Misc.RefreshAssociatedWindows(FindObjectOfType<BDGenericAIBase>().part);
         }
@@ -550,7 +556,10 @@ namespace BDArmory.Modules
             SetSliderClamps("DynamicDampingPitchMin", "DynamicDampingPitchMax");
             SetSliderClamps("DynamicDampingYawMin", "DynamicDampingYawMax");
             SetSliderClamps("DynamicDampingRollMin", "DynamicDampingRollMax");
-            InitDynamicSteerDamping();
+            HideCustomAxisFields();
+            InitSteerDamping();
+            dynamicDamping = dynamicSteerDamping;
+            CustomDynamicAxisField = CustomDynamicAxisFields;
         }
 
         public override void ActivatePilot()
@@ -608,6 +617,20 @@ namespace BDArmory.Modules
                         StartCoroutine(setVar(s.Current, (float)typeof(BDModulePilotAI).GetField(s.Current).GetValue(this)));
                     }
                 toEleven = UpToEleven;
+            }
+            
+            //hide dynamic steer damping fields if dynamic damping isn't toggled
+            if (dynamicSteerDamping != dynamicDamping)
+            {
+                InitSteerDamping();
+                dynamicDamping = dynamicSteerDamping;
+                HideCustomAxisFields();
+            }
+            //hide custom dynamic axis fields when it isn't toggled
+            if (CustomDynamicAxisFields != CustomDynamicAxisField)
+            {
+                HideCustomAxisFields();
+                CustomDynamicAxisField = CustomDynamicAxisFields;
             }
         }
 
@@ -1326,7 +1349,7 @@ namespace BDArmory.Modules
             }
 
             float steerPitch = (0.015f * steerMult * pitchError) - (SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x * (1 + steerKiAdjust));
-            float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming? (180f/25f): 8f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * 0.2f * -localAngVel.z * (1 + steerKiAdjust));
+            float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming? (180f/25f): 4f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * 0.2f * -localAngVel.z * (1 + steerKiAdjust));
 
             pitchIntegral += pitchError;
             yawIntegral += yawError;
@@ -2190,36 +2213,86 @@ namespace BDArmory.Modules
         }
 
         private float SteerDamping(float angleToTarget, float defaultTargetPosition, int axis)
-        { //adjusts steer damping relative to a vessel's angle to its target position
-            if (!dynamicSteerDamping) // Check if enabled.
-            {
-                DynamicDampingLabel = "Dyn Damping Not Toggled";
-                PitchLabel = "Dyn Damping Not Toggled";
-                YawLabel = "Dyn Damping Not Toggled";
-                RollLabel = "Dyn Damping Not Toggled";
-                return steerDamping;
-            }
-            else if (angleToTarget >= 180 || angleToTarget < 0) // Check for valid angle to target.
-            {
-                DynamicDampingLabel = "N/A";
+{ //adjusts steer damping relative to a vessel's angle to its target position
+    if (!dynamicSteerDamping) // Check if enabled.
+    {
+        DynamicDampingLabel = "Dyn Damping Not Toggled";
+        PitchLabel = "Dyn Damping Not Toggled";
+        YawLabel = "Dyn Damping Not Toggled";
+        RollLabel = "Dyn Damping Not Toggled";
+        return steerDamping;
+    }
+    else if (angleToTarget >= 180 || angleToTarget < 0) // Check for valid angle to target.
+    {
+        if (!CustomDynamicAxisFields)
+            DynamicDampingLabel = "N/A";
+        switch (axis)
+        {
+            case 1:
                 PitchLabel = "N/A";
+                break;
+            case 2:
                 YawLabel = "N/A";
+                break;
+            case 3:
                 RollLabel = "N/A";
-                return steerDamping;
-            }
-
-            if (axis == 1 && dynamicDampingPitch)
-            { dynSteerDampingPitchValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingPitchFactor, DynamicDampingPitchMin, DynamicDampingPitchMax); PitchLabel = dynSteerDampingPitchValue.ToString(); return dynSteerDampingPitchValue; }else if(axis == 1 && !dynamicDampingPitch) { PitchLabel = steerDamping.ToString();}
-            if (axis == 2 && dynamicDampingYaw)
-            { dynSteerDampingYawValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingYawFactor, DynamicDampingYawMin, DynamicDampingYawMax); YawLabel = dynSteerDampingYawValue.ToString(); return dynSteerDampingYawValue; }else if(axis == 2 && !dynamicDampingYaw) { YawLabel = steerDamping.ToString();}
-            if (axis == 3 && dynamicDampingRoll)
-            { dynSteerDampingRollValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingRollFactor, DynamicDampingRollMin, DynamicDampingRollMax); RollLabel = dynSteerDampingRollValue.ToString(); return dynSteerDampingRollValue; }else if(axis == 3 && !dynamicDampingRoll) { RollLabel = steerDamping.ToString();}
-            //if custom axis groups is disabled
-            if (!CustomDynamicAxisFields)
-            { dynSteerDampingValue = GetDampeningFactor(defaultTargetPosition, dynamicSteerDampingFactor, DynamicDampingMin, DynamicDampingMax); DynamicDampingLabel = dynSteerDampingValue.ToString(); return dynSteerDampingValue; }
-
-            return steerDamping;
+                break;
         }
+        return steerDamping;
+    }
+
+    if (CustomDynamicAxisFields)
+    {
+        switch (axis)
+        {
+            case 1:
+                if (dynamicDampingPitch)
+                {
+                    dynSteerDampingPitchValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingPitchFactor, DynamicDampingPitchMin, DynamicDampingPitchMax);
+                    PitchLabel = dynSteerDampingPitchValue.ToString();
+                    return dynSteerDampingPitchValue;
+                }
+                break;
+            case 2:
+                if (dynamicDampingYaw)
+                {
+                    dynSteerDampingYawValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingYawFactor, DynamicDampingYawMin, DynamicDampingYawMax);
+                    YawLabel = dynSteerDampingYawValue.ToString();
+                    return dynSteerDampingYawValue;
+                }
+                break;
+            case 3:
+                if (dynamicDampingRoll)
+                {
+                    dynSteerDampingRollValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingRollFactor, DynamicDampingRollMin, DynamicDampingRollMax);
+                    RollLabel = dynSteerDampingRollValue.ToString();
+                    return dynSteerDampingRollValue;
+                }
+                break;
+        }
+        // The specific axis wasn't enabled, use the global value
+        dynSteerDampingValue = steerDamping;
+        switch (axis)
+        {
+            case 1:
+                PitchLabel = dynSteerDampingValue.ToString();
+                break;
+            case 2:
+                YawLabel = dynSteerDampingValue.ToString();
+                break;
+            case 3:
+                RollLabel = dynSteerDampingValue.ToString();
+                break;
+        }
+        return dynSteerDampingValue;
+    }
+    else //if custom axis groups is disabled
+    {
+        dynSteerDampingValue = GetDampeningFactor(defaultTargetPosition, dynamicSteerDampingFactor, DynamicDampingMin, DynamicDampingMax);
+        DynamicDampingLabel = dynSteerDampingValue.ToString();
+        return dynSteerDampingValue;
+    }
+}
 
         private float GetDampeningFactor(float angleToTarget, float dynamicSteerDampingFactorAxis, float DynamicDampingMinAxis, float DynamicDampingMaxAxis)
         { return Mathf.Clamp((float) (Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampingFactorAxis) * (DynamicDampingMaxAxis - DynamicDampingMinAxis) + DynamicDampingMinAxis), DynamicDampingMinAxis, DynamicDampingMaxAxis); }
