@@ -1133,7 +1133,7 @@ namespace BDArmory.Modules
             if (targetDot > 0)
             {
                 finalMaxSpeed = Mathf.Max((distanceToTarget - 100) / 8, 0) + (float)v.srfSpeed;
-                finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed + 25f);
+                finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);
             }
             AdjustThrottle(finalMaxSpeed, true);
 
@@ -1245,10 +1245,9 @@ namespace BDArmory.Modules
             }
 
             //slow down for tighter turns
-            float velAngleToTarget = Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity());
-            float normVelAngleToTarget = Mathf.Clamp(velAngleToTarget, 0, 90) / 90;
+            float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
             float speedReductionFactor = 1.25f;
-            float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * normVelAngleToTarget), idleSpeed, maxSpeed));
+            float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
             debugString.Append($"Final Target Speed: {finalSpeed}");
             debugString.Append(Environment.NewLine);
             AdjustThrottle(finalSpeed, useBrakes, useAB);
@@ -1549,6 +1548,7 @@ namespace BDArmory.Modules
 
                             debugString.Append($" from directly behind and close; breaking hard");
                             steerMode = SteerModes.Aiming;
+                            AdjustThrottle(minSpeed, true, false); // Brake to slow down and turn faster while breaking target
                         }
                     }
                     else
