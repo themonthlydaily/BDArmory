@@ -1538,6 +1538,12 @@ namespace BDArmory.UI
                     {
                         BDACompetitionMode.Instance.StopCompetition();
                     }
+                    if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetitionNow"))) // Start competition NOW button.
+                    {
+                        BDACompetitionMode.Instance.StartCompetitionNow();
+                        SaveConfig();
+                        windowSettingsEnabled = false;
+                    }
                 }
             }
 

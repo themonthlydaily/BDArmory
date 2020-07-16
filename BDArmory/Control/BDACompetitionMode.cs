@@ -207,7 +207,6 @@ namespace BDArmory.Control
 
         public void ResetCompetitionScores()
         {
-
             // reinitilize everything when the button get hit.
             // ammo names
             // 50CalAmmo, 30x173Ammo, 20x102Ammo, CannonShells
@@ -257,6 +256,12 @@ namespace BDArmory.Control
         public bool competitionIsActive = false;
         Coroutine competitionRoutine;
 
+        bool startCompetitionNow = false;
+        public void StartCompetitionNow() // Skip the "Competition: Waiting for teams to get in position."
+        {
+            startCompetitionNow = true;
+        }
+
         public void StartCompetitionMode(float distance)
         {
 
@@ -264,6 +269,7 @@ namespace BDArmory.Control
             {
                 ResetCompetitionScores();
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition ");
+                startCompetitionNow = false;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
         }
@@ -409,7 +415,7 @@ namespace BDArmory.Control
             competitionStatus = "Competition: Waiting for teams to get in position.";
             bool waiting = true;
             var sqrDistance = distance * distance;
-            while (waiting)
+            while (waiting && !startCompetitionNow)
             {
                 waiting = false;
 
