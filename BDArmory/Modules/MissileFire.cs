@@ -346,6 +346,7 @@ namespace BDArmory.Modules
 
         public Vector3 incomingThreatPosition;
         public Vessel incomingThreatVessel;
+        public MissileFire incomingWeaponManager;
 
         bool guardFiringMissile;
         bool disabledRocketAimers;
@@ -4006,6 +4007,7 @@ namespace BDArmory.Modules
         {
             ViewScanResults results = RadarUtils.GuardScanInDirection(this, transform, guardAngle, guardRange);
             incomingThreatVessel = null;
+            incomingWeaponManager = null;
 
             if (results.foundMissile)
             {
@@ -4084,6 +4086,7 @@ namespace BDArmory.Modules
                 }
                 if (results.threatWeaponManager != null)
                 {
+                    incomingWeaponManager = results.threatWeaponManager;
                     TargetInfo nearbyFriendly = BDATargetManager.GetClosestFriendly(this);
                     TargetInfo nearbyThreat = BDATargetManager.GetTargetFromWeaponManager(results.threatWeaponManager);
 
