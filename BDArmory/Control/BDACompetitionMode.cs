@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using BDArmory.Core;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -20,18 +21,12 @@ namespace BDArmory.Control
     {
         public int Score;
         public int PinataHits;
-        public int DeathOrder;
-        public int totalDamagedParts = 0;
+        public int totalDamagedPartsDueToRamming = 0;
         public string lastPersonWhoHitMe;
         public string lastPersonWhoRammedMe;
         public double lastHitTime;
         public double lastFiredTime;
         public double lastRammedTime;
-        public double lastPossibleRammingTime = -1;
-        public float closestTimeToCPA;
-        public Vessel rammedVessel;
-        public Vessel rammingVessel;
-        public ScoringData otherVesselScoringData;
         public bool landedState;
         public double lastLandedTime;
         public double landerKillTimer;
@@ -39,12 +34,10 @@ namespace BDArmory.Control
         public double AverageAltitude;
         public int averageCount;
         public int previousPartCount;
-        public int partCountBeforeRam;
-        public int closestVesselPartCountBeforeRam;
         public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
         public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
-        
+
         public string LastPersonWhoDamagedMe()
         {
             //check if vessel got rammed
@@ -187,7 +180,7 @@ namespace BDArmory.Control
                 else
                 {
                     lastCompetitionStatus = competitionStatus;
-                    lastCompetitionStatusTimer = 5f; // Show for 5s.
+                    lastCompetitionStatusTimer = 10f; // Show for 5s.
                 }
 
                 GUI.Label(cShadowRect, message, cShadowStyle);
@@ -214,7 +207,6 @@ namespace BDArmory.Control
 
         public void ResetCompetitionScores()
         {
-
             // reinitilize everything when the button get hit.
             // ammo names
             // 50CalAmmo, 30x173Ammo, 20x102Ammo, CannonShells
@@ -264,13 +256,20 @@ namespace BDArmory.Control
         public bool competitionIsActive = false;
         Coroutine competitionRoutine;
 
+        bool startCompetitionNow = false;
+        public void StartCompetitionNow() // Skip the "Competition: Waiting for teams to get in position."
+        {
+            startCompetitionNow = true;
+        }
+
         public void StartCompetitionMode(float distance)
         {
 
             if (!competitionStarting)
             {
                 ResetCompetitionScores();
-                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition ");
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition ");
+                startCompetitionNow = false;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
         }
@@ -282,7 +281,7 @@ namespace BDArmory.Control
             if (!competitionStarting)
             {
                 ResetCompetitionScores();
-                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Rapid Deployment ");
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Rapid Deployment ");
                 string commandString = "0:SetThrottle:100\n0:ActionGroup:14:0\n0:Stage\n35:ActionGroup:1\n10:ActionGroup:2\n3:RemoveFairings\n0:ActionGroup:3\n0:ActionGroup:12:1\n1:TogglePilot:1\n6:ToggleGuard:1\n0:ActionGroup:16:0\n5:EnableGM\n5:RemoveDebris\n0:ActionGroup:16:0\n";
                 competitionRoutine = StartCoroutine(SequencedCompetition(commandString));
             }
@@ -297,6 +296,8 @@ namespace BDArmory.Control
 
             competitionStarting = false;
             competitionIsActive = false;
+            GameEvents.onCollision.Remove(AnalyseCollision);
+            rammingInformation = null; // Reset the ramming information.
         }
 
 
@@ -319,10 +320,10 @@ namespace BDArmory.Control
                     {
                         teamPilots = new List<IBDAIControl>();
                         pilots.Add(pilot.weaponManager.Team, teamPilots);
-                        Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Adding Team " + pilot.weaponManager.Team.Name);
+                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Adding Team " + pilot.weaponManager.Team.Name);
                     }
                     teamPilots.Add(pilot);
-                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
                     readyToLaunch.Add(pilot);
                 }
 
@@ -358,6 +359,12 @@ namespace BDArmory.Control
             using (var pilotList = pilots.GetEnumerator())
                 while (pilotList.MoveNext())
                 {
+                    if (pilotList.Current.Value == null)
+                    {
+                        competitionStatus = "Competition: Teams got adjusted during competition start-up, aborting.";
+                        StopCompetition();
+                        yield break;
+                    }
                     leaders.Add(pilotList.Current.Value[0]);
                     pilotList.Current.Value[0].weaponManager.wingCommander.CommandAllFollow();
                 }
@@ -380,7 +387,11 @@ namespace BDArmory.Control
             using (var leader = leaders.GetEnumerator())
                 while (leader.MoveNext())
                     if (leader.Current == null)
+                    {
+                        competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
                         StopCompetition();
+                        yield break;
+                    }
 
             competitionStatus = "Competition: Sending pilots to start position.";
             Vector3 center = Vector3.zero;
@@ -404,26 +415,47 @@ namespace BDArmory.Control
             competitionStatus = "Competition: Waiting for teams to get in position.";
             bool waiting = true;
             var sqrDistance = distance * distance;
-            while (waiting)
+            while (waiting && !startCompetitionNow)
             {
                 waiting = false;
+
+                foreach (var leader in leaders)
+                    if (leader == null)
+                    {
+                        competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
+                        StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
+                        yield break;
+                    }
+
 
                 using (var leader = leaders.GetEnumerator())
                     while (leader.MoveNext())
                     {
-                        if (leader.Current == null)
-                            StopCompetition();
-
                         using (var otherLeader = leaders.GetEnumerator())
                             while (otherLeader.MoveNext())
                             {
                                 if (leader.Current == otherLeader.Current)
                                     continue;
-                                if ((leader.Current.transform.position - otherLeader.Current.transform.position).sqrMagnitude < sqrDistance)
-                                    waiting = true;
+                                try // Somehow, if a vessel gets destroyed during competition start, the following can throw a null reference exception despite checking for nulls!
+                                {
+                                    if ((leader.Current.transform.position - otherLeader.Current.transform.position).sqrMagnitude < sqrDistance)
+                                        waiting = true;
+                                }
+                                catch
+                                {
+                                    competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
+                                    StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
+                                    yield break;
+                                }
                             }
 
                         // Increase the distance for large teams
+                        if (!pilots.ContainsKey(leader.Current.weaponManager.Team))
+                        {
+                            competitionStatus = "Competition: The teams were changed during competition start-up, aborting.";
+                            StopCompetition();
+                            yield break;
+                        }
                         var sqrTeamDistance = (800 + 100 * pilots[leader.Current.weaponManager.Team].Count) * (800 + 100 * pilots[leader.Current.weaponManager.Team].Count);
                         using (var pilot = pilots[leader.Current.weaponManager.Team].GetEnumerator())
                             while (pilot.MoveNext())
@@ -439,6 +471,22 @@ namespace BDArmory.Control
             }
 
             //start the match
+            foreach (var teamPilots in pilots.Values)
+            {
+                if (teamPilots == null)
+                {
+                    competitionStatus = "Competition: Teams have been changed during competition start-up, aborting.";
+                    StopCompetition();
+                    yield break;
+                }
+                foreach (var pilot in teamPilots)
+                    if (pilot == null)
+                    {
+                        competitionStatus = "Competition: A pilot has disappeared from team during competition start-up, aborting.";
+                        StopCompetition(); // Check that the team pilots haven't been changed during the competition startup.
+                        yield break;
+                    }
+            }
             using (var teamPilots = pilots.GetEnumerator())
                 while (teamPilots.MoveNext())
                     using (var pilot = teamPilots.Current.Value.GetEnumerator())
@@ -464,6 +512,7 @@ namespace BDArmory.Control
             lastCompetitionStatus = "";
             competitionStarting = false;
             competitionIsActive = true; //start logging ramming now that the competition has officially started
+            GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
         }
 
         public static Dictionary<int, KSPActionGroup> KM_dictAG = new Dictionary<int, KSPActionGroup> {
@@ -606,10 +655,10 @@ namespace BDArmory.Control
                 }
                 if (partsToKill.Count > 0)
                 {
-                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] Vessel Breaking Part Count Rules " + vessel.GetName());
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] Vessel Breaking Part Count Rules " + vessel.GetName());
                     foreach (var part in partsToKill)
                     {
-                        Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] KILLPART:" + part.name + ":" + vessel.GetName());
+                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] KILLPART:" + part.name + ":" + vessel.GetName());
                         PartExploderSystem.AddPartToExplode(part);
                     }
                 }
@@ -675,9 +724,9 @@ namespace BDArmory.Control
                 }
                 var mass = pilot.vessel.GetTotalMass();
 
-                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] UNSHIELDED:" + notShieldedCount.ToString() + ":" + pilot.vessel.GetName());
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] UNSHIELDED:" + notShieldedCount.ToString() + ":" + pilot.vessel.GetName());
 
-                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] MASS:" + mass.ToString() + ":" + pilot.vessel.GetName());
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] MASS:" + mass.ToString() + ":" + pilot.vessel.GetName());
                 if (mass < lowestMass)
                 {
                     lowestMass = mass;
@@ -715,7 +764,7 @@ namespace BDArmory.Control
                                         if (oreAmount > 1500) oreAmount = 1500;
                                         resources.Current.amount = oreAmount;
                                     }
-                                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] RESOURCEUPDATE:" + pilot.vessel.GetName() + ":" + resources.Current.amount);
+                                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] RESOURCEUPDATE:" + pilot.vessel.GetName() + ":" + resources.Current.amount);
                                     massAdded = true;
                                 }
                             }
@@ -739,7 +788,7 @@ namespace BDArmory.Control
                 var parts = cmdEvent.Split(':');
                 if (parts.Count() == 1)
                 {
-                    Debug.Log("[BDACompetitionMode] Competition Command not parsed correctly " + cmdEvent);
+                    Log("[BDACompetitionMode] Competition Command not parsed correctly " + cmdEvent);
                     break;
                 }
                 var timeStep = int.Parse(parts[0]);
@@ -875,6 +924,7 @@ namespace BDArmory.Control
             lastCompetitionStatus = "";
             // will need a terminator routine
             competitionStarting = false;
+            GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection.
         }
 
         private void RemoveDebris()
@@ -1038,6 +1088,13 @@ namespace BDArmory.Control
             }
         }
 
+        // This is called every Time.fixedDeltaTime.
+        void FixedUpdate()
+        {
+            if (competitionIsActive)
+                LogRamming();
+        }
+
         // the competition update system
         // cleans up dead vessels, tries to track kills (badly)
         // all of these are based on the vessel name which is probably sub optimal
@@ -1046,6 +1103,10 @@ namespace BDArmory.Control
         {
             // should be called every frame during flight scenes
             if (competitionStartTime < 0) return;
+            // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
+            // if (competitionIsActive)
+            //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))
+            //         Debug.Log("DEBUG Upcoming potential collision between " + upcomingCollision.Key.Item1 + " and " + upcomingCollision.Key.Item2 + " at distance " + Mathf.Sqrt(upcomingCollision.Value.Item1) + "m in " + upcomingCollision.Value.Item2 + "s.");
             if (Planetarium.GetUniversalTime() < nextUpdateTick)
                 return;
             int updateTickLength = 2;
@@ -1301,7 +1362,7 @@ namespace BDArmory.Control
                     }
                 }
             string aliveString = string.Join(",", alive.ToArray());
-            Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString);
+            Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString);
             // If we find a vessel named "Pinata" that's a special case object
             // this should probably be configurable.
             if (!pinataAlive && alive.Contains("Pinata"))
@@ -1350,18 +1411,18 @@ namespace BDArmory.Control
                                     if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
                                     {
                                         // twice - so 2 points
-                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
-                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
                                         whoKilledMe += " (BOOM! HEADSHOT!)";
                                     }
                                     else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
                                     {
                                         // if ram killed
-                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
-                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
                                         whoKilledMe += " (BOOM! HEADSHOT!)";
                                     }
-                                    
+
                                 }
                                 else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
                                 {
@@ -1369,25 +1430,25 @@ namespace BDArmory.Control
                                     if (Scores[key].everyoneWhoRammedMe.Count != 0)
                                         whoKilledMe = "Ram Hits: " + String.Join(", ", Scores[key].everyoneWhoRammedMe) + " ";
                                     else if (Scores[key].everyoneWhoHitMe.Count != 0)
-                                        if(whoKilledMe != "") whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
+                                        if (whoKilledMe != "") whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
-                                        Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
+                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                                     }
                                 }
                             }
                             if (whoKilledMe != "")
                             {
                                 if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
-                                    competitionStatus = key + " was killed by " + whoKilledMe; 
+                                    competitionStatus = key + " was killed by " + whoKilledMe;
                                 else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
                                     competitionStatus = key + " was rammed by " + whoKilledMe;
                             }
                             else
                             {
                                 competitionStatus = key + " was killed";
-                                Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:NOBODY");
+                                Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:NOBODY");
                             }
                         }
                         doaUpdate += " :" + key + ": ";
@@ -1409,7 +1470,7 @@ namespace BDArmory.Control
                 }
                 else if (dumpedResults == 0)
                 {
-                    Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]:No viable competitors, Automatically dumping scores");
+                    Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]:No viable competitors, Automatically dumping scores");
                     LogResults();
                     dumpedResults--;
                     //competitionStartTime = -1;
@@ -1435,7 +1496,7 @@ namespace BDArmory.Control
                         killerName = "Landed Too Long";
                     }
                 }
-                Debug.Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
+                Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
                 Misc.Misc.ForceDeadVessel(vessel);
                 KillTimer.Remove(vesselName);
             }
@@ -1448,7 +1509,7 @@ namespace BDArmory.Control
         {
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
-            Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results ");
+            Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results ");
 
 
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
@@ -1463,7 +1524,7 @@ namespace BDArmory.Control
                                 if (wms.Current.vessel != null)
                                 {
                                     alive.Add(wms.Current.vessel.GetName());
-                                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ALIVE:" + wms.Current.vessel.GetName());
+                                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ALIVE:" + wms.Current.vessel.GetName());
                                 }
                                 break;
                             }
@@ -1474,18 +1535,537 @@ namespace BDArmory.Control
             foreach (string key in Scores.Keys)
             {
                 if (!alive.Contains(key))
-                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: DEAD:" + DeathOrder[key] + ":" + key);
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: DEAD:" + DeathOrder[key] + ":" + key);
             }
 
             foreach (string key in whoShotWho.Keys)
             {
-                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHO:" + whoShotWho[key] + ":" + key);
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHO:" + whoShotWho[key] + ":" + key);
             }
 
             foreach (string key in whoRammedWho.Keys)
             {
-                Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHORAMMEDWHO" + whoRammedWho[key] + ":" + key);
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHORAMMEDWHO" + whoRammedWho[key] + ":" + key);
             }
+        }
+
+
+        // Ramming Logging
+        public class RammingTargetInformation
+        {
+            public Vessel vessel; // The other vessel involved in a collision.
+            public double lastUpdateTime; // Last time the timeToCPA was updated.
+            public float timeToCPA; // Time to closest point of approach.
+            public bool potentialCollision; // Whether a collision might happen shortly.
+            public double potentialCollisionDetectionTime; // The latest time the potential collision was detected.
+            public int partCountJustPriorToCollision; // The part count of the colliding vessel just prior to the collision.
+            public float sqrDistance; // Distance^2 at the time of collision.
+            public float angleToCoM; // The angle from a vessel's velocity direction to the center of mass of the target.
+            public bool collisionDetected; // Whether a collision has actually been detected.
+            public double collisionDetectedTime; // The time that the collision actually occurs.
+            public bool ramming; // True if a ram was attempted between the detection of a potential ram and the actual collision.
+        };
+        public class RammingInformation
+        {
+            public Vessel vessel; // This vessel.
+            public string vesselName; // The GetName() name of the vessel (in case vessel gets destroyed and we can't get it from there).
+            public int partCount; // The part count of a vessel.
+            public float radius; // The vessels "radius" at the time the potential collision was detected.
+            public Dictionary<string, RammingTargetInformation> targetInformation; // Information about the ramming target.
+        };
+        public Dictionary<string, RammingInformation> rammingInformation;
+
+        // Initialise the rammingInformation dictionary with the required vessels.
+        public void InitialiseRammingInformation()
+        {
+            double currentTime = Planetarium.GetUniversalTime();
+            rammingInformation = new Dictionary<string, RammingInformation>();
+            foreach (var vessel in BDATargetManager.LoadedVessels)
+            {
+                var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                if (pilotAI == null) continue;
+                var targetRammingInformation = new Dictionary<string, RammingTargetInformation>();
+                foreach (var otherVessel in BDATargetManager.LoadedVessels)
+                {
+                    if (otherVessel == vessel) continue; // Don't include same-vessel information.
+                    var otherPilotAI = otherVessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                    if (otherPilotAI == null) continue;
+                    targetRammingInformation.Add(otherVessel.vesselName, new RammingTargetInformation
+                    {
+                        vessel = otherVessel,
+                        lastUpdateTime = currentTime,
+                        timeToCPA = 0f,
+                        potentialCollision = false,
+                        angleToCoM = 0f,
+                        collisionDetected = false,
+                        ramming = false,
+                    });
+                }
+                rammingInformation.Add(vessel.vesselName, new RammingInformation
+                {
+                    vessel = vessel,
+                    vesselName = vessel.GetName(),
+                    partCount = vessel.parts.Count,
+                    radius = GetRadius(vessel),
+                    targetInformation = targetRammingInformation,
+                });
+            }
+        }
+
+        // Update the ramming information dictionary with expected times to closest point of approach.
+        private float maxTimeToCPA = 5f; // Don't look more than 5s ahead.
+        public void UpdateTimesToCPAs()
+        {
+            double currentTime = Planetarium.GetUniversalTime();
+            foreach (var vesselName in rammingInformation.Keys)
+            {
+                var vessel = rammingInformation[vesselName].vessel;
+                var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
+                Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
+                {
+                    var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
+                    var otherPilotAI = otherVessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                    if (pilotAI == null || otherPilotAI == null) // One of the vessels or pilot AIs has been destroyed.
+                    {
+                        rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTimeToCPA; // Set the timeToCPA to maxTimeToCPA, so that it's not considered for new potential collisions.
+                        rammingInformation[otherVesselName].targetInformation[vesselName].timeToCPA = maxTimeToCPA; // Set the timeToCPA to maxTimeToCPA, so that it's not considered for new potential collisions.
+                    }
+                    else
+                    {
+                        if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].lastUpdateTime > rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA / 2f) // When half the time is gone, update it.
+                        {
+                            float timeToCPA = pilotAI.ClosestTimeToCPA(otherPilotAI.vessel, maxTimeToCPA); // Look up to maxTimeToCPA ahead.
+                            if (timeToCPA > 0f && timeToCPA < maxTimeToCPA) // If the closest approach is within the next maxTimeToCPA, log it.
+                                rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = timeToCPA;
+                            else // Otherwise set it to the max value.
+                                rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTimeToCPA;
+                            // This is symmetric, so update the symmetric value and set the lastUpdateTime for both so that we don't bother calculating the same thing twice.
+                            rammingInformation[otherVesselName].targetInformation[vesselName].timeToCPA = rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA;
+                            rammingInformation[vesselName].targetInformation[otherVesselName].lastUpdateTime = currentTime;
+                            rammingInformation[otherVesselName].targetInformation[vesselName].lastUpdateTime = currentTime;
+                        }
+                    }
+                });
+            }
+        }
+
+        // Get the upcoming collisions ordered by predicted separation^2 (for Scott to adjust camera views).
+        public IOrderedEnumerable<KeyValuePair<Tuple<string, string>, Tuple<float, float>>> UpcomingCollisions(float distanceThreshold, bool sortByDistance = true)
+        {
+            var upcomingCollisions = new Dictionary<Tuple<string, string>, Tuple<float, float>>();
+            foreach (var vesselName in rammingInformation.Keys)
+                foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                    if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && String.Compare(vesselName, otherVesselName) < 0)
+                        if (rammingInformation[vesselName].vessel != null && rammingInformation[otherVesselName].vessel != null)
+                        {
+                            var predictedSqrSeparation = Vector3.SqrMagnitude(rammingInformation[vesselName].vessel.CoM - rammingInformation[otherVesselName].vessel.CoM);
+                            if (predictedSqrSeparation < distanceThreshold * distanceThreshold)
+                                upcomingCollisions.Add(
+                                    new Tuple<string, string>(vesselName, otherVesselName),
+                                    new Tuple<float, float>(predictedSqrSeparation, rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA)
+                                );
+                        }
+            return upcomingCollisions.OrderBy(d => sortByDistance ? d.Value.Item1 : d.Value.Item2);
+        }
+
+        // Check for potential collisions in the near future and update data structures as necessary.
+        private float potentialCollisionDetectionTime = 1f; // 1s ought to be plenty.
+        private void CheckForPotentialCollisions()
+        {
+            float collisionMargin = 4f; // Sum of radii is less than this factor times the separation.
+            double currentTime = Planetarium.GetUniversalTime();
+            foreach (var vesselName in rammingInformation.Keys)
+            {
+                var vessel = rammingInformation[vesselName].vessel;
+                // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items.
+                // The only variables set more than once are vessel radii and part counts, but they are set to the same value, so this ought to be thread-safe.
+                Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
+                {
+                    var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
+                    if (rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < potentialCollisionDetectionTime) // Closest point of approach is within the detection time.
+                    {
+                        if (vessel != null && otherVessel != null) // If one of the vessels has been destroyed, don't calculate new potential collisions, but allow the timer on existing potential collisions to run out so that collision analysis can still use it.
+                        {
+                            var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
+                            if (separation < collisionMargin * (GetRadius(vessel) + GetRadius(otherVessel))) // Potential collision detected.
+                            {
+                                if (!rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision) // Register the part counts and angles when the potential collision is first detected.
+                                { // Note: part counts and vessel radii get updated whenever a new potential collision is detected, but not angleToCoM (which is specific to a colliding pair).
+                                    rammingInformation[vesselName].partCount = vessel.parts.Count;
+                                    rammingInformation[otherVesselName].partCount = otherVessel.parts.Count;
+                                    rammingInformation[vesselName].radius = GetRadius(vessel);
+                                    rammingInformation[otherVesselName].radius = GetRadius(otherVessel);
+                                    rammingInformation[vesselName].targetInformation[otherVesselName].angleToCoM = Vector3.Angle(vessel.srf_vel_direction, otherVessel.CoM - vessel.CoM);
+                                    rammingInformation[otherVesselName].targetInformation[vesselName].angleToCoM = Vector3.Angle(otherVessel.srf_vel_direction, vessel.CoM - otherVessel.CoM);
+                                }
+
+                                // Update part counts if vessels get shot and potentially lose parts before the collision happens.
+                                if (Scores[rammingInformation[vesselName].vesselName].lastHitTime > rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollisionDetectionTime)
+                                    if (rammingInformation[vesselName].partCount != vessel.parts.Count)
+                                    {
+                                        if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] " + vesselName + " lost " + (rammingInformation[vesselName].partCount - vessel.parts.Count) + " parts from getting shot.");
+                                        rammingInformation[vesselName].partCount = vessel.parts.Count;
+                                    }
+                                if (Scores[rammingInformation[otherVesselName].vesselName].lastHitTime > rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime)
+                                    if (rammingInformation[vesselName].partCount != vessel.parts.Count)
+                                    {
+                                        if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] " + otherVesselName + " lost " + (rammingInformation[otherVesselName].partCount - otherVessel.parts.Count) + " parts from getting shot.");
+                                        rammingInformation[otherVesselName].partCount = otherVessel.parts.Count;
+                                    }
+
+                                // Set the potentialCollision flag to true and update the latest potential collision detection time.
+                                rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = true;
+                                rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime = currentTime;
+                                rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = true;
+                                rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollisionDetectionTime = currentTime;
+
+                                // Register intent to ram.
+                                var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>();
+                                rammingInformation[vesselName].targetInformation[otherVesselName].ramming |= (pilotAI != null && pilotAI.ramming); // Pilot AI is alive and trying to ram.
+                                var otherPilotAI = otherVessel.FindPartModuleImplementing<BDModulePilotAI>();
+                                rammingInformation[otherVesselName].targetInformation[vesselName].ramming |= (otherPilotAI != null && otherPilotAI.ramming); // Other pilot AI is alive and trying to ram.
+                            }
+                        }
+                    }
+                    else if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > 2f * potentialCollisionDetectionTime) // Potential collision is no longer relevant.
+                    {
+                        rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false;
+                        rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false;
+                    }
+                });
+            }
+        }
+
+        // Get a vessel's "radius".
+        private float GetRadius(Vessel v)
+        {
+            //get vessel size
+            Vector3 size = v.vesselSize;
+
+            //get largest dimension
+            float radius;
+
+            if (size.x > size.y && size.x > size.z)
+            {
+                radius = size.x / 2;
+            }
+            else if (size.y > size.x && size.y > size.z)
+            {
+                radius = size.y / 2;
+            }
+            else if (size.z > size.x && size.z > size.y)
+            {
+                radius = size.z / 2;
+            }
+            else
+            {
+                radius = size.x / 2;
+            }
+
+            return radius;
+        }
+
+        // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
+        private void AnalyseCollision(EventReport data)
+        {
+            double currentTime = Planetarium.GetUniversalTime();
+            float collisionMargin = 2f; // Compare the separation to this factor times the sum of radii to account for inaccuracies in the vessels size and position. Hopefully, this won't include other nearby vessels.
+            var vessel = data.origin.vessel;
+            if (vessel == null) // Can vessel be null here? It doesn't appear so.
+            {
+                if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] in AnalyseCollision the colliding part belonged to a null vessel!");
+                return;
+            }
+            bool hitVessel = false;
+            if (rammingInformation.ContainsKey(vessel.vesselName)) // If the part was attached to a vessel,
+            {
+                var vesselName = vessel.vesselName; // For convenience.
+                var destroyedPotentialColliders = new List<string>();
+                foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys) // for each other vessel,
+                    if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision) // if it was potentially about to collide,
+                    {
+                        var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
+                        if (otherVessel == null) // Vessel that was potentially colliding has been destroyed. It's more likely that an alive potential collider is the real collider, so remember it in case there are no living potential colliders.
+                        {
+                            destroyedPotentialColliders.Add(otherVesselName);
+                            continue;
+                        }
+                        var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
+                        if (separation < collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius)) // and their separation is less than the sum of their radii,
+                        {
+                            if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) // Take the values when the collision is first detected.
+                            {
+                                rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
+                                rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
+                                rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
+                                rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
+                                rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = (otherVessel != null) ? Vector3.SqrMagnitude(vessel.CoM - otherVessel.CoM) : (Mathf.Pow(collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius), 2f) + 1f); // FIXME Should destroyed vessels have 0 sqrDistance instead?
+                                rammingInformation[otherVesselName].targetInformation[vesselName].sqrDistance = rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance;
+                                rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
+                                rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
+                                if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] Collision detected between " + vesselName + " and " + otherVesselName);
+                            }
+                            hitVessel = true;
+                        }
+                    }
+                if (!hitVessel) // No other living vessels were potential targets, add in the destroyed ones (if any).
+                {
+                    foreach (var otherVesselName in destroyedPotentialColliders) // Note: if there are more than 1, then multiple craft could be credited with the kill, but this is unlikely.
+                    {
+                        rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
+                        hitVessel = true;
+                    }
+                }
+                if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
+                {
+                    if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] " + vesselName + " hit something else.");
+                    foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                    {
+                        rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
+                        rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false; // Set potential collisions to false.
+                    }
+                }
+            }
+        }
+
+        // Check for parts being lost on the various vessels for which collisions have been detected.
+        private void CheckForDamagedParts()
+        {
+            double currentTime = Planetarium.GetUniversalTime();
+            float headOnLimit = 20f;
+            var collidingVesselsBySeparation = new Dictionary<string, KeyValuePair<float, IOrderedEnumerable<KeyValuePair<string, float>>>>();
+
+            // First, we're going to filter the potentially colliding vessels and sort them by separation.
+            foreach (var vesselName in rammingInformation.Keys)
+            {
+                var vessel = rammingInformation[vesselName].vessel;
+                var collidingVesselDistances = new Dictionary<string, float>();
+
+                // For each potential collision that we've waited long enough for, refine the potential colliding vessels.
+                foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                {
+                    if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) continue; // Other vessel wasn't involved in a collision with this vessel.
+                    if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > potentialCollisionDetectionTime) // We've waited long enough for the parts that are going to explode to explode.
+                    {
+                        // First, check the vessels marked as colliding with this vessel for lost parts. If at least one other lost parts or was destroyed, exclude any that didn't lose parts (set collisionDetected to false).
+                        bool someOneElseLostParts = false;
+                        foreach (var tmpVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                        {
+                            if (!rammingInformation[vesselName].targetInformation[tmpVesselName].collisionDetected) continue; // Other vessel wasn't involved in a collision with this vessel.
+                            var tmpVessel = rammingInformation[vesselName].targetInformation[tmpVesselName].vessel;
+                            if (tmpVessel == null || rammingInformation[vesselName].targetInformation[tmpVesselName].partCountJustPriorToCollision - tmpVessel.parts.Count > 0)
+                            {
+                                someOneElseLostParts = true;
+                                break;
+                            }
+                        }
+                        if (someOneElseLostParts) // At least one other vessel lost parts or was destroyed.
+                        {
+                            foreach (var tmpVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                            {
+                                if (!rammingInformation[vesselName].targetInformation[tmpVesselName].collisionDetected) continue; // Other vessel wasn't involved in a collision with this vessel.
+                                var tmpVessel = rammingInformation[vesselName].targetInformation[tmpVesselName].vessel;
+                                if (tmpVessel != null && rammingInformation[vesselName].targetInformation[tmpVesselName].partCountJustPriorToCollision == tmpVessel.parts.Count) // Other vessel didn't lose parts, mark it as not involved in this collision.
+                                {
+                                    rammingInformation[vesselName].targetInformation[tmpVesselName].collisionDetected = false;
+                                    rammingInformation[tmpVesselName].targetInformation[vesselName].collisionDetected = false;
+                                }
+                            }
+                        } // Else, the collided with vessels didn't lose any parts, so we don't know who this vessel really collided with.
+
+                        // If the other vessel is still a potential collider, add it to the colliding vessels dictionary with its distance to this vessel.
+                        if (rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected)
+                            collidingVesselDistances.Add(otherVesselName, rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance);
+                    }
+                }
+
+                // If multiple vessels are involved in a collision with this vessel, the lost parts counts are going to be skewed towards the first vessel processed. To counteract this, we'll sort the colliding vessels by their distance from this vessel.
+                var collidingVessels = collidingVesselDistances.OrderBy(d => d.Value);
+                if (collidingVesselDistances.Count > 0)
+                    collidingVesselsBySeparation.Add(vesselName, new KeyValuePair<float, IOrderedEnumerable<KeyValuePair<string, float>>>(collidingVessels.First().Value, collidingVessels));
+
+                if (BDArmorySettings.DEBUG_RAMMING_LOGGING && collidingVesselDistances.Count > 1) // DEBUG
+                {
+                    foreach (var otherVesselName in collidingVesselDistances.Keys) Debug.Log("[Ram logging] colliding vessel distances^2 from " + vesselName + ": " + otherVesselName + " " + collidingVesselDistances[otherVesselName]);
+                    foreach (var otherVesselName in collidingVessels) Debug.Log("[Ram logging] sorted order: " + otherVesselName.Key);
+                }
+            }
+            var sortedCollidingVesselsBySeparation = collidingVesselsBySeparation.OrderBy(d => d.Value.Key); // Sort the outer dictionary by minimum separation from the nearest colliding vessel.
+
+            // Then we're going to try to figure out who should be awarded the ram.
+            foreach (var vesselNameKVP in sortedCollidingVesselsBySeparation)
+            {
+                var vesselName = vesselNameKVP.Key;
+                var vessel = rammingInformation[vesselName].vessel;
+                foreach (var otherVesselNameKVP in vesselNameKVP.Value.Value)
+                {
+                    var otherVesselName = otherVesselNameKVP.Key;
+                    if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) continue; // Other vessel wasn't involved in a collision with this vessel.
+                    if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > potentialCollisionDetectionTime) // We've waited long enough for the parts that are going to explode to explode.
+                    {
+                        var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
+                        var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>();
+                        var otherPilotAI = otherVessel?.FindPartModuleImplementing<BDModulePilotAI>();
+
+                        // Count the number of parts lost.
+                        var rammedPartsLost = (otherPilotAI == null) ? rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision : rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision - otherVessel.parts.Count;
+                        var rammingPartsLost = (pilotAI == null) ? rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision : rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision - vessel.parts.Count;
+                        rammingInformation[otherVesselName].partCount -= rammedPartsLost; // Immediately adjust the parts count for more accurate tracking.
+                        rammingInformation[vesselName].partCount -= rammingPartsLost;
+                        // Update any other collisions that are waiting to count parts.
+                        foreach (var tmpVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                            if (rammingInformation[tmpVesselName].targetInformation[vesselName].collisionDetected)
+                                rammingInformation[tmpVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
+                        foreach (var tmpVesselName in rammingInformation[otherVesselName].targetInformation.Keys)
+                            if (rammingInformation[tmpVesselName].targetInformation[otherVesselName].collisionDetected)
+                                rammingInformation[tmpVesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
+
+                        // Figure out who should be awarded the ram.
+                        var rammingVessel = rammingInformation[vesselName].vesselName;
+                        var rammedVessel = rammingInformation[otherVesselName].vesselName;
+                        var headOn = false;
+                        if (rammingInformation[vesselName].targetInformation[otherVesselName].ramming ^ rammingInformation[otherVesselName].targetInformation[vesselName].ramming) // Only one of the vessels was ramming.
+                        {
+                            if (!rammingInformation[vesselName].targetInformation[otherVesselName].ramming) // Switch who rammed who if the default is backwards.
+                            {
+                                rammingVessel = rammingInformation[otherVesselName].vesselName;
+                                rammedVessel = rammingInformation[vesselName].vesselName;
+                                var tmp = rammingPartsLost;
+                                rammingPartsLost = rammedPartsLost;
+                                rammedPartsLost = tmp;
+                            }
+                        }
+                        else // Both or neither of the vessels were ramming.
+                        {
+                            if (rammingInformation[vesselName].targetInformation[otherVesselName].angleToCoM < headOnLimit && rammingInformation[otherVesselName].targetInformation[vesselName].angleToCoM < headOnLimit) // Head-on collision detected, both get awarded with ramming the other.
+                            {
+                                headOn = true;
+                            }
+                            else
+                            {
+                                if (rammingInformation[vesselName].targetInformation[otherVesselName].angleToCoM > rammingInformation[otherVesselName].targetInformation[vesselName].angleToCoM) // Other vessel had a better angleToCoM, so switch who rammed who.
+                                {
+                                    rammingVessel = rammingInformation[otherVesselName].vesselName;
+                                    rammedVessel = rammingInformation[vesselName].vesselName;
+                                    var tmp = rammingPartsLost;
+                                    rammingPartsLost = rammedPartsLost;
+                                    rammedPartsLost = tmp;
+                                }
+                            }
+                        }
+
+                        LogRammingVesselScore(rammingVessel, rammedVessel, rammedPartsLost, rammingPartsLost, headOn, true, true, rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime); // Log the ram.
+
+                        // Set the collisionDetected flag to false, since we've now logged this collision. We set both so that the collision only gets logged once.
+                        rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = false;
+                        rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = false;
+                    }
+                }
+            }
+        }
+
+        // Actually log the ram to various places. Note: vesselName and targetVesselName need to be those returned by the GetName() function to match the keys in Scores.
+        public void LogRammingVesselScore(string rammingVesselName, string rammedVesselName, int rammedPartsLost, int rammingPartsLost, bool headOn, bool logToCompetitionStatus, bool logToDebug, double timeOfCollision)
+        {
+            if (logToCompetitionStatus)
+            {
+                if (!headOn)
+                    competitionStatus = rammedVesselName + " got RAMMED by " + rammingVesselName + " and lost " + rammedPartsLost + " parts (" + rammingVesselName + " lost " + rammingPartsLost + " parts).";
+                else
+                    competitionStatus = rammedVesselName + " and " + rammingVesselName + " RAMMED each other and lost " + rammedPartsLost + " and " + rammingPartsLost + " parts, respectively.";
+            }
+            if (logToDebug)
+            {
+                if (!headOn)
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + rammedVesselName + " got RAMMED by " + rammingVesselName + " and lost " + rammedPartsLost + " parts (" + rammingVesselName + " lost " + rammingPartsLost + " parts).");
+                else
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + rammedVesselName + " and " + rammingVesselName + " RAMMED each other and lost " + rammedPartsLost + " and " + rammingPartsLost + " parts, respectively.");
+            }
+
+            // Log score information for the ramming vessel.
+            LogRammingToScoreData(rammingVesselName, rammedVesselName, timeOfCollision, rammedPartsLost);
+            // If it was a head-on, log scores for the rammed vessel too.
+            if (headOn) LogRammingToScoreData(rammedVesselName, rammingVesselName, timeOfCollision, rammingPartsLost);
+        }
+
+        // Write ramming information to the Scores dictionary.
+        private void LogRammingToScoreData(string rammingVesselName, string rammedVesselName, double timeOfCollision, int partsLost)
+        {
+            // Log attributes for the ramming vessel.
+            if (!Scores.ContainsKey(rammingVesselName))
+            {
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] Scores does not contain the key " + rammingVesselName);
+                return;
+            }
+            var vData = Scores[rammingVesselName];
+            vData.totalDamagedPartsDueToRamming += partsLost;
+            var key = rammingVesselName + ":" + rammedVesselName;
+            if (whoRammedWho.ContainsKey(key))
+                whoRammedWho[key] += partsLost;
+            else
+                whoRammedWho.Add(key, partsLost);
+
+            // Log attributes for the rammed vessel.
+            if (!Scores.ContainsKey(rammedVesselName))
+            {
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] Scores does not contain the key " + rammedVesselName);
+                return;
+            }
+            var tData = Scores[rammedVesselName];
+            tData.lastRammedTime = timeOfCollision;
+            tData.lastPersonWhoRammedMe = rammingVesselName;
+            tData.everyoneWhoRammedMe.Add(rammingVesselName);
+            tData.everyoneWhoDamagedMe.Add(rammingVesselName);
+        }
+
+        Dictionary<string, int> partsCheck;
+        void CheckForMissingParts()
+        {
+            if (partsCheck == null)
+            {
+                partsCheck = new Dictionary<string, int>();
+                foreach (var vesselName in rammingInformation.Keys)
+                {
+                    partsCheck.Add(vesselName, rammingInformation[vesselName].vessel.parts.Count);
+                    if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] " + vesselName + " started with " + partsCheck[vesselName] + " parts.");
+                }
+            }
+            foreach (var vesselName in rammingInformation.Keys)
+            {
+                var vessel = rammingInformation[vesselName].vessel;
+                if (vessel != null)
+                {
+                    if (partsCheck[vesselName] != vessel.parts.Count)
+                    {
+                        if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] Parts Check: " + vesselName + " has lost " + (partsCheck[vesselName] - vessel.parts.Count) + " parts." + (vessel.parts.Count > 0 ? "" : " and is no more."));
+                        partsCheck[vesselName] = vessel.parts.Count;
+                    }
+                }
+                else if (partsCheck[vesselName] > 0)
+                {
+                    if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[Ram logging] Parts Check: " + vesselName + " has been destroyed, losing " + partsCheck[vesselName] + " parts.");
+                    partsCheck[vesselName] = 0;
+                }
+            }
+        }
+
+        // Main calling function to control ramming logging.
+        private void LogRamming()
+        {
+            if (!competitionIsActive) return;
+            if (rammingInformation == null) InitialiseRammingInformation();
+            UpdateTimesToCPAs();
+            CheckForPotentialCollisions();
+            CheckForDamagedParts();
+            if (BDArmorySettings.DEBUG_RAMMING_LOGGING) CheckForMissingParts(); // DEBUG
+        }
+
+        // A filter for log messages so Scott can do other stuff depending on the content.
+        public void Log(string message)
+        {
+            // Filter stuff based on the message, then log it to the debug log.
+            Debug.Log(message);
         }
     }
 }

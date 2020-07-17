@@ -1397,8 +1397,10 @@ namespace BDArmory.UI
             BDArmorySettings.BULLET_DECALS = GUI.Toggle(SLeftRect(line), BDArmorySettings.BULLET_DECALS, Localizer.Format("#LOC_BDArmory_Settings_BulletHoleDecals"));//"Bullet Hole Decals"
             BDArmorySettings.DISABLE_RAMMING = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_RAMMING, Localizer.Format("#LOC_BDArmory_Settings_DisableRamming"));// Disable Ramming
             line++;
+            BDArmorySettings.FFA_COMBAT_STYLE = GUI.Toggle(SLeftRect(line), BDArmorySettings.FFA_COMBAT_STYLE, Localizer.Format("#LOC_BDArmory_Settings_FFACombatStyle"));// Free-for-all combat style
+            BDArmorySettings.DEBUG_RAMMING_LOGGING = GUI.Toggle(SRightRect(line), BDArmorySettings.DEBUG_RAMMING_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_DebugRammingLogging"));// Disable Ramming
+            line++;
             BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
-            BDArmorySettings.FFA_COMBAT_STYLE = GUI.Toggle(SRightRect(line), BDArmorySettings.FFA_COMBAT_STYLE, Localizer.Format("#LOC_BDArmory_Settings_FFACombatStyle"));// Free-for-all combat style
             line++;
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -1422,17 +1424,6 @@ namespace BDArmory.UI
             BDArmorySettings.TERRAIN_ALERT_FREQUENCY = (int)terrainAlertFrequency;
             line++;
             
-                GUI.Label(SLeftRect(line), $"Collision Logging Radius Offset:  ({BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET})", leftLabel);
-            float ramLoggingRadiusOffset = BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET;
-            ramLoggingRadiusOffset = GUI.HorizontalSlider(SRightRect(line), ramLoggingRadiusOffset, 10f, 100f);
-            BDArmorySettings.RAM_LOGGING_RADIUS_OFFSET = (int) ramLoggingRadiusOffset;
-            line++;
-            
-                GUI.Label(SLeftRect(line), $"Collision Logging Update Rate:  ({BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE})", leftLabel);
-            float ramLoggingCollisionUpdate = BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE;
-            ramLoggingCollisionUpdate = GUI.HorizontalSlider(SRightRect(line), ramLoggingCollisionUpdate, 0.1f, 1f);
-            BDArmorySettings.RAM_LOGGING_COLLISION_UPDATE = ramLoggingCollisionUpdate;
-            line++;
             line++;
 
             bool origPm = BDArmorySettings.PEACE_MODE;
@@ -1546,6 +1537,12 @@ namespace BDArmory.UI
                     if (GUI.Button(SLeftRect(line), Localizer.Format("#LOC_BDArmory_Generic_Cancel")))//"Cancel"
                     {
                         BDACompetitionMode.Instance.StopCompetition();
+                    }
+                    if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetitionNow"))) // Start competition NOW button.
+                    {
+                        BDACompetitionMode.Instance.StartCompetitionNow();
+                        SaveConfig();
+                        windowSettingsEnabled = false;
                     }
                 }
             }

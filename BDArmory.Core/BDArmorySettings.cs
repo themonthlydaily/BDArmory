@@ -42,8 +42,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistantSettingsField] public static bool PEACE_MODE = false;
         [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = false;
-        [BDAPersistantSettingsField] public static float RAM_LOGGING_RADIUS_OFFSET = 40f;
-        [BDAPersistantSettingsField] public static float RAM_LOGGING_COLLISION_UPDATE = 0.75f;
         [BDAPersistantSettingsField] public static bool FFA_COMBAT_STYLE = false;                // Free-for-all combat style instead of teams (changes target selection behaviour)
         [BDAPersistantSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
@@ -63,5 +61,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = false;
         [BDAPersistantSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;               // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
+        [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;                // Controls whether ramming logging debug information is printed to the Debug.Log
     }
 }
