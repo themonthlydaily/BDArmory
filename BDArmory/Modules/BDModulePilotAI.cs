@@ -1181,7 +1181,7 @@ namespace BDArmory.Modules
             if (targetDot > 0)
             {
                 finalMaxSpeed = Mathf.Max((distanceToTarget - 100) / 8, 0) + (float)v.srfSpeed;
-                finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed );
+                finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);
             }
             AdjustThrottle(finalMaxSpeed, true);
 
@@ -1293,10 +1293,9 @@ namespace BDArmory.Modules
             }
 
             //slow down for tighter turns
-            float velAngleToTarget = Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity());
-            float normVelAngleToTarget = Mathf.Clamp(velAngleToTarget, 0, 90); // This also seems wrong / 90;
+            float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
             float speedReductionFactor = 1.25f;
-            float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * normVelAngleToTarget), idleSpeed, maxSpeed));
+            float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
             debugString.Append($"Final Target Speed: {finalSpeed}");
             debugString.Append(Environment.NewLine);
             AdjustThrottle(finalSpeed, useBrakes, useAB);
@@ -1588,7 +1587,7 @@ namespace BDArmory.Modules
                             }
                         }
                         else
-                        { // This set breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
+                        { // This sets breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
                             breakTarget = threatRelativePosition;
                             if (evasiveTimer < 1.5f * evasionMult)
                                 breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
