@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using BDArmory.Bullets;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -1535,6 +1536,18 @@ namespace BDArmory.UI
                         SaveConfig();
                         windowSettingsEnabled = false;
                     }
+                    if (GUI.Button(SRightRect(line), "Sync Remote"))
+                    {
+                        string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
+                        if( !System.IO.Directory.Exists(vesselPath) )
+                        {
+                            System.IO.Directory.CreateDirectory(vesselPath);
+                        }
+                        BDAScoreService.Instance.Configure(vesselPath, "2");
+                        SaveConfig();
+                        windowSettingsEnabled = false;
+                    }
+                    line++;
                 }
                 else
                 {
