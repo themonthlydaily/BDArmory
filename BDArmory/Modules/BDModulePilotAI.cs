@@ -938,6 +938,8 @@ namespace BDArmory.Modules
 
                 // Find vertical component of aiming angle
                 float angleThreat = Mathf.Pow((1 - Mathf.Pow(targetCosAngle, 2f)), 0.5f);
+                if (float.IsNaN(angleThreat)) // Turrets will return NaN if they don't have a firing solution
+                    angleThreat = 1;
 
                 // Find distance to threat
                 threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
