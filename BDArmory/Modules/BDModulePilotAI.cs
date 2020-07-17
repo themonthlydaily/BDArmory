@@ -123,7 +123,11 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMultiplier", advancedTweakable = true), //Evade Distance Multiplier
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float evasionMult = 1f;
-        
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true), //Evade Threshold
+         UI_FloatRange(minValue = 0f, maxValue = 175f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float evasionThreshold = 175f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactors", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
          UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
@@ -325,6 +329,7 @@ namespace BDArmory.Modules
 
         float turningTimer;
         float evasiveTimer;
+        float threatRating;
         Vector3 lastTargetPosition;
 
         LineRenderer lr;
@@ -741,7 +746,24 @@ namespace BDArmory.Modules
                 lastTargetPosition = requestedExtendTpos;
             }
 
+            // Calculate threat rating from any threats
             if (evasiveTimer > 0 || (weaponManager && evasionMult > 0f && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.            {
+            {
+                if (evasiveTimer < 3f * evasionMult)
+                {
+                    if (weaponManager)
+                    {
+                        threatRating = 0f; // Allow entering evasion code if we're under missile fire
+
+                        if (weaponManager.underFire && weaponManager.incomingWeaponManager != null)
+                        {
+                            threatRating = ThreatRating();
+                        }
+                    }
+                }
+            }
+
+            if (evasiveTimer > 0 || (weaponManager && evasionMult > 0f && threatRating < evasionThreshold && !ramming && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))) // Don't evade while ramming.            {
             {
                 if (evasiveTimer < 3f * evasionMult)
                 {
@@ -901,6 +923,32 @@ namespace BDArmory.Modules
 
             badDirection = Vector3.zero;
             return false;
+        }
+
+        float ThreatRating() // Returns how far away bullets from enemy are from craft in meters
+        {
+            if (weaponManager.incomingWeaponManager.currentGun != null)
+            {
+                var threat_weapon = weaponManager.incomingWeaponManager.currentGun; // Threat vessel weapon
+
+                // Stolen from CheckAIAutofire(), ModuleWeapon.cs
+                Transform fireTransform = threat_weapon.fireTransforms[0];
+                Vector3 aimDirection = fireTransform.forward;
+                float targetCosAngle = Vector3.Dot(aimDirection, (Vector3)threat_weapon.FiringSolutionVector);
+
+                // Find vertical component of aiming angle
+                float angleThreat = Mathf.Pow((1 - Mathf.Pow(targetCosAngle, 2f)), 0.5f);
+
+                // Find distance to threat
+                threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
+                float distanceThreat = Vector3.Magnitude(threatRelativePosition);
+
+                return angleThreat * distanceThreat; // Calculate aiming arc length (how far away the bullets will travel)
+            }
+            else
+            {
+                return 0f;
+            }
         }
 
         public float ClosestTimeToCPA(Vessel v, float maxTime)
@@ -1133,7 +1181,7 @@ namespace BDArmory.Modules
             if (targetDot > 0)
             {
                 finalMaxSpeed = Mathf.Max((distanceToTarget - 100) / 8, 0) + (float)v.srfSpeed;
-                finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);
+                finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed );
             }
             AdjustThrottle(finalMaxSpeed, true);
 
@@ -1245,9 +1293,10 @@ namespace BDArmory.Modules
             }
 
             //slow down for tighter turns
-            float velAngleToTarget = Mathf.Clamp(Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity()), 0, 90);
+            float velAngleToTarget = Vector3.Angle(targetPosition - vesselTransform.position, vessel.Velocity());
+            float normVelAngleToTarget = Mathf.Clamp(velAngleToTarget, 0, 90); // This also seems wrong / 90;
             float speedReductionFactor = 1.25f;
-            float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
+            float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * normVelAngleToTarget), idleSpeed, maxSpeed));
             debugString.Append($"Final Target Speed: {finalSpeed}");
             debugString.Append(Environment.NewLine);
             AdjustThrottle(finalSpeed, useBrakes, useAB);
@@ -1539,7 +1588,7 @@ namespace BDArmory.Modules
                             }
                         }
                         else
-                        { // This sets breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
+                        { // This set breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
                             breakTarget = threatRelativePosition;
                             if (evasiveTimer < 1.5f * evasionMult)
                                 breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
