@@ -95,7 +95,7 @@ namespace BDArmory.Modules
         private Vector3 targetVelocityPrevious; // for acceleration calculation
         private Vector3 targetAccelerationPrevious;
         private Vector3 relativeVelocity;
-        Vector3 finalAimTarget;
+        public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
         bool targetAcquired;
