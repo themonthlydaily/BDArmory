@@ -125,8 +125,8 @@ namespace BDArmory.Modules
         public float evasionMult = 1f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true), //Evade Threshold
-         UI_FloatRange(minValue = 0f, maxValue = 175f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float evasionThreshold = 175f;
+         UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float evasionThreshold = 50f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactors", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
          UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
