@@ -748,7 +748,6 @@ namespace BDArmory.Modules
             }
 
             // Calculate threat rating from any threats
-            threatRating = evasionThreshold + 1f; // Don't evade by default
             if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring))
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
             else if(weaponManager.underFire && weaponManager.incomingWeaponManager != null && !ramming)
@@ -951,7 +950,7 @@ namespace BDArmory.Modules
             else
             {
                 // Debug.Log("[BDArmoryCompetition]: No threat to " + vessel.name);
-                return evasionThreshold + 1f;
+                return evasionThreshold + 1f; // Don't evade by default
             }
         }
 
