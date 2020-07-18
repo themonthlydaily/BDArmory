@@ -12,6 +12,7 @@ using BDArmory.Misc;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using Expansions.Missions;
+using KSP.UI;
 using KSP.UI.Screens;
 using Smooth.Algebraics;
 using UnityEngine;
@@ -747,14 +748,16 @@ namespace BDArmory.Modules
             }
 
             // Calculate threat rating from any threats
-            if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring || weaponManager.underFire))
-            {
+            threatRating = evasionThreshold + 1f; // Don't evade by default
+            if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring))
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
-                if (weaponManager.underFire && weaponManager.incomingWeaponManager != null)
-                    threatRating = ramming ? evasionThreshold + 1f : ThreatRating(); // If we're ramming, ignore gunfire.
-            }
+            else if(weaponManager.underFire && weaponManager.incomingWeaponManager != null && !ramming)
+                threatRating = ThreatRating(); // If we're ramming, ignore gunfire.
             else
-                threatRating = evasionThreshold + 1f;
+                threatRating = evasionThreshold + 1f; // Don't evade by default
+
+            // if (threatRating < evasionThreshold)
+                // Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " is:" + threatRating);
 
             // If we're currently evading or a threat is significant and we're not ramming.
             if (evasiveTimer > 0 || (evasionMult > 0f && threatRating < evasionThreshold))
@@ -931,17 +934,24 @@ namespace BDArmory.Modules
                 float targetCosAngle = threat_weapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threat_weapon.FiringSolutionVector) : 0f; // If the weapon doesn't have a firing solution, set the angleThreat to 1.
 
                 // Find vertical component of aiming angle
-                float angleThreat = Mathf.Pow(Mathf.Max(0f, 1f - Mathf.Pow(targetCosAngle, 2f)), 0.5f);
+                float angleThreat = Mathf.Sin(Mathf.Acos(targetCosAngle));
 
-                // Find distance to threat
-                threatRelativePosition = weaponManager.incomingThreatPosition - vesselTransform.position;
-                float distanceThreat = Vector3.Magnitude(threatRelativePosition);
+                // Calculate distance between incoming threat position and its aimpoint (or self position)
+                float distanceThreat = threat_weapon.finalAimTarget != null ? Vector3.Magnitude(threat_weapon.finalAimTarget - weaponManager.incomingThreatPosition) : Vector3.Magnitude(vesselTransform.position - weaponManager.incomingThreatPosition);
+
+                // For debugging
+                if ((angleThreat * distanceThreat) < evasionThreshold)
+                {
+                    // Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " from " + weaponManager.incomingThreatVessel.name + " is:");
+                    // Debug.Log("     ANGLE: " + Mathf.Asin(angleThreat) / Mathf.PI * 180 + "  DISTANCE: " + distanceThreat + "  RATING: " + angleThreat * distanceThreat);
+                }
 
                 return angleThreat * distanceThreat; // Calculate aiming arc length (how far away the bullets will travel)
             }
             else
             {
-                return 0f;
+                // Debug.Log("[BDArmoryCompetition]: No threat to " + vessel.name);
+                return evasionThreshold + 1f;
             }
         }
 
