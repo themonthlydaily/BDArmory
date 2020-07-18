@@ -12,7 +12,6 @@ using BDArmory.Misc;
 using BDArmory.Targeting;
 using BDArmory.UI;
 using Expansions.Missions;
-using KSP.UI;
 using KSP.UI.Screens;
 using Smooth.Algebraics;
 using UnityEngine;
