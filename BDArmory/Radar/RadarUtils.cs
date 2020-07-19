@@ -824,6 +824,7 @@ namespace BDArmory.Radar
                 foundRadarMissile = false,
                 foundAGM = false,
                 firingAtMe = false,
+		missDistance = null,
                 missileThreatDistance = float.MaxValue,
                 threatVessel = null,
                 threatWeaponManager = null
