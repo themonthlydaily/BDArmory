@@ -3,6 +3,7 @@ using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.CounterMeasure;
+using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Shaders;
@@ -824,7 +825,7 @@ namespace BDArmory.Radar
                 foundRadarMissile = false,
                 foundAGM = false,
                 firingAtMe = false,
-		missDistance = null,
+                missDistance = float.MaxValue,
                 missileThreatDistance = float.MaxValue,
                 threatVessel = null,
                 threatWeaponManager = null
@@ -911,19 +912,17 @@ namespace BDArmory.Radar
                                 using (List<ModuleWeapon>.Enumerator weapon = loadedvessels.Current.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                                     while (weapon.MoveNext())
                                     {
-                                        if (!weapon.Current.recentlyFiring) continue;
-                                        if (Vector3.Dot(weapon.Current.fireTransforms[0].forward, vesselDirection) > 0) continue;
-
-                                        if ((Vector3.Angle(weapon.Current.fireTransforms[0].forward, -predictedRelativeDirection) < 6500 / vesselDistance)
-                                            && (!results.firingAtMe || (weapon.Current.vessel.ReferenceTransform.position - position).sqrMagnitude < (results.threatPosition - position).sqrMagnitude)
-                                            && (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel))
+                                        // If we're being targeted, calculate a miss distance
+                                        if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel
+                                            && MissDistance(weapon.Current, myWpnManager.vessel) < results.missDistance)
                                         {
                                             results.firingAtMe = true;
                                             results.threatPosition = weapon.Current.vessel.transform.position;
                                             results.threatVessel = weapon.Current.vessel;
                                             results.threatWeaponManager = weapon.Current.weaponManager;
-                                            break;
+                                            results.missDistance = MissDistance(weapon.Current, myWpnManager.vessel);
                                         }
+
                                     }
                             }
                         }
@@ -933,6 +932,25 @@ namespace BDArmory.Radar
 
             loadedvessels.Dispose();
             return results;
+        }
+
+        private static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
+        {
+
+            // If we have a firing solution, use that, otherwise use relative vessel positions
+            Transform fireTransform = threatWeapon.fireTransforms[0];
+            Vector3 aimDirection = fireTransform.forward;
+            float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - threatWeapon.vessel.vesselTransform.position).normalized);
+
+            // Find vertical component of aiming angle
+            targetCosAngle = Mathf.Clamp(targetCosAngle, 0, 1); // Treat angles beyond 90 deg as 90 deg
+            float angleThreat = Mathf.Sin(Mathf.Acos(targetCosAngle));
+            
+            // Calculate distance between incoming threat position and its aimpoint (or self position)
+            float distanceThreat = threatWeapon.finalAimTarget != null ? Vector3.Magnitude(threatWeapon.finalAimTarget - threatWeapon.vessel.transform.position) : Vector3.Magnitude(self.vesselTransform.position - threatWeapon.vessel.transform.position);
+
+            return angleThreat * distanceThreat; // Calculate aiming arc length (how far away the bullets will travel)
+
         }
 
         /// <summary>
