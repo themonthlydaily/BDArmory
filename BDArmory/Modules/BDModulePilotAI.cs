@@ -749,7 +749,7 @@ namespace BDArmory.Modules
             // Calculate threat rating from any threats
             if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring))
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
-            else if (weaponManager.underFire && weaponManager.incomingWeaponManager != null && !ramming)
+            else if (weaponManager.underFire && !ramming)
                 threatRating = weaponManager.incomingMissDistance; // If we're ramming, ignore gunfire.
             else
                 threatRating = evasionThreshold + 1f; // Don't evade by default
