@@ -144,8 +144,8 @@ namespace BDArmory.Competition
             // NOTE: runs in separate coroutine
             BDACompetitionMode.Instance.StartCompetitionMode(1000, true);
 
-            // start timer coroutine for 5mins
-            yield return new WaitForSecondsRealtime(5 * 60.0f);
+            // start timer coroutine for 1min
+            yield return new WaitForSeconds(1 * 60.0f);
 
             // timer coroutine stops competition
             BDACompetitionMode.Instance.StopCompetition();
@@ -167,8 +167,9 @@ namespace BDArmory.Competition
             StartCoroutine(SendRecords(competitionId.ToString(), heat, records.ToList()));
         }*/
 
-        private RecordModel TranslateScoreData(string playerName, HeatModel heat, ScoringData scoreData)
+        private RecordModel TranslateScoreData(string vesselName, HeatModel heat, ScoringData scoreData)
         {
+            string playerName = vesselName.Substring(0, vesselName.IndexOf("_"));
             PlayerModel player = client.players.Values.First(e => e.name.Equals(playerName));
             VesselModel vessel = client.vessels.Values.First(e => e.player_id == player.id);
             RecordModel record = new RecordModel();

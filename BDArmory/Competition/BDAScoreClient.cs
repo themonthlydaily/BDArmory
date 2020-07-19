@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
-using Newtonsoft.Json;
 
 namespace BDArmory.Competition
 {
@@ -69,13 +68,13 @@ namespace BDArmory.Competition
 
         private void ReceiveCompetition(string response)
         {
-            if( response == null || "".Equals(response) )
+            if (response == null || "".Equals(response))
             {
                 Debug.Log(string.Format("[BDAScoreClient] Received empty competition response"));
                 return;
             }
-            CompetitionModel competition = ParseJson<CompetitionModel>(response);
-            if( competition == null )
+            CompetitionModel competition = JsonUtility.FromJson<CompetitionModel>(response);
+            if (competition == null)
             {
                 Debug.Log(string.Format("[BDAScoreClient] Failed to parse competition: {0}", response));
             }
@@ -95,16 +94,14 @@ namespace BDArmory.Competition
             }
             pendingRequest = true;
 
-            string uri = string.Format("{0}/competitions/{1}/heats.json", baseUrl, hash);
+            string uri = string.Format("{0}/competitions/{1}/heats.csv", baseUrl, hash);
             Debug.Log(string.Format("[BDAScoreClient] GET {0}", uri));
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
-                webRequest.downloadHandler = new DownloadHandlerBuffer();
                 yield return webRequest.SendWebRequest();
                 if (!webRequest.isHttpError)
                 {
-                    string response = Encoding.UTF8.GetString(webRequest.downloadHandler.data);
-                    ReceiveHeats(response);
+                    ReceiveHeats(webRequest.downloadHandler.text);
                 }
                 else
                 {
@@ -122,15 +119,14 @@ namespace BDArmory.Competition
                 Debug.Log(string.Format("[BDAScoreClient] Received empty heat collection response"));
                 return;
             }
-            string wrapped = "{\"heats\":" + response + "}";
-            HeatCollection collection = ParseJson<HeatCollection>(wrapped);
+            List<HeatModel> collection = HeatModel.FromCsv(response);
             heats.Clear();
-            if (collection == null || collection.heats == null)
+            if (collection == null)
             {
                 Debug.Log(string.Format("[BDAScoreClient] Failed to parse heat collection: {0}", response));
                 return;
             }
-            foreach (HeatModel heatModel in collection.heats)
+            foreach (HeatModel heatModel in collection)
             {
                 Debug.Log(string.Format("[BDAScoreClient] Heat: {0}", heatModel.ToString()));
                 heats.Add(heatModel.id, heatModel);
@@ -147,7 +143,7 @@ namespace BDArmory.Competition
             }
             pendingRequest = true;
 
-            string uri = string.Format("{0}/players.json", baseUrl);
+            string uri = string.Format("{0}/competitions/{1}/players.csv", baseUrl, hash);
             Debug.Log(string.Format("[BDAScoreClient] GET {0}", uri));
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
@@ -172,15 +168,14 @@ namespace BDArmory.Competition
                 Debug.Log(string.Format("[BDAScoreClient] Received empty player collection response"));
                 return;
             }
-            string wrapper = "{\"players\":" + response + "}";
-            PlayerCollection collection = ParseJson<PlayerCollection>(wrapper);
+            List<PlayerModel> collection = PlayerModel.FromCsv(response);
             players.Clear();
-            if( collection == null || collection.players == null )
+            if (collection == null)
             {
-                Debug.Log(string.Format("[BDAScoreClient] Failed to parse player collection: {0}", wrapper));
+                Debug.Log(string.Format("[BDAScoreClient] Failed to parse player collection: {0}", response));
                 return;
             }
-            foreach (PlayerModel playerModel in collection.players)
+            foreach (PlayerModel playerModel in collection)
             {
                 Debug.Log(string.Format("[BDAScoreClient] Player {0}", playerModel.ToString()));
                 players.Add(playerModel.id, playerModel);
@@ -197,7 +192,7 @@ namespace BDArmory.Competition
             }
             pendingRequest = true;
 
-            string uri = string.Format("{0}/competitions/{1}/heats/{2}/vessels.json", baseUrl, hash, heat.id);
+            string uri = string.Format("{0}/competitions/{1}/heats/{2}/vessels.csv", baseUrl, hash, heat.id);
             Debug.Log(string.Format("[BDAScoreClient] GET {0}", uri));
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
@@ -222,15 +217,14 @@ namespace BDArmory.Competition
                 Debug.Log(string.Format("[BDAScoreClient] Received empty vessel collection response"));
                 return;
             }
-            string wrapper = "{\"vessels\":" + response + "}";
-            VesselCollection collection = ParseJson<VesselCollection>(wrapper);
+            List<VesselModel> collection = VesselModel.FromCsv(response);
             vessels.Clear();
-            if( collection == null || collection.vessels == null )
+            if (collection == null)
             {
-                Debug.Log(string.Format("[BDAScoreClient] Failed to parse vessel collection: {0}", wrapper));
+                Debug.Log(string.Format("[BDAScoreClient] Failed to parse vessel collection: {0}", response));
                 return;
             }
-            foreach (VesselModel vesselModel in collection.vessels)
+            foreach (VesselModel vesselModel in collection)
             {
                 Debug.Log(string.Format("[BDAScoreClient] Vessel {0}", vesselModel.ToString()));
                 vessels.Add(vesselModel.id, vesselModel);
@@ -256,7 +250,7 @@ namespace BDArmory.Competition
 
                 yield return webRequest.SendWebRequest();
 
-                if( webRequest.isHttpError )
+                if (webRequest.isHttpError)
                 {
                     Debug.Log(string.Format("[BDAScoreClient] Failed to post records: {0}", webRequest.error));
                 }
@@ -265,6 +259,18 @@ namespace BDArmory.Competition
 
         public IEnumerator GetCraftFiles(string hash, HeatModel model)
         {
+            // DO NOT DELETE THE DIRECTORY. Delete the craft files inside it.
+            // This is much safer.
+            Debug.Log("[BDAScoreClient] Deleting existing craft in spawn directory");
+            DirectoryInfo info = new DirectoryInfo(vesselPath);
+            FileInfo[] craftFiles = info.GetFiles("*.craft")
+                .Where(e => e.Extension == ".craft")
+                .ToArray();
+            foreach (FileInfo file in craftFiles)
+            {
+                File.Delete(file.FullName);
+            }
+
             // already have the vessels in memory; just need to fetch the files
             foreach (VesselModel v in vessels.Values)
             {
@@ -348,21 +354,6 @@ namespace BDArmory.Competition
             }
 
             pendingRequest = false;
-        }
-
-        private T ParseJson<T>(string source)
-        {
-            T result;
-            try
-            {
-                result = JsonConvert.DeserializeObject<T>(source);
-            }
-            catch(Exception e)
-            {
-                Debug.Log("[BDAScoreClient] error: " + e);
-                result = default(T);
-            }
-            return result;
         }
 
     }

@@ -1427,9 +1427,12 @@ namespace BDArmory.UI
             
             line++;
 
-            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging")}:  ({BDArmorySettings.REMOTE_LOGGING_ENABLED})", leftLabel); // Remote logging.
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging")}: ", leftLabel); // Remote logging.
             bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
             BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SRightRect(line), BDArmorySettings.REMOTE_LOGGING_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+            line++;
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+            BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
             line++;
             line++;
 
