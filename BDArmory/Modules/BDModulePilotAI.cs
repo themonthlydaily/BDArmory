@@ -749,13 +749,13 @@ namespace BDArmory.Modules
             // Calculate threat rating from any threats
             if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring))
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
-            else if(weaponManager.underFire && weaponManager.incomingWeaponManager != null && !ramming)
+            else if (weaponManager.underFire && weaponManager.incomingWeaponManager != null && !ramming)
                 threatRating = ThreatRating(); // If we're ramming, ignore gunfire.
             else
                 threatRating = evasionThreshold + 1f; // Don't evade by default
 
             // if (threatRating < evasionThreshold)
-                // Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " is:" + threatRating);
+            //     Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " is:" + threatRating);
 
             // If we're currently evading or a threat is significant and we're not ramming.
             if (evasiveTimer > 0 || (evasionMult > 0f && threatRating < evasionThreshold))
@@ -904,7 +904,7 @@ namespace BDArmory.Modules
             }
 
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
-            float timeToCPA = ClosestTimeToCPA(v, maxTime); // This uses the same kinematics as AIUtils.PredictPosition.
+            float timeToCPA = vessel.ClosestTimeToCPA(v, maxTime); // This uses the same kinematics as AIUtils.PredictPosition.
             if (timeToCPA > 0 && timeToCPA < maxTime)
             {
                 Vector3 tPos = AIUtils.PredictPosition(v, timeToCPA);
@@ -938,11 +938,11 @@ namespace BDArmory.Modules
                 float distanceThreat = threat_weapon.finalAimTarget != null ? Vector3.Magnitude(threat_weapon.finalAimTarget - weaponManager.incomingThreatPosition) : Vector3.Magnitude(vesselTransform.position - weaponManager.incomingThreatPosition);
 
                 // For debugging
-                if ((angleThreat * distanceThreat) < evasionThreshold)
-                {
-                    // Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " from " + weaponManager.incomingThreatVessel.name + " is:");
-                    // Debug.Log("     ANGLE: " + Mathf.Asin(angleThreat) / Mathf.PI * 180 + "  DISTANCE: " + distanceThreat + "  RATING: " + angleThreat * distanceThreat);
-                }
+                // if ((angleThreat * distanceThreat) < evasionThreshold)
+                // {
+                //     Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " from " + weaponManager.incomingThreatVessel.name + " is:");
+                //     Debug.Log("     ANGLE: " + Mathf.Asin(angleThreat) / Mathf.PI * 180 + "  DISTANCE: " + distanceThreat + "  RATING: " + angleThreat * distanceThreat);
+                // }
 
                 return angleThreat * distanceThreat; // Calculate aiming arc length (how far away the bullets will travel)
             }
@@ -950,65 +950,6 @@ namespace BDArmory.Modules
             {
                 // Debug.Log("[BDArmoryCompetition]: No threat to " + vessel.name);
                 return evasionThreshold + 1f; // Don't evade by default
-            }
-        }
-
-        public float ClosestTimeToCPA(Vessel v, float maxTime)
-        { // Find the closest future time to closest point of approach considering accelerations in addition to velocities. This uses the generalisation of Cardano's solution to finding roots of cubics to find where the derivative of the separation is a minimum.
-            if (v == null) return 0f; // We don't have a target.
-            Vector3 relPosition = v.transform.position - vessel.transform.position;
-            Vector3 relVelocity = v.Velocity() - vessel.Velocity();
-            Vector3 relAcceleration = v.acceleration - vessel.acceleration;
-            float A = Vector3.Dot(relAcceleration, relAcceleration) / 2f;
-            float B = Vector3.Dot(relVelocity, relAcceleration) * 3f / 2f;
-            float C = Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration);
-            float D = Vector3.Dot(relPosition, relVelocity);
-            if (A == 0) // Not actually a cubic. Relative acceleration is zero, so return the much simpler linear timeToCPA.
-            {
-                return Mathf.Clamp(-Vector3.Dot(relPosition, relVelocity) / relVelocity.sqrMagnitude, 0f, maxTime);
-            }
-            float D0 = Mathf.Pow(B, 2f) - 3f * A * C;
-            float D1 = 2 * Mathf.Pow(B, 3f) - 9f * A * B * C + 27f * Mathf.Pow(A, 2f) * D;
-            float E = Mathf.Pow(D1, 2f) - 4f * Mathf.Pow(D0, 3f); // = -27*A^2*discriminant
-            // float discriminant = 18f * A * B * C * D - 4f * Mathf.Pow(B, 3f) * D + Mathf.Pow(B, 2f) * Mathf.Pow(C, 2f) - 4f * A * Mathf.Pow(C, 3f) - 27f * Mathf.Pow(A, 2f) * Mathf.Pow(D, 2f);
-            if (E > 0)
-            { // Single solution (E is positive)
-                float F = (D1 + Mathf.Sign(D1) * Mathf.Sqrt(E)) / 2f;
-                float G = Mathf.Sign(F) * Mathf.Pow(Mathf.Abs(F), 1f / 3f);
-                float time = -1f / 3f / A * (B + G + D0 / G);
-                return Mathf.Clamp(time, 0f, maxTime);
-            }
-            else if (E < 0)
-            { // Triple solution (E is negative)
-                float F_real = D1 / 2f;
-                float F_imag = Mathf.Sign(D1) * Mathf.Sqrt(-E) / 2f;
-                float F_abs = Mathf.Sqrt(Mathf.Pow(F_real, 2f) + Mathf.Pow(F_imag, 2f));
-                float F_ang = Mathf.Atan2(F_imag, F_real);
-                float G_abs = Mathf.Pow(F_abs, 1f / 3f);
-                float G_ang = F_ang / 3f;
-                float time = -1f;
-                for (int i = 0; i < 3; ++i)
-                {
-                    float G = G_abs * Mathf.Cos(G_ang + 2f * (float)i * Mathf.PI / 3f);
-                    float t = -1f / 3f / A * (B + G + D0 * G / Mathf.Pow(G_abs, 2f));
-                    if (t > 0f && Mathf.Sign(Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration) + 3f * t * Vector3.Dot(relVelocity, relAcceleration) + 3f / 2f * Mathf.Pow(t, 2f) * Vector3.Dot(relAcceleration, relAcceleration)) > 0)
-                    { // It's a minimum and in the future.
-                        if (time < 0f || t < time) // Update the closest time.
-                            time = t;
-                    }
-                }
-                return Mathf.Clamp(time, 0f, maxTime);
-            }
-            else
-            { // Repeated root
-                if (Mathf.Abs(Mathf.Pow(B, 2) - 2f * A * C) < 1e-7)
-                { // A triple-root.
-                    return Mathf.Clamp(-B / 3f / A, 0f, maxTime);
-                }
-                else
-                { // Double root and simple root.
-                    return Mathf.Clamp(Mathf.Max((9f * A * D - B * C) / 2 / (Mathf.Pow(B, 2f) - 3f * A * C), (4f * A * B * C - 9f * Mathf.Pow(A, 2f) * D - Mathf.Pow(B, 3f)) / A / (Mathf.Pow(B, 2f) - 3f * A * C)), 0f, maxTime);
-                }
             }
         }
 
@@ -1020,7 +961,7 @@ namespace BDArmory.Modules
             Vector3 relVelocity = v.Velocity() - vessel.Velocity();
             Vector3 relPosition = v.transform.position - vessel.transform.position;
             Vector3 relAcceleration = v.acceleration - vessel.acceleration;
-            float timeToCPA = ClosestTimeToCPA(v, 10f);
+            float timeToCPA = vessel.ClosestTimeToCPA(v, 10f);
 
             // Let's try to ram someone!
             if (!ramming)
