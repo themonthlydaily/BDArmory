@@ -1654,18 +1654,19 @@ namespace BDArmory.Control
         public IOrderedEnumerable<KeyValuePair<Tuple<string, string>, Tuple<float, float>>> UpcomingCollisions(float distanceThreshold, bool sortByDistance = true)
         {
             var upcomingCollisions = new Dictionary<Tuple<string, string>, Tuple<float, float>>();
-            foreach (var vesselName in rammingInformation.Keys)
-                foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
-                    if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && String.Compare(vesselName, otherVesselName) < 0)
-                        if (rammingInformation[vesselName].vessel != null && rammingInformation[otherVesselName].vessel != null)
-                        {
-                            var predictedSqrSeparation = Vector3.SqrMagnitude(rammingInformation[vesselName].vessel.CoM - rammingInformation[otherVesselName].vessel.CoM);
-                            if (predictedSqrSeparation < distanceThreshold * distanceThreshold)
-                                upcomingCollisions.Add(
-                                    new Tuple<string, string>(vesselName, otherVesselName),
-                                    new Tuple<float, float>(predictedSqrSeparation, rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA)
-                                );
-                        }
+            if (rammingInformation != null)
+                foreach (var vesselName in rammingInformation.Keys)
+                    foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                        if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && String.Compare(vesselName, otherVesselName) < 0)
+                            if (rammingInformation[vesselName].vessel != null && rammingInformation[otherVesselName].vessel != null)
+                            {
+                                var predictedSqrSeparation = Vector3.SqrMagnitude(rammingInformation[vesselName].vessel.CoM - rammingInformation[otherVesselName].vessel.CoM);
+                                if (predictedSqrSeparation < distanceThreshold * distanceThreshold)
+                                    upcomingCollisions.Add(
+                                        new Tuple<string, string>(vesselName, otherVesselName),
+                                        new Tuple<float, float>(predictedSqrSeparation, rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA)
+                                    );
+                            }
             return upcomingCollisions.OrderBy(d => sortByDistance ? d.Value.Item1 : d.Value.Item2);
         }
 
