@@ -978,7 +978,7 @@ namespace BDArmory.Modules
 
         public bool HasAmmoAndGuns()
         { // Check if the vessel has both ammo and guns.
-            if (outOfAmmo) return false; // It's already been checked and found to be true, don't look again.
+            if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
             bool hasAmmoAndGuns = false;
             if (weaponManager)
             {
