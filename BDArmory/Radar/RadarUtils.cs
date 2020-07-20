@@ -917,7 +917,7 @@ namespace BDArmory.Radar
                                             && MissDistance(weapon.Current, myWpnManager.vessel) < results.missDistance)
                                         {
                                             results.firingAtMe = true;
-                                            results.threatPosition = weapon.Current.vessel.transform.position;
+                                            results.threatPosition = weapon.Current.fireTransforms[0].position; // Position of weapon that's attacking.
                                             results.threatVessel = weapon.Current.vessel;
                                             results.threatWeaponManager = weapon.Current.weaponManager;
                                             results.missDistance = MissDistance(weapon.Current, myWpnManager.vessel);
@@ -940,13 +940,13 @@ namespace BDArmory.Radar
             // If we have a firing solution, use that, otherwise use relative vessel positions
             Transform fireTransform = threatWeapon.fireTransforms[0];
             Vector3 aimDirection = fireTransform.forward;
-            float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(threatWeapon.vessel.vesselTransform.up, (self.vesselTransform.position - threatWeapon.vessel.vesselTransform.position).normalized);
+            float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - fireTransform.position).normalized);
 
             // Find vertical component of aiming angle
             float angleThreat = targetCosAngle < 0 ? float.MaxValue : Mathf.Sqrt(Mathf.Max(0f, 1f - targetCosAngle * targetCosAngle)); // Treat angles beyond 90 degrees as not a threat
 
             // Calculate distance between incoming threat position and its aimpoint (or self position)
-            float distanceThreat = threatWeapon.finalAimTarget != null ? Vector3.Magnitude(threatWeapon.finalAimTarget - threatWeapon.vessel.transform.position) : Vector3.Magnitude(self.vesselTransform.position - threatWeapon.vessel.transform.position);
+            float distanceThreat = !threatWeapon.finalAimTarget.IsZero() ? Vector3.Magnitude(threatWeapon.finalAimTarget - fireTransform.position) : Vector3.Magnitude(self.vesselTransform.position - fireTransform.position);
 
             return angleThreat * distanceThreat; // Calculate aiming arc length (how far away the bullets will travel)
 
