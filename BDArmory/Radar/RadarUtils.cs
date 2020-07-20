@@ -940,7 +940,7 @@ namespace BDArmory.Radar
             // If we have a firing solution, use that, otherwise use relative vessel positions
             Transform fireTransform = threatWeapon.fireTransforms[0];
             Vector3 aimDirection = fireTransform.forward;
-            float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - threatWeapon.vessel.vesselTransform.position).normalized);
+            float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(threatWeapon.vessel.vesselTransform.up, (self.vesselTransform.position - threatWeapon.vessel.vesselTransform.position).normalized);
 
             // Find vertical component of aiming angle
             float angleThreat = targetCosAngle < 0 ? float.MaxValue : Mathf.Sqrt(1 - targetCosAngle * targetCosAngle);  // Treat angles beyond 90 degrees as not a threat
