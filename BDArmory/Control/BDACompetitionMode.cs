@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -1635,7 +1635,7 @@ namespace BDArmory.Control
                     {
                         if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].lastUpdateTime > rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA / 2f) // When half the time is gone, update it.
                         {
-                            float timeToCPA = pilotAI.ClosestTimeToCPA(otherPilotAI.vessel, maxTimeToCPA); // Look up to maxTimeToCPA ahead.
+                            float timeToCPA = AIUtils.ClosestTimeToCPA(vessel, otherVessel, maxTimeToCPA); // Look up to maxTimeToCPA ahead.
                             if (timeToCPA > 0f && timeToCPA < maxTimeToCPA) // If the closest approach is within the next maxTimeToCPA, log it.
                                 rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = timeToCPA;
                             else // Otherwise set it to the max value.
@@ -1654,18 +1654,19 @@ namespace BDArmory.Control
         public IOrderedEnumerable<KeyValuePair<Tuple<string, string>, Tuple<float, float>>> UpcomingCollisions(float distanceThreshold, bool sortByDistance = true)
         {
             var upcomingCollisions = new Dictionary<Tuple<string, string>, Tuple<float, float>>();
-            foreach (var vesselName in rammingInformation.Keys)
-                foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
-                    if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && String.Compare(vesselName, otherVesselName) < 0)
-                        if (rammingInformation[vesselName].vessel != null && rammingInformation[otherVesselName].vessel != null)
-                        {
-                            var predictedSqrSeparation = Vector3.SqrMagnitude(rammingInformation[vesselName].vessel.CoM - rammingInformation[otherVesselName].vessel.CoM);
-                            if (predictedSqrSeparation < distanceThreshold * distanceThreshold)
-                                upcomingCollisions.Add(
-                                    new Tuple<string, string>(vesselName, otherVesselName),
-                                    new Tuple<float, float>(predictedSqrSeparation, rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA)
-                                );
-                        }
+            if (rammingInformation != null)
+                foreach (var vesselName in rammingInformation.Keys)
+                    foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                        if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision && rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < maxTimeToCPA && String.Compare(vesselName, otherVesselName) < 0)
+                            if (rammingInformation[vesselName].vessel != null && rammingInformation[otherVesselName].vessel != null)
+                            {
+                                var predictedSqrSeparation = Vector3.SqrMagnitude(rammingInformation[vesselName].vessel.CoM - rammingInformation[otherVesselName].vessel.CoM);
+                                if (predictedSqrSeparation < distanceThreshold * distanceThreshold)
+                                    upcomingCollisions.Add(
+                                        new Tuple<string, string>(vesselName, otherVesselName),
+                                        new Tuple<float, float>(predictedSqrSeparation, rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA)
+                                    );
+                            }
             return upcomingCollisions.OrderBy(d => sortByDistance ? d.Value.Item1 : d.Value.Item2);
         }
 
