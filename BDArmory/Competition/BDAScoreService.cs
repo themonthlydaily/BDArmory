@@ -15,11 +15,11 @@ namespace BDArmory.Competition
     {
         public static BDAScoreService Instance;
 
-//        private string competitionHash = "";
-
-//        private int heat = 0;
-
-//        private JsonListHelper listHelper = new JsonListHelper();
+        public Dictionary<string, Dictionary<string, int>> hitsOnTarget = new Dictionary<string, Dictionary<string, int>>();
+        public Dictionary<string, Dictionary<string, int>> killsOnTarget = new Dictionary<string, Dictionary<string, int>>();
+        public Dictionary<string, int> deaths = new Dictionary<string, int>();
+        public Dictionary<string, string> longestHitWeapon = new Dictionary<string, string>();
+        public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
 
         private bool pendingSync = false;
 
@@ -142,10 +142,11 @@ namespace BDArmory.Competition
 
             // start competition to begin spawning
             // NOTE: runs in separate coroutine
-            BDACompetitionMode.Instance.StartCompetitionMode(1000, true);
+            BDACompetitionMode.Instance.StartCompetitionMode(1000);
 
             // start timer coroutine for 1min
-            yield return new WaitForSeconds(1 * 60.0f);
+            var duration = Core.BDArmorySettings.COMPETITION_DURATION;
+            yield return new WaitForSeconds(duration * 60.0f);
 
             // timer coroutine stops competition
             BDACompetitionMode.Instance.StopCompetition();
@@ -153,46 +154,135 @@ namespace BDArmory.Competition
             // TODO: remove all spawned vehicles
         }
 
-
-
-        /*public void SubmitResults()
-        {
-            if (!BDArmorySettings.REMOTE_LOGGING_ENABLED)
-            {
-                return;
-            }
-            Dictionary<string, ScoringData> scores = BDACompetitionMode.Instance.Scores;
-            int competitionId = BDACompetitionMode.Instance.CompetitionID;
-            var records = scores.Select(e => TranslateScoreData(competitionId, e.Key, e.Value));
-            StartCoroutine(SendRecords(competitionId.ToString(), heat, records.ToList()));
-        }*/
-
-        private RecordModel TranslateScoreData(string vesselName, HeatModel heat, ScoringData scoreData)
-        {
-            string playerName = vesselName.Substring(0, vesselName.IndexOf("_"));
-            PlayerModel player = client.players.Values.First(e => e.name.Equals(playerName));
-            VesselModel vessel = client.vessels.Values.First(e => e.player_id == player.id);
-            RecordModel record = new RecordModel();
-            record.competition_id = vessel.competition_id;
-            record.vessel_id = vessel.id;
-            record.heat_id = heat.id;
-            record.kills = scoreData.kills;
-            record.deaths = scoreData.deaths;
-            if (BDACompetitionMode.Instance.longestHitDistance.ContainsKey(player.name))
-            {
-                record.distance = (float)BDACompetitionMode.Instance.longestHitDistance[player.name];
-                record.weapon = BDACompetitionMode.Instance.longestHitWeapon[player.name];
-            }
-            return record;
-        }
-
         private IEnumerator SendScores(string hash, HeatModel heat)
         {
-            Dictionary<string, ScoringData> scores = BDACompetitionMode.Instance.Scores;
-            var records = scores.Select(e => TranslateScoreData(e.Key, heat, e.Value));
+            var records = BuildRecords(hash, heat);
             yield return client.PostRecords(hash, heat.order, records.ToList());
         }
 
+        private List<RecordModel> BuildRecords(string hash, HeatModel heat)
+        {
+            List<RecordModel> results = new List<RecordModel>();
+            var playerNames = killsOnTarget.Keys;
+            foreach (string playerName in playerNames)
+            {
+                PlayerModel player = client.players.Values.FirstOrDefault(e => e.name == playerName);
+                if (player == null)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] Unmatched player {0}", playerName));
+                    continue;
+                }
+                VesselModel vessel = client.vessels.Values.FirstOrDefault(e => e.player_id == player.id);
+                if (vessel == null)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] Unmatched vessel for playerId {0}", player.id));
+                    continue;
+                }
+                RecordModel record = new RecordModel();
+                record.vessel_id = vessel.id;
+                record.competition_id = int.Parse(hash);
+                record.heat_id = heat.id;
+                record.hits = ComputeTotalHits(player.name);
+                record.kills = ComputeTotalKills(player.name);
+                record.deaths = ComputeTotalDeaths(player.name);
+                if (longestHitDistance.ContainsKey(player.name))
+                {
+                    record.distance = (float)longestHitDistance[player.name];
+                    record.weapon = longestHitWeapon[player.name];
+                }
+            }
+            return results;
+        }
+
+        private int ComputeTotalHits(string playerName)
+        {
+            int result = 0;
+            if (hitsOnTarget.ContainsKey(playerName))
+            {
+                result = hitsOnTarget[playerName].Values.Sum();
+            }
+            return result;
+        }
+
+        private int ComputeTotalKills(string playerName)
+        {
+            int result = 0;
+            if( killsOnTarget.ContainsKey(playerName) )
+            {
+                result = killsOnTarget[playerName].Values.Sum();
+            }
+            return result;
+        }
+
+        private int ComputeTotalDeaths(string playerName)
+        {
+            int result = 0;
+            if( deaths.ContainsKey(playerName) )
+            {
+                result = deaths[playerName];
+            }
+            return result;
+        }
+
+        public void TrackHit(string attacker, string target, string weaponName, double hitDistance)
+        {
+            if( hitsOnTarget.ContainsKey(attacker) )
+            {
+                Dictionary<string, int> hits = hitsOnTarget[attacker];
+                if( hits.ContainsKey(target) )
+                {
+                    hits[target] += 1;
+                    hitsOnTarget[attacker] = hits;
+                }
+            }
+            else
+            {
+                Dictionary<string, int> newHits = new Dictionary<string, int>();
+                newHits[target] = 1;
+                hitsOnTarget[attacker] = newHits;
+            }
+            if (!longestHitDistance.ContainsKey(attacker) || hitDistance > longestHitDistance[attacker])
+            {
+                Debug.Log(string.Format("[BDACompetitionMode] Tracked hit for {0} with {1} at {2}", attacker, weaponName, hitDistance));
+                longestHitWeapon[attacker] = weaponName;
+                longestHitDistance[attacker] = hitDistance;
+            }
+        }
+
+        public void TrackKill(string attacker, string target)
+        {
+            List<string> list = new List<string>();
+            list.Add(attacker);
+            TrackKill(list, target);
+        }
+
+        public void TrackKill(List<string> attackers, string target)
+        {
+            if( deaths.ContainsKey(target) )
+            {
+                deaths[target] += 1;
+            }
+            else
+            {
+                deaths[target] = 1;
+            }
+            foreach (string attacker in attackers)
+            {
+
+                if (killsOnTarget.ContainsKey(attacker))
+                {
+                    Dictionary<string, int> attackerKills = killsOnTarget[attacker];
+                    attackerKills[target] += 1;
+                    killsOnTarget[attacker] = attackerKills;
+                }
+                else
+                {
+                    Dictionary<string, int> newKills = new Dictionary<string, int>();
+                    newKills[target] = 1;
+                    killsOnTarget[attacker] = newKills;
+                }
+            }
+        }
 
         public class JsonListHelper<T>
         {

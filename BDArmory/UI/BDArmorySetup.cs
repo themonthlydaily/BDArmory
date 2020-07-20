@@ -1427,13 +1427,18 @@ namespace BDArmory.UI
             
             line++;
 
-            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging")}: ", leftLabel); // Remote logging.
             bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
-            BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SRightRect(line), BDArmorySettings.REMOTE_LOGGING_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+            BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
             line++;
-            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
-            BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
-            line++;
+            if (remoteLoggingEnabled)
+            {
+                GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+                BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                line++;
+                GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionDuration")}", leftLabel);
+                BDArmorySettings.COMPETITION_DURATION = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.COMPETITION_DURATION, 1, 10);
+                line++;
+            }
             line++;
 
             bool origPm = BDArmorySettings.PEACE_MODE;
@@ -1546,7 +1551,7 @@ namespace BDArmory.UI
                         {
                             System.IO.Directory.CreateDirectory(vesselPath);
                         }
-                        BDAScoreService.Instance.Configure(vesselPath, "2");
+                        BDAScoreService.Instance.Configure(vesselPath, BDArmorySettings.COMPETITION_HASH);
                         SaveConfig();
                         windowSettingsEnabled = false;
                     }

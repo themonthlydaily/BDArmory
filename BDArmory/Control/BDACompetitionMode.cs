@@ -92,8 +92,6 @@ namespace BDArmory.Control
         public Dictionary<string, int> whoShotWho = new Dictionary<string, int>();
         public Dictionary<string, int> whoRammedWho = new Dictionary<string, int>();
 
-        public Dictionary<string, string> longestHitWeapon = new Dictionary<string, string>();
-        public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
 
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
@@ -1417,6 +1415,7 @@ namespace BDArmory.Control
                                         Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
                                         Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
                                         whoKilledMe += " (BOOM! HEADSHOT!)";
+                                        Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
                                     }
                                     else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
                                     {
@@ -1424,6 +1423,7 @@ namespace BDArmory.Control
                                         Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
                                         Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
                                         whoKilledMe += " (BOOM! HEADSHOT!)";
+                                        Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
                                     }
 
                                 }
@@ -1439,6 +1439,7 @@ namespace BDArmory.Control
                                     {
                                         Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                                     }
+                                    Competition.BDAScoreService.Instance.TrackKill(Scores[key].EveryOneWhoDamagedMe().ToList(), key);
                                 }
                             }
                             if (whoKilledMe != "")
@@ -1833,15 +1834,6 @@ namespace BDArmory.Control
             }
         }
 
-        public void TrackHit(string attacker, string weaponName, double hitDistance)
-        {
-            if (!longestHitDistance.ContainsKey(attacker) || hitDistance > longestHitDistance[attacker])
-            {
-                Debug.Log(string.Format("[BDACompetitionMode] Tracked hit for {0} with {1} at {2}", attacker, weaponName, hitDistance));
-                longestHitWeapon[attacker] = weaponName;
-                longestHitDistance[attacker] = hitDistance;
-            }
-        }
 
         // Check for parts being lost on the various vessels for which collisions have been detected.
         private void CheckForDamagedParts()

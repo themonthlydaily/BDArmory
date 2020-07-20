@@ -10,6 +10,7 @@ using BDArmory.Parts;
 using BDArmory.Shaders;
 using BDArmory.UI;
 using BDArmory.Control;
+using BDArmory.Competition;
 using UnityEngine;
 
 namespace BDArmory.Bullets
@@ -522,7 +523,7 @@ namespace BDArmory.Bullets
                     BDACompetitionMode.Instance.whoShotWho[whoShotWhoKey] = 1;
                 }
 
-                BDACompetitionMode.Instance.TrackHit(aName, bullet.name, distanceTraveled);
+                BDAScoreService.Instance.TrackHit(aName, tName, bullet.name, distanceTraveled);
 
                 // update scoring structure on attacker
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(aName))
