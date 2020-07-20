@@ -943,7 +943,7 @@ namespace BDArmory.Radar
             float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - threatWeapon.vessel.vesselTransform.position).normalized);
 
             // Find vertical component of aiming angle
-            float angleThreat = targetCosAngle < 0 ? float.MaxValue : Mathf.Sin(Mathf.Acos(targetCosAngle));  // Treat angles beyond 90 degrees as not a threat
+            float angleThreat = targetCosAngle < 0 ? float.MaxValue : Mathf.Sqrt(1 - targetCosAngle * targetCosAngle);  // Treat angles beyond 90 degrees as not a threat
             
             // Calculate distance between incoming threat position and its aimpoint (or self position)
             float distanceThreat = threatWeapon.finalAimTarget != null ? Vector3.Magnitude(threatWeapon.finalAimTarget - threatWeapon.vessel.transform.position) : Vector3.Magnitude(self.vesselTransform.position - threatWeapon.vessel.transform.position);
