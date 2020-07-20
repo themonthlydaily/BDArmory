@@ -347,6 +347,7 @@ namespace BDArmory.Modules
         public Vector3 incomingThreatPosition;
         public Vessel incomingThreatVessel;
         public MissileFire incomingWeaponManager;
+        public float incomingMissDistance;
 
         bool guardFiringMissile;
         bool disabledRocketAimers;
@@ -4087,6 +4088,7 @@ namespace BDArmory.Modules
                 if (results.threatWeaponManager != null)
                 {
                     incomingWeaponManager = results.threatWeaponManager;
+                    incomingMissDistance = results.missDistance;
                     TargetInfo nearbyFriendly = BDATargetManager.GetClosestFriendly(this);
                     TargetInfo nearbyThreat = BDATargetManager.GetTargetFromWeaponManager(results.threatWeaponManager);
 
