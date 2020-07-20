@@ -1582,11 +1582,17 @@ namespace BDArmory.Control
             rammingInformation = new Dictionary<string, RammingInformation>();
             foreach (var vessel in BDATargetManager.LoadedVessels)
             {
+                IBDAIControl pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
+                if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral) continue; // Only include the vessels that the Scores dictionary uses.
+                
                 var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                 if (pilotAI == null) continue;
                 var targetRammingInformation = new Dictionary<string, RammingTargetInformation>();
                 foreach (var otherVessel in BDATargetManager.LoadedVessels)
                 {
+                    IBDAIControl otherPilot = otherVessel.FindPartModuleImplementing<IBDAIControl>();
+                    if (otherPilot == null || !otherPilot.weaponManager || otherPilot.weaponManager.Team.Neutral) continue; // Only include the vessels that the Scores dictionary uses.
+
                     if (otherVessel == vessel) continue; // Don't include same-vessel information.
                     var otherPilotAI = otherVessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                     if (otherPilotAI == null) continue;
