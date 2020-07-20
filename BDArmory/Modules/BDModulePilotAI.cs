@@ -120,9 +120,9 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float extendMult = 1f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMultiplier", advancedTweakable = true), //Evade Distance Multiplier
-         UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
-        public float evasionMult = 1f;
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true), // Minimum Evasion Time
+         UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
+        public float minEvasionTime = 0.2f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true), //Evade Threshold
          UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
@@ -254,7 +254,8 @@ namespace BDArmory.Modules
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
             { nameof(extendMult), 200f },
-            { nameof(evasionMult), 200f },
+            { nameof(minEvasionTime), 10f },
+            { nameof(evasionThreshold), 300f },
             { nameof(turnRadiusTwiddleFactorMin), 10f},
             { nameof(turnRadiusTwiddleFactorMax), 10f},
             { nameof(controlSurfaceLag), 1f},
@@ -758,9 +759,9 @@ namespace BDArmory.Modules
             debugString.Append(Environment.NewLine);
 
             // If we're currently evading or a threat is significant and we're not ramming.
-            if ((evasionMult > 0f && threatRating < evasionThreshold))
+            if ((evasiveTimer < minEvasionTime && evasiveTimer != 0) || threatRating < evasionThreshold)
             {
-                if (evasiveTimer < 3f * evasionMult)
+                if (evasiveTimer < minEvasionTime)
                 {
                     threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
 
@@ -801,7 +802,7 @@ namespace BDArmory.Modules
                 evasiveTimer += Time.fixedDeltaTime;
                 turningTimer = 0;
 
-                if (evasiveTimer > 3f * evasionMult)
+                if (evasiveTimer >= minEvasionTime)
                 {
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
@@ -1004,7 +1005,7 @@ namespace BDArmory.Modules
 
         public bool HasAmmoAndGuns()
         { // Check if the vessel has both ammo and guns.
-            if (outOfAmmo) return false; // It's already been checked and found to be true, don't look again.
+            if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
             bool hasAmmoAndGuns = false;
             if (weaponManager)
             {
@@ -1558,7 +1559,7 @@ namespace BDArmory.Modules
                         else
                         { // This sets breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
                             breakTarget = threatRelativePosition;
-                            if (evasiveTimer < 1.5f * evasionMult)
+                            if (evasiveTimer < 1.5f)
                                 breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
                             else
                                 breakTarget += -Math.Sign(Mathf.Sin((float)vessel.missionTime * 2)) * vesselTransform.right * 150;
