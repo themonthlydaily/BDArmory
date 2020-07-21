@@ -43,8 +43,6 @@ namespace BDArmory.UI
                 vessel.SetRotation(Quaternion.FromToRotation(Vector3.back, surfaceNormal));
                 vessel.SetPosition(position + surfaceNormal * (2f + vessel.GetHeightFromTerrain() - 35f - MissileGuidance.GetRaycastRadarAltitude(position))); // Put us at ground level (hopefully). Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true); // Turn on brakes. FIXME, this doesn't seem to work.
-                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Turn on brakes. FIXME, this doesn't seem to work.
-                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true); // Turn on brakes. FIXME, this doesn't seem to work.
                 count += 1;
             }
         }
