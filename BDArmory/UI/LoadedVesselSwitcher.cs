@@ -328,7 +328,6 @@ namespace BDArmory.UI
                     if (BDACompetitionMode.Instance)
                     {
                         BDACompetitionMode.Instance.StopCompetition();
-                        BDACompetitionMode.Instance.ResetCompetitionScores();
                     }
                     // Kill all living vessels.
                     foreach (var vessel in BDATargetManager.LoadedVessels)
