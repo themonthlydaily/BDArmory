@@ -36,11 +36,11 @@ namespace BDArmory.UI
             foreach (var craftUrl in crafts)
             {
                 var heading = 360f * count / crafts.Count;
-                var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading + 90, surfaceNormal) * Vector3.forward, surfaceNormal).normalized;
+                var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * Vector3.forward, surfaceNormal).normalized;
                 var position = aroundPosition + 10f * crafts.Count * direction + 100f * surfaceNormal; // 100m up should be fine, we'll adjust it after.
                 var gps_position = new Vector3d(FlightGlobals.currentMainBody.GetLatitude(position), FlightGlobals.currentMainBody.GetLongitude(position), FlightGlobals.getAltitudeAtPos(position));
-                var vessel = SpawnVesselFromCraftFile(craftUrl, gps_position, heading, 0f);
-                vessel.SetRotation(Quaternion.FromToRotation(Vector3.back, surfaceNormal));
+                var vessel = SpawnVesselFromCraftFile(craftUrl, gps_position, heading - 90, 0f);
+                // vessel.SetRotation(Quaternion.FromToRotation(Vector3.back, surfaceNormal));
                 vessel.SetPosition(position + surfaceNormal * (2f + vessel.GetHeightFromTerrain() - 35f - MissileGuidance.GetRaycastRadarAltitude(position))); // Put us at ground level (hopefully). Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
                 vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true); // Turn on brakes. FIXME, this doesn't seem to work.
                 count += 1;
