@@ -296,6 +296,7 @@ namespace BDArmory.Control
 
             competitionStarting = false;
             competitionIsActive = false;
+            competitionStartTime = -1;
             GameEvents.onCollision.Remove(AnalyseCollision);
             rammingInformation = null; // Reset the ramming information.
         }
