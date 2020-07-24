@@ -417,7 +417,7 @@ namespace BDArmory.Modules
 
         //[KSPField(isPersistant = true)] public bool guardMode;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GaurdMode"),//Gaurd Mode: 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GuardMode"),//Guard Mode: 
             UI_Toggle(disabledText = "OFF", enabledText = "ON")]
         public bool guardMode;
 
