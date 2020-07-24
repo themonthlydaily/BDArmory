@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -41,7 +41,7 @@ namespace BDArmory.UI
 
         //gui params
         private float _windowHeight; //auto adjusting
-        private float _windowWidth = 500;
+        private float _windowWidth = 500; // FIXME This should be saved somewhere
 
         private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
         private Dictionary<string, float> cameraScores = new Dictionary<string, float>();
@@ -54,7 +54,8 @@ namespace BDArmory.UI
         private bool _autoPilotEnabled = false;
         private bool _guardModeEnabled = false;
         private bool _vesselsSpawned = false;
-        private int _post_vessel_spawn_in = 0;
+        private int _vesselsSpawnCount = 0;
+        private bool _vesselsSpawnedThisUpdate = false;
 
         // button styles for info buttons
         private static GUIStyle redLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
@@ -171,11 +172,18 @@ namespace BDArmory.UI
 
                 BDACompetitionMode.Instance.DoUpdate();
 
-                if (_post_vessel_spawn_in > 0)
+                if (_vesselsSpawnCount > 0)
                 {
-                    --_post_vessel_spawn_in;
-                    if (_post_vessel_spawn_in == 0)
+                    var count = 0;
+                    foreach (var teamManager in weaponManagers.Values)
+                        count += teamManager.Count;
+                    if (!_vesselsSpawnedThisUpdate && count == _vesselsSpawnCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
+                    {
                         DoPostVesselSpawn();
+                        _vesselsSpawnCount = 0;
+                    }
+                    if (_vesselsSpawnedThisUpdate)
+                        _vesselsSpawnedThisUpdate = false;
                 }
             }
         }
@@ -328,18 +336,18 @@ namespace BDArmory.UI
                     if (BDACompetitionMode.Instance)
                     {
                         BDACompetitionMode.Instance.StopCompetition();
+                        BDACompetitionMode.Instance.RemoveDebris();
                     }
                     // Kill all living vessels.
                     foreach (var vessel in BDATargetManager.LoadedVessels)
                         Misc.Misc.ForceDeadVessel(vessel);
                     // Now spawn new ones.
-                    Debug.Log("[BDArmory] Spawning vessels.");
                     Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
                     RaycastHit hit;
                     if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
-                        BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(hit.point, hit.normal);
+                        _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point), 1); // Spawn at 1m above the ground. This ought to be good enough to avoid clipping the ground and avoid dropping from too high.
+                    _vesselsSpawnedThisUpdate = true;
                     _vesselsSpawned = true;
-                    _post_vessel_spawn_in = (int)(1f / Time.fixedDeltaTime); // Apparently it takes a few frames before we can do stuff.
                 }
                 else if (Event.current.button == 1)
                 {
@@ -644,6 +652,9 @@ namespace BDArmory.UI
             _teamSwitchDirty = true;
             _wmToSwitchTeam = null;
             _freeForAll = false; // It gets toggled to true when the team switch happens.
+            // Clean up debris again as we probably made some by blowing stuff up.
+            if (BDACompetitionMode.Instance)
+                BDACompetitionMode.Instance.RemoveDebris();
         }
 
         private string UpdateVesselStatus(MissileFire wm, GUIStyle vButtonStyle)

@@ -928,7 +928,7 @@ namespace BDArmory.Control
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection.
         }
 
-        private void RemoveDebris()
+        public void RemoveDebris()
         {
             // only call this if enabled
             // remove anything that doesn't contain BD Armory modules
@@ -2068,6 +2068,10 @@ namespace BDArmory.Control
             CheckForDamagedParts();
             if (BDArmorySettings.DEBUG_RAMMING_LOGGING) CheckForMissingParts(); // DEBUG
         }
+
+        // A method to call the spawning code FIXME Implement this.
+        // public void SpawnCompetition(Vector3 gpsPosition, float altitudeAboveTerrain=1)
+        // {}
 
         // A filter for log messages so Scott can do other stuff depending on the content.
         public void Log(string message)

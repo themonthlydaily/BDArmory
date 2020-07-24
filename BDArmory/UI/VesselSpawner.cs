@@ -29,21 +29,31 @@ namespace BDArmory.UI
         {
         }
 
-        public void SpawnAllVesselsOnce(Vector3 aroundPosition, Vector3 surfaceNormal)
+        public int SpawnAllVesselsOnce(Vector2d geoCoords, double altitude = 0)
         {
             var crafts = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn").Where(f => f.EndsWith(".craft")).ToList();
             int count = 0;
+            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y);
+            var surfaceNormal = FlightGlobals.currentMainBody.GetSurfaceNVector(geoCoords.x, geoCoords.y);
+            Vector3d craftGeoCoords;
+            Vector3 craftPosition;
+            Ray ray;
+            RaycastHit hit;
             foreach (var craftUrl in crafts)
             {
                 var heading = 360f * count / crafts.Count;
                 var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * Vector3.forward, surfaceNormal).normalized;
-                var position = aroundPosition + 10f * crafts.Count * direction + 100f * surfaceNormal; // 100m up should be fine, we'll adjust it after.
-                var gps_position = new Vector3d(FlightGlobals.currentMainBody.GetLatitude(position), FlightGlobals.currentMainBody.GetLongitude(position), FlightGlobals.getAltitudeAtPos(position));
-                var vessel = SpawnVesselFromCraftFile(craftUrl, gps_position, heading - 90, 0f);
-                // vessel.SetRotation(Quaternion.FromToRotation(Vector3.back, surfaceNormal));
-                vessel.SetPosition(position + surfaceNormal * (2f + vessel.GetHeightFromTerrain() - 35f - MissileGuidance.GetRaycastRadarAltitude(position))); // Put us at ground level (hopefully). Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
+                craftPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, terrainAltitude + altitude + 100) + 10f * crafts.Count * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
+                FlightGlobals.currentMainBody.GetLatLonAlt(craftPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z);
+                var craftTerrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(craftGeoCoords.x, craftGeoCoords.y);
+                var vessel = SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, heading - 90, 0f);
+                // vessel.SetRotation(Quaternion.FromToRotation(Vector3.back, surfaceNormal)); // TODO add in rotation to surface normal
+                ray = new Ray(craftPosition, -surfaceNormal);
+                var distance = Physics.Raycast(ray, out hit, (float)(terrainAltitude + altitude + 1000), 1 << 15) ? hit.distance : terrainAltitude + altitude + 100;
+                vessel.SetPosition(craftPosition + surfaceNormal * (altitude + vessel.GetHeightFromTerrain() - 35f - distance)); // Put us at ground level (hopefully). Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
                 count += 1;
             }
+            return crafts.Count;
         }
 
         // THE FOLLOWING STOLEN FROM VESSEL MOVER via BenBenWilde's autospawn (and tweaked slightly)
