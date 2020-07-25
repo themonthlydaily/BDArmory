@@ -893,7 +893,7 @@ namespace BDArmory.UI
                 {
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
                     {
-                        float theta = Vector3.Angle(mf.vessel.srf_vel_direction, target.Current.velocity);
+                        float theta = Vector3.Angle(mf.vessel.srf_vel_direction, target.Current.transform.position - mf.vessel.transform.position);
                         float distance = (mf.vessel.transform.position - target.Current.position).magnitude;
                         float targetScore = (target.Current == mf.currentTarget ? hysteresis : 1f) * ((bias - 1f) * Mathf.Pow(Mathf.Cos(theta / 2f), 2f) + 1f) / distance;
                         if (finalTarget == null || targetScore > finalTargetScore)
