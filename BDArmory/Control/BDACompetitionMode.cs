@@ -942,7 +942,7 @@ namespace BDArmory.Control
                 else
                 {
                     int foundActiveParts = 0;
-                    using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator()) // Has a weapon manager
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -950,7 +950,7 @@ namespace BDArmory.Control
                                 break;
                             }
 
-                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator()) // Has an AI
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -958,7 +958,7 @@ namespace BDArmory.Control
                                 break;
                             }
 
-                    using (var wms = vessel.FindPartModulesImplementing<ModuleCommand>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<ModuleCommand>().GetEnumerator()) // Has a command module
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -967,7 +967,7 @@ namespace BDArmory.Control
                             }
                     activePilot = foundActiveParts == 3;
                 }
-                if ((!activePilot) && (!BDArmorySettings.DISABLE_KILL_TIMER))
+                if (!activePilot)
                     debrisToKill.Add(vessel);
             }
             foreach (var vessel in debrisToKill)
@@ -1288,9 +1288,7 @@ namespace BDArmory.Control
                         // does it have ammunition: no ammo => Disable guard mode
                         if (!BDArmorySettings.INFINITE_AMMO)
                         {
-                            var pilotAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                            var surfaceAI = v.Current.FindPartModuleImplementing<BDModuleSurfaceAI>(); // Get the surface AI if the vessel has one.
-                            if (pilotAI != null && pilotAI.outOfAmmo && !outOfAmmo.Contains(vesselName)) // Report being out of ammo/guns once.
+                            if (mf.outOfAmmo && !outOfAmmo.Contains(vesselName)) // Report being out of weapons/ammo once.
                             {
                                 outOfAmmo.Add(vesselName);
                                 if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
@@ -1302,9 +1300,13 @@ namespace BDArmory.Control
                                     competitionStatus = vesselName + " is out of Ammunition";
                                 }
                             }
-                            if ((pilotAI == null || (pilotAI.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !pilotAI.allowRamming))) && mf.guardMode) // disable guard mode when out of ammo/guns if ramming is not allowed.
-                                if (surfaceAI == null) // Don't disable the tanks
+                            if (mf.guardMode) // If we're in guard mode, check to see if we should disable it.
+                            {
+                                var pilotAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                                var surfaceAI = v.Current.FindPartModuleImplementing<BDModuleSurfaceAI>(); // Get the surface AI if the vessel has one.
+                                if ((pilotAI == null && surfaceAI == null) || (mf.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !(pilotAI != null && pilotAI.allowRamming)))) // if we've lost the AI or the vessel is out of weapons/ammo and ramming is not allowed.
                                     mf.guardMode = false;
+                            }
                         }
 
                         // update the vessel scoring structure
@@ -1313,13 +1315,10 @@ namespace BDArmory.Control
                             vData.AverageSpeed += v.Current.srfSpeed;
                             vData.AverageAltitude += v.Current.altitude;
                             vData.averageCount++;
-                            if (vData.landedState)
+                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15))
                             {
-                                if ((Planetarium.GetUniversalTime() - vData.landerKillTimer > 15) && (!BDArmorySettings.DISABLE_KILL_TIMER))
-                                {
-                                    vesselsToKill.Add(mf.vessel);
-                                    competitionStatus = vesselName + " landed too long.";
-                                }
+                                vesselsToKill.Add(mf.vessel);
+                                competitionStatus = vesselName + " landed too long.";
                             }
                         }
 
@@ -1333,10 +1332,7 @@ namespace BDArmory.Control
                             shouldKillThis = true;
                         }
 
-                        if (vData == null) shouldKillThis = true;
-                        
-                        if (BDArmorySettings.DISABLE_KILL_TIMER) // Don't kill things if kill timer is disabled
-                            shouldKillThis = false;
+                        if (vData == null && !BDArmorySettings.DISABLE_KILL_TIMER) shouldKillThis = true; // Don't kill other things if kill timer is disabled
 
                         // 15 second time until kill, maybe they recover?
                         if (KillTimer.ContainsKey(vesselName))
@@ -1349,19 +1345,19 @@ namespace BDArmory.Control
                             {
                                 KillTimer[vesselName] -= updateTickLength;
                             }
-                            if ((KillTimer[vesselName] > 15) && (!BDArmorySettings.DISABLE_KILL_TIMER))
+                            if (KillTimer[vesselName] > 15)
                             {
                                 vesselsToKill.Add(mf.vessel);
                                 competitionStatus = vesselName + " exceeded kill timer";
                             }
-                            else if ((KillTimer[vesselName] < 0) && (!BDArmorySettings.DISABLE_KILL_TIMER))
+                            else if (KillTimer[vesselName] < 0)
                             {
                                 KillTimer.Remove(vesselName);
                             }
                         }
                         else
                         {
-                            if ((shouldKillThis) && (!BDArmorySettings.DISABLE_KILL_TIMER))
+                            if (shouldKillThis)
                                 KillTimer[vesselName] = updateTickLength;
                         }
                     }
@@ -1488,25 +1484,22 @@ namespace BDArmory.Control
             }
 
             // use the exploder system to remove vessels that should be nuked
-            if (!BDArmorySettings.DISABLE_KILL_TIMER)
-            { 
-                foreach (var vessel in vesselsToKill)
+            foreach (var vessel in vesselsToKill)
+            {
+                var vesselName = vessel.GetName();
+                var killerName = "";
+                if (Scores.ContainsKey(vesselName))
                 {
-                    var vesselName = vessel.GetName();
-                    var killerName = "";
-                    if (Scores.ContainsKey(vesselName))
+                    killerName = Scores[vesselName].LastPersonWhoDamagedMe();
+                    if (killerName == "")
                     {
-                        killerName = Scores[vesselName].LastPersonWhoDamagedMe();
-                        if (killerName == "")
-                        {
-                            Scores[vesselName].lastPersonWhoHitMe = "Landed Too Long"; // only do this if it's not already damaged
-                            killerName = "Landed Too Long";
-                        }
+                        Scores[vesselName].lastPersonWhoHitMe = "Landed Too Long"; // only do this if it's not already damaged
+                        killerName = "Landed Too Long";
                     }
-                    Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
-                    Misc.Misc.ForceDeadVessel(vessel);
-                    KillTimer.Remove(vesselName);
                 }
+                Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
+                Misc.Misc.ForceDeadVessel(vessel);
+                KillTimer.Remove(vesselName);
             }
 
             FindVictim();
@@ -1592,7 +1585,7 @@ namespace BDArmory.Control
             {
                 IBDAIControl pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
                 if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral) continue; // Only include the vessels that the Scores dictionary uses.
-                
+
                 var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                 if (pilotAI == null) continue;
                 var targetRammingInformation = new Dictionary<string, RammingTargetInformation>();

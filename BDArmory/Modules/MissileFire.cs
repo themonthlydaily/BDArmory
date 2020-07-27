@@ -4360,6 +4360,22 @@ namespace BDArmory.Modules
             return false;
         }
 
+        public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
+        public bool HasWeaponsAndAmmo(List<WeaponClasses> weaponClasses = null)
+        { // Check if the vessel has both weapons and ammo for them. Optionally, restrict checks to a subset of the weapon classes.
+            if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
+            bool hasWeaponsAndAmmo = false;
+            foreach (var weapon in vessel.FindPartModulesImplementing<ModuleWeapon>())
+            {
+                if (weapon == null) continue; // First entry is the "no weapon" option.
+                if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
+                if (CheckAmmo(weapon) || BDArmorySettings.INFINITE_AMMO) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
+            }
+            outOfAmmo = !hasWeaponsAndAmmo; // Set outOfAmmo if we don't have any guns with compatible ammo.
+            return hasWeaponsAndAmmo;
+        }
+
+
         void ToggleTurret()
         {
             using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
