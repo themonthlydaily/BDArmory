@@ -118,6 +118,9 @@
     <Reference Include="UnityEngine.UIModule">
       <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.UnityWebRequestWWWModule">
       <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
     </Reference>
