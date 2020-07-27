@@ -4360,18 +4360,19 @@ namespace BDArmory.Modules
             return false;
         }
 
-        public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
+        public bool outOfAmmo = false; // Indicator for being out of ammo.
         public bool HasWeaponsAndAmmo(List<WeaponClasses> weaponClasses = null)
         { // Check if the vessel has both weapons and ammo for them. Optionally, restrict checks to a subset of the weapon classes.
             if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
             bool hasWeaponsAndAmmo = false;
-            foreach (var weapon in vessel.FindPartModulesImplementing<ModuleWeapon>())
+            foreach (var weapon in vessel.FindPartModulesImplementing<IBDWeapon>())
             {
                 if (weapon == null) continue; // First entry is the "no weapon" option.
                 if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
                 if (weapon.GetWeaponClass() == WeaponClasses.Gun)
                 {
-                    if (BDArmorySettings.INFINITE_AMMO || CheckAmmo(weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
+                    if (weapon.GetShortName().EndsWith("Laser")) { hasWeaponsAndAmmo = true; break; } // If it's a laser (counts as a gun) consider it as having ammo, since electric charge can replenish.
+                    if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
                 }
                 else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
             }
