@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -6,11 +6,14 @@ using BDArmory.Control;
 using BDArmory.Core;
 using UnityEngine;
 using KSP.Localization;
+using KSP.UI.Screens;
 using BDArmory.FX;
 using Expansions;
 using System;
 using VehiclePhysics;
 using System.Net;
+using System.IO;
+using System.Linq;
 
 namespace BDArmory.UI
 {
@@ -39,7 +42,6 @@ namespace BDArmory.UI
 
         //gui params
         private float _windowHeight; //auto adjusting
-        private readonly float _windowWidth = 500;
 
         private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
         private Dictionary<string, float> cameraScores = new Dictionary<string, float>();
@@ -51,6 +53,9 @@ namespace BDArmory.UI
         private bool _freeForAll = false;
         private bool _autoPilotEnabled = false;
         private bool _guardModeEnabled = false;
+        private bool _vesselsSpawned = false;
+        private int _vesselsSpawnCount = 0;
+        private bool _vesselsSpawnedThisUpdate = false;
 
         // button styles for info buttons
         private static GUIStyle redLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
@@ -100,7 +105,7 @@ namespace BDArmory.UI
             FloatingOrigin.fetch.thresholdSqr = 20000 * 20000; //20km
             Debug.Log($"FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
 
-            //BDArmorySetup.WindowRectVesselSwitcher = new Rect(10, Screen.height / 6f, _windowWidth, 10);
+            //BDArmorySetup.WindowRectVesselSwitcher = new Rect(10, Screen.height / 6f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, 10);
         }
 
         private void OnDestroy()
@@ -166,6 +171,20 @@ namespace BDArmory.UI
                 }
 
                 BDACompetitionMode.Instance.DoUpdate();
+
+                if (_vesselsSpawnCount > 0)
+                {
+                    var count = 0;
+                    foreach (var teamManager in weaponManagers.Values)
+                        count += teamManager.Count;
+                    if (!_vesselsSpawnedThisUpdate && count == _vesselsSpawnCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
+                    {
+                        DoPostVesselSpawn();
+                        _vesselsSpawnCount = 0;
+                    }
+                    if (_vesselsSpawnedThisUpdate)
+                        _vesselsSpawnedThisUpdate = false;
+                }
             }
         }
 
@@ -245,7 +264,7 @@ namespace BDArmory.UI
                 {
                     SetNewHeight(_windowHeight);
                     // this Rect initialization ensures any save issues with height or width of the window are resolved
-                    BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, _windowWidth, _windowHeight);
+                    BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, _windowHeight);
                     BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, Localizer.Format("#LOC_BDArmory_BDAVesselSwitcher_Title"),//"BDA Vessel Switcher"
                         BDArmorySetup.BDGuiSkin.window);
                     Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
@@ -298,9 +317,49 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            GUI.DragWindow(new Rect(0, 0, _windowWidth - 6 * (_buttonHeight) - _margin, _titleHeight));
+            GUI.DragWindow(new Rect(2f * _buttonHeight + _margin, 0, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 9f * _buttonHeight - _margin, _titleHeight));
 
-            if (GUI.Button(new Rect(_windowWidth - 6 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "M", BDACompetitionMode.Instance.killerGMenabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button))
+            {
+                BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH -= 50f;
+                BDArmorySetup.SaveConfig();
+            }
+            if (GUI.Button(new Rect(1f * _buttonHeight + _margin, 4, _buttonHeight, _buttonHeight), "<>", BDArmorySetup.BDGuiSkin.button))
+            {
+                BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH += 50f;
+                BDArmorySetup.SaveConfig();
+            }
+
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 7f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "S", _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            {
+                if (!_vesselsSpawned && Event.current.button == 0)
+                {
+                    // Reset competition stuff.
+                    if (BDACompetitionMode.Instance)
+                    {
+                        BDACompetitionMode.Instance.StopCompetition();
+                        BDACompetitionMode.Instance.RemoveDebris();
+                    }
+                    // Kill all living vessels.
+                    foreach (var vessel in BDATargetManager.LoadedVessels)
+                        Misc.Misc.ForceDeadVessel(vessel);
+                    // Now spawn new ones.
+                    Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
+                        _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1); // Spawn at 1m above the ground. This ought to be good enough to avoid clipping the ground and avoid dropping from too high.
+                        // _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point), 1); // Spawn at 1m above the ground. This ought to be good enough to avoid clipping the ground and avoid dropping from too high.
+                    _vesselsSpawnedThisUpdate = true;
+                    _vesselsSpawned = true;
+                }
+                else if (Event.current.button == 1)
+                {
+                    _vesselsSpawned = false;
+                    Debug.Log("[BDArmory] Resetting spawning vessel button.");
+                }
+            }
+
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 6 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "M", BDACompetitionMode.Instance.killerGMenabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 if (Event.current.button == 1)
                 {
@@ -313,26 +372,26 @@ namespace BDArmory.UI
                 }
             }
 
-            if (GUI.Button(new Rect(_windowWidth - 5 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "A", _autoCameraSwitch ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 5 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "A", _autoCameraSwitch ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 // set/disable automatic camera switching
                 _autoCameraSwitch = !_autoCameraSwitch;
                 Debug.Log("[BDArmory] Setting AutoCameraSwitch");
             }
 
-            if (GUI.Button(new Rect(_windowWidth - 4 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "G", _guardModeEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 4 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "G", _guardModeEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 // switch everyon onto different teams
                 ToggleGuardModes();
             }
 
-            if (GUI.Button(new Rect(_windowWidth - 3 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "P", _autoPilotEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 3 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "P", _autoPilotEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 // Toggle autopilots for everyone
                 ToggleAutopilots();
             }
 
-            if (GUI.Button(new Rect(_windowWidth - 2 * (_buttonHeight) - _margin, 4, _buttonHeight, _buttonHeight), "T", _freeForAll ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "T", _freeForAll ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 // switch everyone onto different teams
                 _teamSwitchDirty = true;
@@ -341,7 +400,7 @@ namespace BDArmory.UI
 
 
 
-            if (GUI.Button(new Rect(_windowWidth - _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "X",
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "X",
                 BDArmorySetup.BDGuiSkin.button))
             {
                 BDArmorySetup.Instance.showVSGUI = false;
@@ -349,14 +408,14 @@ namespace BDArmory.UI
             }
 
             float height = _titleHeight;
-            float vesselButtonWidth = _windowWidth - 2 * _margin - 6 * _buttonHeight;
+            float vesselButtonWidth = BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin - 6f * _buttonHeight;
 
             Planetarium.GetUniversalTime().ToString();
             using (var teamManagers = weaponManagers.GetEnumerator())
                 while (teamManagers.MoveNext())
                 {
                     height += _margin;
-                    //GUI.Label(new Rect(_margin, height, _windowWidth - 2 * _margin, _buttonHeight), $"{teamManagers.Current.Key}:", BDArmorySetup.BDGuiSkin.label);
+                    //GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManagers.Current.Key}:", BDArmorySetup.BDGuiSkin.label);
                     //height += _buttonHeight;
 
                     using (var wm = teamManagers.Current.Value.GetEnumerator())
@@ -582,6 +641,27 @@ namespace BDArmory.UI
             height += _margin;
             _windowHeight = height;
             BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
+        }
+
+        private void DoPostVesselSpawn()
+        {
+            // Update the weaponManagers list.
+            UpdateList();
+            // Turn on brakes.
+            foreach (var vessel in BDATargetManager.LoadedVessels)
+            {
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false);
+                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+            }
+            // switch everyone onto different teams
+            _teamSwitchDirty = true;
+            _wmToSwitchTeam = null;
+            _freeForAll = false; // It gets toggled to true when the team switch happens.
+            // Unclick the autopilots button.
+            _autoPilotEnabled = false;
+            // Clean up debris again as we probably made some by blowing stuff up.
+            if (BDACompetitionMode.Instance)
+                BDACompetitionMode.Instance.RemoveDebris();
         }
 
         private string UpdateVesselStatus(MissileFire wm, GUIStyle vButtonStyle)

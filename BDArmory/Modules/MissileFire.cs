@@ -347,6 +347,7 @@ namespace BDArmory.Modules
         public Vector3 incomingThreatPosition;
         public Vessel incomingThreatVessel;
         public MissileFire incomingWeaponManager;
+        public float incomingMissDistance;
 
         bool guardFiringMissile;
         bool disabledRocketAimers;
@@ -416,7 +417,7 @@ namespace BDArmory.Modules
 
         //[KSPField(isPersistant = true)] public bool guardMode;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GaurdMode"),//Gaurd Mode: 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GuardMode"),//Guard Mode: 
             UI_Toggle(disabledText = "OFF", enabledText = "ON")]
         public bool guardMode;
 
@@ -4087,6 +4088,7 @@ namespace BDArmory.Modules
                 if (results.threatWeaponManager != null)
                 {
                     incomingWeaponManager = results.threatWeaponManager;
+                    incomingMissDistance = results.missDistance;
                     TargetInfo nearbyFriendly = BDATargetManager.GetClosestFriendly(this);
                     TargetInfo nearbyThreat = BDATargetManager.GetTargetFromWeaponManager(results.threatWeaponManager);
 

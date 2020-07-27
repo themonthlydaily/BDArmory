@@ -1424,7 +1424,16 @@ namespace BDArmory.UI
             terrainAlertFrequency = GUI.HorizontalSlider(SRightRect(line), terrainAlertFrequency, 1f, 5f);
             BDArmorySettings.TERRAIN_ALERT_FREQUENCY = (int)terrainAlertFrequency;
             line++;
-            
+            if (GUI.Button(SLeftRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
+            {
+                Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
+                RaycastHit hit;
+                if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
+                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
+            }
+            GUI.Label(SRightRect(line), "  "+BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("F4"));
+            line++;
+
             line++;
 
             bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;

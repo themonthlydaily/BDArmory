@@ -120,17 +120,20 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
         public float extendMult = 1f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionMultiplier", advancedTweakable = true), //Evade Distance Multiplier
-         UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
-        public float evasionMult = 1f;
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true), // Minimum Evasion Time
+         UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
+        public float minEvasionTime = 0.2f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true), //Evade Threshold
          UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float evasionThreshold = 50f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactors", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMin", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
          UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
-        public float turnRadiusTwiddleFactorMin = 2.0f, turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
+        public float turnRadiusTwiddleFactorMin = 2.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMax", advancedTweakable = true),//Turn radius twiddle factors (category seems to have no effect)
+         UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+        public float turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ControlSurfaceLag", advancedTweakable = true),//Control surface lag (for getting an accurate intercept for ramming).
          UI_FloatRange(minValue = 0f, maxValue = 0.2f, stepIncrement = 0.01f, scene = UI_Scene.All)]
@@ -254,7 +257,8 @@ namespace BDArmory.Modules
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
             { nameof(extendMult), 200f },
-            { nameof(evasionMult), 200f },
+            { nameof(minEvasionTime), 10f },
+            { nameof(evasionThreshold), 300f },
             { nameof(turnRadiusTwiddleFactorMin), 10f},
             { nameof(turnRadiusTwiddleFactorMax), 10f},
             { nameof(controlSurfaceLag), 1f},
@@ -749,18 +753,18 @@ namespace BDArmory.Modules
             // Calculate threat rating from any threats
             if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring))
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
-            else if (weaponManager.underFire && weaponManager.incomingWeaponManager != null && !ramming)
-                threatRating = ThreatRating(); // If we're ramming, ignore gunfire.
+            else if (weaponManager.underFire && !ramming)
+                threatRating = weaponManager.incomingMissDistance; // If we're ramming, ignore gunfire.
             else
                 threatRating = evasionThreshold + 1f; // Don't evade by default
 
-            // if (threatRating < evasionThreshold)
-            //     Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " is:" + threatRating);
+            debugString.Append($"Threat Rating: {threatRating}");
+            debugString.Append(Environment.NewLine);
 
             // If we're currently evading or a threat is significant and we're not ramming.
-            if (evasiveTimer > 0 || (evasionMult > 0f && threatRating < evasionThreshold))
+            if ((evasiveTimer < minEvasionTime && evasiveTimer != 0) || threatRating < evasionThreshold)
             {
-                if (evasiveTimer < 3f * evasionMult)
+                if (evasiveTimer < minEvasionTime)
                 {
                     threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
 
@@ -801,7 +805,7 @@ namespace BDArmory.Modules
                 evasiveTimer += Time.fixedDeltaTime;
                 turningTimer = 0;
 
-                if (evasiveTimer > 3f * evasionMult)
+                if (evasiveTimer >= minEvasionTime)
                 {
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
@@ -918,39 +922,6 @@ namespace BDArmory.Modules
 
             badDirection = Vector3.zero;
             return false;
-        }
-
-        float ThreatRating() // Returns how far away bullets from enemy are from craft in meters
-        {
-            if (weaponManager.incomingWeaponManager.currentGun != null)
-            {
-                var threat_weapon = weaponManager.incomingWeaponManager.currentGun; // Threat vessel weapon
-
-                // Stolen from CheckAIAutofire(), ModuleWeapon.cs
-                Transform fireTransform = threat_weapon.fireTransforms[0];
-                Vector3 aimDirection = fireTransform.forward;
-                float targetCosAngle = threat_weapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threat_weapon.FiringSolutionVector) : 0f; // If the weapon doesn't have a firing solution, set the angleThreat to 1.
-
-                // Find vertical component of aiming angle
-                float angleThreat = Mathf.Sin(Mathf.Acos(targetCosAngle));
-
-                // Calculate distance between incoming threat position and its aimpoint (or self position)
-                float distanceThreat = threat_weapon.finalAimTarget != null ? Vector3.Magnitude(threat_weapon.finalAimTarget - weaponManager.incomingThreatPosition) : Vector3.Magnitude(vesselTransform.position - weaponManager.incomingThreatPosition);
-
-                // For debugging
-                // if ((angleThreat * distanceThreat) < evasionThreshold)
-                // {
-                //     Debug.Log("[BDArmoryCompetition]: Threat to " + vessel.name + " from " + weaponManager.incomingThreatVessel.name + " is:");
-                //     Debug.Log("     ANGLE: " + Mathf.Asin(angleThreat) / Mathf.PI * 180 + "  DISTANCE: " + distanceThreat + "  RATING: " + angleThreat * distanceThreat);
-                // }
-
-                return angleThreat * distanceThreat; // Calculate aiming arc length (how far away the bullets will travel)
-            }
-            else
-            {
-                // Debug.Log("[BDArmoryCompetition]: No threat to " + vessel.name);
-                return evasionThreshold + 1f; // Don't evade by default
-            }
         }
 
         bool RamTarget(FlightCtrlState s, Vessel v)
@@ -1532,7 +1503,7 @@ namespace BDArmory.Modules
                         else
                         { // This sets breakTarget to the attackers position, then applies an up to 500m offset to the right or left (relative to the vessel) for the first half of the default evading period, then sets the breakTarget to be 150m right or left of the attacker.
                             breakTarget = threatRelativePosition;
-                            if (evasiveTimer < 1.5f * evasionMult)
+                            if (evasiveTimer < 1.5f)
                                 breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 500;
                             else
                                 breakTarget += -Math.Sign(Mathf.Sin((float)vessel.missionTime * 2)) * vesselTransform.right * 150;
