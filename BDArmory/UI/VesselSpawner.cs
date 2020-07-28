@@ -353,12 +353,12 @@ namespace BDArmory.UI
             yield return null;
             FlightGlobals.ForceSetActiveVessel(v);
             yield return null;
-            //v.Landed = true;
-            //v.situation = Vessel.Situations.PRELAUNCH;
+            v.Landed = true;
+            v.situation = Vessel.Situations.PRELAUNCH;
             v.GoOffRails();
-            v.IgnoreGForces(240);
+            // v.IgnoreGForces(240);
 
-            //Staging.beginFlight();
+            StageManager.GenerateStagingSequence(v.rootPart);
             StageManager.BeginFlight();
         }
 

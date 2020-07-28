@@ -53,9 +53,12 @@ namespace BDArmory.UI
         private bool _freeForAll = false;
         private bool _autoPilotEnabled = false;
         private bool _guardModeEnabled = false;
+
+        // Vessel spawning
+        private bool _spawnNextUpdate = false;
+        private bool _spawnThisUpdate = false;
         private bool _vesselsSpawned = false;
         private int _vesselsSpawnCount = 0;
-        private bool _vesselsSpawnedThisUpdate = false;
 
         // button styles for info buttons
         private static GUIStyle redLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
@@ -172,19 +175,44 @@ namespace BDArmory.UI
 
                 BDACompetitionMode.Instance.DoUpdate();
 
+                // Vessel spawning
                 if (_vesselsSpawnCount > 0)
                 {
                     var count = 0;
                     foreach (var teamManager in weaponManagers.Values)
                         count += teamManager.Count;
-                    if (!_vesselsSpawnedThisUpdate && count == _vesselsSpawnCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
+                    if (count == _vesselsSpawnCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
                     {
                         DoPostVesselSpawn();
                         _vesselsSpawnCount = 0;
                     }
-                    if (_vesselsSpawnedThisUpdate)
-                        _vesselsSpawnedThisUpdate = false;
                 }
+                if (_spawnThisUpdate)
+                {
+                    _spawnThisUpdate = false;
+                    // For the vessels that survived being killed, kill all their parts (this seems to get rid of it).
+                    var survivingVessels = new List<Vessel>(FlightGlobals.Vessels);
+                    foreach (var vessel in survivingVessels)
+                    {
+                        var partsToKill = new List<Part>(vessel.parts);
+                        foreach (var part in partsToKill)
+                            part.Die();
+                    }
+                    _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1);
+                }
+                if (_spawnNextUpdate)
+                {
+                    _spawnNextUpdate = false;
+                    _spawnThisUpdate = true;
+                    // Reset competition stuff.
+                    if (BDACompetitionMode.Instance)
+                        BDACompetitionMode.Instance.StopCompetition();
+                    // Kill all vessels (including debris). Note: the currently focused vessel somehow survives this.
+                    var vesselsToKill = new List<Vessel>(FlightGlobals.Vessels);
+                    foreach (var vessel in vesselsToKill)
+                        vessel.Die();
+                }
+
             }
         }
 
@@ -236,23 +264,21 @@ namespace BDArmory.UI
             // toggle the state
             _autoPilotEnabled = !_autoPilotEnabled;
 
-            using (var teamManagers = weaponManagers.GetEnumerator())
-                while (teamManagers.MoveNext())
-                    using (var wm = teamManagers.Current.Value.GetEnumerator())
-                        while (wm.MoveNext())
-                        {
-                            if (wm.Current == null) continue;
-                            if (wm.Current.AI == null) continue;
-                            if (_autoPilotEnabled)
-                            {
-                                wm.Current.AI.ActivatePilot();
-                                BDArmory.Misc.Misc.fireNextNonEmptyStage(wm.Current.vessel);
-                            }
-                            else
-                            {
-                                wm.Current.AI.DeactivatePilot();
-                            }
-                        }
+            foreach (var teamManager in weaponManagers)
+                foreach (var weaponManager in teamManager.Value)
+                {
+                    if (weaponManager == null) continue;
+                    if (weaponManager.AI == null) continue;
+                    if (_autoPilotEnabled)
+                    {
+                        weaponManager.AI.ActivatePilot();
+                        BDArmory.Misc.Misc.fireNextNonEmptyStage(weaponManager.vessel);
+                    }
+                    else
+                    {
+                        weaponManager.AI.DeactivatePilot();
+                    }
+                }
         }
 
 
@@ -317,7 +343,7 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            GUI.DragWindow(new Rect(2f * _buttonHeight + _margin, 0, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 9f * _buttonHeight - _margin, _titleHeight));
+            GUI.DragWindow(new Rect(2f * _buttonHeight + _margin, 0, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 9f * _buttonHeight - 2 * _margin, _titleHeight));
 
             if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button))
             {
@@ -334,23 +360,9 @@ namespace BDArmory.UI
             {
                 if (!_vesselsSpawned && Event.current.button == 0)
                 {
-                    // Reset competition stuff.
-                    if (BDACompetitionMode.Instance)
-                    {
-                        BDACompetitionMode.Instance.StopCompetition();
-                        BDACompetitionMode.Instance.RemoveDebris();
-                    }
-                    // Kill all living vessels.
-                    foreach (var vessel in BDATargetManager.LoadedVessels)
-                        Misc.Misc.ForceDeadVessel(vessel);
-                    // Now spawn new ones.
-                    Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
-                    RaycastHit hit;
-                    if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
-                        _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1); // Spawn at 1m above the ground. This ought to be good enough to avoid clipping the ground and avoid dropping from too high.
-                        // _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point), 1); // Spawn at 1m above the ground. This ought to be good enough to avoid clipping the ground and avoid dropping from too high.
-                    _vesselsSpawnedThisUpdate = true;
+                    _spawnNextUpdate = true;
                     _vesselsSpawned = true;
+                    Debug.Log("[BDArmory] Triggering vessel spawning.");
                 }
                 else if (Event.current.button == 1)
                 {
@@ -657,11 +669,10 @@ namespace BDArmory.UI
             _teamSwitchDirty = true;
             _wmToSwitchTeam = null;
             _freeForAll = false; // It gets toggled to true when the team switch happens.
-            // Unclick the autopilots button.
+            // Unclick the autopilots button and make sure all the autopilots are disabled.
             _autoPilotEnabled = false;
-            // Clean up debris again as we probably made some by blowing stuff up.
-            if (BDACompetitionMode.Instance)
-                BDACompetitionMode.Instance.RemoveDebris();
+            ToggleAutopilots();
+            ToggleAutopilots();
         }
 
         private string UpdateVesselStatus(MissileFire wm, GUIStyle vButtonStyle)

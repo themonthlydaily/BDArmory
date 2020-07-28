@@ -946,7 +946,7 @@ namespace BDArmory.Control
                 else
                 {
                     int foundActiveParts = 0;
-                    using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator()) // Has a weapon manager
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -954,7 +954,7 @@ namespace BDArmory.Control
                                 break;
                             }
 
-                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator()) // Has an AI
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -962,7 +962,7 @@ namespace BDArmory.Control
                                 break;
                             }
 
-                    using (var wms = vessel.FindPartModulesImplementing<ModuleCommand>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<ModuleCommand>().GetEnumerator()) // Has a command module
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -1151,7 +1151,7 @@ namespace BDArmory.Control
                         }
 
                         // this vessel really is alive
-                        if (!vesselName.EndsWith("Debris") && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
+                        if (v.Current.vesselType != VesselType.Debris) // if (!vesselName.EndsWith("Debris") && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
                         {
                             if (DeathOrder.ContainsKey(vesselName))
                             {
@@ -1292,8 +1292,7 @@ namespace BDArmory.Control
                         // does it have ammunition: no ammo => Disable guard mode
                         if (!BDArmorySettings.INFINITE_AMMO)
                         {
-                            var pilotAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                            if (pilotAI != null && pilotAI.outOfAmmo && !outOfAmmo.Contains(vesselName)) // Report being out of ammo/guns once.
+                            if (mf.outOfAmmo && !outOfAmmo.Contains(vesselName)) // Report being out of weapons/ammo once.
                             {
                                 outOfAmmo.Add(vesselName);
                                 if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
@@ -1305,8 +1304,13 @@ namespace BDArmory.Control
                                     competitionStatus = vesselName + " is out of Ammunition";
                                 }
                             }
-                            if ((pilotAI == null || (pilotAI.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !pilotAI.allowRamming))) && mf.guardMode) // disable guard mode when out of ammo/guns if ramming is not allowed.
-                                mf.guardMode = false;
+                            if (mf.guardMode) // If we're in guard mode, check to see if we should disable it.
+                            {
+                                var pilotAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                                var surfaceAI = v.Current.FindPartModuleImplementing<BDModuleSurfaceAI>(); // Get the surface AI if the vessel has one.
+                                if ((pilotAI == null && surfaceAI == null) || (mf.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !(pilotAI != null && pilotAI.allowRamming)))) // if we've lost the AI or the vessel is out of weapons/ammo and ramming is not allowed.
+                                    mf.guardMode = false;
+                            }
                         }
 
                         // update the vessel scoring structure
@@ -1315,13 +1319,10 @@ namespace BDArmory.Control
                             vData.AverageSpeed += v.Current.srfSpeed;
                             vData.AverageAltitude += v.Current.altitude;
                             vData.averageCount++;
-                            if (vData.landedState)
+                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15))
                             {
-                                if (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15)
-                                {
-                                    vesselsToKill.Add(mf.vessel);
-                                    competitionStatus = vesselName + " landed too long.";
-                                }
+                                vesselsToKill.Add(mf.vessel);
+                                competitionStatus = vesselName + " landed too long.";
                             }
                         }
 
@@ -1335,7 +1336,7 @@ namespace BDArmory.Control
                             shouldKillThis = true;
                         }
 
-                        if (vData == null) shouldKillThis = true;
+                        if (vData == null && !BDArmorySettings.DISABLE_KILL_TIMER) shouldKillThis = true; // Don't kill other things if kill timer is disabled
 
                         // 15 second time until kill, maybe they recover?
                         if (KillTimer.ContainsKey(vesselName))
@@ -2094,10 +2095,6 @@ namespace BDArmory.Control
             CheckForDamagedParts();
             if (BDArmorySettings.DEBUG_RAMMING_LOGGING) CheckForMissingParts(); // DEBUG
         }
-
-        // A method to call the spawning code FIXME Implement this.
-        // public void SpawnCompetition(Vector3 gpsPosition, float altitudeAboveTerrain=1)
-        // {}
 
         // A filter for log messages so Scott can do other stuff depending on the content.
         public void Log(string message)
