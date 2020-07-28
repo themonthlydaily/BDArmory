@@ -14,7 +14,6 @@ using BDArmory.UI;
 using Expansions.Missions;
 using KSP.UI.Screens;
 using Smooth.Algebraics;
-using Steamworks;
 using UnityEngine;
 
 namespace BDArmory.Modules
