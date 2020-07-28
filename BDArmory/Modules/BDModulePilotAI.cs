@@ -373,7 +373,6 @@ namespace BDArmory.Modules
 
         // Ramming
         public bool ramming = false; // Whether or not we're currently trying to ram someone.
-        public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
 
         //Dynamic Steer Damping
         public float dynSteerDampingValue;
@@ -868,7 +867,7 @@ namespace BDArmory.Modules
 
                 if (!extending)
                 {
-                    if (HasAmmoAndGuns() || !RamTarget(s, targetVessel)) // If we're out of ammo, see if we can ram someone, otherwise, behave as normal.
+                    if (weaponManager.HasWeaponsAndAmmo() || !RamTarget(s, targetVessel)) // If we're out of ammo, see if we can ram someone, otherwise, behave as normal.
                     {
                         ramming = false;
                         currentStatus = "Engaging";
@@ -945,24 +944,6 @@ namespace BDArmory.Modules
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
 
             return true;
-        }
-
-        public bool HasAmmoAndGuns()
-        { // Check if the vessel has both ammo and guns.
-            if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
-            bool hasAmmoAndGuns = false;
-            if (weaponManager)
-            {
-                using (var weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
-                    while (weapon.MoveNext())
-                    {
-                        if (weapon.Current == null) continue; // First entry is the "no weapon" option.
-                        if (weapon.Current.GetWeaponClass() != WeaponClasses.Gun) continue; // Ignore non-guns.
-                        if (weaponManager.CheckAmmo(weapon.Current) || BDArmorySettings.INFINITE_AMMO) { hasAmmoAndGuns = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
-                    }
-                outOfAmmo = !hasAmmoAndGuns; // Set outOfAmmo if we don't have any guns with compatible ammo.
-            }
-            return hasAmmoAndGuns;
         }
 
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
