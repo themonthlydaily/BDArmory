@@ -316,7 +316,7 @@ namespace BDArmory.Modules
         //instantaneous turn radius and possible acceleration from lift
         //properties can be used so that other AI modules can read this for future maneuverability comparisons between craft
         float turnRadius;
-        float bodyGravity = 9.80665f; // Equivalent to (float)PhysicsGlobals.GravitationalAcceleration
+        float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration;
 
         public float TurnRadius
         {
@@ -577,7 +577,7 @@ namespace BDArmory.Modules
             if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
                 initialTakeOff = false;
 
-            bodyGravity = 9.80665f * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
+            bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
         }
 
         void Update()
