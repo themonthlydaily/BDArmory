@@ -31,7 +31,7 @@ namespace BDArmory.Core
 
                 var fieldValue = field.Current.GetValue(null);
                 if (fieldValue.GetType() == typeof(Vector2d))
-                    settings.SetValue(field.Current.Name, ((Vector2d)fieldValue).ToString("F4"), true);
+                    settings.SetValue(field.Current.Name, ((Vector2d)fieldValue).ToString("G"), true);
                 else
                     settings.SetValue(field.Current.Name, field.Current.GetValue(null).ToString(), true);
             }

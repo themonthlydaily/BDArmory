@@ -316,6 +316,7 @@ namespace BDArmory.Modules
         //instantaneous turn radius and possible acceleration from lift
         //properties can be used so that other AI modules can read this for future maneuverability comparisons between craft
         float turnRadius;
+        float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration;
 
         public float TurnRadius
         {
@@ -373,7 +374,6 @@ namespace BDArmory.Modules
 
         // Ramming
         public bool ramming = false; // Whether or not we're currently trying to ram someone.
-        public bool outOfAmmo = false; // Indicator for being out of ammo. Set in competition mode only.
 
         //Dynamic Steer Damping
         public float dynSteerDampingValue;
@@ -576,6 +576,8 @@ namespace BDArmory.Modules
             prevTargetDir = vesselTransform.up;
             if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
                 initialTakeOff = false;
+
+            bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
         }
 
         void Update()
@@ -868,7 +870,7 @@ namespace BDArmory.Modules
 
                 if (!extending)
                 {
-                    if (HasAmmoAndGuns() || !RamTarget(s, targetVessel)) // If we're out of ammo, see if we can ram someone, otherwise, behave as normal.
+                    if (weaponManager.HasWeaponsAndAmmo() || !RamTarget(s, targetVessel)) // If we're out of ammo, see if we can ram someone, otherwise, behave as normal.
                     {
                         ramming = false;
                         currentStatus = "Engaging";
@@ -945,24 +947,6 @@ namespace BDArmory.Modules
             AdjustThrottle(maxSpeed, false, true); // Ramming speed!
 
             return true;
-        }
-
-        public bool HasAmmoAndGuns()
-        { // Check if the vessel has both ammo and guns.
-            if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
-            bool hasAmmoAndGuns = false;
-            if (weaponManager)
-            {
-                using (var weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
-                    while (weapon.MoveNext())
-                    {
-                        if (weapon.Current == null) continue; // First entry is the "no weapon" option.
-                        if (weapon.Current.GetWeaponClass() != WeaponClasses.Gun) continue; // Ignore non-guns.
-                        if (weaponManager.CheckAmmo(weapon.Current) || BDArmorySettings.INFINITE_AMMO) { hasAmmoAndGuns = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
-                    }
-                outOfAmmo = !hasAmmoAndGuns; // Set outOfAmmo if we don't have any guns with compatible ammo.
-            }
-            return hasAmmoAndGuns;
         }
 
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
@@ -1050,7 +1034,7 @@ namespace BDArmory.Modules
                             {
                                 //figuring how much to lead the target's movement to get there after its movement assuming we can manage a constant speed turn
                                 //this only runs if we're not aiming and not that far from the target and the target is in front of us
-                                float curVesselMaxAccel = Math.Min(dynDynPresGRecorded * (float)vessel.dynamicPressurekPa, maxAllowedGForce * 9.81f);
+                                float curVesselMaxAccel = Math.Min(dynDynPresGRecorded * (float)vessel.dynamicPressurekPa, maxAllowedGForce * bodyGravity);
                                 if (curVesselMaxAccel > 0)
                                 {
                                     float timeToTurn = (float)vessel.srfSpeed * angleToTarget * Mathf.Deg2Rad / curVesselMaxAccel;
@@ -1945,7 +1929,7 @@ namespace BDArmory.Modules
 
             float invVesselDynPreskPa = 1f / (float)vessel.dynamicPressurekPa;
 
-            maxCosAoA = maxAllowedGForce * 9.81f * invVesselDynPreskPa;
+            maxCosAoA = maxAllowedGForce * bodyGravity * invVesselDynPreskPa;
             minCosAoA = -maxCosAoA;
 
             maxCosAoA -= gOffsetPerDynPres;
@@ -2036,7 +2020,7 @@ namespace BDArmory.Modules
             negLim = negPitchDynPresLimitIntegrator * invVesselDynPreskPa + negPitchDynPresLimit;
             if (negLim > s.pitch)
             {
-                if (currentG > -(maxAllowedGForce * 0.97f * 9.81f))
+                if (currentG > -(maxAllowedGForce * 0.97f * bodyGravity))
                 {
                     negPitchDynPresLimitIntegrator -= (float)(0.15 * vessel.dynamicPressurekPa);        //jsut an override in case things break
 
@@ -2056,7 +2040,7 @@ namespace BDArmory.Modules
             posLim = posPitchDynPresLimitIntegrator * invVesselDynPreskPa + posPitchDynPresLimit;
             if (posLim < s.pitch)
             {
-                if (currentG < (maxAllowedGForce * 0.97f * 9.81f))
+                if (currentG < (maxAllowedGForce * 0.97f * bodyGravity))
                 {
                     posPitchDynPresLimitIntegrator += (float)(0.15 * vessel.dynamicPressurekPa);        //jsut an override in case things break
 
@@ -2087,7 +2071,7 @@ namespace BDArmory.Modules
         {
             maxLiftAcceleration = dynDynPresGRecorded * (float)vessel.dynamicPressurekPa; //maximum acceleration from lift that the vehicle can provide
 
-            maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, 9.81f, maxAllowedGForce * 9.81f); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
+            maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
             turnRadius = dynMaxVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
         }

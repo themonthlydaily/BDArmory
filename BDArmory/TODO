@@ -1,7 +1,0 @@
-Better handling of the kill timer.
-
-Vessel spawning should reorient the vessel to the surface normal.
-
-Vessel spawning can result in some vessels not spawning properly or dying immediately. This needs to be detected so that it can be redone.
-
-FIXMEs
