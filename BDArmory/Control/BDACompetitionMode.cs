@@ -37,6 +37,9 @@ namespace BDArmory.Control
         public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
         public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
+        public Dictionary<string, int> hitCounts = new Dictionary<string, int>();
+        public int shotsFired = 0;
+        public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
 
         public string LastPersonWhoDamagedMe()
         {
@@ -89,8 +92,8 @@ namespace BDArmory.Control
         //public Dictionary<string, int> FireCount2 = new Dictionary<string, int>();
 
         public Dictionary<string, int> DeathOrder = new Dictionary<string, int>();
-        public Dictionary<string, int> whoShotWho = new Dictionary<string, int>();
-        public Dictionary<string, int> whoRammedWho = new Dictionary<string, int>();
+        public Dictionary<string, string> whoCleanShotWho = new Dictionary<string, string>();
+        public Dictionary<string, string> whoCleanRammedWho = new Dictionary<string, string>();
 
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
@@ -221,8 +224,8 @@ namespace BDArmory.Control
             DoPreflightChecks();
             Scores.Clear();
             DeathOrder.Clear();
-            whoShotWho.Clear();
-            whoRammedWho.Clear();
+            whoCleanShotWho.Clear();
+            whoCleanRammedWho.Clear();
             KillTimer.Clear();
             dumpedResults = 5;
             competitionStartTime = Planetarium.GetUniversalTime();
@@ -296,6 +299,7 @@ namespace BDArmory.Control
 
             competitionStarting = false;
             competitionIsActive = false;
+            competitionStartTime = -1;
             GameEvents.onCollision.Remove(AnalyseCollision);
             rammingInformation = null; // Reset the ramming information.
         }
@@ -329,7 +333,7 @@ namespace BDArmory.Control
 
             foreach (var pilot in readyToLaunch)
             {
-                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[1]);
+                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                 pilot.CommandTakeOff();
                 if (pilot.weaponManager.guardMode)
                 {
@@ -927,7 +931,7 @@ namespace BDArmory.Control
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection.
         }
 
-        private void RemoveDebris()
+        public void RemoveDebris()
         {
             // only call this if enabled
             // remove anything that doesn't contain BD Armory modules
@@ -942,7 +946,7 @@ namespace BDArmory.Control
                 else
                 {
                     int foundActiveParts = 0;
-                    using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator()) // Has a weapon manager
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -950,7 +954,7 @@ namespace BDArmory.Control
                                 break;
                             }
 
-                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator()) // Has an AI
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -958,7 +962,7 @@ namespace BDArmory.Control
                                 break;
                             }
 
-                    using (var wms = vessel.FindPartModulesImplementing<ModuleCommand>().GetEnumerator())
+                    using (var wms = vessel.FindPartModulesImplementing<ModuleCommand>().GetEnumerator()) // Has a command module
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {
@@ -1147,7 +1151,7 @@ namespace BDArmory.Control
                         }
 
                         // this vessel really is alive
-                        if (!vesselName.EndsWith("Debris") && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
+                        if (v.Current.vesselType != VesselType.Debris) // if (!vesselName.EndsWith("Debris") && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
                         {
                             if (DeathOrder.ContainsKey(vesselName))
                             {
@@ -1288,8 +1292,7 @@ namespace BDArmory.Control
                         // does it have ammunition: no ammo => Disable guard mode
                         if (!BDArmorySettings.INFINITE_AMMO)
                         {
-                            var pilotAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                            if (pilotAI != null && pilotAI.outOfAmmo && !outOfAmmo.Contains(vesselName)) // Report being out of ammo/guns once.
+                            if (mf.outOfAmmo && !outOfAmmo.Contains(vesselName)) // Report being out of weapons/ammo once.
                             {
                                 outOfAmmo.Add(vesselName);
                                 if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
@@ -1301,8 +1304,13 @@ namespace BDArmory.Control
                                     competitionStatus = vesselName + " is out of Ammunition";
                                 }
                             }
-                            if ((pilotAI == null || (pilotAI.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !pilotAI.allowRamming))) && mf.guardMode) // disable guard mode when out of ammo/guns if ramming is not allowed.
-                                mf.guardMode = false;
+                            if (mf.guardMode) // If we're in guard mode, check to see if we should disable it.
+                            {
+                                var pilotAI = v.Current.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                                var surfaceAI = v.Current.FindPartModuleImplementing<BDModuleSurfaceAI>(); // Get the surface AI if the vessel has one.
+                                if ((pilotAI == null && surfaceAI == null) || (mf.outOfAmmo && (BDArmorySettings.DISABLE_RAMMING || !(pilotAI != null && pilotAI.allowRamming)))) // if we've lost the AI or the vessel is out of weapons/ammo and ramming is not allowed.
+                                    mf.guardMode = false;
+                            }
                         }
 
                         // update the vessel scoring structure
@@ -1311,13 +1319,10 @@ namespace BDArmory.Control
                             vData.AverageSpeed += v.Current.srfSpeed;
                             vData.AverageAltitude += v.Current.altitude;
                             vData.averageCount++;
-                            if (vData.landedState)
+                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15))
                             {
-                                if (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15)
-                                {
-                                    vesselsToKill.Add(mf.vessel);
-                                    competitionStatus = vesselName + " landed too long.";
-                                }
+                                vesselsToKill.Add(mf.vessel);
+                                competitionStatus = vesselName + " landed too long.";
                             }
                         }
 
@@ -1331,7 +1336,7 @@ namespace BDArmory.Control
                             shouldKillThis = true;
                         }
 
-                        if (vData == null) shouldKillThis = true;
+                        if (vData == null && !BDArmorySettings.DISABLE_KILL_TIMER) shouldKillThis = true; // Don't kill other things if kill timer is disabled
 
                         // 15 second time until kill, maybe they recover?
                         if (KillTimer.ContainsKey(vesselName))
@@ -1411,15 +1416,17 @@ namespace BDArmory.Control
                                     if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
                                     {
                                         // twice - so 2 points
-                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
-                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        whoCleanShotWho.Add(key, whoKilledMe);
                                         whoKilledMe += " (BOOM! HEADSHOT!)";
                                     }
                                     else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
                                     {
                                         // if ram killed
-                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
-                                        Log("[BDArmoryCompetition: " + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
+                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
+                                        whoCleanRammedWho.Add(key, whoKilledMe);
                                         whoKilledMe += " (BOOM! HEADSHOT!)";
                                     }
 
@@ -1538,15 +1545,36 @@ namespace BDArmory.Control
                     Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: DEAD:" + DeathOrder[key] + ":" + key);
             }
 
-            foreach (string key in whoShotWho.Keys)
-            {
-                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHO:" + whoShotWho[key] + ":" + key);
-            }
+            // Who shot who.
+            foreach (var key in Scores.Keys)
+                if (Scores[key].hitCounts.Count > 0)
+                {
+                    string whoShotMe = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHO:" + key;
+                    foreach (var vesselName in Scores[key].hitCounts.Keys)
+                        whoShotMe += ":" + Scores[key].hitCounts[vesselName] + ":" + vesselName;
+                    Log(whoShotMe);
+                }
 
-            foreach (string key in whoRammedWho.Keys)
-            {
-                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHORAMMEDWHO" + whoRammedWho[key] + ":" + key);
-            }
+            // Who rammed who.
+            foreach (var key in Scores.Keys)
+                if (Scores[key].rammingPartLossCounts.Count > 0)
+                {
+                    string whoRammedMe = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHORAMMEDWHO:" + key;
+                    foreach (var vesselName in Scores[key].rammingPartLossCounts.Keys)
+                        whoRammedMe += ":" + Scores[key].rammingPartLossCounts[vesselName] + ":" + vesselName;
+                    Log(whoRammedMe);
+                }
+
+
+            // Log clean kills/rams
+            foreach (var key in whoCleanShotWho.Keys)
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANKILL:" + key + ":" + whoCleanShotWho[key]);
+            foreach (var key in whoCleanRammedWho.Keys)
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANRAM:" + key + ":" + whoCleanRammedWho[key]);
+
+            // Accuracy
+            foreach (var key in Scores.Keys)
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ACCURACY:" + key + ":" + Scores[key].Score + "/" + Scores[key].shotsFired);
         }
 
 
@@ -1584,7 +1612,7 @@ namespace BDArmory.Control
             {
                 IBDAIControl pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
                 if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral) continue; // Only include the vessels that the Scores dictionary uses.
-                
+
                 var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                 if (pilotAI == null) continue;
                 var targetRammingInformation = new Dictionary<string, RammingTargetInformation>();
@@ -2008,10 +2036,6 @@ namespace BDArmory.Control
             var vData = Scores[rammingVesselName];
             vData.totalDamagedPartsDueToRamming += partsLost;
             var key = rammingVesselName + ":" + rammedVesselName;
-            if (whoRammedWho.ContainsKey(key))
-                whoRammedWho[key] += partsLost;
-            else
-                whoRammedWho.Add(key, partsLost);
 
             // Log attributes for the rammed vessel.
             if (!Scores.ContainsKey(rammedVesselName))
@@ -2024,6 +2048,10 @@ namespace BDArmory.Control
             tData.lastPersonWhoRammedMe = rammingVesselName;
             tData.everyoneWhoRammedMe.Add(rammingVesselName);
             tData.everyoneWhoDamagedMe.Add(rammingVesselName);
+            if (tData.rammingPartLossCounts.ContainsKey(rammingVesselName))
+                tData.rammingPartLossCounts[rammingVesselName] += partsLost;
+            else
+                tData.rammingPartLossCounts.Add(rammingVesselName, partsLost);
         }
 
         Dictionary<string, int> partsCheck;

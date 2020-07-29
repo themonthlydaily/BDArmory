@@ -1401,6 +1401,7 @@ namespace BDArmory.UI
             BDArmorySettings.DEBUG_RAMMING_LOGGING = GUI.Toggle(SRightRect(line), BDArmorySettings.DEBUG_RAMMING_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_DebugRammingLogging"));// Disable Ramming
             line++;
             BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
+            BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
             line++;
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -1423,7 +1424,16 @@ namespace BDArmory.UI
             terrainAlertFrequency = GUI.HorizontalSlider(SRightRect(line), terrainAlertFrequency, 1f, 5f);
             BDArmorySettings.TERRAIN_ALERT_FREQUENCY = (int)terrainAlertFrequency;
             line++;
-            
+            if (GUI.Button(SLeftRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
+            {
+                Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
+                RaycastHit hit;
+                if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
+                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
+            }
+            GUI.Label(SRightRect(line), "  "+BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("F4"));
+            line++;
+
             line++;
 
             bool origPm = BDArmorySettings.PEACE_MODE;

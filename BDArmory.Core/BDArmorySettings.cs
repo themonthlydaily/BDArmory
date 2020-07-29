@@ -1,3 +1,7 @@
+using UnityEngine;
+
+using System;
+
 namespace BDArmory.Core
 {
     public class BDArmorySettings
@@ -62,5 +66,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = false;
         [BDAPersistantSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;               // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
         [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;                // Controls whether ramming logging debug information is printed to the Debug.Log
+        [BDAPersistantSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
+        [BDAPersistantSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = Vector2d.zero;
+        [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = false;                 //disables the kill timers.
     }
 }
