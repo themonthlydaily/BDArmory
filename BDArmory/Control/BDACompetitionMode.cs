@@ -329,7 +329,7 @@ namespace BDArmory.Control
 
             foreach (var pilot in readyToLaunch)
             {
-                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[1]);
+                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                 pilot.CommandTakeOff();
                 if (pilot.weaponManager.guardMode)
                 {
