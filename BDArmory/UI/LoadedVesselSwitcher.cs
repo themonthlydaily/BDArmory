@@ -848,6 +848,11 @@ namespace BDArmory.UI
                                             vesselScore *= 0.25f;
                                         }
                                     }
+                                    if (wms.Current.guardFiringMissile)
+                                    {
+                                        // firing a missile at things is more interesting
+                                        vesselScore *= 0.25f;
+                                    }
                                     // scoring for automagic camera check should not be in here
                                     if (wms.Current.underAttack || wms.Current.underFire)
                                     {
@@ -863,10 +868,14 @@ namespace BDArmory.UI
                                             }
                                         }
 
-                                    }
-                                    else if (wms.Current.isFlaring)
+                                    } 
+                                    if (wms.Current.incomingMissileVessel != null)
                                     {
-                                        vesselScore *= 0.5f;
+                                        float timeToImpact = wms.Current.incomingMissileDistance / (float)wms.Current.incomingMissileVessel.srfSpeed;
+                                        vesselScore *= Mathf.Clamp(0.015f* timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
+
+                                        if (wms.Current.isFlaring || wms.Current.isChaffing)
+                                            vesselScore *= 0.5f;
                                     }
                                     if (recentlyDamaged)
                                     {
