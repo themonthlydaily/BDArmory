@@ -349,7 +349,7 @@ namespace BDArmory.Modules
         public MissileFire incomingWeaponManager;
         public float incomingMissDistance;
 
-        bool guardFiringMissile;
+        public bool guardFiringMissile;
         bool disabledRocketAimers;
         bool antiRadTargetAcquired;
         Vector3 antiRadiationTarget;
