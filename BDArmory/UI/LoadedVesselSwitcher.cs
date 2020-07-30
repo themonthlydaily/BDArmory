@@ -457,6 +457,7 @@ namespace BDArmory.UI
                             string status = UpdateVesselStatus(wm.Current, vButtonStyle);
                             int currentScore = 0;
                             int currentRamScore = 0;
+                            int currentMissileScore = 0;
 
                             string vesselName = wm.Current.vessel.GetName();
 
@@ -466,9 +467,12 @@ namespace BDArmory.UI
                                 scoreData = BDACompetitionMode.Instance.Scores[vesselName];
                                 currentScore = scoreData.Score;
                                 currentRamScore = scoreData.totalDamagedPartsDueToRamming;
+                                currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
                             }
-                            string postStatus = " (" + currentScore.ToString() + ")";
-                            if (currentRamScore > 0) postStatus += " (" + currentRamScore.ToString() + ")";
+                            string postStatus = " (" + currentScore.ToString();
+                            if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
+                            if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
+                            postStatus += ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
                             {
@@ -623,12 +627,23 @@ namespace BDArmory.UI
                     statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString();
                     if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
-                    if (BDACompetitionMode.Instance.Scores[key].lastRammedTime < BDACompetitionMode.Instance.Scores[key].lastHitTime)
-                        statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                    else if (BDACompetitionMode.Instance.Scores[key].lastRammedTime > BDACompetitionMode.Instance.Scores[key].lastHitTime)
-                        statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                    else
-                        statusString += ")";
+                    if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
+                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
+                    switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
+                    {
+                        case DamageFrom.Bullet:
+                            statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        case DamageFrom.Missile:
+                            statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        case DamageFrom.Ram:
+                            statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        default:
+                            statusString += ")";
+                            break;
+                    }
                     GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), statusString, BDArmorySetup.BDGuiSkin.label);
                     height += _buttonHeight + _buttonGap;
                 }
