@@ -625,10 +625,10 @@ namespace BDArmory.UI
                 {
                     // DEAD <death order>: vesselName(<Score>[, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
                     statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString();
-                    if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
-                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
                     if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
+                    if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
+                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
                     switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
                     {
                         case DamageFrom.Bullet:
