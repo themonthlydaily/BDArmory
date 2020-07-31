@@ -1326,21 +1326,39 @@ namespace BDArmory.UI
 
         Rect SLineRect(float line)
         {
-            return new Rect(settingsMargin, line * settingsLineHeight, settingsWidth - (2 * settingsMargin),
-                settingsLineHeight);
+            return new Rect(settingsMargin, line * settingsLineHeight, settingsWidth - 2 * settingsMargin, settingsLineHeight);
         }
 
         Rect SRightRect(float line)
         {
-            return new Rect(settingsMargin + ((settingsWidth - 2 * settingsLineHeight) / 2), line * settingsLineHeight,
-                (settingsWidth - (2 * settingsMargin)) / 2, settingsLineHeight);
+            return new Rect(settingsMargin + (settingsWidth - 2 * settingsLineHeight) / 2, line * settingsLineHeight, (settingsWidth - 2 * settingsMargin) / 2, settingsLineHeight);
         }
 
         Rect SLeftRect(float line)
         {
-            return new Rect(settingsMargin, (line * settingsLineHeight), (settingsWidth - (2 * settingsMargin)) / 2,
-                settingsLineHeight);
+            return new Rect(settingsMargin, line * settingsLineHeight, (settingsWidth - 2 * settingsMargin) / 2, settingsLineHeight);
         }
+
+        Rect SLeftButtonRect(float line)
+        {
+            return new Rect(settingsMargin, line * settingsLineHeight, (settingsWidth - 2 * settingsMargin) / 2 - settingsMargin / 4, settingsLineHeight);
+        }
+
+        Rect SRightButtonRect(float line)
+        {
+            return new Rect(settingsWidth / 2 + settingsMargin / 4, line * settingsLineHeight, (settingsWidth - 2 * settingsMargin) / 2 - settingsMargin / 4, settingsLineHeight);
+        }
+
+        List<Rect> SRight2Rects(float line)
+        {
+            var rectGap = settingsMargin / 2;
+            var rectWidth = ((settingsWidth - 2 * settingsMargin) / 2 - 2 * rectGap) / 2;
+            var rects = new List<Rect>();
+            rects.Add(new Rect(settingsWidth / 2 + rectGap / 2, line * settingsLineHeight, rectWidth, settingsLineHeight));
+            rects.Add(new Rect(settingsWidth / 2 + rectWidth + rectGap * 3 / 2, line * settingsLineHeight, rectWidth, settingsLineHeight));
+            return rects;
+        }
+
 
         float settingsWidth;
         float settingsHeight;
@@ -1359,7 +1377,7 @@ namespace BDArmory.UI
             settingsTop = 100;
             settingsLineHeight = 22;
             settingsMargin = 18;
-            WindowRectSettings = new Rect(settingsLeft, settingsTop, 420, 480);
+            WindowRectSettings = new Rect(settingsLeft, settingsTop, settingsWidth, settingsHeight);
         }
 
         void WindowSettings(int windowID)
@@ -1424,14 +1442,21 @@ namespace BDArmory.UI
             terrainAlertFrequency = GUI.HorizontalSlider(SRightRect(line), terrainAlertFrequency, 1f, 5f);
             BDArmorySettings.TERRAIN_ALERT_FREQUENCY = (int)terrainAlertFrequency;
             line++;
-            if (GUI.Button(SLeftRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
+            if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
             {
                 Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
             }
-            GUI.Label(SRightRect(line), "  "+BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("F4"));
+            var rects = SRight2Rects(line);
+            var guiSpawnPointLat = GUI.TextField(rects[0], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("F4"));
+            var guiSpawnPointLon = GUI.TextField(rects[1], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("F4"));
+            double spawnPointLat, spawnPointLon;
+            if (double.TryParse(guiSpawnPointLat, out spawnPointLat))
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnPointLat;
+            if (double.TryParse(guiSpawnPointLon, out spawnPointLon))
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnPointLon;
             line++;
 
             line++;
@@ -1518,12 +1543,12 @@ namespace BDArmory.UI
                     }
                     line++;
 
-                    if (GUI.Button(SLeftRect(line), "Reset Scores")) // resets competition scores
+                    if (GUI.Button(SLeftButtonRect(line), "Reset Scores")) // resets competition scores
                     {
                         BDACompetitionMode.Instance.ResetCompetitionScores();
                     }
 
-                    if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetition")))//"Start Competition"
+                    if (GUI.Button(SRightButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetition")))//"Start Competition"
                     {
 
                         competitionDist = Mathf.Max(competitionDist, 0);
@@ -1533,7 +1558,7 @@ namespace BDArmory.UI
                         windowSettingsEnabled = false;
                     }
                     line++;
-                    if (GUI.Button(SLeftRect(line), "Rapid Deploy"))
+                    if (GUI.Button(SLeftButtonRect(line), "Rapid Deploy"))
                     {
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         SaveConfig();
@@ -1544,11 +1569,11 @@ namespace BDArmory.UI
                 {
                     GUI.Label(SLeftRect(line), Localizer.Format("#LOC_BDArmory_Settings_CompetitionStarting") + " (" + compDistGui + ")");//Starting Competition...
                     line++;
-                    if (GUI.Button(SLeftRect(line), Localizer.Format("#LOC_BDArmory_Generic_Cancel")))//"Cancel"
+                    if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Generic_Cancel")))//"Cancel"
                     {
                         BDACompetitionMode.Instance.StopCompetition();
                     }
-                    if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetitionNow"))) // Start competition NOW button.
+                    if (GUI.Button(SRightButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetitionNow"))) // Start competition NOW button.
                     {
                         BDACompetitionMode.Instance.StartCompetitionNow();
                         SaveConfig();
