@@ -2289,8 +2289,16 @@ namespace BDArmory.Modules
             }
             else if (command == PilotCommands.Attack)
             {
-                currentStatus = "Attack";
-                FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
+                if (targetVessel == null)
+                {
+                    currentStatus = "Attack";
+                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
+                }
+                else // If the vessel has a target, let it fight!
+                {
+                    ReleaseCommand();
+                    return;
+                }
             }
         }
 
