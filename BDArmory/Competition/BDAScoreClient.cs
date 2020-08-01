@@ -178,7 +178,10 @@ namespace BDArmory.Competition
             foreach (PlayerModel playerModel in collection)
             {
                 Debug.Log(string.Format("[BDAScoreClient] Player {0}", playerModel.ToString()));
-                players.Add(playerModel.id, playerModel);
+                if (!players.ContainsKey(playerModel.id))
+                    players.Add(playerModel.id, playerModel);
+                else
+                    Debug.Log("[BDAScoreClient] Player "+ playerModel.id + " already exists in the competition.");
             }
             Debug.Log(string.Format("[BDAScoreClient] Players: {0}", players.Count));
         }
