@@ -198,6 +198,7 @@ namespace BDArmory.UI
                         foreach (var part in partsToKill)
                             part.Die();
                     }
+                    // Spawn the vessels.
                     _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1);
                 }
                 if (_spawnNextUpdate)
@@ -362,7 +363,7 @@ namespace BDArmory.UI
                 {
                     _spawnNextUpdate = true;
                     _vesselsSpawned = true;
-                    Debug.Log("[BDArmory] Triggering vessel spawning.");
+                    Debug.Log("[BDArmory] Triggering vessel spawning at " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("F4") + ".");
                 }
                 else if (Event.current.button == 1)
                 {
@@ -868,11 +869,11 @@ namespace BDArmory.UI
                                             }
                                         }
 
-                                    } 
+                                    }
                                     if (wms.Current.incomingMissileVessel != null)
                                     {
                                         float timeToImpact = wms.Current.incomingMissileDistance / (float)wms.Current.incomingMissileVessel.srfSpeed;
-                                        vesselScore *= Mathf.Clamp(0.0005f* timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
+                                        vesselScore *= Mathf.Clamp(0.0005f * timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
 
                                         if (wms.Current.isFlaring || wms.Current.isChaffing)
                                             vesselScore *= 0.8f;
