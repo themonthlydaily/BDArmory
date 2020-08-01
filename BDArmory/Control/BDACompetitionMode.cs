@@ -1476,7 +1476,7 @@ namespace BDArmory.Control
                                     switch (lastDamageWasFrom)
                                     {
                                         case DamageFrom.Bullet:
-                                            if (!whoCleanShotWho.Keys.Contains(key))
+                                            if (!whoCleanShotWho.ContainsKey(key))
                                             {
                                                 // twice - so 2 points
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
@@ -1487,7 +1487,7 @@ namespace BDArmory.Control
                                             }
                                             break;
                                         case DamageFrom.Missile:
-                                            if (!whoCleanShotWhoWithMissiles.Keys.Contains(key))
+                                            if (!whoCleanShotWhoWithMissiles.ContainsKey(key))
                                             {
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
@@ -1497,7 +1497,7 @@ namespace BDArmory.Control
                                             }
                                             break;
                                         case DamageFrom.Ram:
-                                            if (!whoCleanRammedWho.Keys.Contains(key))
+                                            if (!whoCleanRammedWho.ContainsKey(key))
                                             {
                                                 // if ram killed
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
