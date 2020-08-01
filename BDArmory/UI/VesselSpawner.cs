@@ -25,8 +25,38 @@ namespace BDArmory.UI
             Instance = this;
         }
 
+        string message = null;
+        double messageShowStartTime;
+        double messageShowLength = 10;
         private void OnGUI()
         {
+            if (message != null)
+            {
+                GUIStyle cStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
+                cStyle.fontStyle = FontStyle.Bold;
+                cStyle.fontSize = 22;
+                cStyle.alignment = TextAnchor.UpperLeft;
+
+                var displayRow = 100;
+                if (!BDArmorySetup.GAME_UI_ENABLED)
+                {
+                    displayRow = 30;
+                }
+
+                Rect cLabelRect = new Rect(30, displayRow, Screen.width, 100);
+
+                GUIStyle cShadowStyle = new GUIStyle(cStyle);
+                Rect cShadowRect = new Rect(cLabelRect);
+                cShadowRect.x += 2;
+                cShadowRect.y += 2;
+                cShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
+
+                GUI.Label(cShadowRect, message, cShadowStyle);
+                GUI.Label(cLabelRect, message, cStyle);
+
+                if (Planetarium.GetUniversalTime() - messageShowStartTime > messageShowLength)
+                    message = null;
+            }
         }
 
         public bool vesselsSpawning = false;
@@ -135,13 +165,22 @@ namespace BDArmory.UI
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, localSurfaceNormal)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
+            string failedVessels = "";
             foreach (var craftUrl in crafts)
             {
                 var heading = 360f * spawnedVesselCount / crafts.Count;
                 var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, localSurfaceNormal) * refDirection, localSurfaceNormal).normalized;
                 craftSpawnPosition = spawnPoint + (altitude + 1000f) * (Vector3d)localSurfaceNormal + (10f + 10f * crafts.Count) * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
                 FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
-                var vessel = SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, 0, 0f); // SPAWN
+                Vessel vessel = null;
+                vessel = SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, 0, 0f); // SPAWN
+                if (vessel == null)
+                {
+                    var craftName = craftUrl.Substring((Environment.CurrentDirectory + $"/AutoSpawn/").Length);
+                    Debug.Log("[BDArmory]: Failed to spawn craft " + craftName);
+                    failedVessels += "\n  -  " + craftName;
+                    continue;
+                }
                 ray = new Ray(craftSpawnPosition, -localSurfaceNormal);
                 var distance = Physics.Raycast(ray, out hit, (float)(altitude + 1100f), 1 << 15) ? hit.distance : altitude + 1100f; // Note: if this doesn't hit, then the terrain is too steep to spawn on anyway.
                 vessel.SetRotation(Quaternion.FromToRotation(-Vector3.forward, hit.normal)); // Re-orient the vessel to the terrain normal.
@@ -153,7 +192,13 @@ namespace BDArmory.UI
                     if (distanceUnderWater > 0) // Under water, move the vessel to the surface.
                         vessel.SetPosition(vessel.transform.position + distanceUnderWater * surfaceNormal);
                 }
+                Debug.Log("[BDArmory]: Vessel " + vessel.vesselName + " spawned!");
                 spawnedVesselCount += 1;
+            }
+            if (failedVessels != "")
+            {
+                message = "Some vessels failed to spawn: " + failedVessels;
+                messageShowStartTime = Planetarium.GetUniversalTime();
             }
             #endregion
 
@@ -185,8 +230,6 @@ namespace BDArmory.UI
 
         private Vessel SpawnVessel(VesselData vesselData, List<ProtoCrewMember> crewData = null)
         {
-            Debug.Log("Spawning a vessel named '" + vesselData.name + "'");
-
             //Set additional info for landed vessels
             bool landed = false;
             if (!vesselData.orbiting)
