@@ -384,6 +384,17 @@ namespace BDArmory.Modules
         public float
             gunRange = 2500f;
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true),// Countermeasure dispensing repetition
+         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float
+            cmRepetition = 2f;
+
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true),// Countermeasure dispensing interval
+         UI_FloatRange(minValue = 0.25f, maxValue = 1f, stepIncrement = 0.25f, scene = UI_Scene.All)]
+        public float
+            cmInterval = 1f;
+
+
         public const float maxAllowableMissilesOnTarget = 18f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
@@ -1770,7 +1781,7 @@ namespace BDArmory.Modules
         {
             if (!isChaffing)
             {
-                StartCoroutine(ChaffRoutine());
+                StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval));
             }
         }
 
@@ -1796,33 +1807,36 @@ namespace BDArmory.Modules
                 }
         }
 
-        IEnumerator ChaffRoutine()
+        IEnumerator ChaffRoutine(int repetition, float interval)
         {
             isChaffing = true;
-            yield return new WaitForSeconds(UnityEngine.Random.Range(0.2f, 1f));
-            using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
-                while (cm.MoveNext())
-                {
-                    if (cm.Current == null) continue;
-                    if (cm.Current.cmType == CMDropper.CountermeasureTypes.Chaff)
+            // yield return new WaitForSeconds(UnityEngine.Random.Range(0.2f, 1f));
+            for (int i = 0; i < repetition; i++)
+            {
+
+                using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
+                    while (cm.MoveNext())
                     {
-                        cm.Current.DropCM();
+                        if (cm.Current == null) continue;
+                        if (cm.Current.cmType == CMDropper.CountermeasureTypes.Chaff)
+                        {
+                            cm.Current.DropCM();
+                        }
                     }
-                }
 
-            yield return new WaitForSeconds(0.6f);
-
+                yield return new WaitForSeconds(interval);
+            }
             isChaffing = false;
         }
 
-        IEnumerator FlareRoutine(float time)
+        IEnumerator FlareRoutine(int repetition, float interval)
         {
             if (isFlaring) yield break;
-            time = Mathf.Clamp(time, 2, 8);
+            // time = Mathf.Clamp(time, 2, 8);
             isFlaring = true;
-            yield return new WaitForSeconds(UnityEngine.Random.Range(0f, 1f));
-            float flareStartTime = Time.time;
-            while (Time.time - flareStartTime < time)
+            // yield return new WaitForSeconds(UnityEngine.Random.Range(0f, 1f));
+            // float flareStartTime = Time.time;
+            for (int i = 0; i < repetition; i++)
             {
                 using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
                     while (cm.MoveNext())
@@ -1833,7 +1847,7 @@ namespace BDArmory.Modules
                             cm.Current.DropCM();
                         }
                     }
-                yield return new WaitForSeconds(0.6f);
+                yield return new WaitForSeconds(interval);
             }
             isFlaring = false;
         }
@@ -4022,7 +4036,7 @@ namespace BDArmory.Modules
 
                 if (!isFlaring)
                 {
-                    StartCoroutine(FlareRoutine(2.5f));
+                    StartCoroutine(FlareRoutine((int)cmRepetition, cmInterval));
                     StartCoroutine(ResetMissileThreatDistanceRoutine());
                 }
                 incomingThreatPosition = results.threatPosition;

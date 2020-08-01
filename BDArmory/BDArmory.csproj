@@ -274,6 +274,7 @@
     <None Include="Distribution\GameData\BDArmory\Localization\localization-en-us.cfg" />
     <None Include="Distribution\GameData\BDArmory\Localization\localization-zh-cn.cfg" />
     <None Include="Distribution\GameData\BDArmory\Localization\part_deformatter.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Localization\UI\en-us.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\000000_HitpointModule.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\000000_HitpointModule_PartFixes.cfg" />
     <None Include="Distribution\GameData\BDArmory\MMPatches\10_bdac_stealth.cfg" />
