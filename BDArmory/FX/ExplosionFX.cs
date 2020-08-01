@@ -123,7 +123,7 @@ namespace BDArmory.FX
                             if (sourceVesselName != null && BDACompetitionMode.Instance.Scores.Keys.Contains(sourceVesselName)) // Check that the source vessel is in the competition.
                             {
                                 var damagedVesselName = partHit.vessel?.GetName();
-                                if (damagedVesselName != null && BDACompetitionMode.Instance.Scores.Keys.Contains(damagedVesselName)) // Check that the damaged vessel is in the competition.
+                                if (damagedVesselName != null && damagedVesselName != sourceVesselName && BDACompetitionMode.Instance.Scores.Keys.Contains(damagedVesselName)) // Check that the damaged vessel is in the competition and isn't the source vessel.
                                 {
                                     if (BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts.Keys.Contains(sourceVesselName))
                                         ++BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts[sourceVesselName];

@@ -1450,13 +1450,13 @@ namespace BDArmory.UI
                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
             }
             var rects = SRight2Rects(line);
-            var guiSpawnPointLat = GUI.TextField(rects[0], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("F4"));
-            var guiSpawnPointLon = GUI.TextField(rects[1], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("F4"));
+            var guiSpawnPointLat = GUI.TextField(rects[0], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("G6"));
+            var guiSpawnPointLon = GUI.TextField(rects[1], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("G6"));
             double spawnPointLat, spawnPointLon;
             if (double.TryParse(guiSpawnPointLat, out spawnPointLat))
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnPointLat;
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnPointLat, -90), 90);
             if (double.TryParse(guiSpawnPointLon, out spawnPointLon))
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnPointLon;
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnPointLon, -180), 180);
             line++;
 
             line++;
