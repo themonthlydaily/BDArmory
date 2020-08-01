@@ -387,12 +387,12 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true),// Countermeasure dispensing repetition
          UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float
-            cmRepetition = 2f;
+            cmRepetition = 4f; // Equal to prior default
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true),// Countermeasure dispensing interval
-         UI_FloatRange(minValue = 0.25f, maxValue = 1f, stepIncrement = 0.25f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float
-            cmInterval = 1f;
+            cmInterval = 0.6f; // Equal to prior default
 
 
         public const float maxAllowableMissilesOnTarget = 18f;
@@ -1809,8 +1809,9 @@ namespace BDArmory.Modules
 
         IEnumerator ChaffRoutine(int repetition, float interval)
         {
+            if (isChaffing) yield break;
             isChaffing = true;
-            // yield return new WaitForSeconds(UnityEngine.Random.Range(0.2f, 1f));
+            yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
 
@@ -1832,10 +1833,8 @@ namespace BDArmory.Modules
         IEnumerator FlareRoutine(int repetition, float interval)
         {
             if (isFlaring) yield break;
-            // time = Mathf.Clamp(time, 2, 8);
             isFlaring = true;
-            // yield return new WaitForSeconds(UnityEngine.Random.Range(0f, 1f));
-            // float flareStartTime = Time.time;
+            yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
                 using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
