@@ -120,12 +120,12 @@ namespace BDArmory.FX
                         if (IsMissile && BDACompetitionMode.Instance)
                         {
                             var sourceVesselName = ExplosivePart.FindModuleImplementing<MissileLauncher>()?.SourceVessel?.GetName();
-                            if (sourceVesselName != null && BDACompetitionMode.Instance.Scores.Keys.Contains(sourceVesselName)) // Check that the source vessel is in the competition.
+                            if (sourceVesselName != null && BDACompetitionMode.Instance.Scores.ContainsKey(sourceVesselName)) // Check that the source vessel is in the competition.
                             {
                                 var damagedVesselName = partHit.vessel?.GetName();
-                                if (damagedVesselName != null && damagedVesselName != sourceVesselName && BDACompetitionMode.Instance.Scores.Keys.Contains(damagedVesselName)) // Check that the damaged vessel is in the competition and isn't the source vessel.
+                                if (damagedVesselName != null && damagedVesselName != sourceVesselName && BDACompetitionMode.Instance.Scores.ContainsKey(damagedVesselName)) // Check that the damaged vessel is in the competition and isn't the source vessel.
                                 {
-                                    if (BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts.Keys.Contains(sourceVesselName))
+                                    if (BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts.ContainsKey(sourceVesselName))
                                         ++BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts[sourceVesselName];
                                     else
                                         BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts[sourceVesselName] = 1;
@@ -134,7 +134,7 @@ namespace BDArmory.FX
                                     ++BDACompetitionMode.Instance.Scores[sourceVesselName].totalDamagedPartsDueToMissiles;
                                     BDACompetitionMode.Instance.Scores[damagedVesselName].lastMissileHitTime = Planetarium.GetUniversalTime();
                                     BDACompetitionMode.Instance.Scores[damagedVesselName].lastPersonWhoHitMeWithAMissile = sourceVesselName;
-                                    if (vesselsHitByMissiles.Keys.Contains(damagedVesselName))
+                                    if (vesselsHitByMissiles.ContainsKey(damagedVesselName))
                                         ++vesselsHitByMissiles[damagedVesselName];
                                     else
                                         vesselsHitByMissiles[damagedVesselName] = 1;
