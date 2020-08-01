@@ -828,7 +828,7 @@ namespace BDArmory.UI
                                     }
                                     vesselScore = Math.Abs(vesselScore);
 
-                                    if (!recentlyLanded && v.Current.verticalSpeed < -5)
+                                    if (!recentlyLanded && v.Current.verticalSpeed < -15) // Vessels gently floating to the ground aren't interesting
                                     {
                                         crashTime = (float)(-Math.Abs(v.Current.radarAltitude) / v.Current.verticalSpeed);
                                     }
@@ -836,7 +836,7 @@ namespace BDArmory.UI
                                     {
                                         targetDistance = Vector3.Distance(wms.Current.vessel.GetWorldPos3D(), wms.Current.currentTarget.position);
                                     }
-                                    vesselScore *= targetDistance / 1000;
+                                    vesselScore *= 0.031623f * Mathf.Sqrt(targetDistance); // Equal to 1 at 1000m
                                     if (crashTime < 30)
                                     {
                                         vesselScore *= crashTime / 30;
@@ -852,14 +852,14 @@ namespace BDArmory.UI
                                     if (wms.Current.guardFiringMissile)
                                     {
                                         // firing a missile at things is more interesting
-                                        vesselScore *= 0.25f;
+                                        vesselScore *= 0.2f;
                                     }
                                     // scoring for automagic camera check should not be in here
                                     if (wms.Current.underAttack || wms.Current.underFire)
                                     {
                                         vesselScore *= 0.5f;
                                         var distance = Vector3.Distance(wms.Current.vessel.GetWorldPos3D(), wms.Current.incomingThreatPosition);
-                                        vesselScore *= distance / 1000;
+                                        vesselScore *= 0.031623f * Mathf.Sqrt(distance); // Equal to 1 at 1000m, we don't want to overly disadvantage craft that are super far away, but could be firing missiles or doing other interesting things
                                         //we're very interested when threat and target are the same
                                         if (wms.Current.incomingThreatVessel != null && wms.Current.currentTarget != null)
                                         {
@@ -873,10 +873,10 @@ namespace BDArmory.UI
                                     if (wms.Current.incomingMissileVessel != null)
                                     {
                                         float timeToImpact = wms.Current.incomingMissileDistance / (float)wms.Current.incomingMissileVessel.srfSpeed;
-                                        vesselScore *= Mathf.Clamp(0.015f * timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
+                                        vesselScore *= Mathf.Clamp(0.0005f * timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
 
                                         if (wms.Current.isFlaring || wms.Current.isChaffing)
-                                            vesselScore *= 0.5f;
+                                            vesselScore *= 0.8f;
                                     }
                                     if (recentlyDamaged)
                                     {
