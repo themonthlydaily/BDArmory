@@ -23,9 +23,9 @@ namespace BDArmory.Competition
 
         private bool pendingSync = false;
 
-//        protected CompetitionModel competition = null;
+        //        protected CompetitionModel competition = null;
 
-//        protected HeatModel activeHeat = null;
+        //        protected HeatModel activeHeat = null;
 
 
         private BDAScoreClient client;
@@ -48,7 +48,7 @@ namespace BDArmory.Competition
 
         public IEnumerator SynchronizeWithService(string hash)
         {
-            if( pendingSync )
+            if (pendingSync)
             {
                 Debug.Log("[BDAScoreService] Sync in progress");
                 yield break;
@@ -132,7 +132,6 @@ namespace BDArmory.Competition
             yield return RetryFind(hash);
         }
 
-
         private IEnumerator ExecuteHeat(string hash, HeatModel model)
         {
             Debug.Log(string.Format("[BDAScoreService] Running heat {0}/{1} in 5sec", hash, model.order));
@@ -207,7 +206,7 @@ namespace BDArmory.Competition
         private int ComputeTotalKills(string playerName)
         {
             int result = 0;
-            if( killsOnTarget.ContainsKey(playerName) )
+            if (killsOnTarget.ContainsKey(playerName))
             {
                 result = killsOnTarget[playerName].Values.Sum();
             }
@@ -217,7 +216,7 @@ namespace BDArmory.Competition
         private int ComputeTotalDeaths(string playerName)
         {
             int result = 0;
-            if( deaths.ContainsKey(playerName) )
+            if (deaths.ContainsKey(playerName))
             {
                 result = deaths[playerName];
             }
@@ -226,26 +225,39 @@ namespace BDArmory.Competition
 
         public void TrackHit(string attacker, string target, string weaponName, double hitDistance)
         {
-            if( hitsOnTarget.ContainsKey(attacker) )
+            if (hitsOnTarget.ContainsKey(attacker))
             {
                 Dictionary<string, int> hits = hitsOnTarget[attacker];
-                if( hits.ContainsKey(target) )
+                if (hits.ContainsKey(target))
                 {
                     hits[target] += 1;
                     hitsOnTarget[attacker] = hits;
+                }
+                else
+                {
+                    hits.Add(target, 1);
+                    hitsOnTarget.Add(attacker, hits);
                 }
             }
             else
             {
                 Dictionary<string, int> newHits = new Dictionary<string, int>();
-                newHits[target] = 1;
-                hitsOnTarget[attacker] = newHits;
+                newHits.Add(target, 1);
+                hitsOnTarget.Add(attacker, newHits);
             }
             if (!longestHitDistance.ContainsKey(attacker) || hitDistance > longestHitDistance[attacker])
             {
                 Debug.Log(string.Format("[BDACompetitionMode] Tracked hit for {0} with {1} at {2}", attacker, weaponName, hitDistance));
-                longestHitWeapon[attacker] = weaponName;
-                longestHitDistance[attacker] = hitDistance;
+                if (longestHitDistance.ContainsKey(attacker))
+                {
+                    longestHitWeapon[attacker] = weaponName;
+                    longestHitDistance[attacker] = hitDistance;
+                }
+                else
+                {
+                    longestHitWeapon.Add(attacker, weaponName);
+                    longestHitDistance.Add(attacker, hitDistance);
+                }
             }
         }
 
@@ -258,17 +270,16 @@ namespace BDArmory.Competition
 
         public void TrackKill(List<string> attackers, string target)
         {
-            if( deaths.ContainsKey(target) )
+            if (deaths.ContainsKey(target))
             {
                 deaths[target] += 1;
             }
             else
             {
-                deaths[target] = 1;
+                deaths.Add(target, 1);
             }
             foreach (string attacker in attackers)
             {
-
                 if (killsOnTarget.ContainsKey(attacker))
                 {
                     Dictionary<string, int> attackerKills = killsOnTarget[attacker];
@@ -278,8 +289,8 @@ namespace BDArmory.Competition
                 else
                 {
                     Dictionary<string, int> newKills = new Dictionary<string, int>();
-                    newKills[target] = 1;
-                    killsOnTarget[attacker] = newKills;
+                    newKills.Add(target, 1);
+                    killsOnTarget.Add(attacker, newKills);
                 }
             }
         }
@@ -287,9 +298,9 @@ namespace BDArmory.Competition
         public class JsonListHelper<T>
         {
             [Serializable]
-            private class Wrapper<T>
+            private class Wrapper<S>
             {
-                public T[] items;
+                public S[] items;
             }
             public List<T> FromJSON(string json)
             {

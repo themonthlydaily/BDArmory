@@ -19,7 +19,7 @@ namespace BDArmory.Competition
         public string created_at;
         public string updated_at;
 
-        public string ToString() { return "{id: " + id + ", name: " + name + ", status: " + status + ", stage: " + stage + ", started_at: " + started_at + ", ended_at: " + ended_at + ", created_at: " + created_at + ", updated_at: " + updated_at + "}"; }
+        public override string ToString() { return "{id: " + id + ", name: " + name + ", status: " + status + ", stage: " + stage + ", started_at: " + started_at + ", ended_at: " + ended_at + ", created_at: " + created_at + ", updated_at: " + updated_at + "}"; }
     }
 
     [Serializable]
@@ -39,7 +39,7 @@ namespace BDArmory.Competition
     {
         public int id;
         public string name;
-        public string ToString() { return "{id: " + id + ", name: " + name + "}"; }
+        public override string ToString() { return "{id: " + id + ", name: " + name + "}"; }
         public static List<PlayerModel> FromCsv(string csv)
         {
             List<PlayerModel> results = new List<PlayerModel>();
@@ -92,7 +92,7 @@ namespace BDArmory.Competition
 
         public bool Started() { return started_at != null && !"".Equals(started_at) && ended_at == null && !"".Equals(ended_at); }
         public bool Available() { return (started_at == null || "".Equals(started_at)) && (ended_at == null || "".Equals(ended_at)); }
-        public string ToString() { return "{id: " + id + ", competition_id: " + competition_id + ", order: " + order + ", stage: " + stage + ", started_at: " + started_at + ", ended_at: " + ended_at + "}"; }
+        public override string ToString() { return "{id: " + id + ", competition_id: " + competition_id + ", order: " + order + ", stage: " + stage + ", started_at: " + started_at + ", ended_at: " + ended_at + "}"; }
         public static List<HeatModel> FromCsv(string csv)
         {
             List<HeatModel> results = new List<HeatModel>();
@@ -144,7 +144,7 @@ namespace BDArmory.Competition
         public int player_id;
         public int competition_id;
         public string craft_url;
-        public string ToString() { return "{id: " + id + ", competition_id: " + competition_id + ", player_id: " + player_id + ", craft_url: " + craft_url + "}"; }
+        public override string ToString() { return "{id: " + id + ", competition_id: " + competition_id + ", player_id: " + player_id + ", craft_url: " + craft_url + "}"; }
         public static List<VesselModel> FromCsv(string csv)
         {
             List<VesselModel> results = new List<VesselModel>();
