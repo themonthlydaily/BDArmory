@@ -55,10 +55,8 @@ namespace BDArmory.UI
         private bool _guardModeEnabled = false;
 
         // Vessel spawning
-        private bool _spawnNextUpdate = false;
-        private bool _spawnThisUpdate = false;
         private bool _vesselsSpawned = false;
-        private int _vesselsSpawnCount = 0;
+        private bool _vesselSpawningComplete = false;
 
         // button styles for info buttons
         private static GUIStyle redLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
@@ -175,45 +173,16 @@ namespace BDArmory.UI
 
                 BDACompetitionMode.Instance.DoUpdate();
 
-                // Vessel spawning
-                if (_vesselsSpawnCount > 0)
+                // Vessel post-spawning actions.
+                if (_vesselsSpawned && !_vesselSpawningComplete && !VesselSpawner.Instance.vesselsSpawning && VesselSpawner.Instance.spawnedVesselCount > 0)
                 {
+                    // Wait for the number of weapon managers to equal the number of spawned vessels before doing post-spawn stuff.
                     var count = 0;
                     foreach (var teamManager in weaponManagers.Values)
                         count += teamManager.Count;
-                    if (count == _vesselsSpawnCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
-                    {
+                    if (count == VesselSpawner.Instance.spawnedVesselCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
                         DoPostVesselSpawn();
-                        _vesselsSpawnCount = 0;
-                    }
                 }
-                if (_spawnThisUpdate)
-                {
-                    _spawnThisUpdate = false;
-                    // For the vessels that survived being killed, kill all their parts (this seems to get rid of it).
-                    var survivingVessels = new List<Vessel>(FlightGlobals.Vessels);
-                    foreach (var vessel in survivingVessels)
-                    {
-                        var partsToKill = new List<Part>(vessel.parts);
-                        foreach (var part in partsToKill)
-                            part.Die();
-                    }
-                    // Spawn the vessels.
-                    _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1);
-                }
-                if (_spawnNextUpdate)
-                {
-                    _spawnNextUpdate = false;
-                    _spawnThisUpdate = true;
-                    // Reset competition stuff.
-                    if (BDACompetitionMode.Instance)
-                        BDACompetitionMode.Instance.StopCompetition();
-                    // Kill all vessels (including debris). Note: the currently focused vessel somehow survives this.
-                    var vesselsToKill = new List<Vessel>(FlightGlobals.Vessels);
-                    foreach (var vessel in vesselsToKill)
-                        vessel.Die();
-                }
-
             }
         }
 
@@ -326,7 +295,7 @@ namespace BDArmory.UI
                                     }
                         foreach (var pilot in allPilots)
                         {
-                            Debug.Log("[BDArmory] assigning " + pilot.vessel.GetDisplayName() + " to team " + T.ToString());
+                            Debug.Log("[BDArmory]: assigning " + pilot.vessel.GetDisplayName() + " to team " + T.ToString());
                             pilot.SetTeam(BDTeam.Get(T.ToString()));
                             if (_freeForAll) T++;
                         }
@@ -361,14 +330,15 @@ namespace BDArmory.UI
             {
                 if (!_vesselsSpawned && Event.current.button == 0)
                 {
-                    _spawnNextUpdate = true;
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, true); // Spawn vessels at 1m above ground.
                     _vesselsSpawned = true;
-                    Debug.Log("[BDArmory] Triggering vessel spawning at " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("F4") + ".");
+                    _vesselSpawningComplete = false;
                 }
                 else if (Event.current.button == 1)
                 {
+                    VesselSpawner.Instance.CancelVesselSpawn();
                     _vesselsSpawned = false;
-                    Debug.Log("[BDArmory] Resetting spawning vessel button.");
+                    Debug.Log("[BDArmory]: Resetting spawning vessel button.");
                 }
             }
 
@@ -389,7 +359,7 @@ namespace BDArmory.UI
             {
                 // set/disable automatic camera switching
                 _autoCameraSwitch = !_autoCameraSwitch;
-                Debug.Log("[BDArmory] Setting AutoCameraSwitch");
+                Debug.Log("[BDArmory]: Setting AutoCameraSwitch");
             }
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 4 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "G", _guardModeEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
@@ -673,6 +643,7 @@ namespace BDArmory.UI
 
         private void DoPostVesselSpawn()
         {
+            _vesselSpawningComplete = true;
             // Update the weaponManagers list.
             UpdateList();
             // Turn on brakes.
@@ -925,7 +896,7 @@ namespace BDArmory.UI
                 {
                     if (bestVessel != null && !(bestVessel.isActiveVessel)) // if a vessel dies it'll use a default score for a few seconds
                     {
-                        Debug.Log("[BDArmory] Switching vessel to " + bestVessel.GetDisplayName());
+                        Debug.Log("[BDArmory]: Switching vessel to " + bestVessel.GetDisplayName());
                         ForceSwitchVessel(bestVessel);
                     }
                 }
