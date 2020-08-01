@@ -324,6 +324,8 @@
     <None Include="Distribution\GameData\BDArmory\Parts\aim-120\amraam.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aim-120\amraam_emp.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aim-120\model.mu" />
+    <None Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\AIM4FalconGAR2.cfg" />
+    <None Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\AIM4FalconMK1.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\part.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\surface_ai.cfg" />
@@ -540,6 +542,8 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\adjustableRail\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\AGM86-17\AGM86-17.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aim-120\texture.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\texture.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\texture2.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aiPilot\SAI1.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aiPilot\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\AmmoBox\texture.png" />

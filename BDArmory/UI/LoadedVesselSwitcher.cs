@@ -55,10 +55,8 @@ namespace BDArmory.UI
         private bool _guardModeEnabled = false;
 
         // Vessel spawning
-        private bool _spawnNextUpdate = false;
-        private bool _spawnThisUpdate = false;
         private bool _vesselsSpawned = false;
-        private int _vesselsSpawnCount = 0;
+        private bool _vesselSpawningComplete = false;
 
         // button styles for info buttons
         private static GUIStyle redLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
@@ -175,44 +173,16 @@ namespace BDArmory.UI
 
                 BDACompetitionMode.Instance.DoUpdate();
 
-                // Vessel spawning
-                if (_vesselsSpawnCount > 0)
+                // Vessel post-spawning actions.
+                if (_vesselsSpawned && !_vesselSpawningComplete && !VesselSpawner.Instance.vesselsSpawning && VesselSpawner.Instance.spawnedVesselCount > 0)
                 {
+                    // Wait for the number of weapon managers to equal the number of spawned vessels before doing post-spawn stuff.
                     var count = 0;
                     foreach (var teamManager in weaponManagers.Values)
                         count += teamManager.Count;
-                    if (count == _vesselsSpawnCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
-                    {
+                    if (count == VesselSpawner.Instance.spawnedVesselCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
                         DoPostVesselSpawn();
-                        _vesselsSpawnCount = 0;
-                    }
                 }
-                if (_spawnThisUpdate)
-                {
-                    _spawnThisUpdate = false;
-                    // For the vessels that survived being killed, kill all their parts (this seems to get rid of it).
-                    var survivingVessels = new List<Vessel>(FlightGlobals.Vessels);
-                    foreach (var vessel in survivingVessels)
-                    {
-                        var partsToKill = new List<Part>(vessel.parts);
-                        foreach (var part in partsToKill)
-                            part.Die();
-                    }
-                    _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1);
-                }
-                if (_spawnNextUpdate)
-                {
-                    _spawnNextUpdate = false;
-                    _spawnThisUpdate = true;
-                    // Reset competition stuff.
-                    if (BDACompetitionMode.Instance)
-                        BDACompetitionMode.Instance.StopCompetition();
-                    // Kill all vessels (including debris). Note: the currently focused vessel somehow survives this.
-                    var vesselsToKill = new List<Vessel>(FlightGlobals.Vessels);
-                    foreach (var vessel in vesselsToKill)
-                        vessel.Die();
-                }
-
             }
         }
 
@@ -325,7 +295,7 @@ namespace BDArmory.UI
                                     }
                         foreach (var pilot in allPilots)
                         {
-                            Debug.Log("[BDArmory] assigning " + pilot.vessel.GetDisplayName() + " to team " + T.ToString());
+                            Debug.Log("[BDArmory]: assigning " + pilot.vessel.GetDisplayName() + " to team " + T.ToString());
                             pilot.SetTeam(BDTeam.Get(T.ToString()));
                             if (_freeForAll) T++;
                         }
@@ -360,14 +330,15 @@ namespace BDArmory.UI
             {
                 if (!_vesselsSpawned && Event.current.button == 0)
                 {
-                    _spawnNextUpdate = true;
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, true); // Spawn vessels at 1m above ground.
                     _vesselsSpawned = true;
-                    Debug.Log("[BDArmory] Triggering vessel spawning.");
+                    _vesselSpawningComplete = false;
                 }
                 else if (Event.current.button == 1)
                 {
+                    VesselSpawner.Instance.CancelVesselSpawn();
                     _vesselsSpawned = false;
-                    Debug.Log("[BDArmory] Resetting spawning vessel button.");
+                    Debug.Log("[BDArmory]: Resetting spawning vessel button.");
                 }
             }
 
@@ -388,7 +359,7 @@ namespace BDArmory.UI
             {
                 // set/disable automatic camera switching
                 _autoCameraSwitch = !_autoCameraSwitch;
-                Debug.Log("[BDArmory] Setting AutoCameraSwitch");
+                Debug.Log("[BDArmory]: Setting AutoCameraSwitch");
             }
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 4 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "G", _guardModeEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
@@ -457,6 +428,7 @@ namespace BDArmory.UI
                             string status = UpdateVesselStatus(wm.Current, vButtonStyle);
                             int currentScore = 0;
                             int currentRamScore = 0;
+                            int currentMissileScore = 0;
 
                             string vesselName = wm.Current.vessel.GetName();
 
@@ -466,9 +438,12 @@ namespace BDArmory.UI
                                 scoreData = BDACompetitionMode.Instance.Scores[vesselName];
                                 currentScore = scoreData.Score;
                                 currentRamScore = scoreData.totalDamagedPartsDueToRamming;
+                                currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
                             }
-                            string postStatus = " (" + currentScore.ToString() + ")";
-                            if (currentRamScore > 0) postStatus += " (" + currentRamScore.ToString() + ")";
+                            string postStatus = " (" + currentScore.ToString();
+                            if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
+                            if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
+                            postStatus += ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
                             {
@@ -621,14 +596,25 @@ namespace BDArmory.UI
                 {
                     // DEAD <death order>: vesselName(<Score>[, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
                     statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString();
+                    if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
+                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
                     if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
-                    if (BDACompetitionMode.Instance.Scores[key].lastRammedTime < BDACompetitionMode.Instance.Scores[key].lastHitTime)
-                        statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                    else if (BDACompetitionMode.Instance.Scores[key].lastRammedTime > BDACompetitionMode.Instance.Scores[key].lastHitTime)
-                        statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                    else
-                        statusString += ")";
+                    switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
+                    {
+                        case DamageFrom.Bullet:
+                            statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        case DamageFrom.Missile:
+                            statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        case DamageFrom.Ram:
+                            statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        default:
+                            statusString += ")";
+                            break;
+                    }
                     GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), statusString, BDArmorySetup.BDGuiSkin.label);
                     height += _buttonHeight + _buttonGap;
                 }
@@ -657,6 +643,7 @@ namespace BDArmory.UI
 
         private void DoPostVesselSpawn()
         {
+            _vesselSpawningComplete = true;
             // Update the weaponManagers list.
             UpdateList();
             // Turn on brakes.
@@ -812,7 +799,7 @@ namespace BDArmory.UI
                                     }
                                     vesselScore = Math.Abs(vesselScore);
 
-                                    if (!recentlyLanded && v.Current.verticalSpeed < -5)
+                                    if (!recentlyLanded && v.Current.verticalSpeed < -15) // Vessels gently floating to the ground aren't interesting
                                     {
                                         crashTime = (float)(-Math.Abs(v.Current.radarAltitude) / v.Current.verticalSpeed);
                                     }
@@ -820,7 +807,7 @@ namespace BDArmory.UI
                                     {
                                         targetDistance = Vector3.Distance(wms.Current.vessel.GetWorldPos3D(), wms.Current.currentTarget.position);
                                     }
-                                    vesselScore *= targetDistance / 1000;
+                                    vesselScore *= 0.031623f * Mathf.Sqrt(targetDistance); // Equal to 1 at 1000m
                                     if (crashTime < 30)
                                     {
                                         vesselScore *= crashTime / 30;
@@ -833,12 +820,17 @@ namespace BDArmory.UI
                                             vesselScore *= 0.25f;
                                         }
                                     }
+                                    if (wms.Current.guardFiringMissile)
+                                    {
+                                        // firing a missile at things is more interesting
+                                        vesselScore *= 0.2f;
+                                    }
                                     // scoring for automagic camera check should not be in here
                                     if (wms.Current.underAttack || wms.Current.underFire)
                                     {
                                         vesselScore *= 0.5f;
                                         var distance = Vector3.Distance(wms.Current.vessel.GetWorldPos3D(), wms.Current.incomingThreatPosition);
-                                        vesselScore *= distance / 1000;
+                                        vesselScore *= 0.031623f * Mathf.Sqrt(distance); // Equal to 1 at 1000m, we don't want to overly disadvantage craft that are super far away, but could be firing missiles or doing other interesting things
                                         //we're very interested when threat and target are the same
                                         if (wms.Current.incomingThreatVessel != null && wms.Current.currentTarget != null)
                                         {
@@ -849,9 +841,13 @@ namespace BDArmory.UI
                                         }
 
                                     }
-                                    else if (wms.Current.isFlaring)
+                                    if (wms.Current.incomingMissileVessel != null)
                                     {
-                                        vesselScore *= 0.5f;
+                                        float timeToImpact = wms.Current.incomingMissileDistance / (float)wms.Current.incomingMissileVessel.srfSpeed;
+                                        vesselScore *= Mathf.Clamp(0.0005f * timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
+
+                                        if (wms.Current.isFlaring || wms.Current.isChaffing)
+                                            vesselScore *= 0.8f;
                                     }
                                     if (recentlyDamaged)
                                     {
@@ -900,7 +896,7 @@ namespace BDArmory.UI
                 {
                     if (bestVessel != null && !(bestVessel.isActiveVessel)) // if a vessel dies it'll use a default score for a few seconds
                     {
-                        Debug.Log("[BDArmory] Switching vessel to " + bestVessel.GetDisplayName());
+                        Debug.Log("[BDArmory]: Switching vessel to " + bestVessel.GetDisplayName());
                         ForceSwitchVessel(bestVessel);
                     }
                 }
