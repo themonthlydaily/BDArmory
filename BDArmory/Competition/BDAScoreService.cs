@@ -63,6 +63,13 @@ namespace BDArmory.Competition
             // next, get player metadata
             yield return client.GetPlayers(hash);
 
+            // abort if we didn't receive a valid competition
+            if (client.competition == null)
+            {
+                pendingSync = false;
+                yield break;
+            }
+
             switch (client.competition.status)
             {
                 case 0:
