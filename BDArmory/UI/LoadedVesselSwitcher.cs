@@ -844,7 +844,7 @@ namespace BDArmory.UI
                                     if (wms.Current.incomingMissileVessel != null)
                                     {
                                         float timeToImpact = wms.Current.incomingMissileDistance / (float)wms.Current.incomingMissileVessel.srfSpeed;
-                                        vesselScore *= Mathf.Clamp(0.0005f* timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
+                                        vesselScore *= Mathf.Clamp(0.0005f * timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
 
                                         if (wms.Current.isFlaring || wms.Current.isChaffing)
                                             vesselScore *= 0.8f;
