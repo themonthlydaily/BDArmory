@@ -5,8 +5,6 @@ using System.IO;
 using System.Linq;
 using KSP.UI.Screens;
 using UnityEngine;
-using BDArmory.Guidances;
-using BDArmory.Misc;
 
 namespace BDArmory.UI
 {
@@ -32,10 +30,19 @@ namespace BDArmory.UI
         public int SpawnAllVesselsOnce(Vector2d geoCoords, double altitude = 0)
         {
             var crafts = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn").Where(f => f.EndsWith(".craft")).ToList();
+            if (crafts.Count == 0)
+            {
+                Debug.Log("[BDArmory] Vessel spawning: found no craft files in " + Environment.CurrentDirectory + $"/AutoSpawn");
+                return 0;
+            }
             crafts.Shuffle(); // Randomise the spawn order.
             int count = 0;
+            // Update spawn point after terrain loads in.
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y);
+            var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, terrainAltitude);
             var surfaceNormal = FlightGlobals.currentMainBody.GetSurfaceNVector(geoCoords.x, geoCoords.y);
+            // Update the floating origin offset, so that the vessels spawn within range of the physics. Unfortunately, the terrain takes several frames to load, so the first spawn in this region is often below the terrain level.
+            FloatingOrigin.SetOffset(spawnPoint);
             Vector3d craftGeoCoords;
             Vector3 craftPosition;
             Ray ray;
@@ -53,6 +60,7 @@ namespace BDArmory.UI
                 vessel.SetRotation(Quaternion.AngleAxis(heading, hit.normal) * Quaternion.FromToRotation(-Vector3.forward, hit.normal));
                 vessel.SetPosition(craftPosition + surfaceNormal * (altitude + vessel.GetHeightFromTerrain() - 35f - distance)); // Put us at ground level (hopefully). Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
                 count += 1;
+                // Debug.Log("DEBUG " + vessel.vesselName + " spawned at " + ((Vector3d)vessel.transform.position).ToString("G6") + " in direction " + ((Vector3d)vessel.transform.up).ToString("G6") + ", spawn point direction is " + (vessel.transform.position - spawnPoint).normalized.ToString("G6"));
             }
             return crafts.Count;
         }

@@ -198,6 +198,7 @@ namespace BDArmory.UI
                         foreach (var part in partsToKill)
                             part.Die();
                     }
+                    // Spawn the vessels.
                     _vesselsSpawnCount = BDArmory.UI.VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1);
                 }
                 if (_spawnNextUpdate)
@@ -362,7 +363,7 @@ namespace BDArmory.UI
                 {
                     _spawnNextUpdate = true;
                     _vesselsSpawned = true;
-                    Debug.Log("[BDArmory] Triggering vessel spawning.");
+                    Debug.Log("[BDArmory] Triggering vessel spawning at " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("F4") + ".");
                 }
                 else if (Event.current.button == 1)
                 {
@@ -457,6 +458,7 @@ namespace BDArmory.UI
                             string status = UpdateVesselStatus(wm.Current, vButtonStyle);
                             int currentScore = 0;
                             int currentRamScore = 0;
+                            int currentMissileScore = 0;
 
                             string vesselName = wm.Current.vessel.GetName();
 
@@ -466,9 +468,12 @@ namespace BDArmory.UI
                                 scoreData = BDACompetitionMode.Instance.Scores[vesselName];
                                 currentScore = scoreData.Score;
                                 currentRamScore = scoreData.totalDamagedPartsDueToRamming;
+                                currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
                             }
-                            string postStatus = " (" + currentScore.ToString() + ")";
-                            if (currentRamScore > 0) postStatus += " (" + currentRamScore.ToString() + ")";
+                            string postStatus = " (" + currentScore.ToString();
+                            if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
+                            if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
+                            postStatus += ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
                             {
@@ -621,14 +626,25 @@ namespace BDArmory.UI
                 {
                     // DEAD <death order>: vesselName(<Score>[, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
                     statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString();
+                    if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
+                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
                     if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
-                    if (BDACompetitionMode.Instance.Scores[key].lastRammedTime < BDACompetitionMode.Instance.Scores[key].lastHitTime)
-                        statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                    else if (BDACompetitionMode.Instance.Scores[key].lastRammedTime > BDACompetitionMode.Instance.Scores[key].lastHitTime)
-                        statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                    else
-                        statusString += ")";
+                    switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
+                    {
+                        case DamageFrom.Bullet:
+                            statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        case DamageFrom.Missile:
+                            statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        case DamageFrom.Ram:
+                            statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                            break;
+                        default:
+                            statusString += ")";
+                            break;
+                    }
                     GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), statusString, BDArmorySetup.BDGuiSkin.label);
                     height += _buttonHeight + _buttonGap;
                 }
@@ -833,6 +849,11 @@ namespace BDArmory.UI
                                             vesselScore *= 0.25f;
                                         }
                                     }
+                                    if (wms.Current.guardFiringMissile)
+                                    {
+                                        // firing a missile at things is more interesting
+                                        vesselScore *= 0.25f;
+                                    }
                                     // scoring for automagic camera check should not be in here
                                     if (wms.Current.underAttack || wms.Current.underFire)
                                     {
@@ -849,9 +870,13 @@ namespace BDArmory.UI
                                         }
 
                                     }
-                                    else if (wms.Current.isFlaring)
+                                    if (wms.Current.incomingMissileVessel != null)
                                     {
-                                        vesselScore *= 0.5f;
+                                        float timeToImpact = wms.Current.incomingMissileDistance / (float)wms.Current.incomingMissileVessel.srfSpeed;
+                                        vesselScore *= Mathf.Clamp(0.015f * timeToImpact * timeToImpact, 0, 1); // Missiles about to hit are interesting, scale score with time to impact
+
+                                        if (wms.Current.isFlaring || wms.Current.isChaffing)
+                                            vesselScore *= 0.5f;
                                     }
                                     if (recentlyDamaged)
                                     {
