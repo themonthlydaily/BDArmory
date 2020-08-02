@@ -1513,13 +1513,14 @@ namespace BDArmory.Control
                                 }
                                 else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
                                 {
+                                    List<string> killReasons = new List<string>();
                                     if (Scores[key].everyoneWhoHitMe.Count > 0)
-                                        whoKilledMe += " Hits";
+                                        killReasons.Add("Hits");
                                     if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
-                                        whoKilledMe += " Missiles";
+                                        killReasons.Add("Missiles");
                                     if (Scores[key].everyoneWhoRammedMe.Count > 0)
-                                        whoKilledMe += " Rams";
-                                    whoKilledMe += ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe());
+                                        killReasons.Add("Rams");
+                                    whoKilledMe = String.Join(" ", killReasons) + ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe());
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
@@ -1534,10 +1535,10 @@ namespace BDArmory.Control
                                 {
                                     case DamageFrom.Bullet:
                                     case DamageFrom.Missile:
-                                        competitionStatus = key + " was killed by" + whoKilledMe;
+                                        competitionStatus = key + " was killed by " + whoKilledMe;
                                         break;
                                     case DamageFrom.Ram:
-                                        competitionStatus = key + " was rammed by" + whoKilledMe;
+                                        competitionStatus = key + " was rammed by " + whoKilledMe;
                                         break;
                                     default:
                                         break;
