@@ -1811,7 +1811,7 @@ namespace BDArmory.Modules
         {
             if (isChaffing) yield break;
             isChaffing = true;
-            yield return new WaitForSeconds(0.2f); // Reaction time delay
+            // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
 
@@ -1834,7 +1834,7 @@ namespace BDArmory.Modules
         {
             if (isFlaring) yield break;
             isFlaring = true;
-            yield return new WaitForSeconds(0.2f); // Reaction time delay
+            // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
                 using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
