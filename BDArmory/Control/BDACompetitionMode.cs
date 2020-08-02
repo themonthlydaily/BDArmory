@@ -1509,14 +1509,13 @@ namespace BDArmory.Control
                                 }
                                 else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
                                 {
-                                    //check if anyone got rammed
-                                    if (Scores[key].everyoneWhoRammedMe.Count != 0)
-                                        whoKilledMe = "Ram Hits: " + String.Join(", ", Scores[key].everyoneWhoRammedMe) + " ";
-                                    else if (Scores[key].everyoneWhoHitMe.Count != 0)
-                                        if (whoKilledMe != "")
-                                            whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
-                                        else
-                                            whoKilledMe = "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
+                                    if (Scores[key].everyoneWhoHitMe.Count > 0)
+                                        whoKilledMe += " Hits";
+                                    if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                                        whoKilledMe += " Missiles";
+                                    if (Scores[key].everyoneWhoRammedMe.Count > 0)
+                                        whoKilledMe += " Rams";
+                                    whoKilledMe += ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe());
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
@@ -1526,10 +1525,18 @@ namespace BDArmory.Control
                             }
                             if (whoKilledMe != "")
                             {
-                                if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
-                                    competitionStatus = key + " was killed by " + whoKilledMe;
-                                else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
-                                    competitionStatus = key + " was rammed by " + whoKilledMe;
+                                switch (Scores[key].LastDamageWasFrom())
+                                {
+                                    case DamageFrom.Bullet:
+                                    case DamageFrom.Missile:
+                                        competitionStatus = key + " was killed by" + whoKilledMe;
+                                        break;
+                                    case DamageFrom.Ram:
+                                        competitionStatus = key + " was rammed by" + whoKilledMe;
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
                             else
                             {
