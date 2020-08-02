@@ -1437,10 +1437,6 @@ namespace BDArmory.Modules
                     useAB = vessel.srfSpeed < minSpeed;
                     useBrakes = false;
                     float targetSpeed = minSpeed;
-                    if (weaponManager.isChaffing)
-                    {
-                        targetSpeed = maxSpeed;
-                    }
                     AdjustThrottle(targetSpeed, false, useAB);
                 }
 
@@ -1454,6 +1450,24 @@ namespace BDArmory.Modules
                     //Vector3 breakTarget = vesselTransform.position + breakDirection;
                     RegainEnergy(s, breakDirection);
                     return;
+                }
+                else if ((weaponManager.incomingMissileVessel) && (weaponManager.incomingMissileDistance <= 2000))
+                {
+                    float mSqrDist = Vector3.SqrMagnitude(weaponManager.incomingMissileVessel.transform.position - vesselTransform.position);
+                    if (mSqrDist < 810000) //900m
+                    {
+                        debugString.Append($"Missile about to impact! pull away!");
+                        debugString.Append(Environment.NewLine);
+
+                        AdjustThrottle(maxSpeed, false, false);
+                        Vector3 cross = Vector3.Cross(weaponManager.incomingMissileVessel.transform.position - vesselTransform.position, vessel.Velocity()).normalized;
+                        if (Vector3.Dot(cross, -vesselTransform.forward) < 0)
+                        {
+                            cross = -cross;
+                        }
+                        FlyToPosition(s, vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross));
+                        return;
+                    }
                 }
                 else if (weaponManager.underFire)
                 {
