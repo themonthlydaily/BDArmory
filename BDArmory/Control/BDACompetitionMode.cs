@@ -1514,7 +1514,7 @@ namespace BDArmory.Control
                                     if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
                                         whoKilledMe += " Missiles";
                                     if (Scores[key].everyoneWhoRammedMe.Count > 0)
-                                        whoKilledMe += " Ram";
+                                        whoKilledMe += " Rams";
                                     whoKilledMe += ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe());
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
@@ -1529,10 +1529,10 @@ namespace BDArmory.Control
                                 {
                                     case DamageFrom.Bullet:
                                     case DamageFrom.Missile:
-                                        competitionStatus = key + " was killed by " + whoKilledMe;
+                                        competitionStatus = key + " was killed by" + whoKilledMe;
                                         break;
                                     case DamageFrom.Ram:
-                                        competitionStatus = key + " was rammed by " + whoKilledMe;
+                                        competitionStatus = key + " was rammed by" + whoKilledMe;
                                         break;
                                     default:
                                         break;
