@@ -1543,24 +1543,6 @@ namespace BDArmory.Modules
                     FlyToPosition(s, breakTarget);
                     return;
                 }
-                else if (weaponManager.incomingMissileVessel)
-                {
-                    float mSqrDist = Vector3.SqrMagnitude(weaponManager.incomingMissileVessel.transform.position - vesselTransform.position);
-                    if (mSqrDist < 810000) //900m
-                    {
-                        debugString.Append($"Missile about to impact! pull away!");
-                        debugString.Append(Environment.NewLine);
-
-                        AdjustThrottle(maxSpeed, false, false);
-                        Vector3 cross = Vector3.Cross(weaponManager.incomingMissileVessel.transform.position - vesselTransform.position, vessel.Velocity()).normalized;
-                        if (Vector3.Dot(cross, -vesselTransform.forward) < 0)
-                        {
-                            cross = -cross;
-                        }
-                        FlyToPosition(s, vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross));
-                        return;
-                    }
-                }
             }
 
             Vector3 target = (vessel.srfSpeed < 200) ? FlightPosition(vessel.transform.position, minAltitude) : vesselTransform.position;
