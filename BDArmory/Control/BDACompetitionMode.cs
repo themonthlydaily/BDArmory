@@ -22,11 +22,14 @@ namespace BDArmory.Control
         public int Score;
         public int PinataHits;
         public int totalDamagedPartsDueToRamming = 0;
+        public int totalDamagedPartsDueToMissiles = 0;
         public string lastPersonWhoHitMe;
+        public string lastPersonWhoHitMeWithAMissile;
         public string lastPersonWhoRammedMe;
-        public double lastHitTime;
+        public double lastHitTime; // Bullets
+        public double lastMissileHitTime; // Missiles
         public double lastFiredTime;
-        public double lastRammedTime;
+        public double lastRammedTime; // Rams
         public bool landedState;
         public double lastLandedTime;
         public double landerKillTimer;
@@ -36,19 +39,63 @@ namespace BDArmory.Control
         public int previousPartCount;
         public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
         public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
+        public HashSet<string> everyoneWhoHitMeWithMissiles = new HashSet<string>();
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
         public Dictionary<string, int> hitCounts = new Dictionary<string, int>();
         public int shotsFired = 0;
         public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
+        public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>();
 
+        public double LastDamageTime()
+        {
+            var lastDamageWasFrom = LastDamageWasFrom();
+            switch (lastDamageWasFrom)
+            {
+                case DamageFrom.Bullet:
+                    return lastHitTime;
+                case DamageFrom.Missile:
+                    return lastMissileHitTime;
+                case DamageFrom.Ram:
+                    return lastRammedTime;
+                default:
+                    return 0;
+            }
+        }
+        public DamageFrom LastDamageWasFrom()
+        {
+            double lastTime = 0;
+            var damageFrom = DamageFrom.None;
+            if (lastHitTime > lastTime)
+            {
+                lastTime = lastHitTime;
+                damageFrom = DamageFrom.Bullet;
+            }
+            if (lastMissileHitTime > lastTime)
+            {
+                lastTime = lastMissileHitTime;
+                damageFrom = DamageFrom.Missile;
+            }
+            if (lastRammedTime > lastTime)
+            {
+                lastTime = lastRammedTime;
+                damageFrom = DamageFrom.Ram;
+            }
+            return damageFrom;
+        }
         public string LastPersonWhoDamagedMe()
         {
-            //check if vessel got rammed
-            if (lastHitTime > lastRammedTime)
-                return lastPersonWhoHitMe;
-            if (lastHitTime < lastRammedTime)
-                return lastPersonWhoRammedMe;
-            return "";
+            var lastDamageWasFrom = LastDamageWasFrom();
+            switch (lastDamageWasFrom)
+            {
+                case DamageFrom.Bullet:
+                    return lastPersonWhoHitMe;
+                case DamageFrom.Missile:
+                    return lastPersonWhoHitMeWithAMissile;
+                case DamageFrom.Ram:
+                    return lastPersonWhoRammedMe;
+                default:
+                    return "";
+            }
         }
 
         public HashSet<string> EveryOneWhoDamagedMe()
@@ -66,9 +113,18 @@ namespace BDArmory.Control
                 }
             }
 
+            foreach (var hit in everyoneWhoHitMeWithMissiles)
+            {
+                if (!everyoneWhoDamagedMe.Contains(hit))
+                {
+                    everyoneWhoDamagedMe.Add(hit);
+                }
+            }
+
             return everyoneWhoDamagedMe;
         }
     }
+    public enum DamageFrom { None, Bullet, Missile, Ram };
 
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -93,6 +149,7 @@ namespace BDArmory.Control
 
         public Dictionary<string, int> DeathOrder = new Dictionary<string, int>();
         public Dictionary<string, string> whoCleanShotWho = new Dictionary<string, string>();
+        public Dictionary<string, string> whoCleanShotWhoWithMissiles = new Dictionary<string, string>();
         public Dictionary<string, string> whoCleanRammedWho = new Dictionary<string, string>();
 
         public bool killerGMenabled = false;
@@ -225,6 +282,7 @@ namespace BDArmory.Control
             Scores.Clear();
             DeathOrder.Clear();
             whoCleanShotWho.Clear();
+            whoCleanShotWhoWithMissiles.Clear();
             whoCleanRammedWho.Clear();
             KillTimer.Clear();
             dumpedResults = 5;
@@ -1409,35 +1467,55 @@ namespace BDArmory.Control
 
                             if (Scores.ContainsKey(key))
                             {
-                                if (Planetarium.GetUniversalTime() - Scores[key].lastHitTime < 10 || Planetarium.GetUniversalTime() - Scores[key].lastRammedTime < 10)
+                                if (Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10)
                                 {
                                     // if last hit was recent that person gets the kill
                                     whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
-                                    if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
+                                    var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
+                                    switch (lastDamageWasFrom)
                                     {
-                                        // twice - so 2 points
-                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
-                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
-                                        whoCleanShotWho.Add(key, whoKilledMe);
-                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                        case DamageFrom.Bullet:
+                                            if (!whoCleanShotWho.ContainsKey(key))
+                                            {
+                                                // twice - so 2 points
+                                                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
+                                                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                                whoCleanShotWho.Add(key, whoKilledMe);
+                                                whoKilledMe += " (BOOM! HEADSHOT!)";
+                                            }
+                                            break;
+                                        case DamageFrom.Missile:
+                                            if (!whoCleanShotWhoWithMissiles.ContainsKey(key))
+                                            {
+                                                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
+                                                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                                whoCleanShotWhoWithMissiles.Add(key, whoKilledMe);
+                                                whoKilledMe += " (BOOM! HEADSHOT!)";
+                                            }
+                                            break;
+                                        case DamageFrom.Ram:
+                                            if (!whoCleanRammedWho.ContainsKey(key))
+                                            {
+                                                // if ram killed
+                                                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
+                                                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
+                                                whoCleanRammedWho.Add(key, whoKilledMe);
+                                                whoKilledMe += " (BOOM! HEADSHOT!)";
+                                            }
+                                            break;
+                                        default:
+                                            break;
                                     }
-                                    else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
-                                    {
-                                        // if ram killed
-                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
-                                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
-                                        whoCleanRammedWho.Add(key, whoKilledMe);
-                                        whoKilledMe += " (BOOM! HEADSHOT!)";
-                                    }
-
                                 }
                                 else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
                                 {
-                                    //check if anyone got rammed
-                                    if (Scores[key].everyoneWhoRammedMe.Count != 0)
-                                        whoKilledMe = "Ram Hits: " + String.Join(", ", Scores[key].everyoneWhoRammedMe) + " ";
-                                    else if (Scores[key].everyoneWhoHitMe.Count != 0)
-                                        if (whoKilledMe != "") whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe); else whoKilledMe = "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
+                                    if (Scores[key].everyoneWhoHitMe.Count > 0)
+                                        whoKilledMe += " Hits";
+                                    if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                                        whoKilledMe += " Missiles";
+                                    if (Scores[key].everyoneWhoRammedMe.Count > 0)
+                                        whoKilledMe += " Rams";
+                                    whoKilledMe += ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe());
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
@@ -1447,10 +1525,18 @@ namespace BDArmory.Control
                             }
                             if (whoKilledMe != "")
                             {
-                                if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
-                                    competitionStatus = key + " was killed by " + whoKilledMe;
-                                else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
-                                    competitionStatus = key + " was rammed by " + whoKilledMe;
+                                switch (Scores[key].LastDamageWasFrom())
+                                {
+                                    case DamageFrom.Bullet:
+                                    case DamageFrom.Missile:
+                                        competitionStatus = key + " was killed by" + whoKilledMe;
+                                        break;
+                                    case DamageFrom.Ram:
+                                        competitionStatus = key + " was rammed by" + whoKilledMe;
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
                             else
                             {
@@ -1555,6 +1641,16 @@ namespace BDArmory.Control
                     Log(whoShotMe);
                 }
 
+            // Who shot who with missiles.
+            foreach (var key in Scores.Keys)
+                if (Scores[key].missilePartDamageCounts.Count > 0)
+                {
+                    string whoShotMeWithMissiles = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHOWITHMISSILES:" + key;
+                    foreach (var vesselName in Scores[key].missilePartDamageCounts.Keys)
+                        whoShotMeWithMissiles += ":" + Scores[key].missilePartDamageCounts[vesselName] + ":" + vesselName;
+                    Log(whoShotMeWithMissiles);
+                }
+
             // Who rammed who.
             foreach (var key in Scores.Keys)
                 if (Scores[key].rammingPartLossCounts.Count > 0)
@@ -1569,6 +1665,8 @@ namespace BDArmory.Control
             // Log clean kills/rams
             foreach (var key in whoCleanShotWho.Keys)
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANKILL:" + key + ":" + whoCleanShotWho[key]);
+            foreach (var key in whoCleanShotWhoWithMissiles.Keys)
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANMISSILEKILL:" + key + ":" + whoCleanShotWhoWithMissiles[key]);
             foreach (var key in whoCleanRammedWho.Keys)
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANRAM:" + key + ":" + whoCleanRammedWho[key]);
 

@@ -349,7 +349,7 @@ namespace BDArmory.Modules
         public MissileFire incomingWeaponManager;
         public float incomingMissDistance;
 
-        bool guardFiringMissile;
+        public bool guardFiringMissile;
         bool disabledRocketAimers;
         bool antiRadTargetAcquired;
         Vector3 antiRadiationTarget;
@@ -3234,7 +3234,7 @@ namespace BDArmory.Modules
             {
                 // iterate over weaponTypesAir and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
                 // Prioritize by:
-                // 1. AA missiles, if range > gunRange
+                // 1. AA missiles (if we're flying, otherwise use guns if we're within gun range)
                 // 1. Lasers
                 // 2. Guns
                 //
@@ -3282,8 +3282,8 @@ namespace BDArmory.Modules
                             {
                                 candidateRPM *= 1.5f; // weight selection towards flak ammo
                             }
-                            if ((targetWeapon != null) && (targetWeaponRPM > candidateRPM))
-                                continue; //dont replace better guns (but do replace missiles)
+                            if ((targetWeapon != null) && ((targetWeaponRPM > candidateRPM) || (targetWeapon.GetWeaponClass() == WeaponClasses.Missile)))
+                                continue; //dont replace better guns or missiles
 
                             targetWeapon = item.Current;
                             targetWeaponRPM = candidateRPM;
@@ -3308,10 +3308,10 @@ namespace BDArmory.Modules
                             targetWeapon = item.Current;
                             targetWeaponTDPS = candidateTDPS;
                         }
-                        else if (distance > gunRange)
+                        else if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
                         {
-                            if (targetWeapon.GetWeaponClass() == WeaponClasses.Gun || targetWeaponTDPS > candidateTDPS)
-                                continue; //dont replace guns or better missiles
+                            if (targetWeaponTDPS > candidateTDPS)
+                                continue; //dont better missiles
 
                             targetWeapon = item.Current;
                             targetWeaponTDPS = candidateTDPS;
