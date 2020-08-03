@@ -1028,6 +1028,14 @@ namespace BDArmory.Control
                                 break;
                             }
                     activePilot = foundActiveParts == 3;
+
+                    using (var wms = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator()) // Allow missiles
+                        while (wms.MoveNext())
+                            if (wms.Current != null)
+                            {
+                                activePilot = true;
+                                break;
+                            }
                 }
                 if (!activePilot)
                     debrisToKill.Add(vessel);
