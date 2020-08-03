@@ -1217,7 +1217,7 @@ namespace BDArmory.Control
                         }
 
                         // this vessel really is alive
-                        if (v.Current.vesselType != VesselType.Debris) // if (!vesselName.EndsWith("Debris") && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
+                        if ((v.Current.vesselType != VesselType.Debris) && !vesselName.EndsWith("Debris")) // && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
                         {
                             if (DeathOrder.ContainsKey(vesselName))
                             {
