@@ -73,5 +73,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistantSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016);
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = false;                 //disables the kill timers.
+        [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 500f;
     }
 }
