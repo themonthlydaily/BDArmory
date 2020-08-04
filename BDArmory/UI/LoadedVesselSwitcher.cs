@@ -328,17 +328,24 @@ namespace BDArmory.UI
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 7f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "S", _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
-                if (!_vesselsSpawned && Event.current.button == 0)
+                if (!_vesselsSpawned && Event.current.button == 0) // Left click
                 {
                     VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, true); // Spawn vessels at 1m above ground.
                     _vesselsSpawned = true;
                     _vesselSpawningComplete = false;
                 }
-                else if (Event.current.button == 1)
+                else if (!_vesselsSpawned && Event.current.button == 2) // Middle click
+                {
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, false); // Spawn vessels at 1m above ground, without killing off other vessels or changing camera positions.
+                    _vesselsSpawned = true;
+                    _vesselSpawningComplete = false;
+                }
+                else if (Event.current.button == 1) // Right click
                 {
                     VesselSpawner.Instance.CancelVesselSpawn();
+                    if (_vesselsSpawned)
+                        Debug.Log("[BDArmory]: Resetting spawning vessel button.");
                     _vesselsSpawned = false;
-                    Debug.Log("[BDArmory]: Resetting spawning vessel button.");
                 }
             }
 

@@ -1028,6 +1028,14 @@ namespace BDArmory.Control
                                 break;
                             }
                     activePilot = foundActiveParts == 3;
+
+                    using (var wms = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator()) // Allow missiles
+                        while (wms.MoveNext())
+                            if (wms.Current != null)
+                            {
+                                activePilot = true;
+                                break;
+                            }
                 }
                 if (!activePilot)
                     debrisToKill.Add(vessel);
@@ -1209,7 +1217,7 @@ namespace BDArmory.Control
                         }
 
                         // this vessel really is alive
-                        if (v.Current.vesselType != VesselType.Debris) // if (!vesselName.EndsWith("Debris") && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
+                        if ((v.Current.vesselType != VesselType.Debris) && !vesselName.EndsWith("Debris")) // && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
                         {
                             if (DeathOrder.ContainsKey(vesselName))
                             {
@@ -1475,7 +1483,7 @@ namespace BDArmory.Control
                                     switch (lastDamageWasFrom)
                                     {
                                         case DamageFrom.Bullet:
-                                            if (!whoCleanShotWho.Keys.Contains(key))
+                                            if (!whoCleanShotWho.ContainsKey(key))
                                             {
                                                 // twice - so 2 points
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
@@ -1485,7 +1493,7 @@ namespace BDArmory.Control
                                             }
                                             break;
                                         case DamageFrom.Missile:
-                                            if (!whoCleanShotWhoWithMissiles.Keys.Contains(key))
+                                            if (!whoCleanShotWhoWithMissiles.ContainsKey(key))
                                             {
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
@@ -1494,7 +1502,7 @@ namespace BDArmory.Control
                                             }
                                             break;
                                         case DamageFrom.Ram:
-                                            if (!whoCleanRammedWho.Keys.Contains(key))
+                                            if (!whoCleanRammedWho.ContainsKey(key))
                                             {
                                                 // if ram killed
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
@@ -1509,14 +1517,14 @@ namespace BDArmory.Control
                                 }
                                 else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
                                 {
-                                    //check if anyone got rammed
-                                    if (Scores[key].everyoneWhoRammedMe.Count != 0)
-                                        whoKilledMe = "Ram Hits: " + String.Join(", ", Scores[key].everyoneWhoRammedMe) + " ";
-                                    else if (Scores[key].everyoneWhoHitMe.Count != 0)
-                                        if (whoKilledMe != "")
-                                            whoKilledMe += "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
-                                        else
-                                            whoKilledMe = "Hits: " + String.Join(", ", Scores[key].everyoneWhoHitMe);
+                                    List<string> killReasons = new List<string>();
+                                    if (Scores[key].everyoneWhoHitMe.Count > 0)
+                                        killReasons.Add("Hits");
+                                    if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                                        killReasons.Add("Missiles");
+                                    if (Scores[key].everyoneWhoRammedMe.Count > 0)
+                                        killReasons.Add("Rams");
+                                    whoKilledMe = String.Join(" ", killReasons) + ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe());
 
                                     foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                                     {
@@ -1526,10 +1534,18 @@ namespace BDArmory.Control
                             }
                             if (whoKilledMe != "")
                             {
-                                if (Scores[key].lastHitTime > Scores[key].lastRammedTime)
-                                    competitionStatus = key + " was killed by " + whoKilledMe;
-                                else if (Scores[key].lastHitTime < Scores[key].lastRammedTime)
-                                    competitionStatus = key + " was rammed by " + whoKilledMe;
+                                switch (Scores[key].LastDamageWasFrom())
+                                {
+                                    case DamageFrom.Bullet:
+                                    case DamageFrom.Missile:
+                                        competitionStatus = key + " was killed by " + whoKilledMe;
+                                        break;
+                                    case DamageFrom.Ram:
+                                        competitionStatus = key + " was rammed by " + whoKilledMe;
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
                             else
                             {

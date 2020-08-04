@@ -115,17 +115,17 @@ namespace BDArmory.FX
 
                     if (partHit != null && partHit.mass > 0 && !partsAdded.Contains(partHit))
                     {
-                        ProcessPartEvent(partHit, result, partsAdded);
+                        var damaged = ProcessPartEvent(partHit, result, partsAdded);
                         // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
-                        if (IsMissile && BDACompetitionMode.Instance)
+                        if (damaged && IsMissile && BDACompetitionMode.Instance)
                         {
                             var sourceVesselName = ExplosivePart.FindModuleImplementing<MissileLauncher>()?.SourceVessel?.GetName();
-                            if (sourceVesselName != null && BDACompetitionMode.Instance.Scores.Keys.Contains(sourceVesselName)) // Check that the source vessel is in the competition.
+                            if (sourceVesselName != null && BDACompetitionMode.Instance.Scores.ContainsKey(sourceVesselName)) // Check that the source vessel is in the competition.
                             {
                                 var damagedVesselName = partHit.vessel?.GetName();
-                                if (damagedVesselName != null && damagedVesselName != sourceVesselName && BDACompetitionMode.Instance.Scores.Keys.Contains(damagedVesselName)) // Check that the damaged vessel is in the competition and isn't the source vessel.
+                                if (damagedVesselName != null && damagedVesselName != sourceVesselName && BDACompetitionMode.Instance.Scores.ContainsKey(damagedVesselName)) // Check that the damaged vessel is in the competition and isn't the source vessel.
                                 {
-                                    if (BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts.Keys.Contains(sourceVesselName))
+                                    if (BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts.ContainsKey(sourceVesselName))
                                         ++BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts[sourceVesselName];
                                     else
                                         BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts[sourceVesselName] = 1;
@@ -134,7 +134,7 @@ namespace BDArmory.FX
                                     ++BDACompetitionMode.Instance.Scores[sourceVesselName].totalDamagedPartsDueToMissiles;
                                     BDACompetitionMode.Instance.Scores[damagedVesselName].lastMissileHitTime = Planetarium.GetUniversalTime();
                                     BDACompetitionMode.Instance.Scores[damagedVesselName].lastPersonWhoHitMeWithAMissile = sourceVesselName;
-                                    if (vesselsHitByMissiles.Keys.Contains(damagedVesselName))
+                                    if (vesselsHitByMissiles.ContainsKey(damagedVesselName))
                                         ++vesselsHitByMissiles[damagedVesselName];
                                     else
                                         vesselsHitByMissiles[damagedVesselName] = 1;
@@ -159,6 +159,7 @@ namespace BDArmory.FX
                 foreach (var vesselName in vesselsHitByMissiles.Keys)
                     BDACompetitionMode.Instance.competitionStatus += (BDACompetitionMode.Instance.competitionStatus == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
                 BDACompetitionMode.Instance.competitionStatus += " parts damaged due to missile strike.";
+                // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
             }
             return result;
         }
@@ -183,7 +184,7 @@ namespace BDArmory.FX
             }
         }
 
-        private void ProcessPartEvent(Part part, List<BlastHitEvent> eventList, List<Part> partsAdded)
+        private bool ProcessPartEvent(Part part, List<BlastHitEvent> eventList, List<Part> partsAdded)
         {
             RaycastHit hit;
             float distance = 0;
@@ -200,8 +201,10 @@ namespace BDArmory.FX
                         HitPoint = hit.point,
                     });
                     partsAdded.Add(part);
+                    return true;
                 }
             }
+            return false;
         }
 
         private bool IsAngleAllowed(Vector3 direction, RaycastHit hit)
