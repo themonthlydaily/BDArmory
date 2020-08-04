@@ -95,7 +95,7 @@ namespace BDArmory.UI
         }
 
         private Coroutine spawnAllVesselsOnceCoroutine;
-        private IEnumerator SpawnAllVesselsOnceCoroutine(Vector2d geoCoords, double altitude, bool killEverythingFirst)
+        public IEnumerator SpawnAllVesselsOnceCoroutine(Vector2d geoCoords, double altitude, bool killEverythingFirst)
         {
             #region Initialisation and sanity checks
             // Clear the displayed message.

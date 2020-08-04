@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -21,14 +22,55 @@ namespace BDArmory.Competition
         public Dictionary<string, string> longestHitWeapon = new Dictionary<string, string>();
         public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
 
+        public enum StatusType
+        {
+            [Description("Offline")]
+            Offline,
+            [Description("Fetching Competition")]
+            FetchingCompetition,
+            [Description("Fetching Players")]
+            FetchingPlayers,
+            [Description("Waiting for Players")]
+            PendingPlayers,
+            [Description("Selecting a Heat")]
+            FindingNextHeat,
+            [Description("Fetching Heat")]
+            FetchingHeat,
+            [Description("Fetching Vessels")]
+            FetchingVessels,
+            [Description("Downloading Craft Files")]
+            DownloadingCraftFiles,
+            [Description("Starting Heat")]
+            StartingHeat,
+            [Description("Spawning Vessels")]
+            SpawningVessels,
+            [Description("Running Heat")]
+            RunningHeat,
+            [Description("Removing Vessels")]
+            RemovingVessels,
+            [Description("Stopping Heat")]
+            StoppingHeat,
+            [Description("Reporting Results")]
+            ReportingResults,
+            [Description("No Pending Heats")]
+            StalledNoPendingHeats,
+            [Description("Completed")]
+            Completed,
+            [Description("Invalid")]
+            Invalid
+        }
+
         private bool pendingSync = false;
+        private StatusType status = StatusType.Offline;
+
+        private Coroutine syncCoroutine;
 
         //        protected CompetitionModel competition = null;
 
         //        protected HeatModel activeHeat = null;
 
 
-        private BDAScoreClient client;
+        public BDAScoreClient client;
 
         void Awake()
         {
@@ -40,10 +82,21 @@ namespace BDArmory.Competition
             Instance = this;
         }
 
+        void Update()
+        {
+            if( pendingSync && !Core.BDArmorySettings.REMOTE_LOGGING_ENABLED )
+            {
+                Debug.Log("[BDAScoreService] Cancel due to disable");
+                pendingSync = false;
+                StopCoroutine(syncCoroutine);
+                return;
+            }
+        }
+
         public void Configure(string vesselPath, string hash)
         {
             this.client = new BDAScoreClient(this, vesselPath, hash);
-            StartCoroutine(SynchronizeWithService(hash));
+            syncCoroutine = StartCoroutine(SynchronizeWithService(hash));
         }
 
         public IEnumerator SynchronizeWithService(string hash)
@@ -57,30 +110,37 @@ namespace BDArmory.Competition
 
             Debug.Log(string.Format("[BDAScoreService] Sync started {0}", hash));
 
+            status = StatusType.FetchingCompetition;
             // first, get competition metadata
             yield return client.GetCompetition(hash);
 
+            status = StatusType.FetchingPlayers;
             // next, get player metadata
             yield return client.GetPlayers(hash);
 
             // abort if we didn't receive a valid competition
             if (client.competition == null)
             {
+                status = StatusType.Invalid;
                 pendingSync = false;
+                syncCoroutine = null;
                 yield break;
             }
 
             switch (client.competition.status)
             {
                 case 0:
+                    status = StatusType.PendingPlayers;
                     // waiting for players; nothing to do
                     Debug.Log(string.Format("[BDAScoreService] Waiting for players {0}", hash));
                     break;
                 case 1:
+                    status = StatusType.FindingNextHeat;
                     // heats generated; find next heat
                     yield return FindNextHeat(hash);
                     break;
                 case 2:
+                    status = StatusType.StalledNoPendingHeats;
                     Debug.Log(string.Format("[BDAScoreService] Competition status 2 {0}", hash));
                     break;
             }
@@ -93,6 +153,7 @@ namespace BDArmory.Competition
         {
             Debug.Log(string.Format("[BDAScoreService] Find next heat for {0}", hash));
 
+            status = StatusType.FetchingHeat;
             // fetch heat metadata
             yield return client.GetHeats(hash);
 
@@ -100,6 +161,7 @@ namespace BDArmory.Competition
             HeatModel model = client.heats.Values.FirstOrDefault(e => e.Available());
             if (model == null)
             {
+                status = StatusType.StalledNoPendingHeats;
                 Debug.Log(string.Format("[BDAScoreService] No inactive heat found {0}", hash));
                 yield return RetryFind(hash);
             }
@@ -118,46 +180,63 @@ namespace BDArmory.Competition
 
         private IEnumerator FetchAndExecuteHeat(string hash, HeatModel model)
         {
+            status = StatusType.FetchingVessels;
             // fetch vessel metadata for heat
             yield return client.GetVessels(hash, model);
 
+            status = StatusType.DownloadingCraftFiles;
             // fetch craft files for vessels
             yield return client.GetCraftFiles(hash, model);
 
+            status = StatusType.StartingHeat;
             // notify web service to start heat
             yield return client.StartHeat(hash, model);
 
             // execute heat
             yield return ExecuteHeat(hash, model);
 
+            status = StatusType.ReportingResults;
             // report scores
             yield return SendScores(hash, model);
 
+            status = StatusType.StoppingHeat;
             // notify web service to stop heat
             yield return client.StopHeat(hash, model);
 
+            status = StatusType.FindingNextHeat;
             yield return RetryFind(hash);
         }
 
         private IEnumerator ExecuteHeat(string hash, HeatModel model)
         {
-            Debug.Log(string.Format("[BDAScoreService] Running heat {0}/{1} in 5sec", hash, model.order));
-            yield return new WaitForSeconds(5.0f);
+            Debug.Log(string.Format("[BDAScoreService] Running heat {0}/{1}", hash, model.order));
+            UI.VesselSpawner spawner = UI.VesselSpawner.Instance;
 
             // orchestrate the match
 
-            // start competition to begin spawning
+            status = StatusType.SpawningVessels;
+            // spawn vessels around CompetitionHub
+            Vessel hub = FlightGlobals.Vessels.First(e => e.vesselName.Equals("CompetitionHub"));
+            float spawnAltitude = (float)hub.altitude + 1500.0f;
+            yield return spawner.SpawnAllVesselsOnceCoroutine(new Vector2d(hub.latitude, hub.longitude), spawnAltitude, false);
+
+            status = StatusType.RunningHeat;
             // NOTE: runs in separate coroutine
             BDACompetitionMode.Instance.StartCompetitionMode(1000);
 
-            // start timer coroutine for 1min
+            // start timer coroutine for the duration specified in settings UI
             var duration = Core.BDArmorySettings.COMPETITION_DURATION;
             yield return new WaitForSeconds(duration * 60.0f);
 
-            // timer coroutine stops competition
+            // stop competition
             BDACompetitionMode.Instance.StopCompetition();
 
-            // TODO: remove all spawned vehicles
+            status = StatusType.RemovingVessels;
+            // remove all spawned vehicles
+            foreach (Vessel v in FlightGlobals.Vessels.Where(e => !e.vesselName.Equals("CompetitionHub")))
+            {
+                v.Die();
+            }
         }
 
         private IEnumerator SendScores(string hash, HeatModel heat)
@@ -300,6 +379,11 @@ namespace BDArmory.Competition
                     killsOnTarget.Add(attacker, newKills);
                 }
             }
+        }
+
+        public string Status()
+        {
+            return status.ToString();
         }
 
         public class JsonListHelper<T>
