@@ -218,7 +218,14 @@ namespace BDArmory.Competition
             // spawn vessels around CompetitionHub
             Vessel hub = FlightGlobals.Vessels.First(e => e.vesselName.Equals("CompetitionHub"));
             float spawnAltitude = (float)hub.altitude + 1500.0f;
-            yield return spawner.SpawnAllVesselsOnceCoroutine(new Vector2d(hub.latitude, hub.longitude), spawnAltitude, false);
+            spawner.SpawnAllVesselsOnce(new Vector2d(hub.latitude, hub.longitude), spawnAltitude, false, hash); // FIXME Use a subfolder of AutoSpawn to add and remove vessels to avoid messing with anyone's current setup. GetCraftFiles needs to be adjusted to use this folder too.
+            while(spawner.vesselsSpawning)
+                yield return new WaitForFixedUpdate();
+            if (!spawner.vesselSpawnSuccess)
+            {
+                Debug.Log("[BDAScoreService] Vessel spawning failed."); // FIXME Now what?
+                yield break;
+            }
 
             status = StatusType.RunningHeat;
             // NOTE: runs in separate coroutine

@@ -18,10 +18,7 @@ namespace BDArmory.UI
         void Awake()
         {
             if (Instance)
-            {
                 Destroy(Instance);
-            }
-
             Instance = this;
         }
 
@@ -69,13 +66,15 @@ namespace BDArmory.UI
         }
 
         public bool vesselsSpawning = false;
+        public bool vesselSpawnSuccess = false;
         public int spawnedVesselCount = 0;
-        public void SpawnAllVesselsOnce(Vector2d geoCoords, double altitude = 0, bool killEverythingFirst = true)
+        public void SpawnAllVesselsOnce(Vector2d geoCoords, double altitude = 0, bool killEverythingFirst = true, string spawnFolder = null)
         {
             vesselsSpawning = true; // Signal that we've started the spawning vessels routine.
+            vesselSpawnSuccess = false; // Set our success flag to false for now.
             if (spawnAllVesselsOnceCoroutine != null)
                 StopCoroutine(spawnAllVesselsOnceCoroutine);
-            spawnAllVesselsOnceCoroutine = StartCoroutine(SpawnAllVesselsOnceCoroutine(geoCoords, altitude, killEverythingFirst));
+            spawnAllVesselsOnceCoroutine = StartCoroutine(SpawnAllVesselsOnceCoroutine(geoCoords, altitude, killEverythingFirst, spawnFolder));
             Debug.Log("[BDArmory]: Triggering vessel spawning at " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("G6") + ".");
         }
 
@@ -95,14 +94,14 @@ namespace BDArmory.UI
         }
 
         private Coroutine spawnAllVesselsOnceCoroutine;
-        public IEnumerator SpawnAllVesselsOnceCoroutine(Vector2d geoCoords, double altitude, bool killEverythingFirst)
+        private IEnumerator SpawnAllVesselsOnceCoroutine(Vector2d geoCoords, double altitude, bool killEverythingFirst, string spawnFolder = null)
         {
             #region Initialisation and sanity checks
             // Clear the displayed message.
             message = "";
 
             // Tally up the craft to spawn.
-            var crafts = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn").Where(f => f.EndsWith(".craft")).ToList();
+            var crafts = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{spawnFolder}").Where(f => f.EndsWith(".craft")).ToList();
             if (crafts.Count == 0)
             {
                 message = "Vessel spawning: found no craft files in " + Environment.CurrentDirectory + $"/AutoSpawn";
@@ -192,11 +191,12 @@ namespace BDArmory.UI
             }
 
             // Spawn the craft in an outward facing ring.
+            var spawnedVessels = new Dictionary<string, Tuple<Vessel, Vector3d, Vector3, float>>();
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, localSurfaceNormal)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             string failedVessels = "";
-            foreach (var craftUrl in crafts)
+            foreach (var craftUrl in crafts) // First spawn the vessels in the air.
             {
                 var heading = 360f * spawnedVesselCount / crafts.Count;
                 var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, localSurfaceNormal) * refDirection, localSurfaceNormal).normalized;
@@ -215,11 +215,35 @@ namespace BDArmory.UI
                     failedVessels += "\n  -  " + craftName;
                     continue;
                 }
+                spawnedVesselCount += 1;
+                spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
+            }
+            if (failedVessels != "")
+            {
+                if (message != "") message += "\n";
+                message += "Some vessels failed to spawn: " + failedVessels;
+            }
+
+            // Wait for an update so that the vessels' parts list gets updated.
+            yield return new WaitForFixedUpdate();
+
+            // Count the vessels' for checking later.
+            var spawnedVesselPartCounts = new Dictionary<string, int>();
+            foreach (var vesselName in spawnedVessels.Keys)
+                spawnedVesselPartCounts.Add(vesselName, spawnedVessels[vesselName].Item1.parts.Count);
+
+            // Now rotate them and put them near the ground.
+            foreach (var vesselName in spawnedVessels.Keys)
+            {
+                var vessel = spawnedVessels[vesselName].Item1;
+                craftSpawnPosition = spawnedVessels[vesselName].Item2;
+                var direction = spawnedVessels[vesselName].Item3;
+                var heightFromTerrain = spawnedVessels[vesselName].Item4;
                 ray = new Ray(craftSpawnPosition, -localSurfaceNormal);
                 var distance = Physics.Raycast(ray, out hit, (float)(altitude + 1100f), 1 << 15) ? hit.distance : altitude + 1100f; // Note: if this doesn't hit, then the terrain is too steep to spawn on anyway.
                 vessel.SetRotation(Quaternion.FromToRotation(-Vector3.forward, hit.normal)); // Re-orient the vessel to the terrain normal.
                 vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(vessel.transform.up, direction, hit.normal), hit.normal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
-                vessel.SetPosition(craftSpawnPosition + (Vector3d)localSurfaceNormal * (altitude + vessel.GetHeightFromTerrain() - 35f - distance)); // Put us at ground level (hopefully). Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
+                vessel.SetPosition(craftSpawnPosition + localSurfaceNormal * (altitude + heightFromTerrain - distance)); // Put us at ground level (hopefully). Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
                 if (vessel.mainBody.ocean) // Check for being under water.
                 {
                     var distanceUnderWater = (float)(distance * Vector3.Dot(surfaceNormal, localSurfaceNormal) - vessel.altitude);
@@ -227,20 +251,77 @@ namespace BDArmory.UI
                         vessel.SetPosition(vessel.transform.position + distanceUnderWater * surfaceNormal);
                 }
                 Debug.Log("[BDArmory]: Vessel " + vessel.vesselName + " spawned!");
-                spawnedVesselCount += 1;
-            }
-            if (failedVessels != "")
-            {
-                if (message != "") message += "\n";
-                message += "Some vessels failed to spawn: " + failedVessels;
             }
             #endregion
 
+            #region Post-spawning
+            var postSpawnCheckStartTime = Planetarium.GetUniversalTime();
+            var allWeaponManagersAssigned = false;
+            do
+            {
+                yield return new WaitForFixedUpdate();
+
+                // Check that none of the vessels have lost parts.
+                if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
+                {
+                    message = "One of the vessel lost parts after spawning.";
+                    break;
+                }
+
+                // Wait for the number of weapon managers to equal the number of spawned vessels.
+                var mfCount = 0;
+                foreach (var teamManager in LoadedVesselSwitcher.Instance.weaponManagers.Values)
+                    mfCount += teamManager.Count;
+                if (mfCount == spawnedVesselCount)
+                {
+                    allWeaponManagersAssigned = true;
+                    // Turn on brakes
+                    foreach (var vesselName in spawnedVessels.Keys)
+                    {
+                        spawnedVessels[vesselName].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Disable them first to make sure they trigger on toggling.
+                        spawnedVessels[vesselName].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                    }
+                }
+
+                if (allWeaponManagersAssigned)
+                    break;
+            } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
+
+            // Prevent the vessels from falling too fast and check if their velocities in the surface normal direction is below a threshold.
+            if (allWeaponManagersAssigned)
+            {
+                var vesselsHaveLanded = spawnedVessels.Keys.ToDictionary(v => v, v => (int)0); // 1=started moving, 2=landed.
+                var landingStartTime = Planetarium.GetUniversalTime();
+                do
+                {
+                    yield return new WaitForFixedUpdate();
+                    foreach (var vesselName in spawnedVessels.Keys)
+                    {
+                        if (vesselsHaveLanded[vesselName] == 0 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, localSurfaceNormal) < 0) // Check that vessel has started moving.
+                            vesselsHaveLanded[vesselName] = 1;
+                        if (vesselsHaveLanded[vesselName] == 1 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, localSurfaceNormal) >= 0) // Check if the vessel has landed.
+                            vesselsHaveLanded[vesselName] = 2;
+                        if (vesselsHaveLanded[vesselName] == 1 && spawnedVessels[vesselName].Item1.srf_velocity.sqrMagnitude > 1) // While the vessel hasn't landed, prevent it from moving too fast.
+                            spawnedVessels[vesselName].Item1.SetWorldVelocity(0.99 * spawnedVessels[vesselName].Item1.srf_velocity); // Move at 1m/s at most.
+                    }
+                    if (vesselsHaveLanded.Values.All(v => v == 2))
+                    {
+                        vesselSpawnSuccess = true;
+                        message = "Vessel spawning SUCCEEDED!";
+                        break;
+                    }
+                } while (Planetarium.GetUniversalTime() - landingStartTime < 5 + altitude); // Give the vessels up to (5 + altitude) seconds to land.
+            }
+            if (!vesselSpawnSuccess)
+                message += " Vessel spawning FAILED!";
+            #endregion
+
+            Debug.Log("[BDArmory] Vessel spawning " + (vesselSpawnSuccess ? "SUCCEEDED!" : "FAILED!"));
             vesselsSpawning = false;
         }
 
         // THE FOLLOWING STOLEN FROM VESSEL MOVER via BenBenWilde's autospawn (and tweaked slightly)
-        public Vessel SpawnVesselFromCraftFile(string craftURL, Vector3d gpsCoords, float heading, float pitch, List<ProtoCrewMember> crewData = null)
+        private Vessel SpawnVesselFromCraftFile(string craftURL, Vector3d gpsCoords, float heading, float pitch, List<ProtoCrewMember> crewData = null)
         {
             VesselData newData = new VesselData();
 

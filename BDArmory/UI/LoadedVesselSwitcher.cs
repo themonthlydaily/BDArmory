@@ -24,7 +24,7 @@ namespace BDArmory.UI
         private readonly float _buttonHeight = 20;
 
         private int _guiCheckIndex;
-        public LoadedVesselSwitcher Instance;
+        public static LoadedVesselSwitcher Instance;
         private readonly float _margin = 5;
 
         private bool _ready;
@@ -43,7 +43,7 @@ namespace BDArmory.UI
         //gui params
         private float _windowHeight; //auto adjusting
 
-        private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
+        public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
         private Dictionary<string, float> cameraScores = new Dictionary<string, float>();
 
 
@@ -84,8 +84,7 @@ namespace BDArmory.UI
         {
             if (Instance)
                 Destroy(this);
-            else
-                Instance = this;
+            Instance = this;
         }
 
         private void Start()
@@ -174,15 +173,8 @@ namespace BDArmory.UI
                 BDACompetitionMode.Instance.DoUpdate();
 
                 // Vessel post-spawning actions.
-                if (_vesselsSpawned && !_vesselSpawningComplete && !VesselSpawner.Instance.vesselsSpawning && VesselSpawner.Instance.spawnedVesselCount > 0)
-                {
-                    // Wait for the number of weapon managers to equal the number of spawned vessels before doing post-spawn stuff.
-                    var count = 0;
-                    foreach (var teamManager in weaponManagers.Values)
-                        count += teamManager.Count;
-                    if (count == VesselSpawner.Instance.spawnedVesselCount) // FIXME If one of the vessels dies prematurely or doesn't spawn properly, then this will fail. In this case, we probably don't want to start the competition anyway.
-                        DoPostVesselSpawn();
-                }
+                if (_vesselsSpawned && !_vesselSpawningComplete && !VesselSpawner.Instance.vesselsSpawning && VesselSpawner.Instance.vesselSpawnSuccess)
+                    DoPostVesselSpawn();
             }
         }
 
@@ -330,13 +322,13 @@ namespace BDArmory.UI
             {
                 if (!_vesselsSpawned && Event.current.button == 0) // Left click
                 {
-                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, true); // Spawn vessels at 1m above ground.
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 2, true); // Spawn vessels at 2m above ground.
                     _vesselsSpawned = true;
                     _vesselSpawningComplete = false;
                 }
                 else if (!_vesselsSpawned && Event.current.button == 2) // Middle click
                 {
-                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, false); // Spawn vessels at 1m above ground, without killing off other vessels or changing camera positions.
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 2, false); // Spawn vessels at 2m above ground, without killing off other vessels or changing camera positions.
                     _vesselsSpawned = true;
                     _vesselSpawningComplete = false;
                 }
@@ -648,17 +640,11 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
         }
 
-        private void DoPostVesselSpawn()
+        public void DoPostVesselSpawn()
         {
             _vesselSpawningComplete = true;
             // Update the weaponManagers list.
             UpdateList();
-            // Turn on brakes.
-            foreach (var vessel in BDATargetManager.LoadedVessels)
-            {
-                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false);
-                vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
-            }
             // switch everyone onto different teams
             _teamSwitchDirty = true;
             _wmToSwitchTeam = null;
