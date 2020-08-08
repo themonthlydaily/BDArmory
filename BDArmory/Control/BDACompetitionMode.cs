@@ -393,10 +393,16 @@ namespace BDArmory.Control
             foreach (var pilot in readyToLaunch)
             {
                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
+                pilot.ActivatePilot();
                 pilot.CommandTakeOff();
                 if (pilot.weaponManager.guardMode)
                 {
                     pilot.weaponManager.ToggleGuardMode();
+                }
+                if (!pilot.vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+                {
+                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Firing next stage for " + pilot.vessel.vesselName + " as they forgot to add engines to AG10!");
+                    BDArmory.Misc.Misc.fireNextNonEmptyStage(pilot.vessel);
                 }
             }
 
@@ -573,8 +579,8 @@ namespace BDArmory.Control
             yield return new WaitForSeconds(2);
             competitionStatus = "";
             lastCompetitionStatus = "";
-            competitionStarting = false;
             competitionIsActive = true; //start logging ramming now that the competition has officially started
+            competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
         }
 
@@ -1609,7 +1615,7 @@ namespace BDArmory.Control
             }
 
             FindVictim();
-            Debug.Log("[BDArmoryCompetition] Done With Update");
+            // Debug.Log("[BDArmoryCompetition] Done With Update");
         }
 
         public void LogResults()

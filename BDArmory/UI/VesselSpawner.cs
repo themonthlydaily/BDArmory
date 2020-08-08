@@ -22,7 +22,7 @@ namespace BDArmory.UI
             Instance = this;
         }
 
-        string message = "";
+        public string message = "";
         string lastMessage;
         double messageShowStartTime;
         double messageShowLength = 10;
@@ -104,7 +104,7 @@ namespace BDArmory.UI
             var crafts = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{spawnFolder}").Where(f => f.EndsWith(".craft")).ToList();
             if (crafts.Count == 0)
             {
-                message = "Vessel spawning: found no craft files in " + Environment.CurrentDirectory + $"/AutoSpawn";
+                message = "Vessel spawning: found no craft files in " + Environment.CurrentDirectory + $"/AutoSpawn/{spawnFolder}";
                 Debug.Log("[BDArmory]: " + message);
                 vesselsSpawning = false;
                 yield break;
@@ -200,7 +200,8 @@ namespace BDArmory.UI
             {
                 var heading = 360f * spawnedVesselCount / crafts.Count;
                 var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, localSurfaceNormal) * refDirection, localSurfaceNormal).normalized;
-                craftSpawnPosition = spawnPoint + (altitude + 1000f) * (Vector3d)localSurfaceNormal + (10f + 10f * crafts.Count) * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
+                var spawnDistance = crafts.Count > 1 ? 10f + 10f * crafts.Count : 0f; // If it's a single craft, spawn it at the spawn point.
+                craftSpawnPosition = spawnPoint + (altitude + 1000f) * (Vector3d)localSurfaceNormal + spawnDistance * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
                 FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
                 Vessel vessel = null;
                 try

@@ -129,6 +129,7 @@
     <Compile Include="Competition\BDAScoreClient.cs" />
     <Compile Include="Competition\BDAScoreModels.cs" />
     <Compile Include="Competition\BDAScoreService.cs" />
+    <Compile Include="Competition\RemoteOrchestrationWindow.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
     <Compile Include="Misc\BDTeam.cs" />

@@ -7,6 +7,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 using BDArmory.Control;
+using BDArmory.Core;
 
 namespace BDArmory.Competition
 {
@@ -56,6 +57,8 @@ namespace BDArmory.Competition
             StalledNoPendingHeats,
             [Description("Completed")]
             Completed,
+            [Description("Cancelled")]
+            Cancelled,
             [Description("Invalid")]
             Invalid
         }
@@ -84,7 +87,7 @@ namespace BDArmory.Competition
 
         void Update()
         {
-            if( pendingSync && !Core.BDArmorySettings.REMOTE_LOGGING_ENABLED )
+            if (pendingSync && !Core.BDArmorySettings.REMOTE_LOGGING_ENABLED)
             {
                 Debug.Log("[BDAScoreService] Cancel due to disable");
                 pendingSync = false;
@@ -97,6 +100,17 @@ namespace BDArmory.Competition
         {
             this.client = new BDAScoreClient(this, vesselPath, hash);
             syncCoroutine = StartCoroutine(SynchronizeWithService(hash));
+        }
+
+        public void Cancel()
+        {
+            if (syncCoroutine != null)
+                StopCoroutine(syncCoroutine);
+            BDACompetitionMode.Instance.StopCompetition();
+            pendingSync = false;
+            status = StatusType.Cancelled;
+            Debug.Log("[BDAScoreService] Cancelling the heat");
+            // FIXME What else needs to be done to cancel a heat?
         }
 
         public IEnumerator SynchronizeWithService(string hash)
@@ -215,35 +229,50 @@ namespace BDArmory.Competition
             // orchestrate the match
 
             status = StatusType.SpawningVessels;
-            // spawn vessels around CompetitionHub
-            Vessel hub = FlightGlobals.Vessels.First(e => e.vesselName.Equals("CompetitionHub"));
-            float spawnAltitude = (float)hub.altitude + 1500.0f;
-            spawner.SpawnAllVesselsOnce(new Vector2d(hub.latitude, hub.longitude), spawnAltitude, false, hash); // FIXME Use a subfolder of AutoSpawn to add and remove vessels to avoid messing with anyone's current setup. GetCraftFiles needs to be adjusted to use this folder too.
-            while(spawner.vesselsSpawning)
+            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, true, hash); // FIXME If geo-coords are included in the heat model, then use those instead.
+            while (spawner.vesselsSpawning)
                 yield return new WaitForFixedUpdate();
             if (!spawner.vesselSpawnSuccess)
             {
                 Debug.Log("[BDAScoreService] Vessel spawning failed."); // FIXME Now what?
                 yield break;
             }
+            // if (CompetitionHub != null) // Example of how to spawn extra vessels from another folder.
+            // {
+            //     spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, false, hash+"/"+hubCraftPath);
+            //     while (spawner.vesselsSpawning)
+            //         yield return new WaitForFixedUpdate();
+            //     if (!spawner.vesselSpawnSuccess)
+            //     {
+            //         Debug.Log("[BDAScoreService] Vessel spawning failed for CompetitionHub."); // FIXME Now what?
+            //         yield break;
+            //     }
+            // }
+            UI.LoadedVesselSwitcher.Instance.DoPostVesselSpawn();
+            yield return new WaitForFixedUpdate();
+            spawner.message = ""; // Clear any spawning messages.
 
             status = StatusType.RunningHeat;
             // NOTE: runs in separate coroutine
             BDACompetitionMode.Instance.StartCompetitionMode(1000);
 
             // start timer coroutine for the duration specified in settings UI
-            var duration = Core.BDArmorySettings.COMPETITION_DURATION;
-            yield return new WaitForSeconds(duration * 60.0f);
+            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
+            Debug.Log("[BDAScoreService] Starting a " + duration.ToString("F0") + "s duration competition.");
+            var startTime = Planetarium.GetUniversalTime();
+            while ((BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.competitionIsActive) && Planetarium.GetUniversalTime() - startTime < duration) // Allow exiting if the competition finishes early.
+                yield return new WaitForSeconds(1);
 
             // stop competition
             BDACompetitionMode.Instance.StopCompetition();
+            BDACompetitionMode.Instance.LogResults(); // Make sure the results are dumped to the log.
 
-            status = StatusType.RemovingVessels;
-            // remove all spawned vehicles
-            foreach (Vessel v in FlightGlobals.Vessels.Where(e => !e.vesselName.Equals("CompetitionHub")))
-            {
-                v.Die();
-            }
+            // status = StatusType.RemovingVessels;
+            // // remove all spawned vehicles // Note: Vessel and debris clean-up happens during vessel spawning (also the currently focussed vessel doesn't get killed when telling it to Die...)
+            // foreach (Vessel v in FlightGlobals.Vessels.Where(e => !e.vesselName.Equals("CompetitionHub")))
+            // {
+            //     v.Die();
+            // }
         }
 
         private IEnumerator SendScores(string hash, HeatModel heat)
@@ -262,12 +291,14 @@ namespace BDArmory.Competition
                 if (player == null)
                 {
                     Debug.Log(string.Format("[BDAScoreService] Unmatched player {0}", playerName));
+                    Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
                     continue;
                 }
                 VesselModel vessel = client.vessels.Values.FirstOrDefault(e => e.player_id == player.id);
                 if (vessel == null)
                 {
                     Debug.Log(string.Format("[BDAScoreService] Unmatched vessel for playerId {0}", player.id));
+                    Debug.Log("DEBUG vessels were " + string.Join(", ", client.vessels.Values.Select(p => p.id)));
                     continue;
                 }
                 RecordModel record = new RecordModel();
@@ -320,21 +351,14 @@ namespace BDArmory.Competition
         {
             if (hitsOnTarget.ContainsKey(attacker))
             {
-                Dictionary<string, int> hits = hitsOnTarget[attacker];
-                if (hits.ContainsKey(target))
-                {
-                    hits[target] += 1;
-                    hitsOnTarget[attacker] = hits;
-                }
+                if (hitsOnTarget[attacker].ContainsKey(target))
+                    ++hitsOnTarget[attacker][target];
                 else
-                {
-                    hits.Add(target, 1);
-                    hitsOnTarget.Add(attacker, hits);
-                }
+                    hitsOnTarget[attacker].Add(target, 1);
             }
             else
             {
-                Dictionary<string, int> newHits = new Dictionary<string, int>();
+                var newHits = new Dictionary<string, int>();
                 newHits.Add(target, 1);
                 hitsOnTarget.Add(attacker, newHits);
             }
@@ -364,24 +388,22 @@ namespace BDArmory.Competition
         public void TrackKill(List<string> attackers, string target)
         {
             if (deaths.ContainsKey(target))
-            {
-                deaths[target] += 1;
-            }
+                ++deaths[target];
             else
-            {
                 deaths.Add(target, 1);
-            }
+
             foreach (string attacker in attackers)
             {
                 if (killsOnTarget.ContainsKey(attacker))
                 {
-                    Dictionary<string, int> attackerKills = killsOnTarget[attacker];
-                    attackerKills[target] += 1;
-                    killsOnTarget[attacker] = attackerKills;
+                    if (killsOnTarget[attacker].ContainsKey(target))
+                        ++killsOnTarget[attacker][target];
+                    else
+                        killsOnTarget[attacker].Add(target, 1);
                 }
                 else
                 {
-                    Dictionary<string, int> newKills = new Dictionary<string, int>();
+                    var newKills = new Dictionary<string, int>();
                     newKills.Add(target, 1);
                     killsOnTarget.Add(attacker, newKills);
                 }
