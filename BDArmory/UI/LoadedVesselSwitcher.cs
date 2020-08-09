@@ -299,7 +299,14 @@ namespace BDArmory.UI
 
         private void SetNewHeight(float windowHeight)
         {
+            var previousWindowHeight = BDArmorySetup.WindowRectVesselSwitcher.height;
             BDArmorySetup.WindowRectVesselSwitcher.height = windowHeight;
+            if (windowHeight < previousWindowHeight && BDArmorySetup.WindowRectVesselSwitcher.y + previousWindowHeight == Screen.height) // Window shrunk while being at edge of screen.
+            {
+                Debug.Log("DEBUG Adjusting vessel switcher window");
+                BDArmorySetup.WindowRectVesselSwitcher.y = Screen.height - BDArmorySetup.WindowRectVesselSwitcher.height;
+            }
+            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
         }
 
         private void WindowVesselSwitcher(int id)
@@ -636,7 +643,7 @@ namespace BDArmory.UI
 
             height += _margin;
             _windowHeight = height;
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
+            // BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
         }
 
         public void DoPostVesselSpawn()
