@@ -284,6 +284,16 @@ namespace BDArmory.UI
                         spawnedVessels[vesselName].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Disable them first to make sure they trigger on toggling.
                         spawnedVessels[vesselName].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
                     }
+
+                    // Try to work around a bug where the global P button only activates the current craft.
+                    var autopilotsToToggle = LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList();
+                    foreach (var weaponManager in autopilotsToToggle)
+                    {
+                        weaponManager.AI.ActivatePilot();
+                        weaponManager.AI.DeactivatePilot();
+                        // Currently, it seems that staging with BDArmory.Misc.Misc.fireNextNonEmptyStage(weaponManager.vessel); fixes it, but can also cause unnecessary staging. 
+                        // It may be possible to activate the highest stage without advancing to the next one.
+                    }
                 }
 
                 if (allWeaponManagersAssigned)

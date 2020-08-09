@@ -302,10 +302,7 @@ namespace BDArmory.UI
             var previousWindowHeight = BDArmorySetup.WindowRectVesselSwitcher.height;
             BDArmorySetup.WindowRectVesselSwitcher.height = windowHeight;
             if (windowHeight < previousWindowHeight && BDArmorySetup.WindowRectVesselSwitcher.y + previousWindowHeight == Screen.height) // Window shrunk while being at edge of screen.
-            {
-                Debug.Log("DEBUG Adjusting vessel switcher window");
                 BDArmorySetup.WindowRectVesselSwitcher.y = Screen.height - BDArmorySetup.WindowRectVesselSwitcher.height;
-            }
             BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
         }
 
@@ -657,12 +654,8 @@ namespace BDArmory.UI
             _freeForAll = false; // It gets toggled to true when the team switch happens.
             // Unclick the autopilots button and make sure all the autopilots are disabled.
             _autoPilotEnabled = false;
-            var autopilotsToToggle = weaponManagers.SelectMany(tm => tm.Value).ToList();
-            foreach (var weaponManager in autopilotsToToggle)
-            {
-                weaponManager.AI.ActivatePilot();
-                weaponManager.AI.DeactivatePilot();
-            }
+            ToggleAutopilots(); // Try to work around a bug where the global P only activates the current craft.
+            ToggleAutopilots();
         }
 
         private string UpdateVesselStatus(MissileFire wm, GUIStyle vButtonStyle)
