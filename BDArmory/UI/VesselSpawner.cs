@@ -216,7 +216,9 @@ namespace BDArmory.UI
                     failedVessels += "\n  -  " + craftName;
                     continue;
                 }
-                spawnedVesselCount += 1;
+                ++spawnedVesselCount;
+                if (spawnedVessels.ContainsKey(vessel.GetName()))
+                    vessel.vesselName += "_" + spawnedVesselCount;
                 spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
             }
             if (failedVessels != "")

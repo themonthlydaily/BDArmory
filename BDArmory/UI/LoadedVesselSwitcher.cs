@@ -225,22 +225,21 @@ namespace BDArmory.UI
         {
             // toggle the state
             _autoPilotEnabled = !_autoPilotEnabled;
-
-            foreach (var teamManager in weaponManagers)
-                foreach (var weaponManager in teamManager.Value)
+            var autopilotsToToggle = weaponManagers.SelectMany(tm => tm.Value).ToList(); // Get a copy in case activating stages causes the weaponManager list to change.
+            foreach (var weaponManager in autopilotsToToggle)
+            {
+                if (weaponManager == null) continue;
+                if (weaponManager.AI == null) continue;
+                if (_autoPilotEnabled)
                 {
-                    if (weaponManager == null) continue;
-                    if (weaponManager.AI == null) continue;
-                    if (_autoPilotEnabled)
-                    {
-                        weaponManager.AI.ActivatePilot();
-                        BDArmory.Misc.Misc.fireNextNonEmptyStage(weaponManager.vessel);
-                    }
-                    else
-                    {
-                        weaponManager.AI.DeactivatePilot();
-                    }
+                    weaponManager.AI.ActivatePilot();
+                    BDArmory.Misc.Misc.fireNextNonEmptyStage(weaponManager.vessel);
                 }
+                else
+                {
+                    weaponManager.AI.DeactivatePilot();
+                }
+            }
         }
 
 
@@ -651,8 +650,12 @@ namespace BDArmory.UI
             _freeForAll = false; // It gets toggled to true when the team switch happens.
             // Unclick the autopilots button and make sure all the autopilots are disabled.
             _autoPilotEnabled = false;
-            ToggleAutopilots();
-            ToggleAutopilots();
+            var autopilotsToToggle = weaponManagers.SelectMany(tm => tm.Value).ToList();
+            foreach (var weaponManager in autopilotsToToggle)
+            {
+                weaponManager.AI.ActivatePilot();
+                weaponManager.AI.DeactivatePilot();
+            }
         }
 
         private string UpdateVesselStatus(MissileFire wm, GUIStyle vButtonStyle)
