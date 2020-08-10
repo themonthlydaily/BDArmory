@@ -436,6 +436,7 @@ namespace BDArmory.UI
                             int currentScore = 0;
                             int currentRamScore = 0;
                             int currentMissileScore = 0;
+                            double currentTagTime = 0;
 
                             string vesselName = wm.Current.vessel.GetName();
 
@@ -446,10 +447,12 @@ namespace BDArmory.UI
                                 currentScore = scoreData.Score;
                                 currentRamScore = scoreData.totalDamagedPartsDueToRamming;
                                 currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
+                                currentTagTime = scoreData.tagTotalTime;
                             }
                             string postStatus = " (" + currentScore.ToString();
                             if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
                             if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
+                            if (currentTagTime > 0) postStatus += ", " + currentTagTime.ToString("0.0");
                             postStatus += ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
@@ -607,6 +610,8 @@ namespace BDArmory.UI
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
                     if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
+                    if (BDACompetitionMode.Instance.Scores[key].tagTotalTime > 0)
+                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagTotalTime.ToString("0.0");
                     switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
                     {
                         case DamageFrom.Bullet:

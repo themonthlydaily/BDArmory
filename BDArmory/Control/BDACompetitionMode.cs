@@ -27,6 +27,8 @@ namespace BDArmory.Control
         public string lastPersonWhoHitMeWithAMissile;
         public string lastPersonWhoRammedMe;
         public double lastHitTime; // Bullets
+        public double tagHitTime; // For tag mode
+        public double tagTotalTime = 0; // For tag mode
         public double lastMissileHitTime; // Missiles
         public double lastFiredTime;
         public double lastRammedTime; // Rams
@@ -154,6 +156,7 @@ namespace BDArmory.Control
 
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
+        public bool startTag = false; // For tag mode
 
         private double competitionStartTime = -1;
         private double nextUpdateTick = -1;
@@ -366,6 +369,7 @@ namespace BDArmory.Control
         IEnumerator DogfightCompetitionModeRoutine(float distance)
         {
             competitionStarting = true;
+            startTag = true;
             competitionStatus = "Competition: Pilots are taking off.";
             var pilots = new Dictionary<BDTeam, List<IBDAIControl>>();
             HashSet<IBDAIControl> readyToLaunch = new HashSet<IBDAIControl>();
@@ -1336,6 +1340,35 @@ namespace BDArmory.Control
                             }
                         }
 
+                        // Update Tag Mode! If we're IT (or no one is IT yet) and we get hit, change everyone's teams and update the scoring
+                        double lastDamageTime = vData.LastDamageTime();
+                        if ((BDArmorySettings.TAG_MODE) && ((mf.Team.Name == "IT") || (startTag)) && (Planetarium.GetUniversalTime() - lastDamageTime < 1))
+                        {
+                            // We've started tag
+                            if (startTag)
+                                startTag = false;
+
+                            // Update scoring
+                            vData.tagTotalTime += lastDamageTime - vData.tagHitTime;
+                            var pilots = getAllPilots();
+                            // Debug.Log("TAG TIME = " + vData.tagTotalTime.ToString("0.0"));
+
+                            // Update teams
+                            foreach (var pilot in pilots)
+                            {
+
+                                if (pilot.vessel.GetName() == vData.lastPersonWhoHitMe)
+                                {
+                                    pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
+                                    Scores[pilot.vessel.GetName()].tagHitTime = lastDamageTime;
+                                }
+                                else
+                                {
+                                    pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
+                                }
+                            }
+                        }
+
                         // after this point we're checking things that might result in kills.
                         if (Planetarium.GetUniversalTime() < gracePeriod) continue;
 
@@ -1430,6 +1463,7 @@ namespace BDArmory.Control
                             if (shouldKillThis)
                                 KillTimer[vesselName] = updateTickLength;
                         }
+
                     }
                 }
             string aliveString = string.Join(",", alive.ToArray());
