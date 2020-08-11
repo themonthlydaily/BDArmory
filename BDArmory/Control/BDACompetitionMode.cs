@@ -1372,7 +1372,7 @@ namespace BDArmory.Control
                                 foreach (var pilot in pilots)
                                 {
 
-                                    if (pilot.vessel.GetName() == vData.lastPersonWhoHitMe) // Set the person who scored hits as "IT"
+                                    if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                                     {
                                         Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is IT!");
                                         competitionStatus = pilot.vessel.GetDisplayName() + " is IT!";
