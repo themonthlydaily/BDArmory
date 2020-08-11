@@ -28,7 +28,9 @@ namespace BDArmory.Control
         public string lastPersonWhoRammedMe;
         public double lastHitTime; // Bullets
         public double tagHitTime; // For tag mode
+        public bool tagIsIt = false; // For tag mode
         public double tagTotalTime = 0; // For tag mode
+        public double tagLastUpdateTime; // For tag mode
         public double lastMissileHitTime; // Missiles
         public double lastFiredTime;
         public double lastRammedTime; // Rams
@@ -1340,31 +1342,52 @@ namespace BDArmory.Control
                             }
                         }
 
-                        // Update Tag Mode! If we're IT (or no one is IT yet) and we get hit, change everyone's teams and update the scoring
-                        double lastDamageTime = vData.LastDamageTime();
-                        if ((BDArmorySettings.TAG_MODE) && ((mf.Team.Name == "IT") || (startTag)) && (Planetarium.GetUniversalTime() - lastDamageTime < 1))
+                        // TAG MODE CODE
+                        if (BDArmorySettings.TAG_MODE)
                         {
-                            // We've started tag
-                            if (startTag)
-                                startTag = false;
-
-                            // Update scoring
-                            vData.tagTotalTime += lastDamageTime - vData.tagHitTime;
-                            var pilots = getAllPilots();
-                            // Debug.Log("TAG TIME = " + vData.tagTotalTime.ToString("0.0"));
-
-                            // Update teams
-                            foreach (var pilot in pilots)
+                            // Update tag mode scoring
+                            if (mf.Team.Name == "IT")
                             {
+                                vData.tagTotalTime += Planetarium.GetUniversalTime() - vData.tagLastUpdateTime;
+                                vData.tagLastUpdateTime = Planetarium.GetUniversalTime();
+                            }
+                            else if (vData.tagIsIt) // We need this in case the person who was "IT" died before the updating code ran
+                            {
+                                mf.SetTeam(BDTeam.Get("IT"));
+                                vData.tagTotalTime += Planetarium.GetUniversalTime() - vData.tagLastUpdateTime;
+                                vData.tagLastUpdateTime = Planetarium.GetUniversalTime();
+                            }
 
-                                if (pilot.vessel.GetName() == vData.lastPersonWhoHitMe)
+
+                            // Update Tag Mode! If we're IT (or no one is IT yet) and we get hit, change everyone's teams and update the scoring
+                            double lastDamageTime = vData.LastDamageTime();
+                            if (((mf.Team.Name == "IT") || (startTag)) && (Planetarium.GetUniversalTime() - lastDamageTime < 3))
+                            {
+                                // We've started tag, we don't need the entry condition boolean anymore
+                                if (startTag)
+                                    startTag = false;
+
+                                // Update teams
+                                var pilots = getAllPilots();
+                                foreach (var pilot in pilots)
                                 {
-                                    pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
-                                    Scores[pilot.vessel.GetName()].tagHitTime = lastDamageTime;
-                                }
-                                else
-                                {
-                                    pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
+
+                                    if (pilot.vessel.GetName() == vData.lastPersonWhoHitMe) // Set the person who scored hits as "IT"
+                                    {
+                                        Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is IT!");
+                                        competitionStatus = pilot.vessel.GetDisplayName() + " is IT!";
+                                        pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
+                                        Scores[pilot.vessel.GetName()].tagIsIt = true;
+                                        Scores[pilot.vessel.GetName()].tagHitTime = lastDamageTime;
+                                        Scores[pilot.vessel.GetName()].tagTotalTime += Planetarium.GetUniversalTime() - lastDamageTime;
+                                        Scores[pilot.vessel.GetName()].tagLastUpdateTime = Planetarium.GetUniversalTime();
+                                    }
+                                    else // Everyone else is "NOT IT"
+                                    {
+                                        Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
+                                        pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
+                                        Scores[pilot.vessel.GetName()].tagIsIt = false;
+                                    }
                                 }
                             }
                         }
@@ -1509,10 +1532,19 @@ namespace BDArmory.Control
 
                             if (Scores.ContainsKey(key))
                             {
+                                // If the player who was "IT" died declare a new "IT" player
+                                if ((BDArmorySettings.TAG_MODE) && (Scores[key].tagIsIt))
+                                {
+                                    startTag = true;
+                                    Scores[key].tagIsIt = false;
+                                    Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt = true;
+                                }
+                                
                                 if (Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10)
                                 {
                                     // if last hit was recent that person gets the kill
                                     whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
+
                                     var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
                                     switch (lastDamageWasFrom)
                                     {
