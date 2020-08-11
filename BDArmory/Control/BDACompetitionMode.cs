@@ -1346,7 +1346,7 @@ namespace BDArmory.Control
                         if (BDArmorySettings.TAG_MODE)
                         {
                             // Update tag mode scoring
-                            if (mf.Team.Name == "IT")
+                            if ((mf.Team.Name == "IT") && (numberOfCompetitiveVessels > 1)) // Don't keep increasing score if we're the only ones left
                             {
                                 vData.tagTotalTime += Planetarium.GetUniversalTime() - vData.tagLastUpdateTime;
                                 vData.tagLastUpdateTime = Planetarium.GetUniversalTime();
@@ -1748,6 +1748,11 @@ namespace BDArmory.Control
             // Accuracy
             foreach (var key in Scores.Keys)
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ACCURACY:" + key + ":" + Scores[key].Score + "/" + Scores[key].shotsFired);
+
+            // Time "IT" logging
+            if (BDArmorySettings.TAG_MODE)
+                foreach (var key in Scores.Keys)
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIME IT:" + key + ":" + Scores[key].tagTotalTime.ToString("0.0"));
         }
 
 
