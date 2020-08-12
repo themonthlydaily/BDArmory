@@ -11,6 +11,7 @@ using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
 using UnityEngine;
+using UnityEngine.Experimental.PlayerLoop;
 using UnityEngine.SocialPlatforms.Impl;
 using Object = UnityEngine.Object;
 
@@ -29,6 +30,7 @@ namespace BDArmory.Control
         public double lastHitTime; // Bullets
         public double tagHitTime; // For tag mode
         public bool tagIsIt = false; // For tag mode
+        public int tagKillsWhileIt = 0; // For tag mode
         public double tagTotalTime = 0; // For tag mode
         public double tagLastUpdateTime; // For tag mode
         public double lastMissileHitTime; // Missiles
@@ -159,6 +161,7 @@ namespace BDArmory.Control
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
         public bool startTag = false; // For tag mode
+        public int previousNumberCompetitive = 2; // Also for tag mode
 
         private double competitionStartTime = -1;
         private double nextUpdateTick = -1;
@@ -169,7 +172,7 @@ namespace BDArmory.Control
         public bool OneOfAKind = false;
 
         // count up until killing the object 
-        public Dictionary<string, int> KillTimer = new Dictionary<string, int>();
+        public Dictionary<string, double> KillTimer = new Dictionary<string, double>();
 
 
         private HashSet<int> ammoIds = new HashSet<int>();
@@ -537,6 +540,7 @@ namespace BDArmory.Control
 
                 yield return null;
             }
+            previousNumberCompetitive = 2; // For entering into tag mode
 
             //start the match
             foreach (var teamPilots in pilots.Values)
@@ -1185,7 +1189,7 @@ namespace BDArmory.Control
             //         Debug.Log("DEBUG Upcoming potential collision between " + upcomingCollision.Key.Item1 + " and " + upcomingCollision.Key.Item2 + " at distance " + Mathf.Sqrt(upcomingCollision.Value.Item1) + "m in " + upcomingCollision.Value.Item2 + "s.");
             if (Planetarium.GetUniversalTime() < nextUpdateTick)
                 return;
-            int updateTickLength = 2;
+            double updateTickLength = (BDArmorySettings.TAG_MODE) ? 0.1 : 2;
             HashSet<Vessel> vesselsToKill = new HashSet<Vessel>();
             nextUpdateTick = nextUpdateTick + updateTickLength;
             int numberOfCompetitiveVessels = 0;
@@ -1345,23 +1349,24 @@ namespace BDArmory.Control
                         // TAG MODE CODE
                         if (BDArmorySettings.TAG_MODE)
                         {
+
                             // Update tag mode scoring
-                            if ((mf.Team.Name == "IT") && (numberOfCompetitiveVessels > 1)) // Don't keep increasing score if we're the only ones left
+                            if ((mf.Team.Name == "IT") && (previousNumberCompetitive > 1)) // Don't keep increasing score if we're the only ones left
                             {
-                                vData.tagTotalTime += Planetarium.GetUniversalTime() - vData.tagLastUpdateTime;
+                                vData.tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - vData.tagLastUpdateTime, updateTickLength);
                                 vData.tagLastUpdateTime = Planetarium.GetUniversalTime();
                             }
-                            else if (vData.tagIsIt) // We need this in case the person who was "IT" died before the updating code ran
+                            else if ((vData.tagIsIt) && (previousNumberCompetitive > 1)) // We need this in case the person who was "IT" died before the updating code ran
                             {
                                 mf.SetTeam(BDTeam.Get("IT"));
-                                vData.tagTotalTime += Planetarium.GetUniversalTime() - vData.tagLastUpdateTime;
+                                vData.tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - vData.tagLastUpdateTime, updateTickLength);
                                 vData.tagLastUpdateTime = Planetarium.GetUniversalTime();
                             }
 
 
                             // Update Tag Mode! If we're IT (or no one is IT yet) and we get hit, change everyone's teams and update the scoring
                             double lastDamageTime = vData.LastDamageTime();
-                            if (((mf.Team.Name == "IT") || (startTag)) && (Planetarium.GetUniversalTime() - lastDamageTime < 3))
+                            if (((mf.Team.Name == "IT") || (startTag)) && (Planetarium.GetUniversalTime() - lastDamageTime < updateTickLength))
                             {
                                 // We've started tag, we don't need the entry condition boolean anymore
                                 if (startTag)
@@ -1374,19 +1379,19 @@ namespace BDArmory.Control
 
                                     if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                                     {
-                                        Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is IT!");
                                         competitionStatus = pilot.vessel.GetDisplayName() + " is IT!";
                                         pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
                                         Scores[pilot.vessel.GetName()].tagIsIt = true;
                                         Scores[pilot.vessel.GetName()].tagHitTime = lastDamageTime;
-                                        Scores[pilot.vessel.GetName()].tagTotalTime += Planetarium.GetUniversalTime() - lastDamageTime;
+                                        Scores[pilot.vessel.GetName()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength);
                                         Scores[pilot.vessel.GetName()].tagLastUpdateTime = Planetarium.GetUniversalTime();
+                                        Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is IT!");
                                     }
                                     else // Everyone else is "NOT IT"
                                     {
-                                        Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
                                         pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
                                         Scores[pilot.vessel.GetName()].tagIsIt = false;
+                                        Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
                                     }
                                 }
                             }
@@ -1490,6 +1495,7 @@ namespace BDArmory.Control
                     }
                 }
             string aliveString = string.Join(",", alive.ToArray());
+            previousNumberCompetitive = numberOfCompetitiveVessels;
             Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString);
             // If we find a vessel named "Pinata" that's a special case object
             // this should probably be configurable.
@@ -1532,12 +1538,22 @@ namespace BDArmory.Control
 
                             if (Scores.ContainsKey(key))
                             {
-                                // If the player who was "IT" died declare a new "IT" player
-                                if ((BDArmorySettings.TAG_MODE) && (Scores[key].tagIsIt))
+                                // Update tag mode kills/player status on deaths
+                                if (BDArmorySettings.TAG_MODE)
                                 {
-                                    startTag = true;
-                                    Scores[key].tagIsIt = false;
-                                    Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt = true;
+                                    // If the player who was "IT" died declare a new "IT" player
+                                    if (Scores[key].tagIsIt)
+                                    {
+                                        Scores[key].tagIsIt = false;
+                                        Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt = true;
+                                        Scores[Scores[key].LastPersonWhoDamagedMe()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength);
+                                        Debug.Log("[BDArmory]: " + Scores[key].LastPersonWhoDamagedMe() + " is IT!");
+                                    }
+                                    else if (Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt) // "IT" player got a kill, let's log it
+                                    {
+                                        Scores[Scores[key].LastPersonWhoDamagedMe()].tagKillsWhileIt++;
+                                    }
+                                        
                                 }
                                 
                                 if (Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10)
@@ -1749,10 +1765,18 @@ namespace BDArmory.Control
             foreach (var key in Scores.Keys)
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ACCURACY:" + key + ":" + Scores[key].Score + "/" + Scores[key].shotsFired);
 
-            // Time "IT" logging
+            // Time "IT" and kills while "IT" logging
             if (BDArmorySettings.TAG_MODE)
+            {
                 foreach (var key in Scores.Keys)
-                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIME IT:" + key + ":" + Scores[key].tagTotalTime.ToString("0.0"));
+                {
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMEIT:" + key + ":" + Scores[key].tagTotalTime.ToString("0.0"));
+                }
+                
+                foreach (var key in Scores.Keys)
+                    if (Scores[key].tagKillsWhileIt > 0)
+                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: KILLSWHILEIT:" + key + ":" + Scores[key].tagKillsWhileIt);
+            }
         }
 
 
