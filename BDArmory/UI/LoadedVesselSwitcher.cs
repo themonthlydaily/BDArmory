@@ -57,6 +57,7 @@ namespace BDArmory.UI
         // Vessel spawning
         private bool _vesselsSpawned = false;
         private bool _vesselSpawningComplete = false;
+        private bool _continuousVesselSpawning = false;
 
         // button styles for info buttons
         private static GUIStyle redLight = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
@@ -308,7 +309,7 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            GUI.DragWindow(new Rect(2f * _buttonHeight + _margin, 0, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 9f * _buttonHeight - 2 * _margin, _titleHeight));
+            GUI.DragWindow(new Rect(2f * _buttonHeight + _margin, 0, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 10f * _buttonHeight - 2 * _margin, _titleHeight));
 
             if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button))
             {
@@ -321,17 +322,33 @@ namespace BDArmory.UI
                 BDArmorySetup.SaveConfig();
             }
 
+            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 8f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "CS", _continuousVesselSpawning ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            { // FIXME A null ref happened in here somewhere.
+                if (!_continuousVesselSpawning && Event.current.button == 0) // Left click
+                {
+                    VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, true); // Spawn vessels continuously at 1km above terrain.
+                    _continuousVesselSpawning = true;
+                }
+                else if (Event.current.button == 1)
+                {
+                    VesselSpawner.Instance.CancelVesselSpawn();
+                    if (_continuousVesselSpawning)
+                        Debug.Log("[BDArmory]: Resetting continuous spawning button.");
+                    _continuousVesselSpawning = false;
+                }
+            }
+
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 7f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "S", _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 if (!_vesselsSpawned && Event.current.button == 0) // Left click
                 {
-                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 2, true); // Spawn vessels at 2m above ground.
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, true); // Spawn vessels.
                     _vesselsSpawned = true;
                     _vesselSpawningComplete = false;
                 }
                 else if (!_vesselsSpawned && Event.current.button == 2) // Middle click
                 {
-                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 2, false); // Spawn vessels at 2m above ground, without killing off other vessels or changing camera positions.
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, false); // Spawn vessels, without killing off other vessels or changing camera positions.
                     _vesselsSpawned = true;
                     _vesselSpawningComplete = false;
                 }
@@ -649,13 +666,11 @@ namespace BDArmory.UI
             // Update the weaponManagers list.
             UpdateList();
             // switch everyone onto different teams
-            _teamSwitchDirty = true;
-            _wmToSwitchTeam = null;
-            _freeForAll = false; // It gets toggled to true when the team switch happens.
+            MassTeamSwitch(true);
             // Unclick the autopilots button and make sure all the autopilots are disabled.
             _autoPilotEnabled = false;
-            ToggleAutopilots(); // Try to work around a bug where the global P only activates the current craft.
-            ToggleAutopilots();
+            // ToggleAutopilots(); // Try to work around a bug where the global P only activates the current craft.
+            // ToggleAutopilots();
         }
 
         private string UpdateVesselStatus(MissileFire wm, GUIStyle vButtonStyle)
@@ -702,9 +717,14 @@ namespace BDArmory.UI
                 ForceSwitchVessel(firstVessel);
         }
 
-        public static void MassTeamSwitch()
+        public static void MassTeamSwitch(bool separateTeams = false)
         {
             _teamSwitchDirty = true;
+            if (separateTeams)
+            {
+                Instance._wmToSwitchTeam = null;
+                Instance._freeForAll = false; // It gets toggled to true when the team switch happens.
+            }
         }
 
         private void SwitchToPreviousVessel()
