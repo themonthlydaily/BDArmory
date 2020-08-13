@@ -1357,6 +1357,7 @@ namespace BDArmory.Control
                             else if ((vData.tagIsIt) && (previousNumberCompetitive > 1)) // We need this in case the person who was "IT" died before the updating code ran
                             {
                                 mf.SetTeam(BDTeam.Get("IT"));
+                                v.Current.ActionGroups.ToggleGroup(KM_dictAG[8]); // Trigger AG8 on becoming "IT"
                                 vData.tagTotalTime += updateTickLength;
                             }
 
@@ -1379,6 +1380,7 @@ namespace BDArmory.Control
                                         competitionStatus = pilot.vessel.GetDisplayName() + " is IT!";
                                         pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
                                         Scores[pilot.vessel.GetName()].tagIsIt = true;
+                                        pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[8]); // Trigger AG8 on becoming "IT"
                                         Scores[pilot.vessel.GetName()].tagHitTime = lastDamageTime;
                                         Scores[pilot.vessel.GetName()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength);
                                         Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is IT!");
@@ -1387,6 +1389,7 @@ namespace BDArmory.Control
                                     {
                                         pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
                                         Scores[pilot.vessel.GetName()].tagIsIt = false;
+                                        pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
                                         Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
                                     }
                                 }
@@ -1531,7 +1534,7 @@ namespace BDArmory.Control
                             DeathOrder[key] = DeathOrder.Count;
                             pilotActions[key] = " is Dead";
                             var whoKilledMe = "";
-
+                            
                             if (Scores.ContainsKey(key))
                             {
                                 // Update tag mode kills/player status on deaths
@@ -1557,6 +1560,7 @@ namespace BDArmory.Control
                                             {
                                                 pilot.weaponManager.SetTeam(BDTeam.Get(T.ToString()));
                                                 Scores[pilot.vessel.GetName()].tagIsIt = false;
+                                                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
                                                 T++;
                                             }
                                             startTag = true;

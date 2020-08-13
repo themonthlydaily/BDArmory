@@ -875,7 +875,7 @@ namespace BDArmory.UI
                                         BDArmory.Control.ScoringData scoreData = BDACompetitionMode.Instance.Scores[vesselName];
                                         if (scoreData.tagIsIt)
                                         {
-                                            vesselScore *= 0.3f; // Being "IT" is interesting
+                                            vesselScore *= 0.08f; // Being "IT" is very interesting
                                         }
                                         else // Otherwise we're not "IT" and we want to switch away
                                         {
