@@ -32,7 +32,6 @@ namespace BDArmory.Control
         public bool tagIsIt = false; // For tag mode
         public int tagKillsWhileIt = 0; // For tag mode
         public double tagTotalTime = 0; // For tag mode
-        public double tagLastUpdateTime; // For tag mode
         public double lastMissileHitTime; // Missiles
         public double lastFiredTime;
         public double lastRammedTime; // Rams
@@ -1353,20 +1352,18 @@ namespace BDArmory.Control
                             // Update tag mode scoring
                             if ((mf.Team.Name == "IT") && (previousNumberCompetitive > 1)) // Don't keep increasing score if we're the only ones left
                             {
-                                vData.tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - vData.tagLastUpdateTime, updateTickLength);
-                                vData.tagLastUpdateTime = Planetarium.GetUniversalTime();
+                                vData.tagTotalTime += updateTickLength;
                             }
                             else if ((vData.tagIsIt) && (previousNumberCompetitive > 1)) // We need this in case the person who was "IT" died before the updating code ran
                             {
                                 mf.SetTeam(BDTeam.Get("IT"));
-                                vData.tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - vData.tagLastUpdateTime, updateTickLength);
-                                vData.tagLastUpdateTime = Planetarium.GetUniversalTime();
+                                vData.tagTotalTime += updateTickLength;
                             }
 
 
                             // Update Tag Mode! If we're IT (or no one is IT yet) and we get hit, change everyone's teams and update the scoring
                             double lastDamageTime = vData.LastDamageTime();
-                            if (((mf.Team.Name == "IT") || (startTag)) && (Planetarium.GetUniversalTime() - lastDamageTime < updateTickLength))
+                            if ((vData.tagIsIt || startTag) && (Planetarium.GetUniversalTime() - lastDamageTime < updateTickLength))
                             {
                                 // We've started tag, we don't need the entry condition boolean anymore
                                 if (startTag)
@@ -1384,7 +1381,6 @@ namespace BDArmory.Control
                                         Scores[pilot.vessel.GetName()].tagIsIt = true;
                                         Scores[pilot.vessel.GetName()].tagHitTime = lastDamageTime;
                                         Scores[pilot.vessel.GetName()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength);
-                                        Scores[pilot.vessel.GetName()].tagLastUpdateTime = Planetarium.GetUniversalTime();
                                         Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is IT!");
                                     }
                                     else // Everyone else is "NOT IT"
@@ -1545,9 +1541,26 @@ namespace BDArmory.Control
                                     if (Scores[key].tagIsIt)
                                     {
                                         Scores[key].tagIsIt = false;
-                                        Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt = true;
-                                        Scores[Scores[key].LastPersonWhoDamagedMe()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength);
-                                        Debug.Log("[BDArmory]: " + Scores[key].LastPersonWhoDamagedMe() + " is IT!");
+                                        var tagKillerIs = Scores[key].LastPersonWhoDamagedMe();
+                                        if ((Scores.ContainsKey(tagKillerIs)) && (tagKillerIs != "") && (alive.Contains(tagKillerIs))) // We have a killer who is alive
+                                        {
+                                            Scores[tagKillerIs].tagIsIt = true;
+                                            Scores[tagKillerIs].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength);
+                                            Debug.Log("[BDArmory]: " + tagKillerIs + " is IT!");
+                                            competitionStatus = tagKillerIs + " is IT!";
+                                        }
+                                        else // We don't have a killer who is alive, reset teams
+                                        {
+                                            char T = 'A';
+                                            var pilots = getAllPilots();
+                                            foreach (var pilot in pilots)
+                                            {
+                                                pilot.weaponManager.SetTeam(BDTeam.Get(T.ToString()));
+                                                Scores[pilot.vessel.GetName()].tagIsIt = false;
+                                                T++;
+                                            }
+                                            startTag = true;
+                                        }
                                     }
                                     else if (Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt) // "IT" player got a kill, let's log it
                                     {
