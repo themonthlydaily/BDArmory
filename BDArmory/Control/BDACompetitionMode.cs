@@ -2265,7 +2265,8 @@ namespace BDArmory.Control
 
                 // Update Tag Mode! If we're IT (or no one is IT yet) and we get hit, change everyone's teams and update the scoring
                 double lastDamageTime = vData.LastDamageTime();
-                if ((vData.tagIsIt || startTag) && (Planetarium.GetUniversalTime() - lastDamageTime <= updateTickLength))
+                // Be a little more lenient on detecting damage that didn't occur within the last update tick once tag has started, sometimes the update ticks take longer and damage isn't detected otherwise
+                if (((startTag) && (Planetarium.GetUniversalTime() - lastDamageTime <= updateTickLength)) || ((vData.tagIsIt) && (Planetarium.GetUniversalTime() - lastDamageTime <= (updateTickLength * 5))))
                 {
                     // We've started tag, we don't need the entry condition boolean anymore
                     if (startTag)
