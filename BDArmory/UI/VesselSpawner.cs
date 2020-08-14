@@ -536,8 +536,6 @@ namespace BDArmory.UI
                     {
                         if (activeWeaponManagersByCraftURL.ContainsKey(craftURL))
                             activeWeaponManagersByCraftURL.Remove(craftURL);
-                        // Make sure the BDACompetition's DeathOrder is empty.
-                        BDACompetitionMode.Instance.DeathOrder.Clear();
                         var heading = 360f * continuousSpawnedVesselCount / crafts.Count;
                         var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * refDirection, surfaceNormal).normalized;
                         var spawnDistance = crafts.Count > 1 ? 20f + 20f * crafts.Count : 0f; // If it's a single craft, spawn it at the spawn point. Spawn further apart for airborne spawning.
@@ -604,8 +602,8 @@ namespace BDArmory.UI
                                     engine.Activate();
                             }
                             // Assign the vessel to an unassigned team.
-                            var currentTeams = weaponManagers.Select(wm => wm.Team).ToHashSet();
-                            char team = 'A'; // FIXME This keeps starting at B
+                            var currentTeams = weaponManagers.Where(wm => wm != weaponManager).Select(wm => wm.Team).ToHashSet(); // Current teams, excluding us.
+                            char team = 'A';
                             while (currentTeams.Contains(BDTeam.Get(team.ToString())))
                                 ++team;
                             weaponManager.SetTeam(BDTeam.Get(team.ToString()));
@@ -620,6 +618,9 @@ namespace BDArmory.UI
                         }
                     }
                 }
+
+                // Make sure the BDACompetition's DeathOrder is empty.
+                BDACompetitionMode.Instance.DeathOrder.Clear();
 
                 yield return new WaitForSeconds(1); // 1s between checks. Nothing much happens if nothing needs spawning.
             }
