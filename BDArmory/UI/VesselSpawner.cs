@@ -390,6 +390,7 @@ namespace BDArmory.UI
                                 foreach (var engine in vessel.FindPartModulesImplementing<ModuleEngines>())
                                     engine.Activate();
                             }
+                            vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
                         }
                         // Assign the vessels to their own teams.
                         LoadedVesselSwitcher.MassTeamSwitch(true);
@@ -524,6 +525,11 @@ namespace BDArmory.UI
             while (vesselsSpawningContinuously)  // (BDACompetitionMode.Instance.competitionIsActive) // FIXME What other checks do we want here?
             {
                 // FIXME the vessels are spawning much higher than they should after being respawned and at the wrong geoCoords.
+                // Reacquire the spawn point as the floating origin may have moved.
+                spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, terrainAltitude);
+                surfaceNormal = FlightGlobals.currentMainBody.GetSurfaceNVector(geoCoords.x, geoCoords.y);
+                if (FlightGlobals.currentMainBody.ocean && FlightGlobals.currentMainBody.GetAltitude(spawnPoint) > terrainAltitude) // Adjust for oceans.
+                    spawnPoint += surfaceNormal * (FlightGlobals.currentMainBody.GetAltitude(spawnPoint) - terrainAltitude);
                 // Spawn the craft in a downward facing ring.
                 string failedVessels = "";
                 foreach (var craftURL in crafts)
@@ -605,12 +611,18 @@ namespace BDArmory.UI
                                 ++team;
                             weaponManager.SetTeam(BDTeam.Get(team.ToString()));
                             activeWeaponManagersByCraftURL.Add(craftURLToVesselName.ToDictionary(i => i.Value, i => i.Key)[vessel.GetName()], weaponManager);
+                            // Enable guard mode if a competition is active.
+                            if (BDACompetitionMode.Instance.competitionIsActive)
+                                if (!weaponManager.guardMode)
+                                    weaponManager.ToggleGuardMode();
+                            weaponManager.AI.ReleaseCommand();
+                            vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
                             vesselsToActivate.Remove(vessel);
                         }
                     }
                 }
 
-                yield return new WaitForSeconds(1); // 10s between checks. FIXME
+                yield return new WaitForSeconds(1); // 1s between checks. Nothing much happens if nothing needs spawning.
             }
             #endregion
             vesselsSpawningContinuously = false;
