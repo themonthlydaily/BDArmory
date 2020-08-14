@@ -19,7 +19,7 @@ namespace BDArmory.Competition
 
         private string competitionHash = "";
 
-        private bool pendingRequest = false;
+        public bool pendingRequest = false;
 
         public CompetitionModel competition = null;
 
@@ -35,7 +35,7 @@ namespace BDArmory.Competition
         public BDAScoreClient(BDAScoreService service, string vesselPath, string hash)
         {
             this.service = service;
-            this.vesselPath = vesselPath;
+            this.vesselPath = vesselPath + "/" + hash;
             this.competitionHash = hash;
         }
 
@@ -178,7 +178,10 @@ namespace BDArmory.Competition
             foreach (PlayerModel playerModel in collection)
             {
                 Debug.Log(string.Format("[BDAScoreClient] Player {0}", playerModel.ToString()));
-                players.Add(playerModel.id, playerModel);
+                if (!players.ContainsKey(playerModel.id))
+                    players.Add(playerModel.id, playerModel);
+                else
+                    Debug.Log("[BDAScoreClient] Player " + playerModel.id + " already exists in the competition.");
             }
             Debug.Log(string.Format("[BDAScoreClient] Players: {0}", players.Count));
         }
@@ -259,16 +262,25 @@ namespace BDArmory.Competition
 
         public IEnumerator GetCraftFiles(string hash, HeatModel model)
         {
+            pendingRequest = true;
             // DO NOT DELETE THE DIRECTORY. Delete the craft files inside it.
             // This is much safer.
-            Debug.Log("[BDAScoreClient] Deleting existing craft in spawn directory");
-            DirectoryInfo info = new DirectoryInfo(vesselPath);
-            FileInfo[] craftFiles = info.GetFiles("*.craft")
-                .Where(e => e.Extension == ".craft")
-                .ToArray();
-            foreach (FileInfo file in craftFiles)
+            if (Directory.Exists(vesselPath))
             {
-                File.Delete(file.FullName);
+                Debug.Log("[BDAScoreClient] Deleting existing craft in spawn directory " + vesselPath);
+                DirectoryInfo info = new DirectoryInfo(vesselPath);
+                FileInfo[] craftFiles = info.GetFiles("*.craft")
+                    .Where(e => e.Extension == ".craft")
+                    .ToArray();
+                foreach (FileInfo file in craftFiles)
+                {
+                    Debug.Log("DEBUG Deleting " + file.FullName);
+                    File.Delete(file.FullName);
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory(vesselPath);
             }
 
             // already have the vessels in memory; just need to fetch the files
@@ -289,6 +301,7 @@ namespace BDArmory.Competition
                     }
                 }
             }
+            pendingRequest = false;
         }
 
         private void SaveCraftFile(VesselModel vessel, byte[] bytes)

@@ -349,7 +349,7 @@ namespace BDArmory.Modules
         public MissileFire incomingWeaponManager;
         public float incomingMissDistance;
 
-        bool guardFiringMissile;
+        public bool guardFiringMissile;
         bool disabledRocketAimers;
         bool antiRadTargetAcquired;
         Vector3 antiRadiationTarget;
@@ -3234,7 +3234,7 @@ namespace BDArmory.Modules
             {
                 // iterate over weaponTypesAir and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
                 // Prioritize by:
-                // 1. AA missiles, if range > gunRange
+                // 1. AA missiles (if we're flying, otherwise use guns if we're within gun range)
                 // 1. Lasers
                 // 2. Guns
                 //
@@ -3282,8 +3282,8 @@ namespace BDArmory.Modules
                             {
                                 candidateRPM *= 1.5f; // weight selection towards flak ammo
                             }
-                            if ((targetWeapon != null) && (targetWeaponRPM > candidateRPM))
-                                continue; //dont replace better guns (but do replace missiles)
+                            if ((targetWeapon != null) && ((targetWeaponRPM > candidateRPM) || (targetWeapon.GetWeaponClass() == WeaponClasses.Missile)))
+                                continue; //dont replace better guns or missiles
 
                             targetWeapon = item.Current;
                             targetWeaponRPM = candidateRPM;
@@ -3308,10 +3308,10 @@ namespace BDArmory.Modules
                             targetWeapon = item.Current;
                             targetWeaponTDPS = candidateTDPS;
                         }
-                        else if (distance > gunRange)
+                        else if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
                         {
-                            if (targetWeapon.GetWeaponClass() == WeaponClasses.Gun || targetWeaponTDPS > candidateTDPS)
-                                continue; //dont replace guns or better missiles
+                            if (targetWeaponTDPS > candidateTDPS)
+                                continue; //dont better missiles
 
                             targetWeapon = item.Current;
                             targetWeaponTDPS = candidateTDPS;
@@ -4359,6 +4359,27 @@ namespace BDArmory.Modules
 
             return false;
         }
+
+        public bool outOfAmmo = false; // Indicator for being out of ammo.
+        public bool HasWeaponsAndAmmo(List<WeaponClasses> weaponClasses = null)
+        { // Check if the vessel has both weapons and ammo for them. Optionally, restrict checks to a subset of the weapon classes.
+            if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
+            bool hasWeaponsAndAmmo = false;
+            foreach (var weapon in vessel.FindPartModulesImplementing<IBDWeapon>())
+            {
+                if (weapon == null) continue; // First entry is the "no weapon" option.
+                if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
+                if (weapon.GetWeaponClass() == WeaponClasses.Gun)
+                {
+                    if (weapon.GetShortName().EndsWith("Laser")) { hasWeaponsAndAmmo = true; break; } // If it's a laser (counts as a gun) consider it as having ammo, since electric charge can replenish.
+                    if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
+                }
+                else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
+            }
+            outOfAmmo = !hasWeaponsAndAmmo; // Set outOfAmmo if we don't have any guns with compatible ammo.
+            return hasWeaponsAndAmmo;
+        }
+
 
         void ToggleTurret()
         {
