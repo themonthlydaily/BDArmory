@@ -604,8 +604,8 @@ namespace BDArmory.UI
                                     engine.Activate();
                             }
                             // Assign the vessel to an unassigned team.
-                            var currentTeams = weaponManagers.Select(wm => wm.Team).ToHashSet();
-                            char team = 'A'; // FIXME This keeps starting at B
+                            var currentTeams = weaponManagers.Where(wm => wm != weaponManager).Select(wm => wm.Team).ToHashSet(); // Current teams, excluding us.
+                            char team = 'A';
                             while (currentTeams.Contains(BDTeam.Get(team.ToString())))
                                 ++team;
                             weaponManager.SetTeam(BDTeam.Get(team.ToString()));
