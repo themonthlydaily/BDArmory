@@ -448,6 +448,9 @@ namespace BDArmory.UI
                             int currentScore = 0;
                             int currentRamScore = 0;
                             int currentMissileScore = 0;
+                            double currentTagTime = 0;
+                            double currentTagScore = 0;
+                            int currentTimesIt = 0;
 
                             string vesselName = wm.Current.vessel.GetName();
 
@@ -458,10 +461,16 @@ namespace BDArmory.UI
                                 currentScore = scoreData.Score;
                                 currentRamScore = scoreData.totalDamagedPartsDueToRamming;
                                 currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
+                                currentTagTime = scoreData.tagTotalTime;
+                                currentTagScore = scoreData.tagScore;
+                                currentTimesIt = scoreData.tagTimesIt;
                             }
                             string postStatus = " (" + currentScore.ToString();
                             if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
                             if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
+                            // if (currentTagTime > 0) postStatus += ", " + currentTagTime.ToString("0.0");
+                            if (currentTagScore > 0) postStatus += ", " + currentTagScore.ToString("0.0");
+                            // if (currentTimesIt > 0) postStatus += ", " + currentTimesIt.ToString();
                             postStatus += ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
@@ -619,6 +628,8 @@ namespace BDArmory.UI
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
                     if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
+                    if (BDACompetitionMode.Instance.Scores[key].tagScore > 0)
+                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagScore.ToString("0.0");
                     switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
                     {
                         case DamageFrom.Bullet:
@@ -873,8 +884,21 @@ namespace BDArmory.UI
                                     {
                                         vesselScore *= 3; // not interesting.
                                     }
-                                    // if we're the active vessel add a penalty over time to force it to switch away eventually
-                                    if (wms.Current.vessel.isActiveVessel)
+                                    // if we're the active vessel add a penalty over time to force it to switch away eventually, unless we're in tag
+                                    if ((wms.Current.vessel.isActiveVessel) && (BDArmorySettings.TAG_MODE) && (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName)))
+                                    {
+                                        BDArmory.Control.ScoringData scoreData = BDACompetitionMode.Instance.Scores[vesselName];
+                                        if (scoreData.tagIsIt)
+                                        {
+                                            vesselScore *= 0.08f; // Being "IT" is very interesting
+                                        }
+                                        else // Otherwise we're not "IT" and we want to switch away
+                                        {
+                                            vesselScore = (float)(vesselScore * timeSinceChange / 4.0);
+                                        }
+                                        foundActiveVessel = true;
+                                    }
+                                    else if (wms.Current.vessel.isActiveVessel)
                                     {
                                         vesselScore = (float)(vesselScore * timeSinceChange / 8.0);
                                         foundActiveVessel = true;
