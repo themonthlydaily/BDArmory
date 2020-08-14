@@ -2296,7 +2296,7 @@ namespace BDArmory.Control
 
                         if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                         {
-                            competitionStatus = pilot.vessel.GetDisplayName() + " is IT!";
+                            competitionStatus += (competitionStatus == "" ? "" : "\n") + pilot.vessel.GetDisplayName() + " is IT!";
                             pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
                             Scores[pilot.vessel.GetName()].tagIsIt = true;
                             Scores[pilot.vessel.GetName()].tagTimesIt++;
@@ -2331,7 +2331,7 @@ namespace BDArmory.Control
                         Scores[tagKillerIs].tagScore += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength)
                             * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
                         Debug.Log("[BDArmory]: " + tagKillerIs + " is IT!");
-                        competitionStatus = tagKillerIs + " is IT!";
+                        competitionStatus = (competitionStatus == "" ? "" : "\n") + tagKillerIs + " is IT!";
                     }
                     else // We don't have a killer who is alive, reset teams
                     {
