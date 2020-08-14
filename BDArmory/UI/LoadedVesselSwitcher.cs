@@ -469,9 +469,13 @@ namespace BDArmory.UI
                             if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
                             if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
                             if (_continuousVesselSpawning)
+                            {
                                 if (currentTagTime > 0) postStatus += ", " + currentTagTime.ToString("0.0");
+                            }
                             else
+                            {
                                 if (currentTagScore > 0) postStatus += ", " + currentTagScore.ToString("0.0");
+                            }
                             postStatus += ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
