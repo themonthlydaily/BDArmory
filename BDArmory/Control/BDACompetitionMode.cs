@@ -31,7 +31,9 @@ namespace BDArmory.Control
         public double tagHitTime; // For tag mode
         public bool tagIsIt = false; // For tag mode
         public int tagKillsWhileIt = 0; // For tag mode
+        public int tagTimesIt = 0; // For tag mode
         public double tagTotalTime = 0; // For tag mode
+        public double tagScore = 0; // For tag mode
         public double lastMissileHitTime; // Missiles
         public double lastFiredTime;
         public double lastRammedTime; // Rams
@@ -1353,12 +1355,14 @@ namespace BDArmory.Control
                             if ((mf.Team.Name == "IT") && (previousNumberCompetitive > 1)) // Don't keep increasing score if we're the only ones left
                             {
                                 vData.tagTotalTime += updateTickLength;
+                                vData.tagScore += updateTickLength * previousNumberCompetitive * (previousNumberCompetitive-1) / 5; // Rewards craft accruing time with more competitors
                             }
                             else if ((vData.tagIsIt) && (previousNumberCompetitive > 1)) // We need this in case the person who was "IT" died before the updating code ran
                             {
                                 mf.SetTeam(BDTeam.Get("IT"));
                                 v.Current.ActionGroups.ToggleGroup(KM_dictAG[8]); // Trigger AG8 on becoming "IT"
                                 vData.tagTotalTime += updateTickLength;
+                                vData.tagScore += updateTickLength * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
                             }
 
 
@@ -1380,9 +1384,12 @@ namespace BDArmory.Control
                                         competitionStatus = pilot.vessel.GetDisplayName() + " is IT!";
                                         pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
                                         Scores[pilot.vessel.GetName()].tagIsIt = true;
+                                        Scores[pilot.vessel.GetName()].tagTimesIt++;
                                         pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[8]); // Trigger AG8 on becoming "IT"
                                         Scores[pilot.vessel.GetName()].tagHitTime = lastDamageTime;
                                         Scores[pilot.vessel.GetName()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength);
+                                        Scores[pilot.vessel.GetName()].tagScore += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength) 
+                                            * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
                                         Debug.Log("[BDArmory]: " + pilot.vessel.GetDisplayName() + " is IT!");
                                     }
                                     else // Everyone else is "NOT IT"
@@ -1548,7 +1555,10 @@ namespace BDArmory.Control
                                         if ((Scores.ContainsKey(tagKillerIs)) && (tagKillerIs != "") && (alive.Contains(tagKillerIs))) // We have a killer who is alive
                                         {
                                             Scores[tagKillerIs].tagIsIt = true;
+                                            Scores[tagKillerIs].tagTimesIt++;
                                             Scores[tagKillerIs].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength);
+                                            Scores[tagKillerIs].tagScore += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength)
+                                                * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
                                             Debug.Log("[BDArmory]: " + tagKillerIs + " is IT!");
                                             competitionStatus = tagKillerIs + " is IT!";
                                         }
@@ -1786,13 +1796,18 @@ namespace BDArmory.Control
             if (BDArmorySettings.TAG_MODE)
             {
                 foreach (var key in Scores.Keys)
-                {
+                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TAGSCORE:" + key + ":" + Scores[key].tagScore.ToString("0.0"));
+
+                foreach (var key in Scores.Keys)
                     Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMEIT:" + key + ":" + Scores[key].tagTotalTime.ToString("0.0"));
-                }
                 
                 foreach (var key in Scores.Keys)
                     if (Scores[key].tagKillsWhileIt > 0)
                         Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: KILLSWHILEIT:" + key + ":" + Scores[key].tagKillsWhileIt);
+
+                foreach (var key in Scores.Keys)
+                    if (Scores[key].tagTimesIt > 0)
+                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMESIT:" + key + ":" + Scores[key].tagTimesIt);
             }
         }
 
