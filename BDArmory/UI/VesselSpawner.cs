@@ -107,7 +107,6 @@ namespace BDArmory.UI
             }
         }
 
-        // FIXME JR says to wait for GameEvents.onVesselResumeStaging.Add(VesselResumeStage); after spawning a vessel before switching to the next one to avoid the missing stage icons issue.
         // TODO Make an option to spawn once at altitude without lowering to the ground for places where taking off is difficult.
         private Coroutine spawnAllVesselsOnceCoroutine;
         // Spawns all vessels in an outward facing ring and lowers them to the ground. An altitude of 2m should be fine for most cases.
@@ -522,9 +521,8 @@ namespace BDArmory.UI
             Vector3 craftSpawnPosition;
             var shipFacility = EditorFacility.None;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, surfaceNormal)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            while (vesselsSpawningContinuously)  // (BDACompetitionMode.Instance.competitionIsActive) // FIXME What other checks do we want here?
+            while (vesselsSpawningContinuously)
             {
-                // FIXME the vessels are spawning much higher than they should after being respawned and at the wrong geoCoords.
                 // Reacquire the spawn point as the floating origin may have moved.
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, terrainAltitude);
                 surfaceNormal = FlightGlobals.currentMainBody.GetSurfaceNVector(geoCoords.x, geoCoords.y);
@@ -538,8 +536,8 @@ namespace BDArmory.UI
                     {
                         if (activeWeaponManagersByCraftURL.ContainsKey(craftURL))
                             activeWeaponManagersByCraftURL.Remove(craftURL);
-                        if (craftURLToVesselName.ContainsKey(craftURL) && BDACompetitionMode.Instance.DeathOrder.ContainsKey(craftURLToVesselName[craftURL])) // Remove it from the dead list.
-                            BDACompetitionMode.Instance.DeathOrder.Remove(craftURLToVesselName[craftURL]);
+                        // Make sure the BDACompetition's DeathOrder is empty.
+                        BDACompetitionMode.Instance.DeathOrder.Clear();
                         var heading = 360f * continuousSpawnedVesselCount / crafts.Count;
                         var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * refDirection, surfaceNormal).normalized;
                         var spawnDistance = crafts.Count > 1 ? 20f + 20f * crafts.Count : 0f; // If it's a single craft, spawn it at the spawn point. Spawn further apart for airborne spawning.
@@ -573,6 +571,7 @@ namespace BDArmory.UI
                         ++continuousSpawnedVesselCount;
                         continuousSpawnedVesselCount %= crafts.Count;
                         Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
+                        BDACompetitionMode.Instance.competitionStatus += (BDACompetitionMode.Instance.competitionStatus == "" ? "" : "\n") + "Spawned " + vessel.vesselName;
                     }
                 }
                 if (failedVessels != "")
@@ -606,7 +605,7 @@ namespace BDArmory.UI
                             }
                             // Assign the vessel to an unassigned team.
                             var currentTeams = weaponManagers.Select(wm => wm.Team).ToHashSet();
-                            char team = 'A';
+                            char team = 'A'; // FIXME This keeps starting at B
                             while (currentTeams.Contains(BDTeam.Get(team.ToString())))
                                 ++team;
                             weaponManager.SetTeam(BDTeam.Get(team.ToString()));
