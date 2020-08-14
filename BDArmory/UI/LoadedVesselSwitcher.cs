@@ -468,9 +468,10 @@ namespace BDArmory.UI
                             string postStatus = " (" + currentScore.ToString();
                             if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
                             if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
-                            // if (currentTagTime > 0) postStatus += ", " + currentTagTime.ToString("0.0");
-                            if (currentTagScore > 0) postStatus += ", " + currentTagScore.ToString("0.0");
-                            // if (currentTimesIt > 0) postStatus += ", " + currentTimesIt.ToString();
+                            if (_continuousVesselSpawning)
+                                if (currentTagTime > 0) postStatus += ", " + currentTagTime.ToString("0.0");
+                            else
+                                if (currentTagScore > 0) postStatus += ", " + currentTagScore.ToString("0.0");
                             postStatus += ")";
 
                             if (wm.Current.AI != null && wm.Current.AI.currentStatus != null)
