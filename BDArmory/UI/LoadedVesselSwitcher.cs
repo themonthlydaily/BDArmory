@@ -437,6 +437,8 @@ namespace BDArmory.UI
                             int currentRamScore = 0;
                             int currentMissileScore = 0;
                             double currentTagTime = 0;
+                            double currentTagScore = 0;
+                            int currentTimesIt = 0;
 
                             string vesselName = wm.Current.vessel.GetName();
 
