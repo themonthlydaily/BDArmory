@@ -2277,7 +2277,7 @@ namespace BDArmory.Control
                 }
 
                 // If a vessel is NOT IT, make sure it's on the right team (this is important for continuous spawning
-                if ((!vData.tagIsIt) && (mf.Team.Name != "NO"))
+                if ((!startTag) && (!vData.tagIsIt) && (mf.Team.Name != "NO"))
                     mf.SetTeam(BDTeam.Get("NO"));
 
                 // Update Tag Mode! If we're IT (or no one is IT yet) and we get hit, change everyone's teams and update the scoring
