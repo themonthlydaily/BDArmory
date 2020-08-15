@@ -889,24 +889,15 @@ namespace BDArmory.UI
                                     {
                                         vesselScore *= 3; // not interesting.
                                     }
-                                    // if we're the active vessel add a penalty over time to force it to switch away eventually, unless we're in tag
-                                    if ((wms.Current.vessel.isActiveVessel) && (BDArmorySettings.TAG_MODE) && (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName)))
-                                    {
-                                        BDArmory.Control.ScoringData scoreData = BDACompetitionMode.Instance.Scores[vesselName];
-                                        if (scoreData.tagIsIt)
-                                        {
-                                            vesselScore *= 0.08f; // Being "IT" is very interesting
-                                        }
-                                        else // Otherwise we're not "IT" and we want to switch away
-                                        {
-                                            vesselScore = (float)(vesselScore * timeSinceChange / 4.0);
-                                        }
-                                        foundActiveVessel = true;
-                                    }
-                                    else if (wms.Current.vessel.isActiveVessel)
+                                    // if we're the active vessel add a penalty over time to force it to switch away eventually
+                                    if (wms.Current.vessel.isActiveVessel)
                                     {
                                         vesselScore = (float)(vesselScore * timeSinceChange / 8.0);
                                         foundActiveVessel = true;
+                                    }
+                                    if ((BDArmorySettings.TAG_MODE) && (wms.Current.Team.Name == "IT"))
+                                    {
+                                        vesselScore = 0f; // Keep camera focused on "IT" vessel during tag
                                     }
 
 
