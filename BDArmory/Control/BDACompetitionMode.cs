@@ -1046,6 +1046,17 @@ namespace BDArmory.Control
                                 foundActiveParts++;
                                 break;
                             }
+
+                    if (foundActiveParts != 3)
+                    {
+                        using (var wms = vessel.FindPartModulesImplementing<KerbalSeat>().GetEnumerator()) // Command seats are ok
+                            while (wms.MoveNext())
+                                if (wms.Current != null)
+                                {
+                                    foundActiveParts++;
+                                    break;
+                                }
+                    }
                     activePilot = foundActiveParts == 3;
 
                     using (var wms = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator()) // Allow missiles
