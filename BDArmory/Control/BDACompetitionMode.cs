@@ -1470,7 +1470,7 @@ namespace BDArmory.Control
                 }
             string aliveString = string.Join(",", alive.ToArray());
             previousNumberCompetitive = numberOfCompetitiveVessels;
-            Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString);
+            // Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] STILLALIVE: " + aliveString); // This just fills the logs needlessly.
             // If we find a vessel named "Pinata" that's a special case object
             // this should probably be configurable.
             if (!pinataAlive && alive.Contains("Pinata"))
@@ -1655,6 +1655,12 @@ namespace BDArmory.Control
 
         public void LogResults()
         {
+            if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
+            {
+                VesselSpawner.Instance.DumpContinuousSpawningScores();
+                return;
+            }
+
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
             Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results ");
@@ -1683,7 +1689,10 @@ namespace BDArmory.Control
             foreach (string key in Scores.Keys)
             {
                 if (!alive.Contains(key))
-                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: DEAD:" + DeathOrder[key] + ":" + key);
+                    if (DeathOrder.ContainsKey(key))
+                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: DEAD:" + DeathOrder[key] + ":" + key);
+                    else
+                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: MIA:" + key);
             }
 
             // Who shot who.
@@ -2271,6 +2280,7 @@ namespace BDArmory.Control
         // Function to update tag
         private void UpdateTag(MissileFire mf, string key, double updateTickLength, int previousNumberCompetitive, HashSet<string> alive)
         {
+            // FIXME there is a KeyNotFoundException in here somewhere when exiting
             var vData = Scores[key];
             if (alive.Contains(key)) // Vessel that is being updated is alive
             {

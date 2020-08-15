@@ -323,8 +323,8 @@ namespace BDArmory.UI
             }
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 8f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "CS", _continuousVesselSpawning ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
-            { // FIXME A null ref happened in here somewhere.
-                if (!_continuousVesselSpawning && Event.current.button == 0) // Left click
+            {
+                if (!_continuousVesselSpawning && !_vesselsSpawned && Event.current.button == 0) // Left click
                 {
                     VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, true); // Spawn vessels continuously at 1km above terrain.
                     _continuousVesselSpawning = true;
@@ -340,7 +340,7 @@ namespace BDArmory.UI
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 7f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "S", _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
-                if (!_vesselsSpawned && Event.current.button == 0) // Left click
+                if (!_vesselsSpawned && !_continuousVesselSpawning && Event.current.button == 0) // Left click
                 {
                     VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, true); // Spawn vessels.
                     _vesselsSpawned = true;
