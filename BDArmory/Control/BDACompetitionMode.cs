@@ -412,8 +412,9 @@ namespace BDArmory.Control
                 }
                 if (!pilot.vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {
-                    Debug.Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Firing next stage for " + pilot.vessel.vesselName + " as they forgot to add engines to AG10!");
-                    BDArmory.Misc.Misc.fireNextNonEmptyStage(pilot.vessel);
+                    Debug.Log("[BDArmoryCompetition" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
+                    foreach (var engine in pilot.vessel.FindPartModulesImplementing<ModuleEngines>())
+                        engine.Activate();
                 }
             }
 
@@ -1508,7 +1509,7 @@ namespace BDArmory.Control
                             DeathOrder[key] = DeathOrder.Count;
                             pilotActions[key] = " is Dead";
                             var whoKilledMe = "";
-                            
+
                             if (Scores.ContainsKey(key))
                             {
                                 // Update tag mode
@@ -1736,7 +1737,7 @@ namespace BDArmory.Control
 
                 foreach (var key in Scores.Keys)
                     Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMEIT:" + key + ":" + Scores[key].tagTotalTime.ToString("0.0"));
-                
+
                 foreach (var key in Scores.Keys)
                     if (Scores[key].tagKillsWhileIt > 0)
                         Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: KILLSWHILEIT:" + key + ":" + Scores[key].tagKillsWhileIt);
