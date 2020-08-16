@@ -132,6 +132,7 @@ namespace BDArmory.UI
             spawnedVesselCount = 0; // Reset our spawned vessel count.
             altitude = Math.Max(2, altitude); // Don't spawn too low.
             message = "Spawning " + crafts.Count + " vessels at an altitude of " + altitude + "m" + (crafts.Count > 8 ? ", this may take some time..." : ".");
+            Debug.Log("[VesselSpawner]: " + message);
             var spawnAirborne = altitude > 10;
             BDACompetitionMode.Instance.LogResults(); // Log results first.
             BDACompetitionMode.Instance.ResetCompetitionScores(); // Reset competition scores.
@@ -516,6 +517,7 @@ namespace BDArmory.UI
             crafts.Shuffle(); // Randomise the spawn order.
             continuousSpawnedVesselCount = 0; // Reset our spawned vessel count.
             message = "Spawning " + crafts.Count + " vessels" + (crafts.Count > 8 ? ", this may take some time..." : ".");
+            Debug.Log("[VesselSpawner]: " + message);
             BDACompetitionMode.Instance.LogResults(); // Log results first.
             BDACompetitionMode.Instance.ResetCompetitionScores(); // Reset competition scores.
             #endregion
