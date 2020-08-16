@@ -435,23 +435,22 @@ namespace BDArmory.UI
                 else // Add a new entry.
                 {
                     continuousSpawningScores[vessel.GetName()].scoreData.Add(continuousSpawningScores[vessel.GetName()].spawnCount - 1, BDACompetitionMode.Instance.Scores[vessel.GetName()]);
-                    BDACompetitionMode.Instance.Scores.Remove(vessel.GetName());
-                    BDACompetitionMode.Instance.Scores.Add(vessel.GetName(), new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count() });
+                    BDACompetitionMode.Instance.Scores[vessel.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count() };
                 }
             }
             if (BDACompetitionMode.Instance.whoCleanShotWho.ContainsKey(vessel.GetName()))
             {
-                continuousSpawningScores[vessel.GetName()].cleanKilledBy.Add(continuousSpawningScores[vessel.GetName()].spawnCount - 1, BDACompetitionMode.Instance.whoCleanShotWho[vessel.GetName()]);
+                continuousSpawningScores[vessel.GetName()].cleanKilledBy[continuousSpawningScores[vessel.GetName()].spawnCount - 1] = BDACompetitionMode.Instance.whoCleanShotWho[vessel.GetName()];
                 BDACompetitionMode.Instance.whoCleanShotWho.Remove(vessel.GetName());
             }
             if (BDACompetitionMode.Instance.whoCleanRammedWho.ContainsKey(vessel.GetName()))
             {
-                continuousSpawningScores[vessel.GetName()].cleanRammedBy.Add(continuousSpawningScores[vessel.GetName()].spawnCount - 1, BDACompetitionMode.Instance.whoCleanRammedWho[vessel.GetName()]);
+                continuousSpawningScores[vessel.GetName()].cleanRammedBy[continuousSpawningScores[vessel.GetName()].spawnCount - 1] = BDACompetitionMode.Instance.whoCleanRammedWho[vessel.GetName()];
                 BDACompetitionMode.Instance.whoCleanRammedWho.Remove(vessel.GetName());
             }
             if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vessel.GetName()))
             {
-                continuousSpawningScores[vessel.GetName()].cleanMissileKilledBy.Add(continuousSpawningScores[vessel.GetName()].spawnCount - 1, BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles[vessel.GetName()]);
+                continuousSpawningScores[vessel.GetName()].cleanMissileKilledBy[continuousSpawningScores[vessel.GetName()].spawnCount - 1] = BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles[vessel.GetName()];
                 BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vessel.GetName());
             }
         }
