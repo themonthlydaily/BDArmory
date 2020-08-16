@@ -664,7 +664,8 @@ namespace BDArmory.UI
                 {
                     if (message != "") message += "\n";
                     message += "Some vessels failed to spawn, aborting: " + failedVessels;
-                    yield break;
+                    Debug.Log("[VesselSpawner]: " + message);
+                    break;
                 }
                 // Activate the AI and fire up any new weapon managers that appeared.
                 if (vesselsToActivate.Count > 0)
@@ -708,9 +709,6 @@ namespace BDArmory.UI
                         }
                     }
                 }
-
-                // Make sure the BDACompetition's DeathOrder is empty.
-                // BDACompetitionMode.Instance.DeathOrder.Clear();
 
                 yield return new WaitForSeconds(1); // 1s between checks. Nothing much happens if nothing needs spawning.
             }
