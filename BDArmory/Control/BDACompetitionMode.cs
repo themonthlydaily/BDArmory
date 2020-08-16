@@ -1368,7 +1368,7 @@ namespace BDArmory.Control
                         }
 
                         // Update tag mode
-                        if (BDArmorySettings.TAG_MODE)
+                        if (BDArmorySettings.TAG_MODE && Scores.ContainsKey(vesselName))
                             UpdateTag(mf, vesselName, updateTickLength, previousNumberCompetitive, alive);
 
                         // after this point we're checking things that might result in kills.
@@ -2280,7 +2280,6 @@ namespace BDArmory.Control
         // Function to update tag
         private void UpdateTag(MissileFire mf, string key, double updateTickLength, int previousNumberCompetitive, HashSet<string> alive)
         {
-            // FIXME there is a KeyNotFoundException in here somewhere when exiting
             var vData = Scores[key];
             if (alive.Contains(key)) // Vessel that is being updated is alive
             {
@@ -2315,6 +2314,7 @@ namespace BDArmory.Control
                     var pilots = getAllPilots();
                     foreach (var pilot in pilots)
                     {
+                        if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; }
                         if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                         {
                             competitionStatus += (competitionStatus == "" ? "" : "\n") + pilot.vessel.GetDisplayName() + " is IT!";
@@ -2360,6 +2360,7 @@ namespace BDArmory.Control
                         var pilots = getAllPilots();
                         foreach (var pilot in pilots)
                         {
+                            if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 2 Scores doesn't contain " + pilot.vessel.GetName()); continue; }
                             pilot.weaponManager.SetTeam(BDTeam.Get(T.ToString()));
                             Scores[pilot.vessel.GetName()].tagIsIt = false;
                             pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
