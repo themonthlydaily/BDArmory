@@ -2315,7 +2315,6 @@ namespace BDArmory.Control
                     var pilots = getAllPilots();
                     foreach (var pilot in pilots)
                     {
-
                         if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                         {
                             competitionStatus += (competitionStatus == "" ? "" : "\n") + pilot.vessel.GetDisplayName() + " is IT!";
@@ -2369,9 +2368,12 @@ namespace BDArmory.Control
                         startTag = true;
                     }
                 }
-                else if (Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt) // "IT" player got a kill, let's log it
+                else
                 {
-                    Scores[Scores[key].LastPersonWhoDamagedMe()].tagKillsWhileIt++;
+                    if (Scores.ContainsKey(Scores[key].LastPersonWhoDamagedMe()) && Scores[Scores[key].LastPersonWhoDamagedMe()].tagIsIt) // "IT" player got a kill, let's log it
+                    {
+                        Scores[Scores[key].LastPersonWhoDamagedMe()].tagKillsWhileIt++;
+                    }
                 }
             }
         }
