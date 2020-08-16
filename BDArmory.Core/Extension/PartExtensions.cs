@@ -11,6 +11,8 @@ namespace BDArmory.Core.Extension
     {
         public static void AddDamage(this Part p, float damage)
         {
+            if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
+            
             //////////////////////////////////////////////////////////
             // Basic Add Hitpoints for compatibility
             //////////////////////////////////////////////////////////
@@ -33,6 +35,8 @@ namespace BDArmory.Core.Extension
                                                float caliber,
                                                bool isMissile)
         {
+            if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
+
             float damage_ = 0f;
 
             //////////////////////////////////////////////////////////
@@ -82,6 +86,8 @@ namespace BDArmory.Core.Extension
                                                float bulletDmgMult,
                                                float impactVelocity)
         {
+            if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
+
             //////////////////////////////////////////////////////////
             // Basic Kinetic Formula
             //////////////////////////////////////////////////////////

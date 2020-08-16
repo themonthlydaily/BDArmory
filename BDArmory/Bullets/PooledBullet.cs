@@ -10,6 +10,7 @@ using BDArmory.Parts;
 using BDArmory.Shaders;
 using BDArmory.UI;
 using BDArmory.Control;
+using BDArmory.Competition;
 using UnityEngine;
 
 namespace BDArmory.Bullets
@@ -98,6 +99,8 @@ namespace BDArmory.Bullets
         #endregion Declarations
 
         private Vector3[] linePositions = new Vector3[2];
+
+        private double distanceTraveled = 0;
 
         void OnEnable()
         {
@@ -221,6 +224,9 @@ namespace BDArmory.Bullets
 
             //calculate flight time for drag purposes
             flightTimeElapsed += Time.fixedDeltaTime;
+
+            // calculate flight distance for achievement purposes
+            distanceTraveled += currentVelocity.magnitude * Time.fixedDeltaTime;
 
             //Drag types currently only affect Impactvelocity
             //Numerical Integration is currently Broken
@@ -515,6 +521,8 @@ namespace BDArmory.Bullets
             if (aName != tName)
             {
                 //Debug.Log("[BDArmory]: Weapon from " + aName + " damaged " + tName);
+
+                BDAScoreService.Instance.TrackHit(aName, tName, bullet.name, distanceTraveled);
 
                 // update scoring structure on attacker
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(aName))

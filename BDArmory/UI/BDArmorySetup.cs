@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using BDArmory.Bullets;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -32,6 +33,8 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectVesselSwitcher;
         [BDAWindowSettingsField] public static Rect WindowRectWingCommander = new Rect(45, 75, 240, 800);
         [BDAWindowSettingsField] public static Rect WindowRectTargetingCam;
+
+        [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
 
         //reflection field lists
         FieldInfo[] iFs;
@@ -1359,6 +1362,16 @@ namespace BDArmory.UI
             return rects;
         }
 
+        List<Rect> SRight3Rects(float line)
+        {
+            var rectGap = settingsMargin / 3;
+            var rectWidth = ((settingsWidth - 2 * settingsMargin) / 2 - 3 * rectGap) / 3;
+            var rects = new List<Rect>();
+            rects.Add(new Rect(settingsWidth / 2 + rectGap / 2, line * settingsLineHeight, rectWidth, settingsLineHeight));
+            rects.Add(new Rect(settingsWidth / 2 + rectWidth + rectGap * 3 / 2, line * settingsLineHeight, rectWidth, settingsLineHeight));
+            rects.Add(new Rect(settingsWidth / 2 + 2 * rectWidth + rectGap * 5 / 2, line * settingsLineHeight, rectWidth, settingsLineHeight));
+            return rects;
+        }
 
         float settingsWidth;
         float settingsHeight;
@@ -1421,6 +1434,9 @@ namespace BDArmory.UI
             BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
             BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
             line++;
+            BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"));//"Tag Mode"
+            BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"));//"Paintball Mode"
+            line++;
             if (HighLogic.LoadedSceneIsEditor)
             {
                 if (BDArmorySettings.SHOW_CATEGORIES != (BDArmorySettings.SHOW_CATEGORIES = GUI.Toggle(SLeftRect(line), BDArmorySettings.SHOW_CATEGORIES, Localizer.Format("#LOC_BDArmory_Settings_ShowEditorSubcategories"))))//"Show Editor Subcategories"
@@ -1449,16 +1465,34 @@ namespace BDArmory.UI
                 if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
             }
-            var rects = SRight2Rects(line);
+            var rects = SRight3Rects(line);
             var guiSpawnPointLat = GUI.TextField(rects[0], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("G6"));
             var guiSpawnPointLon = GUI.TextField(rects[1], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("G6"));
+            var guiSpawnPointAlt = GUI.TextField(rects[2], "  " + BDArmorySettings.VESSEL_SPAWN_ALTITUDE.ToString("G6"));
             double spawnPointLat, spawnPointLon;
+            float spawnPointAlt;
             if (double.TryParse(guiSpawnPointLat, out spawnPointLat))
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnPointLat, -90), 90);
             if (double.TryParse(guiSpawnPointLon, out spawnPointLon))
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnPointLon, -180), 180);
+            if (float.TryParse(guiSpawnPointAlt, out spawnPointAlt))
+                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, spawnPointAlt);
             line++;
 
+            line++;
+
+            bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
+            BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+            line++;
+            if (remoteLoggingEnabled)
+            {
+                GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+                BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                line++;
+                GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionDuration")}: ({BDArmorySettings.COMPETITION_DURATION}mins)", leftLabel);
+                BDArmorySettings.COMPETITION_DURATION = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.COMPETITION_DURATION, 1, 10);
+                line++;
+            }
             line++;
 
             bool origPm = BDArmorySettings.PEACE_MODE;
@@ -1564,6 +1598,18 @@ namespace BDArmory.UI
                         SaveConfig();
                         windowSettingsEnabled = false;
                     }
+                    if (GUI.Button(SRightRect(line), "Sync Remote"))
+                    {
+                        string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
+                        if (!System.IO.Directory.Exists(vesselPath))
+                        {
+                            System.IO.Directory.CreateDirectory(vesselPath);
+                        }
+                        BDAScoreService.Instance.Configure(vesselPath, BDArmorySettings.COMPETITION_HASH);
+                        SaveConfig();
+                        windowSettingsEnabled = false;
+                    }
+                    line++;
                 }
                 else
                 {
@@ -1776,6 +1822,7 @@ namespace BDArmory.UI
             if (maySavethisInstance)
             {
                 BDAWindowSettingsField.Save();
+                SaveConfig();
             }
 
             GameEvents.onHideUI.Remove(HideGameUI);
