@@ -434,8 +434,27 @@ namespace BDArmory.UI
                     continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1] = BDACompetitionMode.Instance.Scores[vessel.GetName()];
                 else // Add a new entry.
                 {
+                    // Save the Score instance for the vessel.
                     continuousSpawningScores[vessel.GetName()].scoreData.Add(continuousSpawningScores[vessel.GetName()].spawnCount - 1, BDACompetitionMode.Instance.Scores[vessel.GetName()]);
                     BDACompetitionMode.Instance.Scores[vessel.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count() };
+                    // Re-insert some information needed for Tag.
+                    switch (continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].LastDamageWasFrom())
+                    {
+                        case DamageFrom.Bullet:
+                            BDACompetitionMode.Instance.Scores[vessel.GetName()].lastHitTime = continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].lastHitTime;
+                            BDACompetitionMode.Instance.Scores[vessel.GetName()].lastPersonWhoHitMe = continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].lastPersonWhoHitMe;
+                            break;
+                        case DamageFrom.Ram:
+                            BDACompetitionMode.Instance.Scores[vessel.GetName()].lastRammedTime = continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].lastRammedTime;
+                            BDACompetitionMode.Instance.Scores[vessel.GetName()].lastPersonWhoRammedMe = continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].lastPersonWhoRammedMe;
+                            break;
+                        case DamageFrom.Missile:
+                            BDACompetitionMode.Instance.Scores[vessel.GetName()].lastMissileHitTime = continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].lastMissileHitTime;
+                            BDACompetitionMode.Instance.Scores[vessel.GetName()].lastPersonWhoHitMeWithAMissile = continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].lastPersonWhoHitMeWithAMissile;
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             if (BDACompetitionMode.Instance.whoCleanShotWho.ContainsKey(vessel.GetName()))
@@ -463,7 +482,7 @@ namespace BDArmory.UI
             Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Dumping Results");
             foreach (var vesselName in continuousSpawningScores.Keys)
             {
-                Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: " + vesselName);
+                Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Name:" + vesselName);
                 Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  DEATHCOUNT:" + (continuousSpawningScores[vesselName].spawnCount - 1));
                 var whoShotMeScores = string.Join(", ", continuousSpawningScores[vesselName].scoreData.Where(kvp => kvp.Value.hitCounts.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.hitCounts.Select(kvp => kvp.Value + ":" + kvp.Key))));
                 if (whoShotMeScores != "") Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHOSHOTME:" + whoShotMeScores);

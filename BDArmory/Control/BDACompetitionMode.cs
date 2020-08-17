@@ -1023,7 +1023,7 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    int foundActiveParts = 0;
+                    int foundActiveParts = 0; // Note: this checks for exactly one of each part.
                     using (var wms = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator()) // Has a weapon manager
                         while (wms.MoveNext())
                             if (wms.Current != null)
@@ -1250,7 +1250,7 @@ namespace BDArmory.Control
                         // this vessel really is alive
                         if ((v.Current.vesselType != VesselType.Debris) && !vesselName.EndsWith("Debris")) // && !vesselName.EndsWith("Plane") && !vesselName.EndsWith("Probe"))
                         {
-                            if (DeathOrder.ContainsKey(vesselName))
+                            if (!VesselSpawner.Instance.vesselsSpawningContinuously && DeathOrder.ContainsKey(vesselName)) // This isn't an issue when continuous spawning is active.
                             {
                                 Debug.Log("[BDArmoryCompetition] Dead vessel found alive " + vesselName);
                                 //DeathOrder.Remove(vesselName);
@@ -2314,7 +2314,7 @@ namespace BDArmory.Control
                     var pilots = getAllPilots();
                     foreach (var pilot in pilots)
                     {
-                        if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; }
+                        if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen?
                         if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                         {
                             competitionStatus += (competitionStatus == "" ? "" : "\n") + pilot.vessel.GetDisplayName() + " is IT!";
