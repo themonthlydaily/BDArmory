@@ -762,9 +762,9 @@ namespace BDArmory.UI
                 if (score.outOfAmmoTime > 0 && now - score.outOfAmmoTime > BDArmorySettings.OUT_OF_AMMO_KILL_TIME)
                 {
                     var m = "Killing off " + vesselName + " as they exceeded the out-of-ammo kill time.";
-                    if (message != "") message += "\n";
-                    message += m;
-                    Debug.Log("[VesselSpawner]: " + message);
+                    if (BDACompetitionMode.Instance.competitionStatus != "") BDACompetitionMode.Instance.competitionStatus += "\n";
+                    BDACompetitionMode.Instance.competitionStatus += m;
+                    Debug.Log("[VesselSpawner]: " + m);
                     vessel.Die();
                     var partsToKill = new List<Part>(vessel.parts);
                     foreach (var part in partsToKill)
