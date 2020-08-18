@@ -1000,6 +1000,17 @@ namespace BDArmory.UI
             // Set the vessel size (FIXME various other vessel fields appear to not be set, e.g. CoM)
             protoVessel.vesselRef.vesselSize = shipConstruct.shipSize;
             shipFacility = shipConstruct.shipFacility;
+            switch (shipFacility)
+            {
+                case EditorFacility.SPH:
+                    protoVessel.vesselRef.vesselType = VesselType.Plane;
+                    break;
+                case EditorFacility.VAB:
+                    protoVessel.vesselRef.vesselType = VesselType.Ship;
+                    break;
+                default:
+                    break;
+            }
 
             // Store the id for later use
             vesselData.id = protoVessel.vesselRef.id;
