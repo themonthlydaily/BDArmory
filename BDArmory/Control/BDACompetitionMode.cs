@@ -1206,7 +1206,7 @@ namespace BDArmory.Control
         {
             // should be called every frame during flight scenes
             if (competitionStartTime < 0) return;
-            if (competitionStarting)
+            if (competitionIsActive)
                 competitionShouldBeRunning = true;
             if (competitionShouldBeRunning && !competitionIsActive)
             {

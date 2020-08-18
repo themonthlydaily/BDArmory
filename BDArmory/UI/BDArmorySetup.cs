@@ -1458,6 +1458,77 @@ namespace BDArmory.UI
             terrainAlertFrequency = GUI.HorizontalSlider(SRightRect(line), terrainAlertFrequency, 1f, 5f);
             BDArmorySettings.TERRAIN_ALERT_FREQUENCY = (int)terrainAlertFrequency;
             line++;
+            var outOfAmmoKillTimeStr = "never";
+            if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > -1 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 60)
+                outOfAmmoKillTimeStr = BDArmorySettings.OUT_OF_AMMO_KILL_TIME.ToString("G0") + "s";
+            else if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > 59 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 61)
+                outOfAmmoKillTimeStr = "1min";
+            else if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > 60)
+                outOfAmmoKillTimeStr = ((int)(BDArmorySettings.OUT_OF_AMMO_KILL_TIME / 60f)).ToString("G0") + "mins";
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_OutOfAmmoKillTime")}: ({outOfAmmoKillTimeStr})", leftLabel); // Out of ammo kill timer for continuous spawning mode.
+            float outOfAmmoKillTime;
+            switch ((int)BDArmorySettings.OUT_OF_AMMO_KILL_TIME)
+            {
+                case 0:
+                    outOfAmmoKillTime = 1f;
+                    break;
+                case 10:
+                    outOfAmmoKillTime = 2f;
+                    break;
+                case 20:
+                    outOfAmmoKillTime = 3f;
+                    break;
+                case 30:
+                    outOfAmmoKillTime = 4f;
+                    break;
+                case 45:
+                    outOfAmmoKillTime = 5f;
+                    break;
+                case 60:
+                    outOfAmmoKillTime = 6f;
+                    break;
+                case 120:
+                    outOfAmmoKillTime = 7f;
+                    break;
+                case 300:
+                    outOfAmmoKillTime = 8f;
+                    break;
+                default:
+                    outOfAmmoKillTime = 9f;
+                    break;
+            }
+            outOfAmmoKillTime = GUI.HorizontalSlider(SRightRect(line), outOfAmmoKillTime, 1f, 9f);
+            switch ((int)outOfAmmoKillTime)
+            {
+                case 1:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 0f; // 0s
+                    break;
+                case 2:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 10f; // 10s
+                    break;
+                case 3:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 20f; // 20s
+                    break;
+                case 4:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 30f; // 30s
+                    break;
+                case 5:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 45f; // 45s
+                    break;
+                case 6:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 60f; // 1 min
+                    break;
+                case 7:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 120f;// 2 mins
+                    break;
+                case 8:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 300f; // 5 mins
+                    break;
+                default:
+                    BDArmorySettings.OUT_OF_AMMO_KILL_TIME = -1f; // Never
+                    break;
+            }
+            line++;
             if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
             {
                 Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);

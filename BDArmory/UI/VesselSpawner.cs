@@ -418,6 +418,7 @@ namespace BDArmory.UI
         {
             public Vessel vessel; // The vessel.
             public int spawnCount = 1; // The number of times a craft has been spawned.
+            public double outOfAmmoTime = 0; // The time the vessel ran out of ammo.
             public Dictionary<int, ScoringData> scoreData = new Dictionary<int, ScoringData>();
             public Dictionary<int, string> cleanKilledBy = new Dictionary<int, string>();
             public Dictionary<int, string> cleanRammedBy = new Dictionary<int, string>();
@@ -436,7 +437,7 @@ namespace BDArmory.UI
                 {
                     // Save the Score instance for the vessel.
                     continuousSpawningScores[vessel.GetName()].scoreData.Add(continuousSpawningScores[vessel.GetName()].spawnCount - 1, BDACompetitionMode.Instance.Scores[vessel.GetName()]);
-                    BDACompetitionMode.Instance.Scores[vessel.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count() };
+                    BDACompetitionMode.Instance.Scores[vessel.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].tagIsIt };
                     // Re-insert some information needed for Tag.
                     switch (continuousSpawningScores[vessel.GetName()].scoreData[continuousSpawningScores[vessel.GetName()].spawnCount - 1].LastDamageWasFrom())
                     {
@@ -666,12 +667,15 @@ namespace BDArmory.UI
                                 vessel.vesselName += "_" + continuousSpawnedVesselCount; // This shouldn't give duplicates as there shouldn't be more than crafts.Count craft.
                             craftURLToVesselName.Add(craftURL, vessel.GetName()); // Store the craftURL -> vessel name.
                         }
+                        vessel.vesselName = craftURLToVesselName[craftURL]; // Assign the same (potentially modified) name to the craft each time.
                         if (!vesselsToActivate.Contains(vessel))
                             vesselsToActivate.Add(vessel);
                         if (!continuousSpawningScores.ContainsKey(vessel.GetName()))
-                            continuousSpawningScores.Add(vessel.GetName(), new ContinuousSpawningScores { vessel = vessel });
+                            continuousSpawningScores.Add(vessel.GetName(), new ContinuousSpawningScores());
                         else
                             ++continuousSpawningScores[vessel.GetName()].spawnCount;
+                        continuousSpawningScores[vessel.GetName()].vessel = vessel; // Update some values in the scoring structure.
+                        continuousSpawningScores[vessel.GetName()].outOfAmmoTime = 0;
                         ++continuousSpawnedVesselCount;
                         continuousSpawnedVesselCount %= crafts.Count;
                         Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
@@ -728,11 +732,45 @@ namespace BDArmory.UI
                     }
                 }
 
+                // Kill off vessels that are out of ammo for too long if we're in continuous spawning mode and a competition is active.
+                if (BDACompetitionMode.Instance.competitionIsActive)
+                    KillOffOutOfAmmoVessels();
+
                 yield return new WaitForSeconds(1); // 1s between checks. Nothing much happens if nothing needs spawning.
             }
             #endregion
             vesselsSpawningContinuously = false;
             Debug.Log("[VesselSpawner]: Continuous vessel spawning ended.");
+        }
+
+        public void KillOffOutOfAmmoVessels()
+        {
+            if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 0) return; // Never
+            var now = Planetarium.GetUniversalTime();
+            Vessel vessel;
+            MissileFire weaponManager;
+            ContinuousSpawningScores score;
+            foreach (var vesselName in continuousSpawningScores.Keys)
+            {
+                score = continuousSpawningScores[vesselName];
+                vessel = score.vessel;
+                if (vessel == null) continue; // Vessel hasn't been respawned yet.
+                weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                if (weaponManager == null) continue; // Weapon manager hasn't registered yet.
+                if (score.outOfAmmoTime == 0 && !weaponManager.HasWeaponsAndAmmo())
+                    score.outOfAmmoTime = Planetarium.GetUniversalTime();
+                if (score.outOfAmmoTime > 0 && now - score.outOfAmmoTime > BDArmorySettings.OUT_OF_AMMO_KILL_TIME)
+                {
+                    var m = "Killing off " + vesselName + " as they exceeded the out-of-ammo kill time.";
+                    if (message != "") message += "\n";
+                    message += m;
+                    Debug.Log("[VesselSpawner]: " + message);
+                    vessel.Die();
+                    var partsToKill = new List<Part>(vessel.parts);
+                    foreach (var part in partsToKill)
+                        part.Die();
+                }
+            }
         }
 
         // THE FOLLOWING STOLEN FROM VESSEL MOVER via BenBenWilde's autospawn (and tweaked slightly)
