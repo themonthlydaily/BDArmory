@@ -155,10 +155,11 @@ namespace BDArmory.FX
             }
             if (vesselsHitByMissiles.Count > 0)
             {
-                BDACompetitionMode.Instance.competitionStatus = "";
+                string message = "";
                 foreach (var vesselName in vesselsHitByMissiles.Keys)
-                    BDACompetitionMode.Instance.competitionStatus += (BDACompetitionMode.Instance.competitionStatus == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
-                BDACompetitionMode.Instance.competitionStatus += " parts damaged due to missile strike.";
+                    message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
+                message += " parts damaged due to missile strike.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
             }
             return result;

@@ -679,7 +679,7 @@ namespace BDArmory.UI
                         ++continuousSpawnedVesselCount;
                         continuousSpawnedVesselCount %= crafts.Count;
                         Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
-                        BDACompetitionMode.Instance.competitionStatus += (BDACompetitionMode.Instance.competitionStatus == "" ? "" : "\n") + "Spawned " + vessel.vesselName;
+                        BDACompetitionMode.Instance.competitionStatus.Add("Spawned " + vessel.vesselName);
                     }
                 }
                 if (failedVessels != "")
@@ -762,8 +762,7 @@ namespace BDArmory.UI
                 if (score.outOfAmmoTime > 0 && now - score.outOfAmmoTime > BDArmorySettings.OUT_OF_AMMO_KILL_TIME)
                 {
                     var m = "Killing off " + vesselName + " as they exceeded the out-of-ammo kill time.";
-                    if (BDACompetitionMode.Instance.competitionStatus != "") BDACompetitionMode.Instance.competitionStatus += "\n";
-                    BDACompetitionMode.Instance.competitionStatus += m;
+                    BDACompetitionMode.Instance.competitionStatus.Add(m);
                     Debug.Log("[VesselSpawner]: " + m);
                     vessel.Die();
                     var partsToKill = new List<Part>(vessel.parts);

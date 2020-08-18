@@ -217,41 +217,30 @@ namespace BDArmory.Control
                 cShadowRect.x += 2;
                 cShadowRect.y += 2;
                 cShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
-                string message = competitionStatus;
-                if (competitionStatus == "")
+
+                string currentVesselStatus = "";
+                if (FlightGlobals.ActiveVessel != null)
                 {
-                    if (FlightGlobals.ActiveVessel != null)
+                    var vesselName = FlightGlobals.ActiveVessel.GetName();
+                    string postFix = "";
+                    if (pilotActions.ContainsKey(vesselName))
                     {
-                        string postFix = "";
-                        if (pilotActions.ContainsKey(message))
-                        {
-                            postFix = " " + pilotActions[message];
-                        }
-                        if (Scores.ContainsKey(message))
-                        {
-                            ScoringData vData = Scores[message];
-                            if (Planetarium.GetUniversalTime() - vData.lastHitTime < 2)
-                            {
-                                postFix = " is taking damage from " + vData.lastPersonWhoHitMe;
-                            }
-                        }
-                        if (lastCompetitionStatus != "")
-                        {
-                            message = lastCompetitionStatus + "\n" + FlightGlobals.ActiveVessel.GetName() + postFix;
-                            lastCompetitionStatusTimer -= Time.deltaTime;
-                            if (lastCompetitionStatusTimer < 0f)
-                                lastCompetitionStatus = "";
-                        }
-                        else
-                            message = FlightGlobals.ActiveVessel.GetName() + postFix;
+                        postFix = " " + pilotActions[vesselName];
                     }
-                }
-                else
-                {
-                    lastCompetitionStatus = competitionStatus;
-                    lastCompetitionStatusTimer = 10f; // Show for 5s.
+                    if (Scores.ContainsKey(vesselName))
+                    {
+                        ScoringData vData = Scores[vesselName];
+                        if (Planetarium.GetUniversalTime() - vData.lastHitTime < 2)
+                        {
+                            postFix = " is taking damage from " + vData.lastPersonWhoHitMe;
+                        }
+                    }
+                    if (postFix != "" || vesselName != competitionStatus.lastActiveVessel)
+                        currentVesselStatus = vesselName + postFix;
+                    competitionStatus.lastActiveVessel = vesselName;
                 }
 
+                string message = competitionStatus.ToString() + "\n" + currentVesselStatus;
                 GUI.Label(cShadowRect, message, cShadowStyle);
                 GUI.Label(cLabelRect, message, cStyle);
                 if (!BDArmorySetup.GAME_UI_ENABLED && competitionStartTime > 0)
@@ -320,11 +309,24 @@ namespace BDArmory.Control
 
         //Competition mode
         public bool competitionStarting;
-        public string competitionStatus = "";
-        string lastCompetitionStatus = "";
-        float lastCompetitionStatusTimer = 0f;
         public bool competitionIsActive = false;
         Coroutine competitionRoutine;
+
+        public class CompetitionStatus
+        {
+            private List<Tuple<double, string>> status = new List<Tuple<double, string>>();
+            public void Add(string message) { status.Add(new Tuple<double, string>(Planetarium.GetUniversalTime(), message)); }
+            public override string ToString()
+            {
+                var now = Planetarium.GetUniversalTime();
+                status = status.Where(s => now - s.Item1 < 5).ToList(); // Update the list of status messages. Only show messages for 5s.
+                return string.Join("\n", status.Select(s => s.Item2)); // Join them together to display them.
+            }
+            public int Count { get { return status.Count; } }
+            public string lastActiveVessel = "";
+        }
+
+        public CompetitionStatus competitionStatus = new CompetitionStatus();
 
         bool startCompetitionNow = false;
         public void StartCompetitionNow() // Skip the "Competition: Waiting for teams to get in position."
@@ -377,7 +379,7 @@ namespace BDArmory.Control
         {
             competitionStarting = true;
             startTag = true; // Tag entry condition, should be true even if tag is not currently enabled, so if tag is enabled later in the competition it will function
-            competitionStatus = "Competition: Pilots are taking off.";
+            competitionStatus.Add("Competition: Pilots are taking off.");
             if (VesselSpawner.Instance)
                 VesselSpawner.Instance.message = "";
             var pilots = new Dictionary<BDTeam, List<IBDAIControl>>();
@@ -430,7 +432,7 @@ namespace BDArmory.Control
             if (pilots.Count < 2)
             {
                 Debug.Log("[BDArmory]: Unable to start competition mode - one or more teams is empty");
-                competitionStatus = "Competition: Failed!  One or more teams is empty.";
+                competitionStatus.Add("Competition: Failed!  One or more teams is empty.");
                 yield return new WaitForSeconds(2);
                 competitionStarting = false;
                 competitionIsActive = false;
@@ -443,7 +445,7 @@ namespace BDArmory.Control
                 {
                     if (pilotList.Current.Value == null)
                     {
-                        competitionStatus = "Competition: Teams got adjusted during competition start-up, aborting.";
+                        competitionStatus.Add("Competition: Teams got adjusted during competition start-up, aborting.");
                         StopCompetition();
                         yield break;
                     }
@@ -470,12 +472,12 @@ namespace BDArmory.Control
                 while (leader.MoveNext())
                     if (leader.Current == null)
                     {
-                        competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
+                        competitionStatus.Add("Competition: A leader vessel has disappeared during competition start-up, aborting.");
                         StopCompetition();
                         yield break;
                     }
 
-            competitionStatus = "Competition: Sending pilots to start position.";
+            competitionStatus.Add("Competition: Sending pilots to start position.");
             Vector3 center = Vector3.zero;
             using (var leader = leaders.GetEnumerator())
                 while (leader.MoveNext())
@@ -494,7 +496,7 @@ namespace BDArmory.Control
             Vector3 centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
 
             //wait till everyone is in position
-            competitionStatus = "Competition: Waiting for teams to get in position.";
+            competitionStatus.Add("Competition: Waiting for teams to get in position.");
             bool waiting = true;
             var sqrDistance = distance * distance;
             while (waiting && !startCompetitionNow)
@@ -504,7 +506,7 @@ namespace BDArmory.Control
                 foreach (var leader in leaders)
                     if (leader == null)
                     {
-                        competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
+                        competitionStatus.Add("Competition: A leader vessel has disappeared during competition start-up, aborting.");
                         StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
                         yield break;
                     }
@@ -525,7 +527,7 @@ namespace BDArmory.Control
                                 }
                                 catch
                                 {
-                                    competitionStatus = "Competition: A leader vessel has disappeared during competition start-up, aborting.";
+                                    competitionStatus.Add("Competition: A leader vessel has disappeared during competition start-up, aborting.");
                                     StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
                                     yield break;
                                 }
@@ -534,7 +536,7 @@ namespace BDArmory.Control
                         // Increase the distance for large teams
                         if (!pilots.ContainsKey(leader.Current.weaponManager.Team))
                         {
-                            competitionStatus = "Competition: The teams were changed during competition start-up, aborting.";
+                            competitionStatus.Add("Competition: The teams were changed during competition start-up, aborting.");
                             StopCompetition();
                             yield break;
                         }
@@ -558,14 +560,14 @@ namespace BDArmory.Control
             {
                 if (teamPilots == null)
                 {
-                    competitionStatus = "Competition: Teams have been changed during competition start-up, aborting.";
+                    competitionStatus.Add("Competition: Teams have been changed during competition start-up, aborting.");
                     StopCompetition();
                     yield break;
                 }
                 foreach (var pilot in teamPilots)
                     if (pilot == null)
                     {
-                        competitionStatus = "Competition: A pilot has disappeared from team during competition start-up, aborting.";
+                        competitionStatus.Add("Competition: A pilot has disappeared from team during competition start-up, aborting.");
                         StopCompetition(); // Check that the team pilots haven't been changed during the competition startup.
                         yield break;
                     }
@@ -589,10 +591,8 @@ namespace BDArmory.Control
                             pilot.Current.vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
                         }
 
-            competitionStatus = "Competition starting!  Good luck!";
+            competitionStatus.Add("Competition starting!  Good luck!");
             yield return new WaitForSeconds(2);
-            competitionStatus = "";
-            lastCompetitionStatus = "";
             competitionIsActive = true; //start logging ramming now that the competition has officially started
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
@@ -867,7 +867,7 @@ namespace BDArmory.Control
             foreach (var cmdEvent in events)
             {
                 // parse the event
-                competitionStatus = cmdEvent;
+                competitionStatus.Add(cmdEvent);
                 var parts = cmdEvent.Split(':');
                 if (parts.Count() == 1)
                 {
@@ -1003,8 +1003,6 @@ namespace BDArmory.Control
                         break;
                 }
             }
-            competitionStatus = "";
-            lastCompetitionStatus = "";
             // will need a terminator routine
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection.
@@ -1222,8 +1220,6 @@ namespace BDArmory.Control
             HashSet<Vessel> vesselsToKill = new HashSet<Vessel>();
             nextUpdateTick = nextUpdateTick + updateTickLength;
             int numberOfCompetitiveVessels = 0;
-            if (!competitionStarting)
-                competitionStatus = "";
             HashSet<string> alive = new HashSet<string>();
             string doaUpdate = "ALIVE: ";
             //Debug.Log("[BDArmoryCompetitionMode] Calling Update");
@@ -1406,11 +1402,11 @@ namespace BDArmory.Control
                                 outOfAmmo.Add(vesselName);
                                 if (vData != null && (Planetarium.GetUniversalTime() - vData.lastHitTime < 2))
                                 {
-                                    competitionStatus = vesselName + " damaged by " + vData.LastPersonWhoDamagedMe() + " and lost weapons";
+                                    competitionStatus.Add(vesselName + " damaged by " + vData.LastPersonWhoDamagedMe() + " and lost weapons");
                                 }
                                 else
                                 {
-                                    competitionStatus = vesselName + " is out of Ammunition";
+                                    competitionStatus.Add(vesselName + " is out of Ammunition");
                                 }
                             }
                             if (mf.guardMode) // If we're in guard mode, check to see if we should disable it.
@@ -1431,7 +1427,7 @@ namespace BDArmory.Control
                             if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15))
                             {
                                 vesselsToKill.Add(mf.vessel);
-                                competitionStatus = vesselName + " landed too long.";
+                                competitionStatus.Add(vesselName + " landed too long.");
                             }
                         }
 
@@ -1461,7 +1457,7 @@ namespace BDArmory.Control
                             if (KillTimer[vesselName] > 15)
                             {
                                 vesselsToKill.Add(mf.vessel);
-                                competitionStatus = vesselName + " exceeded kill timer";
+                                competitionStatus.Add(vesselName + " exceeded kill timer");
                             }
                             else if (KillTimer[vesselName] < 0)
                             {
@@ -1485,14 +1481,14 @@ namespace BDArmory.Control
             {
                 Debug.Log("[BDACompetitionMode] Setting Pinata Flag to Alive!");
                 pinataAlive = true;
-                competitionStatus = "Enabling Pinata";
+                competitionStatus.Add("Enabling Pinata");
             }
             else if (pinataAlive && !alive.Contains("Pinata"))
             {
                 // switch everyone onto separate teams when the Pinata Dies
                 LoadedVesselSwitcher.MassTeamSwitch();
                 pinataAlive = false;
-                competitionStatus = "Pinata is dead - competition is now a Free for all";
+                competitionStatus.Add("Pinata is dead - competition is now a Free for all");
                 // start kill clock
                 if (!killerGMenabled)
                 {
@@ -1592,10 +1588,10 @@ namespace BDArmory.Control
                                 {
                                     case DamageFrom.Bullet:
                                     case DamageFrom.Missile:
-                                        competitionStatus = key + " was killed by " + whoKilledMe;
+                                        competitionStatus.Add(key + " was killed by " + whoKilledMe);
                                         break;
                                     case DamageFrom.Ram:
-                                        competitionStatus = key + " was rammed by " + whoKilledMe;
+                                        competitionStatus.Add(key + " was rammed by " + whoKilledMe);
                                         break;
                                     default:
                                         break;
@@ -1603,7 +1599,7 @@ namespace BDArmory.Control
                             }
                             else
                             {
-                                competitionStatus = key + " was killed";
+                                competitionStatus.Add(key + " was killed");
                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:NOBODY");
                             }
                         }
@@ -1615,10 +1611,10 @@ namespace BDArmory.Control
 
             if ((Planetarium.GetUniversalTime() > gracePeriod) && numberOfCompetitiveVessels < 2 && !VesselSpawner.Instance.vesselsSpawningContinuously)
             {
-                competitionStatus = "All Pilots are Dead";
+                competitionStatus.Add("All Pilots are Dead");
                 foreach (string key in alive)
                 {
-                    competitionStatus = key + " wins the round!";
+                    competitionStatus.Add(key + " wins the round!");
                 }
                 if (dumpedResults > 0)
                 {
@@ -1843,7 +1839,7 @@ namespace BDArmory.Control
             {
                 var vessel = rammingInformation[vesselName].vessel;
                 var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
+                                                                                     // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
                 Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
@@ -2195,9 +2191,9 @@ namespace BDArmory.Control
             if (logToCompetitionStatus)
             {
                 if (!headOn)
-                    competitionStatus = rammedVesselName + " got RAMMED by " + rammingVesselName + " and lost " + rammedPartsLost + " parts (" + rammingVesselName + " lost " + rammingPartsLost + " parts).";
+                    competitionStatus.Add(rammedVesselName + " got RAMMED by " + rammingVesselName + " and lost " + rammedPartsLost + " parts (" + rammingVesselName + " lost " + rammingPartsLost + " parts).");
                 else
-                    competitionStatus = rammedVesselName + " and " + rammingVesselName + " RAMMED each other and lost " + rammedPartsLost + " and " + rammingPartsLost + " parts, respectively.";
+                    competitionStatus.Add(rammedVesselName + " and " + rammingVesselName + " RAMMED each other and lost " + rammedPartsLost + " and " + rammingPartsLost + " parts, respectively.");
             }
             if (logToDebug)
             {
@@ -2325,7 +2321,7 @@ namespace BDArmory.Control
                         if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen? This occurred for a vessel that got labelled as a Rover!
                         if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                         {
-                            competitionStatus += (competitionStatus == "" ? "" : "\n") + pilot.vessel.GetDisplayName() + " is IT!";
+                            competitionStatus.Add(pilot.vessel.GetDisplayName() + " is IT!");
                             pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
                             Scores[pilot.vessel.GetName()].tagIsIt = true;
                             Scores[pilot.vessel.GetName()].tagTimesIt++;
@@ -2360,7 +2356,7 @@ namespace BDArmory.Control
                         Scores[tagKillerIs].tagScore += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength)
                             * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
                         Debug.Log("[BDArmory]: " + tagKillerIs + " is IT!");
-                        competitionStatus = (competitionStatus == "" ? "" : "\n") + tagKillerIs + " is IT!";
+                        competitionStatus.Add(tagKillerIs + " is IT!");
                     }
                     else // We don't have a killer who is alive, reset teams
                     {
