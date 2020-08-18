@@ -367,6 +367,7 @@ namespace BDArmory.Control
             competitionStarting = false;
             competitionIsActive = false;
             competitionStartTime = -1;
+            competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
             rammingInformation = null; // Reset the ramming information.
         }
@@ -1196,6 +1197,7 @@ namespace BDArmory.Control
                 LogRamming();
         }
 
+        bool competitionShouldBeRunning = false;
         // the competition update system
         // cleans up dead vessels, tries to track kills (badly)
         // all of these are based on the vessel name which is probably sub optimal
@@ -1204,6 +1206,12 @@ namespace BDArmory.Control
         {
             // should be called every frame during flight scenes
             if (competitionStartTime < 0) return;
+            if (competitionStarting)
+                competitionShouldBeRunning = true;
+            if (competitionShouldBeRunning && !competitionIsActive)
+            {
+                Debug.Log("DEBUG Competition stopped unexpectedly!");
+            }
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)
             //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))
@@ -1605,7 +1613,7 @@ namespace BDArmory.Control
             }
             deadOrAlive = doaUpdate;
 
-            if ((Planetarium.GetUniversalTime() > gracePeriod) && numberOfCompetitiveVessels < 2)
+            if ((Planetarium.GetUniversalTime() > gracePeriod) && numberOfCompetitiveVessels < 2 && !VesselSpawner.Instance.vesselsSpawningContinuously)
             {
                 competitionStatus = "All Pilots are Dead";
                 foreach (string key in alive)
@@ -2314,7 +2322,7 @@ namespace BDArmory.Control
                     var pilots = getAllPilots();
                     foreach (var pilot in pilots)
                     {
-                        if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen?
+                        if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen? This occurred for a vessel that got labelled as a Rover!
                         if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                         {
                             competitionStatus += (competitionStatus == "" ? "" : "\n") + pilot.vessel.GetDisplayName() + " is IT!";
