@@ -250,7 +250,6 @@ namespace BDArmory.Competition
             // }
             UI.LoadedVesselSwitcher.Instance.DoPostVesselSpawn();
             yield return new WaitForFixedUpdate();
-            spawner.message = ""; // Clear any spawning messages.
 
             status = StatusType.RunningHeat;
             // NOTE: runs in separate coroutine
@@ -265,7 +264,7 @@ namespace BDArmory.Competition
 
             // stop competition
             BDACompetitionMode.Instance.StopCompetition();
-            BDACompetitionMode.Instance.LogResults(); // Make sure the results are dumped to the log.
+            BDACompetitionMode.Instance.LogResults("for BDAScoreService"); // Make sure the results are dumped to the log.
 
             // status = StatusType.RemovingVessels;
             // // remove all spawned vehicles // Note: Vessel and debris clean-up happens during vessel spawning (also the currently focussed vessel doesn't get killed when telling it to Die...)

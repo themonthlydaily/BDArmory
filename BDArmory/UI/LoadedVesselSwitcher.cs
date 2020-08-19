@@ -613,6 +613,10 @@ namespace BDArmory.UI
                                     {
                                         scoreData.lastPersonWhoHitMe = "BIG RED BUTTON"; // only do this if it's not already damaged
                                     }
+                                    scoreData.gmKillReason = GMKillReason.BigRedButton; // Indicate that it was us who killed it and remove any "clean" kills.
+                                    if (BDACompetitionMode.Instance.whoCleanShotWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWho.Remove(vesselName);
+                                    if (BDACompetitionMode.Instance.whoCleanRammedWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanRammedWho.Remove(vesselName);
+                                    if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vesselName);
                                     Misc.Misc.ForceDeadVessel(wm.Current.vessel);
                                 }
                             }
