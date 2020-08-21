@@ -645,7 +645,9 @@ namespace BDArmory.UI
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
                     if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
-                    if (BDACompetitionMode.Instance.Scores[key].tagScore > 0)
+                    if (_continuousVesselSpawning && BDACompetitionMode.Instance.Scores[key].tagTotalTime > 0)
+                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagTotalTime.ToString("0.0");
+                    else if (BDACompetitionMode.Instance.Scores[key].tagScore > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagScore.ToString("0.0");
                     switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
                     {
