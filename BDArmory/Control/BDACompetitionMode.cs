@@ -1277,51 +1277,51 @@ namespace BDArmory.Control
                             {
                                 if (mf.vessel.Landed)
                                 {
-                                    pilotActions[vesselName] = "is landed";
+                                    pilotActions[vesselName] = " is landed";
                                 }
                                 else
                                 {
-                                    pilotActions[vesselName] = "is splashed";
+                                    pilotActions[vesselName] = " is splashed";
                                 }
                             }
                             var activity = mf.AI.currentStatus;
                             if (activity == "Taking off")
-                                pilotActions[vesselName] = "is taking off";
+                                pilotActions[vesselName] = " is taking off";
                             else if (activity == "Follow")
                             {
                                 if (mf.AI.commandLeader != null && mf.AI.commandLeader.vessel != null)
-                                    pilotActions[vesselName] = "is following " + mf.AI.commandLeader.vessel.GetName();
+                                    pilotActions[vesselName] = " is following " + mf.AI.commandLeader.vessel.GetName();
                             }
                             else if (activity.StartsWith("Gain Alt"))
-                                pilotActions[vesselName] = "is gaining altitude";
+                                pilotActions[vesselName] = " is gaining altitude";
                             else if (activity.StartsWith("Terrain"))
-                                pilotActions[vesselName] = "is avoiding terrain";
+                                pilotActions[vesselName] = " is avoiding terrain";
                             else if (activity == "Orbiting")
-                                pilotActions[vesselName] = "is orbiting";
+                                pilotActions[vesselName] = " is orbiting";
                             else if (activity == "Extending")
-                                pilotActions[vesselName] = "is extending ";
+                                pilotActions[vesselName] = " is extending ";
                             else if (activity == "AvoidCollision")
-                                pilotActions[vesselName] = "is avoiding collision";
+                                pilotActions[vesselName] = " is avoiding collision";
                             else if (activity == "Evading")
                             {
                                 if (mf.incomingThreatVessel != null)
-                                    pilotActions[vesselName] = "is evading " + mf.incomingThreatVessel.GetName();
+                                    pilotActions[vesselName] = " is evading " + mf.incomingThreatVessel.GetName();
                                 else
-                                    pilotActions[vesselName] = "is taking evasive action";
+                                    pilotActions[vesselName] = " is taking evasive action";
                             }
                             else if (activity == "Attack")
                             {
                                 if (mf.currentTarget != null && mf.currentTarget.name != null)
-                                    pilotActions[vesselName] = "is attacking " + mf.currentTarget.Vessel.GetName();
+                                    pilotActions[vesselName] = " is attacking " + mf.currentTarget.Vessel.GetName();
                                 else
-                                    pilotActions[vesselName] = "is attacking";
+                                    pilotActions[vesselName] = " is attacking";
                             }
                             else if (activity == "Ramming Speed!")
                             {
                                 if (mf.currentTarget != null && mf.currentTarget.name != null)
-                                    pilotActions[vesselName] = "is trying to ram " + mf.currentTarget.Vessel.GetName();
+                                    pilotActions[vesselName] = " is trying to ram " + mf.currentTarget.Vessel.GetName();
                                 else
-                                    pilotActions[vesselName] = "is in ramming speed";
+                                    pilotActions[vesselName] = " is in ramming speed";
                             }
                         }
 
@@ -1386,7 +1386,7 @@ namespace BDArmory.Control
                                 }
                                 if (mf.currentTarget != null && mf.currentTarget.Vessel != null)
                                 {
-                                    pilotActions[vesselName] = "is shooting at " + mf.currentTarget.Vessel.GetName();
+                                    pilotActions[vesselName] = " is shooting at " + mf.currentTarget.Vessel.GetName();
                                 }
                             }
                         }
@@ -1507,7 +1507,7 @@ namespace BDArmory.Control
 
                             // adding pilot into death order
                             DeathOrder[key] = DeathOrder.Count;
-                            pilotActions[key] = "is Dead";
+                            pilotActions[key] = " is Dead";
                             var whoKilledMe = "";
 
                             if (Scores.ContainsKey(key))
