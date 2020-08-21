@@ -227,7 +227,7 @@ namespace BDArmory.Control
                     string postFix = "";
                     if (pilotActions.ContainsKey(vesselName))
                     {
-                        postFix = " " + pilotActions[vesselName];
+                        postFix = " is " + pilotActions[vesselName];
                     }
                     if (Scores.ContainsKey(vesselName))
                     {
