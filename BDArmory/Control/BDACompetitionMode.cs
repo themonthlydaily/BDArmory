@@ -226,16 +226,12 @@ namespace BDArmory.Control
                     var vesselName = FlightGlobals.ActiveVessel.GetName();
                     string postFix = "";
                     if (pilotActions.ContainsKey(vesselName))
-                    {
-                        postFix = " is " + pilotActions[vesselName];
-                    }
+                        postFix = pilotActions[vesselName];
                     if (Scores.ContainsKey(vesselName))
                     {
                         ScoringData vData = Scores[vesselName];
                         if (Planetarium.GetUniversalTime() - vData.lastHitTime < 2)
-                        {
                             postFix = " is taking damage from " + vData.lastPersonWhoHitMe;
-                        }
                     }
                     if (postFix != "" || vesselName != competitionStatus.lastActiveVessel)
                         currentVesselStatus = vesselName + postFix;
@@ -1281,51 +1277,51 @@ namespace BDArmory.Control
                             {
                                 if (mf.vessel.Landed)
                                 {
-                                    pilotActions[vesselName] = "landed";
+                                    pilotActions[vesselName] = "is landed";
                                 }
                                 else
                                 {
-                                    pilotActions[vesselName] = "splashed";
+                                    pilotActions[vesselName] = "is splashed";
                                 }
                             }
                             var activity = mf.AI.currentStatus;
                             if (activity == "Taking off")
-                                pilotActions[vesselName] = "taking off";
+                                pilotActions[vesselName] = "is taking off";
                             else if (activity == "Follow")
                             {
                                 if (mf.AI.commandLeader != null && mf.AI.commandLeader.vessel != null)
-                                    pilotActions[vesselName] = "following " + mf.AI.commandLeader.vessel.GetName();
+                                    pilotActions[vesselName] = "is following " + mf.AI.commandLeader.vessel.GetName();
                             }
                             else if (activity.StartsWith("Gain Alt"))
-                                pilotActions[vesselName] = "gaining altitude";
+                                pilotActions[vesselName] = "is gaining altitude";
                             else if (activity.StartsWith("Terrain"))
-                                pilotActions[vesselName] = "avoiding terrain";
+                                pilotActions[vesselName] = "is avoiding terrain";
                             else if (activity == "Orbiting")
-                                pilotActions[vesselName] = "orbiting";
+                                pilotActions[vesselName] = "is orbiting";
                             else if (activity == "Extending")
-                                pilotActions[vesselName] = "extending ";
+                                pilotActions[vesselName] = "is extending ";
                             else if (activity == "AvoidCollision")
-                                pilotActions[vesselName] = "avoiding collision";
+                                pilotActions[vesselName] = "is avoiding collision";
                             else if (activity == "Evading")
                             {
                                 if (mf.incomingThreatVessel != null)
-                                    pilotActions[vesselName] = "evading " + mf.incomingThreatVessel.GetName();
+                                    pilotActions[vesselName] = "is evading " + mf.incomingThreatVessel.GetName();
                                 else
-                                    pilotActions[vesselName] = "taking evasive action";
+                                    pilotActions[vesselName] = "is taking evasive action";
                             }
                             else if (activity == "Attack")
                             {
                                 if (mf.currentTarget != null && mf.currentTarget.name != null)
-                                    pilotActions[vesselName] = "attacking " + mf.currentTarget.Vessel.GetName();
+                                    pilotActions[vesselName] = "is attacking " + mf.currentTarget.Vessel.GetName();
                                 else
-                                    pilotActions[vesselName] = "attacking";
+                                    pilotActions[vesselName] = "is attacking";
                             }
                             else if (activity == "Ramming Speed!")
                             {
                                 if (mf.currentTarget != null && mf.currentTarget.name != null)
-                                    pilotActions[vesselName] = "trying to ram " + mf.currentTarget.Vessel.GetName();
+                                    pilotActions[vesselName] = "is trying to ram " + mf.currentTarget.Vessel.GetName();
                                 else
-                                    pilotActions[vesselName] = "in ramming speed";
+                                    pilotActions[vesselName] = "is in ramming speed";
                             }
                         }
 
@@ -1390,7 +1386,7 @@ namespace BDArmory.Control
                                 }
                                 if (mf.currentTarget != null && mf.currentTarget.Vessel != null)
                                 {
-                                    pilotActions[vesselName] = "shooting at " + mf.currentTarget.Vessel.GetName();
+                                    pilotActions[vesselName] = "is shooting at " + mf.currentTarget.Vessel.GetName();
                                 }
                             }
                         }
@@ -1511,7 +1507,7 @@ namespace BDArmory.Control
 
                             // adding pilot into death order
                             DeathOrder[key] = DeathOrder.Count;
-                            pilotActions[key] = "Dead";
+                            pilotActions[key] = "is Dead";
                             var whoKilledMe = "";
 
                             if (Scores.ContainsKey(key))
