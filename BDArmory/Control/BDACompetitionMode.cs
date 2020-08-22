@@ -2320,29 +2320,33 @@ namespace BDArmory.Control
 
                     // Update teams
                     var pilots = getAllPilots();
-                    foreach (var pilot in pilots)
-                    {
-                        if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen? This occurred for a vessel that got labelled as a Rover!
-                        if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
+                    if (pilots.All(p => p.vessel.GetName() != vData.LastPersonWhoDamagedMe())) // IT was killed off by GM or BRB.
+                        TagResetTeams();
+                    else
+                        foreach (var pilot in pilots)
                         {
-                            competitionStatus.Add(pilot.vessel.GetDisplayName() + " is IT!");
-                            pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
-                            Scores[pilot.vessel.GetName()].tagIsIt = true;
-                            Scores[pilot.vessel.GetName()].tagTimesIt++;
-                            pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[8]); // Trigger AG8 on becoming "IT"
-                            Scores[pilot.vessel.GetName()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength);
-                            Scores[pilot.vessel.GetName()].tagScore += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength)
-                                * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
-                            Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is IT!");
+                            if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen? This occurred for a vessel with a command seat that got labelled as a Rover!
+                            if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
+                            {
+                                if (pilot.vessel.GetName() == key) Debug.Log("DEBUG " + key + " tagged themself with " + vData.LastDamageWasFrom() + " at " + vData.LastDamageTime().ToString("G1") + "!");
+                                competitionStatus.Add(pilot.vessel.GetDisplayName() + " is IT!");
+                                pilot.weaponManager.SetTeam(BDTeam.Get("IT"));
+                                Scores[pilot.vessel.GetName()].tagIsIt = true;
+                                Scores[pilot.vessel.GetName()].tagTimesIt++;
+                                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[8]); // Trigger AG8 on becoming "IT"
+                                Scores[pilot.vessel.GetName()].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength);
+                                Scores[pilot.vessel.GetName()].tagScore += Math.Min(Planetarium.GetUniversalTime() - lastDamageTime, updateTickLength)
+                                    * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
+                                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is IT!");
+                            }
+                            else // Everyone else is "NOT IT"
+                            {
+                                pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
+                                Scores[pilot.vessel.GetName()].tagIsIt = false;
+                                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
+                                                                                     // Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
+                            }
                         }
-                        else // Everyone else is "NOT IT"
-                        {
-                            pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
-                            Scores[pilot.vessel.GetName()].tagIsIt = false;
-                            pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
-                            // Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
-                        }
-                    }
                 }
             }
             else // Vessel that is being updated is dead
@@ -2354,28 +2358,18 @@ namespace BDArmory.Control
                     var tagKillerIs = Scores[key].LastPersonWhoDamagedMe();
                     if ((Scores.ContainsKey(tagKillerIs)) && (tagKillerIs != "") && (alive.Contains(tagKillerIs))) // We have a killer who is alive
                     {
+                        if (tagKillerIs == key) Debug.Log("DEBUG " + tagKillerIs + " tagged themself to death with " + vData.LastDamageWasFrom() + " at " + vData.LastDamageTime().ToString("G1") + "!");
                         Scores[tagKillerIs].tagIsIt = true;
                         Scores[tagKillerIs].tagTimesIt++;
                         Scores[tagKillerIs].tagTotalTime += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength);
                         Scores[tagKillerIs].tagScore += Math.Min(Planetarium.GetUniversalTime() - Scores[key].LastDamageTime(), updateTickLength)
                             * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
-                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + tagKillerIs + " is IT!");
+                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + " died, " + tagKillerIs + " is IT!"); // FIXME, killing the IT craft with the GM/BRB breaks this.
                         competitionStatus.Add(tagKillerIs + " is IT!");
                     }
                     else // We don't have a killer who is alive, reset teams
-                    {
-                        char T = 'A';
-                        var pilots = getAllPilots();
-                        foreach (var pilot in pilots)
-                        {
-                            if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 2 Scores doesn't contain " + pilot.vessel.GetName()); continue; }
-                            pilot.weaponManager.SetTeam(BDTeam.Get(T.ToString()));
-                            Scores[pilot.vessel.GetName()].tagIsIt = false;
-                            pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
-                            T++;
-                        }
-                        startTag = true;
-                    }
+                        TagResetTeams();
+
                 }
                 else
                 {
@@ -2385,6 +2379,21 @@ namespace BDArmory.Control
                     }
                 }
             }
+        }
+
+        void TagResetTeams()
+        {
+            char T = 'A';
+            var pilots = getAllPilots();
+            foreach (var pilot in pilots)
+            {
+                if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 2 Scores doesn't contain " + pilot.vessel.GetName()); continue; }
+                pilot.weaponManager.SetTeam(BDTeam.Get(T.ToString()));
+                Scores[pilot.vessel.GetName()].tagIsIt = false;
+                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
+                T++;
+            }
+            startTag = true;
         }
 
         // A filter for log messages so Scott can do other stuff depending on the content.
