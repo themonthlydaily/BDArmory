@@ -423,12 +423,12 @@ namespace BDArmory.Control
 
             foreach (var vname in Scores.Keys)
             {
-                Debug.Log("[BDACompetitionMode]: Adding Score Tracker For " + vname);
+                Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Adding Score Tracker For " + vname);
             }
 
             if (pilots.Count < 2)
             {
-                Debug.Log("[BDACompetitionMode]: Unable to start competition mode - one or more teams is empty");
+                Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start competition mode - one or more teams is empty");
                 competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
                 yield return new WaitForSeconds(2);
                 competitionStarting = false;
@@ -868,7 +868,7 @@ namespace BDArmory.Control
                 var parts = cmdEvent.Split(':');
                 if (parts.Count() == 1)
                 {
-                    Log("[BDACompetitionMode] Competition Command not parsed correctly " + cmdEvent);
+                    Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Competition Command not parsed correctly " + cmdEvent);
                     break;
                 }
                 var timeStep = int.Parse(parts[0]);
@@ -910,7 +910,7 @@ namespace BDArmory.Control
                             }
                             else
                             {
-                                Debug.Log("[BDACompetitionMode]: Competition Command not parsed correctly " + cmdEvent);
+                                Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Competition Command not parsed correctly " + cmdEvent);
                             }
                         }
                         break;
@@ -1158,9 +1158,9 @@ namespace BDArmory.Control
                     {
                         Scores[vesselName].lastPersonWhoHitMe = "GM";
                         Scores[vesselName].gmKillReason = GMKillReason.GM; // Indicate that it was us who killed it and remove any "clean" kills.
-                        if (BDACompetitionMode.Instance.whoCleanShotWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWho.Remove(vesselName);
-                        if (BDACompetitionMode.Instance.whoCleanRammedWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanRammedWho.Remove(vesselName);
-                        if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vesselName);
+                        if (whoCleanShotWho.ContainsKey(vesselName)) whoCleanShotWho.Remove(vesselName);
+                        if (whoCleanRammedWho.ContainsKey(vesselName)) whoCleanRammedWho.Remove(vesselName);
+                        if (whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) whoCleanShotWhoWithMissiles.Remove(vesselName);
                     }
                 }
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "] killing " + vesselName);
@@ -1259,7 +1259,7 @@ namespace BDArmory.Control
                         {
                             if (!VesselSpawner.Instance.vesselsSpawningContinuously && DeathOrder.ContainsKey(vesselName)) // This isn't an issue when continuous spawning is active.
                             {
-                                Debug.Log("[BDACompetitionMode]: Dead vessel found alive " + vesselName);
+                                Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Dead vessel found alive " + vesselName);
                                 //DeathOrder.Remove(vesselName);
                             }
                             // vessel is still alive
@@ -1475,7 +1475,7 @@ namespace BDArmory.Control
             // this should probably be configurable.
             if (!pinataAlive && alive.Contains("Pinata"))
             {
-                Debug.Log("[BDACompetitionMode]: Setting Pinata Flag to Alive!");
+                Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Setting Pinata Flag to Alive!");
                 pinataAlive = true;
                 competitionStatus.Add("Enabling Pinata");
             }
@@ -1489,7 +1489,7 @@ namespace BDArmory.Control
                 if (!killerGMenabled)
                 {
                     // disabled for now, should be in a competition settings UI
-                    //BDACompetitionMode.Instance.killerGMenabled = true;
+                    //killerGMenabled = true;
 
                 }
 
@@ -1654,7 +1654,7 @@ namespace BDArmory.Control
             }
 
             FindVictim();
-            // Debug.Log("[BDACompetitionMode]: Done With Update");
+            // Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
         }
 
         public void LogResults(string message = "")
