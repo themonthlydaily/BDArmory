@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -237,13 +238,14 @@ namespace BDArmory.Competition
 
         public IEnumerator PostRecords(string hash, int heat, List<RecordModel> records)
         {
-            IEnumerable<string> recordsJson = records.Select(e => JsonUtility.ToJson(e));
+            List<string> recordsJson = records.Select(e => e.ToJSON()).ToList();
+            Debug.Log(string.Format("[BDAScoreClient] Prepare records for {0} players", records.Count()));
             string recordsJsonStr = string.Join(",", recordsJson);
             string requestBody = string.Format("{{\"records\":[{0}]}}", recordsJsonStr);
 
             byte[] rawBody = Encoding.UTF8.GetBytes(requestBody);
             string uri = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json", baseUrl, hash, heat);
-            Debug.Log(string.Format("[BDAScoreClient] POST {0}", uri));
+            Debug.Log(string.Format("[BDAScoreClient] POST {0}:\n{1}", uri, requestBody));
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))
             {
                 webRequest.SetRequestHeader("Content-Type", "application/json");
@@ -314,6 +316,12 @@ namespace BDArmory.Competition
             }
             string filename = string.Format("{0}/{1}.craft", vesselPath, p.name);
             System.IO.File.WriteAllBytes(filename, bytes);
+
+            // load the file and modify its vessel name to match the player
+            string[] lines = File.ReadAllLines(filename);
+            string pattern = ".*ship = (.+)";
+            string[] modifiedLines = lines.Select(e => Regex.Replace(e, pattern, "ship = " + p.name)).ToArray();
+            File.WriteAllLines(filename, modifiedLines);
             Debug.Log(string.Format("[BDAScoreClient] Saved craft for player {0}", p.name));
         }
 
