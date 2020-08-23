@@ -426,6 +426,7 @@ namespace BDArmory.UI
                 {
                     if (weaponManager == null) continue;
                     AddVesselSwitcherWindowEntry(weaponManager, teamManagers.Key, height, vesselButtonWidth);
+
                     height += _buttonHeight + _buttonGap;
                 }
             }
@@ -494,6 +495,30 @@ namespace BDArmory.UI
             Rect buttonRect = new Rect(_margin + _buttonHeight, height, vesselButtonWidth, _buttonHeight);
             GUIStyle vButtonStyle = wm.vessel.isActiveVessel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
+            string vesselName = wm.vessel.GetName();
+            BDArmory.Control.ScoringData scoreData = null;
+            string status = UpdateVesselStatus(wm, vButtonStyle);
+            int currentScore = 0;
+            int currentRamScore = 0;
+            int currentMissileScore = 0;
+            double currentTagTime = 0;
+            double currentTagScore = 0;
+            int currentTimesIt = 0;
+
+            if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
+            {
+                scoreData = BDACompetitionMode.Instance.Scores[vesselName];
+                currentScore = scoreData.Score;
+                currentRamScore = scoreData.totalDamagedPartsDueToRamming;
+                currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
+                if (BDArmorySettings.TAG_MODE)
+                {
+                    currentTagTime = scoreData.tagTotalTime;
+                    currentTagScore = scoreData.tagScore;
+                    currentTimesIt = scoreData.tagTimesIt;
+                }
+            }
+
             // current target 
             string targetName = "";
             Vessel targetVessel = wm.vessel;
@@ -510,36 +535,16 @@ namespace BDArmory.UI
                 targetVessel = wm.currentTarget.Vessel;
             }
 
-            string status = UpdateVesselStatus(wm, vButtonStyle);
-            int currentScore = 0;
-            int currentRamScore = 0;
-            int currentMissileScore = 0;
-            double currentTagTime = 0;
-            double currentTagScore = 0;
-            int currentTimesIt = 0;
-
-            string vesselName = wm.vessel.GetName();
-
-            BDArmory.Control.ScoringData scoreData = null;
-            if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
-            {
-                scoreData = BDACompetitionMode.Instance.Scores[vesselName];
-                currentScore = scoreData.Score;
-                currentRamScore = scoreData.totalDamagedPartsDueToRamming;
-                currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
-                if (BDArmorySettings.TAG_MODE)
-                {
-                    currentTagTime = scoreData.tagTotalTime;
-                    currentTagScore = scoreData.tagScore;
-                    currentTimesIt = scoreData.tagTimesIt;
-                }
-            }
             string postStatus = " (" + currentScore.ToString();
             if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
             if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
             if (BDArmorySettings.TAG_MODE)
                 if (_continuousVesselSpawning)
-                    postStatus += ", " + (VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeTagTime + currentTagTime).ToString("0.0");
+                {
+                    if (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName))
+                        currentTagTime += VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeTagTime;
+                    postStatus += ", " + currentTagTime.ToString("0.0");
+                }
                 else
                     postStatus += ", " + currentTagScore.ToString("0.0");
             postStatus += ")";
@@ -669,19 +674,22 @@ namespace BDArmory.UI
                     xStyle.normal.textColor = Color.yellow;
                 }
             }
-            if (GUI.Button(killButtonRect, "X", xStyle))
+            if (wm.vessel != null && GUI.Button(killButtonRect, "X", xStyle))
             {
                 // must use right button
                 if (Event.current.button == 1)
                 {
-                    if (scoreData.LastPersonWhoDamagedMe() == "")
+                    if (scoreData != null)
                     {
-                        scoreData.lastPersonWhoHitMe = "BIG RED BUTTON"; // only do this if it's not already damaged
+                        if (scoreData.LastPersonWhoDamagedMe() == "")
+                        {
+                            scoreData.lastPersonWhoHitMe = "BIG RED BUTTON"; // only do this if it's not already damaged
+                        }
+                        scoreData.gmKillReason = GMKillReason.BigRedButton; // Indicate that it was us who killed it and remove any "clean" kills.
+                        if (BDACompetitionMode.Instance.whoCleanShotWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWho.Remove(vesselName);
+                        if (BDACompetitionMode.Instance.whoCleanRammedWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanRammedWho.Remove(vesselName);
+                        if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vesselName);
                     }
-                    scoreData.gmKillReason = GMKillReason.BigRedButton; // Indicate that it was us who killed it and remove any "clean" kills.
-                    if (BDACompetitionMode.Instance.whoCleanShotWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWho.Remove(vesselName);
-                    if (BDACompetitionMode.Instance.whoCleanRammedWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanRammedWho.Remove(vesselName);
-                    if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vesselName);
                     Misc.Misc.ForceDeadVessel(wm.vessel);
                 }
             }

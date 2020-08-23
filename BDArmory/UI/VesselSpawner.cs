@@ -264,41 +264,50 @@ namespace BDArmory.UI
             #endregion
 
             #region Post-spawning
+            yield return new WaitForFixedUpdate();
             var postSpawnCheckStartTime = Planetarium.GetUniversalTime();
             var allWeaponManagersAssigned = false;
             var vesselsToCheck = spawnedVessels.Select(v => v.Value.Item1).ToList();
-            do
+            // Check that the spawned vessels are valid craft
+            var invalidVessels = vesselsToCheck.Select(vessel => new Tuple<string, BDACompetitionMode.InvalidVesselReason>(vessel.vesselName, BDACompetitionMode.Instance.IsValidVessel(vessel))).Where(t => t.Item2 != BDACompetitionMode.InvalidVesselReason.None).ToList();
+            if (invalidVessels.Count > 0)
             {
-                yield return new WaitForFixedUpdate();
-
-                // Check that none of the vessels have lost parts.
-                if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
+                BDACompetitionMode.Instance.competitionStatus.Add("The following vessels are invalid:\n - " + string.Join("\n - ", invalidVessels.Select(t => t.Item1 + " : " + t.Item2)));
+                Debug.Log("[VesselSpawner]: Invalid vessels: " + string.Join(", ", invalidVessels.Select(t => t.Item1 + ":" + t.Item2)));
+            }
+            else
+                do
                 {
-                    message = "One of the vessel lost parts after spawning.";
-                    BDACompetitionMode.Instance.competitionStatus.Add(message);
-                    break;
-                }
+                    yield return new WaitForFixedUpdate();
 
-                // Wait for all the weapon managers to be added to LoadedVesselSwitcher.
-                var weaponManagers = LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList();
-                foreach (var vessel in vesselsToCheck.ToList())
-                {
-                    var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
-                    if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
+                    // Check that none of the vessels have lost parts.
+                    if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                     {
-                        // Turn on the brakes.
-                        spawnedVessels[vessel.GetName()].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Disable them first to make sure they trigger on toggling.
-                        spawnedVessels[vessel.GetName()].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
-
-                        vesselsToCheck.Remove(vessel);
+                        message = "One of the vessel lost parts after spawning.";
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        break;
                     }
-                }
-                if (vesselsToCheck.Count == 0)
-                    allWeaponManagersAssigned = true;
 
-                if (allWeaponManagersAssigned)
-                    break;
-            } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
+                    // Wait for all the weapon managers to be added to LoadedVesselSwitcher.
+                    var weaponManagers = LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList();
+                    foreach (var vessel in vesselsToCheck.ToList())
+                    {
+                        var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                        if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
+                        {
+                            // Turn on the brakes.
+                            spawnedVessels[vessel.GetName()].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, false); // Disable them first to make sure they trigger on toggling.
+                            spawnedVessels[vessel.GetName()].Item1.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+
+                            vesselsToCheck.Remove(vessel);
+                        }
+                    }
+                    if (vesselsToCheck.Count == 0)
+                        allWeaponManagersAssigned = true;
+
+                    if (allWeaponManagersAssigned)
+                        break;
+                } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
 
             if (allWeaponManagersAssigned)
             {
@@ -354,7 +363,8 @@ namespace BDArmory.UI
                         {
                             var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                             if (!weaponManager) continue; // Safety check in case the vessel got destroyed.
-                                                          // Activate the vessel with AG10, or failing that, staging.
+
+                            // Activate the vessel with AG10, or failing that, staging.
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
@@ -605,6 +615,7 @@ namespace BDArmory.UI
 
             var craftURLToVesselName = new Dictionary<string, string>();
             var activeWeaponManagersByCraftURL = new Dictionary<string, MissileFire>();
+            var invalidVesselSpawnCount = new Dictionary<string, int>();
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
             var shipFacility = EditorFacility.None;
@@ -672,6 +683,7 @@ namespace BDArmory.UI
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     break;
                 }
+                yield return new WaitForFixedUpdate();
                 // Activate the AI and fire up any new weapon managers that appeared.
                 if (vesselsToActivate.Count > 0)
                 {
@@ -682,6 +694,35 @@ namespace BDArmory.UI
                     var vesselsToCheck = vesselsToActivate.ToList(); // Take a copy to avoid modifying the original while iterating over it.
                     foreach (var vessel in vesselsToCheck)
                     {
+                        // Check that the vessel is valid.
+                        var invalidReason = BDACompetitionMode.Instance.IsValidVessel(vessel);
+                        if (invalidReason != BDACompetitionMode.InvalidVesselReason.None)
+                        {
+                            message = vessel.vesselName + " is invalid due to " + invalidReason + ".";
+                            BDACompetitionMode.Instance.competitionStatus.Add(message);
+                            Debug.Log("[VesselSpawner]: " + message);
+                            vesselsToActivate.Remove(vessel);
+                            var craftURL = craftURLToVesselName.ToDictionary(i => i.Value, i => i.Key)[vessel.GetName()];
+                            if (invalidVesselSpawnCount.ContainsKey(craftURL))
+                                ++invalidVesselSpawnCount[craftURL];
+                            else
+                                invalidVesselSpawnCount.Add(craftURL, 1);
+                            if (invalidVesselSpawnCount[craftURL] < 5) // 5 attempts
+                                activeWeaponManagersByCraftURL.Add(craftURL, null); // Indicate to the spawning routine that the craft is effectively dead.
+                            else
+                            {
+                                message = vessel.vesselName + " was invalid for 5 spawn attempts in a row, removing.";
+                                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                                Debug.Log("[VesselSpawner]: " + message);
+                            }
+                            // Remove the vessel
+                            vessel.Die();
+                            var partsToKill = vessel.parts.ToList();
+                            foreach (var part in partsToKill)
+                                part.Die();
+                            continue;
+                        }
+                        // Check if the weapon manager has been added to the weapon managers list.
                         var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                         if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
                         {
@@ -701,7 +742,8 @@ namespace BDArmory.UI
                             while (currentTeams.Contains(BDTeam.Get(team.ToString())))
                                 ++team;
                             weaponManager.SetTeam(BDTeam.Get(team.ToString()));
-                            activeWeaponManagersByCraftURL.Add(craftURLToVesselName.ToDictionary(i => i.Value, i => i.Key)[vessel.GetName()], weaponManager);
+                            var craftURL = craftURLToVesselName.ToDictionary(i => i.Value, i => i.Key)[vessel.GetName()];
+                            activeWeaponManagersByCraftURL.Add(craftURL, weaponManager);
                             // Enable guard mode if a competition is active.
                             if (BDACompetitionMode.Instance.competitionIsActive)
                                 if (!weaponManager.guardMode)
@@ -711,6 +753,8 @@ namespace BDArmory.UI
                             // Adjust BDACompetitionMode's scoring structures.
                             UpdateCompetitionScores(vessel, true);
                             ++continuousSpawningScores[vessel.GetName()].spawnCount;
+                            if (invalidVesselSpawnCount.ContainsKey(craftURL))// Reset the invalid spawn counter.
+                                invalidVesselSpawnCount.Remove(craftURL);
                             vesselsToActivate.Remove(vessel);
                         }
                     }
@@ -756,7 +800,7 @@ namespace BDArmory.UI
                         if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vesselName);
                     }
                     vessel.Die();
-                    var partsToKill = new List<Part>(vessel.parts);
+                    var partsToKill = vessel.parts.ToList();
                     foreach (var part in partsToKill)
                         part.Die();
                 }

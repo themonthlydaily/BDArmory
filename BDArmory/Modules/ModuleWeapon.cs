@@ -1010,6 +1010,7 @@ namespace BDArmory.Modules
 
         #region Fire
 
+        int poolSize = 0;
         private void Fire()
         {
             if (BDArmorySetup.GameIsPaused)

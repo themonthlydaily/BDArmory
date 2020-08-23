@@ -197,29 +197,34 @@ namespace BDArmory.Control
             Instance = this;
         }
 
+        void OnDestroy()
+        {
+        }
+
         void OnGUI()
         {
+            GUIStyle cStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
+            cStyle.fontStyle = FontStyle.Bold;
+            cStyle.fontSize = 22;
+            cStyle.alignment = TextAnchor.UpperLeft;
+
+            var displayRow = 100;
+            if (!BDArmorySetup.GAME_UI_ENABLED)
+            {
+                displayRow = 30;
+            }
+
+            Rect cLabelRect = new Rect(30, displayRow, Screen.width, 100);
+
+            GUIStyle cShadowStyle = new GUIStyle(cStyle);
+            Rect cShadowRect = new Rect(cLabelRect);
+            cShadowRect.x += 2;
+            cShadowRect.y += 2;
+            cShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
+
+            string message = competitionStatus.ToString();
             if (competitionStarting || competitionStartTime > 0)
             {
-                GUIStyle cStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
-                cStyle.fontStyle = FontStyle.Bold;
-                cStyle.fontSize = 22;
-                cStyle.alignment = TextAnchor.UpperLeft;
-
-                var displayRow = 100;
-                if (!BDArmorySetup.GAME_UI_ENABLED)
-                {
-                    displayRow = 30;
-                }
-
-                Rect cLabelRect = new Rect(30, displayRow, Screen.width, 100);
-
-                GUIStyle cShadowStyle = new GUIStyle(cStyle);
-                Rect cShadowRect = new Rect(cLabelRect);
-                cShadowRect.x += 2;
-                cShadowRect.y += 2;
-                cShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
-
                 string currentVesselStatus = "";
                 if (FlightGlobals.ActiveVessel != null)
                 {
@@ -237,27 +242,28 @@ namespace BDArmory.Control
                         currentVesselStatus = vesselName + postFix;
                     competitionStatus.lastActiveVessel = vesselName;
                 }
+                message += "\n" + currentVesselStatus;
+            }
 
-                string message = competitionStatus.ToString() + "\n" + currentVesselStatus;
-                GUI.Label(cShadowRect, message, cShadowStyle);
-                GUI.Label(cLabelRect, message, cStyle);
-                if (!BDArmorySetup.GAME_UI_ENABLED && competitionStartTime > 0)
-                {
-                    Rect clockRect = new Rect(10, 6, Screen.width, 20);
-                    GUIStyle clockStyle = new GUIStyle(cStyle);
-                    clockStyle.fontSize = 14;
-                    GUIStyle clockShadowStyle = new GUIStyle(clockStyle);
-                    clockShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
-                    Rect clockShadowRect = new Rect(clockRect);
-                    clockShadowRect.x += 2;
-                    clockShadowRect.y += 2;
-                    var gTime = Planetarium.GetUniversalTime() - competitionStartTime;
-                    var minutes = (int)(Math.Floor(gTime / 60));
-                    var seconds = (int)(gTime % 60);
-                    string pTime = minutes.ToString("00") + ":" + seconds.ToString("00") + "     " + deadOrAlive;
-                    GUI.Label(clockShadowRect, pTime, clockShadowStyle);
-                    GUI.Label(clockRect, pTime, clockStyle);
-                }
+            GUI.Label(cShadowRect, message, cShadowStyle);
+            GUI.Label(cLabelRect, message, cStyle);
+
+            if (!BDArmorySetup.GAME_UI_ENABLED && competitionStartTime > 0)
+            {
+                Rect clockRect = new Rect(10, 6, Screen.width, 20);
+                GUIStyle clockStyle = new GUIStyle(cStyle);
+                clockStyle.fontSize = 14;
+                GUIStyle clockShadowStyle = new GUIStyle(clockStyle);
+                clockShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
+                Rect clockShadowRect = new Rect(clockRect);
+                clockShadowRect.x += 2;
+                clockShadowRect.y += 2;
+                var gTime = Planetarium.GetUniversalTime() - competitionStartTime;
+                var minutes = (int)(Math.Floor(gTime / 60));
+                var seconds = (int)(gTime % 60);
+                string pTime = minutes.ToString("00") + ":" + seconds.ToString("00") + "     " + deadOrAlive;
+                GUI.Label(clockShadowRect, pTime, clockShadowStyle);
+                GUI.Label(clockRect, pTime, clockStyle);
             }
         }
 
@@ -335,7 +341,6 @@ namespace BDArmory.Control
 
         public void StartCompetitionMode(float distance)
         {
-
             if (!competitionStarting)
             {
                 ResetCompetitionScores();
@@ -344,7 +349,6 @@ namespace BDArmory.Control
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
         }
-
 
         public void StartRapidDeployment(float distance)
         {
@@ -631,22 +635,45 @@ namespace BDArmory.Control
             var pilots = new List<IBDAIControl>();
             HashSet<string> vesselNames = new HashSet<string>();
             int count = 0;
-            using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
-                while (loadedVessels.MoveNext())
-                {
-                    if (loadedVessels.Current == null || !loadedVessels.Current.loaded)
-                        continue;
-                    IBDAIControl pilot = loadedVessels.Current.FindPartModuleImplementing<IBDAIControl>();
-                    if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral)
-                        continue;
-                    pilots.Add(pilot);
-                    if (vesselNames.Contains(loadedVessels.Current.vesselName))
-                    {
-                        loadedVessels.Current.vesselName += "_" + (++count);
-                    }
-                    vesselNames.Add(loadedVessels.Current.vesselName);
-                }
+            foreach (var vessel in BDATargetManager.LoadedVessels)
+            {
+                if (vessel == null || !vessel.loaded) continue;
+                if (IsValidVessel(vessel) != InvalidVesselReason.None) continue;
+                var pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
+                if (pilot.weaponManager.Team.Neutral) continue; // Ignore the neutrals.
+                pilots.Add(pilot);
+                if (vesselNames.Contains(vessel.vesselName))
+                    vessel.vesselName += "_" + (++count);
+                vesselNames.Add(vessel.vesselName);
+            }
             return pilots;
+        }
+
+        public enum InvalidVesselReason { None, NoAI, NoWeaponManager, NoCommand };
+        public InvalidVesselReason IsValidVessel(Vessel vessel)
+        {
+            var pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
+            if (pilot == null)
+                return InvalidVesselReason.NoAI;
+            if (!pilot.weaponManager) // Check for a weapon manager
+                return InvalidVesselReason.NoWeaponManager;
+            if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
+                return InvalidVesselReason.NoCommand;
+            return InvalidVesselReason.None;
+        }
+
+        HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
+        public void CheckVesselTypes(Vessel vessel)
+        {
+            if (vessel != null && vessel.vesselName != null && !validVesselTypes.Contains(vessel.vesselType) && vessel.FindPartModuleImplementing<MissileFire>() != null) // Found an invalid vessel type with a weapon manager.
+            {
+                var message = "Found weapon manager on " + vessel.vesselName + " of type " + vessel.vesselType;
+                if (vessel.vesselName.EndsWith(" " + vessel.vesselType.ToString()))
+                    vessel.vesselName = vessel.vesselName.Remove(vessel.vesselName.Length - vessel.vesselType.ToString().Length - 1);
+                vessel.vesselType = VesselType.Plane;
+                message += ", changing vessel name and type to " + vessel.vesselName + ", " + vessel.vesselType;
+                Debug.Log("DEBUG " + message);
+            }
         }
 
         private void DoPreflightChecks()
@@ -2327,7 +2354,7 @@ namespace BDArmory.Control
                     else
                         foreach (var pilot in pilots)
                         {
-                            if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen? This occurred for a vessel with a command seat that got labelled as a Rover!
+                            if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen? This occurred for a vessel that got labelled as a Rover or Debris! Check that the vessel has the mf attached to the cockpit (e.g. JohnF's plane).
                             if (pilot.vessel.GetName() == vData.LastPersonWhoDamagedMe()) // Set the person who scored hits as "IT"
                             {
                                 if (pilot.vessel.GetName() == key) Debug.Log("DEBUG " + key + " tagged themself with " + vData.LastDamageWasFrom() + " at " + vData.LastDamageTime().ToString("G1") + "!");
