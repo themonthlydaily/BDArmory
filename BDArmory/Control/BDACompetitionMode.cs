@@ -282,7 +282,7 @@ namespace BDArmory.Control
             whoCleanRammedWho.Clear();
             KillTimer.Clear();
             dumpedResults = 5;
-            competitionStartTime = Planetarium.GetUniversalTime();
+            competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             gracePeriod = competitionStartTime + 60;
             decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
@@ -593,6 +593,7 @@ namespace BDArmory.Control
             competitionIsActive = true; //start logging ramming now that the competition has officially started
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
+            competitionStartTime = Planetarium.GetUniversalTime();
         }
 
         public static Dictionary<int, KSPActionGroup> KM_dictAG = new Dictionary<int, KSPActionGroup> {
@@ -1003,6 +1004,7 @@ namespace BDArmory.Control
             // will need a terminator routine
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection.
+            competitionStartTime = Planetarium.GetUniversalTime();
         }
 
         public void RemoveDebris()
