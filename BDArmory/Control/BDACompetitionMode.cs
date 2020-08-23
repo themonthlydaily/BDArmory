@@ -1531,8 +1531,8 @@ namespace BDArmory.Control
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
                                                 whoCleanShotWho.Add(key, whoKilledMe);
-                                                whoKilledMe += " (BOOM! HEADSHOT!)";
                                                 Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                                whoKilledMe += " (BOOM! HEADSHOT!)";
                                             }
                                             break;
                                         case DamageFrom.Missile:
@@ -1541,8 +1541,8 @@ namespace BDArmory.Control
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
                                                 whoCleanShotWhoWithMissiles.Add(key, whoKilledMe);
-                                                whoKilledMe += " (BOOM! HEADSHOT!)";
                                                 Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                                whoKilledMe += " (BOOM! HEADSHOT!)";
                                             }
                                             break;
                                         case DamageFrom.Ram:
@@ -1552,8 +1552,8 @@ namespace BDArmory.Control
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
                                                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
                                                 whoCleanRammedWho.Add(key, whoKilledMe);
-                                                whoKilledMe += " (BOOM! HEADSHOT!)";
                                                 Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                                whoKilledMe += " (BOOM! HEADSHOT!)";
                                             }
                                             break;
                                         default:
