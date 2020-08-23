@@ -7,8 +7,9 @@ namespace BDArmory.Misc
     public class ObjectPool : MonoBehaviour
     {
         public GameObject poolObject;
-        public int size;
+        public int size { get { return pool.Count; } }
         public bool canGrow;
+        public int lastIndex = 0;
 
         List<GameObject> pool;
 
@@ -21,13 +22,6 @@ namespace BDArmory.Misc
 
         void Start()
         {
-            for (int i = 0; i < size; i++)
-            {
-                GameObject obj = Instantiate(poolObject);
-                obj.transform.SetParent(transform);
-                obj.SetActive(false);
-                pool.Add(obj);
-            }
         }
 
         public GameObject GetPooledObject(int index)
@@ -37,27 +31,45 @@ namespace BDArmory.Misc
 
         public GameObject GetPooledObject()
         {
-            if (canGrow)
+            if (!poolObject)
             {
-                if (!poolObject)
-                {
-                    Debug.LogWarning("Tried to instantiate a pool object but prefab is missing! (" + poolObjectName + ")");
-                }
-
-                GameObject obj = Instantiate(poolObject);
-                obj.SetActive(false);
-                pool.Add(obj);
-                size++;
-
-                return obj;
+                Debug.LogWarning("Tried to instantiate a pool object but prefab is missing! (" + poolObjectName + ")");
             }
 
-            for (int i = 0; i < pool.Count; i++)
+            // Start at the last index returned and cycle round for efficiency. This makes this a typically O(1) seek operation.
+            for (int i = lastIndex; i < pool.Count; ++i)
             {
                 if (!pool[i].activeInHierarchy)
                 {
+                    lastIndex = i;
                     return pool[i];
                 }
+
+            }
+            for (int i = 0; i < lastIndex; ++i)
+            {
+                if (!pool[i].activeInHierarchy)
+                {
+                    lastIndex = i;
+                    return pool[i];
+                }
+
+            }
+
+            if (canGrow)
+            {
+                var oldsize = pool.Count;
+                var size = (int)(oldsize * 1.2); // Grow by 20%
+                Debug.Log("[ObjectPool]: Increasing pool size to " + size + " for " + poolObjectName);
+                for (int i = oldsize; i < size; ++i)
+                {
+                    GameObject obj = Instantiate(poolObject);
+                    obj.transform.SetParent(transform);
+                    obj.SetActive(false);
+                    pool.Add(obj);
+                }
+
+                return pool[pool.Count - 1]; // Return the last entry in the pool
             }
 
             return null;
@@ -83,12 +95,18 @@ namespace BDArmory.Misc
             GameObject poolObject = new GameObject(obj.name + "Pool");
             ObjectPool op = poolObject.AddComponent<ObjectPool>();
             op.poolObject = obj;
-            op.size = size;
             op.canGrow = canGrow;
             op.poolObjectName = obj.name;
             if (!destroyOnLoad)
             {
                 DontDestroyOnLoad(poolObject);
+            }
+            for (int i = 0; i < size; ++i)
+            {
+                obj = Instantiate(op.poolObject);
+                obj.transform.SetParent(op.transform);
+                obj.SetActive(false);
+                op.pool.Add(obj);
             }
             return op;
         }
