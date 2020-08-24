@@ -425,7 +425,14 @@ namespace BDArmory.UI
                 foreach (var weaponManager in orderedWMs)
                 {
                     if (weaponManager == null) continue;
-                    AddVesselSwitcherWindowEntry(weaponManager, teamManagers.Key, height, vesselButtonWidth);
+                    try
+                    {
+                        AddVesselSwitcherWindowEntry(weaponManager, teamManagers.Key, height, vesselButtonWidth);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManager.vessel.vesselName + " on team " + teamManagers.Key + " to the list: " + e.Message);
+                    }
 
                     height += _buttonHeight + _buttonGap;
                 }
