@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -57,31 +58,39 @@ namespace BDArmory.FX
                 decalPool_ = decalPool_small;
             }
 
-            //front hit
-            GameObject decalFront = decalPool_.GetPooledObject();
-            if (decalFront != null && hitPart != null)
+            try
             {
-                decalFront.transform.SetParent(hitPart.transform);
-                decalFront.transform.position = hit.point + new Vector3(0.25f, 0f, 0f);
-                decalFront.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
-                decalFront.SetActive(true);
-            }
-            //back hole if fully penetrated
-            if (penetrationfactor >= 1)
-            {
-                GameObject decalBack = decalPool_.GetPooledObject();
-                if (decalBack != null && hitPart != null)
-                {
-                    decalBack.transform.SetParent(hitPart.transform);
-                    decalBack.transform.position = hit.point + new Vector3(-0.25f, 0f, 0f);
-                    decalBack.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
-                    decalBack.SetActive(true);
-                }
+                //front hit
+                GameObject decalFront = decalPool_.GetPooledObject();
 
-                if (CanFlamesBeAttached(hitPart))
+                if (decalFront != null && hitPart != null)
                 {
-                    AttachFlames(hit, hitPart, caliber);
+                    decalFront.transform.SetParent(hitPart.transform);
+                    decalFront.transform.position = hit.point + new Vector3(0.25f, 0f, 0f);
+                    decalFront.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
+                    decalFront.SetActive(true);
                 }
+                //back hole if fully penetrated
+                if (penetrationfactor >= 1)
+                {
+                    GameObject decalBack = decalPool_.GetPooledObject();
+                    if (decalBack != null && hitPart != null)
+                    {
+                        decalBack.transform.SetParent(hitPart.transform);
+                        decalBack.transform.position = hit.point + new Vector3(-0.25f, 0f, 0f);
+                        decalBack.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
+                        decalBack.SetActive(true);
+                    }
+
+                    if (CanFlamesBeAttached(hitPart))
+                    {
+                        AttachFlames(hit, hitPart, caliber);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[BulletHixFX]: DEBUG Failed to spawn decal of type " + decalPool_.poolObjectName + ": " + e.Message); // FIXME Fix BulletDecal1
             }
         }
 
@@ -142,7 +151,7 @@ namespace BDArmory.FX
             audioSource.spatialBlend = 1;
             audioSource.volume = BDArmorySettings.BDARMORY_WEAPONS_VOLUME;
 
-            int random = Random.Range(1, 3);
+            int random = UnityEngine.Random.Range(1, 3);
 
             if (ricochet)
             {

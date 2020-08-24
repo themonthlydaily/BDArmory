@@ -29,6 +29,17 @@ namespace BDArmory.Misc
             return pool[index];
         }
 
+        private void AddObjectsToPool(int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                GameObject obj = Instantiate(poolObject);
+                obj.transform.SetParent(transform);
+                obj.SetActive(false);
+                pool.Add(obj);
+            }
+        }
+
         public GameObject GetPooledObject()
         {
             if (!poolObject)
@@ -44,7 +55,6 @@ namespace BDArmory.Misc
                     lastIndex = i;
                     return pool[i];
                 }
-
             }
             for (int i = 0; i < lastIndex; ++i)
             {
@@ -53,21 +63,13 @@ namespace BDArmory.Misc
                     lastIndex = i;
                     return pool[i];
                 }
-
             }
 
             if (canGrow)
             {
-                var oldsize = pool.Count;
-                var size = (int)(oldsize * 1.2); // Grow by 20%
+                var size = (int)(pool.Count * 1.2); // Grow by 20%
                 Debug.Log("[ObjectPool]: Increasing pool size to " + size + " for " + poolObjectName);
-                for (int i = oldsize; i < size; ++i)
-                {
-                    GameObject obj = Instantiate(poolObject);
-                    obj.transform.SetParent(transform);
-                    obj.SetActive(false);
-                    pool.Add(obj);
-                }
+                AddObjectsToPool(size - pool.Count);
 
                 return pool[pool.Count - 1]; // Return the last entry in the pool
             }
@@ -101,13 +103,8 @@ namespace BDArmory.Misc
             {
                 DontDestroyOnLoad(poolObject);
             }
-            for (int i = 0; i < size; ++i)
-            {
-                obj = Instantiate(op.poolObject);
-                obj.transform.SetParent(op.transform);
-                obj.SetActive(false);
-                op.pool.Add(obj);
-            }
+            op.AddObjectsToPool(size);
+            
             return op;
         }
     }
