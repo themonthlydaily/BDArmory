@@ -194,7 +194,9 @@ namespace BDArmory.Competition
 
         public string ToJSON()
         {
-            return JsonUtility.ToJson(this);
+            string result = JsonUtility.ToJson(this);
+            Debug.Log(string.Format("[RecordModel] json: {0}", result));
+            return result;
         }
     }
 }

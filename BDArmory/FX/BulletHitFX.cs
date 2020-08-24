@@ -31,15 +31,13 @@ namespace BDArmory.FX
         public static void SetupShellPool()
         {
             GameObject templateShell_large;
-            templateShell_large =
-                    Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal2"));
+            templateShell_large = Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal2"));
             templateShell_large.SetActive(false);
             if (decalPool_large == null)
                 decalPool_large = ObjectPool.CreateObjectPool(templateShell_large, BDArmorySettings.MAX_NUM_BULLET_DECALS, true, true);
 
             GameObject templateShell_small;
-            templateShell_small =
-                Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal1"));
+            templateShell_small = Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal1"));
             templateShell_small.SetActive(false);
             if (decalPool_small == null)
                 decalPool_small = ObjectPool.CreateObjectPool(templateShell_small, BDArmorySettings.MAX_NUM_BULLET_DECALS, true, true);
