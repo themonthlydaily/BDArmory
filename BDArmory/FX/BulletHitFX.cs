@@ -32,23 +32,22 @@ namespace BDArmory.FX
         public static void SetupShellPool()
         {
             GameObject templateShell_large;
-            templateShell_large = Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal2"));
+            templateShell_large = (GameObject)Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal2"));
             templateShell_large.SetActive(false);
             if (decalPool_large == null)
-                decalPool_large = ObjectPool.CreateObjectPool(templateShell_large, BDArmorySettings.MAX_NUM_BULLET_DECALS, true, true);
+                decalPool_large = ObjectPool.CreateObjectPool(templateShell_large, BDArmorySettings.MAX_NUM_BULLET_DECALS, false, true, false, true);
 
             GameObject templateShell_small;
-            templateShell_small = Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal1"));
+            templateShell_small = (GameObject)Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal1"));
             templateShell_small.SetActive(false);
             if (decalPool_small == null)
-                decalPool_small = ObjectPool.CreateObjectPool(templateShell_small, BDArmorySettings.MAX_NUM_BULLET_DECALS, true, true);
+                decalPool_small = ObjectPool.CreateObjectPool(templateShell_small, BDArmorySettings.MAX_NUM_BULLET_DECALS, false, true, false, true);
         }
 
         public static void SpawnDecal(RaycastHit hit, Part hitPart, float caliber, float penetrationfactor)
         {
             if (!BDArmorySettings.BULLET_DECALS) return;
             ObjectPool decalPool_;
-
             if (caliber >= 90f)
             {
                 decalPool_ = decalPool_large;
@@ -58,39 +57,32 @@ namespace BDArmory.FX
                 decalPool_ = decalPool_small;
             }
 
-            try
+            //front hit
+            GameObject decalFront = decalPool_.GetPooledObject();
+
+            if (decalFront != null && hitPart != null)
             {
-                //front hit
-                GameObject decalFront = decalPool_.GetPooledObject();
-
-                if (decalFront != null && hitPart != null)
-                {
-                    decalFront.transform.SetParent(hitPart.transform);
-                    decalFront.transform.position = hit.point + new Vector3(0.25f, 0f, 0f);
-                    decalFront.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
-                    decalFront.SetActive(true);
-                }
-                //back hole if fully penetrated
-                if (penetrationfactor >= 1)
-                {
-                    GameObject decalBack = decalPool_.GetPooledObject();
-                    if (decalBack != null && hitPart != null)
-                    {
-                        decalBack.transform.SetParent(hitPart.transform);
-                        decalBack.transform.position = hit.point + new Vector3(-0.25f, 0f, 0f);
-                        decalBack.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
-                        decalBack.SetActive(true);
-                    }
-
-                    if (CanFlamesBeAttached(hitPart))
-                    {
-                        AttachFlames(hit, hitPart, caliber);
-                    }
-                }
+                decalFront.transform.SetParent(hitPart.transform);
+                decalFront.transform.position = hit.point + new Vector3(0.25f, 0f, 0f);
+                decalFront.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
+                decalFront.SetActive(true);
             }
-            catch (Exception e)
+            //back hole if fully penetrated
+            if (penetrationfactor >= 1)
             {
-                Debug.LogError("[BulletHixFX]: DEBUG Failed to spawn decal of type " + decalPool_.poolObjectName + ": " + e.Message); // FIXME Fix BulletDecal1
+                GameObject decalBack = decalPool_.GetPooledObject();
+                if (decalBack != null && hitPart != null)
+                {
+                    decalBack.transform.SetParent(hitPart.transform);
+                    decalBack.transform.position = hit.point + new Vector3(-0.25f, 0f, 0f);
+                    decalBack.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
+                    decalBack.SetActive(true);
+                }
+
+                if (CanFlamesBeAttached(hitPart))
+                {
+                    AttachFlames(hit, hitPart, caliber);
+                }
             }
         }
 

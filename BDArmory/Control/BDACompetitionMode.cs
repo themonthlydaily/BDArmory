@@ -377,6 +377,14 @@ namespace BDArmory.Control
             rammingInformation = null; // Reset the ramming information.
         }
 
+        void CompetitionStarted()
+        {
+            competitionIsActive = true; //start logging ramming now that the competition has officially started
+            competitionStarting = false;
+            GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
+            competitionStartTime = Planetarium.GetUniversalTime();
+            lastTagUpdateTime = competitionStartTime;
+        }
 
         IEnumerator DogfightCompetitionModeRoutine(float distance)
         {
@@ -594,10 +602,7 @@ namespace BDArmory.Control
 
             competitionStatus.Set("Competition starting!  Good luck!");
             yield return new WaitForSeconds(2);
-            competitionIsActive = true; //start logging ramming now that the competition has officially started
-            competitionStarting = false;
-            GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
-            competitionStartTime = Planetarium.GetUniversalTime();
+            CompetitionStarted();
         }
 
         public static Dictionary<int, KSPActionGroup> KM_dictAG = new Dictionary<int, KSPActionGroup> {
@@ -1029,9 +1034,7 @@ namespace BDArmory.Control
                 }
             }
             // will need a terminator routine
-            competitionStarting = false;
-            GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection.
-            competitionStartTime = Planetarium.GetUniversalTime();
+            CompetitionStarted();
         }
 
         public void RemoveDebris()
@@ -1398,7 +1401,7 @@ namespace BDArmory.Control
 
                         // Update tag mode
                         if (BDArmorySettings.TAG_MODE && Scores.ContainsKey(vesselName))
-                            UpdateTag(mf, vesselName, updateTickLength, previousNumberCompetitive, alive);
+                            UpdateTag(mf, vesselName, previousNumberCompetitive, alive);
 
                         // after this point we're checking things that might result in kills.
                         if (Planetarium.GetUniversalTime() < gracePeriod) continue;
@@ -1543,7 +1546,7 @@ namespace BDArmory.Control
                             {
                                 // Update tag mode
                                 if (BDArmorySettings.TAG_MODE)
-                                    UpdateTag(null, key, updateTickLength, previousNumberCompetitive, alive);
+                                    UpdateTag(null, key, previousNumberCompetitive, alive);
 
                                 if (Scores[key].gmKillReason == GMKillReason.None && Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10) // Recent kills that weren't instigated by the GM (or similar).
                                 {
@@ -1684,6 +1687,7 @@ namespace BDArmory.Control
 
             FindVictim();
             // Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
+            if (BDArmorySettings.TAG_MODE) lastTagUpdateTime = Planetarium.GetUniversalTime();
         }
 
         public void LogResults(string message = "")
@@ -2314,9 +2318,11 @@ namespace BDArmory.Control
             if (BDArmorySettings.DEBUG_RAMMING_LOGGING) CheckForMissingParts(); // DEBUG
         }
 
+        public double lastTagUpdateTime;
         // Function to update tag
-        private void UpdateTag(MissileFire mf, string key, double updateTickLength, int previousNumberCompetitive, HashSet<string> alive)
+        private void UpdateTag(MissileFire mf, string key, int previousNumberCompetitive, HashSet<string> alive)
         {
+            var updateTickLength = Planetarium.GetUniversalTime() - lastTagUpdateTime;
             var vData = Scores[key];
             if (alive.Contains(key)) // Vessel that is being updated is alive
             {
@@ -2398,7 +2404,6 @@ namespace BDArmory.Control
                     }
                     else // We don't have a killer who is alive, reset teams
                         TagResetTeams();
-
                 }
                 else
                 {
