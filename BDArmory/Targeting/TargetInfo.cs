@@ -241,6 +241,7 @@ namespace BDArmory.Targeting
             }
         }
 
+        // Begin methods used for prioritizing targets
         public int NumFriendliesEngaging(BDTeam team)
         {
             if (friendliesEngaging.TryGetValue(team, out var friendlies))
@@ -250,6 +251,24 @@ namespace BDArmory.Targeting
             }
             return 0;
         }
+
+        public int NumWeapons()
+        {
+            if (friendliesEngaging.TryGetValue(team, out var friendlies))
+            {
+                friendlies.RemoveAll(item => item == null);
+                return friendlies.Count;
+            }
+            return 0;
+        }
+
+        public float NormalizedAcceleration()
+        {
+            float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
+            float forwardAccel = Mathf.Abs((float)Vector3.Dot(vessel.acceleration, vessel.vesselTransform.up)); // Forward acceleration
+            return forwardAccel / bodyGravity;
+        }
+        // End functions used for prioritizing targets
 
         public int TotalEngaging()
         {
