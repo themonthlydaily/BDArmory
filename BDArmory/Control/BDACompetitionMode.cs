@@ -166,7 +166,7 @@ namespace BDArmory.Control
         public bool startTag = false; // For tag mode
         public int previousNumberCompetitive = 2; // Also for tag mode
 
-        private double competitionStartTime = -1;
+        public double competitionStartTime = -1;
         private double nextUpdateTick = -1;
         private double gracePeriod = -1;
         private double decisionTick = -1;
@@ -195,10 +195,6 @@ namespace BDArmory.Control
             }
 
             Instance = this;
-        }
-
-        void OnDestroy()
-        {
         }
 
         void OnGUI()
@@ -374,6 +370,9 @@ namespace BDArmory.Control
             competitionStartTime = -1;
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
+            // GameEvents.onVesselPartCountChanged.Remove(CheckVesselType);
+            // GameEvents.onNewVesselCreated.Remove(CheckVesselType);
+            // GameEvents.onVesselCreate.Remove(CheckVesselType);
             rammingInformation = null; // Reset the ramming information.
         }
 
@@ -382,6 +381,10 @@ namespace BDArmory.Control
             competitionIsActive = true; //start logging ramming now that the competition has officially started
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
+            // Trying to find the right events for when a vessel splits into more than one part.
+            // GameEvents.onVesselPartCountChanged.Add(CheckVesselType);
+            // GameEvents.onNewVesselCreated.Add(CheckVesselType);
+            // GameEvents.onVesselCreate.Add(CheckVesselType);
             competitionStartTime = Planetarium.GetUniversalTime();
             lastTagUpdateTime = competitionStartTime;
         }
@@ -663,12 +666,14 @@ namespace BDArmory.Control
             if (!pilot.weaponManager) // Check for a weapon manager
                 return InvalidVesselReason.NoWeaponManager;
             if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
+                CheckVesselType(vessel); // Attempt to fix it.
+            if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
                 return InvalidVesselReason.NoCommand;
             return InvalidVesselReason.None;
         }
 
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
-        public void CheckVesselTypes(Vessel vessel)
+        public void CheckVesselType(Vessel vessel)
         {
             if (vessel != null && vessel.vesselName != null && !validVesselTypes.Contains(vessel.vesselType) && vessel.FindPartModuleImplementing<MissileFire>() != null) // Found an invalid vessel type with a weapon manager.
             {

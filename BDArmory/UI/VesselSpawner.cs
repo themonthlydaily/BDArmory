@@ -285,10 +285,12 @@ namespace BDArmory.UI
                     {
                         message = "One of the vessel lost parts after spawning.";
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        Debug.Log("[VesselSpawner]: " + message);
                         break;
                     }
 
                     // Wait for all the weapon managers to be added to LoadedVesselSwitcher.
+                    LoadedVesselSwitcher.Instance.UpdateList();
                     var weaponManagers = LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList();
                     foreach (var vessel in vesselsToCheck.ToList())
                     {
@@ -378,17 +380,22 @@ namespace BDArmory.UI
                             }
                             vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
                         }
-                        // Assign the vessels to their own teams.
-                        LoadedVesselSwitcher.MassTeamSwitch(true);
-                        LoadedVesselSwitcher.Instance.UpdateCamera();
+
                         vesselSpawnSuccess = true;
                     }
                 }
             }
             if (!vesselSpawnSuccess)
             {
-                message = " Vessel spawning FAILED!";
+                message = "Vessel spawning FAILED!";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
+            }
+            else
+            {
+                // Assign the vessels to their own teams.
+                LoadedVesselSwitcher.MassTeamSwitch(true);
+                LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnedVessels.First().Value.Item1); // Update the camera.
+                yield return new WaitForFixedUpdate();
             }
             #endregion
 
@@ -615,7 +622,7 @@ namespace BDArmory.UI
 
             var craftURLToVesselName = new Dictionary<string, string>();
             var activeWeaponManagersByCraftURL = new Dictionary<string, MissileFire>();
-            var invalidVesselSpawnCount = new Dictionary<string, int>();
+            var invalidVesselCount = new Dictionary<string, int>();
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
             var shipFacility = EditorFacility.None;
@@ -690,6 +697,7 @@ namespace BDArmory.UI
                     // Wait for an update so that the spawned vessels' parts list gets updated.
                     yield return new WaitForFixedUpdate();
 
+                    LoadedVesselSwitcher.Instance.UpdateList();
                     var weaponManagers = LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList();
                     var vesselsToCheck = vesselsToActivate.ToList(); // Take a copy to avoid modifying the original while iterating over it.
                     foreach (var vessel in vesselsToCheck)
@@ -698,30 +706,37 @@ namespace BDArmory.UI
                         var invalidReason = BDACompetitionMode.Instance.IsValidVessel(vessel);
                         if (invalidReason != BDACompetitionMode.InvalidVesselReason.None)
                         {
-                            message = vessel.vesselName + " is invalid due to " + invalidReason + ".";
-                            BDACompetitionMode.Instance.competitionStatus.Add(message);
-                            Debug.Log("[VesselSpawner]: " + message);
-                            vesselsToActivate.Remove(vessel);
+                            bool killIt = false;
                             var craftURL = craftURLToVesselName.ToDictionary(i => i.Value, i => i.Key)[vessel.GetName()];
-                            if (invalidVesselSpawnCount.ContainsKey(craftURL))
-                                ++invalidVesselSpawnCount[craftURL];
+                            if (invalidVesselCount.ContainsKey(craftURL))
+                                ++invalidVesselCount[craftURL];
                             else
-                                invalidVesselSpawnCount.Add(craftURL, 1);
-                            if (invalidVesselSpawnCount[craftURL] < 5) // 5 attempts
-                                activeWeaponManagersByCraftURL.Add(craftURL, null); // Indicate to the spawning routine that the craft is effectively dead.
-                            else
+                                invalidVesselCount.Add(craftURL, 1);
+                            if (invalidVesselCount[craftURL] == 3) // After 3 attempts try spawning it again.
                             {
-                                message = vessel.vesselName + " was invalid for 5 spawn attempts in a row, removing.";
+                                message = vessel.vesselName + " is INVALID due to " + invalidReason + ", attempting to respawn it.";
+                                activeWeaponManagersByCraftURL.Add(craftURL, null); // Indicate to the spawning routine that the craft is effectively dead.
+                                killIt = true;
+                            }
+                            if (invalidVesselCount[craftURL] > 5) // After 3 more attempts, mark it as defunct.
+                            {
+                                message = vessel.vesselName + " is STILL INVALID due to " + invalidReason + ", removing it.";
+                                crafts.Remove(craftURL);
+                                killIt = true;
+                            }
+                            if (killIt)
+                            {
                                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                                 Debug.Log("[VesselSpawner]: " + message);
+                                vesselsToActivate.Remove(vessel);
+                                vessel.Die(); // Remove the vessel
+                                var partsToKill = vessel.parts.ToList();
+                                foreach (var part in partsToKill)
+                                    part.Die();
                             }
-                            // Remove the vessel
-                            vessel.Die();
-                            var partsToKill = vessel.parts.ToList();
-                            foreach (var part in partsToKill)
-                                part.Die();
                             continue;
                         }
+
                         // Check if the weapon manager has been added to the weapon managers list.
                         var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                         if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
@@ -753,9 +768,10 @@ namespace BDArmory.UI
                             // Adjust BDACompetitionMode's scoring structures.
                             UpdateCompetitionScores(vessel, true);
                             ++continuousSpawningScores[vessel.GetName()].spawnCount;
-                            if (invalidVesselSpawnCount.ContainsKey(craftURL))// Reset the invalid spawn counter.
-                                invalidVesselSpawnCount.Remove(craftURL);
+                            if (invalidVesselCount.ContainsKey(craftURL))// Reset the invalid spawn counter.
+                                invalidVesselCount.Remove(craftURL);
                             vesselsToActivate.Remove(vessel);
+                            LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                         }
                     }
                 }

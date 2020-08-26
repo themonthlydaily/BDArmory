@@ -106,6 +106,7 @@ namespace BDArmory.Bullets
         {
             startPosition = transform.position;
             initialSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
+            distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
 
             if (!wasInitiated)
             {
@@ -522,7 +523,8 @@ namespace BDArmory.Bullets
             {
                 //Debug.Log("[BDArmory]: Weapon from " + aName + " damaged " + tName);
 
-                BDAScoreService.Instance.TrackHit(aName, tName, bullet.name, distanceTraveled);
+                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                    BDAScoreService.Instance.TrackHit(aName, tName, bullet.name, distanceTraveled);
 
                 // update scoring structure on attacker
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(aName))
