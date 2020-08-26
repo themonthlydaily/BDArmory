@@ -66,6 +66,7 @@ namespace BDArmory.UI
                 message = "Continuous vessel spawning cancelled.";
                 Debug.Log("[VesselSpawner]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
+                BDACompetitionMode.Instance.ResetCompetitionScores();
             }
             if (spawnVesselsContinuouslyCoroutine != null)
             {
@@ -472,36 +473,50 @@ namespace BDArmory.UI
 
         public void DumpContinuousSpawningScores()
         {
+            var logStrings = new List<string>();
+
             if (continuousSpawningScores == null || continuousSpawningScores.Count == 0) return;
             foreach (var vesselName in continuousSpawningScores.Keys)
                 UpdateCompetitionScores(continuousSpawningScores[vesselName].vessel);
-            Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Dumping Results");
+            logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Dumping Results");
             foreach (var vesselName in continuousSpawningScores.Keys)
             {
                 var vesselScore = continuousSpawningScores[vesselName];
                 var scoreData = vesselScore.scoreData;
-                Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Name:" + vesselName);
-                Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  DEATHCOUNT:" + (vesselScore.spawnCount - 1 + (vesselsToActivate.Contains(vesselScore.vessel) ? 1 : 0))); // Account for vessels that haven't respawned yet.
+                logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Name:" + vesselName);
+                logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  DEATHCOUNT:" + (vesselScore.spawnCount - 1 + (vesselsToActivate.Contains(vesselScore.vessel) ? 1 : 0))); // Account for vessels that haven't respawned yet.
                 var whoShotMeScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.hitCounts.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.hitCounts.Select(kvp2 => kvp2.Value + ":" + kvp2.Key))));
-                if (whoShotMeScores != "") Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHOSHOTME:" + whoShotMeScores);
+                if (whoShotMeScores != "") logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHOSHOTME:" + whoShotMeScores);
                 var whoRammedMeScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.rammingPartLossCounts.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.rammingPartLossCounts.Select(kvp2 => kvp2.Value + ":" + kvp2.Key))));
-                if (whoRammedMeScores != "") Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHORAMMEDME:" + whoRammedMeScores);
+                if (whoRammedMeScores != "") logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHORAMMEDME:" + whoRammedMeScores);
                 var whoShotMeWithMissilesScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.missilePartDamageCounts.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.missilePartDamageCounts.Select(kvp2 => kvp2.Value + ":" + kvp2.Key))));
-                if (whoShotMeWithMissilesScores != "") Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHOSHOTMEWITHMISSILES:" + whoShotMeWithMissilesScores);
+                if (whoShotMeWithMissilesScores != "") logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHOSHOTMEWITHMISSILES:" + whoShotMeWithMissilesScores);
                 var otherKills = string.Join(", ", scoreData.Where(kvp => kvp.Value.gmKillReason != GMKillReason.None).Select(kvp => kvp.Key + ":" + kvp.Value.gmKillReason));
-                if (otherKills != "") Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  OTHERKILL:" + otherKills);
-                if (vesselScore.cleanKilledBy.Count > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANKILL:" + string.Join(", ", vesselScore.cleanKilledBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
-                if (vesselScore.cleanRammedBy.Count > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANRAM:" + string.Join(", ", vesselScore.cleanRammedBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
-                if (vesselScore.cleanMissileKilledBy.Count > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANMISSILEKILL:" + string.Join(", ", vesselScore.cleanMissileKilledBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
-                if (scoreData.Sum(kvp => kvp.Value.shotsFired) > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  ACCURACY:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.shotsFired > 0).Select(kvp => kvp.Key + ":" + kvp.Value.Score + "/" + kvp.Value.shotsFired)));
+                if (otherKills != "") logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  OTHERKILL:" + otherKills);
+                if (vesselScore.cleanKilledBy.Count > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANKILL:" + string.Join(", ", vesselScore.cleanKilledBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
+                if (vesselScore.cleanRammedBy.Count > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANRAM:" + string.Join(", ", vesselScore.cleanRammedBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
+                if (vesselScore.cleanMissileKilledBy.Count > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANMISSILEKILL:" + string.Join(", ", vesselScore.cleanMissileKilledBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
+                if (scoreData.Sum(kvp => kvp.Value.shotsFired) > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  ACCURACY:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.shotsFired > 0).Select(kvp => kvp.Key + ":" + kvp.Value.Score + "/" + kvp.Value.shotsFired)));
                 if (BDArmorySettings.TAG_MODE)
                 {
-                    if (scoreData.Sum(kvp => kvp.Value.tagScore) > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  TAGSCORE:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagScore > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagScore.ToString("0.0"))));
-                    if (scoreData.Sum(kvp => kvp.Value.tagTotalTime) > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  TIMEIT:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagTotalTime > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagTotalTime.ToString("0.0"))));
-                    if (scoreData.Sum(kvp => kvp.Value.tagKillsWhileIt) > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  KILLSWHILEIT:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagKillsWhileIt > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagKillsWhileIt)));
-                    if (scoreData.Sum(kvp => kvp.Value.tagTimesIt) > 0) Debug.Log("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  TIMESIT:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagTimesIt > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagTimesIt)));
+                    if (scoreData.Sum(kvp => kvp.Value.tagScore) > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  TAGSCORE:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagScore > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagScore.ToString("0.0"))));
+                    if (scoreData.Sum(kvp => kvp.Value.tagTotalTime) > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  TIMEIT:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagTotalTime > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagTotalTime.ToString("0.0"))));
+                    if (scoreData.Sum(kvp => kvp.Value.tagKillsWhileIt) > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  KILLSWHILEIT:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagKillsWhileIt > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagKillsWhileIt)));
+                    if (scoreData.Sum(kvp => kvp.Value.tagTimesIt) > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  TIMESIT:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagTimesIt > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagTimesIt)));
                 }
             }
+
+            // Dump the log results to a file.
+            if (BDACompetitionMode.Instance.CompetitionID > 0)
+            {
+                var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+                File.WriteAllLines(Path.Combine(folder, BDACompetitionMode.Instance.CompetitionID.ToString() + ".log"), logStrings);
+            }
+            // Also dump the results to the normal log.
+            foreach (var line in logStrings)
+                Debug.Log(line);
         }
 
         public bool vesselsSpawningContinuously = false;

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -1695,6 +1696,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.TAG_MODE) lastTagUpdateTime = Planetarium.GetUniversalTime();
         }
 
+        // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>.log
         public void LogResults(string message = "")
         {
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
@@ -1703,9 +1705,11 @@ namespace BDArmory.Control
                 return;
             }
 
+            var logStrings = new List<string>();
+
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
-            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : ""));
+            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : ""));
 
 
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
@@ -1720,7 +1724,7 @@ namespace BDArmory.Control
                                 if (wms.Current.vessel != null)
                                 {
                                     alive.Add(wms.Current.vessel.GetName());
-                                    Log("[moryCompetition:" + CompetitionID.ToString() + "]: ALIVE:" + wms.Current.vessel.GetName());
+                                    logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ALIVE:" + wms.Current.vessel.GetName());
                                 }
                                 break;
                             }
@@ -1732,9 +1736,9 @@ namespace BDArmory.Control
             {
                 if (!alive.Contains(key))
                     if (DeathOrder.ContainsKey(key))
-                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: DEAD:" + DeathOrder[key] + ":" + key);
+                        logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: DEAD:" + DeathOrder[key] + ":" + key);
                     else
-                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: MIA:" + key);
+                        logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: MIA:" + key);
             }
 
             // Who shot who.
@@ -1744,7 +1748,7 @@ namespace BDArmory.Control
                     string whoShotMe = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHO:" + key;
                     foreach (var vesselName in Scores[key].hitCounts.Keys)
                         whoShotMe += ":" + Scores[key].hitCounts[vesselName] + ":" + vesselName;
-                    Log(whoShotMe);
+                    logStrings.Add(whoShotMe);
                 }
 
             // Who shot who with missiles.
@@ -1754,7 +1758,7 @@ namespace BDArmory.Control
                     string whoShotMeWithMissiles = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHOSHOTWHOWITHMISSILES:" + key;
                     foreach (var vesselName in Scores[key].missilePartDamageCounts.Keys)
                         whoShotMeWithMissiles += ":" + Scores[key].missilePartDamageCounts[vesselName] + ":" + vesselName;
-                    Log(whoShotMeWithMissiles);
+                    logStrings.Add(whoShotMeWithMissiles);
                 }
 
             // Who rammed who.
@@ -1764,43 +1768,55 @@ namespace BDArmory.Control
                     string whoRammedMe = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHORAMMEDWHO:" + key;
                     foreach (var vesselName in Scores[key].rammingPartLossCounts.Keys)
                         whoRammedMe += ":" + Scores[key].rammingPartLossCounts[vesselName] + ":" + vesselName;
-                    Log(whoRammedMe);
+                    logStrings.Add(whoRammedMe);
                 }
 
             // Other kill reasons
             foreach (var key in Scores.Keys)
                 if (Scores[key].gmKillReason != GMKillReason.None)
-                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: OTHERKILL:" + key + ":" + Scores[key].gmKillReason);
+                    logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: OTHERKILL:" + key + ":" + Scores[key].gmKillReason);
 
             // Log clean kills/rams
             foreach (var key in whoCleanShotWho.Keys)
-                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANKILL:" + key + ":" + whoCleanShotWho[key]);
+                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANKILL:" + key + ":" + whoCleanShotWho[key]);
             foreach (var key in whoCleanShotWhoWithMissiles.Keys)
-                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANMISSILEKILL:" + key + ":" + whoCleanShotWhoWithMissiles[key]);
+                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANMISSILEKILL:" + key + ":" + whoCleanShotWhoWithMissiles[key]);
             foreach (var key in whoCleanRammedWho.Keys)
-                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANRAM:" + key + ":" + whoCleanRammedWho[key]);
+                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: CLEANRAM:" + key + ":" + whoCleanRammedWho[key]);
 
             // Accuracy
             foreach (var key in Scores.Keys)
-                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ACCURACY:" + key + ":" + Scores[key].Score + "/" + Scores[key].shotsFired);
+                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: ACCURACY:" + key + ":" + Scores[key].Score + "/" + Scores[key].shotsFired);
 
             // Time "IT" and kills while "IT" logging
             if (BDArmorySettings.TAG_MODE)
             {
                 foreach (var key in Scores.Keys)
-                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TAGSCORE:" + key + ":" + Scores[key].tagScore.ToString("0.0"));
+                    logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TAGSCORE:" + key + ":" + Scores[key].tagScore.ToString("0.0"));
 
                 foreach (var key in Scores.Keys)
-                    Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMEIT:" + key + ":" + Scores[key].tagTotalTime.ToString("0.0"));
+                    logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMEIT:" + key + ":" + Scores[key].tagTotalTime.ToString("0.0"));
 
                 foreach (var key in Scores.Keys)
                     if (Scores[key].tagKillsWhileIt > 0)
-                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: KILLSWHILEIT:" + key + ":" + Scores[key].tagKillsWhileIt);
+                        logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: KILLSWHILEIT:" + key + ":" + Scores[key].tagKillsWhileIt);
 
                 foreach (var key in Scores.Keys)
                     if (Scores[key].tagTimesIt > 0)
-                        Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMESIT:" + key + ":" + Scores[key].tagTimesIt);
+                        logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: TIMESIT:" + key + ":" + Scores[key].tagTimesIt);
             }
+
+            // Dump the log results to a file
+            if (CompetitionID > 0)
+            {
+                var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
+                File.WriteAllLines(Path.Combine(folder, CompetitionID.ToString() + ".log"), logStrings);
+            }
+            // Also dump the results to the normal log.
+            foreach (var line in logStrings)
+                Log(line);
         }
 
 
