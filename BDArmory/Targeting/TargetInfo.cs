@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using BDArmory.Control;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -241,7 +242,6 @@ namespace BDArmory.Targeting
             }
         }
 
-        // Begin methods used for prioritizing targets
         public int NumFriendliesEngaging(BDTeam team)
         {
             if (friendliesEngaging.TryGetValue(team, out var friendlies))
@@ -252,21 +252,61 @@ namespace BDArmory.Targeting
             return 0;
         }
 
-        public int NumWeapons()
+        // Begin methods used for prioritizing targets
+        public float TargetPriRange(MissileFire myMf) // 1- Target range normalized with max weapon range
         {
-            if (friendliesEngaging.TryGetValue(team, out var friendlies))
-            {
-                friendlies.RemoveAll(item => item == null);
-                return friendlies.Count;
-            }
-            return 0;
+            float thisDist = (position - myMf.transform.position).magnitude;
+            float maxWepRange = 0;
+            using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    maxWepRange = (weapon.Current.GetEngagementRangeMax() > maxWepRange) ? weapon.Current.GetEngagementRangeMax() : maxWepRange;
+                }
+            float targetPriRange = 1 - Mathf.Clamp(thisDist / maxWepRange, 0, 1);
+            return targetPriRange;
         }
 
-        public float NormalizedAcceleration()
+        public float TargetPriATA(MissileFire myMf) // Square cosine of antenna train angle
+        {
+            float ataDot = Vector3.Dot(myMf.transform.up, position - myMf.transform.position);
+            ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
+            return ataDot*ataDot;
+        }
+
+        public float TargetPriAcceleration() // Normalized clamped acceleration for the target
         {
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
             float forwardAccel = Mathf.Abs((float)Vector3.Dot(vessel.acceleration, vessel.vesselTransform.up)); // Forward acceleration
-            return forwardAccel / bodyGravity;
+            return 0.1f * Mathf.Clamp(forwardAccel / bodyGravity, 0f, 10f); // Output is 0-1 (0.1 is equal to body gravity)
+        }
+
+        public float TargetPriClosureTime(MissileFire myMf) // Time to closest point of approach, normalized for one minute
+        {
+            float timeToCPA = vessel.ClosestTimeToCPA(myMf.vessel, 60f);
+            return 1-timeToCPA/60f; // Output is 0-1
+        }
+
+        public int TargetPriWeapons(MissileFire mf, MissileFire myMf) // Relative number of weapons of target compared to own weapons
+        {
+            if (mf.weaponArray.Length > 0)
+                return Mathf.Max(mf.weaponArray.Length - myMf.weaponArray.Length, 0) / mf.weaponArray.Length; // Ranges 0-1, 0 if target has same # of weapons, 1 if they have weapons and we don't
+            else
+                return 0; // Target doesn't have any weapons
+        }
+
+        public int TargetPriFriendliesEngaging(BDTeam team)
+        {
+            
+            if (friendliesEngaging.TryGetValue(team, out var friendlies))
+            {
+                friendlies.RemoveAll(item => item == null);
+                int friendsEngaging = friendlies.Count;
+                int teammates = team.Allies.Count;
+                return 1 - friendsEngaging / teammates; // Ranges from near 0 to 1
+            }
+            else
+                return 1; // No friendlies engaging
         }
         // End functions used for prioritizing targets
 
