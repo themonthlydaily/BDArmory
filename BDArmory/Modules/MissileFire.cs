@@ -389,6 +389,35 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
         public float maxMissilesOnTarget = 1;
 
+        // Target priority variables
+        [KSPField(isPersistant = true, guiName = "Current Target Bias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Current target bias
+         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetBias = 1.1f;
+
+        [KSPField(isPersistant = true, guiName = "Target Proximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Range
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightRange = 0.1f;
+
+        [KSPField(isPersistant = true, guiName = "Closer Angle to Target", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Antenna Train Angle
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightATA = 0;
+
+        [KSPField(isPersistant = true, guiName = "Target Acceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Acceleration
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightAccel = 0;
+
+        [KSPField(isPersistant = true, guiName = "Shorter Closing Time", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Closure Time
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightTimeToCPA = 0;
+
+        [KSPField(isPersistant = true, guiName = "Target Weapon Number", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Weapon Number
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightWeaponNumber = 0;
+
+        [KSPField(isPersistant = true, guiName = "Fewer Teammates Engaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Number Friendlies Engaging
+         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightFriendliesEngaging = 1f;
+
         public void ToggleGuardMode()
         {
             guardMode = !guardMode;
@@ -2999,7 +3028,7 @@ namespace BDArmory.Modules
             if (!targetMissiles)
             {
                 // select target based on competition style
-                potentialTarget = BDArmorySettings.FFA_COMBAT_STYLE ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetLeastEngagedTarget(this);
+                potentialTarget = BDArmorySettings.FFA_COMBAT_STYLE ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetHighestPriorityTarget(this);
                 if (potentialTarget)
                 {
                     targetsTried.Add(potentialTarget);
