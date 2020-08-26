@@ -947,7 +947,7 @@ namespace BDArmory.UI
                         }
                     }
                 }
-                if (timeSinceChange > 3)
+                if (timeSinceChange > BDArmorySettings.CAMERA_SWITCH_FREQUENCY)
                 {
                     if (bestVessel != null && !(bestVessel.isActiveVessel)) // if a vessel dies it'll use a default score for a few seconds
                     {
