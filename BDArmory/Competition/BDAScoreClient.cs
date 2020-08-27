@@ -333,6 +333,8 @@ namespace BDArmory.Competition
             }
             pendingRequest = true;
 
+            this.activeHeat = heat;
+
             string uri = string.Format("{0}/competitions/{1}/heats/{2}/start", baseUrl, hash, heat.id);
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))
             {
@@ -358,6 +360,8 @@ namespace BDArmory.Competition
                 yield break;
             }
             pendingRequest = true;
+
+            this.activeHeat = null;
 
             string uri = string.Format("{0}/competitions/{1}/heats/{2}/stop", baseUrl, hash, heat.id);
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))

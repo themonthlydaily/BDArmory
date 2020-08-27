@@ -232,6 +232,8 @@ namespace BDArmory.Competition
             hitsOnTarget.Clear();
             killsOnTarget.Clear();
             deaths.Clear();
+            longestHitDistance.Clear();
+            longestHitWeapon.Clear();
 
             status = StatusType.SpawningVessels;
             spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5, true, hash); // FIXME If geo-coords are included in the heat model, then use those instead.
@@ -365,6 +367,7 @@ namespace BDArmory.Competition
         {
             Debug.Log(string.Format("[BDAScoreService] TrackHit {0} by {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
             activePlayers.Add(attacker);
+            activePlayers.Add(target);
             if (hitsOnTarget.ContainsKey(attacker))
             {
                 if (hitsOnTarget[attacker].ContainsKey(target))
@@ -409,6 +412,7 @@ namespace BDArmory.Competition
         {
             Debug.Log(string.Format("[BDAScoreService] TrackKill {0} by {1}", target, string.Join(", ", attackers)));
             attackers.ForEach(e => activePlayers.Add(e));
+            activePlayers.Add(target);
             if (deaths.ContainsKey(target))
             {
                 Debug.Log(string.Format("[BDAScoreService] IncrementDeaths for {0}", target));
