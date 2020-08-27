@@ -269,7 +269,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriATA(MissileFire myMf) // Square cosine of antenna train angle
         {
-            float ataDot = Vector3.Dot(myMf.transform.up, position - myMf.transform.position);
+            float ataDot = Vector3.Dot(myMf.vessel.vesselTransform.up, (position - myMf.vessel.vesselTransform.position).normalized);
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
             return ataDot*ataDot;
         }
@@ -283,16 +283,24 @@ namespace BDArmory.Targeting
 
         public float TargetPriClosureTime(MissileFire myMf) // Time to closest point of approach, normalized for one minute
         {
-            float timeToCPA = vessel.ClosestTimeToCPA(myMf.vessel, 60f);
-            return 1-timeToCPA/60f; // Output is 0-1
+            float targetDistance = Vector3.Distance(vessel.transform.position, myMf.vessel.transform.position);
+            Vector3 currVel = (float)myMf.vessel.srfSpeed * myMf.vessel.Velocity().normalized;
+            float closureTime = Mathf.Clamp((float)(1 / ((vessel.Velocity() - currVel).magnitude / targetDistance)), 0f, 60f);
+            return 1-closureTime/60f;
         }
 
-        public int TargetPriWeapons(MissileFire mf, MissileFire myMf) // Relative number of weapons of target compared to own weapons
+        public float TargetPriWeapons(MissileFire mf, MissileFire myMf) // Relative number of weapons of target compared to own weapons
         {
+            float targetWeapons = mf.weaponArray.Length - 1;
+            float myWeapons = myMf.weaponArray.Length - 1;
             if (mf.weaponArray.Length > 0)
-                return Mathf.Max(mf.weaponArray.Length - myMf.weaponArray.Length, 0) / mf.weaponArray.Length; // Ranges 0-1, 0 if target has same # of weapons, 1 if they have weapons and we don't
+            {
+                return Mathf.Max((targetWeapons - myWeapons) / myWeapons, 0); // Ranges 0-1, 0 if target has same # of weapons, 1 if they have weapons and we don't
+            }
             else
+            {
                 return 0; // Target doesn't have any weapons
+            }
         }
 
         public int TargetPriFriendliesEngaging(BDTeam team)
@@ -302,7 +310,7 @@ namespace BDArmory.Targeting
             {
                 friendlies.RemoveAll(item => item == null);
                 int friendsEngaging = friendlies.Count;
-                int teammates = team.Allies.Count;
+                int teammates = team.Allies.Count + 1;
                 return 1 - friendsEngaging / teammates; // Ranges from near 0 to 1
             }
             else

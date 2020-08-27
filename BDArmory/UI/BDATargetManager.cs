@@ -911,17 +911,16 @@ namespace BDArmory.UI
         {
             TargetInfo finalTarget = null;
             float finalTargetScore = 0f;
-            float hysteresis = mf.targetBias; // 10% hysteresis
             using (var target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
                     {
-                        float targetScore = (target.Current == mf.currentTarget ? hysteresis : 1f) * (
+                        float targetScore = (target.Current == mf.currentTarget ? mf.targetBias : 1f) * (
                             mf.targetWeightRange * target.Current.TargetPriRange(mf) +
                             mf.targetWeightATA * target.Current.TargetPriATA(mf) +
                             mf.targetWeightAccel * target.Current.TargetPriAcceleration() +
-                            mf.targetWeightTimeToCPA * target.Current.TargetPriClosureTime(mf) +
+                            mf.targetWeightClosureTime * target.Current.TargetPriClosureTime(mf) +
                             mf.targetWeightWeaponNumber * target.Current.TargetPriWeapons(target.Current.weaponManager, mf) +
                             mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf.Team));
                         if (finalTarget == null || targetScore > finalTargetScore)
@@ -931,12 +930,14 @@ namespace BDArmory.UI
                         }
                     }
                 }
-            Debug.Log("[BDATargeting]: Selected" + finalTarget.Vessel.GetDisplayName() + " with target score of " + finalTargetScore.ToString("0.00"));
-            mf.TargetScoreLabel = finalTargetScore.ToString("0.00");
-            mf.TargetLabel = finalTarget.Vessel.GetDisplayName();
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDTargeting]: Selected " + finalTarget.Vessel.GetDisplayName() + " with target score of " + finalTargetScore.ToString("0.00"));
+
+            mf.UpdateTargetPriorityUI(finalTarget);
             return finalTarget;
         }
 
+        
         public static TargetInfo GetMissileTarget(MissileFire mf, bool targetingMeOnly = false)
         {
             TargetInfo finalTarget = null;

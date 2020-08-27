@@ -400,30 +400,37 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Score", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string TargetScoreLabel = "";
 
+        private string targetBiasLabel = "Current Target Bias";
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Current Target Bias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Current target bias
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetBias = 1.1f;
 
+        private string targetRangeLabel = "Target Proximity";
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Proximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Range
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightRange = 0.1f;
 
+        private string targetATALabel = "Closer Angle to Target";
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Closer Angle to Target", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Antenna Train Angle
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightATA = 0;
 
+        private string targetAccelLabel = "Target Acceleration";
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Acceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Acceleration
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAccel = 0;
 
+        private string targetClosureTimeLabel = "Shorter Closing Time";
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Shorter Closing Time", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Closure Time
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightTimeToCPA = 0;
+        public float targetWeightClosureTime = 0;
 
+        private string targetWeaponNumberLabel = "Target Weapon Number";
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Weapon Number", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Weapon Number
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
 
+        private string targetFriendliesEngagingLabel = "Fewer Teammates Engaging";
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Fewer Teammates Engaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Number Friendlies Engaging
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightFriendliesEngaging = 1f;
@@ -2986,19 +2993,19 @@ namespace BDArmory.Modules
                         potentialAirTarget = BDATargetManager.GetAirToAirTarget(this);
                         targetDebugText = " is engaging an airborne target with ";
                     }
+                }
 
-                    if (potentialAirTarget)
+                if (potentialAirTarget)
+                {
+                    targetsTried.Add(potentialAirTarget);
+                    SetTarget(potentialAirTarget);
+                    if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget))
                     {
-                        targetsTried.Add(potentialAirTarget);
-                        SetTarget(potentialAirTarget);
-                        if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget))
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            {
-                                Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon);
-                            }
-                            return;
+                            Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon);
                         }
+                        return;
                     }
                 }
             }
@@ -3063,8 +3070,8 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory]: " + vessel.vesselName + " is engaging the least engaged target with " +
-                                      selectedWeapon.GetShortName());
+                            string targetDebugText = BDArmorySettings.FFA_COMBAT_STYLE ? " is engaging an FFA target with " : " is engaging the least engaged target with ";
+                            Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon.GetShortName());
                         }
                         return;
                     }
@@ -3177,6 +3184,57 @@ namespace BDArmory.Modules
             }
 
             Debug.Log("[BDArmory]: Unhandled target case");
+        }
+
+        // Update target priority UI
+        public void UpdateTargetPriorityUI(TargetInfo target)
+        {
+            // Get UI fields
+            var TargetBiasFields = Fields["targetBias"];
+            var TargetRangeFields = Fields["targetWeightRange"];
+            var TargetATAFields = Fields["targetWeightATA"];
+            var TargetAccelFields = Fields["targetWeightAccel"];
+            var TargetClosureTimeFields = Fields["targetWeightClosureTime"];
+            var TargetWeaponNumberFields = Fields["targetWeightWeaponNumber"];
+            var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
+
+            // Calculate score values
+            float targetBiasValue = targetBias;
+            float targetRangeValue = targetWeightRange * target.TargetPriRange(this);
+            float targetATAValue = targetWeightATA * target.TargetPriATA(this);
+            float targetAccelValue = targetWeightAccel * target.TargetPriAcceleration();
+            float targetClosureTimeValue = targetWeightClosureTime * target.TargetPriClosureTime(this);
+            float targetWeaponNumberValue = targetWeightWeaponNumber * target.TargetPriWeapons(target.weaponManager, this);
+            float targetFriendliesEngagingValue = targetWeightFriendliesEngaging * target.TargetPriFriendliesEngaging(this.Team);
+
+            // Calculate total target score
+            float targetScore = targetBiasValue * (
+                targetRangeValue +
+                targetATAValue +
+                targetAccelValue +
+                targetClosureTimeValue +
+                targetWeaponNumberValue +
+                targetFriendliesEngagingValue);
+
+            // Update GUI
+            //TargetBiasFields.guiName = targetBiasLabel + ": " + targetBiasValue.ToString("0.00");
+            //TargetRangeFields.guiName = targetRangeLabel + ": " + targetRangeValue.ToString("0.00");
+            //TargetATAFields.guiName = targetATALabel + ": " + targetATAValue.ToString("0.00");
+            //TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
+            //TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + targetClosureTimeValue.ToString("0.00");
+            //TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + targetWeaponNumberValue.ToString("0.00");
+            //TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
+
+            TargetBiasFields.guiName = targetBiasLabel + ": " + targetBiasValue.ToString("0.00");
+            TargetRangeFields.guiName = targetRangeLabel + ": " + target.TargetPriRange(this).ToString("0.00");
+            TargetATAFields.guiName = targetATALabel + ": " + target.TargetPriATA(this).ToString("0.00");
+            TargetAccelFields.guiName = targetAccelLabel + ": " + target.TargetPriAcceleration().ToString("0.00");
+            TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + target.TargetPriClosureTime(this).ToString("0.00");
+            TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + target.TargetPriWeapons(target.weaponManager, this).ToString("0.00");
+            TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + target.TargetPriFriendliesEngaging(this.Team).ToString("0.00");
+
+            TargetScoreLabel = targetScore.ToString("0.00");
+            TargetLabel = target.Vessel.GetDisplayName();
         }
 
         // extension for feature_engagementenvelope: new smartpickweapon method
@@ -3959,6 +4017,10 @@ namespace BDArmory.Modules
                 targetScanTimer -= Time.fixedDeltaTime; //advance scan timing (increased urgency)
             }
 
+            // Update target priority UI
+            if ((targetPriorityEnabled) && (currentTarget))
+                UpdateTargetPriorityUI(currentTarget);
+
             //scan and acquire new target
             //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
             if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 1f)) // stupid hack to stop them retargetting too quickly
@@ -3968,7 +4030,6 @@ namespace BDArmory.Modules
                 if (!guardFiringMissile)
                 {
 
-                    SetTarget(null);
                     SmartFindTarget();
 
                     if (guardTarget == null || selectedWeapon == null)
