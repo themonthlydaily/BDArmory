@@ -390,31 +390,41 @@ namespace BDArmory.Modules
         public float maxMissilesOnTarget = 1;
 
         // Target priority variables
-        [KSPField(isPersistant = true, guiName = "Current Target Bias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Current target bias
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Priority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Priority Toggle
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool targetPriorityEnabled = false;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Current Target", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
+        public string TargetLabel = "";
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Score", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
+        public string TargetScoreLabel = "";
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Current Target Bias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Current target bias
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetBias = 1.1f;
 
-        [KSPField(isPersistant = true, guiName = "Target Proximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Range
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Proximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Range
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightRange = 0.1f;
 
-        [KSPField(isPersistant = true, guiName = "Closer Angle to Target", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Antenna Train Angle
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Closer Angle to Target", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Antenna Train Angle
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightATA = 0;
 
-        [KSPField(isPersistant = true, guiName = "Target Acceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Acceleration
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Acceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Acceleration
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAccel = 0;
 
-        [KSPField(isPersistant = true, guiName = "Shorter Closing Time", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Closure Time
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Shorter Closing Time", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Closure Time
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightTimeToCPA = 0;
 
-        [KSPField(isPersistant = true, guiName = "Target Weapon Number", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Weapon Number
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Weapon Number", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Weapon Number
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
 
-        [KSPField(isPersistant = true, guiName = "Fewer Teammates Engaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Number Friendlies Engaging
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Fewer Teammates Engaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Number Friendlies Engaging
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightFriendliesEngaging = 1f;
 
@@ -2952,26 +2962,31 @@ namespace BDArmory.Modules
             //if AIRBORNE, try to engage airborne target first
             if (!vessel.LandedOrSplashed && !targetMissiles)
             {
-                if (pilotAI && pilotAI.IsExtending)
+                TargetInfo potentialAirTarget = null;
+                string targetDebugText = "";
+                if (BDArmorySettings.FFA_COMBAT_STYLE)
                 {
-                    TargetInfo potentialAirTarget = BDATargetManager.GetAirToAirTargetAbortExtend(this, 1500, 0.2f);
-                    if (potentialAirTarget)
-                    {
-                        targetsTried.Add(potentialAirTarget);
-                        SetTarget(potentialAirTarget);
-                        if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget))
-                        {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            {
-                                Debug.Log("[BDArmory]: " + vessel.vesselName + " is aborting extend and engaging an incoming airborne target with " + selectedWeapon);
-                            }
-                            return;
-                        }
-                    }
+                    potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
+                    targetDebugText = " is engaging an airborne target in FFA with ";
+                }
+                else if (this.targetPriorityEnabled)
+                {
+                    potentialAirTarget = BDATargetManager.GetHighestPriorityTarget(this);
+                    targetDebugText = " is engaging highest priority airborne target with ";
                 }
                 else
                 {
-                    TargetInfo potentialAirTarget = BDATargetManager.GetAirToAirTarget(this);
+                    if (pilotAI && pilotAI.IsExtending)
+                    {
+                        potentialAirTarget = BDATargetManager.GetAirToAirTargetAbortExtend(this, 1500, 0.2f);
+                        targetDebugText = " is aborting extend and engaging an incoming airborne target with ";
+                    }
+                    else
+                    {
+                        potentialAirTarget = BDATargetManager.GetAirToAirTarget(this);
+                        targetDebugText = " is engaging an airborne target with ";
+                    }
+
                     if (potentialAirTarget)
                     {
                         targetsTried.Add(potentialAirTarget);
@@ -2980,7 +2995,7 @@ namespace BDArmory.Modules
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             {
-                                Debug.Log("[BDArmory]: " + vessel.vesselName + " is engaging an airborne target with " + selectedWeapon);
+                                Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon);
                             }
                             return;
                         }

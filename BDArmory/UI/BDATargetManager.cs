@@ -931,6 +931,9 @@ namespace BDArmory.UI
                         }
                     }
                 }
+            Debug.Log("[BDATargeting]: Selected" + finalTarget.Vessel.GetDisplayName() + " with target score of " + finalTargetScore.ToString("0.00"));
+            mf.TargetScoreLabel = finalTargetScore.ToString("0.00");
+            mf.TargetLabel = finalTarget.Vessel.GetDisplayName();
             return finalTarget;
         }
 
