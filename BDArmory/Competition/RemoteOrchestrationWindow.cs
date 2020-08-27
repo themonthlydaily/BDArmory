@@ -24,6 +24,7 @@ namespace BDArmory.UI
 
         private string status;
         private string competition;
+        private string stage;
         private string heat;
 
         private void Awake()
@@ -45,6 +46,7 @@ namespace BDArmory.UI
 
             competition = client.competition == null ? "-" : client.competition.name;
             status = client.competition == null ? "Offline" : service.Status();
+            stage = client.activeHeat == null ? "-" : client.activeHeat.stage.ToString();
             heat = client.activeHeat == null ? "-" : client.activeHeat.order.ToString();
         }
 
@@ -99,6 +101,9 @@ namespace BDArmory.UI
             offset += _titleHeight;
             GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Status: ");
             GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), status);
+            offset += _titleHeight;
+            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Stage: ");
+            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), stage);
             offset += _titleHeight;
             GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Heat: ");
             GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), heat);
