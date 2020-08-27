@@ -310,16 +310,21 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            GUI.DragWindow(new Rect(3f * _buttonHeight + _margin, 0, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 11f * _buttonHeight - 2 * _margin, _titleHeight));
+            int numButtons = 11;
+            GUI.DragWindow(new Rect(3f * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 2f * _margin, _titleHeight));
 
-            if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button)) // Don't get so small that the buttons get hidden.
             {
                 BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH -= 50f;
+                if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 50f < 2f * _margin + numButtons * _buttonHeight)
+                    BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH = 2f * _margin + numButtons * _buttonHeight;
                 BDArmorySetup.SaveConfig();
             }
             if (GUI.Button(new Rect(1f * _buttonHeight + _margin, 4, _buttonHeight, _buttonHeight), "<>", BDArmorySetup.BDGuiSkin.button))
             {
                 BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH += 50f;
+                if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH > Screen.width) // Don't go off the screen.
+                    BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH = Screen.width;
                 BDArmorySetup.SaveConfig();
             }
             if (GUI.Button(new Rect(2f * _buttonHeight + _margin, 4, _buttonHeight, _buttonHeight), "↕", BDArmorySettings.VESSEL_SWITCHER_WINDOW_SORTING ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
