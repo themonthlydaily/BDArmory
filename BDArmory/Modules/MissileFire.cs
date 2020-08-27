@@ -2923,38 +2923,38 @@ namespace BDArmory.Modules
             //if AIRBORNE, try to engage airborne target first
             if (!vessel.LandedOrSplashed && !targetMissiles)
             {
-                if (pilotAI && pilotAI.IsExtending)
+                TargetInfo potentialAirTarget = null;
+                string targetDebugText = "";
+                if (BDArmorySettings.FFA_COMBAT_STYLE)
                 {
-                    TargetInfo potentialAirTarget = BDATargetManager.GetAirToAirTargetAbortExtend(this, 1500, 0.2f);
-                    if (potentialAirTarget)
-                    {
-                        targetsTried.Add(potentialAirTarget);
-                        SetTarget(potentialAirTarget);
-                        if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget))
-                        {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            {
-                                Debug.Log("[BDArmory]: " + vessel.vesselName + " is aborting extend and engaging an incoming airborne target with " + selectedWeapon);
-                            }
-                            return;
-                        }
-                    }
+                    potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
+                    targetDebugText = " is engaging an airborne FFA target with ";
                 }
                 else
                 {
-                    TargetInfo potentialAirTarget = BDATargetManager.GetAirToAirTarget(this);
-                    if (potentialAirTarget)
+                    if (pilotAI && pilotAI.IsExtending)
                     {
-                        targetsTried.Add(potentialAirTarget);
-                        SetTarget(potentialAirTarget);
-                        if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget))
+                        potentialAirTarget = BDATargetManager.GetAirToAirTargetAbortExtend(this, 1500, 0.2f);
+                        targetDebugText = " is aborting extend and engaging an incoming airborne target with ";
+                    }
+                    else
+                    {
+                        potentialAirTarget = BDATargetManager.GetAirToAirTarget(this);
+                        targetDebugText = " is engaging an airborne target with ";
+                    }
+                }
+
+                if (potentialAirTarget)
+                {
+                    targetsTried.Add(potentialAirTarget);
+                    SetTarget(potentialAirTarget);
+                    if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget))
+                    {
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            {
-                                Debug.Log("[BDArmory]: " + vessel.vesselName + " is engaging an airborne target with " + selectedWeapon);
-                            }
-                            return;
+                            Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon);
                         }
+                        return;
                     }
                 }
             }
@@ -3019,8 +3019,8 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory]: " + vessel.vesselName + " is engaging the least engaged target with " +
-                                      selectedWeapon.GetShortName());
+                            string targetDebugText = BDArmorySettings.FFA_COMBAT_STYLE ? " is engaging an FFA target with " : " is engaging the least engaged target with ";
+                            Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon.GetShortName());
                         }
                         return;
                     }
