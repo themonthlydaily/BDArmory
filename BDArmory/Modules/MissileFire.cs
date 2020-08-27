@@ -2665,7 +2665,7 @@ namespace BDArmory.Modules
                         MissileLauncher launcher = ml.Current as MissileLauncher;
                         if (launcher != null)
                         {
-                            if (launcher.part.name != weaponArray[weaponIndex].GetPart()?.name) continue;
+                            if (launcher.part.name != weaponArray[weaponIndex]?.GetPart()?.name) continue;
                         }
                         else
                         {

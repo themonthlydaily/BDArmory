@@ -49,6 +49,8 @@ namespace BDArmory.Control
         public HashSet<string> everyoneWhoHitMeWithMissiles = new HashSet<string>();
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
         public Dictionary<string, int> hitCounts = new Dictionary<string, int>();
+        public Dictionary<string, float> damageFromBullets = new Dictionary<string, float>();
+        public Dictionary<string, float> damageFromMissiles = new Dictionary<string, float>();
         public int shotsFired = 0;
         public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
         public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>();
@@ -371,9 +373,9 @@ namespace BDArmory.Control
             competitionStartTime = -1;
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
-            // GameEvents.onVesselPartCountChanged.Remove(CheckVesselType);
-            // GameEvents.onNewVesselCreated.Remove(CheckVesselType);
-            // GameEvents.onVesselCreate.Remove(CheckVesselType);
+            GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
+            GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
+            GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
             rammingInformation = null; // Reset the ramming information.
         }
 
@@ -382,10 +384,10 @@ namespace BDArmory.Control
             competitionIsActive = true; //start logging ramming now that the competition has officially started
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
-            // Trying to find the right events for when a vessel splits into more than one part.
-            // GameEvents.onVesselPartCountChanged.Add(CheckVesselType);
-            // GameEvents.onNewVesselCreated.Add(CheckVesselType);
-            // GameEvents.onVesselCreate.Add(CheckVesselType);
+            // I think these three events cover the cases for when an incorrectly built vessel splits into more than one part.
+            GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
+            GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
+            GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
             competitionStartTime = Planetarium.GetUniversalTime();
             lastTagUpdateTime = competitionStartTime;
         }
@@ -673,6 +675,22 @@ namespace BDArmory.Control
             return InvalidVesselReason.None;
         }
 
+        void CheckVesselTypePartCountChanged(Vessel vessel)
+        {
+            // Debug.Log("DEBUG CheckVesselType due to part count change");
+            CheckVesselType(vessel);
+        }
+        void CheckVesselTypeNewVesselCreated(Vessel vessel)
+        {
+            // Debug.Log("DEBUG CheckVesselType due to new vessel created");
+            CheckVesselType(vessel);
+        }
+        void CheckVesselTypeVesselCreate(Vessel vessel)
+        {
+            // Debug.Log("DEBUG CheckVesselType due to vessel create");
+            CheckVesselType(vessel);
+        }
+
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
         public void CheckVesselType(Vessel vessel)
         {
@@ -683,7 +701,7 @@ namespace BDArmory.Control
                     vessel.vesselName = vessel.vesselName.Remove(vessel.vesselName.Length - vessel.vesselType.ToString().Length - 1);
                 vessel.vesselType = VesselType.Plane;
                 message += ", changing vessel name and type to " + vessel.vesselName + ", " + vessel.vesselType;
-                Debug.Log("DEBUG " + message);
+                Debug.Log("[BDACompetitionMode]: " + message);
             }
         }
 
@@ -1751,6 +1769,16 @@ namespace BDArmory.Control
                     logStrings.Add(whoShotMe);
                 }
 
+            // Damage from bullets
+            foreach (var key in Scores.Keys)
+                if (Scores[key].damageFromBullets.Count > 0)
+                {
+                    string whoDamagedMeWithBullets = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHODAMAGEDWHOWITHBULLETS:" + key;
+                    foreach (var vesselName in Scores[key].damageFromBullets.Keys)
+                        whoDamagedMeWithBullets += ":" + Scores[key].damageFromBullets[vesselName].ToString("0.0") + ":" + vesselName;
+                    logStrings.Add(whoDamagedMeWithBullets);
+                }
+
             // Who shot who with missiles.
             foreach (var key in Scores.Keys)
                 if (Scores[key].missilePartDamageCounts.Count > 0)
@@ -1759,6 +1787,16 @@ namespace BDArmory.Control
                     foreach (var vesselName in Scores[key].missilePartDamageCounts.Keys)
                         whoShotMeWithMissiles += ":" + Scores[key].missilePartDamageCounts[vesselName] + ":" + vesselName;
                     logStrings.Add(whoShotMeWithMissiles);
+                }
+
+            // Damage from missiles
+            foreach (var key in Scores.Keys)
+                if (Scores[key].damageFromMissiles.Count > 0)
+                {
+                    string whoDamagedMeWithMissiles = "[BDArmoryCompetition:" + CompetitionID.ToString() + "]: WHODAMAGEDWHOWITHMISSILES:" + key;
+                    foreach (var vesselName in Scores[key].damageFromMissiles.Keys)
+                        whoDamagedMeWithMissiles += ":" + Scores[key].damageFromMissiles[vesselName].ToString("0.0") + ":" + vesselName;
+                    logStrings.Add(whoDamagedMeWithMissiles);
                 }
 
             // Who rammed who.

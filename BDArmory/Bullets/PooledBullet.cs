@@ -39,6 +39,7 @@ namespace BDArmory.Bullets
         public BulletDragTypes dragType;
 
         public Vessel sourceVessel;
+        public string sourceVesselName;
         public Color lightColor = Misc.Misc.ParseColor255("255, 235, 145, 255");
         public Color projectileColor;
         public string bulletTexturePath;
@@ -176,6 +177,11 @@ namespace BDArmory.Bullets
                 var aName = this.sourceVessel.GetName();
                 if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
                     ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
+                sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
+            }
+            else
+            {
+                sourceVesselName = null;
             }
         }
 
@@ -450,7 +456,7 @@ namespace BDArmory.Bullets
             if (ProximityAirDetonation(distanceFromStart))
             {
                 //detonate
-                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, false, caliber, null, currentVelocity);
+                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, currentVelocity);
                 KillBullet();
 
                 return;
@@ -516,6 +522,25 @@ namespace BDArmory.Bullets
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
+
+            // Add decals
+            if (BDArmorySettings.BULLET_HITS)
+            {
+                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, hasRichocheted, caliber, penetrationfactor);
+            }
+
+            // Apply damage
+            float damage;
+            if (explosive)
+            {
+                damage = hitPart.AddBallisticDamage(bulletMass - tntMass, caliber, multiplier, penetrationfactor, bulletDmgMult, impactVelocity);
+            }
+            else
+            {
+                damage = hitPart.AddBallisticDamage(bulletMass, caliber, multiplier, penetrationfactor, bulletDmgMult, impactVelocity);
+            }
+
+            // Update scoring structures
             var aName = this.sourceVessel.GetName();
             var tName = hitPart.vessel.GetName();
 
@@ -547,29 +572,19 @@ namespace BDArmory.Bullets
                     tData.lastPersonWhoHitMe = aName;
                     tData.lastHitTime = Planetarium.GetUniversalTime();
                     tData.everyoneWhoHitMe.Add(aName);
+                    // Track hits
                     if (tData.hitCounts.ContainsKey(aName))
                         ++tData.hitCounts[aName];
                     else
                         tData.hitCounts.Add(aName, 1);
+                    // Track damage
+                    if (tData.damageFromBullets.ContainsKey(aName))
+                        tData.damageFromBullets[aName] += damage;
+                    else
+                        tData.damageFromBullets.Add(aName, damage);
                 }
             }
 
-            if (BDArmorySettings.BULLET_HITS)
-            {
-                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, hasRichocheted, caliber,
-                    penetrationfactor);
-            }
-
-            if (explosive)
-            {
-                hitPart.AddBallisticDamage(bulletMass - tntMass, caliber, multiplier, penetrationfactor,
-                    bulletDmgMult, impactVelocity);
-            }
-            else
-            {
-                hitPart.AddBallisticDamage(bulletMass, caliber, multiplier, penetrationfactor,
-                    bulletDmgMult, impactVelocity);
-            }
         }
 
         private void CalculateDragNumericalIntegration()
@@ -684,13 +699,13 @@ namespace BDArmory.Bullets
 
                     if (airDetonation)
                     {
-                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, false, caliber);
+                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName);
                     }
                     else
                     {
                         ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f),
                                                     GetExplosivePower(),
-                                                    explModelPath, explSoundPath, false, caliber, null, direction: currentVelocity);
+                                                    explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, direction: currentVelocity);
                     }
 
                     KillBullet();
