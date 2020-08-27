@@ -100,7 +100,7 @@ namespace BDArmory.UI
             if (BDACompetitionMode.Instance) // Reset competition stuff.
             {
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                BDACompetitionMode.Instance.LogResults("due to spawning."); // Log results first.
+                BDACompetitionMode.Instance.LogResults("due to spawning.", "auto-dump-from-spawning"); // Log results first.
                 BDACompetitionMode.Instance.StopCompetition();
                 BDACompetitionMode.Instance.ResetCompetitionScores(); // Reset competition scores.
             }
@@ -471,7 +471,7 @@ namespace BDArmory.UI
             }
         }
 
-        public void DumpContinuousSpawningScores()
+        public void DumpContinuousSpawningScores(string tag = "")
         {
             var logStrings = new List<string>();
 
@@ -512,7 +512,7 @@ namespace BDArmory.UI
                 var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
-                File.WriteAllLines(Path.Combine(folder, BDACompetitionMode.Instance.CompetitionID.ToString() + ".log"), logStrings);
+                File.WriteAllLines(Path.Combine(folder, BDACompetitionMode.Instance.CompetitionID.ToString() + (tag != "" ? "-" + tag : "") + ".log"), logStrings);
             }
             // Also dump the results to the normal log.
             foreach (var line in logStrings)
@@ -553,7 +553,7 @@ namespace BDArmory.UI
             if (BDACompetitionMode.Instance) // Reset competition stuff.
             {
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                BDACompetitionMode.Instance.LogResults("due to continuous spawning."); // Log results first.
+                BDACompetitionMode.Instance.LogResults("due to continuous spawning.", "auto-dump-from-spawning"); // Log results first.
                 BDACompetitionMode.Instance.StopCompetition();
                 BDACompetitionMode.Instance.ResetCompetitionScores(); // Reset competition scores.
             }

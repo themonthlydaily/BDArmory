@@ -276,7 +276,6 @@ namespace BDArmory.Competition
                     .ToArray();
                 foreach (FileInfo file in craftFiles)
                 {
-                    Debug.Log("DEBUG Deleting " + file.FullName);
                     File.Delete(file.FullName);
                 }
             }

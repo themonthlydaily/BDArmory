@@ -1696,12 +1696,12 @@ namespace BDArmory.Control
             if (BDArmorySettings.TAG_MODE) lastTagUpdateTime = Planetarium.GetUniversalTime();
         }
 
-        // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>.log
-        public void LogResults(string message = "")
+        // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>[-tag].log
+        public void LogResults(string message = "", string tag = "")
         {
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
-                VesselSpawner.Instance.DumpContinuousSpawningScores();
+                VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
                 return;
             }
 
@@ -1812,7 +1812,7 @@ namespace BDArmory.Control
                 var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
-                File.WriteAllLines(Path.Combine(folder, CompetitionID.ToString() + ".log"), logStrings);
+                File.WriteAllLines(Path.Combine(folder, CompetitionID.ToString() + (tag != "" ? "-" + tag : "") + ".log"), logStrings);
             }
             // Also dump the results to the normal log.
             foreach (var line in logStrings)
