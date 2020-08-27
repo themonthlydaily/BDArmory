@@ -68,6 +68,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = true;
         [BDAPersistantSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;               // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
+        [BDAPersistantSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 3;               // Controls the minimum time between automated camera switches
         [BDAPersistantSettingsField] public static float OUT_OF_AMMO_KILL_TIME = -1f;            // Out of ammo kill timer for continuous spawn mode.
         [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;            // Controls whether ramming logging debug information is printed to the Debug.Log
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;           // Enable/disable remote orchestration
