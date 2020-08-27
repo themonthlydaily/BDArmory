@@ -3924,7 +3924,6 @@ namespace BDArmory.Modules
                 if (!guardFiringMissile)
                 {
 
-                    SetTarget(null);
                     SmartFindTarget();
 
                     if (guardTarget == null || selectedWeapon == null)
