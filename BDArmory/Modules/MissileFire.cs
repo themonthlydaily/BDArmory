@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using KSP.Localization;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -388,6 +389,52 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
         public float maxMissilesOnTarget = 1;
+
+        // Target priority variables
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Priority Toggle
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool targetPriorityEnabled = false;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
+        public string TargetLabel = "";
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetScore", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
+        public string TargetScoreLabel = "";
+
+        private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
+         UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetBias = 1.1f;
+
+        private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightRange = 0.1f;
+
+        private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightATA = 0;
+
+        private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightAccel = 0;
+
+        private string targetClosureTimeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_ShorterClosingTime");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ShorterClosingTime", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Closure Time
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightClosureTime = 0;
+
+        private string targetWeaponNumberLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetWeaponNumber");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetWeaponNumber", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Weapon Number
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightWeaponNumber = 0;
+
+        private string targetFriendliesEngagingLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
+         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightFriendliesEngaging = 1f;
 
         public void ToggleGuardMode()
         {
@@ -2665,7 +2712,7 @@ namespace BDArmory.Modules
                         MissileLauncher launcher = ml.Current as MissileLauncher;
                         if (launcher != null)
                         {
-                            if (launcher.part.name != weaponArray[weaponIndex].GetPart()?.name) continue;
+                            if (launcher.part.name != weaponArray[weaponIndex]?.GetPart()?.name) continue;
                         }
                         else
                         {
@@ -2928,7 +2975,12 @@ namespace BDArmory.Modules
                 if (BDArmorySettings.FFA_COMBAT_STYLE)
                 {
                     potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
-                    targetDebugText = " is engaging an airborne FFA target with ";
+                    targetDebugText = " is engaging an airborne target in FFA with ";
+                }
+                else if (this.targetPriorityEnabled)
+                {
+                    potentialAirTarget = BDATargetManager.GetHighestPriorityTarget(this);
+                    targetDebugText = " is engaging highest priority airborne target with ";
                 }
                 else
                 {
@@ -2999,7 +3051,7 @@ namespace BDArmory.Modules
             if (!targetMissiles)
             {
                 // select target based on competition style
-                potentialTarget = BDArmorySettings.FFA_COMBAT_STYLE ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetLeastEngagedTarget(this);
+                potentialTarget = BDArmorySettings.FFA_COMBAT_STYLE ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetHighestPriorityTarget(this);
                 if (potentialTarget)
                 {
                     targetsTried.Add(potentialTarget);
@@ -3133,6 +3185,49 @@ namespace BDArmory.Modules
             }
 
             Debug.Log("[BDArmory]: Unhandled target case");
+        }
+
+        // Update target priority UI
+        public void UpdateTargetPriorityUI(TargetInfo target)
+        {
+            // Get UI fields
+            var TargetBiasFields = Fields["targetBias"];
+            var TargetRangeFields = Fields["targetWeightRange"];
+            var TargetATAFields = Fields["targetWeightATA"];
+            var TargetAccelFields = Fields["targetWeightAccel"];
+            var TargetClosureTimeFields = Fields["targetWeightClosureTime"];
+            var TargetWeaponNumberFields = Fields["targetWeightWeaponNumber"];
+            var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
+
+            // Calculate score values
+            float targetBiasValue = targetBias;
+            float targetRangeValue = target.TargetPriRange(this);
+            float targetATAValue = target.TargetPriATA(this);
+            float targetAccelValue = target.TargetPriAcceleration();
+            float targetClosureTimeValue = target.TargetPriClosureTime(this);
+            float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
+            float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this.Team);
+
+            // Calculate total target score
+            float targetScore = targetBiasValue * (
+                targetWeightRange * targetRangeValue +
+                targetWeightATA * targetATAValue +
+                targetWeightAccel * targetAccelValue +
+                targetWeightClosureTime * targetClosureTimeValue +
+                targetWeightWeaponNumber * targetWeaponNumberValue +
+                targetWeightFriendliesEngaging * targetFriendliesEngagingValue);
+
+            // Update GUI
+            TargetBiasFields.guiName = targetBiasLabel + ": " + targetBiasValue.ToString("0.00");
+            TargetRangeFields.guiName = targetRangeLabel + ": " + targetRangeValue.ToString("0.00");
+            TargetATAFields.guiName = targetATALabel + ": " + targetATAValue.ToString("0.00");
+            TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
+            TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + targetClosureTimeValue.ToString("0.00");
+            TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + targetWeaponNumberValue.ToString("0.00");
+            TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
+
+            TargetScoreLabel = targetScore.ToString("0.00");
+            TargetLabel = target.Vessel.GetDisplayName();
         }
 
         // extension for feature_engagementenvelope: new smartpickweapon method
@@ -3915,6 +4010,10 @@ namespace BDArmory.Modules
                 targetScanTimer -= Time.fixedDeltaTime; //advance scan timing (increased urgency)
             }
 
+            // Update target priority UI
+            if ((targetPriorityEnabled) && (currentTarget))
+                UpdateTargetPriorityUI(currentTarget);
+
             //scan and acquire new target
             //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
             if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 1f)) // stupid hack to stop them retargetting too quickly
@@ -4377,6 +4476,23 @@ namespace BDArmory.Modules
             }
             outOfAmmo = !hasWeaponsAndAmmo; // Set outOfAmmo if we don't have any guns with compatible ammo.
             return hasWeaponsAndAmmo;
+        }
+
+        public int CountWeapons(List<WeaponClasses> weaponClasses = null)
+        { // Count number of weapons with ammo
+            int countWeaponsAndAmmo = 0;
+            foreach (var weapon in vessel.FindPartModulesImplementing<IBDWeapon>())
+            {
+                if (weapon == null) continue; // First entry is the "no weapon" option.
+                if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
+                if (weapon.GetWeaponClass() == WeaponClasses.Gun)
+                {
+                    if (weapon.GetShortName().EndsWith("Laser")) { countWeaponsAndAmmo++; continue; } // If it's a laser (counts as a gun) consider it as having ammo and count it, since electric charge can replenish.
+                    if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { countWeaponsAndAmmo++; } // If the gun has ammo or we're using infinite ammo, count it.
+                }
+                else { countWeaponsAndAmmo++; } // Other weapon types don't have ammo, or use electric charge, which could recharge, so count them.
+            }
+            return countWeaponsAndAmmo;
         }
 
 
