@@ -404,17 +404,17 @@ namespace BDArmory.Modules
         private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetBias = 1.1f;
+        public float targetBias = 1.2f;
 
         private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightRange = 0.1f;
+        public float targetWeightRange = 1f;
 
         private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightATA = 0;
+        public float targetWeightATA = 1.5f;
 
         private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
@@ -548,6 +548,7 @@ namespace BDArmory.Modules
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
+                SetTarget(null); // Without this, friendliesEngaging never gets updated
                 using (var wpnMgr = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
                     while (wpnMgr.MoveNext())
                     {
@@ -3206,7 +3207,7 @@ namespace BDArmory.Modules
             float targetAccelValue = target.TargetPriAcceleration();
             float targetClosureTimeValue = target.TargetPriClosureTime(this);
             float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
-            float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this.Team);
+            float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this);
 
             // Calculate total target score
             float targetScore = targetBiasValue * (

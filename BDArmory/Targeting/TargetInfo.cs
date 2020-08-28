@@ -306,18 +306,11 @@ namespace BDArmory.Targeting
             }
         }
 
-        public float TargetPriFriendliesEngaging(BDTeam team)
+        public float TargetPriFriendliesEngaging(MissileFire myMf)
         {
-
-            if (friendliesEngaging.TryGetValue(team, out var friendlies))
-            {
-                friendlies.RemoveAll(item => item == null);
-                float friendsEngaging = friendlies.Count;
-                float teammates = team.Allies.Count + 1;
-                return 1 - friendsEngaging / teammates; // Ranges from near 0 to 1
-            }
-            else
-                return 1; // No friendlies engaging
+            float friendsEngaging = Mathf.Max(NumFriendliesEngaging(myMf.Team)-1,0);
+            float teammates = myMf.wingCommander.friendlies.Count; ; 
+            return 1 - Mathf.Clamp(friendsEngaging / teammates, 0f, 1f); // Ranges from 0 to 1
         }
         // End functions used for prioritizing targets
 
