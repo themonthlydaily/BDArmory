@@ -7,14 +7,15 @@ using UnityEngine;
 
 namespace BDArmory.Core.Extension
 {
+    public enum ExplosionSourceType { Other, Missile, Bullet };
     public static class PartExtensions
     {
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
-            
+
             //////////////////////////////////////////////////////////
-            // Basic Add Hitpoints for compatibility
+            // Basic Add Hitpoints for compatibility (only used by lasers)
             //////////////////////////////////////////////////////////
             damage = (float)Math.Round(damage, 2);
 
@@ -30,12 +31,12 @@ namespace BDArmory.Core.Extension
             }
         }
 
-        public static void AddExplosiveDamage(this Part p,
+        public static float AddExplosiveDamage(this Part p,
                                                float explosiveDamage,
                                                float caliber,
-                                               bool isMissile)
+                                               ExplosionSourceType sourceType)
         {
-            if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
+            if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
 
             float damage_ = 0f;
 
@@ -43,15 +44,17 @@ namespace BDArmory.Core.Extension
             // Explosive Hitpoints
             //////////////////////////////////////////////////////////
 
-            if (isMissile)
+            switch (sourceType)
             {
-                damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage;
-            }
-            else
-            {
-                damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC * explosiveDamage;
+                case ExplosionSourceType.Missile:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage;
+                    break;
+                default:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC * explosiveDamage;
+                    break;
             }
 
+            var damage_before = damage_;
             //////////////////////////////////////////////////////////
             //   Armor Reduction factors
             //////////////////////////////////////////////////////////
@@ -59,7 +62,7 @@ namespace BDArmory.Core.Extension
             if (p.HasArmor())
             {
                 float armorMass_ = p.GetArmorThickness();
-                float damageReduction = DamageReduction(armorMass_, damage_, isMissile, caliber);
+                float damageReduction = DamageReduction(armorMass_, damage_, sourceType, caliber);
 
                 damage_ = damageReduction;
             }
@@ -76,9 +79,10 @@ namespace BDArmory.Core.Extension
             {
                 ApplyHitPoints(p, damage_);
             }
+            return damage_;
         }
 
-        public static void AddBallisticDamage(this Part p,
+        public static float AddBallisticDamage(this Part p,
                                                float mass,
                                                float caliber,
                                                float multiplier,
@@ -86,7 +90,7 @@ namespace BDArmory.Core.Extension
                                                float bulletDmgMult,
                                                float impactVelocity)
         {
-            if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
+            if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
 
             //////////////////////////////////////////////////////////
             // Basic Kinetic Formula
@@ -98,6 +102,7 @@ namespace BDArmory.Core.Extension
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
 
+            var damage_before = damage_;
             //////////////////////////////////////////////////////////
             //   Armor Reduction factors
             //////////////////////////////////////////////////////////
@@ -105,7 +110,7 @@ namespace BDArmory.Core.Extension
             if (p.HasArmor())
             {
                 float armorMass_ = p.GetArmorThickness();
-                float damageReduction = DamageReduction(armorMass_, damage_, false, caliber, penetrationfactor);
+                float damageReduction = DamageReduction(armorMass_, damage_, ExplosionSourceType.Bullet, caliber, penetrationfactor);
 
                 damage_ = damageReduction;
             }
@@ -122,6 +127,7 @@ namespace BDArmory.Core.Extension
             {
                 ApplyHitPoints(p, damage_, caliber, mass, mass, impactVelocity, penetrationfactor);
             }
+            return damage_;
         }
 
         /// <summary>
@@ -363,53 +369,56 @@ namespace BDArmory.Core.Extension
             return hasFuel;
         }
 
-        public static float DamageReduction(float armor, float damage, bool isMissile, float caliber = 0, float penetrationfactor = 0)
+        public static float DamageReduction(float armor, float damage, ExplosionSourceType sourceType, float caliber = 0, float penetrationfactor = 0)
         {
             float _damageReduction;
 
-            if (isMissile)
+            switch (sourceType)
             {
-                if (BDAMath.Between(armor, 100f, 200f))
-                {
-                    damage *= 0.95f;
-                }
-                else if (BDAMath.Between(armor, 200f, 400f))
-                {
-                    damage *= 0.875f;
-                }
-                else if (BDAMath.Between(armor, 400f, 500f))
-                {
-                    damage *= 0.80f;
-                }
-            }
+                case ExplosionSourceType.Missile:
+                    if (BDAMath.Between(armor, 100f, 200f))
+                    {
+                        damage *= 0.95f;
+                    }
+                    else if (BDAMath.Between(armor, 200f, 400f))
+                    {
+                        damage *= 0.875f;
+                    }
+                    else if (BDAMath.Between(armor, 400f, 500f))
+                    {
+                        damage *= 0.80f;
+                    }
+                    break;
+                default:
+                    if (!(penetrationfactor >= 1f))
+                    {
+                        //if (BDAMath.Between(armor, 100f, 200f))
+                        //{
+                        //    damage *= 0.300f;
+                        //}
+                        //else if (BDAMath.Between(armor, 200f, 400f))
+                        //{
+                        //    damage *= 0.250f;
+                        //}
+                        //else if (BDAMath.Between(armor, 400f, 500f))
+                        //{
+                        //    damage *= 0.200f;
+                        //}
 
-            if (!isMissile && !(penetrationfactor >= 1f))
-            {
-                //if (BDAMath.Between(armor, 100f, 200f))
-                //{
-                //    damage *= 0.300f;
-                //}
-                //else if (BDAMath.Between(armor, 200f, 400f))
-                //{
-                //    damage *= 0.250f;
-                //}
-                //else if (BDAMath.Between(armor, 400f, 500f))
-                //{
-                //    damage *= 0.200f;
-                //}
+                        //y=(98.34817*x)/(97.85935+x)
 
-                //y=(98.34817*x)/(97.85935+x)
+                        _damageReduction = (113 * armor) / (154 + armor);
 
-                _damageReduction = (113 * armor) / (154 + armor);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        {
+                            Debug.Log("[BDArmory]: Damage Before Reduction : " + Math.Round(damage, 2) / 100);
+                            Debug.Log("[BDArmory]: Damage Reduction : " + Math.Round(_damageReduction, 2) / 100);
+                            Debug.Log("[BDArmory]: Damage After Armor : " + Math.Round(damage *= (_damageReduction / 100f)));
+                        }
 
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                {
-                    Debug.Log("[BDArmory]: Damage Before Reduction : " + Math.Round(damage, 2) / 100);
-                    Debug.Log("[BDArmory]: Damage Reduction : " + Math.Round(_damageReduction, 2) / 100);
-                    Debug.Log("[BDArmory]: Damage After Armor : " + Math.Round(damage *= (_damageReduction / 100f)));
-                }
-
-                damage *= (_damageReduction / 100f);
+                        damage *= (_damageReduction / 100f);
+                    }
+                    break;
             }
 
             return damage;
