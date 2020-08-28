@@ -232,9 +232,11 @@ namespace BDArmory.Competition
             hitsOnTarget.Clear();
             killsOnTarget.Clear();
             deaths.Clear();
+            longestHitDistance.Clear();
+            longestHitWeapon.Clear();
 
             status = StatusType.SpawningVessels;
-            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, true, hash); // FIXME If geo-coords are included in the heat model, then use those instead.
+            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5, true, hash); // FIXME If geo-coords are included in the heat model, then use those instead.
             while (spawner.vesselsSpawning)
                 yield return new WaitForFixedUpdate();
             if (!spawner.vesselSpawnSuccess)
@@ -253,7 +255,6 @@ namespace BDArmory.Competition
             //         yield break;
             //     }
             // }
-            UI.LoadedVesselSwitcher.Instance.DoPostVesselSpawn();
             yield return new WaitForFixedUpdate();
 
             status = StatusType.RunningHeat;
@@ -263,8 +264,16 @@ namespace BDArmory.Competition
             // start timer coroutine for the duration specified in settings UI
             var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
             Debug.Log("[BDAScoreService] Starting a " + duration.ToString("F0") + "s duration competition.");
-            var startTime = Planetarium.GetUniversalTime();
-            while ((BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.competitionIsActive) && Planetarium.GetUniversalTime() - startTime < duration) // Allow exiting if the competition finishes early.
+            while (BDACompetitionMode.Instance.competitionStarting)
+                yield return new WaitForFixedUpdate(); // Wait for the competition to actually start.
+            if (!BDACompetitionMode.Instance.competitionIsActive)
+            {
+                var message = "Competition failed to start for heat " + hash + ".";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[BDAScoreService]: " + message);
+                yield break;
+            }
+            while (BDACompetitionMode.Instance.competitionIsActive && Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime < duration) // Allow exiting if the competition finishes early.
                 yield return new WaitForSeconds(1);
 
             // stop competition
@@ -358,6 +367,7 @@ namespace BDArmory.Competition
         {
             Debug.Log(string.Format("[BDAScoreService] TrackHit {0} by {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
             activePlayers.Add(attacker);
+            activePlayers.Add(target);
             if (hitsOnTarget.ContainsKey(attacker))
             {
                 if (hitsOnTarget[attacker].ContainsKey(target))
@@ -402,6 +412,7 @@ namespace BDArmory.Competition
         {
             Debug.Log(string.Format("[BDAScoreService] TrackKill {0} by {1}", target, string.Join(", ", attackers)));
             attackers.ForEach(e => activePlayers.Add(e));
+            activePlayers.Add(target);
             if (deaths.ContainsKey(target))
             {
                 Debug.Log(string.Format("[BDAScoreService] IncrementDeaths for {0}", target));
