@@ -4486,10 +4486,10 @@ namespace BDArmory.Modules
                 if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
                 if (weapon.GetWeaponClass() == WeaponClasses.Gun)
                 {
-                    if (weapon.GetShortName().EndsWith("Laser")) { countWeaponsAndAmmo++; } // If it's a laser (counts as a gun) consider it as having ammo, since electric charge can replenish.
-                    if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { countWeaponsAndAmmo++; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
+                    if (weapon.GetShortName().EndsWith("Laser")) { countWeaponsAndAmmo++; continue; } // If it's a laser (counts as a gun) consider it as having ammo and count it, since electric charge can replenish.
+                    if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { countWeaponsAndAmmo++; } // If the gun has ammo or we're using infinite ammo, count it.
                 }
-                else { countWeaponsAndAmmo++;} // Other weapon types don't have ammo, or use electric charge, which could recharge.
+                else { countWeaponsAndAmmo++; } // Other weapon types don't have ammo, or use electric charge, which could recharge, so count them.
             }
             return countWeaponsAndAmmo;
         }
