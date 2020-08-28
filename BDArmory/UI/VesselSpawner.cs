@@ -94,7 +94,7 @@ namespace BDArmory.UI
             crafts.Shuffle(); // Randomise the spawn order.
             spawnedVesselCount = 0; // Reset our spawned vessel count.
             altitude = Math.Max(2, altitude); // Don't spawn too low.
-            message = "Spawning " + crafts.Count + " vessels at an altitude of " + altitude + "m" + (crafts.Count > 8 ? ", this may take some time..." : ".");
+            message = "Spawning " + crafts.Count + " vessels at an altitude of " + altitude.ToString("G0") + "m" + (crafts.Count > 8 ? ", this may take some time..." : ".");
             Debug.Log("[VesselSpawner]: " + message);
             var spawnAirborne = altitude > 10;
             if (BDACompetitionMode.Instance) // Reset competition stuff.
@@ -110,27 +110,16 @@ namespace BDArmory.UI
             #region Pre-spawning
             if (killEverythingFirst)
             {
-                // Kill all vessels (including debris). Note: the currently focused vessel somehow survives this.
+                // Kill all vessels (including debris).
                 var vesselsToKill = new List<Vessel>(FlightGlobals.Vessels);
                 foreach (var vessel in vesselsToKill)
-                    vessel.Die();
+                    RemoveVessel(vessel);
             }
-            yield return new WaitForFixedUpdate();
+            while (removeVesselsPending > 0)
+                yield return new WaitForFixedUpdate();
             #endregion
 
             #region Spawning
-            if (killEverythingFirst)
-            {
-                // For the vessels that survived being killed, kill all their parts (this seems to get rid of it).
-                var survivingVessels = new List<Vessel>(FlightGlobals.Vessels);
-                foreach (var vessel in survivingVessels)
-                {
-                    var partsToKill = new List<Part>(vessel.parts);
-                    foreach (var part in partsToKill)
-                        part.Die();
-                }
-            }
-
             // Get the spawning point in world position coordinates.
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y);
             var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, terrainAltitude);
@@ -551,8 +540,9 @@ namespace BDArmory.UI
                 yield break;
             }
             crafts.Shuffle(); // Randomise the spawn order.
+            altitude = Math.Max(100, altitude); // Don't spawn too low.
             continuousSpawnedVesselCount = 0; // Reset our spawned vessel count.
-            message = "Spawning " + crafts.Count + " vessels" + (crafts.Count > 8 ? ", this may take some time..." : ".");
+            message = "Spawning " + crafts.Count + " vessels at an altitude of " + altitude.ToString("G0") + (crafts.Count > 8 ? ", this may take some time..." : ".");
             Debug.Log("[VesselSpawner]: " + message);
             if (BDACompetitionMode.Instance) // Reset competition stuff.
             {
@@ -567,27 +557,16 @@ namespace BDArmory.UI
             #region Pre-spawning
             if (killEverythingFirst)
             {
-                // Kill all vessels (including debris). Note: the currently focused vessel somehow survives this.
+                // Kill all vessels (including debris).
                 var vesselsToKill = new List<Vessel>(FlightGlobals.Vessels);
                 foreach (var vessel in vesselsToKill)
-                    vessel.Die();
+                    RemoveVessel(vessel);
             }
-            yield return new WaitForFixedUpdate();
+            while (removeVesselsPending > 0)
+                yield return new WaitForFixedUpdate();
             #endregion
 
             #region Spawning
-            if (killEverythingFirst)
-            {
-                // For the vessels that survived being killed, kill all their parts (this seems to get rid of it).
-                var survivingVessels = new List<Vessel>(FlightGlobals.Vessels);
-                foreach (var vessel in survivingVessels)
-                {
-                    var partsToKill = new List<Part>(vessel.parts);
-                    foreach (var part in partsToKill)
-                        part.Die();
-                }
-            }
-
             // Get the spawning point in world position coordinates.
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y);
             var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, terrainAltitude);
@@ -734,6 +713,7 @@ namespace BDArmory.UI
                             if (invalidVesselCount[craftURL] == 3) // After 3 attempts try spawning it again.
                             {
                                 message = vessel.vesselName + " is INVALID due to " + invalidReason + ", attempting to respawn it.";
+                                if (activeWeaponManagersByCraftURL.ContainsKey(craftURL)) activeWeaponManagersByCraftURL.Remove(craftURL); // Shouldn't occur, but just to be sure.
                                 activeWeaponManagersByCraftURL.Add(craftURL, null); // Indicate to the spawning routine that the craft is effectively dead.
                                 killIt = true;
                             }
@@ -748,10 +728,7 @@ namespace BDArmory.UI
                                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                                 Debug.Log("[VesselSpawner]: " + message);
                                 vesselsToActivate.Remove(vessel);
-                                vessel.Die(); // Remove the vessel
-                                var partsToKill = vessel.parts.ToList();
-                                foreach (var part in partsToKill)
-                                    part.Die();
+                                RemoveVessel(vessel); // Remove the vessel
                             }
                             continue;
                         }
@@ -777,6 +754,7 @@ namespace BDArmory.UI
                                 ++team;
                             weaponManager.SetTeam(BDTeam.Get(team.ToString()));
                             var craftURL = craftURLToVesselName.ToDictionary(i => i.Value, i => i.Key)[vessel.GetName()];
+                            if (activeWeaponManagersByCraftURL.ContainsKey(craftURL)) activeWeaponManagersByCraftURL.Remove(craftURL); // Shouldn't occur, but just to be sure.
                             activeWeaponManagersByCraftURL.Add(craftURL, weaponManager);
                             // Enable guard mode if a competition is active.
                             if (BDACompetitionMode.Instance.competitionIsActive)
@@ -799,11 +777,36 @@ namespace BDArmory.UI
                 if (BDACompetitionMode.Instance.competitionIsActive)
                     KillOffOutOfAmmoVessels();
 
+                // Wait for any pending vessel removals.
+                while (removeVesselsPending > 0)
+                    yield return new WaitForFixedUpdate();
+
                 yield return new WaitForSeconds(1); // 1s between checks. Nothing much happens if nothing needs spawning.
             }
             #endregion
             vesselsSpawningContinuously = false;
             Debug.Log("[VesselSpawner]: Continuous vessel spawning ended.");
+        }
+
+        private int removeVesselsPending = 0;
+        // Remove a vessel and clean up any remaining parts. This fixes the case where the currently focussed vessel refuses to die properly.
+        public void RemoveVessel(Vessel vessel)
+        {
+            if (vessel == null) return;
+            ++removeVesselsPending;
+            StartCoroutine(RemoveVesselCoroutine(vessel));
+        }
+        private IEnumerator RemoveVesselCoroutine(Vessel vessel)
+        {
+            vessel.Die(); // Kill the vessel
+            yield return new WaitForFixedUpdate();
+            if (vessel != null)
+            {
+                var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
+                foreach (var part in partsToKill)
+                    part.Die();
+            }
+            --removeVesselsPending;
         }
 
         public void KillOffOutOfAmmoVessels()
@@ -834,10 +837,7 @@ namespace BDArmory.UI
                         if (BDACompetitionMode.Instance.whoCleanRammedWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanRammedWho.Remove(vesselName);
                         if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vesselName);
                     }
-                    vessel.Die();
-                    var partsToKill = vessel.parts.ToList();
-                    foreach (var part in partsToKill)
-                        part.Die();
+                    RemoveVessel(vessel);
                 }
             }
         }

@@ -660,6 +660,7 @@ namespace BDArmory.Control
             return pilots;
         }
 
+        #region Vessel validity
         public enum InvalidVesselReason { None, NoAI, NoWeaponManager, NoCommand };
         public InvalidVesselReason IsValidVessel(Vessel vessel)
         {
@@ -704,6 +705,7 @@ namespace BDArmory.Control
                 Debug.Log("[BDACompetitionMode]: " + message);
             }
         }
+        #endregion
 
         private void DoPreflightChecks()
         {
