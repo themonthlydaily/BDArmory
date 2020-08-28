@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using KSP.Localization;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -390,48 +391,48 @@ namespace BDArmory.Modules
         public float maxMissilesOnTarget = 1;
 
         // Target priority variables
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Priority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Priority Toggle
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Priority Toggle
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool targetPriorityEnabled = false;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Current Target", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string TargetLabel = "";
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Score", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetScore", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string TargetScoreLabel = "";
 
-        private string targetBiasLabel = "Current Target Bias";
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Current Target Bias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Current target bias
+        private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetBias = 1.1f;
 
-        private string targetRangeLabel = "Target Proximity";
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Proximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Range
+        private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightRange = 0.1f;
 
-        private string targetATALabel = "Closer Angle to Target";
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Closer Angle to Target", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Antenna Train Angle
+        private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightATA = 0;
 
-        private string targetAccelLabel = "Target Acceleration";
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Acceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Acceleration
+        private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightAccel = 0;
 
-        private string targetClosureTimeLabel = "Shorter Closing Time";
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Shorter Closing Time", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Closure Time
+        private string targetClosureTimeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_ShorterClosingTime");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ShorterClosingTime", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Closure Time
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightClosureTime = 0;
 
-        private string targetWeaponNumberLabel = "Target Weapon Number";
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Target Weapon Number", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Target Weapon Number
+        private string targetWeaponNumberLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetWeaponNumber");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetWeaponNumber", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Weapon Number
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
 
-        private string targetFriendliesEngagingLabel = "Fewer Teammates Engaging";
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Fewer Teammates Engaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "Target Priority Settings", groupStartCollapsed = true),//Number Friendlies Engaging
+        private string targetFriendliesEngagingLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightFriendliesEngaging = 1f;
 
