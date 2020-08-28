@@ -3200,38 +3200,30 @@ namespace BDArmory.Modules
 
             // Calculate score values
             float targetBiasValue = targetBias;
-            float targetRangeValue = targetWeightRange * target.TargetPriRange(this);
-            float targetATAValue = targetWeightATA * target.TargetPriATA(this);
-            float targetAccelValue = targetWeightAccel * target.TargetPriAcceleration();
-            float targetClosureTimeValue = targetWeightClosureTime * target.TargetPriClosureTime(this);
-            float targetWeaponNumberValue = targetWeightWeaponNumber * target.TargetPriWeapons(target.weaponManager, this);
-            float targetFriendliesEngagingValue = targetWeightFriendliesEngaging * target.TargetPriFriendliesEngaging(this.Team);
+            float targetRangeValue = target.TargetPriRange(this);
+            float targetATAValue = target.TargetPriATA(this);
+            float targetAccelValue = target.TargetPriAcceleration();
+            float targetClosureTimeValue = target.TargetPriClosureTime(this);
+            float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
+            float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this.Team);
 
             // Calculate total target score
             float targetScore = targetBiasValue * (
-                targetRangeValue +
-                targetATAValue +
-                targetAccelValue +
-                targetClosureTimeValue +
-                targetWeaponNumberValue +
-                targetFriendliesEngagingValue);
+                targetWeightRange * targetRangeValue +
+                targetWeightATA * targetATAValue +
+                targetWeightAccel * targetAccelValue +
+                targetWeightClosureTime * targetClosureTimeValue +
+                targetWeightWeaponNumber * targetWeaponNumberValue +
+                targetWeightFriendliesEngaging * targetFriendliesEngagingValue);
 
             // Update GUI
-            //TargetBiasFields.guiName = targetBiasLabel + ": " + targetBiasValue.ToString("0.00");
-            //TargetRangeFields.guiName = targetRangeLabel + ": " + targetRangeValue.ToString("0.00");
-            //TargetATAFields.guiName = targetATALabel + ": " + targetATAValue.ToString("0.00");
-            //TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
-            //TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + targetClosureTimeValue.ToString("0.00");
-            //TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + targetWeaponNumberValue.ToString("0.00");
-            //TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
-
             TargetBiasFields.guiName = targetBiasLabel + ": " + targetBiasValue.ToString("0.00");
-            TargetRangeFields.guiName = targetRangeLabel + ": " + target.TargetPriRange(this).ToString("0.00");
-            TargetATAFields.guiName = targetATALabel + ": " + target.TargetPriATA(this).ToString("0.00");
-            TargetAccelFields.guiName = targetAccelLabel + ": " + target.TargetPriAcceleration().ToString("0.00");
-            TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + target.TargetPriClosureTime(this).ToString("0.00");
-            TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + target.TargetPriWeapons(target.weaponManager, this).ToString("0.00");
-            TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + target.TargetPriFriendliesEngaging(this.Team).ToString("0.00");
+            TargetRangeFields.guiName = targetRangeLabel + ": " + targetRangeValue.ToString("0.00");
+            TargetATAFields.guiName = targetATALabel + ": " + targetATAValue.ToString("0.00");
+            TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
+            TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + targetClosureTimeValue.ToString("0.00");
+            TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + targetWeaponNumberValue.ToString("0.00");
+            TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
 
             TargetScoreLabel = targetScore.ToString("0.00");
             TargetLabel = target.Vessel.GetDisplayName();
@@ -4483,6 +4475,23 @@ namespace BDArmory.Modules
             }
             outOfAmmo = !hasWeaponsAndAmmo; // Set outOfAmmo if we don't have any guns with compatible ammo.
             return hasWeaponsAndAmmo;
+        }
+
+        public int CountWeapons(List<WeaponClasses> weaponClasses = null)
+        { // Count number of weapons with ammo
+            int countWeaponsAndAmmo = 0;
+            foreach (var weapon in vessel.FindPartModulesImplementing<IBDWeapon>())
+            {
+                if (weapon == null) continue; // First entry is the "no weapon" option.
+                if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
+                if (weapon.GetWeaponClass() == WeaponClasses.Gun)
+                {
+                    if (weapon.GetShortName().EndsWith("Laser")) { countWeaponsAndAmmo++; } // If it's a laser (counts as a gun) consider it as having ammo, since electric charge can replenish.
+                    if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { countWeaponsAndAmmo++; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
+                }
+                else { countWeaponsAndAmmo++;} // Other weapon types don't have ammo, or use electric charge, which could recharge.
+            }
+            return countWeaponsAndAmmo;
         }
 
 

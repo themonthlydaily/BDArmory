@@ -5,6 +5,7 @@ using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
+using Contracts.Parameters;
 using UnityEngine;
 
 namespace BDArmory.Targeting
@@ -291,11 +292,13 @@ namespace BDArmory.Targeting
 
         public float TargetPriWeapons(MissileFire mf, MissileFire myMf) // Relative number of weapons of target compared to own weapons
         {
-            float targetWeapons = mf.weaponArray.Length - 1;
-            float myWeapons = myMf.weaponArray.Length - 1;
+            float targetWeapons = mf.CountWeapons(); // Counts weapons
+            float myWeapons = myMf.CountWeapons(); // Counts weapons
+            // float targetWeapons = mf.weaponArray.Length - 1; // Counts weapon groups
+            // float myWeapons = myMf.weaponArray.Length - 1; // Counts weapon groups
             if (mf.weaponArray.Length > 0)
             {
-                return Mathf.Max((targetWeapons - myWeapons) / myWeapons, 0); // Ranges 0-1, 0 if target has same # of weapons, 1 if they have weapons and we don't
+                return Mathf.Max((targetWeapons - myWeapons) / targetWeapons, 0); // Ranges 0-1, 0 if target has same # of weapons, 1 if they have weapons and we don't
             }
             else
             {
@@ -303,14 +306,14 @@ namespace BDArmory.Targeting
             }
         }
 
-        public int TargetPriFriendliesEngaging(BDTeam team)
+        public float TargetPriFriendliesEngaging(BDTeam team)
         {
-            
+
             if (friendliesEngaging.TryGetValue(team, out var friendlies))
             {
                 friendlies.RemoveAll(item => item == null);
-                int friendsEngaging = friendlies.Count;
-                int teammates = team.Allies.Count + 1;
+                float friendsEngaging = friendlies.Count;
+                float teammates = team.Allies.Count + 1;
                 return 1 - friendsEngaging / teammates; // Ranges from near 0 to 1
             }
             else
