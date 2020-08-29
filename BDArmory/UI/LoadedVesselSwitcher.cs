@@ -422,33 +422,58 @@ namespace BDArmory.UI
             float vesselButtonWidth = BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin - 6f * _buttonHeight;
 
             // Show all the active vessels
-            if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_SORTING && BDArmorySettings.TAG_MODE) // TODO Add sorting for regular mode too if desired
-            { // Sort vessels based on total tag time or tag scores.
-                var orderedWMs = weaponManagers.SelectMany(tm => tm.Value, (tm, weaponManager) => new Tuple<string, MissileFire>(tm.Key, weaponManager)).ToList(); // Use a local copy.
-                if (_continuousVesselSpawning && orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ContainsKey(mf.Item2.vessel.vesselName) && VesselSpawner.Instance.continuousSpawningScores.ContainsKey(mf.Item2.vessel.vesselName)))
-                    orderedWMs.Sort((mf1, mf2) => ((VesselSpawner.Instance.continuousSpawningScores[mf2.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores[mf2.Item2.vessel.vesselName].tagTotalTime).CompareTo(VesselSpawner.Instance.continuousSpawningScores[mf1.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores[mf1.Item2.vessel.vesselName].tagTotalTime)));
-                else if (orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ContainsKey(mf.Item2.vessel.vesselName)))
-                    orderedWMs.Sort((mf1, mf2) => (BDACompetitionMode.Instance.Scores[mf2.Item2.vessel.vesselName].tagScore.CompareTo(BDACompetitionMode.Instance.Scores[mf1.Item2.vessel.vesselName].tagScore)));
-                foreach (var weaponManagerPair in orderedWMs)
+            if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_SORTING)
+            {
+                if (BDArmorySettings.TAG_MODE)
+                { // Sort vessels based on total tag time or tag scores.
+                    var orderedWMs = weaponManagers.SelectMany(tm => tm.Value, (tm, weaponManager) => new Tuple<string, MissileFire>(tm.Key, weaponManager)).ToList(); // Use a local copy.
+                    if (_continuousVesselSpawning && orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ContainsKey(mf.Item2.vessel.vesselName) && VesselSpawner.Instance.continuousSpawningScores.ContainsKey(mf.Item2.vessel.vesselName)))
+                        orderedWMs.Sort((mf1, mf2) => ((VesselSpawner.Instance.continuousSpawningScores[mf2.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores[mf2.Item2.vessel.vesselName].tagTotalTime).CompareTo(VesselSpawner.Instance.continuousSpawningScores[mf1.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores[mf1.Item2.vessel.vesselName].tagTotalTime)));
+                    else if (orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ContainsKey(mf.Item2.vessel.vesselName)))
+                        orderedWMs.Sort((mf1, mf2) => (BDACompetitionMode.Instance.Scores[mf2.Item2.vessel.vesselName].tagScore.CompareTo(BDACompetitionMode.Instance.Scores[mf1.Item2.vessel.vesselName].tagScore)));
+                    foreach (var weaponManagerPair in orderedWMs)
+                    {
+                        if (weaponManagerPair.Item2 == null) continue;
+                        try
+                        {
+                            AddVesselSwitcherWindowEntry(weaponManagerPair.Item2, weaponManagerPair.Item1, height, vesselButtonWidth);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManagerPair.Item2.vessel.vesselName + " on team " + weaponManagerPair.Item1 + " to the list: " + e.Message);
+                        }
+                        height += _buttonHeight + _buttonGap;
+                    }
+                }
+                else // Sorting of teams by hit counts.
                 {
-                    if (weaponManagerPair.Item2 == null) continue;
-                    try
+                    var orderedTeamManagers = weaponManagers.Select(tm => new Tuple<string, List<MissileFire>>(tm.Key, tm.Value)).ToList();
+                    foreach (var teamManager in orderedTeamManagers)
+                        teamManager.Item2.Sort((wm1, wm2) => (BDACompetitionMode.Instance.Scores.ContainsKey(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm2.vessel.vesselName].Score : 0).CompareTo(BDACompetitionMode.Instance.Scores.ContainsKey(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm1.vessel.vesselName].Score : 0)); // Sort within each team by hits.
+                    orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Score : 0).CompareTo(tm1.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Score : 0)))); // Sort teams by total hits.
+                    foreach (var teamManager in orderedTeamManagers)
                     {
-                        AddVesselSwitcherWindowEntry(weaponManagerPair.Item2, weaponManagerPair.Item1, height, vesselButtonWidth);
+                        height += _margin;
+                        foreach (var weaponManager in teamManager.Item2)
+                        {
+                            if (weaponManager == null) continue;
+                            try
+                            {
+                                AddVesselSwitcherWindowEntry(weaponManager, teamManager.Item1, height, vesselButtonWidth);
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManager.vessel.vesselName + " on team " + teamManager.Item1 + " to the list: " + e.Message);
+                            }
+                            height += _buttonHeight + _buttonGap;
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManagerPair.Item2.vessel.vesselName + " on team " + weaponManagerPair.Item1 + " to the list: " + e.Message);
-                    }
-
-                    height += _buttonHeight + _buttonGap;
                 }
             }
-            else
+            else // Regular sorting.
                 foreach (var teamManagers in weaponManagers)
                 {
                     height += _margin;
-
                     foreach (var weaponManager in teamManagers.Value)
                     {
                         if (weaponManager == null) continue;
@@ -460,7 +485,6 @@ namespace BDArmory.UI
                         {
                             Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManager.vessel.vesselName + " on team " + teamManagers.Key + " to the list: " + e.Message);
                         }
-
                         height += _buttonHeight + _buttonGap;
                     }
                 }
