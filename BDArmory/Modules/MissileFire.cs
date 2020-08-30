@@ -444,16 +444,25 @@ namespace BDArmory.Modules
         private string targetAoDLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AngleOverDistance");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AngleOverDistance", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Angle/Distance
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightAoD = 1.5f;
+        public float targetWeightAoD = 0f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_Reset", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_TargetPriority_ResetFFA")]
-        public bool targetResetWeightsFFA = false;
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_Reset", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Toggle(scene = UI_Scene.All, enabledText = "#LOC_BDArmory_TargetPriority_ResetAvsB")]
-        public bool targetResetWeightsAvsB = false;
-
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ResetPriority", active = true, advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true)]//Reset A vs B
+        void ResetTargetPriorityWeightsPriority()
+        {
+            targetBias = 1.3f;
+            targetWeightRange = 1f;
+            targetWeightATA = 1f;
+            targetWeightAccel = 0f;
+            targetWeightClosureTime = 1f;
+            targetWeightWeaponNumber = 0f;
+            targetWeightFriendliesEngaging = 1f;
+            targetWeightThreat = 0f;
+            targetWeightAoD = 0f;
+        }
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ResetFFA", active = true, advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true)]//Reset FFA
         void ResetTargetPriorityWeightsFFA()
         {
-            targetResetWeightsFFA = false;
+            targetBias = 1.1f;
             targetWeightRange = 0f;
             targetWeightATA = 0f;
             targetWeightAccel = 0f;
@@ -462,11 +471,11 @@ namespace BDArmory.Modules
             targetWeightFriendliesEngaging = 0f;
             targetWeightThreat = 0f;
             targetWeightAoD = 2f;
-            targetBias = 1.1f;
         }
+        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ResetAvsB", active = true, advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true)]//Reset A vs B
         void ResetTargetPriorityWeightsAvsB()
         {
-            targetResetWeightsAvsB = false;
+            targetBias = 1.0f;
             targetWeightRange = 0f;
             targetWeightATA = 0f;
             targetWeightAccel = 0f;
@@ -475,7 +484,6 @@ namespace BDArmory.Modules
             targetWeightFriendliesEngaging = 1f;
             targetWeightThreat = 0f;
             targetWeightAoD = 0f;
-            targetBias = 1.0f;
         }
         #endregion
 
@@ -1046,11 +1054,6 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight && vessel == FlightGlobals.ActiveVessel &&
                 BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled)
             {
-                if (targetResetWeightsFFA)
-                    ResetTargetPriorityWeightsFFA();
-                if (targetResetWeightsAvsB)
-                    ResetTargetPriorityWeightsAvsB();
-
                 if (BDArmorySettings.DRAW_DEBUG_LINES)
                 {
                     if (incomingMissileVessel)
@@ -3258,7 +3261,7 @@ namespace BDArmory.Modules
             float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
             float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this);
             float targetThreatValue = target.TargetPriThreat(target.weaponManager, this);
-            
+
             // Calculate total target score
             float targetScore = targetBiasValue * (
                 targetWeightRange * targetRangeValue +
