@@ -767,6 +767,21 @@ namespace BDArmory.UI
                             ++continuousSpawningScores[vessel.GetName()].spawnCount;
                             if (invalidVesselCount.ContainsKey(craftURL))// Reset the invalid spawn counter.
                                 invalidVesselCount.Remove(craftURL);
+                            // Update the ramming information for the new vessel.
+                            if (BDACompetitionMode.Instance.rammingInformation != null)
+                            {
+                                BDACompetitionMode.Instance.rammingInformation[vessel.GetName()].vessel = vessel;
+                                BDACompetitionMode.Instance.rammingInformation[vessel.GetName()].partCount = vessel.parts.Count;
+                                BDACompetitionMode.Instance.rammingInformation[vessel.GetName()].radius = BDACompetitionMode.GetRadius(vessel);
+                                foreach (var vesselName in BDACompetitionMode.Instance.rammingInformation.Keys)
+                                {
+                                    if (vesselName == vessel.GetName()) continue;
+                                    if (BDACompetitionMode.Instance.rammingInformation.ContainsKey(vesselName))
+                                    {
+                                        BDACompetitionMode.Instance.rammingInformation[vesselName].targetInformation[vessel.GetName()] = new BDACompetitionMode.RammingTargetInformation { vessel = vessel };
+                                    }
+                                }
+                            }
                             vesselsToActivate.Remove(vessel);
                             LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                         }
