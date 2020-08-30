@@ -309,8 +309,41 @@ namespace BDArmory.Targeting
         public float TargetPriFriendliesEngaging(MissileFire myMf)
         {
             float friendsEngaging = Mathf.Max(NumFriendliesEngaging(myMf.Team)-1,0);
-            float teammates = myMf.wingCommander.friendlies.Count; ; 
-            return 1 - Mathf.Clamp(friendsEngaging / teammates, 0f, 1f); // Ranges from 0 to 1
+            float teammates = myMf.wingCommander.friendlies.Count;
+            if (teammates > 0)
+                return 1 - Mathf.Clamp(friendsEngaging / teammates, 0f, 1f); // Ranges from 0 to 1
+            else
+                return 0; // No teammates
+        }
+
+        public float TargetPriThreat(MissileFire mf, MissileFire myMf)
+        {
+            float firingAtMe = 0;
+            var pilotAI = myMf.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+            if (mf.vessel == myMf.incomingThreatVessel)
+            {
+                if (myMf.missileIsIncoming)
+                    firingAtMe = 1f;
+                else if (myMf.underFire)
+                {
+                    if (pilotAI)
+                    {
+                        if (pilotAI.evasionThreshold > 0) // If there is an evasionThreshold, use it to calculate the threat, 0.5 is missDistance = evasionThreshold
+                        {
+                            float missDistance = Mathf.Clamp(myMf.incomingMissDistance, 0, pilotAI.evasionThreshold * 2f);
+                            firingAtMe = 1f - missDistance / (pilotAI.evasionThreshold * 2f); // Ranges from 0-1
+                        }
+                        else
+                            firingAtMe = 1f; // Otherwise threat is 1
+                    }
+                    else // SurfaceAI
+                    {
+                        firingAtMe = 1f;
+                    }
+                }
+
+            }
+            return firingAtMe;
         }
         // End functions used for prioritizing targets
 

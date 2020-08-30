@@ -922,7 +922,8 @@ namespace BDArmory.UI
                             mf.targetWeightAccel * target.Current.TargetPriAcceleration() +
                             mf.targetWeightClosureTime * target.Current.TargetPriClosureTime(mf) +
                             mf.targetWeightWeaponNumber * target.Current.TargetPriWeapons(target.Current.weaponManager, mf) +
-                            mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf));
+                            mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf) + 
+                            mf.targetWeightThreat * target.Current.TargetPriThreat(target.Current.weaponManager, mf));
                         if (finalTarget == null || targetScore > finalTargetScore)
                         {
                             finalTarget = target.Current;
