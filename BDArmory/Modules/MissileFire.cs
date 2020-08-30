@@ -405,17 +405,22 @@ namespace BDArmory.Modules
         private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
          UI_FloatRange(minValue = 1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetBias = 1.3f;
+        public float targetBias = 1.2f;
 
         private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightRange = 1f;
+        public float targetWeightRange = 0f;
 
         private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightATA = 1f;
+        public float targetWeightATA = 0f;
+
+        private string targetAoDLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AngleOverDistance");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AngleOverDistance", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Angle/Distance
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightAoD = 2f;
 
         private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
@@ -425,7 +430,7 @@ namespace BDArmory.Modules
         private string targetClosureTimeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_ShorterClosingTime");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ShorterClosingTime", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Closure Time
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightClosureTime = 1f;
+        public float targetWeightClosureTime = 0f;
 
         private string targetWeaponNumberLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetWeaponNumber");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetWeaponNumber", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Weapon Number
@@ -441,50 +446,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetThreat", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightThreat = 0f;
-        private string targetAoDLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AngleOverDistance");
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AngleOverDistance", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Angle/Distance
-         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightAoD = 0f;
 
-        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ResetPriority", active = true, advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true)]//Reset A vs B
-        void ResetTargetPriorityWeightsPriority()
-        {
-            targetBias = 1.3f;
-            targetWeightRange = 1f;
-            targetWeightATA = 1f;
-            targetWeightAccel = 0f;
-            targetWeightClosureTime = 1f;
-            targetWeightWeaponNumber = 0f;
-            targetWeightFriendliesEngaging = 1f;
-            targetWeightThreat = 0f;
-            targetWeightAoD = 0f;
-        }
-        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ResetFFA", active = true, advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true)]//Reset FFA
-        void ResetTargetPriorityWeightsFFA()
-        {
-            targetBias = 1.1f;
-            targetWeightRange = 0f;
-            targetWeightATA = 0f;
-            targetWeightAccel = 0f;
-            targetWeightClosureTime = 0f;
-            targetWeightWeaponNumber = 0f;
-            targetWeightFriendliesEngaging = 0f;
-            targetWeightThreat = 0f;
-            targetWeightAoD = 2f;
-        }
-        [KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_ResetAvsB", active = true, advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true)]//Reset A vs B
-        void ResetTargetPriorityWeightsAvsB()
-        {
-            targetBias = 1.0f;
-            targetWeightRange = 0f;
-            targetWeightATA = 0f;
-            targetWeightAccel = 0f;
-            targetWeightClosureTime = 0f;
-            targetWeightWeaponNumber = 0f;
-            targetWeightFriendliesEngaging = 1f;
-            targetWeightThreat = 0f;
-            targetWeightAoD = 0f;
-        }
         #endregion
 
         public void ToggleGuardMode()
@@ -3246,6 +3208,7 @@ namespace BDArmory.Modules
             var TargetBiasFields = Fields["targetBias"];
             var TargetRangeFields = Fields["targetWeightRange"];
             var TargetATAFields = Fields["targetWeightATA"];
+            var TargetAoDFields = Fields["targetWeightAoD"];
             var TargetAccelFields = Fields["targetWeightAccel"];
             var TargetClosureTimeFields = Fields["targetWeightClosureTime"];
             var TargetWeaponNumberFields = Fields["targetWeightWeaponNumber"];
@@ -3256,6 +3219,7 @@ namespace BDArmory.Modules
             float targetBiasValue = targetBias;
             float targetRangeValue = target.TargetPriRange(this);
             float targetATAValue = target.TargetPriATA(this);
+            float targetAoDValue = target.TargetPriAoD(this);
             float targetAccelValue = target.TargetPriAcceleration();
             float targetClosureTimeValue = target.TargetPriClosureTime(this);
             float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
@@ -3270,12 +3234,14 @@ namespace BDArmory.Modules
                 targetWeightClosureTime * targetClosureTimeValue +
                 targetWeightWeaponNumber * targetWeaponNumberValue +
                 targetWeightFriendliesEngaging * targetFriendliesEngagingValue +
-                targetWeightThreat * targetThreatValue);
+                targetWeightThreat * targetThreatValue +
+                targetWeightAoD * targetAoDValue);
 
             // Update GUI
             TargetBiasFields.guiName = targetBiasLabel + ": " + targetBiasValue.ToString("0.00");
             TargetRangeFields.guiName = targetRangeLabel + ": " + targetRangeValue.ToString("0.00");
             TargetATAFields.guiName = targetATALabel + ": " + targetATAValue.ToString("0.00");
+            TargetAoDFields.guiName = targetAoDLabel + ": " + targetAoDValue.ToString("0.00");
             TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
             TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + targetClosureTimeValue.ToString("0.00");
             TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + targetWeaponNumberValue.ToString("0.00");

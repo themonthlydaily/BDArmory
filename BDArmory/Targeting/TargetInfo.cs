@@ -271,7 +271,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriATA(MissileFire myMf) // Square cosine of antenna train angle
         {
-            float ataDot = Vector3.Dot(myMf.vessel.vesselTransform.up, (position - myMf.vessel.vesselTransform.position).normalized);
+            float ataDot = Vector3.Dot(myMf.vessel.srf_vel_direction, (position - myMf.vessel.vesselTransform.position).normalized);
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
             return ataDot * ataDot;
         }
@@ -351,7 +351,7 @@ namespace BDArmory.Targeting
         {
             var relativePosition = vessel.transform.position - myMF.vessel.transform.position;
             float theta = Vector3.Angle(myMF.vessel.srf_vel_direction, relativePosition);
-            return (Mathf.Pow(Mathf.Cos(theta / 2f), 2f) + 1f) * 100f / Mathf.Max(10f, relativePosition.magnitude); // Ranges from 0 to 2 for distances > 100m
+            return Mathf.Clamp(((Mathf.Pow(Mathf.Cos(theta / 2f), 2f) + 1f) * 100f / Mathf.Max(10f, relativePosition.magnitude))/2, 0, 1); // Ranges from 0 to 1, clamped at 1 for distances closer than 100m
         }
         // End functions used for prioritizing targets
         #endregion
