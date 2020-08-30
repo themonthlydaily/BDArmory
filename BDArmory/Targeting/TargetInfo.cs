@@ -150,7 +150,7 @@ namespace BDArmory.Targeting
             }
 
             //destroy this if a target info is already attached to the vessel
-            foreach(var otherInfo in vessel.gameObject.GetComponents<TargetInfo>())
+            foreach (var otherInfo in vessel.gameObject.GetComponents<TargetInfo>())
             {
                 if (otherInfo != this)
                 {
@@ -253,6 +253,7 @@ namespace BDArmory.Targeting
             return 0;
         }
 
+        #region Target priority
         // Begin methods used for prioritizing targets
         public float TargetPriRange(MissileFire myMf) // 1- Target range normalized with max weapon range
         {
@@ -272,7 +273,7 @@ namespace BDArmory.Targeting
         {
             float ataDot = Vector3.Dot(myMf.vessel.vesselTransform.up, (position - myMf.vessel.vesselTransform.position).normalized);
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
-            return ataDot*ataDot;
+            return ataDot * ataDot;
         }
 
         public float TargetPriAcceleration() // Normalized clamped acceleration for the target
@@ -287,7 +288,7 @@ namespace BDArmory.Targeting
             float targetDistance = Vector3.Distance(vessel.transform.position, myMf.vessel.transform.position);
             Vector3 currVel = (float)myMf.vessel.srfSpeed * myMf.vessel.Velocity().normalized;
             float closureTime = Mathf.Clamp((float)(1 / ((vessel.Velocity() - currVel).magnitude / targetDistance)), 0f, 60f);
-            return 1-closureTime/60f;
+            return 1 - closureTime / 60f;
         }
 
         public float TargetPriWeapons(MissileFire mf, MissileFire myMf) // Relative number of weapons of target compared to own weapons
@@ -345,7 +346,15 @@ namespace BDArmory.Targeting
             }
             return firingAtMe;
         }
+
+        public float TargetPriAoD(MissileFire myMF)
+        {
+            var relativePosition = vessel.transform.position - myMF.vessel.transform.position;
+            float theta = Vector3.Angle(myMF.vessel.srf_vel_direction, relativePosition);
+            return (Mathf.Pow(Mathf.Cos(theta / 2f), 2f) + 1f) * 100f / Mathf.Max(10f, relativePosition.magnitude); // Ranges from 0 to 2 for distances > 100m
+        }
         // End functions used for prioritizing targets
+        #endregion
 
         public int TotalEngaging()
         {
