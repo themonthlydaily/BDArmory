@@ -922,7 +922,9 @@ namespace BDArmory.UI
                             mf.targetWeightAccel * target.Current.TargetPriAcceleration() +
                             mf.targetWeightClosureTime * target.Current.TargetPriClosureTime(mf) +
                             mf.targetWeightWeaponNumber * target.Current.TargetPriWeapons(target.Current.weaponManager, mf) +
-                            mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf.Team));
+                            mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf) +
+                            mf.targetWeightThreat * target.Current.TargetPriThreat(target.Current.weaponManager, mf) +
+                            mf.targetWeightAoD * target.Current.TargetPriAoD(mf));
                         if (finalTarget == null || targetScore > finalTargetScore)
                         {
                             finalTarget = target.Current;
@@ -937,7 +939,7 @@ namespace BDArmory.UI
             return finalTarget;
         }
 
-        
+
         public static TargetInfo GetMissileTarget(MissileFire mf, bool targetingMeOnly = false)
         {
             TargetInfo finalTarget = null;
