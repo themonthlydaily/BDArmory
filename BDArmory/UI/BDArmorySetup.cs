@@ -1580,6 +1580,8 @@ namespace BDArmory.UI
                 }
                 line++;
             }
+            else
+                BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
 
             bool origPm = BDArmorySettings.PEACE_MODE;
             BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
