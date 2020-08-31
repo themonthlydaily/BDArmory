@@ -1864,16 +1864,16 @@ namespace BDArmory.Control
         public class RammingTargetInformation
         {
             public Vessel vessel; // The other vessel involved in a collision.
-            public double lastUpdateTime; // Last time the timeToCPA was updated.
-            public float timeToCPA; // Time to closest point of approach.
-            public bool potentialCollision; // Whether a collision might happen shortly.
-            public double potentialCollisionDetectionTime; // The latest time the potential collision was detected.
+            public double lastUpdateTime = 0; // Last time the timeToCPA was updated.
+            public float timeToCPA = 0f; // Time to closest point of approach.
+            public bool potentialCollision = false; // Whether a collision might happen shortly.
+            public double potentialCollisionDetectionTime = 0; // The latest time the potential collision was detected.
             public int partCountJustPriorToCollision; // The part count of the colliding vessel just prior to the collision.
             public float sqrDistance; // Distance^2 at the time of collision.
-            public float angleToCoM; // The angle from a vessel's velocity direction to the center of mass of the target.
-            public bool collisionDetected; // Whether a collision has actually been detected.
+            public float angleToCoM = 0f; // The angle from a vessel's velocity direction to the center of mass of the target.
+            public bool collisionDetected = false; // Whether a collision has actually been detected.
             public double collisionDetectedTime; // The time that the collision actually occurs.
-            public bool ramming; // True if a ram was attempted between the detection of a potential ram and the actual collision.
+            public bool ramming = false; // True if a ram was attempted between the detection of a potential ram and the actual collision.
         };
         public class RammingInformation
         {
@@ -1890,39 +1890,25 @@ namespace BDArmory.Control
         {
             double currentTime = Planetarium.GetUniversalTime();
             rammingInformation = new Dictionary<string, RammingInformation>();
-            foreach (var vessel in BDATargetManager.LoadedVessels)
+            var pilots = getAllPilots();
+            foreach (var pilot in pilots)
             {
-                IBDAIControl pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
-                if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral) continue; // Only include the vessels that the Scores dictionary uses.
-
-                var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                var pilotAI = pilot.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                 if (pilotAI == null) continue;
                 var targetRammingInformation = new Dictionary<string, RammingTargetInformation>();
-                foreach (var otherVessel in BDATargetManager.LoadedVessels)
+                foreach (var otherPilot in pilots)
                 {
-                    IBDAIControl otherPilot = otherVessel.FindPartModuleImplementing<IBDAIControl>();
-                    if (otherPilot == null || !otherPilot.weaponManager || otherPilot.weaponManager.Team.Neutral) continue; // Only include the vessels that the Scores dictionary uses.
-
-                    if (otherVessel == vessel) continue; // Don't include same-vessel information.
-                    var otherPilotAI = otherVessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                    if (otherPilot == pilot) continue; // Don't include same-vessel information.
+                    var otherPilotAI = otherPilot.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
                     if (otherPilotAI == null) continue;
-                    targetRammingInformation.Add(otherVessel.vesselName, new RammingTargetInformation
-                    {
-                        vessel = otherVessel,
-                        lastUpdateTime = currentTime,
-                        timeToCPA = 0f,
-                        potentialCollision = false,
-                        angleToCoM = 0f,
-                        collisionDetected = false,
-                        ramming = false,
-                    });
+                    targetRammingInformation.Add(otherPilot.vessel.vesselName, new RammingTargetInformation { vessel = otherPilot.vessel });
                 }
-                rammingInformation.Add(vessel.vesselName, new RammingInformation
+                rammingInformation.Add(pilot.vessel.vesselName, new RammingInformation
                 {
-                    vessel = vessel,
-                    vesselName = vessel.GetName(),
-                    partCount = vessel.parts.Count,
-                    radius = GetRadius(vessel),
+                    vessel = pilot.vessel,
+                    vesselName = pilot.vessel.GetName(),
+                    partCount = pilot.vessel.parts.Count,
+                    radius = GetRadius(pilot.vessel),
                     targetInformation = targetRammingInformation,
                 });
             }
@@ -2055,7 +2041,7 @@ namespace BDArmory.Control
         }
 
         // Get a vessel's "radius".
-        private float GetRadius(Vessel v)
+        public static float GetRadius(Vessel v)
         {
             //get vessel size
             Vector3 size = v.vesselSize;
