@@ -378,7 +378,8 @@ namespace BDArmory.UI
                 if (Event.current.button == 1)
                 {
                     // start the slowboat killer GM
-                    BDACompetitionMode.Instance.killerGMenabled = !BDACompetitionMode.Instance.killerGMenabled;
+                    if (BDArmorySettings.RUNWAY_PROJECT)
+                        BDACompetitionMode.Instance.killerGMenabled = !BDACompetitionMode.Instance.killerGMenabled;
                 }
                 else
                 {
