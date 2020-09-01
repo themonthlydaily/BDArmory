@@ -324,6 +324,7 @@ namespace BDArmory.Competition
                 record.hits = ComputeTotalHits(player.name);
                 record.kills = ComputeTotalKills(player.name);
                 record.deaths = ComputeTotalDeaths(player.name);
+                record.assists = ComputeTotalAssists(player.name);
                 if (longestHitDistance.ContainsKey(player.name))
                 {
                     record.distance = (float)longestHitDistance[player.name];
@@ -361,6 +362,16 @@ namespace BDArmory.Competition
             if (deaths.ContainsKey(playerName))
             {
                 result = deaths[playerName];
+            }
+            return result;
+        }
+
+        private int ComputeTotalAssists(string playerName)
+        {
+            int result = 0;
+            if (assists.ContainsKey(playerName))
+            {
+                result = assists[playerName];
             }
             return result;
         }
@@ -406,7 +417,7 @@ namespace BDArmory.Competition
             {
                 if (timeOfLastHitOnTarget[attacker].ContainsKey(target))
                 {
-                    ++timeOfLastHitOnTarget[attacker][target];
+                    timeOfLastHitOnTarget[attacker][target] = now;
                 }
                 else
                 {

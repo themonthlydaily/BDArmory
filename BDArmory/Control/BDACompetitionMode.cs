@@ -1655,6 +1655,7 @@ namespace BDArmory.Control
                             {
                                 competitionStatus.Add(key + " was killed");
                                 Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:NOBODY");
+                                Competition.BDAScoreService.Instance.TrackDeath(key);
                             }
                         }
                         doaUpdate += " :" + key + ": ";
