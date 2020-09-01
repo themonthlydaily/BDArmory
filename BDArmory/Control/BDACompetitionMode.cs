@@ -1633,7 +1633,7 @@ namespace BDArmory.Control
                                     {
                                         Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                                     }
-                                    Competition.BDAScoreService.Instance.TrackKill(Scores[key].EveryOneWhoDamagedMe().ToList(), key);
+                                    Competition.BDAScoreService.Instance.TrackDeath(key);
                                 }
                             }
                             if (whoKilledMe != "")
