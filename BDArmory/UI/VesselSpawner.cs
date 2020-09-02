@@ -821,6 +821,7 @@ namespace BDArmory.UI
                 foreach (var part in partsToKill)
                     part.Die();
             }
+            yield return new WaitForFixedUpdate();
             --removeVesselsPending;
         }
 
