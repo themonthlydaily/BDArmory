@@ -436,12 +436,19 @@ namespace BDArmory.Competition
         {
             var now = Planetarium.GetUniversalTime();
             var thresholdTime = now - 30; // anyone who hit this target within the last 30sec
-            var assistingAttackers = new HashSet<string>();
+
             foreach (var attacker in timeOfLastHitOnTarget.Keys)
             {
                 if( timeOfLastHitOnTarget[attacker].ContainsKey(target) && timeOfLastHitOnTarget[attacker][target] > thresholdTime)
                 {
-                    assistingAttackers.Add(attacker);
+                    if( assists.ContainsKey(attacker) )
+                    {
+                        ++assists[attacker];
+                    }
+                    else
+                    {
+                        assists.Add(attacker, 1);
+                    }
                 }
             }
         }
