@@ -567,8 +567,6 @@ namespace BDArmory.Modules
             DynamicDampingRollFactorField.guiActiveEditor = CustomDynamicAxisFields && dynamicSteerDamping;
 
             InitSteerDamping();
-
-            Misc.Misc.RefreshAssociatedWindows(FindObjectOfType<BDGenericAIBase>().part);
         }
 
         public void InitSteerDamping()
@@ -590,8 +588,6 @@ namespace BDArmory.Modules
             DampingMax.guiActiveEditor = dynamicSteerDamping && !CustomDynamicAxisFields;
             DampingFactor.guiActive = dynamicSteerDamping && !CustomDynamicAxisFields;
             DampingFactor.guiActiveEditor = dynamicSteerDamping && !CustomDynamicAxisFields;
-
-            Misc.Misc.RefreshAssociatedWindows(FindObjectOfType<BDGenericAIBase>().part);
         }
 
         protected override void Start()
