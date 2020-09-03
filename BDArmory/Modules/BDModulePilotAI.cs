@@ -219,10 +219,10 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = .1f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
         public float maxSteer = 1;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AttitudeLimiter", advancedTweakable = true, //Attitude Limiter
-            groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
-         UI_FloatRange(minValue = 10f, maxValue = 90f, stepIncrement = 5f, scene = UI_Scene.All)]
-        public float maxAttitude = 90f;
+        //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AttitudeLimiter", advancedTweakable = true, //Attitude Limiter, not currently functional
+        //    groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
+        // UI_FloatRange(minValue = 10f, maxValue = 90f, stepIncrement = 5f, scene = UI_Scene.All)]
+        //public float maxAttitude = 90f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BankLimiter", advancedTweakable = true, //Bank Angle Limiter
             groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
@@ -1272,13 +1272,17 @@ namespace BDArmory.Modules
             }
             debugPos = vessel.transform.position + (targetPosition - vesselTransform.position) * 5000;
 
-            // Adjust targetDirection based on attitude limits
-            Vector3 horizonNormal = Vector3.ProjectOnPlane((vessel.transform.position - vessel.mainBody.transform.position).normalized, vesselTransform.right);
-            // Vector3 horizonCross = Vector3.Cross(horizonNormal, targetDirection);
-            // Vector3 attitude = Vector3.ProjectOnPlane((vessel.transform.position - vessel.mainBody.transform.position).normalized, vesselTransform.right);
-            float attitude = vesselTransform.eulerAngles.x; // Quaternions seem good, but make my brain hurt
-            debugString.Append($"Attitude: " + attitude);
-            debugString.Append(Environment.NewLine);
+            //// Adjust targetDirection based on ATTITUDE limits
+            //var horizonUp = Vector3.ProjectOnPlane(vesselTransform.up, upDirection).normalized;
+            //var horizonRight = -Vector3.Cross(horizonUp, upDirection);
+            //float attitude = Vector3.SignedAngle(horizonUp, vesselTransform.up, horizonRight);
+            //if ((Mathf.Abs(attitude) > maxAttitude) && (maxAttitude != 90f))
+            //{
+            //    var projectPlane = Vector3.RotateTowards(upDirection, horizonUp, attitude * Mathf.PI / 180f, 0f);
+            //    targetDirection = Vector3.ProjectOnPlane(targetDirection, projectPlane);
+            //}
+            //debugString.Append($"Attitude: " + attitude);
+            //debugString.Append(Environment.NewLine);
 
             pitchError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirection, Vector3.right), Vector3.back);
             yawError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirectionYaw, Vector3.forward), Vector3.right);
@@ -1331,7 +1335,7 @@ namespace BDArmory.Modules
                 rollTarget = Vector3.ProjectOnPlane(targetPosition - vesselTransform.position + rollUp * Mathf.Clamp((targetPosition - vesselTransform.position).magnitude / 500f, 0f, 1f) * upDirection, vesselTransform.up);
 
             // Limit Bank Angle, this should probably be re-worked using quaternions or something like that, SignedAngle doesn't work well for angles > 90
-            horizonNormal = Vector3.ProjectOnPlane(vessel.transform.position-vessel.mainBody.transform.position, vesselTransform.up);
+            Vector3 horizonNormal = Vector3.ProjectOnPlane(vessel.transform.position-vessel.mainBody.transform.position, vesselTransform.up);
             float bankAngle = Vector3.SignedAngle(horizonNormal, rollTarget, vesselTransform.up);
 
             // FlightGlobals.ActiveVessel.mainBody.transform.position - this.vessel.transform.position;
@@ -1339,8 +1343,8 @@ namespace BDArmory.Modules
                 rollTarget = Vector3.RotateTowards(horizonNormal, rollTarget, maxBank / 180 * Mathf.PI, 0.0f);
 
             bankAngle = Vector3.SignedAngle(horizonNormal, rollTarget, vesselTransform.up);
-            debugString.Append($"Bank Angle: " + bankAngle);
-            debugString.Append(Environment.NewLine);
+            // debugString.Append($"Bank Angle: " + bankAngle);
+            // debugString.Append(Environment.NewLine);
 
             //v/q
             float dynamicAdjustment = Mathf.Clamp(16 * (float)(vessel.srfSpeed / vessel.dynamicPressurekPa), 0, 1.2f);
