@@ -649,9 +649,9 @@ namespace BDArmory.Control
         public InvalidVesselReason IsValidVessel(Vessel vessel)
         {
             var pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
-            if (pilot == null)
+            if (pilot == null) // Check for an AI.
                 return InvalidVesselReason.NoAI;
-            if (!pilot.weaponManager) // Check for a weapon manager
+            if (pilot.weaponManager == null) // Check for a weapon manager.
                 return InvalidVesselReason.NoWeaponManager;
             if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
                 CheckVesselType(vessel); // Attempt to fix it.
@@ -679,6 +679,7 @@ namespace BDArmory.Control
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
         public void CheckVesselType(Vessel vessel)
         {
+            if (!BDArmorySettings.RUNWAY_PROJECT) return;
             if (vessel != null && vessel.vesselName != null && !validVesselTypes.Contains(vessel.vesselType) && vessel.FindPartModuleImplementing<MissileFire>() != null) // Found an invalid vessel type with a weapon manager.
             {
                 var message = "Found weapon manager on " + vessel.vesselName + " of type " + vessel.vesselType;
@@ -1998,6 +1999,21 @@ namespace BDArmory.Control
                 // The only variables set more than once are vessel radii and part counts, but they are set to the same value, so this ought to be thread-safe.
                 Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
                 {
+                    if (!rammingInformation.ContainsKey(otherVesselName))
+                    {
+                        Debug.Log("DEBUG other vessel (" + otherVesselName + ") is missing from rammingInformation!");
+                        return;
+                    }
+                    if (!rammingInformation[vesselName].targetInformation.ContainsKey(otherVesselName))
+                    {
+                        Debug.Log("DEBUG other vessel (" + otherVesselName + ") is missing from rammingInformation[vessel].targetInformation!");
+                        return;
+                    }
+                    if (!rammingInformation[otherVesselName].targetInformation.ContainsKey(vesselName))
+                    {
+                        Debug.Log("DEBUG vessel (" + vesselName + ") is missing from rammingInformation[otherVessel].targetInformation!");
+                        return;
+                    }
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
                     if (rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA < potentialCollisionDetectionTime) // Closest point of approach is within the detection time.
                     {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -434,6 +435,13 @@ namespace BDArmory.UI
             }
 
             BulletInfo.Load();
+
+            // Spawn fields
+            spawnFields = new Dictionary<string, SpawnField> {
+                { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("G6"), -90, 90) },
+                { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("G6"), -180, 180) },
+                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_ALTITUDE.ToString("G6"), 0) },
+            };
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -1393,6 +1401,48 @@ namespace BDArmory.UI
             WindowRectSettings = new Rect(settingsLeft, settingsTop, settingsWidth, settingsHeight);
         }
 
+        private class SpawnField : MonoBehaviour
+        {
+            public SpawnField Initialise(double l, double v, string p, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; value = v; possibleValue = p; minValue = minV; maxValue = maxV; return this; }
+            public double lastUpdated;
+            public double value;
+            public string possibleValue;
+            private double minValue;
+            private double maxValue;
+            private bool coroutineRunning = false;
+            private Coroutine coroutine;
+
+            public void tryParseValue(string v)
+            {
+                if (!string.IsNullOrEmpty(v) && v != possibleValue)
+                {
+                    lastUpdated = Planetarium.GetUniversalTime();
+                    possibleValue = v;
+                    if (!coroutineRunning)
+                    {
+                        coroutine = StartCoroutine(UpdateValueCoroutine());
+                    }
+                }
+            }
+
+            private IEnumerator UpdateValueCoroutine()
+            {
+                coroutineRunning = true;
+                while (Planetarium.GetUniversalTime() - lastUpdated < 0.5)
+                    yield return new WaitForFixedUpdate();
+                double newValue;
+                if (double.TryParse(possibleValue, out newValue))
+                {
+                    value = Math.Min(Math.Max(newValue, minValue), maxValue);
+                    lastUpdated = Planetarium.GetUniversalTime();
+                }
+                possibleValue = value.ToString("G6");
+                coroutineRunning = false;
+                yield return new WaitForFixedUpdate();
+            }
+        }
+        Dictionary<string, SpawnField> spawnFields;
+
         void WindowSettings(int windowID)
         {
             float line = 1.25f;
@@ -1470,6 +1520,10 @@ namespace BDArmory.UI
             BDArmorySettings.CAMERA_SWITCH_FREQUENCY = (int)cameraSwitchFrequency;
             line++;
 
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
+            BDArmorySettings.VESSEL_SPAWN_DISTANCE = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f;
+            line++;
+
             var outOfAmmoKillTimeStr = "never";
             if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > -1 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 60)
                 outOfAmmoKillTimeStr = BDArmorySettings.OUT_OF_AMMO_KILL_TIME.ToString("G0") + "s";
@@ -1541,6 +1595,7 @@ namespace BDArmory.UI
                     break;
             }
             line++;
+
             if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
             {
                 Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
@@ -1549,17 +1604,12 @@ namespace BDArmory.UI
                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
             }
             var rects = SRight3Rects(line);
-            var guiSpawnPointLat = GUI.TextField(rects[0], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("G6"));
-            var guiSpawnPointLon = GUI.TextField(rects[1], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("G6"));
-            var guiSpawnPointAlt = GUI.TextField(rects[2], "  " + BDArmorySettings.VESSEL_SPAWN_ALTITUDE.ToString("G6"));
-            double spawnPointLat, spawnPointLon;
-            float spawnPointAlt;
-            if (double.TryParse(guiSpawnPointLat, out spawnPointLat))
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnPointLat, -90), 90);
-            if (double.TryParse(guiSpawnPointLon, out spawnPointLon))
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnPointLon, -180), 180);
-            if (float.TryParse(guiSpawnPointAlt, out spawnPointAlt))
-                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, spawnPointAlt);
+            spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8));
+            spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8));
+            spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8));
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].value, -90), 90);
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].value, -180), 180);
+            BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].value);
             line++;
 
             line++;
