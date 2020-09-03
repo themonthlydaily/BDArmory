@@ -1406,7 +1406,7 @@ namespace BDArmory.UI
             public SpawnField Initialise(double l, double v, string p, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; value = v; possibleValue = p; minValue = minV; maxValue = maxV; return this; }
             public double lastUpdated;
             public double value;
-            public string possibleValue;
+            public string possibleValue = string.Empty;
             private double minValue;
             private double maxValue;
             private bool coroutineRunning = false;
@@ -1414,7 +1414,7 @@ namespace BDArmory.UI
 
             public void tryParseValue(string v)
             {
-                if (!string.IsNullOrEmpty(v) && v != possibleValue)
+                if (v != possibleValue)
                 {
                     lastUpdated = Planetarium.GetUniversalTime();
                     possibleValue = v;
