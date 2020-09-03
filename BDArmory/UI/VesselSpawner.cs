@@ -651,8 +651,10 @@ namespace BDArmory.UI
                     using (var nextSpawnSlot = slotsToUse.GetEnumerator())
                         foreach (var craftURL in craftToSpawn)
                         {
+                            nextSpawnSlot.MoveNext();
                             if (activeWeaponManagersByCraftURL.ContainsKey(craftURL))
                                 activeWeaponManagersByCraftURL.Remove(craftURL);
+                            Debug.Log("DEBUG Spawning from spawn slot " + nextSpawnSlot.Current + " of " + crafts.Count);
                             var heading = 360f * nextSpawnSlot.Current / crafts.Count;
                             var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * refDirection, surfaceNormal).normalized;
                             var spawnDistance = crafts.Count > 1 ? spawnDistanceFactor + spawnDistanceFactor * crafts.Count : 0f; // If it's a single craft, spawn it at the spawn point.
@@ -689,7 +691,6 @@ namespace BDArmory.UI
                             continuousSpawningScores[vessel.GetName()].vessel = vessel; // Update some values in the scoring structure.
                             continuousSpawningScores[vessel.GetName()].outOfAmmoTime = 0;
                             spawnSlots[nextSpawnSlot.Current] = Planetarium.GetUniversalTime(); // Update the timestamp of the spawn slot.
-                            nextSpawnSlot.MoveNext();
                             ++continuousSpawnedVesselCount;
                             continuousSpawnedVesselCount %= crafts.Count;
                             Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
