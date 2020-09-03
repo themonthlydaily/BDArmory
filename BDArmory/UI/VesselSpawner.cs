@@ -647,7 +647,6 @@ namespace BDArmory.UI
                     {
                         if (activeWeaponManagersByCraftURL.ContainsKey(craftURL))
                             activeWeaponManagersByCraftURL.Remove(craftURL);
-                        Debug.Log("DEBUG Spawning from spawn slot " + spawnSlots[continuousSpawnedVesselCount] + " of " + crafts.Count);
                         var heading = 360f * spawnSlots[continuousSpawnedVesselCount] / crafts.Count;
                         var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * refDirection, surfaceNormal).normalized;
                         var spawnDistance = crafts.Count > 1 ? spawnDistanceFactor + spawnDistanceFactor * crafts.Count : 0f; // If it's a single craft, spawn it at the spawn point.
