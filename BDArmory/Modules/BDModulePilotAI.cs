@@ -2286,15 +2286,15 @@ namespace BDArmory.Modules
             }
             else if (command == PilotCommands.Attack)
             {
-                if (targetVessel == null)
-                {
-                    currentStatus = "Attack";
-                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
-                }
-                else // If the vessel has a target, let it fight!
+                if ((BDArmorySettings.RUNWAY_PROJECT) && (targetVessel != null)) // If the vessel has a target, let it fight!
                 {
                     ReleaseCommand();
                     return;
+                }
+                else
+                {
+                    currentStatus = "Attack";
+                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
                 }
             }
         }
