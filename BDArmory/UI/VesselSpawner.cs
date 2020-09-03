@@ -630,8 +630,7 @@ namespace BDArmory.UI
             Vector3 craftSpawnPosition;
             var shipFacility = EditorFacility.None;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, surfaceNormal)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            var spawnSlots = Enumerable.Range(0, crafts.Count).ToDictionary(c => c, c => (double)0);
-            var spawnSlotKeys = spawnSlots.Keys.ToList();
+            var spawnSlots = OptimiseSpawnSlots(crafts.Count);
             while (vesselsSpawningContinuously)
             {
                 // Reacquire the spawn point as the local coordinate system may have changed (floating origin adjustments, local body rotation, etc.).
@@ -642,60 +641,53 @@ namespace BDArmory.UI
                 var craftToSpawn = crafts.Where(craftURL => !craftURLToVesselName.ContainsKey(craftURL) || (activeWeaponManagersByCraftURL.ContainsKey(craftURL) && activeWeaponManagersByCraftURL[craftURL] == null)).ToList(); // Vessels that haven't been spawned yet, or have died.
                 if (craftToSpawn.Count > 0)
                 {
-                    // Figure out optimal spacing between spawning points. FIXME WIP
-                    spawnSlotKeys.Shuffle(); // Shuffle the order of slots (for sub-sorting).
-                    var availableSpawnSlots = spawnSlots.Where(s => s.Value < Planetarium.GetUniversalTime()).OrderBy(s => s.Value).ThenBy(s => spawnSlotKeys[s.Key]).Select(s => s.Key).ToList(); // Unused spawn slots ordered by least recently used, then randomly.
-                    var slotsToUse = availableSpawnSlots.Take(craftToSpawn.Count); // Use a random sample of the least recently used slots.
                     // Spawn the craft in a downward facing ring.
                     string failedVessels = "";
-                    using (var nextSpawnSlot = slotsToUse.GetEnumerator())
-                        foreach (var craftURL in craftToSpawn)
+                    foreach (var craftURL in craftToSpawn)
+                    {
+                        if (activeWeaponManagersByCraftURL.ContainsKey(craftURL))
+                            activeWeaponManagersByCraftURL.Remove(craftURL);
+                        Debug.Log("DEBUG Spawning from spawn slot " + spawnSlots[continuousSpawnedVesselCount] + " of " + crafts.Count);
+                        var heading = 360f * spawnSlots[continuousSpawnedVesselCount] / crafts.Count;
+                        var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * refDirection, surfaceNormal).normalized;
+                        var spawnDistance = crafts.Count > 1 ? spawnDistanceFactor + spawnDistanceFactor * crafts.Count : 0f; // If it's a single craft, spawn it at the spawn point.
+                        craftSpawnPosition = spawnPoint + altitude * (Vector3d)surfaceNormal + spawnDistance * direction;
+                        FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
+                        Vessel vessel = null;
+                        try
                         {
-                            nextSpawnSlot.MoveNext();
-                            if (activeWeaponManagersByCraftURL.ContainsKey(craftURL))
-                                activeWeaponManagersByCraftURL.Remove(craftURL);
-                            Debug.Log("DEBUG Spawning from spawn slot " + nextSpawnSlot.Current + " of " + crafts.Count);
-                            var heading = 360f * nextSpawnSlot.Current / crafts.Count;
-                            var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, surfaceNormal) * refDirection, surfaceNormal).normalized;
-                            var spawnDistance = crafts.Count > 1 ? spawnDistanceFactor + spawnDistanceFactor * crafts.Count : 0f; // If it's a single craft, spawn it at the spawn point.
-                            craftSpawnPosition = spawnPoint + altitude * (Vector3d)surfaceNormal + spawnDistance * direction;
-                            FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
-                            Vessel vessel = null;
-                            try
-                            {
-                                vessel = SpawnVesselFromCraftFile(craftURL, craftGeoCoords, 0, 0f, out shipFacility); // SPAWN
-                            }
-                            catch { vessel = null; }
-                            if (vessel == null)
-                            {
-                                var craftName = craftURL.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnFolder}").Length);
-                                Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
-                                failedVessels += "\n  -  " + craftName;
-                                continue;
-                            }
-                            vessel.Landed = false; // Tell KSP that it's not landed.
-                            vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
-                            vessel.SetRotation(Quaternion.FromToRotation(-Vector3.up, surfaceNormal)); // Re-orient the vessel to the terrain normal.
-                            vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.transform.forward, direction, surfaceNormal), surfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
-                            if (!craftURLToVesselName.ContainsKey(craftURL))
-                            {
-                                if (craftURLToVesselName.ContainsValue(vessel.GetName())) // Avoid duplicate names.
-                                    vessel.vesselName += "_" + continuousSpawnedVesselCount; // This shouldn't give duplicates as there shouldn't be more than crafts.Count craft.
-                                craftURLToVesselName.Add(craftURL, vessel.GetName()); // Store the craftURL -> vessel name.
-                            }
-                            vessel.vesselName = craftURLToVesselName[craftURL]; // Assign the same (potentially modified) name to the craft each time.
-                            if (!vesselsToActivate.Contains(vessel))
-                                vesselsToActivate.Add(vessel);
-                            if (!continuousSpawningScores.ContainsKey(vessel.GetName()))
-                                continuousSpawningScores.Add(vessel.GetName(), new ContinuousSpawningScores());
-                            continuousSpawningScores[vessel.GetName()].vessel = vessel; // Update some values in the scoring structure.
-                            continuousSpawningScores[vessel.GetName()].outOfAmmoTime = 0;
-                            spawnSlots[nextSpawnSlot.Current] = Planetarium.GetUniversalTime(); // Update the timestamp of the spawn slot.
-                            ++continuousSpawnedVesselCount;
-                            continuousSpawnedVesselCount %= crafts.Count;
-                            Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
-                            BDACompetitionMode.Instance.competitionStatus.Add("Spawned " + vessel.vesselName);
+                            vessel = SpawnVesselFromCraftFile(craftURL, craftGeoCoords, 0, 0f, out shipFacility); // SPAWN
                         }
+                        catch { vessel = null; }
+                        if (vessel == null)
+                        {
+                            var craftName = craftURL.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnFolder}").Length);
+                            Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
+                            failedVessels += "\n  -  " + craftName;
+                            continue;
+                        }
+                        vessel.Landed = false; // Tell KSP that it's not landed.
+                        vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
+                        vessel.SetRotation(Quaternion.FromToRotation(-Vector3.up, surfaceNormal)); // Re-orient the vessel to the terrain normal.
+                        vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.transform.forward, direction, surfaceNormal), surfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+                        if (!craftURLToVesselName.ContainsKey(craftURL))
+                        {
+                            if (craftURLToVesselName.ContainsValue(vessel.GetName())) // Avoid duplicate names.
+                                vessel.vesselName += "_" + continuousSpawnedVesselCount; // This shouldn't give duplicates as there shouldn't be more than crafts.Count craft.
+                            craftURLToVesselName.Add(craftURL, vessel.GetName()); // Store the craftURL -> vessel name.
+                        }
+                        vessel.vesselName = craftURLToVesselName[craftURL]; // Assign the same (potentially modified) name to the craft each time.
+                        if (!vesselsToActivate.Contains(vessel))
+                            vesselsToActivate.Add(vessel);
+                        if (!continuousSpawningScores.ContainsKey(vessel.GetName()))
+                            continuousSpawningScores.Add(vessel.GetName(), new ContinuousSpawningScores());
+                        continuousSpawningScores[vessel.GetName()].vessel = vessel; // Update some values in the scoring structure.
+                        continuousSpawningScores[vessel.GetName()].outOfAmmoTime = 0;
+                        ++continuousSpawnedVesselCount;
+                        continuousSpawnedVesselCount %= crafts.Count;
+                        Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
+                        BDACompetitionMode.Instance.competitionStatus.Add("Spawned " + vessel.vesselName);
+                    }
                     if (failedVessels != "")
                     {
                         message = "Some vessels failed to spawn, aborting: " + failedVessels;
@@ -817,6 +809,24 @@ namespace BDArmory.UI
             #endregion
             vesselsSpawningContinuously = false;
             Debug.Log("[VesselSpawner]: Continuous vessel spawning ended.");
+        }
+
+        // Stagger the spawn slots to avoid consecutive craft being launched too close together.
+        private static List<int> OptimiseSpawnSlots(int slotCount)
+        {
+            var availableSlots = Enumerable.Range(0, slotCount).ToList();
+            if (slotCount < 4) return availableSlots; // Can't do anything about it for < 4 craft.
+            var separation = Mathf.CeilToInt(slotCount / 3f); // Start with approximately 120° separation.
+            var pos = 0;
+            var optimisedSlots = new List<int>();
+            while(optimisedSlots.Count<slotCount)
+            {
+                while (optimisedSlots.Contains(pos)) { ++pos; pos %= slotCount; }
+                optimisedSlots.Add(pos);
+                pos += separation;
+                pos %= slotCount;
+            }
+            return optimisedSlots;
         }
 
         private int removeVesselsPending = 0;
