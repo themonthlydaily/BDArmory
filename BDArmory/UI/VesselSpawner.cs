@@ -32,13 +32,13 @@ namespace BDArmory.UI
         public bool vesselsSpawning = false;
         public bool vesselSpawnSuccess = false;
         public int spawnedVesselCount = 0;
-        public void SpawnAllVesselsOnce(Vector2d geoCoords, double altitude = 0, float spawnDistanceFactor = 10f, bool killEverythingFirst = true, string spawnFolder = null)
+        public void SpawnAllVesselsOnce(Vector2d geoCoords, double altitude = 0, float spawnDistanceFactor = 10f, float easeInSpeed = 1f, bool killEverythingFirst = true, string spawnFolder = null)
         {
             vesselsSpawning = true; // Signal that we've started the spawning vessels routine.
             vesselSpawnSuccess = false; // Set our success flag to false for now.
             if (spawnAllVesselsOnceCoroutine != null)
                 StopCoroutine(spawnAllVesselsOnceCoroutine);
-            spawnAllVesselsOnceCoroutine = StartCoroutine(SpawnAllVesselsOnceCoroutine(geoCoords, altitude, spawnDistanceFactor, killEverythingFirst, spawnFolder));
+            spawnAllVesselsOnceCoroutine = StartCoroutine(SpawnAllVesselsOnceCoroutine(geoCoords, altitude, spawnDistanceFactor, easeInSpeed, killEverythingFirst, spawnFolder));
             Debug.Log("[VesselSpawner]: Triggering vessel spawning at " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("G6") + ", with altitude " + altitude + "m.");
         }
 
@@ -78,7 +78,7 @@ namespace BDArmory.UI
         // TODO Make an option to spawn once at altitude without lowering to the ground for places where taking off is difficult.
         private Coroutine spawnAllVesselsOnceCoroutine;
         // Spawns all vessels in an outward facing ring and lowers them to the ground. An altitude of 5m should be suitable for most cases.
-        private IEnumerator SpawnAllVesselsOnceCoroutine(Vector2d geoCoords, double altitude, float spawnDistanceFactor, bool killEverythingFirst, string spawnFolder = null)
+        private IEnumerator SpawnAllVesselsOnceCoroutine(Vector2d geoCoords, double altitude, float spawnDistanceFactor, float easeInSpeed, bool killEverythingFirst, string spawnFolder = null)
         {
             #region Initialisation and sanity checks
             // Tally up the craft to spawn.
@@ -324,8 +324,8 @@ namespace BDArmory.UI
                                 vesselsHaveLanded[vesselName] = 2;
                                 spawnedVessels[vesselName].Item1.Landed = true; // Tell KSP that the vessel is landed.
                             }
-                            if (vesselsHaveLanded[vesselName] == 1 && spawnedVessels[vesselName].Item1.srf_velocity.sqrMagnitude > 1) // While the vessel hasn't landed, prevent it from moving too fast.
-                                spawnedVessels[vesselName].Item1.SetWorldVelocity(0.99 * spawnedVessels[vesselName].Item1.srf_velocity); // Move at 1m/s at most.
+                            if (vesselsHaveLanded[vesselName] == 1 && spawnedVessels[vesselName].Item1.srf_velocity.sqrMagnitude > easeInSpeed) // While the vessel hasn't landed, prevent it from moving too fast.
+                                spawnedVessels[vesselName].Item1.SetWorldVelocity(0.99 * easeInSpeed * spawnedVessels[vesselName].Item1.srf_velocity); // Move at VESSEL_SPAWN_EASE_IN_SPEED m/s at most.
                         }
 
                         // Check that none of the vessels have lost parts.
@@ -343,7 +343,7 @@ namespace BDArmory.UI
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             break;
                         }
-                    } while (Planetarium.GetUniversalTime() - landingStartTime < 5 + altitude); // Give the vessels up to (5 + altitude) seconds to land.
+                    } while (Planetarium.GetUniversalTime() - landingStartTime < 5 + altitude / easeInSpeed); // Give the vessels up to (5 + altitude / VESSEL_SPAWN_EASE_IN_SPEED) seconds to land.
                 }
                 else
                 {
@@ -818,7 +818,7 @@ namespace BDArmory.UI
             var separation = Mathf.CeilToInt(slotCount / 3f); // Start with approximately 120° separation.
             var pos = 0;
             var optimisedSlots = new List<int>();
-            while(optimisedSlots.Count<slotCount)
+            while (optimisedSlots.Count < slotCount)
             {
                 while (optimisedSlots.Contains(pos)) { ++pos; pos %= slotCount; }
                 optimisedSlots.Add(pos);

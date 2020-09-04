@@ -238,7 +238,7 @@ namespace BDArmory.Competition
             longestHitWeapon.Clear();
 
             status = StatusType.SpawningVessels;
-            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5f, 10f, true, hash); // FIXME If geo-coords are included in the heat model, then use those instead. Also, altitude and spawn distance factor.
+            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5f, 10f, 1f, true, hash); // FIXME If geo-coords are included in the heat model, then use those instead. Also, altitude, spawn distance factor and ease-in speed.
             while (spawner.vesselsSpawning)
                 yield return new WaitForFixedUpdate();
             if (!spawner.vesselSpawnSuccess)

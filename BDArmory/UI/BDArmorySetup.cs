@@ -1520,10 +1520,6 @@ namespace BDArmory.UI
             BDArmorySettings.CAMERA_SWITCH_FREQUENCY = (int)cameraSwitchFrequency;
             line++;
 
-            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
-            BDArmorySettings.VESSEL_SPAWN_DISTANCE = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f;
-            line++;
-
             var outOfAmmoKillTimeStr = "never";
             if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > -1 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 60)
                 outOfAmmoKillTimeStr = BDArmorySettings.OUT_OF_AMMO_KILL_TIME.ToString("G0") + "s";
@@ -1594,6 +1590,14 @@ namespace BDArmory.UI
                     BDArmorySettings.OUT_OF_AMMO_KILL_TIME = -1f; // Never
                     break;
             }
+            line++;
+
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
+            BDArmorySettings.VESSEL_SPAWN_DISTANCE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f);
+            line++;
+
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnEaseInSpeed")}:  ({BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED})", leftLabel);//Spawn Ease In Speed
+            BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, 0.1f, 1f) * 10f) / 10f;
             line++;
 
             if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"

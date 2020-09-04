@@ -79,6 +79,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016); // Spawning coordinates on a planetary body.
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_ALTITUDE = 5f;               // Spawning altitude above the surface.
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_DISTANCE = 20f;              // Scale factor for the size of the spawning circle.
+        [BDAPersistantSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 1f;          // Rate to limit "falling" during spawning.
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = false;                //disables the kill timers.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = true;                    // Enable/disable Runway Project specific enhancements. FIXME Default to true for now. Later, default to false for official BDArmory release.
