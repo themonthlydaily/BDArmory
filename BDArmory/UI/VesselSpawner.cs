@@ -29,6 +29,8 @@ namespace BDArmory.UI
         {
         }
 
+        public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut };
+        public SpawnFailureReason spawnFailureReason = SpawnFailureReason.None;
         public bool vesselsSpawning = false;
         public bool vesselSpawnSuccess = false;
         public int spawnedVesselCount = 0;
@@ -36,6 +38,7 @@ namespace BDArmory.UI
         {
             vesselsSpawning = true; // Signal that we've started the spawning vessels routine.
             vesselSpawnSuccess = false; // Set our success flag to false for now.
+            spawnFailureReason = SpawnFailureReason.None;
             if (spawnAllVesselsOnceCoroutine != null)
                 StopCoroutine(spawnAllVesselsOnceCoroutine);
             spawnAllVesselsOnceCoroutine = StartCoroutine(SpawnAllVesselsOnceCoroutine(geoCoords, altitude, spawnDistanceFactor, easeInSpeed, killEverythingFirst, spawnFolder));
@@ -89,6 +92,7 @@ namespace BDArmory.UI
                 Debug.Log("[VesselSpawner]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 vesselsSpawning = false;
+                spawnFailureReason = SpawnFailureReason.NoCraft;
                 yield break;
             }
             crafts.Shuffle(); // Randomise the spawn order.
@@ -150,7 +154,7 @@ namespace BDArmory.UI
                 {
                     lastTerrainDistance = terrainDistance;
                     yield return new WaitForFixedUpdate();
-                    terrainDistance = Physics.Raycast(ray, out hit, 2000f, 1 << 15) ? hit.distance : -1f;
+                    terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)altitude + 1000f, 1 << 15) ? hit.distance : -1f;
                     if (terrainDistance < 0f || Math.Abs(lastTerrainDistance - terrainDistance) > 0.1f)
                         lastStableTimeStart = Planetarium.GetUniversalTime(); // Reset the stable time tracker.
                     stableTime = Planetarium.GetUniversalTime() - lastStableTimeStart;
@@ -161,6 +165,7 @@ namespace BDArmory.UI
                     Debug.Log("[VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     vesselsSpawning = false;
+                    spawnFailureReason = SpawnFailureReason.NoTerrain;
                     yield break;
                 }
                 spawnPoint = hit.point;
@@ -268,8 +273,10 @@ namespace BDArmory.UI
             {
                 BDACompetitionMode.Instance.competitionStatus.Add("The following vessels are invalid:\n - " + string.Join("\n - ", invalidVessels.Select(t => t.Item1 + " : " + t.Item2)));
                 Debug.Log("[VesselSpawner]: Invalid vessels: " + string.Join(", ", invalidVessels.Select(t => t.Item1 + ":" + t.Item2)));
+                spawnFailureReason = SpawnFailureReason.InvalidVessel;
             }
             else
+            {
                 do
                 {
                     yield return new WaitForFixedUpdate();
@@ -280,6 +287,7 @@ namespace BDArmory.UI
                         message = "One of the vessel lost parts after spawning.";
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         Debug.Log("[VesselSpawner]: " + message);
+                        spawnFailureReason = SpawnFailureReason.VesselLostParts;
                         break;
                     }
 
@@ -304,6 +312,9 @@ namespace BDArmory.UI
                     if (allWeaponManagersAssigned)
                         break;
                 } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
+                if (!allWeaponManagersAssigned)
+                    spawnFailureReason = SpawnFailureReason.TimedOut;
+            }
 
             if (allWeaponManagersAssigned)
             {
@@ -333,6 +344,7 @@ namespace BDArmory.UI
                         {
                             message = "One of the vessel lost parts after spawning.";
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
+                            spawnFailureReason = SpawnFailureReason.VesselLostParts;
                             break;
                         }
 
@@ -352,6 +364,7 @@ namespace BDArmory.UI
                     {
                         message = "One of the vessel lost parts after spawning.";
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        spawnFailureReason = SpawnFailureReason.VesselLostParts;
                     }
                     else
                     {
@@ -521,6 +534,7 @@ namespace BDArmory.UI
         public void SpawnVesselsContinuously(Vector2d geoCoords, double altitude = 1000, float spawnDistanceFactor = 20f, bool killEverythingFirst = true, string spawnFolder = null)
         {
             vesselsSpawningContinuously = true;
+            spawnFailureReason = SpawnFailureReason.None;
             continuousSpawningScores = new Dictionary<string, ContinuousSpawningScores>();
             if (spawnVesselsContinuouslyCoroutine != null)
                 StopCoroutine(spawnVesselsContinuouslyCoroutine);
@@ -542,6 +556,7 @@ namespace BDArmory.UI
                 Debug.Log("[VesselSpawner]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 vesselsSpawning = false;
+                spawnFailureReason = SpawnFailureReason.NoCraft;
                 yield break;
             }
             crafts.Shuffle(); // Randomise the spawn order.
@@ -603,7 +618,7 @@ namespace BDArmory.UI
                 {
                     lastTerrainDistance = terrainDistance;
                     yield return new WaitForFixedUpdate();
-                    terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)altitude, 1 << 15) ? hit.distance : -1f;
+                    terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)altitude + 1000f, 1 << 15) ? hit.distance : -1f;
                     if (terrainDistance < 0f || Math.Abs(lastTerrainDistance - terrainDistance) > 0.1f)
                         lastStableTimeStart = Planetarium.GetUniversalTime(); // Reset the stable time tracker.
                     stableTime = Planetarium.GetUniversalTime() - lastStableTimeStart;
@@ -614,6 +629,7 @@ namespace BDArmory.UI
                     Debug.Log("[VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     vesselsSpawning = false;
+                    spawnFailureReason = SpawnFailureReason.NoTerrain;
                     yield break;
                 }
             }
@@ -692,6 +708,7 @@ namespace BDArmory.UI
                         message = "Some vessels failed to spawn, aborting: " + failedVessels;
                         Debug.Log("[VesselSpawner]: " + message);
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        spawnFailureReason = SpawnFailureReason.VesselFailedToSpawn;
                         break;
                     }
                 }
