@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -434,6 +435,13 @@ namespace BDArmory.UI
             }
 
             BulletInfo.Load();
+
+            // Spawn fields
+            spawnFields = new Dictionary<string, SpawnField> {
+                { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("G6"), -90, 90) },
+                { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("G6"), -180, 180) },
+                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_ALTITUDE.ToString("G6"), 0) },
+            };
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -1393,6 +1401,48 @@ namespace BDArmory.UI
             WindowRectSettings = new Rect(settingsLeft, settingsTop, settingsWidth, settingsHeight);
         }
 
+        private class SpawnField : MonoBehaviour
+        {
+            public SpawnField Initialise(double l, double v, string p, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; value = v; possibleValue = p; minValue = minV; maxValue = maxV; return this; }
+            public double lastUpdated;
+            public double value;
+            public string possibleValue = string.Empty;
+            private double minValue;
+            private double maxValue;
+            private bool coroutineRunning = false;
+            private Coroutine coroutine;
+
+            public void tryParseValue(string v)
+            {
+                if (v != possibleValue)
+                {
+                    lastUpdated = Planetarium.GetUniversalTime();
+                    possibleValue = v;
+                    if (!coroutineRunning)
+                    {
+                        coroutine = StartCoroutine(UpdateValueCoroutine());
+                    }
+                }
+            }
+
+            private IEnumerator UpdateValueCoroutine()
+            {
+                coroutineRunning = true;
+                while (Planetarium.GetUniversalTime() - lastUpdated < 0.5)
+                    yield return new WaitForFixedUpdate();
+                double newValue;
+                if (double.TryParse(possibleValue, out newValue))
+                {
+                    value = Math.Min(Math.Max(newValue, minValue), maxValue);
+                    lastUpdated = Planetarium.GetUniversalTime();
+                }
+                possibleValue = value.ToString("G6");
+                coroutineRunning = false;
+                yield return new WaitForFixedUpdate();
+            }
+        }
+        Dictionary<string, SpawnField> spawnFields;
+
         void WindowSettings(int windowID)
         {
             float line = 1.25f;
@@ -1428,17 +1478,19 @@ namespace BDArmory.UI
             BDArmorySettings.BULLET_DECALS = GUI.Toggle(SLeftRect(line), BDArmorySettings.BULLET_DECALS, Localizer.Format("#LOC_BDArmory_Settings_BulletHoleDecals"));//"Bullet Hole Decals"
             BDArmorySettings.DISABLE_RAMMING = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_RAMMING, Localizer.Format("#LOC_BDArmory_Settings_DisableRamming"));// Disable Ramming
             line++;
-            BDArmorySettings.FFA_COMBAT_STYLE = GUI.Toggle(SLeftRect(line), BDArmorySettings.FFA_COMBAT_STYLE, Localizer.Format("#LOC_BDArmory_Settings_FFACombatStyle"));// Free-for-all combat style
+            BDArmorySettings.DEFAULT_FFA_TARGETING = GUI.Toggle(SLeftRect(line), BDArmorySettings.DEFAULT_FFA_TARGETING, Localizer.Format("#LOC_BDArmory_Settings_DefaultFFATargeting"));// Free-for-all combat style
             BDArmorySettings.DEBUG_RAMMING_LOGGING = GUI.Toggle(SRightRect(line), BDArmorySettings.DEBUG_RAMMING_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_DebugRammingLogging"));// Disable Ramming
             line++;
             BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
-            BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
             line++;
             if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
             {
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.lastTagUpdateTime = Planetarium.GetUniversalTime();
             }
             BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"));//"Paintball Mode"
+            line++;
+            BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
+            BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
             line++;
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -1466,6 +1518,10 @@ namespace BDArmory.UI
             float cameraSwitchFrequency = BDArmorySettings.CAMERA_SWITCH_FREQUENCY;
             cameraSwitchFrequency = GUI.HorizontalSlider(SRightRect(line), cameraSwitchFrequency, 1f, 10f);
             BDArmorySettings.CAMERA_SWITCH_FREQUENCY = (int)cameraSwitchFrequency;
+            line++;
+
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
+            BDArmorySettings.VESSEL_SPAWN_DISTANCE = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f;
             line++;
 
             var outOfAmmoKillTimeStr = "never";
@@ -1539,6 +1595,7 @@ namespace BDArmory.UI
                     break;
             }
             line++;
+
             if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
             {
                 Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
@@ -1547,34 +1604,34 @@ namespace BDArmory.UI
                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
             }
             var rects = SRight3Rects(line);
-            var guiSpawnPointLat = GUI.TextField(rects[0], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("G6"));
-            var guiSpawnPointLon = GUI.TextField(rects[1], "  " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("G6"));
-            var guiSpawnPointAlt = GUI.TextField(rects[2], "  " + BDArmorySettings.VESSEL_SPAWN_ALTITUDE.ToString("G6"));
-            double spawnPointLat, spawnPointLon;
-            float spawnPointAlt;
-            if (double.TryParse(guiSpawnPointLat, out spawnPointLat))
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnPointLat, -90), 90);
-            if (double.TryParse(guiSpawnPointLon, out spawnPointLon))
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnPointLon, -180), 180);
-            if (float.TryParse(guiSpawnPointAlt, out spawnPointAlt))
-                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, spawnPointAlt);
+            spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8));
+            spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8));
+            spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8));
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].value, -90), 90);
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].value, -180), 180);
+            BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].value);
             line++;
 
             line++;
 
-            bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
-            BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
-            line++;
-            if (remoteLoggingEnabled)
+            if (BDArmorySettings.RUNWAY_PROJECT)
             {
-                GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
-                BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
+                BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
                 line++;
-                GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionDuration")}: ({BDArmorySettings.COMPETITION_DURATION}mins)", leftLabel);
-                BDArmorySettings.COMPETITION_DURATION = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.COMPETITION_DURATION, 1, 10);
+                if (remoteLoggingEnabled)
+                {
+                    GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+                    BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                    line++;
+                    GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionDuration")}: ({BDArmorySettings.COMPETITION_DURATION}mins)", leftLabel);
+                    BDArmorySettings.COMPETITION_DURATION = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.COMPETITION_DURATION, 1, 10);
+                    line++;
+                }
                 line++;
             }
-            line++;
+            else
+                BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
 
             bool origPm = BDArmorySettings.PEACE_MODE;
             BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
@@ -1672,23 +1729,26 @@ namespace BDArmory.UI
                         SaveConfig();
                         windowSettingsEnabled = false;
                     }
-                    line++;
-                    if (GUI.Button(SLeftButtonRect(line), "Rapid Deploy"))
+                    if (BDArmorySettings.RUNWAY_PROJECT)
                     {
-                        BDACompetitionMode.Instance.StartRapidDeployment(0);
-                        SaveConfig();
-                        windowSettingsEnabled = false;
-                    }
-                    if (GUI.Button(SRightRect(line), "Sync Remote"))
-                    {
-                        string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
-                        if (!System.IO.Directory.Exists(vesselPath))
+                        line++;
+                        if (GUI.Button(SLeftButtonRect(line), "Rapid Deploy"))
                         {
-                            System.IO.Directory.CreateDirectory(vesselPath);
+                            BDACompetitionMode.Instance.StartRapidDeployment(0);
+                            SaveConfig();
+                            windowSettingsEnabled = false;
                         }
-                        BDAScoreService.Instance.Configure(vesselPath, BDArmorySettings.COMPETITION_HASH);
-                        SaveConfig();
-                        windowSettingsEnabled = false;
+                        if (GUI.Button(SRightRect(line), "Sync Remote"))
+                        {
+                            string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
+                            if (!System.IO.Directory.Exists(vesselPath))
+                            {
+                                System.IO.Directory.CreateDirectory(vesselPath);
+                            }
+                            BDAScoreService.Instance.Configure(vesselPath, BDArmorySettings.COMPETITION_HASH);
+                            SaveConfig();
+                            windowSettingsEnabled = false;
+                        }
                     }
                     line++;
                 }

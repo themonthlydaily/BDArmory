@@ -2986,7 +2986,7 @@ namespace BDArmory.Modules
             {
                 TargetInfo potentialAirTarget = null;
                 string targetDebugText = "";
-                if (BDArmorySettings.FFA_COMBAT_STYLE)
+                if (BDArmorySettings.DEFAULT_FFA_TARGETING)
                 {
                     potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
                     targetDebugText = " is engaging an airborne target in FFA with ";
@@ -3065,7 +3065,7 @@ namespace BDArmory.Modules
             if (!targetMissiles)
             {
                 // select target based on competition style
-                potentialTarget = BDArmorySettings.FFA_COMBAT_STYLE ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetHighestPriorityTarget(this);
+                potentialTarget = BDArmorySettings.DEFAULT_FFA_TARGETING ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetHighestPriorityTarget(this);
                 if (potentialTarget)
                 {
                     targetsTried.Add(potentialTarget);
@@ -3085,7 +3085,7 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            string targetDebugText = BDArmorySettings.FFA_COMBAT_STYLE ? " is engaging an FFA target with " : " is engaging the least engaged target with ";
+                            string targetDebugText = BDArmorySettings.DEFAULT_FFA_TARGETING ? " is engaging an FFA target with " : " is engaging the least engaged target with ";
                             Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon.GetShortName());
                         }
                         return;

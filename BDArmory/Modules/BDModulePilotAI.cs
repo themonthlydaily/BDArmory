@@ -191,7 +191,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude", //Min Altitude
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-         UI_FloatRange(minValue = 150f, maxValue = 6000, stepIncrement = 50f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 0f, maxValue = 6000, stepIncrement = 25f, scene = UI_Scene.All)]
         public float minAltitude = 500f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed", //Max Speed
@@ -2353,15 +2353,15 @@ namespace BDArmory.Modules
             }
             else if (command == PilotCommands.Attack)
             {
-                if (targetVessel == null)
-                {
-                    currentStatus = "Attack";
-                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
-                }
-                else // If the vessel has a target, let it fight!
+                if ((BDArmorySettings.RUNWAY_PROJECT) && (targetVessel != null)) // If the vessel has a target, let it fight!
                 {
                     ReleaseCommand();
                     return;
+                }
+                else
+                {
+                    currentStatus = "Attack";
+                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
                 }
             }
         }
