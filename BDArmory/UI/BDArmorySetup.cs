@@ -438,9 +438,9 @@ namespace BDArmory.UI
 
             // Spawn fields
             spawnFields = new Dictionary<string, SpawnField> {
-                { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x.ToString("G6"), -90, 90) },
-                { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y.ToString("G6"), -180, 180) },
-                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_ALTITUDE.ToString("G6"), 0) },
+                { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, -90, 90) },
+                { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
+                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
             };
         }
 
@@ -1403,10 +1403,11 @@ namespace BDArmory.UI
 
         private class SpawnField : MonoBehaviour
         {
-            public SpawnField Initialise(double l, double v, string p, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; value = v; possibleValue = p; minValue = minV; maxValue = maxV; return this; }
+            public SpawnField Initialise(double l, double v, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; currentValue = v; minValue = minV; maxValue = maxV; return this; }
             public double lastUpdated;
-            public double value;
             public string possibleValue = string.Empty;
+            private double _value;
+            public double currentValue { get { return _value; } set { _value = value; possibleValue = _value.ToString("G6"); } }
             private double minValue;
             private double maxValue;
             private bool coroutineRunning = false;
@@ -1433,10 +1434,10 @@ namespace BDArmory.UI
                 double newValue;
                 if (double.TryParse(possibleValue, out newValue))
                 {
-                    value = Math.Min(Math.Max(newValue, minValue), maxValue);
+                    currentValue = Math.Min(Math.Max(newValue, minValue), maxValue);
                     lastUpdated = Planetarium.GetUniversalTime();
                 }
-                possibleValue = value.ToString("G6");
+                possibleValue = currentValue.ToString("G6");
                 coroutineRunning = false;
                 yield return new WaitForFixedUpdate();
             }
@@ -1520,10 +1521,6 @@ namespace BDArmory.UI
             BDArmorySettings.CAMERA_SWITCH_FREQUENCY = (int)cameraSwitchFrequency;
             line++;
 
-            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
-            BDArmorySettings.VESSEL_SPAWN_DISTANCE = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f;
-            line++;
-
             var outOfAmmoKillTimeStr = "never";
             if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > -1 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 60)
                 outOfAmmoKillTimeStr = BDArmorySettings.OUT_OF_AMMO_KILL_TIME.ToString("G0") + "s";
@@ -1596,20 +1593,32 @@ namespace BDArmory.UI
             }
             line++;
 
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
+            BDArmorySettings.VESSEL_SPAWN_DISTANCE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f);
+            line++;
+
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnEaseInSpeed")}:  ({BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED})", leftLabel);//Spawn Ease In Speed
+            BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, 0.1f, 1f) * 10f) / 10f;
+            line++;
+
             if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
             {
                 Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
+                {
                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
+                    spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
+                    spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
+                }
             }
             var rects = SRight3Rects(line);
             spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8));
             spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8));
             spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8));
-            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].value, -90), 90);
-            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].value, -180), 180);
-            BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].value);
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].currentValue, -90), 90);
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].currentValue, -180), 180);
+            BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].currentValue);
             line++;
 
             line++;

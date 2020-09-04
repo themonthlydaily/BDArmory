@@ -354,13 +354,13 @@ namespace BDArmory.UI
             {
                 if (!_vesselsSpawned && !_continuousVesselSpawning && Event.current.button == 0) // Left click
                 {
-                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, true); // Spawn vessels.
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true); // Spawn vessels.
                     _vesselsSpawned = true;
                     _autoPilotEnabled = false;
                 }
                 else if (!_vesselsSpawned && Event.current.button == 2) // Middle click
                 {
-                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, false); // Spawn vessels, without killing off other vessels or changing camera positions.
+                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false); // Spawn vessels, without killing off other vessels or changing camera positions.
                     _vesselsSpawned = true;
                     _autoPilotEnabled = false;
                 }
