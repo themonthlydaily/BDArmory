@@ -191,7 +191,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude", //Min Altitude
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-         UI_FloatRange(minValue = 0f, maxValue = 6000, stepIncrement = 25f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 25f, maxValue = 6000, stepIncrement = 25f, scene = UI_Scene.All)]
         public float minAltitude = 500f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed", //Max Speed
