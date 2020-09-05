@@ -1417,7 +1417,7 @@ namespace BDArmory.UI
             {
                 if (v != possibleValue)
                 {
-                    lastUpdated = Planetarium.GetUniversalTime();
+                    lastUpdated = Time.time;
                     possibleValue = v;
                     if (!coroutineRunning)
                     {
@@ -1429,13 +1429,13 @@ namespace BDArmory.UI
             private IEnumerator UpdateValueCoroutine()
             {
                 coroutineRunning = true;
-                while (Planetarium.GetUniversalTime() - lastUpdated < 0.5)
+                while (Time.time - lastUpdated < 0.5)
                     yield return new WaitForFixedUpdate();
                 double newValue;
                 if (double.TryParse(possibleValue, out newValue))
                 {
                     currentValue = Math.Min(Math.Max(newValue, minValue), maxValue);
-                    lastUpdated = Planetarium.GetUniversalTime();
+                    lastUpdated = Time.time;
                 }
                 possibleValue = currentValue.ToString("G6");
                 coroutineRunning = false;
