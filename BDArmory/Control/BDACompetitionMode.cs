@@ -645,13 +645,15 @@ namespace BDArmory.Control
         }
 
         #region Vessel validity
-        public enum InvalidVesselReason { None, NoAI, NoWeaponManager, NoCommand };
+        public enum InvalidVesselReason { None, NullVessel, NoAI, NoWeaponManager, NoCommand };
         public InvalidVesselReason IsValidVessel(Vessel vessel)
         {
+            if (vessel == null)
+                return InvalidVesselReason.NullVessel;
             var pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
             if (pilot == null) // Check for an AI.
                 return InvalidVesselReason.NoAI;
-            if (pilot.weaponManager == null) // Check for a weapon manager.
+            if (vessel.FindPartModuleImplementing<MissileFire>() == null) // Check for a weapon manager.
                 return InvalidVesselReason.NoWeaponManager;
             if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
                 CheckVesselType(vessel); // Attempt to fix it.
