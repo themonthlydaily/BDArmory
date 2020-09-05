@@ -1505,6 +1505,13 @@ namespace BDArmory.UI
                 }
                 line++;
             }
+
+            float dmgMultiplier = BDArmorySettings.DMG_MULTIPLIER <= 100f ? BDArmorySettings.DMG_MULTIPLIER / 10f : BDArmorySettings.DMG_MULTIPLIER / 50f + 8f;
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_DamageMultiplier")}:  ({BDArmorySettings.DMG_MULTIPLIER})", leftLabel);//Damage Multiplier
+            dmgMultiplier = (int)GUI.HorizontalSlider(SRightRect(line), dmgMultiplier, 1f, 28f);
+            BDArmorySettings.DMG_MULTIPLIER = dmgMultiplier < 11 ? (int)(dmgMultiplier * 10f) : (int)(50f * (dmgMultiplier - 8f));
+            line++;
+
             GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_MaxBulletHoles")}:  ({BDArmorySettings.MAX_NUM_BULLET_DECALS})", leftLabel);//Max Bullet Holes
             BDArmorySettings.MAX_NUM_BULLET_DECALS = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.MAX_NUM_BULLET_DECALS, 1f, 999);
             line++;
