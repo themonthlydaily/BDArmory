@@ -1417,7 +1417,7 @@ namespace BDArmory.UI
             {
                 if (v != possibleValue)
                 {
-                    lastUpdated = Planetarium.GetUniversalTime();
+                    lastUpdated = Time.time;
                     possibleValue = v;
                     if (!coroutineRunning)
                     {
@@ -1429,13 +1429,13 @@ namespace BDArmory.UI
             private IEnumerator UpdateValueCoroutine()
             {
                 coroutineRunning = true;
-                while (Planetarium.GetUniversalTime() - lastUpdated < 0.5)
+                while (Time.time - lastUpdated < 0.5)
                     yield return new WaitForFixedUpdate();
                 double newValue;
                 if (double.TryParse(possibleValue, out newValue))
                 {
                     currentValue = Math.Min(Math.Max(newValue, minValue), maxValue);
-                    lastUpdated = Planetarium.GetUniversalTime();
+                    lastUpdated = Time.time;
                 }
                 possibleValue = currentValue.ToString("G6");
                 coroutineRunning = false;
@@ -1505,6 +1505,17 @@ namespace BDArmory.UI
                 }
                 line++;
             }
+
+            float dmgMultiplier = BDArmorySettings.DMG_MULTIPLIER <= 100f ? BDArmorySettings.DMG_MULTIPLIER / 10f : BDArmorySettings.DMG_MULTIPLIER / 50f + 8f;
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_DamageMultiplier")}:  ({BDArmorySettings.DMG_MULTIPLIER})", leftLabel);//Damage Multiplier
+            dmgMultiplier = (int)GUI.HorizontalSlider(SRightRect(line), dmgMultiplier, 1f, 28f);
+            BDArmorySettings.DMG_MULTIPLIER = dmgMultiplier < 11 ? (int)(dmgMultiplier * 10f) : (int)(50f * (dmgMultiplier - 8f));
+            line++;
+
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_DebrisCleanUpDelay")}:  ({BDArmorySettings.DEBRIS_CLEANUP_DELAY})", leftLabel);//Max Bullet Holes
+            BDArmorySettings.DEBRIS_CLEANUP_DELAY = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.DEBRIS_CLEANUP_DELAY, 1f, 120f);
+            line++;
+
             GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_MaxBulletHoles")}:  ({BDArmorySettings.MAX_NUM_BULLET_DECALS})", leftLabel);//Max Bullet Holes
             BDArmorySettings.MAX_NUM_BULLET_DECALS = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.MAX_NUM_BULLET_DECALS, 1f, 999);
             line++;

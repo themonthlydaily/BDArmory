@@ -360,6 +360,7 @@ namespace BDArmory.Control
             GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
             GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
+            GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
         }
 
@@ -372,6 +373,7 @@ namespace BDArmory.Control
             GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
             GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
+            GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
             lastTagUpdateTime = competitionStartTime;
         }
@@ -645,13 +647,15 @@ namespace BDArmory.Control
         }
 
         #region Vessel validity
-        public enum InvalidVesselReason { None, NoAI, NoWeaponManager, NoCommand };
+        public enum InvalidVesselReason { None, NullVessel, NoAI, NoWeaponManager, NoCommand };
         public InvalidVesselReason IsValidVessel(Vessel vessel)
         {
+            if (vessel == null)
+                return InvalidVesselReason.NullVessel;
             var pilot = vessel.FindPartModuleImplementing<IBDAIControl>();
             if (pilot == null) // Check for an AI.
                 return InvalidVesselReason.NoAI;
-            if (pilot.weaponManager == null) // Check for a weapon manager.
+            if (vessel.FindPartModuleImplementing<MissileFire>() == null) // Check for a weapon manager.
                 return InvalidVesselReason.NoWeaponManager;
             if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
                 CheckVesselType(vessel); // Attempt to fix it.
@@ -688,6 +692,7 @@ namespace BDArmory.Control
                 vessel.vesselType = VesselType.Plane;
                 message += ", changing vessel name and type to " + vessel.vesselName + ", " + vessel.vesselType;
                 Debug.Log("[BDACompetitionMode]: " + message);
+                return;
             }
         }
         #endregion
@@ -1194,6 +1199,7 @@ namespace BDArmory.Control
             var debrisToKill = new List<Vessel>();
             foreach (var vessel in FlightGlobals.Vessels)
             {
+                if (vessel.vesselType == VesselType.Debris) continue; // Handled by DebrisDelayedCleanUp
                 bool activePilot = false;
                 if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == "Pinata")
                 {
@@ -1256,6 +1262,29 @@ namespace BDArmory.Control
             }
         }
 
+        void DebrisDelayedCleanUp(Vessel debris)
+        {
+            if (debris.vesselType == VesselType.Debris)
+                StartCoroutine(DebrisDelayedCleanupCoroutine(debris, BDArmorySettings.DEBRIS_CLEANUP_DELAY));
+        }
+
+        private IEnumerator DebrisDelayedCleanupCoroutine(Vessel debris, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (debris != null)
+            {
+                Debug.Log("[RemoveObjectsDebris] " + debris.GetName());
+                debris.Die();
+            }
+            yield return new WaitForFixedUpdate();
+            if (debris != null)
+            {
+                var partsToKill = debris.parts;
+                foreach (var part in partsToKill)
+                    if (part != null)
+                        part.Die();
+            }
+        }
 
         // This is called every Time.fixedDeltaTime.
         void FixedUpdate()
