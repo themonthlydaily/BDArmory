@@ -1340,7 +1340,7 @@ namespace BDArmory.Control
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
-                    if (v.Current == null || !v.Current.loaded || v.Current.packed)
+                    if (v.Current == null || !v.Current.loaded) // || v.Current.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
                         continue;
 
                     MissileFire mf = null;
@@ -1786,7 +1786,7 @@ namespace BDArmory.Control
 
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
-            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : ""));
+            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " at " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s");
 
 
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
