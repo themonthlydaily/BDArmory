@@ -829,7 +829,7 @@ namespace BDArmory.UI
                                 }
                             }
                             vesselsToActivate.Remove(vessel);
-                            LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
+                            // LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                         }
                     }
                 }
