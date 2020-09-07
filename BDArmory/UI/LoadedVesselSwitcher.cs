@@ -492,40 +492,41 @@ namespace BDArmory.UI
 
             height += _margin;
             // add all the lost pilots at the bottom
-            foreach (var key in BDACompetitionMode.Instance.DeathOrder.Keys)
-            {
-                string statusString = "";
-                if (BDACompetitionMode.Instance.Scores.ContainsKey(key))
+            if (!VesselSpawner.Instance.vesselsSpawningContinuously) // Don't show the dead vessels when continuously spawning. (Especially as command seats trigger all vessels as showing up as dead.)
+                foreach (var key in BDACompetitionMode.Instance.DeathOrder.Keys)
                 {
-                    // DEAD <death order>: vesselName(<Score>[, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
-                    statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString();
-                    if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
-                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
-                    if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
-                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
-                    if (_continuousVesselSpawning && BDACompetitionMode.Instance.Scores[key].tagTotalTime > 0)
-                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagTotalTime.ToString("0.0");
-                    else if (BDACompetitionMode.Instance.Scores[key].tagScore > 0)
-                        statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagScore.ToString("0.0");
-                    switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
+                    string statusString = "";
+                    if (BDACompetitionMode.Instance.Scores.ContainsKey(key))
                     {
-                        case DamageFrom.Bullet:
-                            statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                            break;
-                        case DamageFrom.Missile:
-                            statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                            break;
-                        case DamageFrom.Ram:
-                            statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
-                            break;
-                        default:
-                            statusString += ")";
-                            break;
+                        // DEAD <death order>: vesselName(<Score>[, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
+                        statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key] + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString();
+                        if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
+                        if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
+                        if (_continuousVesselSpawning && BDACompetitionMode.Instance.Scores[key].tagTotalTime > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagTotalTime.ToString("0.0");
+                        else if (BDACompetitionMode.Instance.Scores[key].tagScore > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagScore.ToString("0.0");
+                        switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
+                        {
+                            case DamageFrom.Bullet:
+                                statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                                break;
+                            case DamageFrom.Missile:
+                                statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                                break;
+                            case DamageFrom.Ram:
+                                statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                                break;
+                            default:
+                                statusString += ")";
+                                break;
+                        }
+                        GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), statusString, BDArmorySetup.BDGuiSkin.label);
+                        height += _buttonHeight + _buttonGap;
                     }
-                    GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), statusString, BDArmorySetup.BDGuiSkin.label);
-                    height += _buttonHeight + _buttonGap;
                 }
-            }
             // Piñata killers.
             if (!BDACompetitionMode.Instance.pinataAlive)
             {
