@@ -2960,6 +2960,7 @@ namespace BDArmory.Modules
         void SmartFindTarget()
         {
             List<TargetInfo> targetsTried = new List<TargetInfo>();
+            string targetDebugText = "";
 
             if (overrideTarget) //begin by checking the override target, since that takes priority
             {
@@ -2985,7 +2986,7 @@ namespace BDArmory.Modules
             if (!vessel.LandedOrSplashed && !targetMissiles)
             {
                 TargetInfo potentialAirTarget = null;
-                string targetDebugText = "";
+                
                 if (BDArmorySettings.DEFAULT_FFA_TARGETING)
                 {
                     potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
@@ -3065,7 +3066,22 @@ namespace BDArmory.Modules
             if (!targetMissiles)
             {
                 // select target based on competition style
-                potentialTarget = BDArmorySettings.DEFAULT_FFA_TARGETING ? BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this) : BDATargetManager.GetHighestPriorityTarget(this);
+                if (BDArmorySettings.DEFAULT_FFA_TARGETING)
+                {
+                    potentialTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
+                    targetDebugText = " is engaging an FFA target with ";
+                }
+                else if (this.targetPriorityEnabled)
+                {
+                    potentialTarget = BDATargetManager.GetHighestPriorityTarget(this);
+                    targetDebugText = " is engaging highest priority target with ";
+                }
+                else
+                {
+                    potentialTarget = BDATargetManager.GetLeastEngagedTarget(this);
+                    targetDebugText = " is engaging the least engaged target with ";
+                }
+
                 if (potentialTarget)
                 {
                     targetsTried.Add(potentialTarget);
@@ -3085,7 +3101,6 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            string targetDebugText = BDArmorySettings.DEFAULT_FFA_TARGETING ? " is engaging an FFA target with " : " is engaging the least engaged target with ";
                             Debug.Log("[BDArmory]: " + vessel.vesselName + targetDebugText + selectedWeapon.GetShortName());
                         }
                         return;
