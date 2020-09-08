@@ -442,6 +442,9 @@ namespace BDArmory.UI
             public Dictionary<int, string> cleanRammedBy = new Dictionary<int, string>();
             public Dictionary<int, string> cleanMissileKilledBy = new Dictionary<int, string>();
             public double cumulativeTagTime = 0;
+            public int cumulativeHits = 0;
+            public int cumulativeDamagedPartsDueToRamming = 0;
+            public int cumulativeDamagedPartsDueToMissiles = 0;
         };
         public Dictionary<string, ContinuousSpawningScores> continuousSpawningScores;
         public void UpdateCompetitionScores(Vessel vessel, bool newSpawn = false)
@@ -460,6 +463,9 @@ namespace BDArmory.UI
                 {
                     BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
                     continuousSpawningScores[vesselName].cumulativeTagTime = scoreData.Sum(kvp => kvp.Value.tagTotalTime);
+                    continuousSpawningScores[vesselName].cumulativeHits = scoreData.Sum(kvp => kvp.Value.Score);
+                    continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRamming = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToRamming);
+                    continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToMissiles = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToMissiles);
                     // Re-insert some information needed for Tag.
                     switch (scoreData[spawnCount].LastDamageWasFrom())
                     {
@@ -504,7 +510,7 @@ namespace BDArmory.UI
             if (continuousSpawningScores == null || continuousSpawningScores.Count == 0) return;
             foreach (var vesselName in continuousSpawningScores.Keys)
                 UpdateCompetitionScores(continuousSpawningScores[vesselName].vessel);
-            logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Dumping Results");
+            logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Dumping Results at " + (int)(Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime) + "s");
             foreach (var vesselName in continuousSpawningScores.Keys)
             {
                 var vesselScore = continuousSpawningScores[vesselName];
@@ -829,7 +835,7 @@ namespace BDArmory.UI
                                 }
                             }
                             vesselsToActivate.Remove(vessel);
-                            LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
+                            // LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                         }
                     }
                 }
@@ -1226,8 +1232,8 @@ namespace BDArmory.UI
             }
             v.SetWorldVelocity(Vector3d.zero);
 
-            yield return null;
-            FlightGlobals.ForceSetActiveVessel(v);
+            // yield return null;
+            // FlightGlobals.ForceSetActiveVessel(v);
             yield return null;
             v.Landed = true;
             v.situation = Vessel.Situations.PRELAUNCH;

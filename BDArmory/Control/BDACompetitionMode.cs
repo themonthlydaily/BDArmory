@@ -262,6 +262,12 @@ namespace BDArmory.Control
             }
         }
 
+        void OnDestroy()
+        {
+            StopCompetition();
+            StopAllCoroutines();
+        }
+
         public void ResetCompetitionScores()
         {
             // reinitilize everything when the button get hit.
@@ -360,7 +366,7 @@ namespace BDArmory.Control
             GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
             GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
-            GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
+            // GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
         }
 
@@ -373,7 +379,7 @@ namespace BDArmory.Control
             GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
             GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
-            GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
+            // GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
             lastTagUpdateTime = competitionStartTime;
         }
@@ -1199,7 +1205,7 @@ namespace BDArmory.Control
             var debrisToKill = new List<Vessel>();
             foreach (var vessel in FlightGlobals.Vessels)
             {
-                if (vessel.vesselType == VesselType.Debris) continue; // Handled by DebrisDelayedCleanUp
+                // if (vessel.vesselType == VesselType.Debris) continue; // Handled by DebrisDelayedCleanUp
                 bool activePilot = false;
                 if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == "Pinata")
                 {
@@ -1264,8 +1270,16 @@ namespace BDArmory.Control
 
         void DebrisDelayedCleanUp(Vessel debris)
         {
-            if (debris.vesselType == VesselType.Debris)
-                StartCoroutine(DebrisDelayedCleanupCoroutine(debris, BDArmorySettings.DEBRIS_CLEANUP_DELAY));
+            try
+            {
+                if (debris != null && debris.vesselType == VesselType.Debris)
+                    StartCoroutine(DebrisDelayedCleanupCoroutine(debris, BDArmorySettings.DEBRIS_CLEANUP_DELAY));
+            }
+            catch
+            {
+                Debug.Log("DEBUG debris " + debris.vesselName + " is a component? " + (debris is Component) + ", is a monobehaviour? " + (debris is MonoBehaviour));
+                throw;
+            }
         }
 
         private IEnumerator DebrisDelayedCleanupCoroutine(Vessel debris, float delay)
@@ -1279,7 +1293,7 @@ namespace BDArmory.Control
             yield return new WaitForFixedUpdate();
             if (debris != null)
             {
-                var partsToKill = debris.parts;
+                var partsToKill = debris.parts.ToList();
                 foreach (var part in partsToKill)
                     if (part != null)
                         part.Die();
@@ -1326,7 +1340,7 @@ namespace BDArmory.Control
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
-                    if (v.Current == null || !v.Current.loaded || v.Current.packed)
+                    if (v.Current == null || !v.Current.loaded) // || v.Current.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
                         continue;
 
                     MissileFire mf = null;
@@ -1772,7 +1786,7 @@ namespace BDArmory.Control
 
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
-            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : ""));
+            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " at " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s");
 
 
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
