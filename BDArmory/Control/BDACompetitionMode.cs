@@ -1205,6 +1205,7 @@ namespace BDArmory.Control
             var debrisToKill = new List<Vessel>();
             foreach (var vessel in FlightGlobals.Vessels)
             {
+                if (vessel.vesselType == VesselType.SpaceObject) continue; // Ignore asteroids and comets, killing them off can cause null refs (especially comets).
                 // if (vessel.vesselType == VesselType.Debris) continue; // Handled by DebrisDelayedCleanUp
                 bool activePilot = false;
                 if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == "Pinata")
