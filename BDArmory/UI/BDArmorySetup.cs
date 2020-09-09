@@ -1642,7 +1642,7 @@ namespace BDArmory.UI
 
             line++;
 
-            if (BDArmorySettings.RUNWAY_PROJECT)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
             {
                 bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
                 BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
