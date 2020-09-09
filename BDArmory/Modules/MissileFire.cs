@@ -385,17 +385,6 @@ namespace BDArmory.Modules
         public float
             gunRange = 2500f;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true),// Countermeasure dispensing repetition
-         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float
-            cmRepetition = 4f; // Equal to prior default
-
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true),// Countermeasure dispensing interval
-         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float
-            cmInterval = 0.6f; // Equal to prior default
-
-
         public const float maxAllowableMissilesOnTarget = 18f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
@@ -457,7 +446,20 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetThreat", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightThreat = 0f;
+        #endregion
 
+        #region Countermeasure Settings
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing repetition
+         UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float cmThreshold = 60f; // No prior default, just go with a long time
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing repetition
+         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float cmRepetition = 4f; // Equal to prior default
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing interval
+         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float cmInterval = 0.6f; // Equal to prior default
         #endregion
 
         public void ToggleGuardMode()
@@ -1842,7 +1844,7 @@ namespace BDArmory.Modules
         {
             if (!isChaffing)
             {
-                StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval));
+                StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval, cmThreshold));
             }
         }
 
@@ -1868,8 +1870,9 @@ namespace BDArmory.Modules
                 }
         }
 
-        IEnumerator ChaffRoutine(int repetition, float interval)
+        IEnumerator ChaffRoutine(int repetition, float interval, float threshold)
         {
+            if (ThreatClosingTime(incomingMissileVessel) > cmThreshold) yield break;
             if (isChaffing) yield break;
             isChaffing = true;
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
@@ -1893,6 +1896,7 @@ namespace BDArmory.Modules
 
         IEnumerator FlareRoutine(int repetition, float interval)
         {
+            if (ThreatClosingTime(incomingMissileVessel) > cmThreshold) yield break;
             if (isFlaring) yield break;
             isFlaring = true;
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
@@ -4322,6 +4326,19 @@ namespace BDArmory.Modules
         {
             UI_FloatRange rangeEditor = (UI_FloatRange)Fields["guardRange"].uiControlEditor;
             rangeEditor.maxValue = BDArmorySettings.MAX_GUARD_VISUAL_RANGE;
+        }
+
+        float ThreatClosingTime(Vessel threat)
+        {
+            float closureTime = 3600f; // Default closure time of one hour
+            if (threat) // If we weren't passed a null
+            {
+                float targetDistance = Vector3.Distance(threat.transform.position, vessel.transform.position);
+                Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
+                closureTime = Mathf.Clamp((float)(1 / ((threat.Velocity() - currVel).magnitude / targetDistance)), 0f, closureTime);
+                Debug.Log("[BDThreat]: Threat from " + threat.GetDisplayName() + " is " + closureTime.ToString("0.0") + " seconds away!");
+            }
+            return closureTime;
         }
 
         // moved from pilot AI, as it does not really do anything AI related?
