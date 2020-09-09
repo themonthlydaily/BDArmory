@@ -516,7 +516,7 @@ namespace BDArmory.UI
                 var vesselScore = continuousSpawningScores[vesselName];
                 var scoreData = vesselScore.scoreData;
                 logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Name:" + vesselName);
-                logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  DEATHCOUNT:" + (vesselScore.spawnCount - 1 + (vesselsToActivate.Contains(vesselScore.vessel) ? 1 : 0))); // Account for vessels that haven't respawned yet.
+                logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  DEATHCOUNT:" + (vesselScore.spawnCount - 1 + (vesselsToActivate.Contains(vesselScore.vessel) || !LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(teamManager => teamManager.Value, (teamManager, weaponManager) => weaponManager.vessel).Contains(vesselScore.vessel) ? 1 : 0))); // Account for vessels that haven't respawned yet.
                 var whoShotMeScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.hitCounts.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.hitCounts.Select(kvp2 => kvp2.Value + ":" + kvp2.Key))));
                 if (whoShotMeScores != "") logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHOSHOTME:" + whoShotMeScores);
                 var whoDamagedMeWithBulletsScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.damageFromBullets.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.damageFromBullets.Select(kvp2 => kvp2.Value.ToString("0.0") + ":" + kvp2.Key))));
@@ -689,7 +689,6 @@ namespace BDArmory.UI
                 var currentlyActive = LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList().Count;
                 while (craftToSpawn.Count + vesselsToActivate.Count + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                     craftToSpawn.Enqueue(spawnQueue.Dequeue());
-                Debug.Log("DEBUG currently active: " + currentlyActive + ", to spawn: " + craftToSpawn.Count + ", waiting for activation:" + vesselsToActivate.Count + ", queue length: " + spawnQueue.Count);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     var missing = crafts.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => v.FindPartModuleImplementing<MissileFire>() != null).Select(v => v.GetName()).ToList().Contains(craftURLToVesselName[craftURL])).ToList();

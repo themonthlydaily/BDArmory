@@ -1771,6 +1771,7 @@ namespace BDArmory.Control
         // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>[-tag].log
         public void LogResults(string message = "", string tag = "")
         {
+            competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
                 VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
