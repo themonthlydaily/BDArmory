@@ -258,6 +258,7 @@ namespace BDArmory.UI
                     var geeDirection = FlightGlobals.getGeeForceAtPosition(craftSpawnPosition);
                     vessel.SetRotation(Quaternion.FromToRotation(-Vector3.up, -geeDirection)); // Re-orient the vessel to the local gravity direction.
                     vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.transform.forward, direction, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+                    vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.transform.right) * vessel.transform.rotation); // Tilt 10° outwards.
                 }
                 if (FlightGlobals.currentMainBody.hasSolidSurface)
                     vessel.SetPosition(craftSpawnPosition + localSurfaceNormal * (altitude + heightFromTerrain - distance)); // Put us at the specified altitude. Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
@@ -505,7 +506,6 @@ namespace BDArmory.UI
 
         public void DumpContinuousSpawningScores(string tag = "")
         {
-
             var logStrings = new List<string>();
 
             if (continuousSpawningScores == null || continuousSpawningScores.Count == 0) return;
@@ -730,6 +730,7 @@ namespace BDArmory.UI
                         vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
                         vessel.SetRotation(Quaternion.FromToRotation(-Vector3.up, -geeDirection)); // Re-orient the vessel to the local gravity direction.
                         vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.transform.forward, direction, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+                        vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.transform.right) * vessel.transform.rotation); // Tilt 10° outwards.
                         if (!craftURLToVesselName.ContainsKey(craftURL))
                         {
                             if (craftURLToVesselName.ContainsValue(vessel.GetName())) // Avoid duplicate names.
