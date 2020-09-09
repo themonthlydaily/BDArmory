@@ -1870,7 +1870,7 @@ namespace BDArmory.Modules
                 }
         }
 
-        IEnumerator ChaffRoutine(int repetition, float interval, float threshold)
+        IEnumerator ChaffRoutine(int repetition, float interval)
         {
             if (ThreatClosingTime(incomingMissileVessel) > cmThreshold) yield break;
             if (isChaffing) yield break;
@@ -4058,7 +4058,7 @@ namespace BDArmory.Modules
             {
                 if (!isLegacyCMing)
                 {
-                    StartCoroutine(LegacyCMRoutine());
+                    // StartCoroutine(LegacyCMRoutine()); Maybe take this out since CMs are fired in UpdateGuardViewScan()? https://forum.kerbalspaceprogram.com/index.php?/topic/7542-the-official-unoffical-quothelp-a-fellow-plugin-developerquot-thread/page/125/&tab=comments#comment-3842041
                 }
 
                 targetScanTimer -= Time.fixedDeltaTime; //advance scan timing (increased urgency)
@@ -4336,7 +4336,7 @@ namespace BDArmory.Modules
                 float targetDistance = Vector3.Distance(threat.transform.position, vessel.transform.position);
                 Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
                 closureTime = Mathf.Clamp((float)(1 / ((threat.Velocity() - currVel).magnitude / targetDistance)), 0f, closureTime);
-                Debug.Log("[BDThreat]: Threat from " + threat.GetDisplayName() + " is " + closureTime.ToString("0.0") + " seconds away!");
+                // Debug.Log("[BDThreat]: Threat from " + threat.GetDisplayName() + " is " + closureTime.ToString("0.0") + " seconds away!");
             }
             return closureTime;
         }
