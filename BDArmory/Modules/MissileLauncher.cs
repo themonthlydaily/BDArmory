@@ -918,27 +918,39 @@ namespace BDArmory.Modules
 
         void UpdateGuidance()
         {
+            string debugTarget = "none";
             if (guidanceActive)
             {
                 if (TargetingMode == TargetingModes.Heat)
                 {
                     UpdateHeatTarget();
+                    if (heatTarget.vessel)
+                        debugTarget = heatTarget.vessel.GetDisplayName();
+                    else
+                        debugTarget = "Flare " + heatTarget.signalStrength.ToString();
                 }
                 else if (TargetingMode == TargetingModes.Radar)
                 {
                     UpdateRadarTarget();
+                    if (radarTarget.vessel)
+                        debugTarget = radarTarget.vessel.GetDisplayName();
+                    else
+                        debugTarget = "Chaff " + heatTarget.signalStrength.ToString();
                 }
                 else if (TargetingMode == TargetingModes.Laser)
                 {
                     UpdateLaserTarget();
+                    debugTarget = TargetPosition.ToString();
                 }
                 else if (TargetingMode == TargetingModes.Gps)
                 {
                     UpdateGPSTarget();
+                    debugTarget = UpdateGPSTarget().ToString();
                 }
                 else if (TargetingMode == TargetingModes.AntiRad)
                 {
                     UpdateAntiRadiationTarget();
+                    debugTarget = TargetPosition.ToString();
                 }
 
                 UpdateTerminalGuidance();
@@ -1067,6 +1079,9 @@ namespace BDArmory.Modules
                     KillRCS();
                 }
             }
+
+            debugString.Append("Missile target=" + debugTarget);
+            debugString.Append(Environment.NewLine);
         }
 
         // feature_engagementenvelope: terminal guidance mode for cruise missiles

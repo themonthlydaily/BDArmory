@@ -84,5 +84,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = false;                //disables the kill timers.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = true;                    // Enable/disable Runway Project specific enhancements. FIXME Default to true for now. Later, default to false for official BDArmory release.
+        [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
     }
 }

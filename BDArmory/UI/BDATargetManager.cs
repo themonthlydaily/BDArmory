@@ -297,6 +297,7 @@ namespace BDArmory.UI
         public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, float heatSignature)
         {
             TargetSignatureData flareTarget = TargetSignatureData.noTarget;
+            float bestScore = 0f;
 
             using (List<CMFlare>.Enumerator flare = BDArmorySetup.Flares.GetEnumerator())
                 while (flare.MoveNext())
@@ -311,11 +312,26 @@ namespace BDArmory.UI
                         score *= Mathf.Pow(1400, 2) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
                         score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
-                        // check acceptable range:
-                        // flare cannot be too cool, but also not too bright
-                        if ((score > heatSignature * 0.9) && (score < heatSignature * 1.15))
+                        if (BDArmorySettings.DUMB_IR_SEEKERS) // Pick the hottest flare hotter than heatSignature
                         {
-                            flareTarget = new TargetSignatureData(flare.Current, score);
+                            if ((score > heatSignature) && (score > bestScore))
+                            {
+                                flareTarget = new TargetSignatureData(flare.Current, score);
+                                bestScore = score;
+                            }
+                        }
+                        else
+                        {
+                            // check acceptable range:
+                            // flare cannot be too cool, but also not too bright
+                            if ((score > heatSignature * 0.8) && (score < heatSignature * 1.2)) // Used to be 0.9, 1.15, expanded range to 0.8-1.2 to increase flare effectiveness
+                            {
+                                if (Mathf.Abs(score - heatSignature) < Mathf.Abs(bestScore - heatSignature)) // Pick the closest flare to target, not just the last iterated on
+                                {
+                                    flareTarget = new TargetSignatureData(flare.Current, score);
+                                    bestScore = score;
+                                }
+                            }
                         }
                     }
                 }

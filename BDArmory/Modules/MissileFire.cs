@@ -1844,7 +1844,7 @@ namespace BDArmory.Modules
         {
             if (!isChaffing)
             {
-                StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval, cmThreshold));
+                StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval));
             }
         }
 
