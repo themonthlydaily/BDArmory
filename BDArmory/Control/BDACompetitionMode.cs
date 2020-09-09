@@ -288,6 +288,7 @@ namespace BDArmory.Control
             whoCleanShotWhoWithMissiles.Clear();
             whoCleanRammedWho.Clear();
             KillTimer.Clear();
+            pilotActions.Clear(); // Clear the pilotActions, so we don't get "<pilot> is Dead" on the next round of the competition.
             dumpedResults = 5;
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
