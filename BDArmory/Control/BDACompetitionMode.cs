@@ -376,6 +376,9 @@ namespace BDArmory.Control
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
+            nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
+            gracePeriod = competitionStartTime + 60;
+            decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
             lastTagUpdateTime = competitionStartTime;
         }
 
@@ -1540,7 +1543,7 @@ namespace BDArmory.Control
                         bool shouldKillThis = false;
 
                         // if vessels is Debris, kill it
-                        if (vesselName.Contains("Debris"))
+                        if (vesselName.Contains("Debris")) // FIXME delayed debris cleanup should remove this too
                         {
                             // reap this vessel
                             shouldKillThis = true;
