@@ -25,9 +25,9 @@ namespace BDArmory.Control
         public int PinataHits;
         public int totalDamagedPartsDueToRamming = 0;
         public int totalDamagedPartsDueToMissiles = 0;
-        public string lastPersonWhoHitMe;
-        public string lastPersonWhoHitMeWithAMissile;
-        public string lastPersonWhoRammedMe;
+        public string lastPersonWhoHitMe = "";
+        public string lastPersonWhoHitMeWithAMissile = "";
+        public string lastPersonWhoRammedMe = "";
         public double lastHitTime; // Bullets
         public bool tagIsIt = false; // For tag mode
         public int tagKillsWhileIt = 0; // For tag mode
@@ -303,12 +303,7 @@ namespace BDArmory.Control
                     if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral)
                         continue;
                     // put these in the scoring dictionary - these are the active participants
-                    ScoringData vDat = new ScoringData();
-                    vDat.lastPersonWhoHitMe = "";
-                    vDat.lastPersonWhoRammedMe = "";
-                    vDat.lastFiredTime = Planetarium.GetUniversalTime();
-                    vDat.previousPartCount = loadedVessels.Current.parts.Count();
-                    Scores[loadedVessels.Current.GetName()] = vDat;
+                    Scores[loadedVessels.Current.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = loadedVessels.Current.parts.Count };
                 }
         }
 
@@ -1783,10 +1778,12 @@ namespace BDArmory.Control
                 return;
             }
 
+
             var logStrings = new List<string>();
 
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
+            competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
             logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " at " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s");
 
 
@@ -1981,7 +1978,8 @@ namespace BDArmory.Control
             {
                 var vessel = rammingInformation[vesselName].vessel;
                 var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                                                                                     // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
+
+                // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
                 Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
