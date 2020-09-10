@@ -264,6 +264,7 @@ namespace BDArmory.Control
 
         void OnDestroy()
         {
+            LogResults();
             StopCompetition();
             StopAllCoroutines();
         }
@@ -1675,7 +1676,7 @@ namespace BDArmory.Control
                                         break;
                                 }
                             }
-                            else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
+                            else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0 || Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
                             {
                                 List<string> killReasons = new List<string>();
                                 if (Scores[key].everyoneWhoHitMe.Count > 0)

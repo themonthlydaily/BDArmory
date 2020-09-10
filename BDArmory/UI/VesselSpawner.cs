@@ -27,7 +27,6 @@ namespace BDArmory.UI
 
         void OnDestroy()
         {
-            CancelVesselSpawn();
         }
 
         private void OnGUI()
