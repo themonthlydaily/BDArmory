@@ -25,6 +25,11 @@ namespace BDArmory.UI
             Instance = this;
         }
 
+        void OnDestroy()
+        {
+            CancelVesselSpawn();
+        }
+
         private void OnGUI()
         {
         }

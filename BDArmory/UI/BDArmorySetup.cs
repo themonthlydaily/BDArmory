@@ -149,7 +149,6 @@ namespace BDArmory.UI
 
 
         //competition mode
-        float competitionDist = 1000;
         string compDistGui = "1000";
 
         #region Textures
@@ -442,6 +441,7 @@ namespace BDArmory.UI
                 { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
                 { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
             };
+            compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -1739,7 +1739,7 @@ namespace BDArmory.UI
                     float cDist;
                     if (Single.TryParse(compDistGui, out cDist))
                     {
-                        competitionDist = cDist;
+                        BDArmorySettings.COMPETITION_DISTANCE = (int)cDist;
                     }
                     line++;
 
@@ -1751,9 +1751,9 @@ namespace BDArmory.UI
                     if (GUI.Button(SRightButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetition")))//"Start Competition"
                     {
 
-                        competitionDist = Mathf.Max(competitionDist, 0);
-                        compDistGui = competitionDist.ToString();
-                        BDACompetitionMode.Instance.StartCompetitionMode(competitionDist);
+                        BDArmorySettings.COMPETITION_DISTANCE = Mathf.Max(BDArmorySettings.COMPETITION_DISTANCE, 0);
+                        compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+                        BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
                         SaveConfig();
                         windowSettingsEnabled = false;
                     }
@@ -1766,7 +1766,7 @@ namespace BDArmory.UI
                             SaveConfig();
                             windowSettingsEnabled = false;
                         }
-                        if (GUI.Button(SRightRect(line), "Sync Remote"))
+                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED && GUI.Button(SRightRect(line), "Sync Remote"))
                         {
                             string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
                             if (!System.IO.Directory.Exists(vesselPath))
