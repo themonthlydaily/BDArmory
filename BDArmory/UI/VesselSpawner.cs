@@ -119,7 +119,7 @@ namespace BDArmory.UI
             if (killEverythingFirst)
             {
                 // Kill all vessels (including debris).
-                var vesselsToKill = new List<Vessel>(FlightGlobals.Vessels);
+                var vesselsToKill = FlightGlobals.Vessels.Where(v => v.vesselType != VesselType.SpaceObject).ToList();
                 foreach (var vessel in vesselsToKill)
                     RemoveVessel(vessel);
             }
@@ -610,7 +610,7 @@ namespace BDArmory.UI
             if (killEverythingFirst)
             {
                 // Kill all vessels (including debris).
-                var vesselsToKill = new List<Vessel>(FlightGlobals.Vessels);
+                var vesselsToKill = FlightGlobals.Vessels.Where(v => v.vesselType != VesselType.SpaceObject).ToList();
                 foreach (var vessel in vesselsToKill)
                     RemoveVessel(vessel);
             }
