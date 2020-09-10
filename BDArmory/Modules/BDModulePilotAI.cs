@@ -796,8 +796,12 @@ namespace BDArmory.Modules
             }
 
             // Calculate threat rating from any threats
+            float minimumEvasionTime = minEvasionTime;
             if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring))
+            {
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
+                minimumEvasionTime = minEvasionTime * 2f + 1f; // Longer minimum evasion time for missiles, so we don't turn into them
+            }
             else if (weaponManager.underFire && !ramming)
                 threatRating = weaponManager.incomingMissDistance; // If we're ramming, ignore gunfire.
             else
@@ -807,9 +811,9 @@ namespace BDArmory.Modules
             debugString.Append(Environment.NewLine);
 
             // If we're currently evading or a threat is significant and we're not ramming.
-            if ((evasiveTimer < minEvasionTime && evasiveTimer != 0) || threatRating < evasionThreshold)
+            if ((evasiveTimer < minimumEvasionTime && evasiveTimer != 0) || threatRating < evasionThreshold)
             {
-                if (evasiveTimer < minEvasionTime)
+                if (evasiveTimer < minimumEvasionTime)
                 {
                     threatRelativePosition = vessel.Velocity().normalized + vesselTransform.right;
 
@@ -850,7 +854,7 @@ namespace BDArmory.Modules
                 evasiveTimer += Time.fixedDeltaTime;
                 turningTimer = 0;
 
-                if (evasiveTimer >= minEvasionTime)
+                if (evasiveTimer >= minimumEvasionTime)
                 {
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine

@@ -1483,6 +1483,7 @@ namespace BDArmory.UI
             BDArmorySettings.DEBUG_RAMMING_LOGGING = GUI.Toggle(SRightRect(line), BDArmorySettings.DEBUG_RAMMING_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_DebugRammingLogging"));// Disable Ramming
             line++;
             BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
+            BDArmorySettings.DUMB_IR_SEEKERS = GUI.Toggle(SRightRect(line), BDArmorySettings.DUMB_IR_SEEKERS, Localizer.Format("#LOC_BDArmory_Settings_DumbIRSeekers"));//"Dumb IR Seekers"
             line++;
             if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
             {

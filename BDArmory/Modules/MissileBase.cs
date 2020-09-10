@@ -283,7 +283,7 @@ namespace BDArmory.Modules
         {
             return part;
         }
-
+        
         public abstract void FireMissile();
 
         public abstract void Jettison();
@@ -405,7 +405,7 @@ namespace BDArmory.Modules
                 if (heatTarget.exists)
                 {
                     TargetAcquired = true;
-                    TargetPosition = heatTarget.position + (2 * heatTarget.velocity * Time.fixedDeltaTime);
+                    TargetPosition = heatTarget.position + (heatTarget.velocity * Time.fixedDeltaTime); // Previously this was 2 * heatTarget.velocity, why?
                     TargetVelocity = heatTarget.velocity;
                     TargetAcceleration = heatTarget.acceleration;
                     lockFailTimer = 0;
