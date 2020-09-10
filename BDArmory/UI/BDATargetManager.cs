@@ -376,6 +376,14 @@ namespace BDArmory.UI
                         continue;
                     }
                 }
+
+                // Abort if target is a missile that we've shot
+                if (tInfo.isMissile)
+                {
+                    if (tInfo.MissileBaseModule.SourceVessel == sourceVessel)
+                        continue;
+                }
+
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
                 if (angle < scanRadius)
                 {
