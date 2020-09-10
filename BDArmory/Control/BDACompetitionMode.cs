@@ -25,9 +25,9 @@ namespace BDArmory.Control
         public int PinataHits;
         public int totalDamagedPartsDueToRamming = 0;
         public int totalDamagedPartsDueToMissiles = 0;
-        public string lastPersonWhoHitMe;
-        public string lastPersonWhoHitMeWithAMissile;
-        public string lastPersonWhoRammedMe;
+        public string lastPersonWhoHitMe = "";
+        public string lastPersonWhoHitMeWithAMissile = "";
+        public string lastPersonWhoRammedMe = "";
         public double lastHitTime; // Bullets
         public bool tagIsIt = false; // For tag mode
         public int tagKillsWhileIt = 0; // For tag mode
@@ -264,6 +264,7 @@ namespace BDArmory.Control
 
         void OnDestroy()
         {
+            LogResults();
             StopCompetition();
             StopAllCoroutines();
         }
@@ -288,6 +289,7 @@ namespace BDArmory.Control
             whoCleanShotWhoWithMissiles.Clear();
             whoCleanRammedWho.Clear();
             KillTimer.Clear();
+            pilotActions.Clear(); // Clear the pilotActions, so we don't get "<pilot> is Dead" on the next round of the competition.
             dumpedResults = 5;
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
@@ -303,12 +305,7 @@ namespace BDArmory.Control
                     if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral)
                         continue;
                     // put these in the scoring dictionary - these are the active participants
-                    ScoringData vDat = new ScoringData();
-                    vDat.lastPersonWhoHitMe = "";
-                    vDat.lastPersonWhoRammedMe = "";
-                    vDat.lastFiredTime = Planetarium.GetUniversalTime();
-                    vDat.previousPartCount = loadedVessels.Current.parts.Count();
-                    Scores[loadedVessels.Current.GetName()] = vDat;
+                    Scores[loadedVessels.Current.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = loadedVessels.Current.parts.Count };
                 }
         }
 
@@ -381,6 +378,9 @@ namespace BDArmory.Control
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
+            nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
+            gracePeriod = competitionStartTime + 60;
+            decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
             lastTagUpdateTime = competitionStartTime;
         }
 
@@ -1205,6 +1205,7 @@ namespace BDArmory.Control
             var debrisToKill = new List<Vessel>();
             foreach (var vessel in FlightGlobals.Vessels)
             {
+                if (vessel.vesselType == VesselType.SpaceObject) continue; // Ignore asteroids and comets, killing them off can cause null refs (especially comets).
                 // if (vessel.vesselType == VesselType.Debris) continue; // Handled by DebrisDelayedCleanUp
                 bool activePilot = false;
                 if (BDArmorySettings.RUNWAY_PROJECT && vessel.GetName() == "Pinata")
@@ -1544,7 +1545,7 @@ namespace BDArmory.Control
                         bool shouldKillThis = false;
 
                         // if vessels is Debris, kill it
-                        if (vesselName.Contains("Debris"))
+                        if (vesselName.Contains("Debris")) // FIXME delayed debris cleanup should remove this too
                         {
                             // reap this vessel
                             shouldKillThis = true;
@@ -1675,7 +1676,7 @@ namespace BDArmory.Control
                                         break;
                                 }
                             }
-                            else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0)
+                            else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0 || Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
                             {
                                 List<string> killReasons = new List<string>();
                                 if (Scores[key].everyoneWhoHitMe.Count > 0)
@@ -1782,10 +1783,12 @@ namespace BDArmory.Control
                 return;
             }
 
+
             var logStrings = new List<string>();
 
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
+            competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
             logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " at " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s");
 
 
@@ -1980,7 +1983,8 @@ namespace BDArmory.Control
             {
                 var vessel = rammingInformation[vesselName].vessel;
                 var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                                                                                     // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
+
+                // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
                 Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
