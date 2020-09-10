@@ -397,7 +397,7 @@ namespace BDArmory.UI
                 if (tInfo.isMissile)
                 {
                     if (tInfo.MissileBaseModule.SourceVessel == sourceVessel)
-                        continue; 
+                        continue;
                 }
 
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
