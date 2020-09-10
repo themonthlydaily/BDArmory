@@ -1829,7 +1829,10 @@ namespace BDArmory.Modules
 
         public void FireAllCountermeasures(int count)
         {
-            StartCoroutine(AllCMRoutine(count));
+            if (!isChaffing && !isFlaring)
+            {
+                StartCoroutine(AllCMRoutine(count));
+            }
         }
 
         public void FireECM()
@@ -1845,6 +1848,15 @@ namespace BDArmory.Modules
             if (!isChaffing)
             {
                 StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval));
+            }
+        }
+
+        public void FireFlares()
+        {
+            if (!isFlaring)
+            {
+                StartCoroutine(FlareRoutine((int)cmRepetition, cmInterval));
+                StartCoroutine(ResetMissileThreatDistanceRoutine());
             }
         }
 
@@ -1875,6 +1887,7 @@ namespace BDArmory.Modules
             if (ThreatClosingTime(incomingMissileVessel) > cmThreshold) yield break;
             if (isChaffing) yield break;
             isChaffing = true;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Starting chaff routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
@@ -1892,6 +1905,7 @@ namespace BDArmory.Modules
                 yield return new WaitForSeconds(interval);
             }
             isChaffing = false;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Ending chaff routine");
         }
 
         IEnumerator FlareRoutine(int repetition, float interval)
@@ -1899,6 +1913,7 @@ namespace BDArmory.Modules
             if (ThreatClosingTime(incomingMissileVessel) > cmThreshold) yield break;
             if (isFlaring) yield break;
             isFlaring = true;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Starting flare routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
@@ -1914,29 +1929,34 @@ namespace BDArmory.Modules
                 yield return new WaitForSeconds(interval);
             }
             isFlaring = false;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Ending flare routine");
         }
 
         IEnumerator AllCMRoutine(int count)
         {
+            if (ThreatClosingTime(incomingMissileVessel) < cmThreshold) yield break; // Use this routine for missile threats that are outside of the cmThreshold
+            if (isFlaring || isChaffing) yield break;
+            isFlaring = true;
+            isChaffing = true;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Starting All CM routine");
             for (int i = 0; i < count; i++)
             {
                 using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
                     while (cm.MoveNext())
                     {
                         if (cm.Current == null) continue;
-                        if ((cm.Current.cmType == CMDropper.CountermeasureTypes.Flare && !isFlaring)
-                            || (cm.Current.cmType == CMDropper.CountermeasureTypes.Chaff && !isChaffing)
+                        if ((cm.Current.cmType == CMDropper.CountermeasureTypes.Flare)
+                            || (cm.Current.cmType == CMDropper.CountermeasureTypes.Chaff)
                             || (cm.Current.cmType == CMDropper.CountermeasureTypes.Smoke))
                         {
                             cm.Current.DropCM();
                         }
                     }
-                isFlaring = true;
-                isChaffing = true;
                 yield return new WaitForSeconds(1f);
             }
             isFlaring = false;
             isChaffing = false;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Ending All CM routine");
         }
 
         IEnumerator LegacyCMRoutine()
@@ -4172,11 +4192,8 @@ namespace BDArmory.Modules
             {
                 StartCoroutine(UnderAttackRoutine());
 
-                if (!isFlaring)
-                {
-                    StartCoroutine(FlareRoutine((int)cmRepetition, cmInterval));
-                    StartCoroutine(ResetMissileThreatDistanceRoutine());
-                }
+                FireFlares();
+                
                 incomingThreatPosition = results.threatPosition;
                 incomingThreatVessel = results.threatVessel;
 

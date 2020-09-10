@@ -874,19 +874,13 @@ namespace BDArmory.Radar
                                 MissileBase missileBase;
                                 if (missileBase = tInfo.MissileBaseModule)
                                 {
-                                    if (missileBase.SourceVessel == myWpnManager.vessel) continue; // ignore missile's we've fired
+                                    if (missileBase.SourceVessel == myWpnManager.vessel) continue; // ignore missiles we've fired
                                     
                                     results.foundMissile = true;
                                     results.threatVessel = missileBase.vessel;
                                     Vector3 vectorFromMissile = myWpnManager.vessel.CoM - missileBase.part.transform.position;
                                     Vector3 relV = missileBase.vessel.Velocity() - myWpnManager.vessel.Velocity();
                                     bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
-
-                                    // missileCount++; //FIXME for debugging
-                                    // Debug.Log("[BDThreat]: Total vessels: " + BDATargetManager.LoadedVessels.Count);
-                                    // Debug.Log("[BDThreat]:" + myWpnManager.vessel.GetDisplayName() + " threat from " + missileCount + " " + results.threatVessel.GetDisplayName());
-                                    // Debug.Log("[BDThreat]:" + (missileBase.HasFired && missileBase.TimeIndex > 1) + " " + approaching + " " + ((missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < 3600));
-                                    // Debug.Log("[BDThreat]:" + ((missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).magnitude.ToString("0.0")));
 
                                     if (missileBase.HasFired && missileBase.TimeIndex > 1 && approaching && (missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < 3600)
                                     {
@@ -909,10 +903,6 @@ namespace BDArmory.Radar
                                             results.missileThreatDistance = Mathf.Min(results.missileThreatDistance, Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position));
                                             break;
                                         }
-                                    }
-                                    else
-                                    {
-                                        // break; // This was causing a lot of issues, leaving it commented for now in case something else breaks
                                     }
                                 }
                             }
