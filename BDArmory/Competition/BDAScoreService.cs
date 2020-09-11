@@ -236,8 +236,13 @@ namespace BDArmory.Competition
             // orchestrate the match
             activePlayers.Clear();
             hitsOnTarget.Clear();
+            hitsOut.Clear();
+            hitsIn.Clear();
+            damageOut.Clear();
+            damageIn.Clear();
             killsOnTarget.Clear();
             deaths.Clear();
+            assists.Clear();
             longestHitDistance.Clear();
             longestHitWeapon.Clear();
 
@@ -250,22 +255,11 @@ namespace BDArmory.Competition
                 Debug.Log("[BDAScoreService] Vessel spawning failed."); // FIXME Now what?
                 yield break;
             }
-            // if (CompetitionHub != null) // Example of how to spawn extra vessels from another folder.
-            // {
-            //     spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, false, hash+"/"+hubCraftPath);
-            //     while (spawner.vesselsSpawning)
-            //         yield return new WaitForFixedUpdate();
-            //     if (!spawner.vesselSpawnSuccess)
-            //     {
-            //         Debug.Log("[BDAScoreService] Vessel spawning failed for CompetitionHub."); // FIXME Now what?
-            //         yield break;
-            //     }
-            // }
             yield return new WaitForFixedUpdate();
 
             status = StatusType.RunningHeat;
             // NOTE: runs in separate coroutine
-            BDACompetitionMode.Instance.StartCompetitionMode(1000);
+            BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
 
             // start timer coroutine for the duration specified in settings UI
             var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
@@ -285,13 +279,6 @@ namespace BDArmory.Competition
             // stop competition
             BDACompetitionMode.Instance.StopCompetition();
             BDACompetitionMode.Instance.LogResults("for BDAScoreService"); // Make sure the results are dumped to the log.
-
-            // status = StatusType.RemovingVessels;
-            // // remove all spawned vehicles // Note: Vessel and debris clean-up happens during vessel spawning (also the currently focussed vessel doesn't get killed when telling it to Die...)
-            // foreach (Vessel v in FlightGlobals.Vessels.Where(e => !e.vesselName.Equals("CompetitionHub")))
-            // {
-            //     v.Die();
-            // }
         }
 
         private IEnumerator SendScores(string hash, HeatModel heat)
@@ -462,7 +449,7 @@ namespace BDArmory.Competition
             }
             if( hitsOut.ContainsKey(attacker) )
             {
-                hitsOut[attacker]++;
+                ++hitsOut[attacker];
             }
             else
             {
@@ -470,7 +457,7 @@ namespace BDArmory.Competition
             }
             if (hitsIn.ContainsKey(target))
             {
-                hitsIn[target]++;
+                ++hitsIn[target];
             }
             else
             {
