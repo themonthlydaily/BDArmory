@@ -400,7 +400,7 @@ namespace BDArmory.Modules
             if (lockFailTimer >= 0)
             {
                 Ray lookRay = new Ray(transform.position, heatTarget.position + (heatTarget.velocity * Time.fixedDeltaTime) - transform.position);
-                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, lockedSensorFOV / 2, heatThreshold, allAspect, SourceVessel?.gameObject?.GetComponent<MissileFire>());
+                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, heatTarget.signalStrength, lockedSensorFOV / 2, heatThreshold, allAspect, SourceVessel?.gameObject?.GetComponent<MissileFire>());
 
                 if (heatTarget.exists)
                 {

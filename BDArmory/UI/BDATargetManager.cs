@@ -312,7 +312,7 @@ namespace BDArmory.UI
                         score *= Mathf.Pow(1400, 2) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
                         score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
-                        if (BDArmorySettings.DUMB_IR_SEEKERS) // Pick the hottest flare hotter than heatSignature
+                        if ((false) && (BDArmorySettings.DUMB_IR_SEEKERS)) // Pick the hottest flare hotter than heatSignature
                         {
                             if ((score > heatSignature) && (score > bestScore))
                             {
@@ -339,12 +339,11 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, float priorHeatScore, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
-
             foreach (Vessel vessel in LoadedVessels)
             {
                 if (vessel == null)
@@ -422,24 +421,45 @@ namespace BDArmory.UI
 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
-                    if (score > finalScore)
+                    if (priorHeatScore > 0) // If we were passed a target heat score, look for the most similar heat score
                     {
-                        finalScore = score;
-                        finalData = new TargetSignatureData(vessel, score);
+                        if (Mathf.Abs(score-priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
+                        {
+                            finalScore = score;
+                            finalData = new TargetSignatureData(vessel, score);
+                        }
+                    }
+                    else // Otherwise, pick the highest heat score
+                    {
+                        if (score > finalScore)
+                        {
+                            finalScore = score;
+                            finalData = new TargetSignatureData(vessel, score);
+                        }
                     }
                 }
             }
 
+            float flareDecoyScore = (priorHeatScore > 0) ? priorHeatScore : finalScore;
+
             // see if there are flares decoying us:
-            TargetSignatureData flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, finalScore);
+            TargetSignatureData flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, flareDecoyScore);
 
             if (finalScore < highpassThreshold)
             {
                 finalData = TargetSignatureData.noTarget;
             }
 
+
+            bool flareSuccess = true;
+            if (!BDArmorySettings.DUMB_IR_SEEKERS)
+            {
+                if (priorHeatScore > 0)
+                    flareSuccess = (Mathf.Abs(flareData.signalStrength - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore));
+            }
+
             // return matching flare
-            if (!flareData.Equals(TargetSignatureData.noTarget))
+            if ((!flareData.Equals(TargetSignatureData.noTarget)) && flareSuccess)
                 return flareData;
 
             //else return the target:
