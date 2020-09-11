@@ -24,7 +24,6 @@ namespace BDArmory.Competition
         public Dictionary<string, int> hitsIn = new Dictionary<string, int>();
         public Dictionary<string, double> damageOut = new Dictionary<string, double>();
         public Dictionary<string, double> damageIn = new Dictionary<string, double>();
-        public Dictionary<string, Dictionary<string, int>> cleanKillsOnTarget = new Dictionary<string, Dictionary<string, int>>();
         public Dictionary<string, Dictionary<string, int>> killsOnTarget = new Dictionary<string, Dictionary<string, int>>();
         public Dictionary<string, int> assists = new Dictionary<string, int>();
         public Dictionary<string, int> deaths = new Dictionary<string, int>();
@@ -241,7 +240,6 @@ namespace BDArmory.Competition
             hitsIn.Clear();
             damageOut.Clear();
             damageIn.Clear();
-            cleanKillsOnTarget.Clear();
             killsOnTarget.Clear();
             deaths.Clear();
             assists.Clear();
@@ -318,7 +316,6 @@ namespace BDArmory.Competition
                 record.hits_in = ComputeTotalHitsIn(player.name);
                 record.dmg_out = ComputeTotalDamageOut(player.name);
                 record.dmg_in = ComputeTotalDamageIn(player.name);
-                record.clean_kills = ComputeTotalCleanKills(player.name);
                 record.kills = ComputeTotalKills(player.name);
                 record.deaths = ComputeTotalDeaths(player.name);
                 record.assists = ComputeTotalAssists(player.name);
@@ -369,16 +366,6 @@ namespace BDArmory.Competition
             if (damageIn.ContainsKey(playerName))
             {
                 result = damageIn[playerName];
-            }
-            return result;
-        }
-
-        private int ComputeTotalCleanKills(string playerName)
-        {
-            int result = 0;
-            if (cleanKillsOnTarget.ContainsKey(playerName))
-            {
-                result = cleanKillsOnTarget[playerName].Values.Sum();
             }
             return result;
         }
@@ -509,7 +496,7 @@ namespace BDArmory.Competition
             }
         }
 
-        private void ComputeAssists(string target, string killer = "", double timeLimit = 30)
+        public void ComputeAssists(string target, string killer = "", double timeLimit = 30)
         {
             var now = Planetarium.GetUniversalTime();
             var thresholdTime = now - timeLimit; // anyone who hit this target within the last 30sec
@@ -532,7 +519,7 @@ namespace BDArmory.Competition
         }
 
         /**
-         * Tracks a death.
+         * Tracks an unattributed death, where no clear attacker exists.
          */
         public void TrackDeath(string target)
         {
@@ -556,20 +543,16 @@ namespace BDArmory.Competition
         }
 
         /**
-         * Tracks a kill, when an attacker kills the target.
-         * Clean kills (when the target dies shortly after being hit) are also tracked.
+         * Tracks a clean kill, when an attacker decisively kills the target.
          */
-        public void TrackKill(string attacker, string target, bool cleanKill)
+        public void TrackKill(string attacker, string target)
         {
             Debug.Log(string.Format("[BDAScoreService] TrackKill {0} by {1}", target, attacker));
             activePlayers.Add(attacker);
             activePlayers.Add(target);
 
-            if (cleanKill)
-                IncrementCleanKill(attacker, target);
-            else
-                IncrementKill(attacker, target);
-            ComputeAssists(target, attacker, cleanKill ? 30 : 60);
+            IncrementKill(attacker, target);
+            ComputeAssists(target, attacker, 30);
         }
 
         private void IncrementKill(string attacker, string target)
@@ -594,31 +577,6 @@ namespace BDArmory.Competition
                 var newKills = new Dictionary<string, int>();
                 newKills.Add(target, 1);
                 killsOnTarget.Add(attacker, newKills);
-            }
-        }
-
-        private void IncrementCleanKill(string attacker, string target)
-        {
-            // increment kill counter
-            if (cleanKillsOnTarget.ContainsKey(attacker))
-            {
-                if (cleanKillsOnTarget[attacker].ContainsKey(target))
-                {
-                    Debug.Log(string.Format("[BDAScoreService] IncrementCleanKills for {0} on {1}", attacker, target));
-                    ++cleanKillsOnTarget[attacker][target];
-                }
-                else
-                {
-                    Debug.Log(string.Format("[BDAScoreService] CleanKill for {0} on {1}", attacker, target));
-                    cleanKillsOnTarget[attacker].Add(target, 1);
-                }
-            }
-            else
-            {
-                Debug.Log(string.Format("[BDAScoreService] FirstCleanKill for {0} on {1}", attacker, target));
-                var newCleanKills = new Dictionary<string, int>();
-                newCleanKills.Add(target, 1);
-                cleanKillsOnTarget.Add(attacker, newCleanKills);
             }
         }
 

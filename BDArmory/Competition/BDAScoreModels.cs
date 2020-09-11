@@ -191,7 +191,6 @@ namespace BDArmory.Competition
         public double dmg_out;
         public double dmg_in;
         public int assists;
-        public int clean_kills;
         public int kills;
         public int deaths;
         public float distance;

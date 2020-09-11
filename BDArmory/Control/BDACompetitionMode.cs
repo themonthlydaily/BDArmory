@@ -1648,7 +1648,7 @@ namespace BDArmory.Control
                                             Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
                                             whoCleanShotWho.Add(key, whoKilledMe);
                                             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key, true);
+                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
                                             whoKilledMe += " (BOOM! HEADSHOT!)";
                                         }
                                         break;
@@ -1659,7 +1659,7 @@ namespace BDArmory.Control
                                             Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
                                             whoCleanShotWhoWithMissiles.Add(key, whoKilledMe);
                                             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key, true);
+                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
                                             whoKilledMe += " (BOOM! HEADSHOT!)";
                                         }
                                         break;
@@ -1671,7 +1671,7 @@ namespace BDArmory.Control
                                             Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
                                             whoCleanRammedWho.Add(key, whoKilledMe);
                                             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key, true);
+                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
                                             whoKilledMe += " (BOOM! HEADSHOT!)";
                                         }
                                         break;
@@ -1695,7 +1695,7 @@ namespace BDArmory.Control
                                     Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                                 }
                                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED && Scores[key].gmKillReason == GMKillReason.None) // Don't count kills by the GM.
-                                    Competition.BDAScoreService.Instance.TrackKill(key, Scores[key].LastPersonWhoDamagedMe(), false);
+                                    Competition.BDAScoreService.Instance.ComputeAssists(key, "", Planetarium.GetUniversalTime() - competitionStartTime);
                             }
                         }
                         if (whoKilledMe != "")
