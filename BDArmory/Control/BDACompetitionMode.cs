@@ -55,6 +55,7 @@ namespace BDArmory.Control
         public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
         public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>();
         public GMKillReason gmKillReason = GMKillReason.None;
+        public bool cleanDeath = false;
 
         public double LastDamageTime()
         {
@@ -1637,6 +1638,7 @@ namespace BDArmory.Control
                             {
                                 // if last hit was recent that person gets the kill
                                 whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
+                                Scores[key].cleanDeath = true;
 
                                 var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
                                 switch (lastDamageWasFrom)
