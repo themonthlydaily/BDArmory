@@ -925,7 +925,7 @@ namespace BDArmory.Modules
                 {
                     UpdateHeatTarget();
                     if (heatTarget.vessel)
-                        debugTarget = heatTarget.vessel.GetDisplayName();
+                        debugTarget = heatTarget.vessel.GetDisplayName() + " " + heatTarget.signalStrength.ToString();
                     else
                         debugTarget = "Flare " + heatTarget.signalStrength.ToString();
                 }
@@ -933,7 +933,7 @@ namespace BDArmory.Modules
                 {
                     UpdateRadarTarget();
                     if (radarTarget.vessel)
-                        debugTarget = radarTarget.vessel.GetDisplayName();
+                        debugTarget = radarTarget.vessel.GetDisplayName() + " " + radarTarget.signalStrength.ToString();
                     else
                         debugTarget = "Chaff " + heatTarget.signalStrength.ToString();
                 }
