@@ -399,16 +399,27 @@ namespace BDArmory.Modules
             }
             if (lockFailTimer >= 0)
             {
+                TargetSignatureData priorTarget = heatTarget;
+                
                 Ray lookRay = new Ray(transform.position, heatTarget.position + (heatTarget.velocity * Time.fixedDeltaTime) - transform.position);
                 heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, heatTarget.signalStrength, lockedSensorFOV / 2, heatThreshold, allAspect, SourceVessel?.gameObject?.GetComponent<MissileFire>());
 
                 if (heatTarget.exists)
                 {
                     TargetAcquired = true;
-                    TargetPosition = heatTarget.position + (heatTarget.velocity * Time.fixedDeltaTime); // Previously this was 2 * heatTarget.velocity, why?
+                    TargetPosition = heatTarget.position + (2 * heatTarget.velocity * Time.fixedDeltaTime); // This should be 2*heatVel to reduce chance of the lookRay losing target
                     TargetVelocity = heatTarget.velocity;
                     TargetAcceleration = heatTarget.acceleration;
                     lockFailTimer = 0;
+
+                    // Adjust heat score based on distance missile will travel in the next update
+                    if (heatTarget.signalStrength > 0)
+                    {
+                        float currentFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - transform.position).sqrMagnitude, 90000, 36000000);
+                        Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
+                        float futureFactor = (1400 * 1400) / Mathf.Clamp(((heatTarget.position + heatTarget.velocity * Time.fixedDeltaTime) - (transform.position + (currVel * Time.fixedDeltaTime))).sqrMagnitude, 90000, 36000000);
+                        heatTarget.signalStrength *= futureFactor / currentFactor;
+                    }
                 }
                 else
                 {

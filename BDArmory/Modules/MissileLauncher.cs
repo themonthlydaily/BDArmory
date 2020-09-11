@@ -926,7 +926,7 @@ namespace BDArmory.Modules
                     UpdateHeatTarget();
                     if (heatTarget.vessel)
                         debugTarget = heatTarget.vessel.GetDisplayName() + " " + heatTarget.signalStrength.ToString();
-                    else
+                    else if (heatTarget.signalStrength > 0)
                         debugTarget = "Flare " + heatTarget.signalStrength.ToString();
                 }
                 else if (TargetingMode == TargetingModes.Radar)
@@ -934,8 +934,8 @@ namespace BDArmory.Modules
                     UpdateRadarTarget();
                     if (radarTarget.vessel)
                         debugTarget = radarTarget.vessel.GetDisplayName() + " " + radarTarget.signalStrength.ToString();
-                    else
-                        debugTarget = "Chaff " + heatTarget.signalStrength.ToString();
+                    else if (radarTarget.signalStrength > 0)
+                        debugTarget = "Chaff " + radarTarget.signalStrength.ToString();
                 }
                 else if (TargetingMode == TargetingModes.Laser)
                 {
@@ -1114,6 +1114,15 @@ namespace BDArmory.Modules
                             TargetAcceleration = heatTarget.acceleration;
                             lockFailTimer = 0;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);
+
+                            // Adjust heat score based on distance missile will travel in the next update
+                            if (heatTarget.signalStrength > 0)
+                            {
+                                float currentFactor = (1400 * 1400) / Mathf.Clamp((heatTarget.position - transform.position).sqrMagnitude, 90000, 36000000);
+                                Vector3 currVel = (float)vessel.srfSpeed * vessel.Velocity().normalized;
+                                float futureFactor = (1400 * 1400) / Mathf.Clamp((TargetPosition - (transform.position + (currVel * Time.fixedDeltaTime))).sqrMagnitude, 90000, 36000000);
+                                heatTarget.signalStrength *= futureFactor / currentFactor;
+                            }
                         }
                         else
                         {
