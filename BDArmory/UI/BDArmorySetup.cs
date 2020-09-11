@@ -1360,6 +1360,11 @@ namespace BDArmory.UI
             return new Rect(settingsWidth / 2 + settingsMargin / 4, line * settingsLineHeight, (settingsWidth - 2 * settingsMargin) / 2 - settingsMargin / 4, settingsLineHeight);
         }
 
+        Rect SQuarterRect(float line, int pos)
+        {
+            return new Rect(settingsMargin + (pos % 4) * (settingsWidth - 2f * settingsMargin) / 4f, (line + (int)(pos / 4)) * settingsLineHeight, (settingsWidth - 2.5f * settingsMargin) / 4f, settingsLineHeight);
+        }
+
         List<Rect> SRight2Rects(float line)
         {
             var rectGap = settingsMargin / 2;
@@ -1444,6 +1449,7 @@ namespace BDArmory.UI
         }
         Dictionary<string, SpawnField> spawnFields;
 
+        bool showSpawnLocations = false;
         void WindowSettings(int windowID)
         {
             float line = 1.25f;
@@ -1616,7 +1622,7 @@ namespace BDArmory.UI
             BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS, 0f, 20f);
             line++;
 
-            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_LivesPerVessel")}:  ({(BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0 ? BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL.ToString() : "Inf")})", leftLabel);//Respawns (CS)
+            GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnLivesPerVessel")}:  ({(BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0 ? BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL.ToString() : "Inf")})", leftLabel);//Respawns (CS)
             BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL, 0f, 20f);
             line++;
 
@@ -1639,11 +1645,26 @@ namespace BDArmory.UI
             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].currentValue, -180), 180);
             BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].currentValue);
             line++;
-
-            line++;
+            showSpawnLocations = GUI.Toggle(SLineRect(line), showSpawnLocations, (showSpawnLocations ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations"));//Show/hide spawn locations
+            if (showSpawnLocations)
+            {
+                line++;
+                int i = 0;
+                foreach (var spawnLocation in VesselSpawner.spawnLocations)
+                {
+                    if (GUI.Button(SQuarterRect(line, i++), spawnLocation.name))
+                    {
+                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
+                        spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
+                        spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
+                    }
+                }
+                line += (i - 1) / 4;
+            }
 
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
             {
+                line++;
                 bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
                 BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
                 line++;
@@ -1661,6 +1682,7 @@ namespace BDArmory.UI
             else
                 BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
 
+            line++;
             bool origPm = BDArmorySettings.PEACE_MODE;
             BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
             if (BDArmorySettings.PEACE_MODE && !origPm)
