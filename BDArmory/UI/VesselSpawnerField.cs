@@ -74,7 +74,7 @@ namespace BDArmory.UI
             // Add defaults if nothing got loaded.
             if (VesselSpawner.spawnLocations.Count == 0)
             {
-                Debug.Log("DEBUG No locations found, adding defaults.");
+                Debug.Log("[VesselSpawnerField]: No locations found in config file, adding defaults.");
                 VesselSpawner.spawnLocations = defaultLocations.ToList();
             }
         }
