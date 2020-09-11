@@ -431,7 +431,8 @@ namespace BDArmory.FX
                                             tData.damageFromBullets[aName] += damage;
                                         else
                                             tData.damageFromBullets.Add(aName, damage);
-                                        BDAScoreService.Instance.TrackDamage(aName, tName, damage);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                                         break;
                                     case ExplosionSourceType.Missile:
                                         if (tData.damageFromMissiles.ContainsKey(aName))
