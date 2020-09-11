@@ -450,8 +450,8 @@ namespace BDArmory.Modules
 
         #region Countermeasure Settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing repetition
-         UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float cmThreshold = 60f; // No prior default, just go with a long time
+         UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+        public float cmThreshold = 9f; // No prior default, use 7.5 seconds, so with default routine, CMs will dispense twice before missile impact
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing repetition
          UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
@@ -460,6 +460,10 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing interval
          UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float cmInterval = 0.6f; // Equal to prior default
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing interval
+         UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float cmWaitTime = 2.4f; // No prior default, use 2.7 seconds, so with default routine, CMs will dispense twice with a 2.7s break in between before missile impact
         #endregion
 
         public void ToggleGuardMode()
@@ -1904,6 +1908,7 @@ namespace BDArmory.Modules
 
                 yield return new WaitForSeconds(interval);
             }
+            yield return new WaitForSeconds(cmWaitTime);
             isChaffing = false;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Ending chaff routine");
         }
@@ -1928,6 +1933,7 @@ namespace BDArmory.Modules
                     }
                 yield return new WaitForSeconds(interval);
             }
+            yield return new WaitForSeconds(cmWaitTime);
             isFlaring = false;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Ending flare routine");
         }
@@ -4078,7 +4084,7 @@ namespace BDArmory.Modules
             {
                 if (!isLegacyCMing)
                 {
-                    // StartCoroutine(LegacyCMRoutine()); Maybe take this out since CMs are fired in UpdateGuardViewScan()? https://forum.kerbalspaceprogram.com/index.php?/topic/7542-the-official-unoffical-quothelp-a-fellow-plugin-developerquot-thread/page/125/&tab=comments#comment-3842041
+                    // StartCoroutine(LegacyCMRoutine()); // Depreciated
                 }
 
                 targetScanTimer -= Time.fixedDeltaTime; //advance scan timing (increased urgency)

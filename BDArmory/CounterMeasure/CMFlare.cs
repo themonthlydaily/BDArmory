@@ -34,8 +34,7 @@ namespace BDArmory.CounterMeasure
             // OLD:
             //thermal = BDArmorySetup.FLARE_THERMAL*UnityEngine.Random.Range(0.45f, 1.25f);
             // NEW: generate flare within spectrum of emitting vessel's heat signature
-            thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel) * UnityEngine.Random.Range(0.65f, 1.75f);
-            // thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel) * UnityEngine.Random.Range(0.99f, 1.01f);
+            thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel) * UnityEngine.Random.Range(0.9f, 1.75f);
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0"));
         }
@@ -43,7 +42,7 @@ namespace BDArmory.CounterMeasure
         void OnEnable()
         {
             startThermal = thermal;
-            minThermal = startThermal * 0.65f; // 0.65 decay gives best flare performance based on some monte carlo analysis (this was previously 0.3)
+            minThermal = startThermal * 0.4f; // 0.65 decay gives best flare performance based on some monte carlo analysis (this was previously 0.3)
 
             if (gaplessEmitters == null || pEmitters == null)
             {

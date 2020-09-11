@@ -324,7 +324,7 @@ namespace BDArmory.UI
                         {
                             // check acceptable range:
                             // flare cannot be too cool, but also not too bright
-                            if ((score > heatSignature * 0.8) && (score < heatSignature * 1.2)) // Used to be 0.9, 1.15, expanded range to 0.8-1.2 to increase flare effectiveness
+                            if ((score > heatSignature * 0.9) && (score < heatSignature * 1.15))
                             {
                                 if (Mathf.Abs(score - heatSignature) < Mathf.Abs(bestScore - heatSignature)) // Pick the closest flare to target, not just the last iterated on
                                 {
