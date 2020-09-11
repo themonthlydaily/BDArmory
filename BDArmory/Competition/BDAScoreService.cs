@@ -20,6 +20,10 @@ namespace BDArmory.Competition
         private HashSet<string> activePlayers = new HashSet<string>();
         public Dictionary<string, Dictionary<string, double>> timeOfLastHitOnTarget = new Dictionary<string, Dictionary<string, double>>();
         public Dictionary<string, Dictionary<string, int>> hitsOnTarget = new Dictionary<string, Dictionary<string, int>>();
+        public Dictionary<string, int> hitsOut = new Dictionary<string, int>();
+        public Dictionary<string, int> hitsIn = new Dictionary<string, int>();
+        public Dictionary<string, double> damageOut = new Dictionary<string, double>();
+        public Dictionary<string, double> damageIn = new Dictionary<string, double>();
         public Dictionary<string, Dictionary<string, int>> killsOnTarget = new Dictionary<string, Dictionary<string, int>>();
         public Dictionary<string, int> assists = new Dictionary<string, int>();
         public Dictionary<string, int> deaths = new Dictionary<string, int>();
@@ -321,7 +325,10 @@ namespace BDArmory.Competition
                 record.vessel_id = vessel.id;
                 record.competition_id = int.Parse(hash);
                 record.heat_id = heat.id;
-                record.hits = ComputeTotalHits(player.name);
+                record.hits_out = ComputeTotalHitsOut(player.name);
+                record.hits_in = ComputeTotalHitsIn(player.name);
+                record.dmg_out = ComputeTotalDamageOut(player.name);
+                record.dmg_in = ComputeTotalDamageIn(player.name);
                 record.kills = ComputeTotalKills(player.name);
                 record.deaths = ComputeTotalDeaths(player.name);
                 record.assists = ComputeTotalAssists(player.name);
@@ -336,12 +343,42 @@ namespace BDArmory.Competition
             return results;
         }
 
-        private int ComputeTotalHits(string playerName)
+        private int ComputeTotalHitsOut(string playerName)
         {
             int result = 0;
-            if (hitsOnTarget.ContainsKey(playerName))
+            if (hitsOut.ContainsKey(playerName))
             {
-                result = hitsOnTarget[playerName].Values.Sum();
+                result = hitsOut[playerName];
+            }
+            return result;
+        }
+
+        private int ComputeTotalHitsIn(string playerName)
+        {
+            int result = 0;
+            if (hitsIn.ContainsKey(playerName))
+            {
+                result = hitsIn[playerName];
+            }
+            return result;
+        }
+
+        private double ComputeTotalDamageOut(string playerName)
+        {
+            double result = 0;
+            if (damageOut.ContainsKey(playerName))
+            {
+                result = damageOut[playerName];
+            }
+            return result;
+        }
+
+        private double ComputeTotalDamageIn(string playerName)
+        {
+            double result = 0;
+            if (damageIn.ContainsKey(playerName))
+            {
+                result = damageIn[playerName];
             }
             return result;
         }
@@ -376,9 +413,33 @@ namespace BDArmory.Competition
             return result;
         }
 
+        public void TrackDamage(string attacker, string target, double damage)
+        {
+            Debug.Log(string.Format("[BDAScoreService] TrackDamage by {0} on {1} for {2}hp", target, attacker, damage));
+            double now = Planetarium.GetUniversalTime();
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (damageOut.ContainsKey(attacker))
+            {
+                damageOut[attacker] += damage;
+            }
+            else
+            {
+                damageOut.Add(attacker, damage);
+            }
+            if (damageIn.ContainsKey(target))
+            {
+                damageIn[target] += damage;
+            }
+            else
+            {
+                damageIn.Add(target, damage);
+            }
+        }
+
         public void TrackHit(string attacker, string target, string weaponName, double hitDistance)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackHit {0} by {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
+            Debug.Log(string.Format("[BDAScoreService] TrackHit by {0} on {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
             double now = Planetarium.GetUniversalTime();
             activePlayers.Add(attacker);
             activePlayers.Add(target);
@@ -399,9 +460,25 @@ namespace BDArmory.Competition
                 newHits.Add(target, 1);
                 hitsOnTarget.Add(attacker, newHits);
             }
+            if( hitsOut.ContainsKey(attacker) )
+            {
+                hitsOut[attacker]++;
+            }
+            else
+            {
+                hitsOut.Add(attacker, 1);
+            }
+            if (hitsIn.ContainsKey(target))
+            {
+                hitsIn[target]++;
+            }
+            else
+            {
+                hitsIn.Add(target, 1);
+            }
             if (!longestHitDistance.ContainsKey(attacker) || hitDistance > longestHitDistance[attacker])
             {
-                Debug.Log(string.Format("[BDACompetitionMode] Tracked hit for {0} with {1} at {2}", attacker, weaponName, hitDistance));
+                Debug.Log(string.Format("[BDACompetitionMode] Tracked longest hit for {0} with {1} at {2}m", attacker, weaponName, hitDistance));
                 if (longestHitDistance.ContainsKey(attacker))
                 {
                     longestHitWeapon[attacker] = weaponName;
