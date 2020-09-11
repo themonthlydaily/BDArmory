@@ -25,6 +25,11 @@ namespace BDArmory.UI
             Instance = this;
         }
 
+        void Start()
+        {
+            VesselSpawnerField.Load();
+        }
+
         void OnDestroy()
         {
         }
