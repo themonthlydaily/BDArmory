@@ -4078,7 +4078,7 @@ namespace BDArmory.Modules
             {
                 if (!isLegacyCMing)
                 {
-                    // StartCoroutine(LegacyCMRoutine()); Maybe take this out since CMs are fired in UpdateGuardViewScan()? https://forum.kerbalspaceprogram.com/index.php?/topic/7542-the-official-unoffical-quothelp-a-fellow-plugin-developerquot-thread/page/125/&tab=comments#comment-3842041
+                    // StartCoroutine(LegacyCMRoutine()); // Depreciated
                 }
 
                 targetScanTimer -= Time.fixedDeltaTime; //advance scan timing (increased urgency)
