@@ -549,7 +549,10 @@ namespace BDArmory.Bullets
                 //Debug.Log("[BDArmory]: Weapon from " + aName + " damaged " + tName);
 
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                {
                     BDAScoreService.Instance.TrackHit(aName, tName, bullet.name, distanceTraveled);
+                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
+                }
 
                 // update scoring structure on attacker
                 if (BDACompetitionMode.Instance.Scores.ContainsKey(aName))
