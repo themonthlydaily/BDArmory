@@ -20,21 +20,21 @@ namespace BDArmory.UI
     [AttributeUsage(AttributeTargets.Field)]
     public class VesselSpawnerField : Attribute
     {
-        public VesselSpawnerField()
-        {
-        }
+        public VesselSpawnerField() { }
 
         static List<SpawnLocation> defaultLocations = new List<SpawnLocation>{
-            new SpawnLocation("KSC", new Vector2d(0.07, -74.67)),
-            new SpawnLocation("Inland KSC", new Vector2d(20.657, -146.421)),
-            new SpawnLocation("Ice field", new Vector2d(80.0821, -81.1997)),
-            new SpawnLocation("Canyon", new Vector2d(-52.67, -4.67)),
-            new SpawnLocation("Bowl 1", new Vector2d(35.6559, -77.4941)),
-            new SpawnLocation("Bowl 2", new Vector2d(3.85, -78.0)),
-            new SpawnLocation("Bowl 3", new Vector2d(0.25, -80.5)),
-            new SpawnLocation("Bowl 4", new Vector2d(6.925, -170.705)),
+            new SpawnLocation("KSC", new Vector2d(-0.04762, -74.8593)),
+            new SpawnLocation("Inland KSC", new Vector2d(20.5939, -146.567)),
+            new SpawnLocation("Desert Runway", new Vector2d(-6.44958, -144.038)),
+            new SpawnLocation("Ice field", new Vector2d(80.3343, -32.0119)),
+            new SpawnLocation("Canyon", new Vector2d(-52.7592, -4.71081)),
+            new SpawnLocation("Big Canyon", new Vector2d(6.97865, -170.804)),
+            new SpawnLocation("Manley Valley", new Vector2d(45.6, -137.3)),
+            new SpawnLocation("Half-pipe", new Vector2d(-21.1388, 72.6437)),
             new SpawnLocation("Kurgan's spot", new Vector2d(-28.4595, -9.15156)),
-            new SpawnLocation("Half-pipe", new Vector2d(-21.10, 72.70)),
+            new SpawnLocation("Bowl 1", new Vector2d(35.6559, -77.4941)),
+            new SpawnLocation("Bowl 2", new Vector2d(3.8744, -78.0039)),
+            new SpawnLocation("Bowl 3", new Vector2d(0.268284, -80.5195)),
         };
 
         public static void Save()
