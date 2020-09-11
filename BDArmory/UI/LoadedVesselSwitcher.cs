@@ -520,13 +520,13 @@ namespace BDArmory.UI
                         switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
                         {
                             case DamageFrom.Bullet:
-                                statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                                statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
                                 break;
                             case DamageFrom.Missile:
-                                statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                                statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
                                 break;
                             case DamageFrom.Ram:
-                                statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe();
+                                statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
                                 break;
                             default:
                                 statusString += ")";
