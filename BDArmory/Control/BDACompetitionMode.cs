@@ -342,7 +342,7 @@ namespace BDArmory.Control
             if (!competitionStarting)
             {
                 ResetCompetitionScores();
-                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition ");
+                Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition");
                 startCompetitionNow = false;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
@@ -382,6 +382,7 @@ namespace BDArmory.Control
             gracePeriod = competitionStartTime + 60;
             decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
             lastTagUpdateTime = competitionStartTime;
+            Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Competition Started");
         }
 
         IEnumerator DogfightCompetitionModeRoutine(float distance)
