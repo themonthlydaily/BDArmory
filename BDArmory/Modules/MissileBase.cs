@@ -392,6 +392,12 @@ namespace BDArmory.Modules
                 return;
             }
 
+            if (vessel.isActiveVessel)
+            {
+                Debug.Log("[BDHEAT]: Lock fail: " + lockFailTimer.ToString("0.0"));
+                if (heatTarget.exists)
+                    Debug.Log("[BDHEAT]: Target: " + heatTarget.vessel.GetDisplayName() + " Score: " + heatTarget.signalStrength);
+            }
 
             if (heatTarget.exists && lockFailTimer < 0)
             {
@@ -1019,7 +1025,7 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: DetonationDistanceState = : " + DetonationDistanceState);
+                // Debug.Log("[BDArmory]: DetonationDistanceState = : " + DetonationDistanceState);
             }
         }
 
