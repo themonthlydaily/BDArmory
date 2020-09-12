@@ -396,13 +396,6 @@ namespace BDArmory.Modules
                 return;
             }
 
-            if (vessel.isActiveVessel)
-            {
-                Debug.Log("[BDHEAT]: Lock fail: " + lockFailTimer.ToString("0.0"));
-                if (heatTarget.exists)
-                    Debug.Log("[BDHEAT]: Target: " + heatTarget.vessel.GetDisplayName() + " Score: " + heatTarget.signalStrength);
-            }
-
             if (heatTarget.exists && lockFailTimer < 0)
             {
                 lockFailTimer = 0;
@@ -416,21 +409,15 @@ namespace BDArmory.Modules
                 {
                     lookRay = new Ray(transform.position, predictedHeatTarget.position - transform.position);
                     targetHeatScore = predictedHeatTarget.signalStrength;
-                    if (vessel.isActiveVessel)
-                        Debug.Log("[BDSEEK]: Looking at predicted target location");
                 }
                 else if (heatTarget.exists) // We have a new active target and no prior target
                 {
                     lookRay = new Ray(transform.position, heatTarget.position + (heatTarget.velocity * Time.fixedDeltaTime) - transform.position);
                     targetHeatScore = heatTarget.signalStrength;
-                    if (vessel.isActiveVessel)
-                        Debug.Log("[BDSEEK]: Looking at heat target location");
                 }
                 else // No target, look straight ahead
                 {
                     lookRay = new Ray(transform.position, vessel.srf_vel_direction);
-                    if (vessel.isActiveVessel)
-                        Debug.Log("[BDSEEK]: Looking straight ahead");
                 }
 
                 if (BDArmorySettings.DRAW_DEBUG_LINES)

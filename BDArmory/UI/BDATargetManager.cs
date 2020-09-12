@@ -347,43 +347,22 @@ namespace BDArmory.UI
             foreach (Vessel vessel in LoadedVessels)
             {
                 if (vessel == null)
-                {
-                    if (missileVessel.isActiveVessel)
-                        Debug.Log("[BDHEAT]: 1");
                     continue; 
-                }
-                if (missileVessel.isActiveVessel)
-                    Debug.Log("[BDHEAT]: Checking " + vessel.GetDisplayName() + " unmodified heat " + GetVesselHeatSignature(vessel).ToString("0.0"));
                 if (!vessel || !vessel.loaded)
-                {
-                    if (missileVessel.isActiveVessel)
-                        Debug.Log("[BDHEAT]: 2");
                     continue;
-                }
-
                 if (vessel == sourceVessel || vessel == missileVessel)
-                {
-                    if (missileVessel.isActiveVessel)
-                        Debug.Log("[BDHEAT]: 3 Skipping " + vessel.GetDisplayName());
                     continue;
-                }
-
                 if (favorGroundTargets && !vessel.LandedOrSplashed)
                 {
                     // for AGM heat guidance
-                    if (missileVessel.isActiveVessel)
-                        Debug.Log("[BDHEAT]: 4");
                     continue;
                 }
 
                 TargetInfo tInfo = vessel.gameObject.GetComponent<TargetInfo>();
 
                 if (tInfo == null)
-                {
-                    if (missileVessel.isActiveVessel)
-                        Debug.Log("[BDHEAT]: 5");
                     return finalData;
-                }
+
                 // If no weaponManager or no target or the target is not a missile with engines on..??? and the target weighs less than 50kg, abort.
                 if (mf == null ||
                     !tInfo ||
@@ -391,8 +370,6 @@ namespace BDArmory.UI
                 {
                     if (vessel.GetTotalMass() < minMass)
                     {
-                        if (missileVessel.isActiveVessel)
-                            Debug.Log("[BDHEAT]: 6");
                         continue;
                     }
                 }
@@ -401,18 +378,12 @@ namespace BDArmory.UI
                 if (mf != null)
                 {
                     if (mf.Team.IsFriendly(tInfo.Team))
-                    {
-                        if (missileVessel.isActiveVessel)
-                            Debug.Log("[BDHEAT]: 7");
                         continue;
-                    }
                 }
 
                 // Abort if target is a missile that we've shot
                 if (tInfo.isMissile)
                 {
-                    if(missileVessel.isActiveVessel)
-                            Debug.Log("[BDHEAT]: 8");
                     if (tInfo.MissileBaseModule.SourceVessel == sourceVessel)
                         continue;
                 }
@@ -421,26 +392,10 @@ namespace BDArmory.UI
                 if (angle < scanRadius)
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
-                    {
-                        if (missileVessel.isActiveVessel)
-                            Debug.Log("[BDHEAT]: 9");
-                    }
-
-                    if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
-                    {
-                        if (missileVessel.isActiveVessel)
-                            Debug.Log("[BDHEAT]: " + vessel.GetDisplayName() + " failed terrain check");
                         continue;
-                    }
 
                     if (!allAspect)
                     {
-                        if (!Misc.Misc.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
-                        {
-                            if (missileVessel.isActiveVessel)
-                                Debug.Log("[BDHEAT]: 10");
-                        }
-
                         if (!Misc.Misc.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
                             continue;
                     }
@@ -464,11 +419,6 @@ namespace BDArmory.UI
                         {
                             finalScore = score;
                             finalData = new TargetSignatureData(vessel, score);
-                            if (missileVessel.isActiveVessel)
-                            {
-                                Debug.Log("[BDHEAT]: 11 ");
-                                Debug.Log("[BDHEAT]: 11 " + finalScore.ToString("0.0") + " " + angle.ToString("0.0"));
-                            }
                         }
                     }
                     else // Otherwise, pick the highest heat score
@@ -477,32 +427,9 @@ namespace BDArmory.UI
                         {
                             finalScore = score;
                             finalData = new TargetSignatureData(vessel, score);
-                            if (missileVessel.isActiveVessel)
-                            {
-                                Debug.Log("[BDHEAT]: 12 ");
-                                Debug.Log("[BDHEAT]: 12 " + finalScore.ToString("0.0") + " " + angle.ToString("0.0"));
-                            }
-                        }
-                        else // The other targets are not as tasty
-                        {
-                            if (missileVessel.isActiveVessel)
-                            {
-                                Debug.Log("[BDHEAT]: 12 Else");
-                                Debug.Log("[BDHEAT]: 12 " + vessel.GetDisplayName() + " " + score.ToString("0.0") + " " + angle.ToString("0.0"));
-                            }
                         }
                     }
                 }
-                else
-                {
-                    Debug.Log("[BDHEAT]: Angle Violation ");
-                    Debug.Log("[BDHEAT]: Angle Violation " + vessel.GetDisplayName() + " " + angle.ToString("0.0") + " " + scanRadius.ToString());
-                }
-            }
-
-            if ((missileVessel.isActiveVessel) && (!finalData.exists))
-            {
-                Debug.Log("[BDHEAT]: No valid target found!");
             }
 
             float flareDecoyScore = (priorHeatScore > 0) ? priorHeatScore : finalScore;
@@ -514,26 +441,12 @@ namespace BDArmory.UI
             // No targets above highpassThreshold
             if (finalScore < highpassThreshold)
             {
-                if (missileVessel.isActiveVessel)
-                {
-                    Debug.Log("[BDHEAT]: Highpass violation heat score of " + finalScore.ToString("0.0") + " below threshold of " + highpassThreshold.ToString("0.0"));
-                    Debug.Log("[BDHEAT]: " + finalData.vessel.GetDisplayName() + " heat score of " + finalScore.ToString("0.0") + " below threshold of " + highpassThreshold.ToString("0.0"));
-                }
-
                 finalData = TargetSignatureData.noTarget;
 
                 if (flareSuccess) // return matching flare
-                {
-                    if (missileVessel.isActiveVessel)
-                        Debug.Log("[BDHEAT]: 13");
                     return flareData;
-                }
                 else //else return the target:
-                {
-                    if (missileVessel.isActiveVessel)
-                        Debug.Log("[BDHEAT]: 14");
                     return finalData;
-                }
             }
 
             // See if a flare is closer in score to priorHeatScore than finalScore
@@ -547,17 +460,9 @@ namespace BDArmory.UI
 
 
             if (flareSuccess) // return matching flare
-            {
-                if (missileVessel.isActiveVessel)
-                    Debug.Log("[BDHEAT]: 15");
                 return flareData;
-            }
             else //else return the target:
-            {
-                if (missileVessel.isActiveVessel)
-                    Debug.Log("[BDHEAT]: 16");
                 return finalData;
-            }
         }
 
         void UpdateDebugLabels()
