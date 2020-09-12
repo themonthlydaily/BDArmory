@@ -310,7 +310,7 @@ namespace BDArmory.UI
                         float score = flare.Current.thermal * Mathf.Clamp01(15 / angle); // Reduce score on anything outside 15 deg of look ray
 
                         // Add bias targets closer to center of seeker FOV
-                        score *= Mathf.Clamp(-1f * ((1f - biasLevel) / (scanRadius * scanRadius)) * angle * angle + 1f, biasLevel, 1f); // Equal to 1 for angle==0, biasLevel for angle==scanRadius
+                        score *= Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
 
                         score *= (1400 * 1400) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
                         score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
@@ -325,7 +325,7 @@ namespace BDArmory.UI
                         }
                         else
                         {
-                            if (Mathf.Abs(score - heatSignature) < Mathf.Abs(bestScore - heatSignature)) // Pick the closest flare to target
+                            if ((score > 0f) && (Mathf.Abs(score - heatSignature) < Mathf.Abs(bestScore - heatSignature))) // Pick the closest flare to target
                             {
                                 flareTarget = new TargetSignatureData(flare.Current, score);
                                 bestScore = score;
@@ -340,7 +340,7 @@ namespace BDArmory.UI
         public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, float priorHeatScore, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
-            float biasLevel = 0.8f; // Bias level for targets/flares closer to seeker centerline
+            float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
 
@@ -348,21 +348,31 @@ namespace BDArmory.UI
             {
                 if (vessel == null)
                 {
-                    continue;
+                    if (missileVessel.isActiveVessel)
+                        Debug.Log("[BDHEAT]: 1");
+                    continue; 
                 }
+                if (missileVessel.isActiveVessel)
+                    Debug.Log("[BDHEAT]: Checking " + vessel.GetDisplayName() + " unmodified heat " + GetVesselHeatSignature(vessel).ToString("0.0"));
                 if (!vessel || !vessel.loaded)
                 {
+                    if (missileVessel.isActiveVessel)
+                        Debug.Log("[BDHEAT]: 2");
                     continue;
                 }
 
                 if (vessel == sourceVessel || vessel == missileVessel)
                 {
+                    if (missileVessel.isActiveVessel)
+                        Debug.Log("[BDHEAT]: 3 Skipping " + vessel.GetDisplayName());
                     continue;
                 }
 
                 if (favorGroundTargets && !vessel.LandedOrSplashed)
                 {
                     // for AGM heat guidance
+                    if (missileVessel.isActiveVessel)
+                        Debug.Log("[BDHEAT]: 4");
                     continue;
                 }
 
@@ -370,6 +380,8 @@ namespace BDArmory.UI
 
                 if (tInfo == null)
                 {
+                    if (missileVessel.isActiveVessel)
+                        Debug.Log("[BDHEAT]: 5");
                     return finalData;
                 }
                 // If no weaponManager or no target or the target is not a missile with engines on..??? and the target weighs less than 50kg, abort.
@@ -379,6 +391,8 @@ namespace BDArmory.UI
                 {
                     if (vessel.GetTotalMass() < minMass)
                     {
+                        if (missileVessel.isActiveVessel)
+                            Debug.Log("[BDHEAT]: 6");
                         continue;
                     }
                 }
@@ -388,6 +402,8 @@ namespace BDArmory.UI
                 {
                     if (mf.Team.IsFriendly(tInfo.Team))
                     {
+                        if (missileVessel.isActiveVessel)
+                            Debug.Log("[BDHEAT]: 7");
                         continue;
                     }
                 }
@@ -395,6 +411,8 @@ namespace BDArmory.UI
                 // Abort if target is a missile that we've shot
                 if (tInfo.isMissile)
                 {
+                    if(missileVessel.isActiveVessel)
+                            Debug.Log("[BDHEAT]: 8");
                     if (tInfo.MissileBaseModule.SourceVessel == sourceVessel)
                         continue;
                 }
@@ -403,19 +421,35 @@ namespace BDArmory.UI
                 if (angle < scanRadius)
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
+                    {
+                        if (missileVessel.isActiveVessel)
+                            Debug.Log("[BDHEAT]: 9");
+                    }
+
+                    if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
+                    {
+                        if (missileVessel.isActiveVessel)
+                            Debug.Log("[BDHEAT]: " + vessel.GetDisplayName() + " failed terrain check");
                         continue;
+                    }
 
                     if (!allAspect)
                     {
+                        if (!Misc.Misc.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
+                        {
+                            if (missileVessel.isActiveVessel)
+                                Debug.Log("[BDHEAT]: 10");
+                        }
+
                         if (!Misc.Misc.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
                             continue;
                     }
 
                     float score = GetVesselHeatSignature(vessel) * Mathf.Clamp01(15 / angle);
-                    score *= (1400*1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
+                    score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
                     // Add bias targets closer to center of seeker FOV
-                    score *= Mathf.Clamp(-1f * ((1f - biasLevel) / (scanRadius * scanRadius)) * angle * angle + 1f, biasLevel, 1f); // Equal to 1 for angle==0, biasLevel for angle==scanRadius
+                    score *= Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
 
                     if (vessel.LandedOrSplashed && !favorGroundTargets)
                     {
@@ -424,12 +458,17 @@ namespace BDArmory.UI
 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
-                    if (priorHeatScore > 0) // If we were passed a target heat score, look for the most similar heat score
+                    if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
                     {
-                        if (Mathf.Abs(score-priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
+                        if (Mathf.Abs(score - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
                         {
                             finalScore = score;
                             finalData = new TargetSignatureData(vessel, score);
+                            if (missileVessel.isActiveVessel)
+                            {
+                                Debug.Log("[BDHEAT]: 11 ");
+                                Debug.Log("[BDHEAT]: 11 " + finalScore.ToString("0.0") + " " + angle.ToString("0.0"));
+                            }
                         }
                     }
                     else // Otherwise, pick the highest heat score
@@ -438,26 +477,63 @@ namespace BDArmory.UI
                         {
                             finalScore = score;
                             finalData = new TargetSignatureData(vessel, score);
+                            if (missileVessel.isActiveVessel)
+                            {
+                                Debug.Log("[BDHEAT]: 12 ");
+                                Debug.Log("[BDHEAT]: 12 " + finalScore.ToString("0.0") + " " + angle.ToString("0.0"));
+                            }
+                        }
+                        else // The other targets are not as tasty
+                        {
+                            if (missileVessel.isActiveVessel)
+                            {
+                                Debug.Log("[BDHEAT]: 12 Else");
+                                Debug.Log("[BDHEAT]: 12 " + vessel.GetDisplayName() + " " + score.ToString("0.0") + " " + angle.ToString("0.0"));
+                            }
                         }
                     }
                 }
+                else
+                {
+                    Debug.Log("[BDHEAT]: Angle Violation ");
+                    Debug.Log("[BDHEAT]: Angle Violation " + vessel.GetDisplayName() + " " + angle.ToString("0.0") + " " + scanRadius.ToString());
+                }
+            }
+
+            if ((missileVessel.isActiveVessel) && (!finalData.exists))
+            {
+                Debug.Log("[BDHEAT]: No valid target found!");
             }
 
             float flareDecoyScore = (priorHeatScore > 0) ? priorHeatScore : finalScore;
 
             // see if there are flares decoying us:
             TargetSignatureData flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, flareDecoyScore, biasLevel);
-            bool flareSuccess = (!flareData.Equals(TargetSignatureData.noTarget));
+            bool flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
 
             // No targets above highpassThreshold
             if (finalScore < highpassThreshold)
             {
+                if (missileVessel.isActiveVessel)
+                {
+                    Debug.Log("[BDHEAT]: Highpass violation heat score of " + finalScore.ToString("0.0") + " below threshold of " + highpassThreshold.ToString("0.0"));
+                    Debug.Log("[BDHEAT]: " + finalData.vessel.GetDisplayName() + " heat score of " + finalScore.ToString("0.0") + " below threshold of " + highpassThreshold.ToString("0.0"));
+                }
+
                 finalData = TargetSignatureData.noTarget;
 
                 if (flareSuccess) // return matching flare
+                {
+                    if (missileVessel.isActiveVessel)
+                        Debug.Log("[BDHEAT]: 13");
                     return flareData;
+                }
                 else //else return the target:
+                {
+                    if (missileVessel.isActiveVessel)
+                        Debug.Log("[BDHEAT]: 14");
                     return finalData;
+                }
             }
 
             // See if a flare is closer in score to priorHeatScore than finalScore
@@ -471,9 +547,17 @@ namespace BDArmory.UI
 
 
             if (flareSuccess) // return matching flare
+            {
+                if (missileVessel.isActiveVessel)
+                    Debug.Log("[BDHEAT]: 15");
                 return flareData;
+            }
             else //else return the target:
+            {
+                if (missileVessel.isActiveVessel)
+                    Debug.Log("[BDHEAT]: 16");
                 return finalData;
+            }
         }
 
         void UpdateDebugLabels()
