@@ -349,6 +349,8 @@ namespace BDArmory.Modules
         public Vessel incomingThreatVessel;
         public MissileFire incomingWeaponManager;
         public float incomingMissDistance;
+        public float incomingMissTime;
+        public Vessel priorThreatVessel = null;
 
         public bool guardFiringMissile;
         bool disabledRocketAimers;
@@ -4260,6 +4262,15 @@ namespace BDArmory.Modules
                     StopCoroutine(ufRoutine);
                     underFire = false;
                 }
+                if (priorThreatVessel == incomingThreatVessel)
+                {
+                    incomingMissTime += Time.fixedDeltaTime;
+                }
+                else
+                {
+                    priorThreatVessel = incomingThreatVessel;
+                    incomingMissTime = 0f;
+                }
                 if (results.threatWeaponManager != null)
                 {
                     incomingWeaponManager = results.threatWeaponManager;
@@ -4294,6 +4305,8 @@ namespace BDArmory.Modules
                 }
                 ufRoutine = StartCoroutine(UnderFireRoutine());
             }
+            else
+                incomingMissTime = 0f; // Reset incoming fire time
         }
 
         public void ForceScan()

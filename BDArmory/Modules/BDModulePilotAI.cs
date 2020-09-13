@@ -251,6 +251,11 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float evasionThreshold = 50f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionTimeThreshold", advancedTweakable = true, // Time on Target Threshold
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+         UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
+        public float evasionTimeThreshold = 0f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendMultiplier", advancedTweakable = true, //Extend Distance Multiplier
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
          UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
@@ -306,6 +311,7 @@ namespace BDArmory.Modules
             { nameof(extendMult), 200f },
             { nameof(minEvasionTime), 10f },
             { nameof(evasionThreshold), 300f },
+            { nameof(evasionTimeThreshold), 3f },
             { nameof(turnRadiusTwiddleFactorMin), 10f},
             { nameof(turnRadiusTwiddleFactorMax), 10f},
             { nameof(controlSurfaceLag), 1f},
@@ -797,15 +803,17 @@ namespace BDArmory.Modules
 
             // Calculate threat rating from any threats
             float minimumEvasionTime = minEvasionTime;
+            threatRating = evasionThreshold + 1f; // Don't evade by default
             if (weaponManager && (weaponManager.missileIsIncoming || weaponManager.isChaffing || weaponManager.isFlaring))
             {
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
                 minimumEvasionTime = minEvasionTime * 2f + 1f; // Longer minimum evasion time for missiles, so we don't turn into them
             }
-            else if (weaponManager.underFire && !ramming)
-                threatRating = weaponManager.incomingMissDistance; // If we're ramming, ignore gunfire.
-            else
-                threatRating = evasionThreshold + 1f; // Don't evade by default
+            else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
+            {
+                if (weaponManager.incomingMissTime >= evasionTimeThreshold) // If we haven't been under fire long enough, ignore gunfire
+                    threatRating = weaponManager.incomingMissDistance; 
+            }
 
             debugString.Append($"Threat Rating: {threatRating}");
             debugString.Append(Environment.NewLine);
