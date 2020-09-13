@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using KSP.UI.Screens;
 using UnityEngine;
 using BDArmory.Control;
@@ -17,6 +18,10 @@ namespace BDArmory.UI
     {
         public static VesselSpawner Instance;
 
+        // Interesting spawn locations on Kerbin.
+        public static string spawnLocationsCfg = "GameData/BDArmory/spawn_locations.cfg";
+        [VesselSpawnerField] public static List<SpawnLocation> spawnLocations;
+
         private string message;
         void Awake()
         {
@@ -25,8 +30,14 @@ namespace BDArmory.UI
             Instance = this;
         }
 
+        void Start()
+        {
+            VesselSpawnerField.Load();
+        }
+
         void OnDestroy()
         {
+            VesselSpawnerField.Save();
         }
 
         private void OnGUI()
