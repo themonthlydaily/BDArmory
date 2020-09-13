@@ -72,6 +72,7 @@ namespace BDArmory.Competition
 
         private bool pendingSync = false;
         private StatusType status = StatusType.Offline;
+        private bool competitionStarted = false;
 
         private Coroutine syncCoroutine;
 
@@ -214,7 +215,23 @@ namespace BDArmory.Competition
             yield return client.StartHeat(hash, model);
 
             // execute heat
-            yield return ExecuteHeat(hash, model);
+            int attempts = 0;
+            competitionStarted = false;
+            while (!competitionStarted && attempts++ < 3) // 3 attempts is plenty
+            {
+                yield return ExecuteHeat(hash, model);
+                if (!competitionStarted)
+                    switch (UI.VesselSpawner.Instance.spawnFailureReason)
+                    {
+                        case UI.VesselSpawner.SpawnFailureReason.None: // Successful spawning, but competition failed to start for some reason.
+                        case UI.VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
+                        case UI.VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
+                            break;
+                        default: // Spawning is unrecoverable.
+                            attempts = 3;
+                            break;
+                    }
+            }
 
             status = StatusType.ReportingResults;
             // report scores
@@ -273,6 +290,7 @@ namespace BDArmory.Competition
                 Debug.Log("[BDAScoreService]: " + message);
                 yield break;
             }
+            competitionStarted = true;
             while (BDACompetitionMode.Instance.competitionIsActive && Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime < duration) // Allow exiting if the competition finishes early.
                 yield return new WaitForSeconds(1);
 
