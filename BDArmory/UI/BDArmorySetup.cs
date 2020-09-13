@@ -1657,7 +1657,7 @@ namespace BDArmory.UI
                             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
                             spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
                             spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-                            // StartCoroutine(ShowSpawnPoint());
+                            VesselSpawner.Instance.ShowSpawnPoint(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 1000);
                         }
                     }
                     line += (i - 1) / 4;
@@ -1831,27 +1831,6 @@ namespace BDArmory.UI
             WindowRectSettings.height = settingsHeight;
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
-        }
-
-        bool showSpawnPointRunning = false;
-        IEnumerator ShowSpawnPoint()
-        {
-            if (showSpawnPointRunning) yield break;
-            showSpawnPointRunning = true;
-            var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y);
-            var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, terrainAltitude);
-            var surfaceNormal = FlightGlobals.currentMainBody.GetSurfaceNVector(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y);
-            var refDirection = Math.Abs(Vector3.Dot(Vector3.up, surfaceNormal)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            var flightCamera = FlightCamera.fetch;
-            flightCamera.SetTargetNone();
-            yield return new WaitForFixedUpdate();
-            FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
-            yield return new WaitForFixedUpdate();
-            var cameraPosition = spawnPoint + Vector3.RotateTowards(100 * surfaceNormal, Vector3.Cross(surfaceNormal, refDirection), 60f * Mathf.Deg2Rad, 0);
-            flightCamera.transform.parent.position = spawnPoint;
-            flightCamera.transform.position = cameraPosition;
-            flightCamera.transform.rotation = Quaternion.LookRotation(spawnPoint - flightCamera.transform.position, surfaceNormal);
-            showSpawnPointRunning = false;
         }
 
         internal static void ResizeRwrWindow(float rwrScale)
