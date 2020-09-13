@@ -432,11 +432,16 @@ namespace BDArmory.UI
                 }
             }
 
-            float flareDecoyScore = (priorHeatScore > 0) ? priorHeatScore : finalScore;
 
             // see if there are flares decoying us:
-            TargetSignatureData flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, flareDecoyScore, biasLevel);
-            bool flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
+            bool flareSuccess = false;
+            TargetSignatureData flareData = TargetSignatureData.noTarget;
+            if (priorHeatScore > 0) // Flares can only decoy if we already had a target
+            {
+                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, priorHeatScore, biasLevel);
+                flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
+            }
+
 
             // No targets above highpassThreshold
             if (finalScore < highpassThreshold)

@@ -42,7 +42,7 @@ namespace BDArmory.CounterMeasure
         void OnEnable()
         {
             startThermal = thermal;
-            minThermal = startThermal * 0.3f; // 0.65 decay gives best flare performance based on some monte carlo analysis
+            minThermal = startThermal * (float)BDArmorySettings.FLARE_DECAY/100f; // 0.3 is original value, 0.65 decay gives best flare performance based on some monte carlo analysis
 
             if (gaplessEmitters == null || pEmitters == null)
             {
