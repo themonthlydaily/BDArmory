@@ -1046,7 +1046,7 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                // Debug.Log("[BDArmory]: DetonationDistanceState = : " + DetonationDistanceState);
+                Debug.Log("[BDArmory]: DetonationDistanceState = : " + DetonationDistanceState);
             }
         }
 

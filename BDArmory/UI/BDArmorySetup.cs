@@ -1483,7 +1483,6 @@ namespace BDArmory.UI
             BDArmorySettings.DEBUG_RAMMING_LOGGING = GUI.Toggle(SRightRect(line), BDArmorySettings.DEBUG_RAMMING_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_DebugRammingLogging"));// Disable Ramming
             line++;
             BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
-            BDArmorySettings.DUMB_IR_SEEKERS = GUI.Toggle(SRightRect(line), BDArmorySettings.DUMB_IR_SEEKERS, Localizer.Format("#LOC_BDArmory_Settings_DumbIRSeekers"));//"Dumb IR Seekers"
             line++;
             if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
             {
@@ -1516,10 +1515,6 @@ namespace BDArmory.UI
             // GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_DebrisCleanUpDelay")}:  ({BDArmorySettings.DEBRIS_CLEANUP_DELAY})", leftLabel);//Debris Clean-up delay
             // BDArmorySettings.DEBRIS_CLEANUP_DELAY = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.DEBRIS_CLEANUP_DELAY, 1f, 120f);
             // line++;
-
-            GUI.Label(SLeftRect(line), $"{Localizer.Format("Flare Decay Value")}:  ({BDArmorySettings.FLARE_DECAY})", leftLabel);//Flare Decay
-            BDArmorySettings.FLARE_DECAY = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.FLARE_DECAY, 1f, 99);
-            line++;
 
             GUI.Label(SLeftRect(line), $"{Localizer.Format("#LOC_BDArmory_Settings_MaxBulletHoles")}:  ({BDArmorySettings.MAX_NUM_BULLET_DECALS})", leftLabel);//Max Bullet Holes
             BDArmorySettings.MAX_NUM_BULLET_DECALS = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.MAX_NUM_BULLET_DECALS, 1f, 999);
