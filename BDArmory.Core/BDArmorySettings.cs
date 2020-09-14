@@ -12,7 +12,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
         [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 30f;            // Clean up debris after 30s.
-        [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;
+        [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;         
         [BDAPersistantSettingsField] public static bool SHOW_AMMO_GAUGES = false;
         [BDAPersistantSettingsField] public static bool EJECT_SHELLS = true;
         [BDAPersistantSettingsField] public static bool SHELL_COLLISIONS = true;
@@ -48,7 +48,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistantSettingsField] public static bool PEACE_MODE = false;
         [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = false;
-        [BDAPersistantSettingsField] public static bool DEFAULT_FFA_TARGETING = true;                // Free-for-all combat style instead of teams (changes target selection behaviour)
+        [BDAPersistantSettingsField] public static bool DEFAULT_FFA_TARGETING = false;                // Free-for-all combat style instead of teams (changes target selection behaviour)
         [BDAPersistantSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
         [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                    //Used for debug fields not nomrally shown to regular users
@@ -72,17 +72,22 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 3;               // Controls the minimum time between automated camera switches
         [BDAPersistantSettingsField] public static float OUT_OF_AMMO_KILL_TIME = -1f;            // Out of ammo kill timer for continuous spawn mode.
         [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;            // Controls whether ramming logging debug information is printed to the Debug.Log
+        [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;           // Show/hide the remote orchestration toggle
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;           // Enable/disable remote orchestration
         [BDAPersistantSettingsField] public static string COMPETITION_HASH = "";                  // Competition hash used for orchestration
         [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                  // Competition duration in minutes
+        [BDAPersistantSettingsField] public static float COMPETITION_DISTANCE = 1000;             // Competition distance.
         [BDAPersistantSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistantSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016); // Spawning coordinates on a planetary body.
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_ALTITUDE = 5f;               // Spawning altitude above the surface.
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_DISTANCE = 20f;              // Scale factor for the size of the spawning circle.
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 1f;          // Rate to limit "falling" during spawning.
+        [BDAPersistantSettingsField] public static int VESSEL_SPAWN_CONCURRENT_VESSELS = 0;        // Maximum number of vessels to spawn in concurrently (continuous spawning mode).
+        [BDAPersistantSettingsField] public static int VESSEL_SPAWN_LIVES_PER_VESSEL = 0;          // Maximum number of times to spawn a vessel (continuous spawning mode).
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = false;                //disables the kill timers.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = true;                    // Enable/disable Runway Project specific enhancements. FIXME Default to true for now. Later, default to false for official BDArmory release.
+        [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
     }
 }
