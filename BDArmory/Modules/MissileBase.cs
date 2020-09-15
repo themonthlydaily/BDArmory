@@ -399,6 +399,7 @@ namespace BDArmory.Modules
             if (heatTarget.exists && lockFailTimer < 0)
             {
                 lockFailTimer = 0;
+                predictedHeatTarget = heatTarget;
             }
             if (lockFailTimer >= 0)
             {

@@ -34,15 +34,36 @@ namespace BDArmory.CounterMeasure
             // OLD:
             //thermal = BDArmorySetup.FLARE_THERMAL*UnityEngine.Random.Range(0.45f, 1.25f);
             // NEW: generate flare within spectrum of emitting vessel's heat signature
-            thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel) * UnityEngine.Random.Range(0.65f, 1.75f);
+            /*
+            thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel);
+
+            // colder temps/lower thrust engines don't generate enough heat to be effective
+            if(thermal < 900f)
+            {
+                thermal = 900f;
+            }
+
+            thermal *= UnityEngine.Random.Range(0.65f, 1.75f);
+            */
+
+            // NEW NEW: Dynamic min/max based on engine heat, with larger multiplier for colder engines, and smaller for naturally hot engines
+            // since range of values are too small for smaller heat values, and flares tend to decay to even colder values, rendering them useless
+
+            thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel);
+            float thermalMinMult = Mathf.Clamp(-0.166f * (float)Math.Log(thermal) + 1.9376f, 0.5f, 0.82f);
+            float thermalMaxMult = Mathf.Clamp(0.3534f * (float)Math.Log(thermal) - 1.0251f, 1.35f, 2.0f);
+
+            thermal *= UnityEngine.Random.Range(thermalMinMult, thermalMaxMult);
+
+
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0"));
+                Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0") + " mult: " + thermalMinMult + "-" + thermalMaxMult);
         }
 
         void OnEnable()
         {
             startThermal = thermal;
-            minThermal = startThermal * 0.4f; // 0.3 is original value, but doesn't work well for Tigers, 0.4f gives decent performance for Tigers, 0.65 decay gives best flare performance overall based on some monte carlo analysis
+            minThermal = startThermal * 0.35f; // 0.3 is original value, but doesn't work well for Tigers, 0.4f gives decent performance for Tigers, 0.65 decay gives best flare performance overall based on some monte carlo analysis
 
             if (gaplessEmitters == null || pEmitters == null)
             {
