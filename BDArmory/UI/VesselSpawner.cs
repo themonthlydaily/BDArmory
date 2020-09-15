@@ -51,18 +51,22 @@ namespace BDArmory.UI
         Transform originalCameraParentTransform;
         bool showSpawnPointRunning = false;
         Coroutine showSpawnPointCoroutine = null;
-        public void ShowSpawnPoint(Vector2d geocoords, double altitude = 0, double distance = 100)
+        public void ShowSpawnPoint(Vector2d geocoords, double altitude = 0, float distance = 100)
         {
-            if (showSpawnPointCoroutine != null)
-                StopCoroutine(showSpawnPointCoroutine);
-            showSpawnPointCoroutine = StartCoroutine(ShowSpawnPointCoroutine(geocoords, altitude, distance));
+            FlightGlobals.fetch.SetVesselPosition(FlightGlobals.currentMainBody.flightGlobalsIndex, geocoords.x, geocoords.y, altitude, FlightGlobals.ActiveVessel.vesselType == VesselType.Plane ? 0 : 90, 0, true, true);
+            FlightCamera.fetch.SetDistance(distance);
+
+            return;
+            // if (showSpawnPointCoroutine != null)
+            //     StopCoroutine(showSpawnPointCoroutine);
+            // showSpawnPointCoroutine = StartCoroutine(ShowSpawnPointCoroutine(geocoords, altitude, distance));
         }
 
-        IEnumerator ShowSpawnPointCoroutine(Vector2d geocoords, double altitude, double distance)
+        IEnumerator ShowSpawnPointCoroutine(Vector2d geocoords, double altitude, float distance)
         {
             if (showSpawnPointRunning) yield break;
             showSpawnPointRunning = true;
-            FlightGlobals.SetActiveVessel(null);
+            FlightGlobals.fetch.SetVesselPosition(FlightGlobals.currentMainBody.flightGlobalsIndex, geocoords.x, geocoords.y, altitude, 0, 0, true);
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(geocoords.x, geocoords.y);
             var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geocoords.x, geocoords.y, terrainAltitude + altitude);
             var surfaceNormal = FlightGlobals.currentMainBody.GetSurfaceNVector(geocoords.x, geocoords.y);
@@ -80,7 +84,7 @@ namespace BDArmory.UI
             flightCamera.SetTarget(spawnLocationCamera.transform);
             flightCamera.transform.position = spawnPoint + cameraPosition;
             flightCamera.transform.rotation = Quaternion.LookRotation(-flightCamera.transform.position, surfaceNormal);
-            flightCamera.SetDistance((float)distance);
+            flightCamera.SetDistance(distance);
             showSpawnPointRunning = false;
             // flightCamera.setMode(FlightCamera.Modes.FREE);
             // flightCamera.ActivateUpdate();
@@ -212,8 +216,13 @@ namespace BDArmory.UI
             if (killEverythingFirst)
             {
                 // Update the floating origin offset, so that the vessels spawn within range of the physics.
-                FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
-                yield return ShowSpawnPointCoroutine(geoCoords, altitude, 2 * spawnDistanceFactor * (crafts.Count + 1));
+                // FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
+                ShowSpawnPoint(geoCoords, altitude, 2 * spawnDistanceFactor * (crafts.Count + 1));
+                // yield return ShowSpawnPointCoroutine(geoCoords, altitude, 2 * spawnDistanceFactor * (crafts.Count + 1));
+                // Re-acquire the spawning point after the floating origin shift.
+                // terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(geoCoords.x, geoCoords.y);
+                // spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, terrainAltitude + altitude);
+                // surfaceNormal = FlightGlobals.currentMainBody.GetSurfaceNVector(geoCoords.x, geoCoords.y);
 
                 if (terrainAltitude > 0) // Not over the ocean or on a surfaceless body.
                 {
