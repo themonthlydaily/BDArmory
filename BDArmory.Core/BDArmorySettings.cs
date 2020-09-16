@@ -52,7 +52,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
         [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users
-
         [BDAPersistantSettingsField] public static float RECOIL_FACTOR = 0.75f;
         [BDAPersistantSettingsField] public static float DMG_MULTIPLIER = 100f;
         [BDAPersistantSettingsField] public static float BALLISTIC_DMG_FACTOR = 1.55f;
@@ -93,6 +92,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float HEART_BLEED_RATE = 0.01f;
         [BDAPersistantSettingsField] public static float HEART_BLEED_INTERVAL = 10f;
         [BDAPersistantSettingsField] public static float HEART_BLEED_THRESHOLD = 10f;
-
+        [BDAPersistantSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
     }
 }
