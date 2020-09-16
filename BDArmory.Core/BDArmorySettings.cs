@@ -23,8 +23,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistantSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistantSettingsField] public static bool BOMB_CLEARANCE_CHECK = true;
-        [BDAPersistantSettingsField] public static float PHYSICS_RANGE = 200000f;                //TODO: this probably ought to be handled by the PRE
-        [BDAPersistantSettingsField] public static float MAX_BULLET_RANGE = 8000f;               //TODO: remove all references to this so it can be deprecated! all ranges should be supplied in part config!
+        [BDAPersistantSettingsField] public static float PHYSICS_RANGE = 200000f;                 //TODO: this probably ought to be handled by the PRE
+        [BDAPersistantSettingsField] public static float MAX_BULLET_RANGE = 8000f;                //TODO: remove all references to this so it can be deprecated! all ranges should be supplied in part config!
         [BDAPersistantSettingsField] public static float TRIGGER_HOLD_TIME = 0.2f;
         [BDAPersistantSettingsField] public static float TARGET_CAM_RESOLUTION = 1024f;
         [BDAPersistantSettingsField] public static bool BW_TARGET_CAM = true;
@@ -47,11 +47,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float GLOBAL_DRAG_MULTIPLIER = 6f;
         [BDAPersistantSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistantSettingsField] public static bool PEACE_MODE = false;
-        [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = false;
-        [BDAPersistantSettingsField] public static bool DEFAULT_FFA_TARGETING = false;                // Free-for-all combat style instead of teams (changes target selection behaviour)
+        [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = true;                   // Prevent craft from going into ramming mode when out of ammo.
+        [BDAPersistantSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour)
         [BDAPersistantSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
-        [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                    //Used for debug fields not nomrally shown to regular users
+        [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users
 
         [BDAPersistantSettingsField] public static float RECOIL_FACTOR = 0.75f;
         [BDAPersistantSettingsField] public static float DMG_MULTIPLIER = 100f;
@@ -61,8 +61,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float EXP_DMG_MOD_MISSILE = 6.75f;
         [BDAPersistantSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistantSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
-        [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                   //controls fx for penetration only for landed or splashed
-        [BDAPersistantSettingsField] public static float FIRELIFETIME_IN_SECONDS = 90f;             //controls fx for penetration only for landed or splashed
+        [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed
+        [BDAPersistantSettingsField] public static float FIRELIFETIME_IN_SECONDS = 90f;           //controls fx for penetration only for landed or splashed
         [BDAPersistantSettingsField] public static bool PERFORMANCE_LOGGING = false;
         [BDAPersistantSettingsField] public static bool TAG_MODE = false;
         [BDAPersistantSettingsField] public static bool PAINTBALL_MODE = false;
@@ -70,7 +70,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = true;
         [BDAPersistantSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;               // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
         [BDAPersistantSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 3;               // Controls the minimum time between automated camera switches
-        [BDAPersistantSettingsField] public static float OUT_OF_AMMO_KILL_TIME = -1f;            // Out of ammo kill timer for continuous spawn mode.
+        [BDAPersistantSettingsField] public static float OUT_OF_AMMO_KILL_TIME = -1f;             // Out of ammo kill timer for continuous spawn mode.
         [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;            // Controls whether ramming logging debug information is printed to the Debug.Log
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;           // Show/hide the remote orchestration toggle
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;           // Enable/disable remote orchestration
@@ -85,9 +85,10 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 1f;          // Rate to limit "falling" during spawning.
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_CONCURRENT_VESSELS = 0;        // Maximum number of vessels to spawn in concurrently (continuous spawning mode).
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_LIVES_PER_VESSEL = 0;          // Maximum number of times to spawn a vessel (continuous spawning mode).
-        [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = false;                //disables the kill timers.
+        [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                 //Disables the kill timers used in Runway Project.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = true;                    // Enable/disable Runway Project specific enhancements. FIXME Default to true for now. Later, default to false for official BDArmory release.
         [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
+
     }
 }
