@@ -11,7 +11,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool INSTAKILL = false;
         [BDAPersistantSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
-        [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 30f;              // Clean up debris after 30s.
+        [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 30f;            // Clean up debris after 30s.
         [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;         
         [BDAPersistantSettingsField] public static bool SHOW_AMMO_GAUGES = false;
         [BDAPersistantSettingsField] public static bool EJECT_SHELLS = true;
@@ -88,9 +88,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                 //Disables the kill timers used in Runway Project.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
+        [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                   // IR missiles will go after hottest thing they can see
         [BDAPersistantSettingsField] public static bool HEART_BLEED_ENABLED = false;
         [BDAPersistantSettingsField] public static float HEART_BLEED_RATE = 0.01f;
         [BDAPersistantSettingsField] public static float HEART_BLEED_INTERVAL = 10f;
         [BDAPersistantSettingsField] public static float HEART_BLEED_THRESHOLD = 10f;
+
     }
 }
