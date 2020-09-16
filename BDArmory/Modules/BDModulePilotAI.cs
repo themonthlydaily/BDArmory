@@ -1166,7 +1166,7 @@ namespace BDArmory.Modules
             }
         }
 
-        void RegainEnergy(FlightCtrlState s, Vector3 direction)
+        void RegainEnergy(FlightCtrlState s, Vector3 direction, float throttleOverride = -1f)
         {
             debugString.Append($"Regaining energy");
             debugString.Append(Environment.NewLine);
@@ -1179,8 +1179,12 @@ namespace BDArmory.Modules
             Vector3 targetDirection = Vector3.RotateTowards(planarDirection, -upDirection, angle, 0);
             targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
-            AdjustThrottle(maxSpeed, false);
-            FlyToPosition(s, vesselTransform.position + (targetDirection * 100));
+            if (throttleOverride >= 0)
+                AdjustThrottle(maxSpeed, false, false, throttleOverride);
+            else
+                AdjustThrottle(maxSpeed, false, false);
+
+            FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
         }
 
         float GetSteerLimiterForSpeedAndPower()
@@ -1202,7 +1206,7 @@ namespace BDArmory.Modules
         Vector3 debugPos;
         bool useVelRollTarget;
 
-        void FlyToPosition(FlightCtrlState s, Vector3 targetPosition)
+        void FlyToPosition(FlightCtrlState s, Vector3 targetPosition, bool overrideThrottle = false)
         {
             if (!belowMinAltitude) // Includes avoidingTerrain
             {
@@ -1251,7 +1255,11 @@ namespace BDArmory.Modules
             float finalSpeed = Mathf.Min(speedController.targetSpeed, Mathf.Clamp(maxSpeed - (speedReductionFactor * velAngleToTarget), idleSpeed, maxSpeed));
             debugString.Append($"Final Target Speed: {finalSpeed}");
             debugString.Append(Environment.NewLine);
-            AdjustThrottle(finalSpeed, useBrakes, useAB);
+
+            if (!overrideThrottle)
+            {
+                AdjustThrottle(finalSpeed, useBrakes, useAB);
+            }
 
             if (steerMode == SteerModes.Aiming)
             {
@@ -1487,11 +1495,12 @@ namespace BDArmory.Modules
         }
 
         //sends target speed to speedController
-        void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true)
+        void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true, float throttleOverride = -1f)
         {
             speedController.targetSpeed = targetSpeed;
             speedController.useBrakes = useBrakes;
             speedController.allowAfterburner = allowAfterburner;
+            speedController.throttleOverride = throttleOverride;
         }
 
         Vector3 threatRelativePosition;
@@ -1507,6 +1516,8 @@ namespace BDArmory.Modules
             debugString.Append(Environment.NewLine);
             debugString.Append($"Threat Distance: {weaponManager.incomingMissileDistance}");
             debugString.Append(Environment.NewLine);
+
+            bool hasABEngines = (speedController.multiModeEngines.Count > 0);
 
             collisionDetectionTicker += 2;
 
@@ -1528,7 +1539,11 @@ namespace BDArmory.Modules
                     Vector3 axis = -Vector3.Cross(vesselTransform.up, threatRelativePosition);
                     Vector3 breakDirection = Quaternion.AngleAxis(90, axis) * threatRelativePosition;
                     //Vector3 breakTarget = vesselTransform.position + breakDirection;
-                    RegainEnergy(s, breakDirection);
+                    
+                    if (hasABEngines)
+                        RegainEnergy(s, breakDirection);
+                    else
+                        RegainEnergy(s, breakDirection, 0.66f);
                     return;
                 }
                 else if ((weaponManager.incomingMissileVessel) && (weaponManager.incomingMissileDistance <= 2000))
@@ -1538,8 +1553,9 @@ namespace BDArmory.Modules
                     {
                         debugString.Append($"Missile about to impact! pull away!");
                         debugString.Append(Environment.NewLine);
-
+                        
                         AdjustThrottle(maxSpeed, false, false);
+
                         Vector3 cross = Vector3.Cross(weaponManager.incomingMissileVessel.transform.position - vesselTransform.position, vessel.Velocity()).normalized;
                         if (Vector3.Dot(cross, -vesselTransform.forward) < 0)
                         {
