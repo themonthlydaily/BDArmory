@@ -587,22 +587,13 @@ namespace BDArmory.Bullets
                 }
 
                 // steal resources if enabled
+                if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
                 {
-                    if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
-                    {
-                        float fuelRation = BDArmorySettings.RESOURCE_STEAL_FUEL_RATION;
-                        float ammoRation = BDArmorySettings.RESOURCE_STEAL_AMMO_RATION;
-                        Vessel attacker = FlightGlobals.Vessels.Find(v => v.vesselName.Equals(aName));
-                        Vessel defender = FlightGlobals.Vessels.Find(v => v.vesselName.Equals(tName));
-                        if (attacker != null && defender != null)
-                        {
-                            StealResource(attacker, defender, "LiquidFuel", fuelRation);
-                            StealResource(attacker, defender, "Oxidizer", fuelRation);
-                            StealResource(attacker, defender, "20x102Ammo", ammoRation);
-                            StealResource(attacker, defender, "30x173Ammo", ammoRation);
-                            StealResource(attacker, defender, "50CalAmmo", ammoRation);
-                        }
-                    }
+                    StealResource(sourceVessel, hitPart.vessel, "LiquidFuel", BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
+                    StealResource(sourceVessel, hitPart.vessel, "Oxidizer", BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
+                    StealResource(sourceVessel, hitPart.vessel, "20x102Ammo", BDArmorySettings.RESOURCE_STEAL_AMMO_RATION);
+                    StealResource(sourceVessel, hitPart.vessel, "30x173Ammo", BDArmorySettings.RESOURCE_STEAL_AMMO_RATION);
+                    StealResource(sourceVessel, hitPart.vessel, "50CalAmmo", BDArmorySettings.RESOURCE_STEAL_AMMO_RATION);
                 }
             }
 
@@ -623,7 +614,7 @@ namespace BDArmory.Bullets
             public void Add(PartResource r)
             {
                 int key = r.part.resourcePriorityOffset;
-                if( partResources.ContainsKey(key) )
+                if (partResources.ContainsKey(key))
                 {
                     List<PartResource> existing = partResources[key];
                     existing.Add(r);
@@ -639,7 +630,7 @@ namespace BDArmory.Bullets
 
             public List<PartResource> Pop()
             {
-                if( partResources.Count == 0 )
+                if (partResources.Count == 0)
                 {
                     return new List<PartResource>();
                 }
@@ -671,7 +662,7 @@ namespace BDArmory.Bullets
                 DeepFind(p, resourceName, dstParts);
             }
 
-            if ( srcParts.Count == 0 || dstParts.Count == 0 )
+            if (srcParts.Count == 0 || dstParts.Count == 0)
             {
                 //Debug.Log(string.Format("[BDArmoryCompetition] Steal resource {0} failed; no parts.", resourceName));
                 return;
@@ -686,7 +677,7 @@ namespace BDArmory.Bullets
 
             List<ResourceAllocation> allocations = new List<ResourceAllocation>();
             List<PartResource> inputs = null, outputs = null;
-            while ( amount > 0 )
+            while (amount > 0)
             {
                 if (inputs == null)
                 {
@@ -709,21 +700,21 @@ namespace BDArmory.Bullets
                         allocations.Add(ra);
                     }
                 }
-                if( availability < amount )
+                if (availability < amount)
                 {
                     inputs = null;
                 }
-                if( opportunity < amount )
+                if (opportunity < amount)
                 {
                     outputs = null;
                 }
-                if( tAmount == 0 )
+                if (tAmount == 0)
                 {
                     break;
                 }
                 amount -= tAmount;
             }
-            if( allocations.Count == 0 )
+            if (allocations.Count == 0)
             {
                 return;
             }
@@ -755,7 +746,7 @@ namespace BDArmory.Bullets
         {
             foreach (PartResource r in p.Resources)
             {
-                if( r.resourceName.Equals(resourceName) )
+                if (r.resourceName.Equals(resourceName))
                 {
                     accumulator.Add(r);
                 }
