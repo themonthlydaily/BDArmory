@@ -1494,6 +1494,7 @@ namespace BDArmory.UI
             {
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.lastTagUpdateTime = Planetarium.GetUniversalTime();
             }
+            BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(line), BDArmorySettings.BATTLEDAMAGE, "Battle Damage");
             BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"));//"Paintball Mode"
             line++;
             BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
