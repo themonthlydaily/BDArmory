@@ -356,7 +356,7 @@ namespace BDArmory.Control
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
             GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
-            GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
+            // GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
@@ -369,7 +369,7 @@ namespace BDArmory.Control
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             // I think these three events cover the cases for when an incorrectly built vessel splits into more than one part.
             GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
-            GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
+            // GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
@@ -668,17 +668,20 @@ namespace BDArmory.Control
 
         void CheckVesselTypePartCountChanged(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to part count change");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to part count change (" + vessel + ")");
             CheckVesselType(vessel);
         }
         void CheckVesselTypeNewVesselCreated(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to new vessel created");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to new vessel created (" + vessel + ")");
             CheckVesselType(vessel);
         }
         void CheckVesselTypeVesselCreate(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to vessel create");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to vessel create (" + vessel + ")");
             CheckVesselType(vessel);
         }
 
