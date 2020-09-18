@@ -3455,7 +3455,7 @@ namespace BDArmory.Modules
 
                         if (candidateClass == WeaponClasses.Rocket)
                         {
-                            float canidateRocketPower = ((RocketLauncher)item.Current).blastForce;
+                            float canidateRocketPower = ((ModuleWeapon)item.Current).blastForce;
 
                             if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Bomb)) continue;
                             // dont replace bombs
@@ -3929,7 +3929,7 @@ namespace BDArmory.Modules
                     }
             }
 
-            if (!guardTarget && selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLa
+            if (!guardTarget && selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
             {
                 using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                     while (weapon.MoveNext())
@@ -4388,7 +4388,7 @@ namespace BDArmory.Modules
                 if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
                 if (weapon.GetWeaponClass() == WeaponClasses.Gun || weapon.GetWeaponClass() == WeaponClasses.Rocket || weapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                 {
-                    if (weapon.GetWeaponClass() == WeaponClasses.DefenseLaser && weapon.ammoName == "electriccharge") { hasWeaponsAndAmmo = true; break; } // If it's an EC laser, count it as EC can replenish. 
+                    if (weapon.GetWeaponClass() == WeaponClasses.DefenseLaser) { hasWeaponsAndAmmo = true; break; } // If it's an EC laser, count it as EC can replenish. 
                     if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun or mod laser has ammo or we're using infinite ammo, return true after cleaning up.
                 }
                 else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
