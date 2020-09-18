@@ -1771,13 +1771,12 @@ namespace BDArmory.Modules
 		}
 		public PartResource GetRocketResource()
 		{
-			IEnumerator<PartResource> res = part.Resources.GetEnumerator();
-			while (res.MoveNext())
-			{
-				if (res.Current == null) continue;
-				if (res.Current.resourceName == ammoName) return res.Current;
-			}
-			res.Dispose();
+			using (IEnumerator<PartResource> res = part.Resources.GetEnumerator())
+				while (res.MoveNext())
+				{
+					if (res.Current == null) continue;
+					if (res.Current.resourceName == ammoName) return res.Current;
+				}
 			return null;
 		}
 		#endregion
