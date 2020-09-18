@@ -534,25 +534,14 @@ namespace BDArmory.UI
                 if (ActiveWeaponManager.selectedWeapon != null && ActiveWeaponManager.weaponIndex > 0 &&
                     !ActiveWeaponManager.guardMode)
                 {
-                    if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
-                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
+                if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
+						ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser ||
+						ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket)
                     {
                         ModuleWeapon mw =
                             ActiveWeaponManager.selectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
                         if (mw.weaponState == ModuleWeapon.WeaponStates.Enabled && mw.maxPitch > 1 && !mw.slaved &&
                             !mw.aiControlled)
-                        {
-                            //Screen.showCursor = false;
-                            Cursor.visible = false;
-                            drawCursor = true;
-                            return;
-                        }
-                    }
-                    else if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket)
-                    {
-                        RocketLauncher rl =
-                            ActiveWeaponManager.selectedWeapon.GetPart().FindModuleImplementing<RocketLauncher>();
-                        if (rl.readyToFire && rl.turret)
                         {
                             //Screen.showCursor = false;
                             Cursor.visible = false;
