@@ -14,6 +14,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 30f;            // Clean up debris after 30s.
         [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;
         [BDAPersistantSettingsField] public static bool SHOW_AMMO_GAUGES = false;
+        [BDAPersistantSettingsField] public static bool BATTLEDAMAGE = true;
         [BDAPersistantSettingsField] public static bool EJECT_SHELLS = true;
         [BDAPersistantSettingsField] public static bool SHELL_COLLISIONS = true;
         [BDAPersistantSettingsField] public static bool INFINITE_AMMO = false;
