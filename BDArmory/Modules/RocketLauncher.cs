@@ -11,6 +11,8 @@ using BDArmory.UI;
 using UniLinq;
 using UnityEngine;
 
+namespace BDArmory.Modules
+{
 	public class RocketLauncher : EngageableWeapon
 	{
 
