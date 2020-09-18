@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using BDArmory.Core;
-using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
 using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
-using UnityEngine.SocialPlatforms.Impl;
-using Object = UnityEngine.Object;
 
 namespace BDArmory.Control
 {
