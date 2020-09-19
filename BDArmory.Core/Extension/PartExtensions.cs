@@ -145,10 +145,10 @@ namespace BDArmory.Core.Extension
                 Debug.Log("[BDArmory]: Ballistic Hitpoints Applied : " + Math.Round(damage_, 2));
             }
 
-            if (BDArmorySettings.BATTLEDAMAGE)
-			{
-				CheckDamageFX(p, caliber);
-			}
+            if (BDArmorySettings.BATTLEDAMAGE && !BDArmorySettings.PAINTBALL_MODE)
+		{
+			CheckDamageFX(p, caliber);
+		}
         }
 
         /// <summary>
@@ -164,10 +164,10 @@ namespace BDArmory.Core.Extension
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 Debug.Log("[BDArmory]: Explosive Hitpoints Applied to " + p.name + ": " + Math.Round(damage, 2));
 
-            if (BDArmorySettings.BATTLEDAMAGE)
-			{
-				CheckDamageFX(p, 50);
-			}
+            if (BDArmorySettings.BATTLEDAMAGE && !BDArmorySettings.PAINTBALL_MODE)
+		{
+			CheckDamageFX(p, 50);
+		}
         }
 
         /// <summary>
