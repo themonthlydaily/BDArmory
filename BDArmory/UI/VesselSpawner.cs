@@ -109,6 +109,13 @@ namespace BDArmory.UI
         public int spawnedVesselCount = 0;
         public void SpawnAllVesselsOnce(Vector2d geoCoords, double altitude = 0, float spawnDistanceFactor = 10f, float easeInSpeed = 1f, bool killEverythingFirst = true, string spawnFolder = null)
         {
+            //Reset gravity
+            if (BDArmorySettings.GRAVITY_HACKS)
+            {
+                PhysicsGlobals.GraviticForceMultiplier = 1d;
+                VehiclePhysics.Gravity.Refresh();
+            }
+
             vesselsSpawning = true; // Signal that we've started the spawning vessels routine.
             vesselSpawnSuccess = false; // Set our success flag to false for now.
             spawnFailureReason = SpawnFailureReason.None;

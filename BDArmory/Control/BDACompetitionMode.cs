@@ -182,6 +182,7 @@ namespace BDArmory.Control
 
         // time competition was started
         public int CompetitionID;
+        public int DeathCount = 0;
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
@@ -342,6 +343,7 @@ namespace BDArmory.Control
         {
             if (!competitionStarting)
             {
+                DeathCount = 0;
                 ResetCompetitionScores();
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition");
                 startCompetitionNow = false;
@@ -1630,6 +1632,16 @@ namespace BDArmory.Control
 
                         if (Scores.ContainsKey(key))
                         {
+                            DeathCount++;
+                            //Reset gravity
+                            if (BDArmorySettings.GRAVITY_HACKS)
+                            {
+                                int gravMult = 1 + (DeathCount % 10);
+                                PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
+                                VehiclePhysics.Gravity.Refresh();
+                                competitionStatus.Set("Competition: Adjusting gravity to " + gravMult + "G!");
+                            }
+
                             // Update tag mode
                             if (BDArmorySettings.TAG_MODE)
                                 UpdateTag(null, key, previousNumberCompetitive, alive);
