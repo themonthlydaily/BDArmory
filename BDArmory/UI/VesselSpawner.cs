@@ -652,6 +652,13 @@ namespace BDArmory.UI
         int continuousSpawnedVesselCount = 0;
         public void SpawnVesselsContinuously(Vector2d geoCoords, double altitude = 1000, float spawnDistanceFactor = 20f, bool killEverythingFirst = true, string spawnFolder = null)
         {
+            //Reset gravity
+            if (BDArmorySettings.GRAVITY_HACKS)
+            {
+                PhysicsGlobals.GraviticForceMultiplier = 1d;
+                VehiclePhysics.Gravity.Refresh();
+            }
+
             vesselsSpawningContinuously = true;
             spawnFailureReason = SpawnFailureReason.None;
             continuousSpawningScores = new Dictionary<string, ContinuousSpawningScores>();
