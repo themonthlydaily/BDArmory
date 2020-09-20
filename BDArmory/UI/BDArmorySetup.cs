@@ -1545,6 +1545,8 @@ namespace BDArmory.UI
             BDArmorySettings.SPAWN_SETTINGS_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.SPAWN_SETTINGS_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_SpawnSettingsToggle"));//Show/hide spawn settings.
             if (BDArmorySettings.SPAWN_SETTINGS_TOGGLE)
             {
+                BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = GUI.Toggle(SRightRect(++line), BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN, Localizer.Format("#LOC_BDArmory_Settings_SpawnDumpLogsEverySpawn")); //Dump logs every spawn.
+
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
                 BDArmorySettings.VESSEL_SPAWN_DISTANCE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f);
 

@@ -727,9 +727,9 @@ namespace BDArmory.UI
 
             if (killEverythingFirst)
             {
-                // Update the floating origin offset, so that the vessels spawn within range of the physics. Unfortunately, the terrain takes several frames to load, so the first spawn in this region is often below the terrain level.
+                // Update the floating origin offset, so that the vessels spawn within range of the physics. The terrain takes several frames to load, so we need to wait for the terrain to settle.
                 FloatingOrigin.SetOffset(spawnPoint); // This adjusts local coordinates, such that spawnPoint is (0,0,0).
-                ShowSpawnPoint(geoCoords, altitude, 2 * spawnDistanceFactor * (crafts.Count + 1), true);
+                ShowSpawnPoint(geoCoords, altitude, 2 * spawnDistanceFactor * (Math.Min(BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS, crafts.Count) + 1), true);
 
                 if (terrainAltitude > 0) // Not over the ocean or on a surfaceless body.
                 {
@@ -760,7 +760,6 @@ namespace BDArmory.UI
                 message = "WARNING The spawn point is " + ((spawnPoint - FloatingOrigin.fetch.offset).magnitude / 1000).ToString("G4") + "km away. Expect vessels to be killed immediately.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
             }
-            RevertSpawnLocationCamera(true); // Undo the camera adjustment and reset the camera distance.
 
             var craftURLToVesselName = new Dictionary<string, string>();
             var activeWeaponManagersByCraftURL = new Dictionary<string, MissileFire>();
@@ -775,6 +774,7 @@ namespace BDArmory.UI
             var spawnQueue = new Queue<string>();
             var craftToSpawn = new Queue<string>();
             var duplicateCraftCounter = 0;
+            bool initialSpawn = true;
             while (vesselsSpawningContinuously)
             {
                 // Reacquire the spawn point as the local coordinate system may have changed (floating origin adjustments, local body rotation, etc.).
@@ -944,6 +944,8 @@ namespace BDArmory.UI
                             // Adjust BDACompetitionMode's scoring structures.
                             UpdateCompetitionScores(vessel, true);
                             ++continuousSpawningScores[vessel.GetName()].spawnCount;
+                            if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN)
+                                DumpContinuousSpawningScores();
                             if (invalidVesselCount.ContainsKey(craftURL))// Reset the invalid spawn counter.
                                 invalidVesselCount.Remove(craftURL);
                             // Update the ramming information for the new vessel.
@@ -968,8 +970,10 @@ namespace BDArmory.UI
                                 }
                             }
                             vesselsToActivate.Remove(vessel);
-                            if (FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD)
+                            RevertSpawnLocationCamera(true); // Undo the camera adjustment and reset the camera distance. This has an internal check so that it only occurs once.
+                            if (initialSpawn || FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD)
                             {
+                                initialSpawn = false;
                                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                                 FlightCamera.fetch.SetDistance(50);
                             }
