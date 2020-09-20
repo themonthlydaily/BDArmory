@@ -182,7 +182,7 @@ namespace BDArmory.Control
 
         // time competition was started
         public int CompetitionID;
-        public int DeathCount = 0;
+        public static int DeathCount = 0;
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
