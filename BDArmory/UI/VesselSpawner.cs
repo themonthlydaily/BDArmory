@@ -941,11 +941,11 @@ namespace BDArmory.UI
                                     weaponManager.ToggleGuardMode();
                             weaponManager.AI.ReleaseCommand();
                             vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
+                            if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN && BDACompetitionMode.Instance.competitionIsActive)
+                                DumpContinuousSpawningScores();
                             // Adjust BDACompetitionMode's scoring structures.
                             UpdateCompetitionScores(vessel, true);
                             ++continuousSpawningScores[vessel.GetName()].spawnCount;
-                            if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN)
-                                DumpContinuousSpawningScores();
                             if (invalidVesselCount.ContainsKey(craftURL))// Reset the invalid spawn counter.
                                 invalidVesselCount.Remove(craftURL);
                             // Update the ramming information for the new vessel.
