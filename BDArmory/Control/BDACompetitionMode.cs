@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using BDArmory.Core;
-using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
 using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
-using UnityEngine.SocialPlatforms.Impl;
-using Object = UnityEngine.Object;
 
 namespace BDArmory.Control
 {
@@ -364,7 +358,7 @@ namespace BDArmory.Control
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
             GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
-            GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
+            // GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
@@ -377,7 +371,7 @@ namespace BDArmory.Control
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             // I think these three events cover the cases for when an incorrectly built vessel splits into more than one part.
             GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
-            GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
+            // GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
@@ -676,17 +670,20 @@ namespace BDArmory.Control
 
         void CheckVesselTypePartCountChanged(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to part count change");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to part count change (" + vessel + ")");
             CheckVesselType(vessel);
         }
         void CheckVesselTypeNewVesselCreated(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to new vessel created");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to new vessel created (" + vessel + ")");
             CheckVesselType(vessel);
         }
         void CheckVesselTypeVesselCreate(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to vessel create");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to vessel create (" + vessel + ")");
             CheckVesselType(vessel);
         }
 
@@ -2169,6 +2166,7 @@ namespace BDArmory.Control
         // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
         private void AnalyseCollision(EventReport data)
         {
+            if (data.origin == null) return; // The part is gone. Nothing much we can do about it.
             double currentTime = Planetarium.GetUniversalTime();
             float collisionMargin = 2f; // Compare the separation to this factor times the sum of radii to account for inaccuracies in the vessels size and position. Hopefully, this won't include other nearby vessels.
             var vessel = data.origin.vessel;
