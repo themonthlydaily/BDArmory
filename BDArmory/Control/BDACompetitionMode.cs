@@ -2166,6 +2166,7 @@ namespace BDArmory.Control
         // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
         private void AnalyseCollision(EventReport data)
         {
+            if (data.origin == null) return; // The part is gone. Nothing much we can do about it.
             double currentTime = Planetarium.GetUniversalTime();
             float collisionMargin = 2f; // Compare the separation to this factor times the sum of radii to account for inaccuracies in the vessels size and position. Hopefully, this won't include other nearby vessels.
             var vessel = data.origin.vessel;
