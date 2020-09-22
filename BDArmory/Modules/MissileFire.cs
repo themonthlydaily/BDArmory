@@ -3264,6 +3264,14 @@ namespace BDArmory.Modules
         // Update target priority UI
         public void UpdateTargetPriorityUI(TargetInfo target)
         {
+            // Return if no target
+            if (target == null)
+            {
+                TargetScoreLabel = "";
+                TargetLabel = "";
+                return;
+            }
+            
             // Get UI fields
             var TargetBiasFields = Fields["targetBias"];
             var TargetRangeFields = Fields["targetWeightRange"];
