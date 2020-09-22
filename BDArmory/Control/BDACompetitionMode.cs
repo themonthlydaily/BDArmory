@@ -163,7 +163,7 @@ namespace BDArmory.Control
         public int previousNumberCompetitive = 2; // Also for tag mode
 
         public double competitionStartTime = -1;
-        private double nextUpdateTick = -1;
+        public double nextUpdateTick = -1;
         private double gracePeriod = -1;
         private double decisionTick = -1;
         private int dumpedResults = 4;
@@ -1621,94 +1621,90 @@ namespace BDArmory.Control
                     if (BDArmorySettings.RUNWAY_PROJECT && key == "Pinata") continue;
                     if (!DeathOrder.ContainsKey(key))
                     {
-
                         // adding pilot into death order
                         DeathOrder[key] = DeathOrder.Count;
                         pilotActions[key] = " is Dead";
                         var whoKilledMe = "";
 
-                        if (Scores.ContainsKey(key))
+                        DeathCount++;
+                        //Reset gravity
+                        if (BDArmorySettings.GRAVITY_HACKS)
                         {
-                            DeathCount++;
-                            //Reset gravity
-                            if (BDArmorySettings.GRAVITY_HACKS)
+                            int gravMult = 1 + (DeathCount % 10);
+                            PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
+                            VehiclePhysics.Gravity.Refresh();
+                            competitionStatus.Add("Competition: Adjusting gravity to " + gravMult + "G!");
+                        }
+
+                        // Update tag mode
+                        if (BDArmorySettings.TAG_MODE)
+                            UpdateTag(null, key, previousNumberCompetitive, alive);
+
+                        if (Scores[key].gmKillReason == GMKillReason.None && Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10) // Recent kills that weren't instigated by the GM (or similar).
+                        {
+                            // if last hit was recent that person gets the kill
+                            whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
+                            Scores[key].cleanDeath = true;
+
+                            var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
+                            switch (lastDamageWasFrom)
                             {
-                                int gravMult = 1 + (DeathCount % 10);
-                                PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
-                                VehiclePhysics.Gravity.Refresh();
-                                competitionStatus.Set("Competition: Adjusting gravity to " + gravMult + "G!");
+                                case DamageFrom.Bullet:
+                                    if (!whoCleanShotWho.ContainsKey(key))
+                                    {
+                                        // twice - so 2 points
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        whoCleanShotWho.Add(key, whoKilledMe);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    break;
+                                case DamageFrom.Missile:
+                                    if (!whoCleanShotWhoWithMissiles.ContainsKey(key))
+                                    {
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        whoCleanShotWhoWithMissiles.Add(key, whoKilledMe);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    break;
+                                case DamageFrom.Ram:
+                                    if (!whoCleanRammedWho.ContainsKey(key))
+                                    {
+                                        // if ram killed
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
+                                        whoCleanRammedWho.Add(key, whoKilledMe);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    break;
+                                default:
+                                    break;
                             }
+                        }
+                        else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0 || Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                        {
+                            List<string> killReasons = new List<string>();
+                            if (Scores[key].everyoneWhoHitMe.Count > 0)
+                                killReasons.Add("Hits");
+                            if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                                killReasons.Add("Missiles");
+                            if (Scores[key].everyoneWhoRammedMe.Count > 0)
+                                killReasons.Add("Rams");
+                            whoKilledMe = String.Join(" ", killReasons) + ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe()) + (Scores[key].gmKillReason != GMKillReason.None ? ", " + Scores[key].gmKillReason : "");
 
-                            // Update tag mode
-                            if (BDArmorySettings.TAG_MODE)
-                                UpdateTag(null, key, previousNumberCompetitive, alive);
-
-                            if (Scores[key].gmKillReason == GMKillReason.None && Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10) // Recent kills that weren't instigated by the GM (or similar).
+                            foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                             {
-                                // if last hit was recent that person gets the kill
-                                whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
-                                Scores[key].cleanDeath = true;
-
-                                var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
-                                switch (lastDamageWasFrom)
-                                {
-                                    case DamageFrom.Bullet:
-                                        if (!whoCleanShotWho.ContainsKey(key))
-                                        {
-                                            // twice - so 2 points
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
-                                            whoCleanShotWho.Add(key, whoKilledMe);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
-                                            whoKilledMe += " (BOOM! HEADSHOT!)";
-                                        }
-                                        break;
-                                    case DamageFrom.Missile:
-                                        if (!whoCleanShotWhoWithMissiles.ContainsKey(key))
-                                        {
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
-                                            whoCleanShotWhoWithMissiles.Add(key, whoKilledMe);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
-                                            whoKilledMe += " (BOOM! HEADSHOT!)";
-                                        }
-                                        break;
-                                    case DamageFrom.Ram:
-                                        if (!whoCleanRammedWho.ContainsKey(key))
-                                        {
-                                            // if ram killed
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
-                                            whoCleanRammedWho.Add(key, whoKilledMe);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
-                                            whoKilledMe += " (BOOM! HEADSHOT!)";
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                }
+                                Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                             }
-                            else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0 || Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
-                            {
-                                List<string> killReasons = new List<string>();
-                                if (Scores[key].everyoneWhoHitMe.Count > 0)
-                                    killReasons.Add("Hits");
-                                if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
-                                    killReasons.Add("Missiles");
-                                if (Scores[key].everyoneWhoRammedMe.Count > 0)
-                                    killReasons.Add("Rams");
-                                whoKilledMe = String.Join(" ", killReasons) + ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe()) + (Scores[key].gmKillReason != GMKillReason.None ? ", " + Scores[key].gmKillReason : "");
-
-                                foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
-                                {
-                                    Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
-                                }
-                                if (BDArmorySettings.REMOTE_LOGGING_ENABLED && Scores[key].gmKillReason == GMKillReason.None) // Don't count kills by the GM.
-                                    Competition.BDAScoreService.Instance.ComputeAssists(key, "", Planetarium.GetUniversalTime() - competitionStartTime);
-                            }
+                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED && Scores[key].gmKillReason == GMKillReason.None) // Don't count kills by the GM.
+                                Competition.BDAScoreService.Instance.ComputeAssists(key, "", Planetarium.GetUniversalTime() - competitionStartTime);
                         }
                         if (whoKilledMe != "")
                         {
