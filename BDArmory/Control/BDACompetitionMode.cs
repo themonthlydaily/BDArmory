@@ -177,6 +177,7 @@ namespace BDArmory.Control
         // time competition was started
         public int CompetitionID;
         public static int DeathCount = 0;
+        public static float gravMult = 1f;
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
@@ -1627,14 +1628,6 @@ namespace BDArmory.Control
                         var whoKilledMe = "";
 
                         DeathCount++;
-                        //Reset gravity
-                        if (BDArmorySettings.GRAVITY_HACKS)
-                        {
-                            int gravMult = 1 + (DeathCount % 10);
-                            PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
-                            VehiclePhysics.Gravity.Refresh();
-                            competitionStatus.Add("Competition: Adjusting gravity to " + gravMult + "G!");
-                        }
 
                         // Update tag mode
                         if (BDArmorySettings.TAG_MODE)
@@ -1761,6 +1754,16 @@ namespace BDArmory.Control
             else
             {
                 dumpedResults = 5;
+            }
+
+            //Reset gravity
+            if (BDArmorySettings.GRAVITY_HACKS)
+            {
+                double time = Planetarium.GetUniversalTime() - competitionStartTime;
+                gravMult = 1f + 1.4f * (float)(DeathCount % 10) + Mathf.Sqrt((float)time / 60f);// OLD: 1 + (DeathCount % 10); (float)(9 - alive.Count())
+                PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
+                VehiclePhysics.Gravity.Refresh();
+                competitionStatus.Add("Competition: Adjusting gravity to " + gravMult.ToString("0.0") + "G!");
             }
 
             // use the exploder system to remove vessels that should be nuked
