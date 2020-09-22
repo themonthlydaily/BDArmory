@@ -95,11 +95,11 @@ namespace BDArmory.UI
 
             float offset = _titleHeight + _margin;
             float width = BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH;
-            float half = width / 2.0f;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Competition: ");
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), competition);
+            float fifth = width / 5.0f;
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Competition: ");
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), competition);
             offset += _titleHeight;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Status: ");
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Status: ");
             string statusLine;
             switch (service.status)
             {
@@ -110,13 +110,13 @@ namespace BDArmory.UI
                     statusLine = status;
                     break;
             }
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), statusLine);
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), statusLine);
             offset += _titleHeight;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Stage: ");
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), stage);
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Stage: ");
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), stage);
             offset += _titleHeight;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Heat: ");
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), heat);
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Heat: ");
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), heat);
             offset += _titleHeight;
             string buttonText;
             switch (BDAScoreService.Instance.status)
