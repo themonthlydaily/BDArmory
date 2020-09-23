@@ -3031,7 +3031,7 @@ namespace BDArmory.Modules
             if (!vessel.LandedOrSplashed && !targetMissiles)
             {
                 TargetInfo potentialAirTarget = null;
-                
+
                 if (BDArmorySettings.DEFAULT_FFA_TARGETING)
                 {
                     potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
@@ -3264,6 +3264,14 @@ namespace BDArmory.Modules
         // Update target priority UI
         public void UpdateTargetPriorityUI(TargetInfo target)
         {
+            // Return if no target
+            if (target == null)
+            {
+                TargetScoreLabel = "";
+                TargetLabel = "";
+                return;
+            }
+            
             // Get UI fields
             var TargetBiasFields = Fields["targetBias"];
             var TargetRangeFields = Fields["targetWeightRange"];
@@ -3712,7 +3720,20 @@ namespace BDArmory.Modules
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory] : " + vessel.vesselName + " - No weapon selected.");
+                    Debug.Log("[BDArmory] : " + vessel.vesselName + " - No weapon selected for target " + target.Vessel.vesselName);
+                    // Debug.Log("DEBUG target isflying:" + target.isFlying + ", isLorS:" + target.isLandedOrSurfaceSplashed + ", isUW:" + target.isUnderwater);
+                    // if (target.isFlying)
+                    //     foreach (var weapon in weaponTypesAir)
+                    //     {
+                    //         var engageableWeapon = weapon as EngageableWeapon;
+                    //         Debug.Log("DEBUG flying target:" + target.Vessel + ", weapon:" + weapon + " can engage:" + CheckEngagementEnvelope(weapon, distance) + ", engageEnabled:" + engageableWeapon.engageEnabled + ", min/max:" + engageableWeapon.GetEngagementRangeMin() + "/" + engageableWeapon.GetEngagementRangeMax());
+                    //     }
+                    // if (target.isLandedOrSurfaceSplashed)
+                    //     foreach (var weapon in weaponTypesAir)
+                    //     {
+                    //         var engageableWeapon = weapon as EngageableWeapon;
+                    //         Debug.Log("DEBUG landed target:" + target.Vessel + ", weapon:" + weapon + " can engage:" + CheckEngagementEnvelope(weapon, distance) + ", engageEnabled:" + engageableWeapon.engageEnabled + ", min/max:" + engageableWeapon.GetEngagementRangeMin() + "/" + engageableWeapon.GetEngagementRangeMax());
+                    //     }
                 }
 
                 selectedWeapon = null;
@@ -3784,7 +3805,7 @@ namespace BDArmory.Modules
                         }
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory] : " + vessel.vesselName + " - Failed DLZ test: " + weaponCandidate.GetShortName());
+                            Debug.Log("[BDArmory] : " + vessel.vesselName + " - Failed DLZ test: " + weaponCandidate.GetShortName() + ", distance: " + distanceToTarget + ", DLZ min/max: " + dlz.minLaunchRange + "/" + dlz.maxLaunchRange);
                         }
                         break;
                     }
@@ -4201,7 +4222,7 @@ namespace BDArmory.Modules
                 StartCoroutine(UnderAttackRoutine());
 
                 FireFlares();
-                
+
                 incomingThreatPosition = results.threatPosition;
                 incomingThreatVessel = results.threatVessel;
 

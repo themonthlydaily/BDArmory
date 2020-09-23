@@ -1,20 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using BDArmory.Core;
-using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
 using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
-using UnityEngine.SocialPlatforms.Impl;
-using Object = UnityEngine.Object;
 
 namespace BDArmory.Control
 {
@@ -169,7 +163,7 @@ namespace BDArmory.Control
         public int previousNumberCompetitive = 2; // Also for tag mode
 
         public double competitionStartTime = -1;
-        private double nextUpdateTick = -1;
+        public double nextUpdateTick = -1;
         private double gracePeriod = -1;
         private double decisionTick = -1;
         private int dumpedResults = 4;
@@ -182,6 +176,7 @@ namespace BDArmory.Control
 
         // time competition was started
         public int CompetitionID;
+        public static int DeathCount = 0;
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
@@ -342,6 +337,7 @@ namespace BDArmory.Control
         {
             if (!competitionStarting)
             {
+                DeathCount = 0;
                 ResetCompetitionScores();
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition");
                 startCompetitionNow = false;
@@ -362,7 +358,7 @@ namespace BDArmory.Control
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
             GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
-            GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
+            // GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
@@ -375,7 +371,7 @@ namespace BDArmory.Control
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             // I think these three events cover the cases for when an incorrectly built vessel splits into more than one part.
             GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
-            GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
+            // GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
             // GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
@@ -674,17 +670,20 @@ namespace BDArmory.Control
 
         void CheckVesselTypePartCountChanged(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to part count change");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to part count change (" + vessel + ")");
             CheckVesselType(vessel);
         }
         void CheckVesselTypeNewVesselCreated(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to new vessel created");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to new vessel created (" + vessel + ")");
             CheckVesselType(vessel);
         }
         void CheckVesselTypeVesselCreate(Vessel vessel)
         {
-            // Debug.Log("DEBUG CheckVesselType due to vessel create");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDACompetitionMode]: CheckVesselType due to vessel create (" + vessel + ")");
             CheckVesselType(vessel);
         }
 
@@ -1622,84 +1621,90 @@ namespace BDArmory.Control
                     if (BDArmorySettings.RUNWAY_PROJECT && key == "Pinata") continue;
                     if (!DeathOrder.ContainsKey(key))
                     {
-
                         // adding pilot into death order
                         DeathOrder[key] = DeathOrder.Count;
                         pilotActions[key] = " is Dead";
                         var whoKilledMe = "";
 
-                        if (Scores.ContainsKey(key))
+                        DeathCount++;
+                        //Reset gravity
+                        if (BDArmorySettings.GRAVITY_HACKS)
                         {
-                            // Update tag mode
-                            if (BDArmorySettings.TAG_MODE)
-                                UpdateTag(null, key, previousNumberCompetitive, alive);
+                            int gravMult = 1 + (DeathCount % 10);
+                            PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
+                            VehiclePhysics.Gravity.Refresh();
+                            competitionStatus.Add("Competition: Adjusting gravity to " + gravMult + "G!");
+                        }
 
-                            if (Scores[key].gmKillReason == GMKillReason.None && Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10) // Recent kills that weren't instigated by the GM (or similar).
+                        // Update tag mode
+                        if (BDArmorySettings.TAG_MODE)
+                            UpdateTag(null, key, previousNumberCompetitive, alive);
+
+                        if (Scores[key].gmKillReason == GMKillReason.None && Planetarium.GetUniversalTime() - Scores[key].LastDamageTime() < 10) // Recent kills that weren't instigated by the GM (or similar).
+                        {
+                            // if last hit was recent that person gets the kill
+                            whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
+                            Scores[key].cleanDeath = true;
+
+                            var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
+                            switch (lastDamageWasFrom)
                             {
-                                // if last hit was recent that person gets the kill
-                                whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
-                                Scores[key].cleanDeath = true;
-
-                                var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
-                                switch (lastDamageWasFrom)
-                                {
-                                    case DamageFrom.Bullet:
-                                        if (!whoCleanShotWho.ContainsKey(key))
-                                        {
-                                            // twice - so 2 points
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
-                                            whoCleanShotWho.Add(key, whoKilledMe);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
-                                            whoKilledMe += " (BOOM! HEADSHOT!)";
-                                        }
-                                        break;
-                                    case DamageFrom.Missile:
-                                        if (!whoCleanShotWhoWithMissiles.ContainsKey(key))
-                                        {
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
-                                            whoCleanShotWhoWithMissiles.Add(key, whoKilledMe);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
-                                            whoKilledMe += " (BOOM! HEADSHOT!)";
-                                        }
-                                        break;
-                                    case DamageFrom.Ram:
-                                        if (!whoCleanRammedWho.ContainsKey(key))
-                                        {
-                                            // if ram killed
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
-                                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
-                                            whoCleanRammedWho.Add(key, whoKilledMe);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
-                                            whoKilledMe += " (BOOM! HEADSHOT!)";
-                                        }
-                                        break;
-                                    default:
-                                        break;
-                                }
+                                case DamageFrom.Bullet:
+                                    if (!whoCleanShotWho.ContainsKey(key))
+                                    {
+                                        // twice - so 2 points
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANKILL:" + whoKilledMe);
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        whoCleanShotWho.Add(key, whoKilledMe);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    break;
+                                case DamageFrom.Missile:
+                                    if (!whoCleanShotWhoWithMissiles.ContainsKey(key))
+                                    {
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANMISSILEKILL:" + whoKilledMe);
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + whoKilledMe);
+                                        whoCleanShotWhoWithMissiles.Add(key, whoKilledMe);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    break;
+                                case DamageFrom.Ram:
+                                    if (!whoCleanRammedWho.ContainsKey(key))
+                                    {
+                                        // if ram killed
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":CLEANRAMKILL:" + whoKilledMe);
+                                        Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED VIA RAMMERY BY:" + whoKilledMe);
+                                        whoCleanRammedWho.Add(key, whoKilledMe);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            Competition.BDAScoreService.Instance.TrackKill(whoKilledMe, key);
+                                        whoKilledMe += " (BOOM! HEADSHOT!)";
+                                    }
+                                    break;
+                                default:
+                                    break;
                             }
-                            else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0 || Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                        }
+                        else if (Scores[key].everyoneWhoHitMe.Count > 0 || Scores[key].everyoneWhoRammedMe.Count > 0 || Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                        {
+                            List<string> killReasons = new List<string>();
+                            if (Scores[key].everyoneWhoHitMe.Count > 0)
+                                killReasons.Add("Hits");
+                            if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
+                                killReasons.Add("Missiles");
+                            if (Scores[key].everyoneWhoRammedMe.Count > 0)
+                                killReasons.Add("Rams");
+                            whoKilledMe = String.Join(" ", killReasons) + ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe()) + (Scores[key].gmKillReason != GMKillReason.None ? ", " + Scores[key].gmKillReason : "");
+
+                            foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                             {
-                                List<string> killReasons = new List<string>();
-                                if (Scores[key].everyoneWhoHitMe.Count > 0)
-                                    killReasons.Add("Hits");
-                                if (Scores[key].everyoneWhoHitMeWithMissiles.Count > 0)
-                                    killReasons.Add("Missiles");
-                                if (Scores[key].everyoneWhoRammedMe.Count > 0)
-                                    killReasons.Add("Rams");
-                                whoKilledMe = String.Join(" ", killReasons) + ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe()) + (Scores[key].gmKillReason != GMKillReason.None ? ", " + Scores[key].gmKillReason : "");
-
-                                foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
-                                {
-                                    Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
-                                }
-                                if (BDArmorySettings.REMOTE_LOGGING_ENABLED && Scores[key].gmKillReason == GMKillReason.None) // Don't count kills by the GM.
-                                    Competition.BDAScoreService.Instance.ComputeAssists(key, "", Planetarium.GetUniversalTime() - competitionStartTime);
+                                Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + key + ":KILLED:" + killer);
                             }
+                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED && Scores[key].gmKillReason == GMKillReason.None) // Don't count kills by the GM.
+                                Competition.BDAScoreService.Instance.ComputeAssists(key, "", Planetarium.GetUniversalTime() - competitionStartTime);
                         }
                         if (whoKilledMe != "")
                         {
@@ -2157,6 +2162,7 @@ namespace BDArmory.Control
         // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
         private void AnalyseCollision(EventReport data)
         {
+            if (data.origin == null) return; // The part is gone. Nothing much we can do about it.
             double currentTime = Planetarium.GetUniversalTime();
             float collisionMargin = 2f; // Compare the separation to this factor times the sum of radii to account for inaccuracies in the vessels size and position. Hopefully, this won't include other nearby vessels.
             var vessel = data.origin.vessel;

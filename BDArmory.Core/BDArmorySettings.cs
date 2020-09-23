@@ -8,6 +8,11 @@ namespace BDArmory.Core
     {
         public static string settingsConfigURL = "GameData/BDArmory/settings.cfg";
 
+        [BDAPersistantSettingsField] public static bool GENERAL_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool RADAR_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool SPAWN_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool SLIDER_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool OTHER_SETTINGS_TOGGLE = true;
         [BDAPersistantSettingsField] public static bool INSTAKILL = false;
         [BDAPersistantSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
@@ -64,6 +69,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed
         [BDAPersistantSettingsField] public static float FIRELIFETIME_IN_SECONDS = 90f;           //controls fx for penetration only for landed or splashed
         [BDAPersistantSettingsField] public static bool PERFORMANCE_LOGGING = false;
+        [BDAPersistantSettingsField] public static bool GRAVITY_HACKS = false;
         [BDAPersistantSettingsField] public static bool TAG_MODE = false;
         [BDAPersistantSettingsField] public static bool PAINTBALL_MODE = false;
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
@@ -85,9 +91,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 1f;          // Rate to limit "falling" during spawning.
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_CONCURRENT_VESSELS = 0;        // Maximum number of vessels to spawn in concurrently (continuous spawning mode).
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_LIVES_PER_VESSEL = 0;          // Maximum number of times to spawn a vessel (continuous spawning mode).
-        [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                 //Disables the kill timers used in Runway Project.
-        [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
-        [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = true;                    // Enable/disable Runway Project specific enhancements. FIXME Default to true for now. Later, default to false for official BDArmory release.
+        [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = false; // Dump competition scores every time a vessel spawns.
+        [BDAPersistantSettingsField] public static bool SHOW_SPAWN_LOCATIONS = false;              // Show the interesting spawn locations.
+        [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
+        [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 225f;
+        [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements. FIXME Default to true for now. Later, default to false for official BDArmory release.
         [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
 
     }
