@@ -29,6 +29,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float TARGET_CAM_RESOLUTION = 1024f;
         [BDAPersistantSettingsField] public static bool BW_TARGET_CAM = true;
         [BDAPersistantSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
+        [BDAPersistantSettingsField] public static bool STRICT_WINDOW_BOUNDARIES = false;
         [BDAPersistantSettingsField] public static float RWR_WINDOW_SCALE_MIN = 0.50f;
         [BDAPersistantSettingsField] public static float RWR_WINDOW_SCALE = 1f;
         [BDAPersistantSettingsField] public static float RWR_WINDOW_SCALE_MAX = 1.50f;
