@@ -16,7 +16,7 @@ namespace BDArmory.Competition
 
         private string baseUrl = "https://bdascores.herokuapp.com";
 
-        private string vesselPath = "";
+        public string vesselPath = "";
 
         private string competitionHash = "";
 
@@ -230,8 +230,15 @@ namespace BDArmory.Competition
             }
             foreach (VesselModel vesselModel in collection)
             {
-                Debug.Log(string.Format("[BDAScoreClient] Vessel {0}", vesselModel.ToString()));
-                vessels.Add(vesselModel.id, vesselModel);
+                if (!vessels.ContainsKey(vesselModel.id)) // Skip duplicates.
+                {
+                    Debug.Log(string.Format("[BDAScoreClient] Vessel {0}", vesselModel.ToString()));
+                    vessels.Add(vesselModel.id, vesselModel);
+                }
+                else
+                {
+                    Debug.Log("[BDAScoreClient]: Vessel " + vesselModel.ToString() + " is already in the vessel list, skipping.");
+                }
             }
             Debug.Log(string.Format("[BDAScoreClient] Vessels: {0}", vessels.Count));
         }
@@ -320,7 +327,10 @@ namespace BDArmory.Competition
             // load the file and modify its vessel name to match the player
             string[] lines = File.ReadAllLines(filename);
             string pattern = ".*ship = (.+)";
-            string[] modifiedLines = lines.Select(e => Regex.Replace(e, pattern, "ship = " + p.name)).ToArray();
+            string[] modifiedLines = lines
+                .Select(e => Regex.Replace(e, pattern, "ship = " + p.name))
+                .Where(e => !e.Contains("VESSELNAMING"))
+                .ToArray();
             File.WriteAllLines(filename, modifiedLines);
             Debug.Log(string.Format("[BDAScoreClient] Saved craft for player {0}", p.name));
         }
