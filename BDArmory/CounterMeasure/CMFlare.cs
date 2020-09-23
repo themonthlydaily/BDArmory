@@ -61,7 +61,6 @@ namespace BDArmory.CounterMeasure
             */
 
 
-
             // NEW (1.9.1 and before): generate flare within spectrum of emitting vessel's heat signature
             //thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel) * UnityEngine.Random.Range(0.65f, 1.75f);
 
