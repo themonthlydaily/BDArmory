@@ -1340,7 +1340,7 @@ namespace BDArmory.Control
             //         Debug.Log("DEBUG Upcoming potential collision between " + upcomingCollision.Key.Item1 + " and " + upcomingCollision.Key.Item2 + " at distance " + Mathf.Sqrt(upcomingCollision.Value.Item1) + "m in " + upcomingCollision.Value.Item2 + "s.");
             if (Planetarium.GetUniversalTime() < nextUpdateTick)
                 return;
-            double updateTickLength = (BDArmorySettings.TAG_MODE) ? 0.1 : 2;
+            double updateTickLength = BDArmorySettings.TAG_MODE ? 0.1 : BDArmorySettings.GRAVITY_HACKS ? 0.5 : 2;
             HashSet<Vessel> vesselsToKill = new HashSet<Vessel>();
             nextUpdateTick = nextUpdateTick + updateTickLength;
             int numberOfCompetitiveVessels = 0;
