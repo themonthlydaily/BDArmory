@@ -21,6 +21,7 @@ namespace BDArmory.UI
         private float _windowHeight; //auto adjusting
 
         private bool ready = false;
+        private bool showWindow = true;
 
         private string status;
         private string competition;
@@ -37,7 +38,6 @@ namespace BDArmory.UI
         private void Start()
         {
             ready = false;
-            StartCoroutine(WaitForSetup());
         }
 
         private void Update()
@@ -52,7 +52,7 @@ namespace BDArmory.UI
 
         private void OnGUI()
         {
-            if (!(ready && BDArmorySetup.GAME_UI_ENABLED && BDArmorySettings.REMOTE_LOGGING_ENABLED))
+            if (!(showWindow && ready && BDArmorySetup.GAME_UI_ENABLED && BDArmorySettings.REMOTE_LOGGING_ENABLED))
                 return;
 
             SetNewHeight(_windowHeight);
@@ -77,6 +77,14 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectRemoteOrchestration.height = windowHeight;
         }
 
+
+        public void ShowWindow()
+        {
+            if (!ready)
+                StartCoroutine(WaitForSetup());
+            showWindow = true;
+        }
+
         private IEnumerator WaitForSetup()
         {
             while (BDArmorySetup.Instance == null || BDAScoreService.Instance == null || BDAScoreService.Instance.client == null)
@@ -91,7 +99,11 @@ namespace BDArmory.UI
 
         private void WindowRemoteOrchestration(int id)
         {
-            GUI.DragWindow(new Rect(0, 0, BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH, _titleHeight));
+            GUI.DragWindow(new Rect(0, 0, BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH - _titleHeight / 2 - 2, _titleHeight));
+            if (GUI.Button(new Rect(BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH - _titleHeight / 2 - 2, 2, _titleHeight / 2, _titleHeight / 2), "X", BDArmorySetup.BDGuiSkin.button))
+            {
+                showWindow = false;
+            }
 
             float offset = _titleHeight + _margin;
             float width = BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH;
@@ -149,9 +161,10 @@ namespace BDArmory.UI
 
             _windowHeight = offset;
 
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRemoteOrchestration); // Prevent it from going off the screen edges.
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+            {
+                BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRemoteOrchestration); // Prevent it from going off the screen edges.
+            }
         }
-
-
     }
 }
