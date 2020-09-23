@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using BDArmory.Control;
 using BDArmory.Core;
+using BDArmory.UI;
 
 namespace BDArmory.Competition
 {
@@ -104,7 +105,8 @@ namespace BDArmory.Competition
             {
                 Debug.Log("[BDAScoreService] Cancel due to disable");
                 pendingSync = false;
-                StopCoroutine(syncCoroutine);
+                if (syncCoroutine != null)
+                    StopCoroutine(syncCoroutine);
                 return;
             }
         }
@@ -113,7 +115,10 @@ namespace BDArmory.Competition
         {
             this.vesselPath = vesselPath;
             this.client = new BDAScoreClient(this, vesselPath, hash);
+            if (syncCoroutine != null)
+                StopCoroutine(syncCoroutine);
             syncCoroutine = StartCoroutine(SynchronizeWithService(hash));
+            RemoteOrchestrationWindow.Instance.ShowWindow();
         }
 
         public void Cancel()
@@ -158,7 +163,6 @@ namespace BDArmory.Competition
             {
                 status = StatusType.Invalid;
                 pendingSync = false;
-                syncCoroutine = null;
                 yield break;
             }
 
