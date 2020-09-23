@@ -250,7 +250,7 @@ namespace BDArmory.UI
                 {
                     string windowTitle = Localizer.Format("#LOC_BDArmory_BDAVesselSwitcher_Title");
                     if (BDArmorySettings.GRAVITY_HACKS)
-                        windowTitle = windowTitle + " (" + BDACompetitionMode.gravMult.ToString("0.0") + "G)";
+                        windowTitle = windowTitle + " (" + BDACompetitionMode.gravityMultiplier.ToString("0.0") + "G)";
                     
                     SetNewHeight(_windowHeight);
                     // this Rect initialization ensures any save issues with height or width of the window are resolved
