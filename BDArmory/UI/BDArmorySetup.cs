@@ -1694,6 +1694,7 @@ namespace BDArmory.UI
                 }
             }
             line++;
+            BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SRightRect(line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, "Strict Window Boundaries");
             line++;
 
             GUI.Label(SLeftRect(line), Localizer.Format("#LOC_BDArmory_Settings_RWRWindowScale") + ": " + (BDArmorySettings.RWR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel);//RWR Window Scale
