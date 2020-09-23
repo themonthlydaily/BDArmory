@@ -1536,7 +1536,8 @@ namespace BDArmory.Control
                             vData.AverageSpeed += v.Current.srfSpeed;
                             vData.AverageAltitude += v.Current.altitude;
                             vData.averageCount++;
-                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15))
+                            double landedKillTime = (BDArmorySettings.GRAVITY_HACKS) ? 1d : 15d;
+                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > landedKillTime))
                             {
                                 vesselsToKill.Add(mf.vessel);
                                 competitionStatus.Add(vesselName + " landed too long.");
