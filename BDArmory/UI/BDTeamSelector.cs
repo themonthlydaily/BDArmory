@@ -103,7 +103,10 @@ namespace BDArmory.UI
             }
 
             height += margin;
-            BDGUIUtils.RepositionWindow(ref window);
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+			{
+				BDGUIUtils.RepositionWindow(ref window);
+			}
             BDGUIUtils.UseMouseEventInRect(window);
         }
 
