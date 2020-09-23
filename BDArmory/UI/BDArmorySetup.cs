@@ -446,12 +446,16 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
+			if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+			{
+			BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
             BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.RepositionWindow(ref WindowRectRwr);
             BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
             BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
             BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
+            }
         }
 
         void Update()
@@ -1191,7 +1195,10 @@ namespace BDArmory.UI
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
             WindowRectToolbar.height = toolWindowHeight;
             // = new Rect(toolbarWindowRect.position.x, toolbarWindowRect.position.y, toolWindowWidth, toolWindowHeight);
-            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+			{
+				BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+			}
         }
 
         bool validGPSName = true;
@@ -1837,7 +1844,10 @@ namespace BDArmory.UI
             line += 1.5f;
             settingsHeight = (line * settingsLineHeight);
             WindowRectSettings.height = settingsHeight;
-            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+			{
+				BDGUIUtils.RepositionWindow(ref WindowRectSettings);
+			}
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
