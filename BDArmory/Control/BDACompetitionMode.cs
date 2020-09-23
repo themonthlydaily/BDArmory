@@ -177,7 +177,7 @@ namespace BDArmory.Control
         // time competition was started
         public int CompetitionID;
         public static int DeathCount = 0;
-        public static float gravMult = 1f;
+        public static float gravityMultiplier = 1f;
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
@@ -342,6 +342,13 @@ namespace BDArmory.Control
                 ResetCompetitionScores();
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition");
                 startCompetitionNow = false;
+                if (BDArmorySettings.GRAVITY_HACKS)
+                {
+                    lastGravityMultiplier = 1f;
+                    gravityMultiplier = 1f;
+                    PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
+                    VehiclePhysics.Gravity.Refresh();
+                }
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
         }
@@ -1311,6 +1318,7 @@ namespace BDArmory.Control
         }
 
         bool competitionShouldBeRunning = false;
+        float lastGravityMultiplier;
         // the competition update system
         // cleans up dead vessels, tries to track kills (badly)
         // all of these are based on the vessel name which is probably sub optimal
@@ -1760,11 +1768,17 @@ namespace BDArmory.Control
             //Reset gravity
             if (BDArmorySettings.GRAVITY_HACKS)
             {
+                int maxVesselsActive = (VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0) ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS : Scores.Count;
                 double time = Planetarium.GetUniversalTime() - competitionStartTime;
-                gravMult = 1f + 1.4f * (float)(DeathCount % 10) + Mathf.Sqrt((float)time / 60f);// OLD: 1 + (DeathCount % 10); (float)(9 - alive.Count())
-                PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
+                gravityMultiplier = 1f + 7f * (float)(DeathCount % maxVesselsActive) / (float)(maxVesselsActive - 1); // From 1G to 8G.
+                gravityMultiplier += VesselSpawner.Instance.vesselsSpawningContinuously ? 2f - 2f * Mathf.Cos((float)time / 600f * Mathf.PI) : Mathf.Sqrt((float)time / 60f); // Plus up to 3.16G for regular spawns or up to 4G in continuous spawning.
+                PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
                 VehiclePhysics.Gravity.Refresh();
-                competitionStatus.Add("Competition: Adjusting gravity to " + gravMult.ToString("0.0") + "G!");
+                if ((int)Mathf.Round(10 * gravityMultiplier - 10 * lastGravityMultiplier) != 0) // Only write a message when it shows something different.
+                {
+                    lastGravityMultiplier = gravityMultiplier;
+                    competitionStatus.Add("Competition: Adjusting gravity to " + gravityMultiplier.ToString("0.0") + "G!");
+                }
             }
 
             // use the exploder system to remove vessels that should be nuked
