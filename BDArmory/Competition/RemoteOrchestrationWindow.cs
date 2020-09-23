@@ -95,21 +95,56 @@ namespace BDArmory.UI
 
             float offset = _titleHeight + _margin;
             float width = BDArmorySettings.REMOTE_ORCHESTRATION_WINDOW_WIDTH;
-            float half = width / 2.0f;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Competition: ");
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), competition);
+            float fifth = width / 5.0f;
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Competition: ");
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), competition);
             offset += _titleHeight;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Status: ");
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), status);
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Status: ");
+            string statusLine;
+            switch (service.status)
+            {
+                case BDAScoreService.StatusType.Waiting:
+                    statusLine = status + " " + (30 + service.retryFindStartedAt - Planetarium.GetUniversalTime()).ToString("0") + "s";
+                    break;
+                default:
+                    statusLine = status;
+                    break;
+            }
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), statusLine);
             offset += _titleHeight;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Stage: ");
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), stage);
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Stage: ");
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), stage);
             offset += _titleHeight;
-            GUI.Label(new Rect(_margin, offset, half, _titleHeight), "Heat: ");
-            GUI.Label(new Rect(_margin + half, offset, half, _titleHeight), heat);
+            GUI.Label(new Rect(_margin, offset, 2 * fifth, _titleHeight), "Heat: ");
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), heat);
             offset += _titleHeight;
-            if (GUI.Button(new Rect(_margin, offset, width - 2 * _margin, _titleHeight), "Cancel", BDArmorySetup.BDGuiSkin.button))
-                service.Cancel();
+            string buttonText;
+            switch (BDAScoreService.Instance.status)
+            {
+                case BDAScoreService.StatusType.Waiting:
+                    buttonText = "Stop";
+                    break;
+                case BDAScoreService.StatusType.Stopped:
+                case BDAScoreService.StatusType.Cancelled:
+                    buttonText = "Next Heat";
+                    break;
+                default:
+                    buttonText = "Cancel";
+                    break;
+            }
+            if (GUI.Button(new Rect(_margin, offset, width - 2 * _margin, _titleHeight), buttonText, BDArmorySetup.BDGuiSkin.button))
+            {
+                switch (BDAScoreService.Instance.status)
+                {
+                    case BDAScoreService.StatusType.Stopped:
+                    case BDAScoreService.StatusType.Cancelled:
+                        service.Configure(service.vesselPath, BDArmorySettings.COMPETITION_HASH);
+                        break;
+                    default:
+                        service.Cancel();
+                        break;
+                }
+            }
             offset += _titleHeight + _margin;
 
             _windowHeight = offset;
