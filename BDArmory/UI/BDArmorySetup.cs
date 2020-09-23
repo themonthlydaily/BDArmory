@@ -446,12 +446,16 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
-            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
-            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-            BDGUIUtils.RepositionWindow(ref WindowRectRwr);
-            BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
-            BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
-            BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+            {
+                BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
+                BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+                BDGUIUtils.RepositionWindow(ref WindowRectSettings);
+                BDGUIUtils.RepositionWindow(ref WindowRectRwr);
+                BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
+                BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
+                BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
+            }
         }
 
         void Update()
@@ -1191,7 +1195,10 @@ namespace BDArmory.UI
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
             WindowRectToolbar.height = toolWindowHeight;
             // = new Rect(toolbarWindowRect.position.x, toolbarWindowRect.position.y, toolWindowWidth, toolWindowHeight);
-            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+            {
+                BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+            }
         }
 
         bool validGPSName = true;
@@ -1473,7 +1480,11 @@ namespace BDArmory.UI
                 InputSettings();
                 return;
             }
-            BDArmorySettings.GENERAL_SETTINGS_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.GENERAL_SETTINGS_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_GeneralSettingsToggle"));//Show/hide general settings.
+
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.GENERAL_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_GeneralSettingsToggle")))//Show/hide general settings.
+            {
+                BDArmorySettings.GENERAL_SETTINGS_TOGGLE = !BDArmorySettings.GENERAL_SETTINGS_TOGGLE;
+            }
             if (BDArmorySettings.GENERAL_SETTINGS_TOGGLE)
             {
                 BDArmorySettings.INSTAKILL = GUI.Toggle(SLeftRect(++line), BDArmorySettings.INSTAKILL, Localizer.Format("#LOC_BDArmory_Settings_Instakill"));//"Instakill"
@@ -1493,6 +1504,7 @@ namespace BDArmory.UI
                 BDArmorySettings.DEFAULT_FFA_TARGETING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DEFAULT_FFA_TARGETING, Localizer.Format("#LOC_BDArmory_Settings_DefaultFFATargeting"));// Free-for-all combat style
                 BDArmorySettings.DEBUG_RAMMING_LOGGING = GUI.Toggle(SRightRect(line), BDArmorySettings.DEBUG_RAMMING_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_DebugRammingLogging"));// Disable Ramming
                 BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
+                BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SRightRect(line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
                 BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SRightRect(line), BDArmorySettings.BATTLEDAMAGE, "Battle Damage");
                 BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, Localizer.Format("Increase Gravity on Death"));//"Gravity hacks"
                 if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
@@ -1502,6 +1514,7 @@ namespace BDArmory.UI
                 BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"));//"Paintball Mode"
                 BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
                 BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
+                BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, Localizer.Format("Increase Gravity on Death"));//"Gravity hacks"
                 if (HighLogic.LoadedSceneIsEditor)
                 {
                     if (BDArmorySettings.SHOW_CATEGORIES != (BDArmorySettings.SHOW_CATEGORIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_CATEGORIES, Localizer.Format("#LOC_BDArmory_Settings_ShowEditorSubcategories"))))//"Show Editor Subcategories"
@@ -1516,7 +1529,10 @@ namespace BDArmory.UI
                 ++line;
             }
 
-            BDArmorySettings.SLIDER_SETTINGS_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.SLIDER_SETTINGS_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_SliderSettingsToggle"));//Show/hide slider settings.
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SLIDER_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SliderSettingsToggle")))//Show/hide slider settings.
+            {
+                BDArmorySettings.SLIDER_SETTINGS_TOGGLE = !BDArmorySettings.SLIDER_SETTINGS_TOGGLE;
+            }
             if (BDArmorySettings.SLIDER_SETTINGS_TOGGLE)
             {
                 float dmgMultiplier = BDArmorySettings.DMG_MULTIPLIER <= 100f ? BDArmorySettings.DMG_MULTIPLIER / 10f : BDArmorySettings.DMG_MULTIPLIER / 50f + 8f;
@@ -1543,7 +1559,10 @@ namespace BDArmory.UI
                 ++line;
             }
 
-            BDArmorySettings.SPAWN_SETTINGS_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.SPAWN_SETTINGS_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_SpawnSettingsToggle"));//Show/hide spawn settings.
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SPAWN_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnSettingsToggle")))//Show/hide spawn settings.
+            {
+                BDArmorySettings.SPAWN_SETTINGS_TOGGLE = !BDArmorySettings.SPAWN_SETTINGS_TOGGLE;
+            }
             if (BDArmorySettings.SPAWN_SETTINGS_TOGGLE)
             {
                 BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = GUI.Toggle(SLeftRect(++line), BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN, Localizer.Format("#LOC_BDArmory_Settings_SpawnDumpLogsEverySpawn")); //Dump logs every spawn.
@@ -1649,7 +1668,10 @@ namespace BDArmory.UI
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].currentValue, -90), 90);
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].currentValue, -180), 180);
                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].currentValue);
-                BDArmorySettings.SHOW_SPAWN_LOCATIONS = GUI.Toggle(SLineRect(++line), BDArmorySettings.SHOW_SPAWN_LOCATIONS, Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations"));//Show/hide spawn locations
+                if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_LOCATIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations")))//Show/hide spawn locations
+                {
+                    BDArmorySettings.SHOW_SPAWN_LOCATIONS = !BDArmorySettings.SHOW_SPAWN_LOCATIONS;
+                }
                 if (BDArmorySettings.SHOW_SPAWN_LOCATIONS)
                 {
                     line++;
@@ -1685,7 +1707,10 @@ namespace BDArmory.UI
                 ++line;
             }
 
-            BDArmorySettings.RADAR_SETTINGS_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.RADAR_SETTINGS_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle"));//Show/hide radar settings.
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle")))//Show/hide radar settings.
+            {
+                BDArmorySettings.RADAR_SETTINGS_TOGGLE = !BDArmorySettings.RADAR_SETTINGS_TOGGLE;
+            }
             if (BDArmorySettings.RADAR_SETTINGS_TOGGLE)
             {
                 GUI.Label(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RWRWindowScale") + ": " + (BDArmorySettings.RWR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel);//RWR Window Scale
@@ -1715,7 +1740,10 @@ namespace BDArmory.UI
                 ++line;
             }
 
-            BDArmorySettings.OTHER_SETTINGS_TOGGLE = GUI.Toggle(SLineRect(++line), BDArmorySettings.OTHER_SETTINGS_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_OtherSettingsToggle"));//Show/hide other settings.
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.OTHER_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_OtherSettingsToggle")))//Show/hide other settings.
+            {
+                BDArmorySettings.OTHER_SETTINGS_TOGGLE = !BDArmorySettings.OTHER_SETTINGS_TOGGLE;
+            }
             if (BDArmorySettings.OTHER_SETTINGS_TOGGLE)
             {
                 GUI.Label(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TriggerHold") + ": " + BDArmorySettings.TRIGGER_HOLD_TIME.ToString("0.00") + "s", leftLabel);//Trigger Hold
@@ -1833,7 +1861,10 @@ namespace BDArmory.UI
             line += 1.5f; // Bottom internal margin
             settingsHeight = (line * settingsLineHeight);
             WindowRectSettings.height = settingsHeight;
-            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
+            {
+                BDGUIUtils.RepositionWindow(ref WindowRectSettings);
+            }
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 

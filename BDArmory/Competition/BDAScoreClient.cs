@@ -16,7 +16,7 @@ namespace BDArmory.Competition
 
         private string baseUrl = "https://bdascores.herokuapp.com";
 
-        private string vesselPath = "";
+        public string vesselPath = "";
 
         private string competitionHash = "";
 
@@ -230,8 +230,15 @@ namespace BDArmory.Competition
             }
             foreach (VesselModel vesselModel in collection)
             {
-                Debug.Log(string.Format("[BDAScoreClient] Vessel {0}", vesselModel.ToString()));
-                vessels.Add(vesselModel.id, vesselModel);
+                if (!vessels.ContainsKey(vesselModel.id)) // Skip duplicates.
+                {
+                    Debug.Log(string.Format("[BDAScoreClient] Vessel {0}", vesselModel.ToString()));
+                    vessels.Add(vesselModel.id, vesselModel);
+                }
+                else
+                {
+                    Debug.Log("[BDAScoreClient]: Vessel " + vesselModel.ToString() + " is already in the vessel list, skipping.");
+                }
             }
             Debug.Log(string.Format("[BDAScoreClient] Vessels: {0}", vessels.Count));
         }

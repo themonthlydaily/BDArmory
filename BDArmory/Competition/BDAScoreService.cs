@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using BDArmory.Control;
 using BDArmory.Core;
+using BDArmory.UI;
 
 namespace BDArmory.Competition
 {
@@ -66,12 +67,16 @@ namespace BDArmory.Competition
             Completed,
             [Description("Cancelled")]
             Cancelled,
+            [Description("Waiting")]
+            Waiting,
+            [Description("Stopped")]
+            Stopped,
             [Description("Invalid")]
             Invalid
         }
 
         private bool pendingSync = false;
-        private StatusType status = StatusType.Offline;
+        public StatusType status = StatusType.Offline;
 
         private Coroutine syncCoroutine;
 
@@ -81,6 +86,8 @@ namespace BDArmory.Competition
 
 
         public BDAScoreClient client;
+
+        public string vesselPath;
 
         void Awake()
         {
@@ -98,15 +105,20 @@ namespace BDArmory.Competition
             {
                 Debug.Log("[BDAScoreService] Cancel due to disable");
                 pendingSync = false;
-                StopCoroutine(syncCoroutine);
+                if (syncCoroutine != null)
+                    StopCoroutine(syncCoroutine);
                 return;
             }
         }
 
         public void Configure(string vesselPath, string hash)
         {
+            this.vesselPath = vesselPath;
             this.client = new BDAScoreClient(this, vesselPath, hash);
+            if (syncCoroutine != null)
+                StopCoroutine(syncCoroutine);
             syncCoroutine = StartCoroutine(SynchronizeWithService(hash));
+            RemoteOrchestrationWindow.Instance.ShowWindow();
         }
 
         public void Cancel()
@@ -115,9 +127,16 @@ namespace BDArmory.Competition
                 StopCoroutine(syncCoroutine);
             BDACompetitionMode.Instance.StopCompetition();
             pendingSync = false;
-            status = StatusType.Cancelled;
-            Debug.Log("[BDAScoreService] Cancelling the heat");
-            // FIXME What else needs to be done to cancel a heat?
+            status = status == StatusType.Waiting ? StatusType.Stopped : StatusType.Cancelled;
+            if (status == StatusType.Cancelled)
+            {
+                Debug.Log("[BDAScoreService]: Cancelling the heat");
+                // FIXME What else needs to be done to cancel a heat?
+            }
+            else
+            {
+                Debug.Log("[BDAScoreService]: Stopping score service.");
+            }
         }
 
         public IEnumerator SynchronizeWithService(string hash)
@@ -144,7 +163,6 @@ namespace BDArmory.Competition
             {
                 status = StatusType.Invalid;
                 pendingSync = false;
-                syncCoroutine = null;
                 yield break;
             }
 
@@ -193,10 +211,16 @@ namespace BDArmory.Competition
             }
         }
 
+        public double retryFindStartedAt = -1;
         private IEnumerator RetryFind(string hash)
         {
+            retryFindStartedAt = Planetarium.GetUniversalTime();
             yield return new WaitForSeconds(30);
-            yield return FindNextHeat(hash);
+            if (status != StatusType.Cancelled)
+            {
+                status = StatusType.FindingNextHeat;
+                yield return FindNextHeat(hash);
+            }
         }
 
         private IEnumerator FetchAndExecuteHeat(string hash, HeatModel model)
@@ -224,7 +248,7 @@ namespace BDArmory.Competition
             // notify web service to stop heat
             yield return client.StopHeat(hash, model);
 
-            status = StatusType.FindingNextHeat;
+            status = StatusType.Waiting;
             yield return RetryFind(hash);
         }
 
@@ -260,6 +284,7 @@ namespace BDArmory.Competition
             status = StatusType.RunningHeat;
             // NOTE: runs in separate coroutine
             BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+            yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
 
             // start timer coroutine for the duration specified in settings UI
             var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
@@ -402,7 +427,10 @@ namespace BDArmory.Competition
 
         public void TrackDamage(string attacker, string target, double damage)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackDamage by {0} on {1} for {2}hp", target, attacker, damage));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackDamage by {0} on {1} for {2}hp", target, attacker, damage));
+            }
             double now = Planetarium.GetUniversalTime();
             activePlayers.Add(attacker);
             activePlayers.Add(target);
@@ -426,7 +454,10 @@ namespace BDArmory.Competition
 
         public void TrackHit(string attacker, string target, string weaponName, double hitDistance)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackHit by {0} on {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackHit by {0} on {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
+            }
             double now = Planetarium.GetUniversalTime();
             activePlayers.Add(attacker);
             activePlayers.Add(target);
@@ -523,7 +554,10 @@ namespace BDArmory.Competition
          */
         public void TrackDeath(string target)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackDeath for {0}", target));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackDeath for {0}", target));
+            }
             activePlayers.Add(target);
             IncrementDeath(target);
         }
@@ -532,12 +566,18 @@ namespace BDArmory.Competition
         {
             if (deaths.ContainsKey(target))
             {
-                Debug.Log(string.Format("[BDAScoreService] IncrementDeaths for {0}", target));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] IncrementDeaths for {0}", target));
+                }
                 ++deaths[target];
             }
             else
             {
-                Debug.Log(string.Format("[BDAScoreService] FirstDeath for {0}", target));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] FirstDeath for {0}", target));
+                }
                 deaths.Add(target, 1);
             }
         }
@@ -547,7 +587,10 @@ namespace BDArmory.Competition
          */
         public void TrackKill(string attacker, string target)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackKill {0} by {1}", target, attacker));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackKill {0} by {1}", target, attacker));
+            }
             activePlayers.Add(attacker);
             activePlayers.Add(target);
 
@@ -562,18 +605,27 @@ namespace BDArmory.Competition
             {
                 if (killsOnTarget[attacker].ContainsKey(target))
                 {
-                    Debug.Log(string.Format("[BDAScoreService] IncrementKills for {0} on {1}", attacker, target));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    {
+                        Debug.Log(string.Format("[BDAScoreService] IncrementKills for {0} on {1}", attacker, target));
+                    }
                     ++killsOnTarget[attacker][target];
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDAScoreService] Kill for {0} on {1}", attacker, target));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    {
+                        Debug.Log(string.Format("[BDAScoreService] Kill for {0} on {1}", attacker, target));
+                    }
                     killsOnTarget[attacker].Add(target, 1);
                 }
             }
             else
             {
-                Debug.Log(string.Format("[BDAScoreService] FirstKill for {0} on {1}", attacker, target));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] FirstKill for {0} on {1}", attacker, target));
+                }
                 var newKills = new Dictionary<string, int>();
                 newKills.Add(target, 1);
                 killsOnTarget.Add(attacker, newKills);

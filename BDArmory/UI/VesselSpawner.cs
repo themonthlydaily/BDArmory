@@ -50,7 +50,6 @@ namespace BDArmory.UI
         GameObject spawnLocationCamera;
         Transform originalCameraParentTransform;
         float originalCameraNearClipPlane;
-        Coroutine showSpawnPointCoroutine = null;
         public void ShowSpawnPoint(Vector2d geocoords, double altitude = 0, float distance = 100, bool spawning = false)
         {
             if (!spawning)
