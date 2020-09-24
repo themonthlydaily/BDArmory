@@ -30,6 +30,12 @@ namespace BDArmory.Competition
         public Dictionary<string, int> deaths = new Dictionary<string, int>();
         public Dictionary<string, string> longestHitWeapon = new Dictionary<string, string>();
         public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
+        public Dictionary<string, int> rammedPartsOut = new Dictionary<string, int>();
+        public Dictionary<string, int> rammedPartsIn = new Dictionary<string, int>();
+        public Dictionary<string, int> missilePartsOut = new Dictionary<string, int>();
+        public Dictionary<string, int> missilePartsIn = new Dictionary<string, int>();
+        public Dictionary<string, double> missileDamageOut = new Dictionary<string, double>();
+        public Dictionary<string, double> missileDamageIn = new Dictionary<string, double>();
 
         public enum StatusType
         {
@@ -359,6 +365,12 @@ namespace BDArmory.Competition
                 record.hits_in = ComputeTotalHitsIn(player.name);
                 record.dmg_out = ComputeTotalDamageOut(player.name);
                 record.dmg_in = ComputeTotalDamageIn(player.name);
+                record.rammed_parts_out = ComputeTotalRammedPartsOut(player.name);
+                record.rammed_parts_in = ComputeTotalRammedPartsIn(player.name);
+                record.missile_parts_out = ComputeTotalMissilePartsOut(player.name);
+                record.missile_parts_in = ComputeTotalMissilePartsIn(player.name);
+                record.missile_damage_out = ComputeTotalMissileDamageOut(player.name);
+                record.missile_damage_in = ComputeTotalMissileDamageIn(player.name);
                 record.kills = ComputeTotalKills(player.name);
                 record.deaths = ComputeTotalDeaths(player.name);
                 record.assists = ComputeTotalAssists(player.name);
@@ -413,6 +425,48 @@ namespace BDArmory.Competition
             return result;
         }
 
+        private int ComputeTotalRammedPartsOut(string playerName)
+        {
+            if (rammedPartsOut.ContainsKey(playerName))
+                return rammedPartsOut[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalRammedPartsIn(string playerName)
+        {
+            if (rammedPartsIn.ContainsKey(playerName))
+                return rammedPartsIn[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalMissilePartsOut(string playerName)
+        {
+            if (missilePartsOut.ContainsKey(playerName))
+                return missilePartsOut[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalMissilePartsIn(string playerName)
+        {
+            if (missilePartsIn.ContainsKey(playerName))
+                return missilePartsIn[playerName];
+            return 0;
+        }
+
+        private double ComputeTotalMissileDamageOut(string playerName)
+        {
+            if (missileDamageOut.ContainsKey(playerName))
+                return missileDamageOut[playerName];
+            return 0;
+        }
+
+        private double ComputeTotalMissileDamageIn(string playerName)
+        {
+            if (missileDamageIn.ContainsKey(playerName))
+                return missileDamageIn[playerName];
+            return 0;
+        }
+
         private int ComputeTotalKills(string playerName)
         {
             int result = 0;
@@ -449,7 +503,6 @@ namespace BDArmory.Competition
             {
                 Debug.Log(string.Format("[BDAScoreService] TrackDamage by {0} on {1} for {2}hp", target, attacker, damage));
             }
-            double now = Planetarium.GetUniversalTime();
             activePlayers.Add(attacker);
             activePlayers.Add(target);
             if (damageOut.ContainsKey(attacker))
@@ -467,6 +520,92 @@ namespace BDArmory.Competition
             else
             {
                 damageIn.Add(target, damage);
+            }
+        }
+
+        public void TrackMissileDamage(string attacker, string target, double damage)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackMissileDamage by {0} on {1} for {2}hp", target, attacker, damage));
+            }
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (missileDamageOut.ContainsKey(attacker))
+            {
+                missileDamageOut[attacker] += damage;
+            }
+            else
+            {
+                missileDamageOut.Add(attacker, damage);
+            }
+            if (missileDamageIn.ContainsKey(target))
+            {
+                missileDamageIn[target] += damage;
+            }
+            else
+            {
+                missileDamageIn.Add(target, damage);
+            }
+        }
+
+        public void TrackMissileParts(string attacker, string target, int count)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log(string.Format("[BDAScoreService] TrackMissileParts by {0} on {1} for {2}parts", target, attacker, count));
+
+            double now = Planetarium.GetUniversalTime();
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (missilePartsOut.ContainsKey(attacker))
+                missilePartsOut[attacker] += count;
+            else
+                missilePartsOut.Add(attacker, count);
+            if (missilePartsIn.ContainsKey(target))
+                missilePartsIn[target] += count;
+            else
+                missilePartsIn.Add(target, count);
+
+            if (timeOfLastHitOnTarget.ContainsKey(attacker))
+            {
+                if (timeOfLastHitOnTarget[attacker].ContainsKey(target))
+                    timeOfLastHitOnTarget[attacker][target] = now;
+                else
+                    timeOfLastHitOnTarget[attacker].Add(target, now);
+            }
+            else
+            {
+                timeOfLastHitOnTarget.Add(attacker, new Dictionary<string, double> { { target, now } });
+            }
+        }
+
+        public void TrackRammedParts(string attacker, string target, int count)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log(string.Format("[BDAScoreService] TrackRammedParts by {0} on {1} for {2}parts", target, attacker, count));
+
+            double now = Planetarium.GetUniversalTime();
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (rammedPartsOut.ContainsKey(attacker))
+                rammedPartsOut[attacker] += count;
+            else
+                rammedPartsOut.Add(attacker, count);
+            if (rammedPartsIn.ContainsKey(target))
+                rammedPartsIn[target] += count;
+            else
+                rammedPartsIn.Add(target, count);
+
+            if (timeOfLastHitOnTarget.ContainsKey(attacker))
+            {
+                if (timeOfLastHitOnTarget[attacker].ContainsKey(target))
+                    timeOfLastHitOnTarget[attacker][target] = now;
+                else
+                    timeOfLastHitOnTarget[attacker].Add(target, now);
+            }
+            else
+            {
+                timeOfLastHitOnTarget.Add(attacker, new Dictionary<string, double> { { target, now } });
             }
         }
 

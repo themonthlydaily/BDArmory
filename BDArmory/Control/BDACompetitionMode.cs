@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using BDArmory.Core;
 using BDArmory.Misc;
 using BDArmory.Modules;
+using BDArmory.Competition;
 using BDArmory.UI;
 using UnityEngine;
 
@@ -2430,6 +2431,9 @@ namespace BDArmory.Control
                 tData.rammingPartLossCounts[rammingVesselName] += partsLost;
             else
                 tData.rammingPartLossCounts.Add(rammingVesselName, partsLost);
+
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                BDAScoreService.Instance.TrackRammedParts(rammingVesselName, rammedVesselName, partsLost);
         }
 
         Dictionary<string, int> partsCheck;
