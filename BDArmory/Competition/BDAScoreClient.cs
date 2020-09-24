@@ -345,6 +345,7 @@ namespace BDArmory.Competition
             pendingRequest = true;
 
             this.activeHeat = heat;
+            UI.RemoteOrchestrationWindow.Instance.UpdateClientStatus();
 
             string uri = string.Format("{0}/competitions/{1}/heats/{2}/start", baseUrl, hash, heat.id);
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))

@@ -3268,7 +3268,7 @@ namespace BDArmory.Modules
                 TargetLabel = "";
                 return;
             }
-            
+
             // Get UI fields
             var TargetBiasFields = Fields["targetBias"];
             var TargetRangeFields = Fields["targetWeightRange"];

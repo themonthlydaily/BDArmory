@@ -43,11 +43,7 @@ namespace BDArmory.UI
         private void Update()
         {
             if (!ready) return;
-
-            competition = client.competition == null ? "-" : client.competition.name;
             status = client.competition == null ? "Offline" : service.Status();
-            stage = client.activeHeat == null ? "-" : client.activeHeat.stage.ToString();
-            heat = client.activeHeat == null ? "-" : client.activeHeat.order.ToString();
         }
 
         private void OnGUI()
@@ -77,6 +73,14 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectRemoteOrchestration.height = windowHeight;
         }
 
+        public void UpdateClientStatus()
+        {
+            client = service.client;
+            competition = client.competition == null ? "-" : client.competition.name;
+            stage = client.activeHeat == null ? "-" : client.activeHeat.stage.ToString();
+            heat = client.activeHeat == null ? "-" : client.activeHeat.order.ToString();
+
+        }
 
         public void ShowWindow()
         {
@@ -92,7 +96,7 @@ namespace BDArmory.UI
                 yield return null;
             }
             service = BDAScoreService.Instance;
-            client = BDAScoreService.Instance.client;
+            UpdateClientStatus();
             ready = true;
             _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
         }
