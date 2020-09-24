@@ -385,7 +385,7 @@ namespace BDArmory.Control
             // GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
-            gracePeriod = competitionStartTime + 60;
+            gracePeriod = competitionStartTime + (BDArmorySettings.GRAVITY_HACKS ? 10 : 60);
             decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
             lastTagUpdateTime = competitionStartTime;
             Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Competition Started");

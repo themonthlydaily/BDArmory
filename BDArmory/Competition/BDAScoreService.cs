@@ -222,7 +222,7 @@ namespace BDArmory.Competition
         private IEnumerator RetryFind(string hash)
         {
             retryFindStartedAt = Planetarium.GetUniversalTime();
-            yield return new WaitForSeconds(30);
+            yield return new WaitWhile(() => Planetarium.GetUniversalTime() - retryFindStartedAt < 30);
             if (status != StatusType.Cancelled)
             {
                 status = StatusType.FindingNextHeat;
