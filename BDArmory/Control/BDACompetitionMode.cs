@@ -177,6 +177,7 @@ namespace BDArmory.Control
         // time competition was started
         public int CompetitionID;
         public static int DeathCount = 0;
+        public static float gravityMultiplier = 1f;
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
@@ -341,6 +342,13 @@ namespace BDArmory.Control
                 ResetCompetitionScores();
                 Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Starting Competition");
                 startCompetitionNow = false;
+                if (BDArmorySettings.GRAVITY_HACKS)
+                {
+                    lastGravityMultiplier = 1f;
+                    gravityMultiplier = 1f;
+                    PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
+                    VehiclePhysics.Gravity.Refresh();
+                }
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
         }
@@ -1310,6 +1318,7 @@ namespace BDArmory.Control
         }
 
         bool competitionShouldBeRunning = false;
+        float lastGravityMultiplier;
         // the competition update system
         // cleans up dead vessels, tries to track kills (badly)
         // all of these are based on the vessel name which is probably sub optimal
@@ -1331,7 +1340,7 @@ namespace BDArmory.Control
             //         Debug.Log("DEBUG Upcoming potential collision between " + upcomingCollision.Key.Item1 + " and " + upcomingCollision.Key.Item2 + " at distance " + Mathf.Sqrt(upcomingCollision.Value.Item1) + "m in " + upcomingCollision.Value.Item2 + "s.");
             if (Planetarium.GetUniversalTime() < nextUpdateTick)
                 return;
-            double updateTickLength = (BDArmorySettings.TAG_MODE) ? 0.1 : 2;
+            double updateTickLength = BDArmorySettings.TAG_MODE ? 0.1 : BDArmorySettings.GRAVITY_HACKS ? 0.5 : 2;
             HashSet<Vessel> vesselsToKill = new HashSet<Vessel>();
             nextUpdateTick = nextUpdateTick + updateTickLength;
             int numberOfCompetitiveVessels = 0;
@@ -1535,7 +1544,8 @@ namespace BDArmory.Control
                             vData.AverageSpeed += v.Current.srfSpeed;
                             vData.AverageAltitude += v.Current.altitude;
                             vData.averageCount++;
-                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > 15))
+                            double landedKillTime = (BDArmorySettings.GRAVITY_HACKS) ? 1d : 15d;
+                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (Planetarium.GetUniversalTime() - vData.landerKillTimer > landedKillTime))
                             {
                                 vesselsToKill.Add(mf.vessel);
                                 competitionStatus.Add(vesselName + " landed too long.");
@@ -1627,14 +1637,6 @@ namespace BDArmory.Control
                         var whoKilledMe = "";
 
                         DeathCount++;
-                        //Reset gravity
-                        if (BDArmorySettings.GRAVITY_HACKS)
-                        {
-                            int gravMult = 1 + (DeathCount % 10);
-                            PhysicsGlobals.GraviticForceMultiplier = (double)gravMult;
-                            VehiclePhysics.Gravity.Refresh();
-                            competitionStatus.Add("Competition: Adjusting gravity to " + gravMult + "G!");
-                        }
 
                         // Update tag mode
                         if (BDArmorySettings.TAG_MODE)
@@ -1761,6 +1763,22 @@ namespace BDArmory.Control
             else
             {
                 dumpedResults = 5;
+            }
+
+            //Reset gravity
+            if (BDArmorySettings.GRAVITY_HACKS)
+            {
+                int maxVesselsActive = (VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0) ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS : Scores.Count;
+                double time = Planetarium.GetUniversalTime() - competitionStartTime;
+                gravityMultiplier = 1f + 7f * (float)(DeathCount % maxVesselsActive) / (float)(maxVesselsActive - 1); // From 1G to 8G.
+                gravityMultiplier += VesselSpawner.Instance.vesselsSpawningContinuously ? Mathf.Sqrt(5f - 5f * Mathf.Cos((float)time / 600f * Mathf.PI)) : Mathf.Sqrt((float)time / 60f); // Plus up to 3.16G.
+                PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
+                VehiclePhysics.Gravity.Refresh();
+                if ((int)Mathf.Round(10 * gravityMultiplier - 10 * lastGravityMultiplier) != 0) // Only write a message when it shows something different.
+                {
+                    lastGravityMultiplier = gravityMultiplier;
+                    competitionStatus.Add("Competition: Adjusting gravity to " + gravityMultiplier.ToString("0.0") + "G!");
+                }
             }
 
             // use the exploder system to remove vessels that should be nuked
