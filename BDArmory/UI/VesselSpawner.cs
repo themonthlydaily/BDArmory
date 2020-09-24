@@ -125,6 +125,62 @@ namespace BDArmory.UI
             Debug.Log("[VesselSpawner]: Triggering vessel spawning at " + BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.ToString("G6") + ", with altitude " + altitude + "m.");
         }
 
+        private bool vesselsSpawningOnceContinuously = false;
+        public Coroutine spawnAllVesselsOnceContinuouslyCoroutine = null;
+        public IEnumerator SpawnAllVesselsOnceContinuously(Vector2d geoCoords, double altitude = 0, float spawnDistanceFactor = 10f, float easeInSpeed = 1f, bool killEverythingFirst = true, string spawnFolder = null)
+        {
+            vesselsSpawningOnceContinuously = true;
+            SpawnAllVesselsOnce(geoCoords, altitude, spawnDistanceFactor, easeInSpeed, killEverythingFirst, spawnFolder);
+            while (vesselsSpawning)
+                yield return new WaitForFixedUpdate();
+            if (!vesselSpawnSuccess)
+            {
+                Debug.Log("[VesselSpawner] Vessel spawning failed."); // FIXME Now what?
+                yield break;
+            }
+            yield return new WaitForFixedUpdate();
+
+            // NOTE: runs in separate coroutine
+            BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+            yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
+
+            // start timer coroutine for the duration specified in settings UI
+            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
+            Debug.Log("[VesselSpawner] Starting a " + duration.ToString("F0") + "s duration competition.");
+            while (BDACompetitionMode.Instance.competitionStarting)
+                yield return new WaitForFixedUpdate(); // Wait for the competition to actually start.
+            if (!BDACompetitionMode.Instance.competitionIsActive)
+            {
+                var message = "Competition failed to start.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[VesselSpawner]: " + message);
+                yield break;
+            }
+            while (BDACompetitionMode.Instance.competitionIsActive && Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime < duration) // Allow exiting if the competition finishes early.
+                yield return new WaitForSeconds(1);
+
+            // stop competition
+            BDACompetitionMode.Instance.StopCompetition();
+            BDACompetitionMode.Instance.LogResults(); // Make sure the results are dumped to the log.
+
+            // Wait 10s for any user action
+            double startTime = Planetarium.GetUniversalTime();
+            if ((vesselsSpawningOnceContinuously) && (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING))
+            {
+                while ((Planetarium.GetUniversalTime() - startTime) < 10d)
+                {
+                    BDACompetitionMode.Instance.competitionStatus.Set("Waiting " + (10d - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
+                    yield return new WaitForSeconds(1);
+                }
+            }
+
+            // Recursively continue spawning
+            if ((vesselsSpawningOnceContinuously) && (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING))
+                spawnAllVesselsOnceContinuouslyCoroutine = StartCoroutine(SpawnAllVesselsOnceContinuously(geoCoords, altitude, spawnDistanceFactor, easeInSpeed, killEverythingFirst, spawnFolder));
+            else
+                CancelVesselSpawn();
+        }
+
         // Cancel both spawning modes.
         public void CancelVesselSpawn()
         {
@@ -150,6 +206,14 @@ namespace BDArmory.UI
                 Debug.Log("[VesselSpawner]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 BDACompetitionMode.Instance.ResetCompetitionScores();
+            }
+            if (vesselsSpawningOnceContinuously)
+            {
+                StopCoroutine(spawnAllVesselsOnceContinuouslyCoroutine);
+                vesselsSpawningOnceContinuously = false;
+                message = "Continuous single spawning cancelled.";
+                Debug.Log("[VesselSpawner]: " + message);
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
             }
             if (spawnVesselsContinuouslyCoroutine != null)
             {
