@@ -1738,6 +1738,7 @@ namespace BDArmory.Control
 
             if ((Planetarium.GetUniversalTime() > gracePeriod) && numberOfCompetitiveVessels < 2 && !VesselSpawner.Instance.vesselsSpawningContinuously)
             {
+                
                 if (dumpedResults == 1)
                 {
                     competitionStatus.Add("All Pilots are Dead");
@@ -1756,6 +1757,30 @@ namespace BDArmory.Control
                     LogResults("automatically.");
                     dumpedResults--;
                     //competitionStartTime = -1;
+
+                    if ((BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING) && (VesselSpawner.Instance.spawnedVesselCount > 0) && (!VesselSpawner.Instance.vesselsSpawningContinuously))
+                    {
+                        competitionStatus.Set("Waiting 5s, then respawning pilots");
+                        double startTime = Planetarium.GetUniversalTime();
+                        while (Planetarium.GetUniversalTime() - startTime < 5d) // Wait for 5s to allow any user scripts to do their thing
+                        {
+                            competitionStatus.Set("Waiting " + (5d - (Planetarium.GetUniversalTime() - startTime)).ToString("0.0") + "s, then respawning pilots");
+                            yield return new WaitForFixedUpdate();
+                        }
+                             
+                        VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true); // Spawn vessels.
+
+                        while (VesselSpawner.Instance.vesselsSpawning)
+                            yield return new WaitForFixedUpdate();
+                        if (!VesselSpawner.Instance.vesselSpawnSuccess)
+                        {
+                            Debug.Log("[BDAScoreService] Vessel spawning failed."); // FIXME Now what?
+                            yield break;
+                        }
+                        yield return new WaitForFixedUpdate();
+
+                        StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+                    }
                 }
                 competitionIsActive = false;
                 competitionShouldBeRunning = false;
