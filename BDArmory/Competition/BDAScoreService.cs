@@ -256,8 +256,10 @@ namespace BDArmory.Competition
                         case UI.VesselSpawner.SpawnFailureReason.None: // Successful spawning, but competition failed to start for some reason.
                         case UI.VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
                         case UI.VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + UI.VesselSpawner.Instance.spawnFailureReason + ", trying again.");
                             break;
                         default: // Spawning is unrecoverable.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + UI.VesselSpawner.Instance.spawnFailureReason + ", aborting.");
                             attempts = 3;
                             break;
                     }
