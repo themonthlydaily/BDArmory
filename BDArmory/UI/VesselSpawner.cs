@@ -146,7 +146,6 @@ namespace BDArmory.UI
                     yield return new WaitForFixedUpdate();
                 if (!vesselSpawnSuccess)
                 {
-                    Debug.Log("[VesselSpawner] Vessel spawning failed."); // FIXME Now what?
                     vesselsSpawningOnceContinuously = false;
                     yield break;
                 }
@@ -158,7 +157,9 @@ namespace BDArmory.UI
 
                 // start timer coroutine for the duration specified in settings UI
                 var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
-                Debug.Log("[VesselSpawner] Starting a " + duration.ToString("F0") + "s duration competition.");
+                message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
+                Debug.Log("[VesselSpawner]: " + message);
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
                 while (BDACompetitionMode.Instance.competitionStarting)
                     yield return new WaitForFixedUpdate(); // Wait for the competition to actually start.
                 if (!BDACompetitionMode.Instance.competitionIsActive)
@@ -169,12 +170,8 @@ namespace BDArmory.UI
                     vesselsSpawningOnceContinuously = false;
                     yield break;
                 }
-                while (BDACompetitionMode.Instance.competitionIsActive && Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime < duration) // Allow exiting if the competition finishes early.
+                while (BDACompetitionMode.Instance.competitionIsActive) // Wait for the competition to finish (limited duration and log dumping is handled directly by the competition now).
                     yield return new WaitForSeconds(1);
-
-                // stop competition
-                BDACompetitionMode.Instance.StopCompetition();
-                BDACompetitionMode.Instance.LogResults(); // Make sure the results are dumped to the log.
 
                 // Wait 10s for any user action
                 double startTime = Planetarium.GetUniversalTime();
@@ -182,7 +179,7 @@ namespace BDArmory.UI
                 {
                     while ((Planetarium.GetUniversalTime() - startTime) < 10d)
                     {
-                        BDACompetitionMode.Instance.competitionStatus.Set("Waiting " + (10d - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
+                        BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (10d - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
                         yield return new WaitForSeconds(1);
                     }
                 }
@@ -268,7 +265,7 @@ namespace BDArmory.UI
             if (BDACompetitionMode.Instance) // Reset competition stuff.
             {
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                BDACompetitionMode.Instance.LogResults("due to spawning.", "auto-dump-from-spawning"); // Log results first.
+                BDACompetitionMode.Instance.LogResults("due to spawning", "auto-dump-from-spawning"); // Log results first.
                 BDACompetitionMode.Instance.StopCompetition();
                 BDACompetitionMode.Instance.ResetCompetitionScores(); // Reset competition scores.
             }
@@ -309,7 +306,7 @@ namespace BDArmory.UI
                 if (terrainAltitude > 0) // Not over the ocean or on a surfaceless body.
                 {
                     // Wait for the terrain to load in before continuing.
-                    var testPosition = 1000f * surfaceNormal;
+                    var testPosition = spawnPoint + 1000f * surfaceNormal;
                     var terrainDistance = 1000f + (float)altitude;
                     var lastTerrainDistance = terrainDistance;
                     ray = new Ray(testPosition, -surfaceNormal);
@@ -366,7 +363,7 @@ namespace BDArmory.UI
                 var heading = 360f * spawnedVesselCount / crafts.Count;
                 var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, localSurfaceNormal) * refDirection, localSurfaceNormal).normalized;
                 var spawnDistance = crafts.Count > 1 ? (spawnDistanceFactor + spawnDistanceFactor * crafts.Count) : 0f; // If it's a single craft, spawn it at the spawn point.
-                craftSpawnPosition = 1000f * localSurfaceNormal + spawnDistance * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
+                craftSpawnPosition = spawnPoint + 1000f * localSurfaceNormal + spawnDistance * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
                 FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
                 Vessel vessel = null;
                 try
@@ -580,16 +577,17 @@ namespace BDArmory.UI
                                 foreach (var engine in vessel.FindPartModulesImplementing<ModuleEngines>())
                                     engine.Activate();
                             }
-                            vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
                         }
 
                         vesselSpawnSuccess = true;
                     }
                 }
+                foreach (var vessel in spawnedVessels.Select(v => v.Value.Item1))
+                    vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
             }
             if (!vesselSpawnSuccess)
             {
-                message = "Vessel spawning FAILED!";
+                message = "Vessel spawning FAILED! Reason: " + spawnFailureReason;
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
             }
             else
@@ -600,7 +598,7 @@ namespace BDArmory.UI
             }
             #endregion
 
-            Debug.Log("[VesselSpawner]: Vessel spawning " + (vesselSpawnSuccess ? "SUCCEEDED!" : "FAILED!"));
+            Debug.Log("[VesselSpawner]: Vessel spawning " + (vesselSpawnSuccess ? "SUCCEEDED!" : "FAILED! " + spawnFailureReason));
             vesselsSpawning = false;
         }
 
@@ -779,7 +777,7 @@ namespace BDArmory.UI
             if (BDACompetitionMode.Instance) // Reset competition stuff.
             {
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                BDACompetitionMode.Instance.LogResults("due to continuous spawning.", "auto-dump-from-spawning"); // Log results first.
+                BDACompetitionMode.Instance.LogResults("due to continuous spawning", "auto-dump-from-spawning"); // Log results first.
                 BDACompetitionMode.Instance.StopCompetition();
                 BDACompetitionMode.Instance.ResetCompetitionScores(); // Reset competition scores.
             }

@@ -1739,7 +1739,7 @@ namespace BDArmory.Control
 
             if ((Planetarium.GetUniversalTime() > gracePeriod) && numberOfCompetitiveVessels < 2 && !VesselSpawner.Instance.vesselsSpawningContinuously)
             {
-                
+
                 if (dumpedResults == 1)
                 {
                     competitionStatus.Add("All Pilots are Dead");
@@ -1755,12 +1755,10 @@ namespace BDArmory.Control
                 else if (dumpedResults == 0)
                 {
                     Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]:No viable competitors, Automatically dumping scores");
-                    LogResults("automatically.");
+                    LogResults("automatically");
+                    StopCompetition();
                     dumpedResults--;
-                    //competitionStartTime = -1;
                 }
-                competitionIsActive = false;
-                competitionShouldBeRunning = false;
             }
             else
             {
@@ -1806,6 +1804,12 @@ namespace BDArmory.Control
                 FindVictim();
             // Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
             if (BDArmorySettings.TAG_MODE) lastTagUpdateTime = Planetarium.GetUniversalTime();
+
+            if (!VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.COMPETITION_DURATION > 0 && Planetarium.GetUniversalTime() - competitionStartTime >= BDArmorySettings.COMPETITION_DURATION * 60d)
+            {
+                LogResults("due to out-of-time");
+                StopCompetition();
+            }
         }
 
         // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>[-tag].log
