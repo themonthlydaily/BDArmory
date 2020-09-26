@@ -2290,52 +2290,41 @@ namespace BDArmory.Modules
 
         public override string GetInfo() // FIXME Something in here sometimes gives a NRE when starting up KSP.
         {
-            try
-            {
-                BulletInfo binfo = BulletInfo.bullets[bulletType];
-                StringBuilder output = new StringBuilder();
-                output.Append(Environment.NewLine);
-                output.AppendLine($"Weapon Type: {weaponType}");
+            BulletInfo binfo = BulletInfo.bullets[bulletType];
+            StringBuilder output = new StringBuilder();
+            output.Append(Environment.NewLine);
+            output.AppendLine($"Weapon Type: {weaponType}");
 
-                if (weaponType == "laser")
+            if (weaponType == "laser")
+            {
+                output.AppendLine($"Laser damage: {laserDamage}");
+            }
+            else
+            {
+                output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
+                output.AppendLine($"Ammunition: {ammoName}");
+                output.AppendLine($"Bullet type: {bulletType}");
+                output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
+                output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
+                output.AppendLine($"Max Range: {maxEffectiveDistance} m");
+                if (weaponType == "cannon" || weaponType == "ballistic")
                 {
-                    output.AppendLine($"Laser damage: {laserDamage}");
-                }
-                else
-                {
-                    output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
-                    output.AppendLine($"Ammunition: {ammoName}");
-                    output.AppendLine($"Bullet type: {bulletType}");
-                    output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
-                    output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
-                    output.AppendLine($"Max Range: {maxEffectiveDistance} m");
-                    if (weaponType == "cannon" || weaponType == "ballistic")
+                    output.AppendLine($"Explosive: {binfo.explosive}");
+                    if (binfo.explosive)
                     {
-                        output.AppendLine($"Explosive: {binfo.explosive}");
-                        if (binfo.explosive)
+                        output.AppendLine($"Blast:");
+                        output.AppendLine($"- tnt mass:  {Math.Round((binfo.tntMass > 0 ? binfo.tntMass : binfo.blastPower), 2)} kg");
+                        output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
+                        output.AppendLine($"Air detonation: {airDetonation}");
+                        if (airDetonation)
                         {
-                            output.AppendLine($"Blast:");
-                            output.AppendLine($"- tnt mass:  {Math.Round((binfo.tntMass > 0 ? binfo.tntMass : binfo.blastPower), 2)} kg");
-                            output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
-                            output.AppendLine($"Air detonation: {airDetonation}");
-                            if (airDetonation)
-                            {
-                                output.AppendLine($"- auto timing: {airDetonationTiming}");
-                                output.AppendLine($"- max range: {maxAirDetonationRange} m");
-                            }
+                            output.AppendLine($"- auto timing: {airDetonationTiming}");
+                            output.AppendLine($"- max range: {maxAirDetonationRange} m");
                         }
                     }
                 }
-                return output.ToString();
             }
-            catch (NullReferenceException e)
-            {
-                Debug.LogError("DEBUG Something in GetInfo threw an exception! " + e.Message);
-                Debug.Log("DEBUG bulletType: " + bulletType);
-                Debug.Log("DEBUG weaponType: " + weaponType);
-                Debug.Log("DEBUG binfo: " + BulletInfo.bullets[bulletType]);
-                throw;
-            }
+            return output.ToString();
         }
 
         #endregion RMB Info
