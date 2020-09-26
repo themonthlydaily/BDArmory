@@ -1089,6 +1089,30 @@ namespace BDArmory.UI
         }
         #endregion
 
+        public void Round3Spawn()
+        {
+            vesselsSpawning = true;
+            vesselSpawnSuccess = false;
+            spawnFailureReason = SpawnFailureReason.None;
+            if (round3SpawnCoroutine != null)
+                StopCoroutine(round3SpawnCoroutine);
+            RevertSpawnLocationCamera(true);
+            round3SpawnCoroutine = StartCoroutine(Round3SpawnCoroutine());
+            Debug.Log("DEBUG Spawning 'Round 3' configuration.");
+        }
+        private Coroutine round3SpawnCoroutine;
+        private IEnumerator Round3SpawnCoroutine()
+        {
+            yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, null);
+            int playersCount = spawnedVesselCount;
+            if (vesselSpawnSuccess)
+            {
+                LoadedVesselSwitcher.Instance.MassTeamSwitch(false); // Reset everyone to team 'A' so that the order doesn't get messed up.
+                yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE + 1000, 300, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, "piñatas");
+            }
+            LoadedVesselSwitcher.Instance.MassTeamSwitch(false, new List<int> { playersCount, spawnedVesselCount }); // Assign teams.
+        }
+
         // Stagger the spawn slots to avoid consecutive craft being launched too close together.
         private static List<int> OptimiseSpawnSlots(int slotCount)
         {
