@@ -38,13 +38,11 @@ namespace BDArmory.UI
         private Vessel lastActiveVessel = null;
         private float updateTimer = 0;
 
-
         //gui params
         private float _windowHeight; //auto adjusting
 
         public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
         private Dictionary<string, float> cameraScores = new Dictionary<string, float>();
-
 
         // booleans to track state of buttons affecting everyone
         private bool _freeForAll = false;
@@ -757,8 +755,6 @@ namespace BDArmory.UI
             return status;
         }
 
-
-
         private void SwitchToNextVessel()
         {
             if (weaponManagers.Count == 0) return;
@@ -1024,8 +1020,6 @@ namespace BDArmory.UI
                 }
             }
         }
-
-
 
         // Extracted method, so we dont have to call these two lines everywhere
         public void ForceSwitchVessel(Vessel v)
