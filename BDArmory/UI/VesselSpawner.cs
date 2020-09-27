@@ -1103,13 +1103,13 @@ namespace BDArmory.UI
         private Coroutine round3SpawnCoroutine;
         private IEnumerator Round3SpawnCoroutine()
         {
-            yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, null);
+            yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, null); // Spawn at ground level.
             int playersCount = spawnedVesselCount;
             if (vesselSpawnSuccess)
             {
                 vesselSpawnSuccess = false;
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(false); // Reset everyone to team 'A' so that the order doesn't get messed up.
-                yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE + 1000, 300, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, "piñatas");
+                yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, "piñatas"); // Spawn piñatas at 5k up.
             }
             LoadedVesselSwitcher.Instance.MassTeamSwitch(false, new List<int> { playersCount, spawnedVesselCount }); // Assign teams.
             if (vesselSpawnSuccess)
