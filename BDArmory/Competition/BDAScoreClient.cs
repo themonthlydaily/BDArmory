@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
+using BDArmory.Core;
 
 namespace BDArmory.Competition
 {
@@ -251,7 +252,7 @@ namespace BDArmory.Competition
             string requestBody = string.Format("{{\"records\":[{0}]}}", recordsJsonStr);
 
             byte[] rawBody = Encoding.UTF8.GetBytes(requestBody);
-            string uri = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json", baseUrl, hash, heat);
+            string uri = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json?client_secret={3}", baseUrl, hash, heat, BDArmorySettings.REMOTE_CLIENT_SECRET);
             Debug.Log(string.Format("[BDAScoreClient] POST {0}:\n{1}", uri, requestBody));
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))
             {
