@@ -790,7 +790,6 @@ namespace BDArmory.UI
          */
         public void MassTeamSwitch(bool separateTeams = false, List<int> groups = null, Dictionary<string, char> specific = null)
         {
-            Debug.Log("DEBUG team switch with groups " + groups);
             char T = 'A';
             if (specific != null)
             {
@@ -814,7 +813,6 @@ namespace BDArmory.UI
                         ++groupIndex;
                         count = 0;
                         ++T;
-                        Debug.Log("DEBUG changing team to " + T.ToString());
                     }
                     weaponManager.SetTeam(BDTeam.Get(T.ToString())); // Otherwise, assign them to team T.
                     ++count;
