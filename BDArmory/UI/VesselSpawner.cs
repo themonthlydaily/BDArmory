@@ -1098,7 +1098,7 @@ namespace BDArmory.UI
                 StopCoroutine(round3SpawnCoroutine);
             RevertSpawnLocationCamera(true);
             round3SpawnCoroutine = StartCoroutine(Round3SpawnCoroutine());
-            Debug.Log("DEBUG Spawning 'Round 3' configuration.");
+            Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
         }
         private Coroutine round3SpawnCoroutine;
         private IEnumerator Round3SpawnCoroutine()
@@ -1114,7 +1114,10 @@ namespace BDArmory.UI
             LoadedVesselSwitcher.Instance.MassTeamSwitch(false, new List<int> { playersCount, spawnedVesselCount }); // Assign teams.
             if (vesselSpawnSuccess)
             {
+                yield return new WaitForFixedUpdate();
                 BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+                yield return new WaitForFixedUpdate();
+                BDACompetitionMode.Instance.StartCompetitionNow();
             }
         }
 
