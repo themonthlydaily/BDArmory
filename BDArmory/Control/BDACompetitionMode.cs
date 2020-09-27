@@ -272,16 +272,14 @@ namespace BDArmory.Control
                 GUI.Label(clockShadowRect, pTime, clockShadowStyle);
                 GUI.Label(clockRect, pTime, clockStyle);
             }
-            if (KSP.UI.Dialogs.FlightResultsDialog.isDisplaying)
+            if (KSP.UI.Dialogs.FlightResultsDialog.isDisplaying && KSP.UI.Dialogs.FlightResultsDialog.showExitControls) // Prevent the Flight Results window from interrupting things when a certain vessel dies.
             {
-                Debug.Log("DEBUG Flight dialog is showing. allowClosing: " + KSP.UI.Dialogs.FlightResultsDialog.allowClosingDialog + ", showExit: " + KSP.UI.Dialogs.FlightResultsDialog.showExitControls);
                 KSP.UI.Dialogs.FlightResultsDialog.Close();
             }
         }
 
         void OnDestroy()
         {
-            LogResults();
             StopCompetition();
             StopAllCoroutines();
         }
@@ -336,6 +334,7 @@ namespace BDArmory.Control
 
         public void StopCompetition()
         {
+            LogResults();
             if (competitionRoutine != null)
             {
                 StopCoroutine(competitionRoutine);
