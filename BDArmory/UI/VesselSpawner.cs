@@ -1107,10 +1107,15 @@ namespace BDArmory.UI
             int playersCount = spawnedVesselCount;
             if (vesselSpawnSuccess)
             {
+                vesselSpawnSuccess = false;
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(false); // Reset everyone to team 'A' so that the order doesn't get messed up.
                 yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE + 1000, 300, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, "piñatas");
             }
             LoadedVesselSwitcher.Instance.MassTeamSwitch(false, new List<int> { playersCount, spawnedVesselCount }); // Assign teams.
+            if (vesselSpawnSuccess)
+            {
+                BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+            }
         }
 
         // Stagger the spawn slots to avoid consecutive craft being launched too close together.
