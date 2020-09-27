@@ -253,7 +253,8 @@ namespace BDArmory.Competition
 
             byte[] rawBody = Encoding.UTF8.GetBytes(requestBody);
             string uri = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json?client_secret={3}", baseUrl, hash, heat, BDArmorySettings.REMOTE_CLIENT_SECRET);
-            Debug.Log(string.Format("[BDAScoreClient] POST {0}:\n{1}", uri, requestBody));
+            string uriWithoutSecret = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json?client_secret=****", baseUrl, hash, heat);
+            Debug.Log(string.Format("[BDAScoreClient] POST {0}:\n{1}", uriWithoutSecret, requestBody));
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))
             {
                 webRequest.SetRequestHeader("Content-Type", "application/json");
