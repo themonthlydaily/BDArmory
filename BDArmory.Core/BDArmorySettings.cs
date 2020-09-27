@@ -81,6 +81,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;            // Controls whether ramming logging debug information is printed to the Debug.Log
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;           // Show/hide the remote orchestration toggle
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;           // Enable/disable remote orchestration
+        [BDAPersistantSettingsField] public static string REMOTE_CLIENT_SECRET = "";              // Token used to authorize remote orchestration client
         [BDAPersistantSettingsField] public static string COMPETITION_HASH = "";                  // Competition hash used for orchestration
         [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                  // Competition duration in minutes
         [BDAPersistantSettingsField] public static float COMPETITION_DISTANCE = 1000;             // Competition distance.
