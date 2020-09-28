@@ -10,8 +10,8 @@ namespace BDArmory.Modules
 {
     public class BDExplosivePart : PartModule
     {
-		float distanceFromStart;
-		Vessel SourceVessel;
+		float distanceFromStart = 550;
+		Vessel sourcevessel;
 
 		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
         UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
@@ -107,7 +107,7 @@ namespace BDArmory.Modules
 				var MMG = part.vessel.FindPartModuleImplementing<BDModularGuidance>(); // if mounted to a MMG, grab MMG launch vessel
 				if (MMG)
 				{
-					SourceVessel = MMG.SourceVessel;
+					sourcevessel = MMG.SourceVessel;
 					distanceFromStart = Vector3.Distance(transform.position, MMG.SourceVessel.transform.position); // and make sure this doesn't explode when too close to parent vessel
 				}
 				else // warhead is mounted on craft to spice up ramming
@@ -202,7 +202,7 @@ namespace BDArmory.Modules
 					try
 					{
 						Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-						if (partHit?.vessel == vessel || partHit?.vessel == SourceVessel) continue;
+						if (partHit?.vessel == vessel || partHit?.vessel == sourcevessel) continue;
 						return detonate = true;
 					}
 					catch
