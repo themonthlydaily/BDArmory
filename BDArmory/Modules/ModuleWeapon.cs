@@ -381,8 +381,13 @@ namespace BDArmory.Modules
 		[KSPField]
 		public float cannonShellHeat = -1; //if non-negative, heat damage
 
+		//laser Info;
 		[KSPField]
 		public float laserDamage = 10000; //base damage/second of lasers
+		[KSPField] public bool pulseLaser = false; //pulse vs beam
+		[KSPField] public bool HEpulses = false; //do the pulses have blast damage
+		[KSPField] public bool HeatRay = false; //conic AoE
+		[KSPField] public bool electroLaser = false; //Drains EC from target/induces EMP effects
 
 		//Rocket info; 
 
@@ -722,6 +727,26 @@ namespace BDArmory.Modules
 				{
 					externalAmmo = true;
 				}
+			}
+			if (eWeaponType == WeaponTypes.Laser)
+			{
+				if (HEpulses)
+				{
+					pulseLaser = true;
+					HeatRay = false;
+				}
+				if (HeatRay)
+				{
+					HEpulses = false;
+					electroLaser = false;
+				}
+				//disable fuze GUI elements
+				Fields["maxAirDetonationRange"].guiActive = false;
+				Fields["maxAirDetonationRange"].guiActiveEditor = false;
+				Fields["defaultDetonationRange"].guiActive = false;
+				Fields["defaultDetonationRange"].guiActiveEditor = false;
+				Fields["detonationRange"].guiActive = false;
+				Fields["detonationRange"].guiActiveEditor = false;
 			}
 			muzzleFlashEmitters = new List<KSPParticleEmitter>();
 			IEnumerator<Transform> mtf = part.FindModelTransforms("muzzleTransform").AsEnumerable().GetEnumerator();
@@ -1491,7 +1516,11 @@ namespace BDArmory.Modules
 		{
 			float chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
 
-			if (!pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated &&
+			float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+			float beamDuration = 0.1f * TimeWarp.CurrentRate;
+
+			if ((((Time.time - timeFired > timeGap || Time.time - timeFired < beamDuration) && pulseLaser) || !pulseLaser)
+				&& !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated && !isReloading &&
 				(part.RequestResource(ammoName, chargeAmount) >= chargeAmount || BDArmorySettings.INFINITE_AMMO))
 			{
 				if (!audioSource.isPlaying)
@@ -1500,64 +1529,109 @@ namespace BDArmory.Modules
 					audioSource.Play();
 					audioSource.loop = true;
 				}
-				for (int i = 0; i < fireTransforms.Length; i++)
-				{
-					Transform tf = fireTransforms[i];
-
-					LineRenderer lr = laserRenderers[i];
-
-					Vector3 rayDirection = tf.forward;
-
-					Vector3 targetDirection = Vector3.zero; //autoTrack enhancer
-					Vector3 targetDirectionLR = tf.forward;
-
-					if (((visualTargetVessel != null && visualTargetVessel.loaded) || slaved)
-						&& Vector3.Angle(rayDirection, targetDirection) < 1)
+				for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
+					for (int i = 0; i < fireTransforms.Length; i++)
 					{
-						//targetDirection = targetPosition + (relativeVelocity * Time.fixedDeltaTime) * 2 - tf.position;
-						targetDirection = targetPosition - tf.position;
-						rayDirection = targetDirection;
-						targetDirectionLR = targetDirection.normalized;
-					}
+						Transform tf = fireTransforms[i];
 
-					Ray ray = new Ray(tf.position, rayDirection);
-					lr.useWorldSpace = false;
-					lr.SetPosition(0, Vector3.zero);
-					RaycastHit hit;
+						LineRenderer lr = laserRenderers[i];
 
-					if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737)) // this is getting offset slightly zzz
-					{
-						lr.useWorldSpace = true;
-						laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime); //already adding targetvel to the laser offset in line 1457
-																						 //laserPoint = hit.point;
-						lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
-						lr.SetPosition(1, laserPoint);
+						Vector3 rayDirection = tf.forward;
 
-						KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-						Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+						Vector3 targetDirection = Vector3.zero; //autoTrack enhancer
+						Vector3 targetDirectionLR = tf.forward;
 
-						if (p && p.vessel && p.vessel != vessel)
+						if (pulseLaser)
 						{
-							float distance = hit.distance;
-							//Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-							p.AddDamage(laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) *
-											 TimeWarp.fixedDeltaTime
-											 * 0.425f);
-
-							if (BDArmorySettings.INSTAKILL) p.Destroy();
+							rayDirection = VectorUtils.GaussianDirectionDeviation(tf.forward, maxDeviation / 4);
+							targetDirectionLR = rayDirection.normalized;
+							timeFired = Time.time - iTime;
+							laserRenderers[i].enabled = true;
 						}
 
-						if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
+						if ((((visualTargetVessel != null && visualTargetVessel.loaded) || slaved) && turret) // causes laser to snap to target CoM if close enough. changed to only apply to turrets
+							&& Vector3.Angle(rayDirection, targetDirection) < 1)
 						{
-							BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0);
+							//targetDirection = targetPosition + (relativeVelocity * Time.fixedDeltaTime) * 2 - tf.position;
+							targetDirection = targetPosition - tf.position;
+							rayDirection = targetDirection;
+							targetDirectionLR = targetDirection.normalized;
 						}
+
+						Ray ray = new Ray(tf.position, rayDirection);
+						lr.useWorldSpace = false;
+						lr.SetPosition(0, Vector3.zero);
+						RaycastHit hit;
+
+						if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737)) // this is getting offset slightly zzz
+						{
+							lr.useWorldSpace = true;
+							laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime); //already adding targetvel to the laser offset in line 1457
+																							 //laserPoint = hit.point;
+							lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
+							lr.SetPosition(1, laserPoint);
+
+							KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+							Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+
+							if (p && p.vessel && p.vessel != vessel)
+							{
+								float distance = hit.distance;
+								//Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+								if (electroLaser)
+								{
+									p.RequestResource("ElectricCharge", 0.1, ResourceFlowMode.ALL_VESSEL); //drain EC
+									var PAI = p.vessel.FindPartModuleImplementing<BDModulePilotAI>();
+									var SAI = p.vessel.FindPartModuleImplementing<BDModuleSurfaceAI>();
+									if (PAI && SAI.pilotEnabled)
+									{
+										PAI.TogglePilot(); //ideally set this up to temporarally mess with the target craft - if artificial GLOC could be induced or otherwise lock controls...
+									}
+									if (SAI && SAI.pilotEnabled)
+									{
+										SAI.TogglePilot();//mainly since the DrainEC module turns a lot of stuff off, but doesn't have anything setup to reenable it
+									} //add EMPscore to Missilefire, have Electrolaser add to it, if EMPscore passes a set threshold, then start the EMP effects?
+								}
+								else
+								{
+									p.AddDamage(laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
+								}
+								if (HEpulses)
+								{
+									ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f),
+												   laserDamage / 10000,
+												   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, direction: rayDirection);
+								}
+								if (BDArmorySettings.INSTAKILL) p.Destroy();
+								if (HeatRay)
+								{
+									using (var hitsEnu = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+									{
+										while (hitsEnu.MoveNext())
+										{
+											KerbalEVA kerb = hitsEnu.Current.gameObject.GetComponentUpwards<KerbalEVA>();
+											Part hitP = kerb ? kerb.part : hitsEnu.Current.GetComponentInParent<Part>();
+											if (hitP && hitP.vessel && hitP.vessel != vessel)
+											{
+												p.AddDamage(laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
+											}
+										}
+									}
+								}
+							}
+
+							if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
+							{
+								BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0);
+							}
+						}
+						else
+						{
+							laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
+							lr.SetPosition(1, laserPoint);
+						}
+
 					}
-					else
-					{
-						laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
-						lr.SetPosition(1, laserPoint);
-					}
-				}
 				heat += heatPerShot * TimeWarp.CurrentRate;
 				return true;
 			}
