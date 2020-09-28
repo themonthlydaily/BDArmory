@@ -2,13 +2,18 @@ using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace BDArmory.Modules
 {
     public class BDExplosivePart : PartModule
     {
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
+		float distanceFromStart;
+		Vessel SourceVessel;
+
+		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
         UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
         public float tntMass = 1;
 
@@ -16,7 +21,28 @@ namespace BDArmory.Modules
          UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
         public float blastRadius = 10;
 
-        [KSPField]
+		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ProximityFuzeRadius"), UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Proximity Fuze Radius
+		public float detonationRange = -1f; // give ability to set proximity range
+
+		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Status")]//Status
+		public string guiStatusString =	"Safe";
+
+		//PartWindow buttons
+		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Toggle")]//Toggle
+		public void Toggle()
+		{
+			Armed = !Armed;
+			if (Armed)
+			{
+				guiStatusString = "ARMED";
+			}
+			else
+			{
+				guiStatusString = "Safe";
+			}
+		}
+
+		[KSPField]
         public string explModelPath = "BDArmory/Models/explosion/explosion";
 
         [KSPField]
@@ -26,6 +52,7 @@ namespace BDArmory.Modules
         public void ArmAG(KSPActionParam param)
         {
             Armed = true;
+			guiStatusString = "ARMED";
         }
 
         [KSPAction("Detonate")]
@@ -40,7 +67,7 @@ namespace BDArmory.Modules
             Detonate();
         }
 
-        public bool Armed { get; set; } = true;
+        public bool Armed { get; set; } = false;
         public bool Shaped { get; set; } = false;
 
         private double previousMass = -1;
@@ -66,7 +93,8 @@ namespace BDArmory.Modules
             }
 
             CalculateBlast();
-        }
+			SetInitialDetonationDistance();
+		}
 
         public void Update()
         {
@@ -74,7 +102,23 @@ namespace BDArmory.Modules
             {
                 OnUpdateEditor();
             }
-
+			if (HighLogic.LoadedSceneIsFlight)
+			{
+				var MMG = part.vessel.FindPartModuleImplementing<BDModularGuidance>(); // if mounted to a MMG, grab MMG launch vessel
+				if (MMG)
+				{
+					SourceVessel = MMG.SourceVessel;
+					distanceFromStart = Vector3.Distance(transform.position, MMG.SourceVessel.transform.position); // and make sure this doesn't explode when too close to parent vessel
+				}
+				else // warhead is mounted on craft to spice up ramming
+				{
+					distanceFromStart = blastRadius + 100;
+				}
+				if (Armed && Checkproximity(distanceFromStart))
+				{
+					Detonate();
+				}
+			}
             if (hasDetonated)
             {
                 this.part.explode();
@@ -119,9 +163,10 @@ namespace BDArmory.Modules
         {
             if (!hasDetonated && Armed)
             {
-                part.Destroy();
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part);
-            }
+				hasDetonated = true;
+				part.Destroy();
+			}
         }
 
         public float GetBlastRadius()
@@ -129,5 +174,43 @@ namespace BDArmory.Modules
             CalculateBlast();
             return blastRadius;
         }
-    }
+		protected void SetInitialDetonationDistance()
+		{
+			if (this.detonationRange == -1)
+			{
+				if (tntMass != 0)
+				{
+					detonationRange = (BlastPhysicsUtils.CalculateBlastRange(tntMass) * 0.66f);
+				}
+			}
+		}
+		private bool Checkproximity(float distanceFromStart)
+		{
+			bool detonate = false;
+
+			if (distanceFromStart < blastRadius)
+			{
+				return detonate = false;
+			}
+
+			using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
+			{
+				while (hitsEnu.MoveNext())
+				{
+					if (hitsEnu.Current == null) continue;
+
+					try
+					{
+						Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+						if (partHit?.vessel == vessel || partHit?.vessel == SourceVessel) continue;
+						return detonate = true;
+					}
+					catch
+					{
+					}
+				}
+			}
+			return detonate;
+		}
+	}
 }
