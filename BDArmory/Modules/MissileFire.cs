@@ -136,7 +136,7 @@ namespace BDArmory.Modules
                 else
                 {
                     ro = new RippleOption(false, 650); //default to true ripple fire for guns, otherwise, false
-                    if (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket)
+                    if (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                     {
                         ro.rippleFire = currentGun.useRippleFire;
                     }
@@ -145,7 +145,7 @@ namespace BDArmory.Modules
 
                 ro.rippleFire = !ro.rippleFire;
 
-                if (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket)
+                if (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                 {
                     using (List<ModuleWeapon>.Enumerator w = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                         while (w.MoveNext())
@@ -314,7 +314,7 @@ namespace BDArmory.Modules
         {
             get
             {
-                if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket))
+                if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
                 {
                     return selectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
                 }
@@ -932,8 +932,10 @@ namespace BDArmory.Modules
                     }
                 }
                 else if (!guardMode &&
-						 selectedWeapon != null &&
-						 ((selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket) && currentGun.roundsPerMinute < 1500))
+			selectedWeapon != null &&
+			((selectedWeapon.GetWeaponClass() == WeaponClasses.Gun 
+			 || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket
+			 || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) && currentGun.roundsPerMinute < 1500))
                 {
                     canRipple = true;
                 }
@@ -2228,8 +2230,8 @@ namespace BDArmory.Modules
             }
 
             //gun ripple stuff
-            if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket) &&
-				currentGun.roundsPerMinute < 1500)
+            if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) &&
+		currentGun.roundsPerMinute < 1500)
             {
                 float counter = 0; // Used to get a count of the ripple weapons.  a float version of rippleGunCount.
                 gunRippleIndex = 0;
@@ -3131,6 +3133,7 @@ namespace BDArmory.Modules
             IBDWeapon targetWeapon = null;
             float targetWeaponRPM = 0;
             float targetWeaponTDPS = 0;
+	    float targetWeaponAcc = 0;
             float targetWeaponImpact = 0;
             float targetLaserDamage = 0;
             float targetYield = 0;
@@ -3232,6 +3235,12 @@ namespace BDArmory.Modules
                             float candidatePower = ((ModuleWeapon)item.Current).laserDamage;
                             bool canidateGimbal = ((ModuleWeapon)item.Current).turret;
                             float canidateTraverse = ((ModuleWeapon)item.Current).yawRange;
+			    float canidateAccuracy = ((ModuleWeapon)item.Current).maxDeviation;
+
+			    if ((targetWeapon != null) && (targetWeaponAcc > canidateAccuracy))
+			    {
+				candidatePower /= (canidateAccuracy + 1); //weight towards accuracy
+			    }
                             if ((targetWeapon != null) && (canidateGimbal = true && canidateTraverse > 0))
                             {
                                 candidatePower *= 1.5f; // weight selection towards turreted lasers
@@ -3253,6 +3262,12 @@ namespace BDArmory.Modules
                             float canidateTraverse = ((ModuleWeapon)item.Current).yawRange;
                             bool canidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
                             bool canidateVTFuzed = ((ModuleWeapon)item.Current).airDetonation;
+			    float canidateAccuracy = ((ModuleWeapon)item.Current).maxDeviation;
+
+			    if ((targetWeapon != null) && (targetWeaponAcc > canidateAccuracy))
+			    {
+				candidateRPM /= (canidateAccuracy + 1); //weight towards accuracy
+			    }
                             if ((targetWeapon != null) && (canidateGimbal = true && canidateTraverse > 0))
                             {
                                 candidateRPM *= 1.5f; // weight selection towards turrets
