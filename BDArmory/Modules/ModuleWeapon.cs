@@ -679,7 +679,7 @@ namespace BDArmory.Modules
 			}
 			emitter.Dispose();
 
-			if (roundsPerMinute >= 1500)
+			if (roundsPerMinute >= 1500 || !pulseLaser)
 			{
 				Events["ToggleRipple"].guiActiveEditor = false;
 				Fields["useRippleFire"].guiActiveEditor = false;
@@ -1050,7 +1050,15 @@ namespace BDArmory.Modules
 						if ((userFiring || autoFire || agHoldFiring) &&
 							(!turret || turret.TargetInRange(targetPosition, 10, float.MaxValue)))
 						{
-							finalFire = true;
+							if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
+							{
+								StartCoroutine(IncrementRippleIndex(0));
+								finalFire = false;
+							}
+							else
+							{
+								finalFire = true;
+							}
 						}
 						else
 						{
@@ -1580,7 +1588,7 @@ namespace BDArmory.Modules
 								//Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
 								if (electroLaser)
 								{
-									p.RequestResource("ElectricCharge", 0.1, ResourceFlowMode.ALL_VESSEL); //drain EC
+									p.RequestResource("ElectricCharge", 1.0, ResourceFlowMode.ALL_VESSEL); //drain EC
 									var PAI = p.vessel.FindPartModuleImplementing<BDModulePilotAI>();
 									var SAI = p.vessel.FindPartModuleImplementing<BDModuleSurfaceAI>();
 									if (PAI && SAI.pilotEnabled)
@@ -1599,7 +1607,7 @@ namespace BDArmory.Modules
 								if (HEpulses)
 								{
 									ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f),
-												   laserDamage / 10000,
+												   laserDamage / 30000,
 												   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, direction: rayDirection);
 								}
 								if (BDArmorySettings.INSTAKILL) p.Destroy();
@@ -1633,6 +1641,10 @@ namespace BDArmory.Modules
 
 					}
 				heat += heatPerShot * TimeWarp.CurrentRate;
+				if (useRippleFire && pulseLaser)
+				{
+					StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+				}
 				return true;
 			}
 			else
@@ -2401,6 +2413,15 @@ namespace BDArmory.Modules
 
 			if (finalFire)
 			{
+				if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+				{
+					//timeFired = Time.time + (initialFireDelay - (60f / roundsPerMinute)) * TimeWarp.CurrentRate;
+					finalFire = false;
+				}
+				else
+				{
+					finalFire = true;
+				}
 				if (eWeaponType == WeaponTypes.Laser)
 				{
 					if (FireLaser())
@@ -2421,15 +2442,6 @@ namespace BDArmory.Modules
 				}
 				else
 				{
-					if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
-					{
-						//timeFired = Time.time + (initialFireDelay - (60f / roundsPerMinute)) * TimeWarp.CurrentRate;
-						finalFire = false;
-					}
-					else
-					{
-						finalFire = true;
-					}
 					if (eWeaponType == WeaponTypes.Ballistic)
 					{
 						if (finalFire)
