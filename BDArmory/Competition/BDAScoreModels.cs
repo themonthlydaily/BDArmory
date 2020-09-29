@@ -190,12 +190,12 @@ namespace BDArmory.Competition
         public int hits_in;
         public double dmg_out;
         public double dmg_in;
-        public int rammed_parts_out;
-        public int rammed_parts_in;
-        public int missile_parts_out;
-        public int missile_parts_in;
-        public double missile_damage_out;
-        public double missile_damage_in;
+        public int ram_parts_out;
+        public int ram_parts_in;
+        public int mis_parts_out;
+        public int mis_parts_in;
+        public double mis_dmg_out;
+        public double mis_dmg_in;
         public int assists;
         public int kills;
         public int deaths;

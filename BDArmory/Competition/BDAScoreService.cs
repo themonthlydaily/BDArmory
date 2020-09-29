@@ -312,24 +312,22 @@ namespace BDArmory.Competition
             yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
 
             // start timer coroutine for the duration specified in settings UI
-            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
-            Debug.Log("[BDAScoreService] Starting a " + duration.ToString("F0") + "s duration competition.");
+            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60d;
+            var message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
+            Debug.Log("[BDAScoreService]: " + message);
+            BDACompetitionMode.Instance.competitionStatus.Add(message);
             while (BDACompetitionMode.Instance.competitionStarting)
                 yield return new WaitForFixedUpdate(); // Wait for the competition to actually start.
             if (!BDACompetitionMode.Instance.competitionIsActive)
             {
-                var message = "Competition failed to start for heat " + hash + ".";
+                message = "Competition failed to start for heat " + hash + ".";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.Log("[BDAScoreService]: " + message);
                 yield break;
             }
             competitionStarted = true;
-            while (BDACompetitionMode.Instance.competitionIsActive && Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime < duration) // Allow exiting if the competition finishes early.
+            while (BDACompetitionMode.Instance.competitionIsActive) // Wait for the competition to finish (limited duration and log dumping is handled directly by the competition now).
                 yield return new WaitForSeconds(1);
-
-            // stop competition
-            BDACompetitionMode.Instance.StopCompetition();
-            BDACompetitionMode.Instance.LogResults("for BDAScoreService"); // Make sure the results are dumped to the log.
         }
 
         private IEnumerator SendScores(string hash, HeatModel heat)
@@ -367,12 +365,12 @@ namespace BDArmory.Competition
                 record.hits_in = ComputeTotalHitsIn(player.name);
                 record.dmg_out = ComputeTotalDamageOut(player.name);
                 record.dmg_in = ComputeTotalDamageIn(player.name);
-                record.rammed_parts_out = ComputeTotalRammedPartsOut(player.name);
-                record.rammed_parts_in = ComputeTotalRammedPartsIn(player.name);
-                record.missile_parts_out = ComputeTotalMissilePartsOut(player.name);
-                record.missile_parts_in = ComputeTotalMissilePartsIn(player.name);
-                record.missile_damage_out = ComputeTotalMissileDamageOut(player.name);
-                record.missile_damage_in = ComputeTotalMissileDamageIn(player.name);
+                record.ram_parts_out = ComputeTotalRammedPartsOut(player.name);
+                record.ram_parts_in = ComputeTotalRammedPartsIn(player.name);
+                record.mis_parts_out = ComputeTotalMissilePartsOut(player.name);
+                record.mis_parts_in = ComputeTotalMissilePartsIn(player.name);
+                record.mis_dmg_out = ComputeTotalMissileDamageOut(player.name);
+                record.mis_dmg_in = ComputeTotalMissileDamageIn(player.name);
                 record.kills = ComputeTotalKills(player.name);
                 record.deaths = ComputeTotalDeaths(player.name);
                 record.assists = ComputeTotalAssists(player.name);

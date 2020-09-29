@@ -82,6 +82,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;            // Controls whether ramming logging debug information is printed to the Debug.Log
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;           // Show/hide the remote orchestration toggle
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;           // Enable/disable remote orchestration
+        [BDAPersistantSettingsField] public static string REMOTE_CLIENT_SECRET = "";              // Token used to authorize remote orchestration client
         [BDAPersistantSettingsField] public static string COMPETITION_HASH = "";                  // Competition hash used for orchestration
         [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                  // Competition duration in minutes
         [BDAPersistantSettingsField] public static float COMPETITION_DISTANCE = 1000;             // Competition distance.
@@ -94,6 +95,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_CONCURRENT_VESSELS = 0;        // Maximum number of vessels to spawn in concurrently (continuous spawning mode).
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_LIVES_PER_VESSEL = 0;          // Maximum number of times to spawn a vessel (continuous spawning mode).
         [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = false; // Dump competition scores every time a vessel spawns.
+        [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING = false; // Spawn craft again after single spawn competition finishes.
         [BDAPersistantSettingsField] public static bool SHOW_SPAWN_LOCATIONS = false;              // Show the interesting spawn locations.
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
         [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 225f;

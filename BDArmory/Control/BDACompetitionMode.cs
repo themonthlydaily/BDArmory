@@ -139,50 +139,64 @@ namespace BDArmory.Control
     {
         public static BDACompetitionMode Instance;
 
-        // keep track of scores, these probably need to be somewhere else
+        #region Flags and variables
+        // Score tracking flags and variables.
         public Dictionary<string, ScoringData> Scores = new Dictionary<string, ScoringData>();
-        //public Dictionary<string, int> Scores = new Dictionary<string, int>();
-        //public Dictionary<string, int> PinataHits = new Dictionary<string, int>();
-
-        //public Dictionary<string, string> whoKilledVessels = new Dictionary<string, string>();
-        //public Dictionary<string, double> lastHitTime = new Dictionary<string, double>();
-
-
-        // KILLER GM - how we look for slowest planes
-        //public Dictionary<string, double> AverageSpeed = new Dictionary<string, double>();
-        //public Dictionary<string, double> AverageAltitude = new Dictionary<string, double>();
-        //public Dictionary<string, int> FireCount = new Dictionary<string, int>();
-        //public Dictionary<string, int> FireCount2 = new Dictionary<string, int>();
-
         public Dictionary<string, int> DeathOrder = new Dictionary<string, int>();
         public Dictionary<string, string> whoCleanShotWho = new Dictionary<string, string>();
         public Dictionary<string, string> whoCleanShotWhoWithMissiles = new Dictionary<string, string>();
         public Dictionary<string, string> whoCleanRammedWho = new Dictionary<string, string>();
 
-
-        public bool startTag = false; // For tag mode
-        public int previousNumberCompetitive = 2; // Also for tag mode
-
+        // Competition flags and variables
+        public int CompetitionID; // time competition was started
+        bool competitionShouldBeRunning = false;
         public double competitionStartTime = -1;
         public double nextUpdateTick = -1;
         private double gracePeriod = -1;
         private double decisionTick = -1;
         private int dumpedResults = 4;
-
-        // count up until killing the object 
-        public Dictionary<string, double> KillTimer = new Dictionary<string, double>();
-
-
-        private HashSet<int> ammoIds = new HashSet<int>();
-
-        // time competition was started
-        public int CompetitionID;
         public static int DeathCount = 0;
         public static float gravityMultiplier = 1f;
+        float lastGravityMultiplier;
+        private string deadOrAlive = "";
+        private HashSet<int> ammoIds = new HashSet<int>();
+        static HashSet<string> outOfAmmo = new HashSet<string>(); // outOfAmmo register for tracking which planes are out of ammo.
+
+        // Action groups
+        public static Dictionary<int, KSPActionGroup> KM_dictAG = new Dictionary<int, KSPActionGroup> {
+            { 0,  KSPActionGroup.None },
+            { 1,  KSPActionGroup.Custom01 },
+            { 2,  KSPActionGroup.Custom02 },
+            { 3,  KSPActionGroup.Custom03 },
+            { 4,  KSPActionGroup.Custom04 },
+            { 5,  KSPActionGroup.Custom05 },
+            { 6,  KSPActionGroup.Custom06 },
+            { 7,  KSPActionGroup.Custom07 },
+            { 8,  KSPActionGroup.Custom08 },
+            { 9,  KSPActionGroup.Custom09 },
+            { 10, KSPActionGroup.Custom10 },
+            { 11, KSPActionGroup.Light },
+            { 12, KSPActionGroup.RCS },
+            { 13, KSPActionGroup.SAS },
+            { 14, KSPActionGroup.Brakes },
+            { 15, KSPActionGroup.Abort },
+            { 16, KSPActionGroup.Gear }
+        };
+
+        // Tag mode flags and variables.
+        public bool startTag = false; // For tag mode
+        public int previousNumberCompetitive = 2; // Also for tag mode
+
+        // KILLER GM - how we look for slowest planes
+        public Dictionary<string, double> KillTimer = new Dictionary<string, double>();
+        //public Dictionary<string, double> AverageSpeed = new Dictionary<string, double>();
+        //public Dictionary<string, double> AverageAltitude = new Dictionary<string, double>();
+        //public Dictionary<string, int> FireCount = new Dictionary<string, int>();
+        //public Dictionary<string, int> FireCount2 = new Dictionary<string, int>();
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
-        private string deadOrAlive = "";
+        #endregion
 
         void Awake()
         {
@@ -258,55 +272,19 @@ namespace BDArmory.Control
                 GUI.Label(clockShadowRect, pTime, clockShadowStyle);
                 GUI.Label(clockRect, pTime, clockStyle);
             }
+            if (KSP.UI.Dialogs.FlightResultsDialog.isDisplaying && KSP.UI.Dialogs.FlightResultsDialog.showExitControls) // Prevent the Flight Results window from interrupting things when a certain vessel dies.
+            {
+                KSP.UI.Dialogs.FlightResultsDialog.Close();
+            }
         }
 
         void OnDestroy()
         {
-            LogResults();
             StopCompetition();
             StopAllCoroutines();
         }
 
-        public void ResetCompetitionScores()
-        {
-            // reinitilize everything when the button get hit.
-            // ammo names
-            // 50CalAmmo, 30x173Ammo, 20x102Ammo, CannonShells
-            if (ammoIds.Count == 0)
-            {
-                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("50CalAmmo").id);
-                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("30x173Ammo").id);
-                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("20x102Ammo").id);
-                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("CannonShells").id);
-            }
-            CompetitionID = (int)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
-            DoPreflightChecks();
-            Scores.Clear();
-            DeathOrder.Clear();
-            whoCleanShotWho.Clear();
-            whoCleanShotWhoWithMissiles.Clear();
-            whoCleanRammedWho.Clear();
-            KillTimer.Clear();
-            pilotActions.Clear(); // Clear the pilotActions, so we don't get "<pilot> is Dead" on the next round of the competition.
-            dumpedResults = 5;
-            competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
-            nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
-            gracePeriod = competitionStartTime + 60;
-            decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
-            // now find all vessels with weapons managers
-            using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
-                while (loadedVessels.MoveNext())
-                {
-                    if (loadedVessels.Current == null || !loadedVessels.Current.loaded)
-                        continue;
-                    IBDAIControl pilot = loadedVessels.Current.FindPartModuleImplementing<IBDAIControl>();
-                    if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral)
-                        continue;
-                    // put these in the scoring dictionary - these are the active participants
-                    Scores[loadedVessels.Current.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = loadedVessels.Current.parts.Count };
-                }
-        }
-
+        #region Competition start/stop routines
         //Competition mode
         public bool competitionStarting;
         public bool competitionIsActive = false;
@@ -356,6 +334,7 @@ namespace BDArmory.Control
 
         public void StopCompetition()
         {
+            LogResults();
             if (competitionRoutine != null)
             {
                 StopCoroutine(competitionRoutine);
@@ -389,6 +368,46 @@ namespace BDArmory.Control
             decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
             lastTagUpdateTime = competitionStartTime;
             Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Competition Started");
+        }
+
+        public void ResetCompetitionScores()
+        {
+            // reinitilize everything when the button get hit.
+            // ammo names
+            // 50CalAmmo, 30x173Ammo, 20x102Ammo, CannonShells
+            if (ammoIds.Count == 0)
+            {
+                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("50CalAmmo").id);
+                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("30x173Ammo").id);
+                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("20x102Ammo").id);
+                ammoIds.Add(PartResourceLibrary.Instance.GetDefinition("CannonShells").id);
+            }
+            CompetitionID = (int)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
+            DoPreflightChecks();
+            Scores.Clear();
+            DeathOrder.Clear();
+            whoCleanShotWho.Clear();
+            whoCleanShotWhoWithMissiles.Clear();
+            whoCleanRammedWho.Clear();
+            KillTimer.Clear();
+            pilotActions.Clear(); // Clear the pilotActions, so we don't get "<pilot> is Dead" on the next round of the competition.
+            dumpedResults = 5;
+            competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
+            nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
+            gracePeriod = competitionStartTime + 60;
+            decisionTick = competitionStartTime + 60; // every 60 seconds we do nasty things
+            // now find all vessels with weapons managers
+            using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                while (loadedVessels.MoveNext())
+                {
+                    if (loadedVessels.Current == null || !loadedVessels.Current.loaded)
+                        continue;
+                    IBDAIControl pilot = loadedVessels.Current.FindPartModuleImplementing<IBDAIControl>();
+                    if (pilot == null || !pilot.weaponManager || pilot.weaponManager.Team.Neutral)
+                        continue;
+                    // put these in the scoring dictionary - these are the active participants
+                    Scores[loadedVessels.Current.GetName()] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = loadedVessels.Current.parts.Count };
+                }
         }
 
         IEnumerator DogfightCompetitionModeRoutine(float distance)
@@ -609,36 +628,7 @@ namespace BDArmory.Control
             yield return new WaitForSeconds(2);
             CompetitionStarted();
         }
-
-        public static Dictionary<int, KSPActionGroup> KM_dictAG = new Dictionary<int, KSPActionGroup> {
-            { 0,  KSPActionGroup.None },
-            { 1,  KSPActionGroup.Custom01 },
-            { 2,  KSPActionGroup.Custom02 },
-            { 3,  KSPActionGroup.Custom03 },
-            { 4,  KSPActionGroup.Custom04 },
-            { 5,  KSPActionGroup.Custom05 },
-            { 6,  KSPActionGroup.Custom06 },
-            { 7,  KSPActionGroup.Custom07 },
-            { 8,  KSPActionGroup.Custom08 },
-            { 9,  KSPActionGroup.Custom09 },
-            { 10, KSPActionGroup.Custom10 },
-            { 11, KSPActionGroup.Light },
-            { 12, KSPActionGroup.RCS },
-            { 13, KSPActionGroup.SAS },
-            { 14, KSPActionGroup.Brakes },
-            { 15, KSPActionGroup.Abort },
-            { 16, KSPActionGroup.Gear }
-        };
-
-        // transmits a bunch of commands to make things happen
-        // this is a really dumb sequencer with text commands
-        // 0:ThrottleMax
-        // 0:Stage
-        // 30:ActionGroup:1
-        // 35:ActionGroup:2
-        // 40:ActionGroup:3
-        // 41:TogglePilot
-        // 45:ToggleGuard
+        #endregion
 
         private List<IBDAIControl> getAllPilots()
         {
@@ -936,6 +926,15 @@ namespace BDArmory.Control
             }
         }
 
+        // transmits a bunch of commands to make things happen
+        // this is a really dumb sequencer with text commands
+        // 0:ThrottleMax
+        // 0:Stage
+        // 30:ActionGroup:1
+        // 35:ActionGroup:2
+        // 40:ActionGroup:3
+        // 41:TogglePilot
+        // 45:ToggleGuard
         IEnumerator SequencedCompetition(string commandList)
         {
             competitionStarting = true;
@@ -1205,9 +1204,7 @@ namespace BDArmory.Control
 
         #endregion
 
-        // outOfAmmo register
-        static HashSet<string> outOfAmmo = new HashSet<string>(); // For tracking which planes are out of ammo.
-
+        #region Debris clean-up
         public void RemoveDebris()
         {
             // only call this if enabled
@@ -1310,6 +1307,7 @@ namespace BDArmory.Control
                         part.Die();
             }
         }
+        #endregion
 
         // This is called every Time.fixedDeltaTime.
         void FixedUpdate()
@@ -1318,8 +1316,6 @@ namespace BDArmory.Control
                 LogRamming();
         }
 
-        bool competitionShouldBeRunning = false;
-        float lastGravityMultiplier;
         // the competition update system
         // cleans up dead vessels, tries to track kills (badly)
         // all of these are based on the vessel name which is probably sub optimal
@@ -1739,6 +1735,7 @@ namespace BDArmory.Control
 
             if ((Planetarium.GetUniversalTime() > gracePeriod) && numberOfCompetitiveVessels < 2 && !VesselSpawner.Instance.vesselsSpawningContinuously)
             {
+
                 if (dumpedResults == 1)
                 {
                     competitionStatus.Add("All Pilots are Dead");
@@ -1754,12 +1751,10 @@ namespace BDArmory.Control
                 else if (dumpedResults == 0)
                 {
                     Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]:No viable competitors, Automatically dumping scores");
-                    LogResults("automatically.");
+                    LogResults("automatically");
+                    StopCompetition();
                     dumpedResults--;
-                    //competitionStartTime = -1;
                 }
-                competitionIsActive = false;
-                competitionShouldBeRunning = false;
             }
             else
             {
@@ -1767,7 +1762,7 @@ namespace BDArmory.Control
             }
 
             //Reset gravity
-            if (BDArmorySettings.GRAVITY_HACKS)
+            if (BDArmorySettings.GRAVITY_HACKS && competitionIsActive)
             {
                 int maxVesselsActive = (VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0) ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS : Scores.Count;
                 double time = Planetarium.GetUniversalTime() - competitionStartTime;
@@ -1805,11 +1800,22 @@ namespace BDArmory.Control
                 FindVictim();
             // Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
             if (BDArmorySettings.TAG_MODE) lastTagUpdateTime = Planetarium.GetUniversalTime();
+
+            if (!VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.COMPETITION_DURATION > 0 && Planetarium.GetUniversalTime() - competitionStartTime >= BDArmorySettings.COMPETITION_DURATION * 60d)
+            {
+                LogResults("due to out-of-time");
+                StopCompetition();
+            }
         }
 
         // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>[-tag].log
         public void LogResults(string message = "", string tag = "")
         {
+            if (competitionStartTime < 0)
+            {
+                Debug.Log("[BDArmoryCompetition]: No active competition, not dumping results.");
+                return;
+            }
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
                 VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
@@ -1952,7 +1958,7 @@ namespace BDArmory.Control
                 Log(line);
         }
 
-
+        #region Ramming
         // Ramming Logging
         public class RammingTargetInformation
         {
@@ -2242,7 +2248,6 @@ namespace BDArmory.Control
             }
         }
 
-
         // Check for parts being lost on the various vessels for which collisions have been detected.
         private void CheckForDamagedParts()
         {
@@ -2477,7 +2482,9 @@ namespace BDArmory.Control
             CheckForDamagedParts();
             if (BDArmorySettings.DEBUG_RAMMING_LOGGING) CheckForMissingParts(); // DEBUG
         }
+        #endregion
 
+        #region Tag
         public double lastTagUpdateTime;
         // Function to update tag
         private void UpdateTag(MissileFire mf, string key, int previousNumberCompetitive, HashSet<string> alive)
@@ -2589,6 +2596,7 @@ namespace BDArmory.Control
             }
             startTag = true;
         }
+        #endregion
 
         // A filter for log messages so Scott can do other stuff depending on the content.
         public void Log(string message)
