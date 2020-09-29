@@ -10,7 +10,7 @@ namespace BDArmory.Modules
 {
     public class BDExplosivePart : PartModule
     {
-		float distanceFromStart = 550;
+		float distanceFromStart = 500;
 		Vessel sourcevessel;
 
 		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
@@ -81,7 +81,15 @@ namespace BDArmory.Modules
                 part.explosionPotential = 1.0f;
                 part.OnJustAboutToBeDestroyed += DetonateIfPossible;
                 part.force_activate();
-            }
+				sourcevessel = vessel;
+				using (List<MissileFire>.Enumerator MF = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+					while (MF.MoveNext())
+					{
+						if (MF.Current == null) continue;
+						sourcevessel = MF.Current.vessel;
+						break;
+					}
+			}
 
             if (BDArmorySettings.ADVANCED_EDIT)
             {
@@ -94,6 +102,7 @@ namespace BDArmory.Modules
 
             CalculateBlast();
 			SetInitialDetonationDistance();
+
 		}
 
         public void Update()
@@ -104,19 +113,19 @@ namespace BDArmory.Modules
             }
 			if (HighLogic.LoadedSceneIsFlight)
 			{
-				var MMG = part.vessel.FindPartModuleImplementing<BDModularGuidance>(); // if mounted to a MMG, grab MMG launch vessel
-				if (MMG)
+				if (Armed)
 				{
-					sourcevessel = MMG.SourceVessel;
-					distanceFromStart = Vector3.Distance(transform.position, MMG.SourceVessel.transform.position); // and make sure this doesn't explode when too close to parent vessel
-				}
-				else // warhead is mounted on craft to spice up ramming
-				{
-					distanceFromStart = blastRadius + 100;
-				}
-				if (Armed && Checkproximity(distanceFromStart))
-				{
-					Detonate();
+					if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0)
+					{
+						if (sourcevessel != part.vessel)
+						{
+							distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
+						}
+					}
+					if (Checkproximity(distanceFromStart))
+					{
+						Detonate();
+					}
 				}
 			}
             if (hasDetonated)
@@ -203,6 +212,7 @@ namespace BDArmory.Modules
 					{
 						Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 						if (partHit?.vessel == vessel || partHit?.vessel == sourcevessel) continue;
+						//Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
 						return detonate = true;
 					}
 					catch
