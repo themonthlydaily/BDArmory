@@ -998,6 +998,7 @@ namespace BDArmory.UI
                         // the active vessel is no longer in our list, so it probably just got shot
                         // we need to make sure we follow it for a few seconds
                         lastCameraSwitch = Planetarium.GetUniversalTime();
+                        timeSinceChange = 0;
                         lostActiveVessel = true;
                     }
                     else
