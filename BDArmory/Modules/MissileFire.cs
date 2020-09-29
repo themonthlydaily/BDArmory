@@ -1835,7 +1835,8 @@ namespace BDArmory.Modules
 
         public void FireAllCountermeasures(int count)
         {
-            if (!isChaffing && !isFlaring)
+            if (!isChaffing && !isFlaring
+                && ThreatClosingTime(incomingMissileVessel) > cmThreshold)
             {
                 StartCoroutine(AllCMRoutine(count));
             }
@@ -1851,7 +1852,8 @@ namespace BDArmory.Modules
 
         public void FireChaff()
         {
-            if (!isChaffing)
+            if (!isChaffing
+                && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
                 StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval));
             }
@@ -1859,7 +1861,8 @@ namespace BDArmory.Modules
 
         public void FireFlares()
         {
-            if (!isFlaring)
+            if (!isFlaring
+                && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
                 StartCoroutine(FlareRoutine((int)cmRepetition, cmInterval));
                 StartCoroutine(ResetMissileThreatDistanceRoutine());
@@ -1890,8 +1893,6 @@ namespace BDArmory.Modules
 
         IEnumerator ChaffRoutine(int repetition, float interval)
         {
-            if (ThreatClosingTime(incomingMissileVessel) > cmThreshold) yield break;
-            if (isChaffing) yield break;
             isChaffing = true;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Starting chaff routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
@@ -1917,8 +1918,6 @@ namespace BDArmory.Modules
 
         IEnumerator FlareRoutine(int repetition, float interval)
         {
-            if (ThreatClosingTime(incomingMissileVessel) > cmThreshold) yield break;
-            if (isFlaring) yield break;
             isFlaring = true;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Starting flare routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
@@ -1942,8 +1941,7 @@ namespace BDArmory.Modules
 
         IEnumerator AllCMRoutine(int count)
         {
-            if (ThreatClosingTime(incomingMissileVessel) < cmThreshold) yield break; // Use this routine for missile threats that are outside of the cmThreshold
-            if (isFlaring || isChaffing) yield break;
+            // Use this routine for missile threats that are outside of the cmThreshold
             isFlaring = true;
             isChaffing = true;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Starting All CM routine");
@@ -3031,7 +3029,7 @@ namespace BDArmory.Modules
             if (!vessel.LandedOrSplashed && !targetMissiles)
             {
                 TargetInfo potentialAirTarget = null;
-                
+
                 if (BDArmorySettings.DEFAULT_FFA_TARGETING)
                 {
                     potentialAirTarget = BDATargetManager.GetClosestTargetWithBiasAndHysteresis(this);
@@ -3264,6 +3262,14 @@ namespace BDArmory.Modules
         // Update target priority UI
         public void UpdateTargetPriorityUI(TargetInfo target)
         {
+            // Return if no target
+            if (target == null)
+            {
+                TargetScoreLabel = "";
+                TargetLabel = "";
+                return;
+            }
+
             // Get UI fields
             var TargetBiasFields = Fields["targetBias"];
             var TargetRangeFields = Fields["targetWeightRange"];
@@ -3712,7 +3718,20 @@ namespace BDArmory.Modules
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory] : " + vessel.vesselName + " - No weapon selected.");
+                    Debug.Log("[BDArmory] : " + vessel.vesselName + " - No weapon selected for target " + target.Vessel.vesselName);
+                    // Debug.Log("DEBUG target isflying:" + target.isFlying + ", isLorS:" + target.isLandedOrSurfaceSplashed + ", isUW:" + target.isUnderwater);
+                    // if (target.isFlying)
+                    //     foreach (var weapon in weaponTypesAir)
+                    //     {
+                    //         var engageableWeapon = weapon as EngageableWeapon;
+                    //         Debug.Log("DEBUG flying target:" + target.Vessel + ", weapon:" + weapon + " can engage:" + CheckEngagementEnvelope(weapon, distance) + ", engageEnabled:" + engageableWeapon.engageEnabled + ", min/max:" + engageableWeapon.GetEngagementRangeMin() + "/" + engageableWeapon.GetEngagementRangeMax());
+                    //     }
+                    // if (target.isLandedOrSurfaceSplashed)
+                    //     foreach (var weapon in weaponTypesAir)
+                    //     {
+                    //         var engageableWeapon = weapon as EngageableWeapon;
+                    //         Debug.Log("DEBUG landed target:" + target.Vessel + ", weapon:" + weapon + " can engage:" + CheckEngagementEnvelope(weapon, distance) + ", engageEnabled:" + engageableWeapon.engageEnabled + ", min/max:" + engageableWeapon.GetEngagementRangeMin() + "/" + engageableWeapon.GetEngagementRangeMax());
+                    //     }
                 }
 
                 selectedWeapon = null;
@@ -3784,7 +3803,7 @@ namespace BDArmory.Modules
                         }
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory] : " + vessel.vesselName + " - Failed DLZ test: " + weaponCandidate.GetShortName());
+                            Debug.Log("[BDArmory] : " + vessel.vesselName + " - Failed DLZ test: " + weaponCandidate.GetShortName() + ", distance: " + distanceToTarget + ", DLZ min/max: " + dlz.minLaunchRange + "/" + dlz.maxLaunchRange);
                         }
                         break;
                     }
@@ -4201,7 +4220,7 @@ namespace BDArmory.Modules
                 StartCoroutine(UnderAttackRoutine());
 
                 FireFlares();
-                
+
                 incomingThreatPosition = results.threatPosition;
                 incomingThreatVessel = results.threatVessel;
 

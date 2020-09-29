@@ -8,11 +8,17 @@ namespace BDArmory.Core
     {
         public static string settingsConfigURL = "GameData/BDArmory/settings.cfg";
 
+        [BDAPersistantSettingsField] public static bool GENERAL_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool RADAR_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool GAME_MODES_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool SPAWN_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool SLIDER_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool OTHER_SETTINGS_TOGGLE = true;
         [BDAPersistantSettingsField] public static bool INSTAKILL = false;
         [BDAPersistantSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
         [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 30f;            // Clean up debris after 30s.
-        [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;         
+        [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;
         [BDAPersistantSettingsField] public static bool SHOW_AMMO_GAUGES = false;
         [BDAPersistantSettingsField] public static bool EJECT_SHELLS = true;
         [BDAPersistantSettingsField] public static bool SHELL_COLLISIONS = true;
@@ -29,6 +35,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float TARGET_CAM_RESOLUTION = 1024f;
         [BDAPersistantSettingsField] public static bool BW_TARGET_CAM = true;
         [BDAPersistantSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
+        [BDAPersistantSettingsField] public static bool STRICT_WINDOW_BOUNDARIES = true;
         [BDAPersistantSettingsField] public static float RWR_WINDOW_SCALE_MIN = 0.50f;
         [BDAPersistantSettingsField] public static float RWR_WINDOW_SCALE = 1f;
         [BDAPersistantSettingsField] public static float RWR_WINDOW_SCALE_MAX = 1.50f;
@@ -63,6 +70,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed
         [BDAPersistantSettingsField] public static float FIRELIFETIME_IN_SECONDS = 90f;           //controls fx for penetration only for landed or splashed
         [BDAPersistantSettingsField] public static bool PERFORMANCE_LOGGING = false;
+        [BDAPersistantSettingsField] public static bool GRAVITY_HACKS = false;
         [BDAPersistantSettingsField] public static bool TAG_MODE = false;
         [BDAPersistantSettingsField] public static bool PAINTBALL_MODE = false;
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
@@ -73,6 +81,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;            // Controls whether ramming logging debug information is printed to the Debug.Log
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;           // Show/hide the remote orchestration toggle
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;           // Enable/disable remote orchestration
+        [BDAPersistantSettingsField] public static string REMOTE_CLIENT_SECRET = "";              // Token used to authorize remote orchestration client
         [BDAPersistantSettingsField] public static string COMPETITION_HASH = "";                  // Competition hash used for orchestration
         [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                  // Competition duration in minutes
         [BDAPersistantSettingsField] public static float COMPETITION_DISTANCE = 1000;             // Competition distance.
@@ -84,8 +93,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float VESSEL_SPAWN_EASE_IN_SPEED = 1f;          // Rate to limit "falling" during spawning.
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_CONCURRENT_VESSELS = 0;        // Maximum number of vessels to spawn in concurrently (continuous spawning mode).
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_LIVES_PER_VESSEL = 0;          // Maximum number of times to spawn a vessel (continuous spawning mode).
+        [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = false; // Dump competition scores every time a vessel spawns.
+        [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING = false; // Spawn craft again after single spawn competition finishes.
+        [BDAPersistantSettingsField] public static bool SHOW_SPAWN_LOCATIONS = false;              // Show the interesting spawn locations.
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                 //Disables the kill timers used in Runway Project.
-        [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 200f;
+        [BDAPersistantSettingsField] public static float REMOTE_ORCHESTRATION_WINDOW_WIDTH = 225f;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
         [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                   // IR missiles will go after hottest thing they can see
         [BDAPersistantSettingsField] public static bool HEART_BLEED_ENABLED = false;
