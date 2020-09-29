@@ -896,7 +896,7 @@ namespace BDArmory.UI
                                     {
                                         var currentParts = v.Current.parts.Count;
                                         var vdat = BDACompetitionMode.Instance.Scores[vesselName];
-                                        if (currentParts < vdat.previousPartCount)
+                                        if (Planetarium.GetUniversalTime() - vdat.lastLostPartTime < 5d) // Lost parts within the last 5s.
                                         {
                                             recentlyDamaged = true;
                                         }

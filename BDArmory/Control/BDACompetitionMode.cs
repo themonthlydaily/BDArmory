@@ -39,6 +39,7 @@ namespace BDArmory.Control
         public double AverageAltitude;
         public int averageCount;
         public int previousPartCount;
+        public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
         public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
         public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
         public HashSet<string> everyoneWhoHitMeWithMissiles = new HashSet<string>();
@@ -1466,7 +1467,9 @@ namespace BDArmory.Control
                                     enforcePartCount(v.Current);
                                 }
                             }
-                            vData.previousPartCount = v.Current.parts.Count();
+                            if (vData.previousPartCount < v.Current.parts.Count)
+                                vData.lastLostPartTime = Planetarium.GetUniversalTime();
+                            vData.previousPartCount = v.Current.parts.Count;
 
                             if (v.Current.LandedOrSplashed)
                             {
