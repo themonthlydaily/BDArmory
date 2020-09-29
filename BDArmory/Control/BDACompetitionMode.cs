@@ -132,6 +132,7 @@ namespace BDArmory.Control
     }
     public enum DamageFrom { None, Bullet, Missile, Ram };
     public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton };
+    public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared };
 
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -289,6 +290,7 @@ namespace BDArmory.Control
         public bool competitionStarting;
         public bool competitionIsActive = false;
         Coroutine competitionRoutine;
+        public CompetitionStartFailureReason competitionStartFailureReason;
 
         public class CompetitionStatus
         {
@@ -328,6 +330,7 @@ namespace BDArmory.Control
                     PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
                     VehiclePhysics.Gravity.Refresh();
                 }
+                competitionStartFailureReason = CompetitionStartFailureReason.None;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
         }
@@ -469,6 +472,7 @@ namespace BDArmory.Control
                 yield return new WaitForSeconds(2);
                 competitionStarting = false;
                 competitionIsActive = false;
+                competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
                 yield break;
             }
 
@@ -479,6 +483,7 @@ namespace BDArmory.Control
                     if (pilotList.Current.Value == null)
                     {
                         competitionStatus.Set("Competition: Teams got adjusted during competition start-up, aborting.");
+                        competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
                         StopCompetition();
                         yield break;
                     }
@@ -506,6 +511,7 @@ namespace BDArmory.Control
                     if (leader.Current == null)
                     {
                         competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                        competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                         StopCompetition();
                         yield break;
                     }
@@ -540,6 +546,7 @@ namespace BDArmory.Control
                     if (leader == null)
                     {
                         competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                        competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                         StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
                         yield break;
                     }
@@ -561,6 +568,7 @@ namespace BDArmory.Control
                                 catch
                                 {
                                     competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                                    competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                                     StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
                                     yield break;
                                 }
@@ -570,6 +578,7 @@ namespace BDArmory.Control
                         if (!pilots.ContainsKey(leader.Current.weaponManager.Team))
                         {
                             competitionStatus.Set("Competition: The teams were changed during competition start-up, aborting.");
+                            competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                             StopCompetition();
                             yield break;
                         }
@@ -594,6 +603,7 @@ namespace BDArmory.Control
                 if (teamPilots == null)
                 {
                     competitionStatus.Set("Competition: Teams have been changed during competition start-up, aborting.");
+                    competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                     StopCompetition();
                     yield break;
                 }
@@ -601,6 +611,7 @@ namespace BDArmory.Control
                     if (pilot == null)
                     {
                         competitionStatus.Set("Competition: A pilot has disappeared from team during competition start-up, aborting.");
+                        competitionStartFailureReason = CompetitionStartFailureReason.PilotDisappeared;
                         StopCompetition(); // Check that the team pilots haven't been changed during the competition startup.
                         yield break;
                     }
