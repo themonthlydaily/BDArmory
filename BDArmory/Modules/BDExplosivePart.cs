@@ -52,7 +52,7 @@ namespace BDArmory.Modules
         public void ArmAG(KSPActionParam param)
         {
             Armed = true;
-			guiStatusString = "ARMED";
+			guiStatusString = "ARMED"; // Future me, this needs localization at some point
         }
 
         [KSPAction("Detonate")]
@@ -81,15 +81,15 @@ namespace BDArmory.Modules
                 part.explosionPotential = 1.0f;
                 part.OnJustAboutToBeDestroyed += DetonateIfPossible;
                 part.force_activate();
-				sourcevessel = vessel;
-				using (List<MissileFire>.Enumerator MF = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-					while (MF.MoveNext())
-					{
-						if (MF.Current == null) continue;
-						sourcevessel = MF.Current.vessel;
-						break;
-					}
-			}
+		sourcevessel = vessel;
+		using (List<MissileFire>.Enumerator MF = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+		    while (MF.MoveNext()) // grab the vessel the Weapon manager is on at start
+		    {
+			if (MF.Current == null) continue;
+			sourcevessel = MF.Current.vessel;
+			break;
+		    }
+	    }
 
             if (BDArmorySettings.ADVANCED_EDIT)
             {
@@ -101,9 +101,9 @@ namespace BDArmory.Modules
             }
 
             CalculateBlast();
-			SetInitialDetonationDistance();
+	    SetInitialDetonationDistance();
 
-		}
+	}
 
         public void Update()
         {
@@ -111,23 +111,23 @@ namespace BDArmory.Modules
             {
                 OnUpdateEditor();
             }
-			if (HighLogic.LoadedSceneIsFlight)
+	    if (HighLogic.LoadedSceneIsFlight)
+	    {
+		if (Armed)
+		{
+		    if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
 			{
-				if (Armed)
-				{
-					if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0)
-					{
-						if (sourcevessel != part.vessel)
-						{
-							distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
-						}
-					}
-					if (Checkproximity(distanceFromStart))
-					{
-						Detonate();
-					}
-				}
+			    if (sourcevessel != part.vessel)
+			    {
+				distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
+			    }
 			}
+			if (Checkproximity(distanceFromStart))
+			{
+			    Detonate();
+			}
+		    }
+		}
             if (hasDetonated)
             {
                 this.part.explode();
@@ -175,7 +175,7 @@ namespace BDArmory.Modules
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part);
 				hasDetonated = true;
 				part.Destroy();
-			}
+	    }
         }
 
         public float GetBlastRadius()
