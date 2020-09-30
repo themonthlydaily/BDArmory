@@ -36,6 +36,7 @@ namespace BDArmory.Competition
         public Dictionary<string, int> missilePartsIn = new Dictionary<string, int>();
         public Dictionary<string, double> missileDamageOut = new Dictionary<string, double>();
         public Dictionary<string, double> missileDamageIn = new Dictionary<string, double>();
+        public Dictionary<string, int> deathOrder = new Dictionary<string, int>();
 
         public enum StatusType
         {
@@ -286,16 +287,23 @@ namespace BDArmory.Competition
 
             // orchestrate the match
             activePlayers.Clear();
+            assists.Clear();
+            damageIn.Clear();
+            damageOut.Clear();
+            deathOrder.Clear();
+            deaths.Clear();
+            hitsIn.Clear();
             hitsOnTarget.Clear();
             hitsOut.Clear();
-            hitsIn.Clear();
-            damageOut.Clear();
-            damageIn.Clear();
             killsOnTarget.Clear();
-            deaths.Clear();
-            assists.Clear();
             longestHitDistance.Clear();
             longestHitWeapon.Clear();
+            missileDamageIn.Clear();
+            missileDamageOut.Clear();
+            missilePartsIn.Clear();
+            missilePartsOut.Clear()
+            rammedPartsIn.Clear();
+            rammedPartsOut.Clear();
 
             status = StatusType.SpawningVessels;
             spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, hash);
@@ -374,8 +382,9 @@ namespace BDArmory.Competition
                 record.mis_dmg_out = ComputeTotalMissileDamageOut(player.name);
                 record.mis_dmg_in = ComputeTotalMissileDamageIn(player.name);
                 record.kills = ComputeTotalKills(player.name);
-                record.deaths = ComputeTotalDeaths(player.name);
                 record.assists = ComputeTotalAssists(player.name);
+                record.deaths = ComputeTotalDeaths(player.name);
+                record.death_order = deathOrder.ContainsKey(player.name) ? deathOrder[player.name] : -1;
                 if (longestHitDistance.ContainsKey(player.name))
                 {
                     record.distance = (float)longestHitDistance[player.name];
@@ -709,7 +718,7 @@ namespace BDArmory.Competition
         }
 
         /**
-         * Tracks an unattributed death, where no clear attacker exists.
+         * Tracks a death.
          */
         public void TrackDeath(string target)
         {
@@ -719,6 +728,8 @@ namespace BDArmory.Competition
             }
             activePlayers.Add(target);
             IncrementDeath(target);
+            if (!deathOrder.ContainsKey(target)) // A plane shouldn't die more than once per heat...
+                deathOrder.Add(target, deathOrder.Count);
         }
 
         private void IncrementDeath(string target)
