@@ -301,7 +301,7 @@ namespace BDArmory.Competition
             missileDamageIn.Clear();
             missileDamageOut.Clear();
             missilePartsIn.Clear();
-            missilePartsOut.Clear()
+            missilePartsOut.Clear();
             rammedPartsIn.Clear();
             rammedPartsOut.Clear();
 
