@@ -218,19 +218,18 @@ namespace BDArmory.Modules
 			{
 				ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
 				int lastAmmoID = this.AmmoID;
-				List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator();
-				while (weapon.MoveNext())
-				{
-					if (weapon.Current == null) continue;
-					if (weapon.Current.GetShortName() != this.GetShortName()) continue;
-					if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
+				using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+					while (weapon.MoveNext())
 					{
-						vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
-						ammoLeft += "; " + ammoCurrent.ToString("0");
-						lastAmmoID = weapon.Current.AmmoID;
+						if (weapon.Current == null) continue;
+						if (weapon.Current.GetShortName() != this.GetShortName()) continue;
+						if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
+						{
+							vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
+							ammoLeft += "; " + ammoCurrent.ToString("0");
+							lastAmmoID = weapon.Current.AmmoID;
+						}
 					}
-				}
-				weapon.Dispose();
 			}
 			return ammoLeft;
 		}
@@ -286,7 +285,7 @@ namespace BDArmory.Modules
 
 		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Rate of Fire"),
 		UI_FloatRange(minValue = 100f, maxValue = 1500, stepIncrement = 25f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
-		public float roundsPerMinute; //rocket RoF slider
+		public float roundsPerMinute = 650; //rocket RoF slider
 		[KSPField]
 		public float maxDeviation = 1; //inaccuracy two standard deviations in degrees (two because backwards compatibility :)
 
@@ -391,7 +390,6 @@ namespace BDArmory.Modules
 		[KSPField] public bool HeatRay = false; //conic AoE
 		[KSPField] public bool electroLaser = false; //Drains EC from target/induces EMP effects
 		float beamDuration = 0.1f; // duration of pulselaser beamFX
-		
 		//Rocket info; 
 
 		[KSPField(isPersistant = false)] public string rocketModelPath;
@@ -694,6 +692,10 @@ namespace BDArmory.Modules
 			}
 
 			vessel.Velocity();
+			if (BurstFire)
+			{
+				BeltFed = false;
+			}
 			if (eWeaponType == WeaponTypes.Ballistic)
 			{
 				if (airDetonation)
@@ -908,7 +910,7 @@ namespace BDArmory.Modules
 			}
 
 			SetupBullet();
-			SetInitialDetonationDistance();
+
 			if (bulletInfo == null)
 			{
 				if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -1722,7 +1724,6 @@ namespace BDArmory.Modules
 				}
 			}
 		}
-
 		void SetupLaserSpecifics()
 		{
 			chargeSound = GameDatabase.Instance.GetAudioClip(chargeSoundPath);
@@ -1761,13 +1762,13 @@ namespace BDArmory.Modules
 		public void FireRocket() //#11, #673
 		{
 			int rocketsLeft;
-			
+
 			float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
 			if (Time.time - timeFired > timeGap && !isReloading || !pointingAtSelf && (aiControlled || !Misc.Misc.CheckMouseIsOnGui()) && WMgrAuthorized())
 			{// fixes rocket ripple code for proper rippling
 				for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
 				{
-					if (CanFire())
+					if (CanFire(requestResourceAmount))
 					{
 						if (BDArmorySettings.INFINITE_AMMO)
 						{
@@ -1888,7 +1889,7 @@ namespace BDArmory.Modules
 			Transform rocketsTransform = part.FindModelTransform("rockets");// important to keep this seperate from the fireTransformName transform
 			int numOfRockets = rocketsTransform.childCount;     // due to rockets.Rocket_n being inconsistantly aligned 
 			rockets = new Transform[numOfRockets];              // (and subsequently messing up the aim() vestors) 
-			if (rocketPod)								      // and this overwriting the previous fireTransFormName -> fireTransForms
+			if (rocketPod)                                    // and this overwriting the previous fireTransFormName -> fireTransForms
 			{
 				RoundsPerMag = numOfRockets;
 			}
@@ -1935,6 +1936,7 @@ namespace BDArmory.Modules
 				}
 			return null;
 		}
+
 		#endregion
 
 		//more code organization
@@ -2536,7 +2538,6 @@ namespace BDArmory.Modules
 				else
 				{
 					finalFire = false;
-					RoundsRemaining = 0;
 				}
 			}
 
@@ -2973,7 +2974,7 @@ namespace BDArmory.Modules
 					{
 						output.AppendLine($"Uses External Ammo");
 					}
-					if(!BeltFed)
+					if (!BeltFed)
 					{
 						output.AppendLine($" Reloadable");
 						output.AppendLine($" - Shots before Reload: {RoundsPerMag}");
@@ -3197,6 +3198,8 @@ namespace BDArmory.Modules
 			GUI.DragWindow();
 
 			BDGUIUtils.RepositionWindow(ref guiWindowRect);
+
+
 		}
 
 		private static void InitializeStyles()
