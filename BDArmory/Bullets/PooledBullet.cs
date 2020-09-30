@@ -670,14 +670,14 @@ namespace BDArmory.Bullets
         {
             float penetration = 0;
             if (apBulletMod <= 0) // sanity check/legacy compatibility
-			{
-				apBulletMod = 1;
-			}
+            {
+                apBulletMod = 1;
+            }
 
             if (caliber > 5) //use the "krupp" penetration formula for anything larger than HMGs
             {
-                penetration = (float)(16f * impactVelocity * Math.Sqrt(bulletMass / 1000) / Math.Sqrt(caliber)*apBulletMod); //APulletMod now actually implemented, serves as penetration multiplier, 1 being neutral, <1 for soft rounds, >1 for AP penetrators
-            }                                                                                                               
+                penetration = (float)(16f * impactVelocity * Math.Sqrt(bulletMass / 1000) / Math.Sqrt(caliber) * apBulletMod); //APBulletMod now actually implemented, serves as penetration multiplier, 1 being neutral, <1 for soft rounds, >1 for AP penetrators
+            }
 
             return penetration;
         }
