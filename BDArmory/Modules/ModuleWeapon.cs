@@ -1580,6 +1580,8 @@ namespace BDArmory.Modules
 					{
 						LaserBeam(aName);
 						heat += heatPerShot * TimeWarp.CurrentRate;
+						for (float iTime = TimeWarp.fixedDeltaTime; iTime >= 0; iTime -= timeGap)
+							timeFired = Time.time - iTime;
 					}
 					if (!BeltFed)
 					{
