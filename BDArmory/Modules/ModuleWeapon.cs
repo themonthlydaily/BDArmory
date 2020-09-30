@@ -1581,6 +1581,10 @@ namespace BDArmory.Modules
 						LaserBeam(aName);
 						heat += heatPerShot * TimeWarp.CurrentRate;
 					}
+					if (!BeltFed)
+					{
+						RoundsRemaining++;
+					}
 					return true;
 				}
 				else
