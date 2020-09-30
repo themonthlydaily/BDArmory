@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using BDArmory.Competition;
+using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
@@ -21,6 +23,7 @@ namespace BDArmory.Modules
 	{
 		public Transform spawnTransform;
 		public Vessel sourceVessel;
+		public string sourceVesselName;
 		public float mass;
 		public float thrust;
 		public float thrustTime;
@@ -98,6 +101,18 @@ namespace BDArmory.Modules
 			randThrustSeed = UnityEngine.Random.Range(0f, 100f);
 
 			SetupAudio();
+
+			if (this.sourceVessel)
+			{
+				var aName = this.sourceVessel.GetName();
+				if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
+					++BDACompetitionMode.Instance.Scores[aName].shotsFired;
+				sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
+			}
+			else
+			{
+				sourceVesselName = null;
+			}
 		}
 
 		void FixedUpdate()
@@ -159,26 +174,25 @@ namespace BDArmory.Modules
 			if (Time.time - startTime > thrustTime)
 			{
 				//isThrusting = false;
-				IEnumerator<KSPParticleEmitter> pEmitter = pEmitters.AsEnumerable().GetEnumerator();
-				while (pEmitter.MoveNext())
-				{
-					if (pEmitter.Current == null) continue;
-					if (pEmitter.Current.useWorldSpace)
+				using (IEnumerator<KSPParticleEmitter> pEmitter = pEmitters.AsEnumerable().GetEnumerator())
+					while (pEmitter.MoveNext())
 					{
-						pEmitter.Current.minSize = Mathf.MoveTowards(pEmitter.Current.minSize, 0.1f, 0.05f);
-						pEmitter.Current.maxSize = Mathf.MoveTowards(pEmitter.Current.maxSize, 0.2f, 0.05f);
-					}
-					else
-					{
-						pEmitter.Current.minSize = Mathf.MoveTowards(pEmitter.Current.minSize, 0, 0.1f);
-						pEmitter.Current.maxSize = Mathf.MoveTowards(pEmitter.Current.maxSize, 0, 0.1f);
-						if (pEmitter.Current.maxSize == 0)
+						if (pEmitter.Current == null) continue;
+						if (pEmitter.Current.useWorldSpace)
 						{
-							pEmitter.Current.emit = false;
+							pEmitter.Current.minSize = Mathf.MoveTowards(pEmitter.Current.minSize, 0.1f, 0.05f);
+							pEmitter.Current.maxSize = Mathf.MoveTowards(pEmitter.Current.maxSize, 0.2f, 0.05f);
+						}
+						else
+						{
+							pEmitter.Current.minSize = Mathf.MoveTowards(pEmitter.Current.minSize, 0, 0.1f);
+							pEmitter.Current.maxSize = Mathf.MoveTowards(pEmitter.Current.maxSize, 0, 0.1f);
+							if (pEmitter.Current.maxSize == 0)
+							{
+								pEmitter.Current.emit = false;
+							}
 						}
 					}
-				}
-				pEmitter.Dispose();
 			}
 
 			if (Time.time - startTime > 0.1f + stayTime)
@@ -224,32 +238,32 @@ namespace BDArmory.Modules
 
 						if (hitPart == null || (hitPart != null && hitPart.vessel != sourceVessel))
 						{
-							Detonate(hit.point);
+							Detonate(hit.point, false);
 						}
 					}
 					else if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
 					{
-						Detonate(transform.position);
+						Detonate(transform.position, false);
 					}
 				}
 			}
 			else if (FlightGlobals.getAltitudeAtPos(currPosition) <= 0)
 			{
-				Detonate(currPosition);
+				Detonate(currPosition, false);
 			}
 			prevPosition = currPosition;
 
 			if (Time.time - startTime > lifeTime) // life's 10s, quite a long time for faster rockets
 			{
-				Detonate(transform.position);
+				Detonate(transform.position, true);
 			}
 			if (distanceFromStart >= maxAirDetonationRange)//rockets are performance intensive, lets cull those that have flown too far away
 			{
-				Detonate(transform.position);
+				Detonate(transform.position, false);
 			}
 			if (ProximityAirDetonation(distanceFromStart))
 			{
-				Detonate(transform.position);
+				Detonate(transform.position, false);
 			}
 		}
 		private bool ProximityAirDetonation(float distanceFromStart)
@@ -303,24 +317,24 @@ namespace BDArmory.Modules
 				}
 			}
 		}
-		void Detonate(Vector3 pos)
+		void Detonate(Vector3 pos, bool missed)
 		{
 			BDArmorySetup.numberOfParticleEmitters--;
-
-			ExplosionFx.CreateExplosion(pos, BlastPhysicsUtils.CalculateExplosiveMass(blastRadius), explModelPath, explSoundPath, ExplosionSourceType.Missile);
-
-			IEnumerator<KSPParticleEmitter> emitter = pEmitters.AsEnumerable().GetEnumerator();
-			while (emitter.MoveNext())
+			if (!missed)
 			{
-				if (emitter.Current == null) continue;
-				if (!emitter.Current.useWorldSpace) continue;
-				emitter.Current.gameObject.AddComponent<BDAParticleSelfDestruct>();
-				emitter.Current.transform.parent = null;
-			}
-			emitter.Dispose();
+				ExplosionFx.CreateExplosion(pos, BlastPhysicsUtils.CalculateExplosiveMass(blastRadius), explModelPath, explSoundPath, ExplosionSourceType.Bullet, 70, null, sourceVessel.vesselName);
+			} // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
+
+			using (IEnumerator<KSPParticleEmitter> emitter = pEmitters.AsEnumerable().GetEnumerator())
+				while (emitter.MoveNext())
+				{
+					if (emitter.Current == null) continue;
+					if (!emitter.Current.useWorldSpace) continue;
+					emitter.Current.gameObject.AddComponent<BDAParticleSelfDestruct>();
+					emitter.Current.transform.parent = null;
+				}
 			Destroy(gameObject); //destroy rocket on collision
 		}
-
 
 		void SetupAudio()
 		{
