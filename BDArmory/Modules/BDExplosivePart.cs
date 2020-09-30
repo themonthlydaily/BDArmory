@@ -212,6 +212,7 @@ namespace BDArmory.Modules
 					{
 						Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 						if (partHit?.vessel == vessel || partHit?.vessel == sourcevessel) continue;
+						if (partHit?.vessel.vesselType == VesselType.Debris) continue;
 						//Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
 						return detonate = true;
 					}
