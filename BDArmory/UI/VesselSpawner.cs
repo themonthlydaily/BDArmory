@@ -1109,7 +1109,7 @@ namespace BDArmory.UI
             {
                 vesselSpawnSuccess = false;
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(false); // Reset everyone to team 'A' so that the order doesn't get messed up.
-                yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, "piñatas"); // Spawn piñatas at 5k up.
+                yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, "Targets"); // Spawn target vessels at 5k up.
             }
             LoadedVesselSwitcher.Instance.MassTeamSwitch(false, new List<int> { playersCount, spawnedVesselCount }); // Assign teams.
             if (vesselSpawnSuccess)
