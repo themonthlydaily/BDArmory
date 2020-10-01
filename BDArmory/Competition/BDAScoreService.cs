@@ -36,7 +36,6 @@ namespace BDArmory.Competition
         public Dictionary<string, int> missilePartsIn = new Dictionary<string, int>();
         public Dictionary<string, double> missileDamageOut = new Dictionary<string, double>();
         public Dictionary<string, double> missileDamageIn = new Dictionary<string, double>();
-        public Dictionary<string, int> deathOrder = new Dictionary<string, int>();
 
         public enum StatusType
         {
@@ -290,7 +289,6 @@ namespace BDArmory.Competition
             assists.Clear();
             damageIn.Clear();
             damageOut.Clear();
-            deathOrder.Clear();
             deaths.Clear();
             hitsIn.Clear();
             hitsOnTarget.Clear();
@@ -382,9 +380,8 @@ namespace BDArmory.Competition
                 record.mis_dmg_out = ComputeTotalMissileDamageOut(player.name);
                 record.mis_dmg_in = ComputeTotalMissileDamageIn(player.name);
                 record.kills = ComputeTotalKills(player.name);
-                record.assists = ComputeTotalAssists(player.name);
                 record.deaths = ComputeTotalDeaths(player.name);
-                record.death_order = deathOrder.ContainsKey(player.name) ? deathOrder[player.name] : -1;
+                record.assists = ComputeTotalAssists(player.name);
                 if (longestHitDistance.ContainsKey(player.name))
                 {
                     record.distance = (float)longestHitDistance[player.name];
@@ -728,8 +725,6 @@ namespace BDArmory.Competition
             }
             activePlayers.Add(target);
             IncrementDeath(target);
-            if (!deathOrder.ContainsKey(target)) // A plane shouldn't die more than once per heat...
-                deathOrder.Add(target, deathOrder.Count);
         }
 
         private void IncrementDeath(string target)
