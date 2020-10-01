@@ -210,7 +210,7 @@ namespace BDArmory.Modules
 
 		public void DetonateIfPossible()
 		{
-			if (!hasDetonated && Armed)
+			if (!hasDetonated && Armed && !manualOverride)
 			{
 				Vector3 direction = default(Vector3);
 
