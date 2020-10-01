@@ -8,27 +8,27 @@ using UnityEngine;
 
 namespace BDArmory.Modules
 {
-    public class BDExplosivePart : PartModule
-    {
+	public class BDExplosivePart : PartModule
+	{
 		float distanceFromStart = 500;
 		Vessel sourcevessel;
 
 		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
-        UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
-        public float tntMass = 1;
+		UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
+		public float tntMass = 1;
 
-        [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_BlastRadius"),//Blast Radius
-         UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
-        public float blastRadius = 10;
+		[KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_BlastRadius"),//Blast Radius
+		 UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
+		public float blastRadius = 10;
 
-		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ProximityFuzeRadius"), UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Proximity Fuze Radius
+		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ProximityFuzeRadius"), UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Proximity Fuze Radius
 		public float detonationRange = -1f; // give ability to set proximity range
 
-		[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Status")]//Status
-		public string guiStatusString =	"Safe";
+		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Status")]//Status
+		public string guiStatusString = "Safe";
 
 		//PartWindow buttons
-		[KSPEvent(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Toggle")]//Toggle
+		[KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Toggle")]//Toggle
 		public void Toggle()
 		{
 			Armed = !Armed;
@@ -43,146 +43,159 @@ namespace BDArmory.Modules
 		}
 
 		[KSPField]
-        public string explModelPath = "BDArmory/Models/explosion/explosion";
+		public string explModelPath = "BDArmory/Models/explosion/explosion";
 
-        [KSPField]
-        public string explSoundPath = "BDArmory/Sounds/explode1";
+		[KSPField]
+		public string explSoundPath = "BDArmory/Sounds/explode1";
 
-        [KSPAction("Arm")]
-        public void ArmAG(KSPActionParam param)
-        {
-            Armed = true;
-			guiStatusString = "ARMED"; // Future me, this needs localization at some point
-        }
-
-        [KSPAction("Detonate")]
-        public void DetonateAG(KSPActionParam param)
-        {
-            Detonate();
-        }
-
-        [KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_Detonate", active = true)]//Detonate
-        public void DetonateEvent()
-        {
-            Detonate();
-        }
-
-        public bool Armed { get; set; } = false;
-        public bool Shaped { get; set; } = false;
-
-        private double previousMass = -1;
-
-        bool hasDetonated;
-
-        public override void OnStart(StartState state)
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                part.explosionPotential = 1.0f;
-                part.OnJustAboutToBeDestroyed += DetonateIfPossible;
-                part.force_activate();
-		sourcevessel = vessel;
-		using (List<MissileFire>.Enumerator MF = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-		    while (MF.MoveNext()) // grab the vessel the Weapon manager is on at start
-		    {
-			if (MF.Current == null) continue;
-			sourcevessel = MF.Current.vessel;
-			break;
-		    }
-	    }
-
-            if (BDArmorySettings.ADVANCED_EDIT)
-            {
-                //Fields["tntMass"].guiActiveEditor = true;
-
-                //((UI_FloatRange)Fields["tntMass"].uiControlEditor).minValue = 0f;
-                //((UI_FloatRange)Fields["tntMass"].uiControlEditor).maxValue = 3000f;
-                //((UI_FloatRange)Fields["tntMass"].uiControlEditor).stepIncrement = 5f;
-            }
-
-            CalculateBlast();
-	    SetInitialDetonationDistance();
-
-	}
-
-        public void Update()
-        {
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                OnUpdateEditor();
-            }
-	    if (HighLogic.LoadedSceneIsFlight)
-	    {
-		if (Armed)
+		[KSPAction("Arm")]
+		public void ArmAG(KSPActionParam param)
 		{
-		    if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
-			{
-			    if (sourcevessel != part.vessel)
-			    {
-				distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
-			    }
-			}
-			if (Checkproximity(distanceFromStart))
-			{
-			    Detonate();
-			}
-		    }
+			Armed = true;
+			guiStatusString = "ARMED"; // Future me, this needs localization at some point
 		}
-            if (hasDetonated)
-            {
-                this.part.explode();
-            }
-        }
 
-        private void OnUpdateEditor()
-        {
-            CalculateBlast();
-        }
+		[KSPAction("Detonate")]
+		public void DetonateAG(KSPActionParam param)
+		{
+			Detonate();
+		}
 
-        private void CalculateBlast()
-        {
-            if (part.Resources.Contains("HighExplosive"))
-            {
-                if (part.Resources["HighExplosive"].amount == previousMass) return;
+		[KSPEvent(guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_Detonate", active = true)]//Detonate
+		public void DetonateEvent()
+		{
+			Detonate();
+		}
 
-                tntMass = (float)(part.Resources["HighExplosive"].amount * part.Resources["HighExplosive"].info.density * 1000) * 1.5f;
-                part.explosionPotential = tntMass / 10f;
-                previousMass = part.Resources["HighExplosive"].amount;
-            }
+		public bool Armed { get; set; } = false;
+		public bool Shaped { get; set; } = false;
+		bool isMissile = true;
 
-            blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
-        }
+		private double previousMass = -1;
 
-        public void DetonateIfPossible()
-        {
-            if (!hasDetonated && Armed)
-            {
-                Vector3 direction = default(Vector3);
+		bool hasDetonated;
 
-                if (Shaped)
-                {
-                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
-                }
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, null, direction);
-                hasDetonated = true;
-            }
-        }
+		public override void OnStart(StartState state)
+		{
+			if (HighLogic.LoadedSceneIsFlight)
+			{
+				part.explosionPotential = 1.0f;
+				part.OnJustAboutToBeDestroyed += DetonateIfPossible;
+				part.force_activate();
+				sourcevessel = vessel;
+				using (List<MissileFire>.Enumerator MF = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+					while (MF.MoveNext()) // grab the vessel the Weapon manager is on at start
+					{
+						if (MF.Current == null) continue;
+						sourcevessel = MF.Current.vessel;
+						break;
+					}
+			}
+			if (part.FindModuleImplementing<MissileLauncher>() == null)
+			{
+				isMissile = false;
+				Events["Toggle"].guiActiveEditor = true;
+				Events["Toggle"].guiActive = true;
+				Fields["guiStatusString"].guiActiveEditor = true;
+				Fields["guiStatusString"].guiActive = true;
+				Fields["detonationRange"].guiActiveEditor = true;
+				Fields["detonationRange"].guiActive = true;
+				SetInitialDetonationDistance();
+			}
+			if (BDArmorySettings.ADVANCED_EDIT)
+			{
+				//Fields["tntMass"].guiActiveEditor = true;
 
-        private void Detonate()
-        {
-            if (!hasDetonated && Armed)
-            {
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part);
+				//((UI_FloatRange)Fields["tntMass"].uiControlEditor).minValue = 0f;
+				//((UI_FloatRange)Fields["tntMass"].uiControlEditor).maxValue = 3000f;
+				//((UI_FloatRange)Fields["tntMass"].uiControlEditor).stepIncrement = 5f;
+			}
+
+			CalculateBlast();
+
+		}
+
+		public void Update()
+		{
+			if (HighLogic.LoadedSceneIsEditor)
+			{
+				OnUpdateEditor();
+			}
+			if (HighLogic.LoadedSceneIsFlight)
+			{
+				if (!isMissile)
+				{
+					if (Armed)
+					{
+						if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
+						{
+							if (sourcevessel != part.vessel)
+							{
+								distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
+							}
+						}
+						if (Checkproximity(distanceFromStart))
+						{
+							Detonate();
+						}
+					}
+				}
+			}
+			if (hasDetonated)
+			{
+				this.part.explode();
+			}
+		}
+
+		private void OnUpdateEditor()
+		{
+			CalculateBlast();
+		}
+
+		private void CalculateBlast()
+		{
+			if (part.Resources.Contains("HighExplosive"))
+			{
+				if (part.Resources["HighExplosive"].amount == previousMass) return;
+
+				tntMass = (float)(part.Resources["HighExplosive"].amount * part.Resources["HighExplosive"].info.density * 1000) * 1.5f;
+				part.explosionPotential = tntMass / 10f;
+				previousMass = part.Resources["HighExplosive"].amount;
+			}
+
+			blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
+		}
+
+		public void DetonateIfPossible()
+		{
+			if (!hasDetonated && Armed)
+			{
+				Vector3 direction = default(Vector3);
+
+				if (Shaped)
+				{
+					direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+				}
+				ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, null, direction);
+				hasDetonated = true;
+			}
+		}
+
+		private void Detonate()
+		{
+			if (!hasDetonated && Armed)
+			{
+				ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part);
 				hasDetonated = true;
 				part.Destroy();
-	    }
-        }
+			}
+		}
 
-        public float GetBlastRadius()
-        {
-            CalculateBlast();
-            return blastRadius;
-        }
+		public float GetBlastRadius()
+		{
+			CalculateBlast();
+			return blastRadius;
+		}
 		protected void SetInitialDetonationDistance()
 		{
 			if (this.detonationRange == -1)
@@ -213,7 +226,8 @@ namespace BDArmory.Modules
 						Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 						if (partHit?.vessel == vessel || partHit?.vessel == sourcevessel) continue;
 						if (partHit?.vessel.vesselType == VesselType.Debris) continue;
-						//Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
+						if (partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;
+						Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
 						return detonate = true;
 					}
 					catch
