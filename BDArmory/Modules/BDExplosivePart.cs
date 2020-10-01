@@ -25,7 +25,7 @@ namespace BDArmory.Modules
 		public float detonationRange = -1f; // give ability to set proximity range
 
 		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Status")]//Status
-		public string guiStatusString = "Safe";
+		public string guiStatusString = "ARMED";
 
 		//PartWindow buttons
 		[KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Toggle")]//Toggle
