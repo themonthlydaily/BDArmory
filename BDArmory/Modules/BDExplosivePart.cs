@@ -215,7 +215,7 @@ namespace BDArmory.Modules
 				return detonate = false;
 			}
 
-			using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
+			using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
 			{
 				while (hitsEnu.MoveNext())
 				{
