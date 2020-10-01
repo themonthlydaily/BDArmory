@@ -91,6 +91,8 @@ namespace BDArmory.Modules
 		public bool Armed { get; set; } = true;
 		public bool Shaped { get; set; } = false;
 		public bool isMissile = true;
+
+		[KSPField(isPersistant = true)]
 		public bool manualOverride = false;
 		private double previousMass = -1;
 
@@ -139,8 +141,16 @@ namespace BDArmory.Modules
 				Events["ToggleProx"].guiActive = true;
 				Fields["guiStatusString"].guiActiveEditor = true;
 				Fields["guiStatusString"].guiActive = true;
-				Fields["detonationRange"].guiActiveEditor = false;
-				Fields["detonationRange"].guiActive = false;
+				if (manualOverride)
+				{
+					Fields["detonationRange"].guiActiveEditor = true;
+					Fields["detonationRange"].guiActive = true;
+				}
+				else
+				{
+					Fields["detonationRange"].guiActiveEditor = false;
+					Fields["detonationRange"].guiActive = false;
+				}
 				SetInitialDetonationDistance();
 			}
 			else
