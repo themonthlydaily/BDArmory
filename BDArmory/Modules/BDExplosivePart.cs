@@ -67,7 +67,7 @@ namespace BDArmory.Modules
 			Detonate();
 		}
 
-		public bool Armed { get; set; } = false;
+		public bool Armed { get; set; } = true;
 		public bool Shaped { get; set; } = false;
 		bool isMissile = true;
 
