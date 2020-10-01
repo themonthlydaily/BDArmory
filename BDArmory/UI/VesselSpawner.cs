@@ -803,7 +803,7 @@ namespace BDArmory.UI
                         {
                             BDACompetitionMode.Instance.Scores[vessel.vesselName] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count };
                             if (!BDACompetitionMode.Instance.DeathOrder.ContainsKey(vessel.vesselName)) // Temporarily add the vessel to the DeathOrder to prevent it from being detected as newly dead until it's finished spawning.
-                                BDACompetitionMode.Instance.DeathOrder.Add(vessel.vesselName, BDACompetitionMode.Instance.DeathOrder.Count);
+                                BDACompetitionMode.Instance.DeathOrder.Add(vessel.vesselName, new Tuple<int, double>(BDACompetitionMode.Instance.DeathOrder.Count, 0));
                         }
                         if (!vesselsToActivate.Contains(vessel))
                             vesselsToActivate.Add(vessel);
