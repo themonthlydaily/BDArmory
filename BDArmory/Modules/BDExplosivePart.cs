@@ -2,6 +2,7 @@ using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
+using KSP.Localization;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -28,18 +29,37 @@ namespace BDArmory.Modules
 		public string guiStatusString = "ARMED";
 
 		//PartWindow buttons
-		[KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Toggle")]//Toggle
+		[KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "Disarm Warhead")]//Toggle
 		public void Toggle()
 		{
 			Armed = !Armed;
 			if (Armed)
 			{
 				guiStatusString = "ARMED";
+				Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");//"Enable Engage Options"
 			}
 			else
 			{
 				guiStatusString = "Safe";
+				Events["Toggle"].guiName = Localizer.Format("Arm Warhead");//"Disable Engage Options"
 			}
+		}
+
+		[KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_DetonationDistanceOverride")]//Toggle
+		public void ToggleProx()
+		{
+			manualOverride = !manualOverride;
+			if (manualOverride)
+			{
+				Fields["detonationRange"].guiActiveEditor = true;
+				Fields["detonationRange"].guiActive = true;
+			}
+			else
+			{
+				Fields["detonationRange"].guiActiveEditor = false;
+				Fields["detonationRange"].guiActive = false;
+			}
+			Misc.Misc.RefreshAssociatedWindows(part);
 		}
 
 		[KSPField]
@@ -53,6 +73,7 @@ namespace BDArmory.Modules
 		{
 			Armed = true;
 			guiStatusString = "ARMED"; // Future me, this needs localization at some point
+			Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");//"Enable Engage Options"
 		}
 
 		[KSPAction("Detonate")]
@@ -69,8 +90,8 @@ namespace BDArmory.Modules
 
 		public bool Armed { get; set; } = true;
 		public bool Shaped { get; set; } = false;
-		bool isMissile = true;
-
+		public bool isMissile = true;
+		public bool manualOverride = false;
 		private double previousMass = -1;
 
 		bool hasDetonated;
@@ -94,14 +115,8 @@ namespace BDArmory.Modules
 			if (part.FindModuleImplementing<MissileLauncher>() == null)
 			{
 				isMissile = false;
-				Events["Toggle"].guiActiveEditor = true;
-				Events["Toggle"].guiActive = true;
-				Fields["guiStatusString"].guiActiveEditor = true;
-				Fields["guiStatusString"].guiActive = true;
-				Fields["detonationRange"].guiActiveEditor = true;
-				Fields["detonationRange"].guiActive = true;
-				SetInitialDetonationDistance();
 			}
+			GuiSetup();
 			if (BDArmorySettings.ADVANCED_EDIT)
 			{
 				//Fields["tntMass"].guiActiveEditor = true;
@@ -112,7 +127,34 @@ namespace BDArmory.Modules
 			}
 
 			CalculateBlast();
+		}
 
+		public void GuiSetup()
+		{
+			if (!isMissile)
+			{
+				Events["Toggle"].guiActiveEditor = true;
+				Events["Toggle"].guiActive = true;
+				Events["ToggleProx"].guiActiveEditor = true;
+				Events["ToggleProx"].guiActive = true;
+				Fields["guiStatusString"].guiActiveEditor = true;
+				Fields["guiStatusString"].guiActive = true;
+				Fields["detonationRange"].guiActiveEditor = false;
+				Fields["detonationRange"].guiActive = false;
+				SetInitialDetonationDistance();
+			}
+			else
+			{
+				Events["Toggle"].guiActiveEditor = false;
+				Events["Toggle"].guiActive = false;
+				Events["ToggleProx"].guiActiveEditor = false;
+				Events["ToggleProx"].guiActive = false;
+				Fields["guiStatusString"].guiActiveEditor = false;
+				Fields["guiStatusString"].guiActive = false;
+				Fields["detonationRange"].guiActiveEditor = false;
+				Fields["detonationRange"].guiActive = false;
+			}
+			Misc.Misc.RefreshAssociatedWindows(part);
 		}
 
 		public void Update()
@@ -123,7 +165,7 @@ namespace BDArmory.Modules
 			}
 			if (HighLogic.LoadedSceneIsFlight)
 			{
-				if (!isMissile)
+				if (!isMissile && manualOverride) // don't call proximity code if a missile/MMG, use theirs
 				{
 					if (Armed)
 					{
@@ -227,7 +269,7 @@ namespace BDArmory.Modules
 						if (partHit?.vessel == vessel || partHit?.vessel == sourcevessel) continue;
 						if (partHit?.vessel.vesselType == VesselType.Debris) continue;
 						if (partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;
-						Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
+						//Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
 						return detonate = true;
 					}
 					catch
