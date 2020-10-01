@@ -527,7 +527,7 @@ namespace BDArmory.Modules
             // if (DynamicDampingRollMin > DynamicDampingRollMax) { DynamicDampingRollMin = DynamicDampingRollMax; } // reversed roll dynamic damp behavior
         }
 
-        public void ToggleActiveDynamicDampingFields()
+        public void ToggleDynamicDampingFields()
         {
             // Dynamic damping
             var DynamicDampingLabel = Fields["DynamicDampingLabel"];
@@ -632,7 +632,7 @@ namespace BDArmory.Modules
             // SetSliderClamps("DynamicDampingRollMin", "DynamicDampingRollMax");
             dynamicDamping = dynamicSteerDamping;
             CustomDynamicAxisField = CustomDynamicAxisFields;
-            ToggleActiveDynamicDampingFields();
+            ToggleDynamicDampingFields();
             // InitSteerDamping();
         }
 
@@ -700,13 +700,13 @@ namespace BDArmory.Modules
             {
                 // InitSteerDamping();
                 dynamicDamping = dynamicSteerDamping;
-                ToggleActiveDynamicDampingFields();
+                ToggleDynamicDampingFields();
             }
             //hide custom dynamic axis fields when it isn't toggled
             if (CustomDynamicAxisFields != CustomDynamicAxisField)
             {
                 CustomDynamicAxisField = CustomDynamicAxisFields;
-                ToggleActiveDynamicDampingFields();
+                ToggleDynamicDampingFields();
             }
         }
 
