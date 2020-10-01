@@ -40,13 +40,12 @@ namespace BDArmory.CounterMeasure
             // since range of values are too small for smaller heat values, and flares tend to decay to even colder values, rendering them useless
 
             /* Alternate flare gen code, adjusts curve towards high end up to 5000K heat engines. Polynomial versions available.
-            
+
             thermal = BDATargetManager.GetVesselHeatSignature(sourceVessel);
             //float thermalMinMult = Mathf.Clamp(-0.166f * (float)Math.Log(thermal) + 1.9376f, 0.5f, 0.82f);
             //float thermalMaxMult = Mathf.Clamp(0.3534f * (float)Math.Log(thermal) - 1.0251f, 1.35f, 2.0f);
 
             thermal *= UnityEngine.Random.Range(thermalMinMult, thermalMaxMult);
-
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0") + " mult: " + thermalMinMult + "-" + thermalMaxMult);
@@ -60,7 +59,7 @@ namespace BDArmory.CounterMeasure
             thermal *= UnityEngine.Random.Range(thermalMinMult, 1.75f - thermalMinMult + 0.65f);
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + this.thermal.ToString("0.0"));
+                Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0"));
         }
 
         void OnEnable()
