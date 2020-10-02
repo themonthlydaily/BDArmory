@@ -803,7 +803,7 @@ namespace BDArmory.UI
                         {
                             BDACompetitionMode.Instance.Scores[vessel.vesselName] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count };
                             if (!BDACompetitionMode.Instance.DeathOrder.ContainsKey(vessel.vesselName)) // Temporarily add the vessel to the DeathOrder to prevent it from being detected as newly dead until it's finished spawning.
-                                BDACompetitionMode.Instance.DeathOrder.Add(vessel.vesselName, BDACompetitionMode.Instance.DeathOrder.Count);
+                                BDACompetitionMode.Instance.DeathOrder.Add(vessel.vesselName, new Tuple<int, double>(BDACompetitionMode.Instance.DeathOrder.Count, 0));
                         }
                         if (!vesselsToActivate.Contains(vessel))
                             vesselsToActivate.Add(vessel);
@@ -969,6 +969,7 @@ namespace BDArmory.UI
             public Vessel vessel; // The vessel.
             public int spawnCount = 0; // The number of times a craft has been spawned.
             public double outOfAmmoTime = 0; // The time the vessel ran out of ammo.
+            public List<double> deathTimes = new List<double>();
             public Dictionary<int, ScoringData> scoreData = new Dictionary<int, ScoringData>();
             public Dictionary<int, string> cleanKilledBy = new Dictionary<int, string>();
             public Dictionary<int, string> cleanRammedBy = new Dictionary<int, string>();
@@ -987,7 +988,10 @@ namespace BDArmory.UI
             if (spawnCount < 0) return; // Initial spawning after scores were reset.
             var scoreData = continuousSpawningScores[vesselName].scoreData;
             if (newSpawn && BDACompetitionMode.Instance.DeathOrder.ContainsKey(vesselName))
+            {
+                continuousSpawningScores[vesselName].deathTimes.Add(BDACompetitionMode.Instance.DeathOrder[vesselName].Item2);
                 BDACompetitionMode.Instance.DeathOrder.Remove(vesselName);
+            }
             if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
             {
                 scoreData[spawnCount] = BDACompetitionMode.Instance.Scores[vesselName]; // Save the Score instance for the vessel.
@@ -1050,6 +1054,7 @@ namespace BDArmory.UI
                 var scoreData = vesselScore.scoreData;
                 logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]: Name:" + vesselName);
                 logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  DEATHCOUNT:" + (vesselScore.spawnCount - 1 + (vesselsToActivate.Contains(vesselScore.vessel) || !LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(teamManager => teamManager.Value, (teamManager, weaponManager) => weaponManager.vessel).Contains(vesselScore.vessel) ? 1 : 0))); // Account for vessels that haven't respawned yet.
+                if (vesselScore.deathTimes.Count > 0) logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  DEATHTIMES:" + string.Join(",", vesselScore.deathTimes.Select(d => d.ToString("0.0"))));
                 var whoShotMeScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.hitCounts.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.hitCounts.Select(kvp2 => kvp2.Value + ":" + kvp2.Key))));
                 if (whoShotMeScores != "") logStrings.Add("[VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  WHOSHOTME:" + whoShotMeScores);
                 var whoDamagedMeWithBulletsScores = string.Join(", ", scoreData.Where(kvp => kvp.Value.damageFromBullets.Count > 0).Select(kvp => kvp.Key + ":" + string.Join(";", kvp.Value.damageFromBullets.Select(kvp2 => kvp2.Value.ToString("0.0") + ":" + kvp2.Key))));
