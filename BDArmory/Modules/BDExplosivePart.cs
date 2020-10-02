@@ -12,7 +12,7 @@ namespace BDArmory.Modules
     public class BDExplosivePart : PartModule
     {
         float distanceFromStart = 500;
-        Vessel sourcevessel;
+        public Vessel sourcevessel;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_TNTMass"),//TNT mass equivalent
         UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
