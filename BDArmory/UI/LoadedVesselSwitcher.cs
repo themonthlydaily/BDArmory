@@ -332,13 +332,13 @@ namespace BDArmory.UI
                 {
                     // VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false); // Spawn vessels, without killing off other vessels or changing camera positions.
                     Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
+                    _vesselsSpawned = true;
+                    _autoPilotEnabled = false;
                     VesselSpawner.Instance.TeamSpawn(
                         new List<VesselSpawner.SpawnConfig> {
                             new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5, BDArmorySettings.VESSEL_SPAWN_DISTANCE, ""),
                             new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, "Targets")
                         }, 0d, true); // FIXME, this is temporary
-                    _vesselsSpawned = true;
-                    _autoPilotEnabled = false;
                 }
                 else if (Event.current.button == 1) // Right click
                 {
