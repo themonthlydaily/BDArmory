@@ -1094,35 +1094,59 @@ namespace BDArmory.UI
         }
         #endregion
 
-        public void Round3Spawn()
+        public class SpawnConfig
+        {
+            public SpawnConfig(Vector2d geoCoords, double altitude, float distance, string folder) { this.geoCoords = geoCoords; this.altitude = altitude; this.distance = distance; this.folder = folder; }
+            public Vector2d geoCoords;
+            public double altitude;
+            public float distance; // Note: this is the distance factor; actual distance is (N+1)*distance, where N is the number of vessels.
+            public string folder;
+        }
+        public void TeamSpawn(List<SpawnConfig> spawnConfigs, double competitionStartDelay = 0d, bool startImmediately = false)
         {
             vesselsSpawning = true;
             vesselSpawnSuccess = false;
             spawnFailureReason = SpawnFailureReason.None;
-            if (round3SpawnCoroutine != null)
-                StopCoroutine(round3SpawnCoroutine);
+            if (teamSpawnCoroutine != null)
+                StopCoroutine(teamSpawnCoroutine);
             RevertSpawnLocationCamera(true);
-            round3SpawnCoroutine = StartCoroutine(Round3SpawnCoroutine());
-            Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
+            teamSpawnCoroutine = StartCoroutine(TeamsSpawnCoroutine(spawnConfigs, competitionStartDelay, startImmediately));
         }
-        private Coroutine round3SpawnCoroutine;
-        private IEnumerator Round3SpawnCoroutine()
+        private Coroutine teamSpawnCoroutine;
+        private IEnumerator TeamsSpawnCoroutine(List<SpawnConfig> spawnConfigs, double competitionStartDelay = 0d, bool startImmediately = false)
         {
-            yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, null); // Spawn at ground level.
-            int playersCount = spawnedVesselCount;
-            if (vesselSpawnSuccess)
+            bool killAllFirst = true;
+            List<int> spawnCounts = new List<int>();
+            // Spawn each team.
+            foreach (var spawnConfig in spawnConfigs)
             {
                 vesselSpawnSuccess = false;
+                yield return SpawnAllVesselsOnceCoroutine(spawnConfig.geoCoords, spawnConfig.altitude, spawnConfig.distance, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killAllFirst, spawnConfig.folder);
+                if (!vesselSpawnSuccess)
+                {
+                    message = "Vessel spawning failed, aborting.";
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    Debug.Log("[VesselSpawner]: " + message);
+                    yield break;
+                }
+                spawnCounts.Add(spawnedVesselCount);
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(false); // Reset everyone to team 'A' so that the order doesn't get messed up.
-                yield return SpawnAllVesselsOnceCoroutine(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, "Targets"); // Spawn target vessels at 5k up.
+                killAllFirst = false;
             }
-            LoadedVesselSwitcher.Instance.MassTeamSwitch(false, new List<int> { playersCount, spawnedVesselCount }); // Assign teams.
+            // Assign teams and start the competition.
             if (vesselSpawnSuccess)
             {
                 yield return new WaitForFixedUpdate();
+                LoadedVesselSwitcher.Instance.MassTeamSwitch(false, spawnCounts); // Assign teams.
+                var competitionStartDelayStart = Planetarium.GetUniversalTime();
+                while (Planetarium.GetUniversalTime() - competitionStartDelayStart < competitionStartDelay - Time.fixedDeltaTime)
+                    yield return new WaitForFixedUpdate();
                 BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
-                yield return new WaitForFixedUpdate();
-                BDACompetitionMode.Instance.StartCompetitionNow();
+                if (startImmediately)
+                {
+                    yield return new WaitForFixedUpdate();
+                    BDACompetitionMode.Instance.StartCompetitionNow();
+                }
             }
         }
 
