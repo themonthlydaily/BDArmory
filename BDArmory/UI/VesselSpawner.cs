@@ -1104,19 +1104,19 @@ namespace BDArmory.UI
         }
         public void TeamSpawn(List<SpawnConfig> spawnConfigs, double competitionStartDelay = 0d, bool startImmediately = false)
         {
-            vesselsSpawning = true;
-            vesselSpawnSuccess = false;
-            spawnFailureReason = SpawnFailureReason.None;
+            vesselsSpawning = true; // Indicate that vessels are spawning here to avoid timing issues with Update in other modules.
             if (teamSpawnCoroutine != null)
                 StopCoroutine(teamSpawnCoroutine);
-            RevertSpawnLocationCamera(true);
             teamSpawnCoroutine = StartCoroutine(TeamsSpawnCoroutine(spawnConfigs, competitionStartDelay, startImmediately));
         }
         private Coroutine teamSpawnCoroutine;
-        private IEnumerator TeamsSpawnCoroutine(List<SpawnConfig> spawnConfigs, double competitionStartDelay = 0d, bool startImmediately = false)
+        public IEnumerator TeamsSpawnCoroutine(List<SpawnConfig> spawnConfigs, double competitionStartDelay = 0d, bool startImmediately = false)
         {
             bool killAllFirst = true;
             List<int> spawnCounts = new List<int>();
+            vesselsSpawning = true;
+            spawnFailureReason = SpawnFailureReason.None;
+            RevertSpawnLocationCamera(true);
             // Spawn each team.
             foreach (var spawnConfig in spawnConfigs)
             {
