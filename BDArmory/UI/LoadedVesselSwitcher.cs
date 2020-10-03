@@ -338,7 +338,11 @@ namespace BDArmory.UI
                         new List<VesselSpawner.SpawnConfig> {
                             new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5, BDArmorySettings.VESSEL_SPAWN_DISTANCE, ""),
                             new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, "Targets")
-                        }, true, 0d, true); // FIXME, this is temporary
+                        },
+                        true, // Start the competition.
+                        30d, // Wait 30s for the target planes to get going first.
+                        true // Enable startCompetitionNow so the competition starts as soon as the missiles have launched.
+                    ); // FIXME, this is temporary
                 }
                 else if (Event.current.button == 1) // Right click
                 {
