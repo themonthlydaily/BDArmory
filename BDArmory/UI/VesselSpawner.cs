@@ -1102,16 +1102,16 @@ namespace BDArmory.UI
             public float distance; // Note: this is the distance factor; actual distance is (N+1)*distance, where N is the number of vessels.
             public string folder;
         }
-        public void TeamSpawn(List<SpawnConfig> spawnConfigs, double competitionStartDelay = 0d, bool startImmediately = false)
+        public void TeamSpawn(List<SpawnConfig> spawnConfigs, bool startCompetition = false, double competitionStartDelay = 0d, bool startCompetitionNow = false)
         {
             vesselsSpawning = true; // Indicate that vessels are spawning here to avoid timing issues with Update in other modules.
             RevertSpawnLocationCamera(true);
             if (teamSpawnCoroutine != null)
                 StopCoroutine(teamSpawnCoroutine);
-            teamSpawnCoroutine = StartCoroutine(TeamsSpawnCoroutine(spawnConfigs, competitionStartDelay, startImmediately));
+            teamSpawnCoroutine = StartCoroutine(TeamsSpawnCoroutine(spawnConfigs, startCompetition, competitionStartDelay, startCompetitionNow));
         }
         private Coroutine teamSpawnCoroutine;
-        public IEnumerator TeamsSpawnCoroutine(List<SpawnConfig> spawnConfigs, double competitionStartDelay = 0d, bool startImmediately = false)
+        public IEnumerator TeamsSpawnCoroutine(List<SpawnConfig> spawnConfigs, bool startCompetition = false, double competitionStartDelay = 0d, bool startCompetitionNow = false)
         {
             bool killAllFirst = true;
             List<int> spawnCounts = new List<int>();
@@ -1133,16 +1133,15 @@ namespace BDArmory.UI
                 LoadedVesselSwitcher.Instance.MassTeamSwitch(false); // Reset everyone to team 'A' so that the order doesn't get messed up.
                 killAllFirst = false;
             }
-            // Assign teams and start the competition.
-            if (vesselSpawnSuccess)
+            yield return new WaitForFixedUpdate();
+            LoadedVesselSwitcher.Instance.MassTeamSwitch(false, spawnCounts); // Assign teams.
+            if (startCompetition) // Start the competition.
             {
-                yield return new WaitForFixedUpdate();
-                LoadedVesselSwitcher.Instance.MassTeamSwitch(false, spawnCounts); // Assign teams.
                 var competitionStartDelayStart = Planetarium.GetUniversalTime();
                 while (Planetarium.GetUniversalTime() - competitionStartDelayStart < competitionStartDelay - Time.fixedDeltaTime)
                     yield return new WaitForFixedUpdate();
                 BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
-                if (startImmediately)
+                if (startCompetitionNow)
                 {
                     yield return new WaitForFixedUpdate();
                     BDACompetitionMode.Instance.StartCompetitionNow();
