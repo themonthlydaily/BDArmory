@@ -58,7 +58,7 @@ namespace BDArmory.UI
         private int _guiCheckIndex;
         private static readonly float _buttonSize = 20;
         private static readonly float _margin = 5;
-        private static readonly float _lineHeight = _buttonSize + _margin;
+        private static readonly float _lineHeight = _buttonSize;
         private float _windowHeight; //auto adjusting
         private float _windowWidth;
         public bool _ready = false;
@@ -209,12 +209,12 @@ namespace BDArmory.UI
         private void WindowVesselSpawner(int id)
         {
             GUI.DragWindow(new Rect(0, 0, _windowWidth - _buttonSize - _margin, _buttonSize + _margin));
-            if (GUI.Button(new Rect(_windowWidth - _buttonSize - _margin, _margin, _buttonSize - _margin, _buttonSize - _margin), "X", BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(_windowWidth - _buttonSize - (_margin - 2), _margin, _buttonSize - 2, _buttonSize - 2), "X", BDArmorySetup.BDGuiSkin.button))
             {
                 BDArmorySetup.Instance.showVesselSpawnerGUI = false;
             }
 
-            float line = 0f;
+            float line = 0.25f;
 
             GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
             BDArmorySettings.VESSEL_SPAWN_DISTANCE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f);
@@ -340,6 +340,7 @@ namespace BDArmory.UI
                 }
                 line += (i - 1) / 4;
             }
+            // TODO Add a button for adding in spawn locations in the GUI.
 
             ++line;
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_SingleSpawn"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
@@ -393,7 +394,7 @@ namespace BDArmory.UI
                 continuousVesselSpawning = false;
             }
 
-            line += 1.5f; // Bottom internal margin
+            line += 1.25f; // Bottom internal margin
             _windowHeight = (line * _lineHeight);
         }
     }
