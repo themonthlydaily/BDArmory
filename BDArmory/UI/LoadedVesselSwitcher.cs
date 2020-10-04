@@ -340,7 +340,7 @@ namespace BDArmory.UI
                             new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, "Targets")
                         },
                         true, // Start the competition.
-                        30d, // Wait 30s for the target planes to get going first.
+                        15d, // Wait 15s for the target planes to get going first.
                         true // Enable startCompetitionNow so the competition starts as soon as the missiles have launched.
                     ); // FIXME, this is temporary
                 }
