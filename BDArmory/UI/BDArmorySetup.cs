@@ -653,7 +653,7 @@ namespace BDArmory.UI
             }
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
-            WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, Localizer.Format("#LOC_BDArmory_WMWindow_title"), BDGuiSkin.window);//"BDA Weapon Manager"
+            WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, Localizer.Format("#LOC_BDArmory_WMWindow_title") + "          ", BDGuiSkin.window);//"BDA Weapon Manager"
             BDGUIUtils.UseMouseEventInRect(WindowRectToolbar);
             if (showWindowGPS && ActiveWeaponManager)
             {
@@ -670,8 +670,7 @@ namespace BDArmory.UI
 
             // big error messages for missing dependencies
             if (ModuleManagerLoaded && PhysicsRangeExtenderLoaded) return;
-            string message = (ModuleManagerLoaded ? "Physics Range Extender" : "Module Manager")
-                             + " is missing. BDA will not work properly.";
+            string message = (ModuleManagerLoaded ? "Physics Range Extender" : "Module Manager") + " is missing. BDA will not work properly.";
             GUI.Label(new Rect(0 + 2, Screen.height / 6 + 2, Screen.width, 100),
               message, redErrorShadowStyle);
             GUI.Label(new Rect(0, Screen.height / 6, Screen.width, 100),
@@ -706,7 +705,7 @@ namespace BDArmory.UI
             line += 0.25f;
 
             // Version.
-            GUI.Label(new Rect(toolWindowWidth - 30 - 28 - 70, 23, 70, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize - 57, 23, 57, 10), Version, waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
@@ -729,7 +728,7 @@ namespace BDArmory.UI
             if (hasVesselSpawner)
             {
                 GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "SP", vsStyle))
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
                 {
                     showVesselSpawnerGUI = !showVesselSpawnerGUI;
                 }
@@ -1579,6 +1578,7 @@ namespace BDArmory.UI
                 ++line;
             }
 
+            /* Moved to VesselSpawnerWindow.cs
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.SPAWN_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnSettingsToggle")))//Show/hide spawn settings.
             {
                 BDArmorySettings.SPAWN_SETTINGS_TOGGLE = !BDArmorySettings.SPAWN_SETTINGS_TOGGLE;
@@ -1725,6 +1725,7 @@ namespace BDArmory.UI
 
                 ++line;
             }
+            */
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle")))//Show/hide radar settings.
             {
