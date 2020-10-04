@@ -129,7 +129,7 @@ namespace BDArmory.UI
                 yield return null;
 
             _ready = true;
-            BDArmorySetup.Instance.hasVS = true;
+            BDArmorySetup.Instance.hasVesselSwitcher = true;
             _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
         }
 
@@ -149,10 +149,10 @@ namespace BDArmory.UI
         {
             if (_ready)
             {
-                if (BDArmorySetup.Instance.showVSGUI != _showGui)
+                if (BDArmorySetup.Instance.showVesselSwitcherGUI != _showGui)
                 {
                     updateTimer -= Time.fixedDeltaTime;
-                    _showGui = BDArmorySetup.Instance.showVSGUI;
+                    _showGui = BDArmorySetup.Instance.showVesselSwitcherGUI;
                     if (_showGui && updateTimer < 0)
                     {
                         UpdateList();
@@ -395,7 +395,7 @@ namespace BDArmory.UI
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "X", BDArmorySetup.BDGuiSkin.button))
             {
-                BDArmorySetup.Instance.showVSGUI = false;
+                BDArmorySetup.Instance.showVesselSwitcherGUI = false;
                 return;
             }
 

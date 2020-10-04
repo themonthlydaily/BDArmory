@@ -36,6 +36,7 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectTargetingCam;
 
         [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
+        [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
 
         //reflection field lists
         FieldInfo[] iFs;
@@ -677,8 +678,10 @@ namespace BDArmory.UI
               message, redErrorStyle);
         }
 
-        public bool hasVS = false;
-        public bool showVSGUI;
+        public bool hasVesselSwitcher = false;
+        public bool hasVesselSpawner = false;
+        public bool showVesselSwitcherGUI = false;
+        public bool showVesselSpawnerGUI = false;
 
         float rippleHeight;
         float weaponsHeight;
@@ -689,13 +692,15 @@ namespace BDArmory.UI
 
         void WindowBDAToolbar(int windowID)
         {
-            GUI.DragWindow(new Rect(30, 0, toolWindowWidth - 90, 30));
-
             float line = 0;
             float leftIndent = 10;
             float contentWidth = (toolWindowWidth) - (2 * leftIndent);
             float contentTop = 10;
             float entryHeight = 20;
+            float _buttonSize = 26;
+            float _windowMargin = 4;
+
+            GUI.DragWindow(new Rect(_windowMargin + _buttonSize, 0, toolWindowWidth - 2 * _windowMargin - 4 * _buttonSize, _windowMargin + _buttonSize));
 
             line += 1.25f;
             line += 0.25f;
@@ -705,25 +710,35 @@ namespace BDArmory.UI
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
-                GUI.Button(new Rect(toolWindowWidth - 30, 4, 26, 26), settingsIconTexture, BDGuiSkin.button))
+                GUI.Button(new Rect(toolWindowWidth - _windowMargin - _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
             {
                 ToggleWindowSettings();
             }
 
             //vesselswitcher button
-            if (hasVS)
+            if (hasVesselSwitcher)
             {
-                GUIStyle vsStyle = showVSGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(toolWindowWidth - 30 - 28, 4, 26, 26), "VS", vsStyle))
+                GUIStyle vsStyle = showVesselSwitcherGUI ? BDGuiSkin.box : BDGuiSkin.button;
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 2 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
                 {
-                    showVSGUI = !showVSGUI;
+                    showVesselSwitcherGUI = !showVesselSwitcherGUI;
+                }
+            }
+
+            //VesselSpawner button
+            if (hasVesselSpawner)
+            {
+                GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "SP", vsStyle))
+                {
+                    showVesselSpawnerGUI = !showVesselSpawnerGUI;
                 }
             }
 
             if (ActiveWeaponManager != null)
             {
                 //MINIMIZE BUTTON
-                toolMinimized = GUI.Toggle(new Rect(4, 4, 26, 26), toolMinimized, "_",
+                toolMinimized = GUI.Toggle(new Rect(_windowMargin, _windowMargin, _buttonSize, _buttonSize), toolMinimized, "_",
                     toolMinimized ? BDGuiSkin.box : BDGuiSkin.button);
 
                 GUIStyle armedLabelStyle;
