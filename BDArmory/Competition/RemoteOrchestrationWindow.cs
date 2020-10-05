@@ -43,11 +43,7 @@ namespace BDArmory.UI
         private void Update()
         {
             if (!ready) return;
-
-            competition = client.competition == null ? "-" : client.competition.name;
             status = client.competition == null ? "Offline" : service.Status();
-            stage = client.activeHeat == null ? "-" : client.activeHeat.stage.ToString();
-            heat = client.activeHeat == null ? "-" : client.activeHeat.order.ToString();
         }
 
         private void OnGUI()
@@ -77,6 +73,14 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectRemoteOrchestration.height = windowHeight;
         }
 
+        public void UpdateClientStatus()
+        {
+            client = service.client;
+            competition = client.competition == null ? "-" : client.competition.name;
+            stage = client.activeHeat == null ? "-" : client.activeHeat.stage.ToString();
+            heat = client.activeHeat == null ? "-" : client.activeHeat.order.ToString();
+
+        }
 
         public void ShowWindow()
         {
@@ -92,7 +96,7 @@ namespace BDArmory.UI
                 yield return null;
             }
             service = BDAScoreService.Instance;
-            client = BDAScoreService.Instance.client;
+            UpdateClientStatus();
             ready = true;
             _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
         }
@@ -131,10 +135,12 @@ namespace BDArmory.UI
             GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _titleHeight), heat);
             offset += _titleHeight;
             string buttonText;
+            bool nextButton = false;
             switch (BDAScoreService.Instance.status)
             {
                 case BDAScoreService.StatusType.Waiting:
                     buttonText = "Stop";
+                    nextButton = true;
                     break;
                 case BDAScoreService.StatusType.Stopped:
                 case BDAScoreService.StatusType.Cancelled:
@@ -144,7 +150,7 @@ namespace BDArmory.UI
                     buttonText = "Cancel";
                     break;
             }
-            if (GUI.Button(new Rect(_margin, offset, width - 2 * _margin, _titleHeight), buttonText, BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(new Rect(_margin, offset, nextButton ? 2 * width / 3 - _margin : width - 2 * _margin, _titleHeight), buttonText, BDArmorySetup.BDGuiSkin.button))
             {
                 switch (BDAScoreService.Instance.status)
                 {
@@ -156,6 +162,10 @@ namespace BDArmory.UI
                         service.Cancel();
                         break;
                 }
+            }
+            if (nextButton && GUI.Button(new Rect(2 * width / 3, offset, width / 3 - _margin, _titleHeight), "Next", BDArmorySetup.BDGuiSkin.button))
+            {
+                BDAScoreService.Instance.retryFindStartedAt = -1;
             }
             offset += _titleHeight + _margin;
 
