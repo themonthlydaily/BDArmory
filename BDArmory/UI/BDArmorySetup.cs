@@ -1726,19 +1726,6 @@ namespace BDArmory.UI
                 ++line;
             }
             */
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
-            {
-                bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
-                BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
-                if (remoteLoggingEnabled)
-                {
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
-                    BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
-                }
-            }
-            else
-                BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
-
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle")))//Show/hide radar settings.
             {
@@ -1805,6 +1792,19 @@ namespace BDArmory.UI
             if (HighLogic.LoadedSceneIsFlight)
             {
                 ++line;
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
+                {
+                    bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
+                    BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+                    if (remoteLoggingEnabled)
+                    {
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+                        BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                    }
+                }
+                else
+                    BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
+
                 bool origPm = BDArmorySettings.PEACE_MODE;
                 BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
                 if (BDArmorySettings.PEACE_MODE && !origPm)
