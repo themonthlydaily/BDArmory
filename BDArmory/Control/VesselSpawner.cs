@@ -3,15 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using KSP.UI.Screens;
 using UnityEngine;
-using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Modules;
 using BDArmory.Misc;
+using BDArmory.UI;
 
-namespace BDArmory.UI
+namespace BDArmory.Control
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class VesselSpawner : MonoBehaviour
@@ -1138,6 +1137,7 @@ namespace BDArmory.UI
             if (startCompetition) // Start the competition.
             {
                 var competitionStartDelayStart = Planetarium.GetUniversalTime();
+                BDACompetitionMode.Instance.competitionStatus.Add("Competition starting in T-" + competitionStartDelay.ToString("0") + "s");
                 while (Planetarium.GetUniversalTime() - competitionStartDelayStart < competitionStartDelay - Time.fixedDeltaTime)
                 {
                     var timeLeft = competitionStartDelay - (Planetarium.GetUniversalTime() - competitionStartDelayStart);

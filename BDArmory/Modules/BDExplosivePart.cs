@@ -45,6 +45,28 @@ namespace BDArmory.Modules
             }
         }
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Targeting Logic")]//Status
+        public string guiIFFString = "Ignore Allies";
+
+        //PartWindow buttons
+        [KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "Disable IFF")]//Toggle
+        public void ToggleIFF()
+        {
+            IFF_On = !IFF_On;
+            if (IFF_On)
+            {
+                guiIFFString = "Ignore Allies";
+                Events["ToggleIFF"].guiName = Localizer.Format("Disable IFF");//"Enable Engage Options"
+            }
+            else
+            {
+                guiIFFString = "Indescriminate";
+                Events["ToggleIFF"].guiName = Localizer.Format("Enable IFF");//"Disable Engage Options"
+            }
+        }
+
+        public string IFFID = null;
+
         [KSPEvent(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_DetonationDistanceOverride")]//Toggle
         public void ToggleProx()
         {
@@ -93,7 +115,13 @@ namespace BDArmory.Modules
         public bool isMissile = true;
 
         [KSPField(isPersistant = true)]
+        public bool IFF_On = true;
+
+        private float updateTimer = 0;
+
+        [KSPField(isPersistant = true)]
         public bool manualOverride = false;
+
         private double previousMass = -1;
 
         bool hasDetonated;
@@ -137,10 +165,14 @@ namespace BDArmory.Modules
             {
                 Events["Toggle"].guiActiveEditor = true;
                 Events["Toggle"].guiActive = true;
+                Events["ToggleIFF"].guiActiveEditor = true;
+                Events["ToggleIFF"].guiActive = true;
                 Events["ToggleProx"].guiActiveEditor = true;
                 Events["ToggleProx"].guiActive = true;
                 Fields["guiStatusString"].guiActiveEditor = true;
                 Fields["guiStatusString"].guiActive = true;
+                Fields["guiIFFString"].guiActiveEditor = true;
+                Fields["guiIFFString"].guiActive = true;
                 if (manualOverride)
                 {
                     Fields["detonationRange"].guiActiveEditor = true;
@@ -157,10 +189,14 @@ namespace BDArmory.Modules
             {
                 Events["Toggle"].guiActiveEditor = false;
                 Events["Toggle"].guiActive = false;
+                Events["ToggleIFF"].guiActiveEditor = false;
+                Events["ToggleIFF"].guiActive = false;
                 Events["ToggleProx"].guiActiveEditor = false;
                 Events["ToggleProx"].guiActive = false;
                 Fields["guiStatusString"].guiActiveEditor = false;
                 Fields["guiStatusString"].guiActive = false;
+                Fields["guiIFFString"].guiActiveEditor = false;
+                Fields["guiIFFString"].guiActive = false;
                 Fields["detonationRange"].guiActiveEditor = false;
                 Fields["detonationRange"].guiActive = false;
             }
@@ -175,20 +211,32 @@ namespace BDArmory.Modules
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (!isMissile && manualOverride) // don't call proximity code if a missile/MMG, use theirs
+                if (!isMissile)
                 {
-                    if (Armed)
+                    if (IFF_On)
                     {
-                        if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
+                        updateTimer -= Time.fixedDeltaTime;
+                        if (updateTimer < 0)
                         {
-                            if (sourcevessel != null && sourcevessel != part.vessel)
-                            {
-                                distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
-                            }
+                            GetTeamID(); //have this only called once a sec
+                            updateTimer = 1.0f;    //next update in half a sec only
                         }
-                        if (Checkproximity(distanceFromStart))
+                    }
+                    if (manualOverride) // don't call proximity code if a missile/MMG, use theirs
+                    {
+                        if (Armed)
                         {
-                            Detonate();
+                            if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
+                            {
+                                if (sourcevessel != part.vessel)
+                                {
+                                    distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
+                                }
+                            }
+                            if (Checkproximity(distanceFromStart))
+                            {
+                                Detonate();
+                            }
                         }
                     }
                 }
@@ -197,6 +245,11 @@ namespace BDArmory.Modules
             {
                 this.part.explode();
             }
+        }
+
+        private void GetTeamID()
+        {
+            IFFID = sourcevessel.FindPartModuleImplementing<MissileFire>()?.teamString;
         }
 
         private void OnUpdateEditor()
@@ -279,6 +332,7 @@ namespace BDArmory.Modules
                         if (partHit?.vessel == vessel || partHit?.vessel == sourcevessel) continue;
                         if (partHit?.vessel.vesselType == VesselType.Debris) continue;
                         if (partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;
+                        if (IFF_On && partHit.vessel.FindPartModuleImplementing<MissileFire>().teamString == IFFID) continue;
                         //Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
                         return detonate = true;
                     }
