@@ -1726,6 +1726,19 @@ namespace BDArmory.UI
                 ++line;
             }
             */
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
+            {
+                bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
+                BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+                if (remoteLoggingEnabled)
+                {
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+                    BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                }
+            }
+            else
+                BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
+
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle")))//Show/hide radar settings.
             {
