@@ -347,7 +347,7 @@ namespace BDArmory.Control
                 var heightFromTerrain = spawnedVessels[vesselName].Item4;
                 shipFacility = spawnedVessels[vesselName].Item5;
                 ray = new Ray(craftSpawnPosition, -localSurfaceNormal);
-                var distance = Physics.Raycast(ray, out hit, (float)(altitude + 1100f), 1 << 15) ? hit.distance : (float)altitude + 1100f; // Note: if this doesn't hit, then the terrain is too steep to spawn on anyway.
+                var distance = Physics.Raycast(ray, out hit, (float)(altitude + 10000f), 1 << 15) ? hit.distance : (float)altitude + 10000f;
                 if (!spawnAirborne)
                 {
                     vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -Vector3.forward : Vector3.up, localSurfaceNormal)); // Re-orient the vessel to the terrain normal.
