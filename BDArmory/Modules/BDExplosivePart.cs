@@ -205,6 +205,7 @@ namespace BDArmory.Modules
 
         public void Update()
         {
+            if (this == null || part == null) return;
             if (HighLogic.LoadedSceneIsEditor)
             {
                 OnUpdateEditor();
