@@ -205,7 +205,6 @@ namespace BDArmory.Modules
 
         public void Update()
         {
-            if (this == null || part == null) return;
             if (HighLogic.LoadedSceneIsEditor)
             {
                 OnUpdateEditor();
@@ -229,7 +228,7 @@ namespace BDArmory.Modules
                         {
                             if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
                             {
-                                if (sourcevessel != part.vessel)
+                                if (sourcevessel != null && sourcevessel != part.vessel)
                                 {
                                     distanceFromStart = Vector3.Distance(part.vessel.transform.position, sourcevessel.transform.position);
                                 }
