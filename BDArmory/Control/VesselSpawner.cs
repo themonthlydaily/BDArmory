@@ -485,7 +485,9 @@ namespace BDArmory.Control
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             break;
                         }
-                    } while (Planetarium.GetUniversalTime() - landingStartTime < 5 + altitude / easeInSpeed); // Give the vessels up to (5 + altitude / VESSEL_SPAWN_EASE_IN_SPEED) seconds to land.
+                    } while (Planetarium.GetUniversalTime() - landingStartTime < 10 + altitude / easeInSpeed); // Give the vessels up to (10 + altitude / VESSEL_SPAWN_EASE_IN_SPEED) seconds to land.
+                    if (!vesselSpawnSuccess && spawnFailureReason == SpawnFailureReason.None)
+                        spawnFailureReason = SpawnFailureReason.TimedOut;
                 }
                 else
                 {
