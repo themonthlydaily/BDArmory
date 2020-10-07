@@ -447,16 +447,13 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
-                BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
-                BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-                BDGUIUtils.RepositionWindow(ref WindowRectRwr);
-                BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
-                BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
-                BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
-            }
+            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
+            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
+            BDGUIUtils.RepositionWindow(ref WindowRectRwr);
+            BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
+            BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
+            BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
         }
 
         void Update()
@@ -1208,11 +1205,7 @@ namespace BDArmory.UI
 
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
             WindowRectToolbar.height = toolWindowHeight;
-            // = new Rect(toolbarWindowRect.position.x, toolbarWindowRect.position.y, toolWindowWidth, toolWindowHeight);
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
-            }
+            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
         }
 
         bool validGPSName = true;
@@ -1726,19 +1719,6 @@ namespace BDArmory.UI
                 ++line;
             }
             */
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
-            {
-                bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
-                BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
-                if (remoteLoggingEnabled)
-                {
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
-                    BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
-                }
-            }
-            else
-                BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
-
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle")))//Show/hide radar settings.
             {
@@ -1805,6 +1785,19 @@ namespace BDArmory.UI
             if (HighLogic.LoadedSceneIsFlight)
             {
                 ++line;
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
+                {
+                    bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
+                    BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+                    if (remoteLoggingEnabled)
+                    {
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+                        BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                    }
+                }
+                else
+                    BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
+
                 bool origPm = BDArmorySettings.PEACE_MODE;
                 BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
                 if (BDArmorySettings.PEACE_MODE && !origPm)
@@ -1894,10 +1887,7 @@ namespace BDArmory.UI
             line += 1.5f; // Bottom internal margin
             settingsHeight = (line * settingsLineHeight);
             WindowRectSettings.height = settingsHeight;
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-            }
+            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
