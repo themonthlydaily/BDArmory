@@ -60,6 +60,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonationDistanceOverride"), UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Detonation distance override
         public float DetonationDistance = -1;
+        float closestPartDistance;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonateAtMinimumDistance"), // Detonate At Minumum Distance
             UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
@@ -909,7 +910,6 @@ namespace BDArmory.Modules
             return vessel.FindPartModulesImplementing<BDExplosivePart>().Max(x => x.tntMass);
         }
 
-        float closestPartDistance;
         public void CheckDetonationState()
         {
             //Guard clauses
