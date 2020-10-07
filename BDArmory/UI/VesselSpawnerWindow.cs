@@ -374,14 +374,16 @@ namespace BDArmory.UI
                     continuousVesselSpawning = true;
                 }
             }
-            if (GUI.Button(SLineRect(++line), Localizer.Format("Runway Project Season 2 Round 3"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) // FIXME For round 3 only.
+            if (BDArmorySettings.RUNWAY_PROJECT)
             {
-                if (!_vesselsSpawned && !continuousVesselSpawning && Event.current.button == 0) // Left click
+                if (GUI.Button(SLineRect(++line), Localizer.Format("Runway Project Season 2 Round 3"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) // FIXME For round 3 only.
                 {
-                    Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
-                    _vesselsSpawned = true;
-                    VesselSpawner.Instance.TeamSpawn(
-                        new List<VesselSpawner.SpawnConfig> {
+                    if (!_vesselsSpawned && !continuousVesselSpawning && Event.current.button == 0) // Left click
+                    {
+                        Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
+                        _vesselsSpawned = true;
+                        VesselSpawner.Instance.TeamSpawn(
+                            new List<VesselSpawner.SpawnConfig> {
                             new VesselSpawner.SpawnConfig(
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
                                 5,
@@ -396,11 +398,12 @@ namespace BDArmory.UI
                                 false,
                                 "Targets"
                             )
-                        },
-                        true, // Start the competition.
-                        15d, // Wait 15s for the target planes to get going first.
-                        true // Enable startCompetitionNow so the competition starts as soon as the missiles have launched.
-                    ); // FIXME, this is temporary
+                            },
+                            true, // Start the competition.
+                            15d, // Wait 15s for the target planes to get going first.
+                            true // Enable startCompetitionNow so the competition starts as soon as the missiles have launched.
+                        ); // FIXME, this is temporary
+                    }
                 }
             }
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || continuousVesselSpawning) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
