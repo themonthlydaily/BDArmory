@@ -3,15 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using KSP.UI.Screens;
 using UnityEngine;
-using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Modules;
 using BDArmory.Misc;
+using BDArmory.UI;
 
-namespace BDArmory.UI
+namespace BDArmory.Control
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class VesselSpawner : MonoBehaviour
@@ -348,7 +347,7 @@ namespace BDArmory.UI
                 var heightFromTerrain = spawnedVessels[vesselName].Item4;
                 shipFacility = spawnedVessels[vesselName].Item5;
                 ray = new Ray(craftSpawnPosition, -localSurfaceNormal);
-                var distance = Physics.Raycast(ray, out hit, (float)(altitude + 1100f), 1 << 15) ? hit.distance : (float)altitude + 1100f; // Note: if this doesn't hit, then the terrain is too steep to spawn on anyway.
+                var distance = Physics.Raycast(ray, out hit, (float)(altitude + 10000f), 1 << 15) ? hit.distance : (float)altitude + 10000f;
                 if (!spawnAirborne)
                 {
                     vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -Vector3.forward : Vector3.up, localSurfaceNormal)); // Re-orient the vessel to the terrain normal.
@@ -486,7 +485,9 @@ namespace BDArmory.UI
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             break;
                         }
-                    } while (Planetarium.GetUniversalTime() - landingStartTime < 5 + altitude / easeInSpeed); // Give the vessels up to (5 + altitude / VESSEL_SPAWN_EASE_IN_SPEED) seconds to land.
+                    } while (Planetarium.GetUniversalTime() - landingStartTime < 10 + altitude / easeInSpeed); // Give the vessels up to (10 + altitude / VESSEL_SPAWN_EASE_IN_SPEED) seconds to land.
+                    if (!vesselSpawnSuccess && spawnFailureReason == SpawnFailureReason.None)
+                        spawnFailureReason = SpawnFailureReason.TimedOut;
                 }
                 else
                 {
@@ -1141,7 +1142,7 @@ namespace BDArmory.UI
                 while (Planetarium.GetUniversalTime() - competitionStartDelayStart < competitionStartDelay - Time.fixedDeltaTime)
                 {
                     var timeLeft = competitionStartDelay - (Planetarium.GetUniversalTime() - competitionStartDelayStart);
-                    if ((int)timeLeft < (int)(timeLeft + Time.fixedDeltaTime))
+                    if ((int)(timeLeft - Time.fixedDeltaTime) < (int)timeLeft)
                         BDACompetitionMode.Instance.competitionStatus.Add("Competition starting in T-" + timeLeft.ToString("0") + "s");
                     yield return new WaitForFixedUpdate();
                 }

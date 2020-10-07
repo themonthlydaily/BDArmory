@@ -61,6 +61,10 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonationDistanceOverride"), UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Detonation distance override
         public float DetonationDistance = -1;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonateAtMinimumDistance"), // Detonate At Minumum Distance
+            UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public bool DetonateAtMinimumDistance = false;
+
         //[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "SLW Offset"), UI_FloatRange(minValue = -1000f, maxValue = 0f, stepIncrement = 100f, affectSymCounterparts = UI_Scene.All)]
         public float SLWOffset = 0;
 
@@ -284,7 +288,7 @@ namespace BDArmory.Modules
         {
             return part;
         }
-        
+
         public abstract void FireMissile();
 
         public abstract void Jettison();
@@ -456,7 +460,7 @@ namespace BDArmory.Modules
                     float futureFactor = (1400 * 1400) / Mathf.Clamp((predictedHeatTarget.position - (transform.position + (currVel * Time.fixedDeltaTime))).sqrMagnitude, 90000, 36000000);
                     predictedHeatTarget.signalStrength *= futureFactor / currentFactor;
                 }
-                
+
             }
         }
 
@@ -905,6 +909,7 @@ namespace BDArmory.Modules
             return vessel.FindPartModulesImplementing<BDExplosivePart>().Max(x => x.tntMass);
         }
 
+        float closestPartDistance;
         public void CheckDetonationState()
         {
             //Guard clauses
@@ -922,7 +927,6 @@ namespace BDArmory.Modules
             {
                 case DetonationDistanceStates.NotSafe:
                     //Lets check if we are at a safe distance from the source vessel
-
                     using (var hitsEnu = Physics.OverlapSphere(futureMissilePosition, GetBlastRadius() * 3f, 557057).AsEnumerable().GetEnumerator())
                     {
                         while (hitsEnu.MoveNext())
@@ -932,7 +936,7 @@ namespace BDArmory.Modules
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 
-                                if (partHit?.vessel == SourceVessel)
+                                if (partHit?.vessel != vessel && partHit?.vessel == SourceVessel) // Not ourselves, but the source vessel.
                                 {
                                     //We found a hit to the vessel
                                     return;
@@ -946,12 +950,11 @@ namespace BDArmory.Modules
                     }
 
                     //We are safe and we can continue with the cruising phase
-
                     DetonationDistanceState = DetonationDistanceStates.Cruising;
                     break;
 
                 case DetonationDistanceStates.Cruising:
-
+                    closestPartDistance = 2 * Mathf.Max(DetonationDistance, (float)relativeSpeed);
                     if (Vector3.Distance(futureMissilePosition, futureTargetPosition) < GetBlastRadius() * 10)
                     {
                         //We are now close enough to start checking the detonation distance
@@ -970,7 +973,6 @@ namespace BDArmory.Modules
                     break;
 
                 case DetonationDistanceStates.CheckingProximity:
-
                     if (DetonationDistance == 0)
                     {
                         if (weaponClass == WeaponClasses.Bomb) return;
@@ -1015,7 +1017,6 @@ namespace BDArmory.Modules
                     else
                     {
                         float optimalDistance = (float)(Math.Max(DetonationDistance, relativeSpeed));
-
                         using (var hitsEnu = Physics.OverlapSphere(vessel.CoM, optimalDistance, 557057).AsEnumerable().GetEnumerator())
                         {
                             while (hitsEnu.MoveNext())
@@ -1027,10 +1028,20 @@ namespace BDArmory.Modules
                                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 
                                     if (partHit?.vessel == vessel || partHit?.vessel == SourceVessel) continue;
+                                    if (partHit?.vessel.vesselType == VesselType.Debris) continue; // Ignore debris
 
                                     Debug.Log("[BDArmory]: Missile proximity sphere hit | Distance overlap = " + optimalDistance + "| Part name = " + partHit.name);
 
                                     //We found a hit a different vessel than ours
+                                    if (DetonateAtMinimumDistance)
+                                    {
+                                        var distance = Vector3.Distance(partHit.vessel.CoM, vessel.CoM);
+                                        if (distance > 1 && distance < closestPartDistance) // If we're more than 1m away and closing, then wait.
+                                        {
+                                            closestPartDistance = distance;
+                                            return;
+                                        }
+                                    }
                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
                                     return;
                                 }
