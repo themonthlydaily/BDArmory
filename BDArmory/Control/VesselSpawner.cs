@@ -442,7 +442,10 @@ namespace BDArmory.Control
                             break;
                     } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
                     if (!allWeaponManagersAssigned)
+                    {
+                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for weapon managers to be appear in the Vessel Switcher.");
                         spawnFailureReason = SpawnFailureReason.TimedOut;
+                    }
                 }
             }
 
@@ -487,7 +490,10 @@ namespace BDArmory.Control
                         }
                     } while (Planetarium.GetUniversalTime() - landingStartTime < 10 + altitude / easeInSpeed); // Give the vessels up to (10 + altitude / VESSEL_SPAWN_EASE_IN_SPEED) seconds to land.
                     if (!vesselSpawnSuccess && spawnFailureReason == SpawnFailureReason.None)
+                    {
+                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for the vessels to land.");
                         spawnFailureReason = SpawnFailureReason.TimedOut;
+                    }
                 }
                 else
                 {
