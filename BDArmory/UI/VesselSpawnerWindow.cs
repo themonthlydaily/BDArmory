@@ -200,10 +200,7 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectVesselSpawner.height = windowHeight;
             if (windowHeight < previousWindowHeight && BDArmorySetup.WindowRectVesselSpawner.y + previousWindowHeight == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectVesselSpawner.y = Screen.height - BDArmorySetup.WindowRectVesselSpawner.height;
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSpawner);
-            }
+            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSpawner);
         }
 
         private void WindowVesselSpawner(int id)
