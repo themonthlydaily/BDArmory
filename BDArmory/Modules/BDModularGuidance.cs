@@ -192,7 +192,8 @@ namespace BDArmory.Modules
 
         void Update()
         {
-            CheckDetonationState();
+            if (!HasFired)
+                CheckDetonationState();
         }
 
         private void CheckNextStage()
