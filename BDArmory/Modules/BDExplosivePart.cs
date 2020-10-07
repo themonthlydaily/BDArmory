@@ -340,7 +340,6 @@ namespace BDArmory.Modules
                     if (partHit?.vessel.vesselType == VesselType.Debris) continue;
                     if (sourcevessel != null && partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;
                     if (IFF_On && partHit.vessel.FindPartModuleImplementing<MissileFire>()?.teamString == IFFID) continue;
-                    //Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
                     if (detonateAtMinimumDistance)
                     {
                         var distance = Vector3.Distance(partHit.vessel.CoM, vessel.CoM);
@@ -350,6 +349,7 @@ namespace BDArmory.Modules
                             return detonate = false;
                         }
                     }
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
                     return detonate = true;
                 }
             }
