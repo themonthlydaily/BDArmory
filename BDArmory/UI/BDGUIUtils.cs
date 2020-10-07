@@ -176,6 +176,8 @@ namespace BDArmory.UI
             }
             else // If the window is completely off-screen, bring it just onto the screen.
             {
+                if (windowPosition.width == 0) windowPosition.width = 1;
+                if (windowPosition.height == 0) windowPosition.height = 1;
                 if (windowPosition.x >= Screen.width) windowPosition.x = Screen.width - 1;
                 if (windowPosition.y >= Screen.height) windowPosition.y = Screen.height - 1;
                 if (windowPosition.x + windowPosition.width < 1) windowPosition.x = 1 - windowPosition.width;
