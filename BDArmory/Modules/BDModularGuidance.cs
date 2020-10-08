@@ -1038,17 +1038,19 @@ namespace BDArmory.Modules
             if (HasExploded || !HasFired) return;
             if (SourceVessel == null) SourceVessel = vessel;
 
-            HasExploded = true;
             if (StageToTriggerOnProximity != 0)
             {
-                vessel.ActionGroups.ToggleGroup(
-                    (KSPActionGroup)Enum.Parse(typeof(KSPActionGroup), "Custom0" + (int)StageToTriggerOnProximity));
+                vessel.ActionGroups.ToggleGroup((KSPActionGroup)Enum.Parse(typeof(KSPActionGroup), "Custom0" + (int)StageToTriggerOnProximity));
+                HasExploded = true;
             }
             else
             {
                 vessel.FindPartModulesImplementing<BDExplosivePart>().ForEach(explosivePart => explosivePart.DetonateIfPossible());
                 if (vessel.FindPartModulesImplementing<BDExplosivePart>().Any(explosivePart => explosivePart.hasDetonated))
+                {
+                    HasExploded = true;
                     AutoDestruction();
+                }
             }
         }
 
