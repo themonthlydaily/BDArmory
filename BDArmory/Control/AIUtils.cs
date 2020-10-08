@@ -24,6 +24,11 @@ namespace BDArmory.Control
             return pos;
         }
 
+        public static Vector3 PredictPosition(Vector3 position, Vector3 velocity, Vector3 acceleration, float time)
+        {
+            return position + time * velocity + 0.5f * time * time * acceleration;
+        }
+
         /// <summary>
         /// Predict the next time to the closest point of approach within the next maxTime seconds using the same kinematics as PredictPosition (i.e, position, velocity and acceleration).
         /// </summary>
