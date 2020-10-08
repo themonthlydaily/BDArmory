@@ -1590,10 +1590,10 @@ namespace BDArmory.Control
             public bool owned = false;
             public List<CrewData> crew = new List<CrewData>();
             public PQSCity pqsCity = null;
-            public Vector3d pqsOffset;
-            public float heading;
-            public float pitch;
-            public float roll;
+            public Vector3d pqsOffset = Vector3d.zero;
+            public float heading = 0f;
+            public float pitch = 0f;
+            public float roll = 0f;
         }
         #endregion
     }

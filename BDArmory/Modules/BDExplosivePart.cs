@@ -342,9 +342,9 @@ namespace BDArmory.Modules
                     if (IFF_On && partHit.vessel.FindPartModuleImplementing<MissileFire>()?.teamString == IFFID) continue;
                     if (detonateAtMinimumDistance)
                     {
-                        var distance = Vector3.Distance(partHit.vessel.CoM, vessel.CoM);
-                        var predictedDistance = Vector3.Distance(AIUtils.PredictPosition(partHit.vessel, Time.deltaTime), AIUtils.PredictPosition(vessel, Time.deltaTime));
-                        if (distance > 1 && distance > predictedDistance) // If we're more than 1m away and closing, then wait.
+                        var distance = Vector3.Distance(partHit.transform.position + partHit.CoMOffset, transform.position);
+                        var predictedDistance = Vector3.Distance(AIUtils.PredictPosition(partHit.transform.position + partHit.CoMOffset, partHit.vessel.Velocity(), partHit.vessel.acceleration, Time.deltaTime), AIUtils.PredictPosition(transform.position, vessel.Velocity(), vessel.acceleration, Time.deltaTime));
+                        if (distance > predictedDistance && distance > Time.fixedDeltaTime * (float)vessel.srfSpeed) // If we're closing and not going to hit within the next update, then wait.
                         {
                             return detonate = false;
                         }
