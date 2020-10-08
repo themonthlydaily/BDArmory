@@ -364,6 +364,12 @@ namespace BDArmory.UI
                         spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
                         spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
                         VesselSpawner.Instance.ShowSpawnPoint(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
+                        if (BDArmorySettings.RUNWAY_PROJECT) // FIXME Round 3
+                        {
+                            targetSpawnConfig.geoCoords = spawnLocation.location;
+                            targetSpawnFields["lat"].currentValue = spawnLocation.location.x;
+                            targetSpawnFields["lon"].currentValue = spawnLocation.location.y;
+                        }
                     }
                 }
                 line += (i - 1) / 4;
@@ -372,6 +378,7 @@ namespace BDArmory.UI
 
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
+                ++line;
                 if (GUI.Button(SLeftButtonRect(++line), Localizer.Format("Set target spawn here"), BDArmorySetup.BDGuiSkin.button)) //"Vessel Spawning Location"
                 {
                     Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
