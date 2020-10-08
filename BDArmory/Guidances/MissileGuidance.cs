@@ -149,6 +149,8 @@ namespace BDArmory.Guidances
             //Basic lead time calculation
             Vector3 currVel = ((float)missileVessel.srfSpeed * missileVessel.Velocity().normalized);
             timeToImpact = (float)(1 / ((targetVelocity - currVel).magnitude / targetDistance));
+
+            // Calculate time to CPA to determine target position
             float timeToCPA = TimeToCPA(missileVessel, targetPosition, targetVelocity, targetAcceleration, 10f);
             timeToImpact = (timeToImpact < 10f) ? timeToCPA : timeToImpact;
             return targetPosition + targetVelocity * timeToCPA + 0.5f * targetAcceleration * timeToCPA * timeToCPA;
