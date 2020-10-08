@@ -297,61 +297,6 @@ namespace BDArmory.UI
                 BDArmorySetup.SaveConfig();
             }
 
-            /* Moved to VesselSpawnerWindow.cs
-            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 8f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "CS", _continuousVesselSpawning ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
-            {
-                if (!_continuousVesselSpawning && !_vesselsSpawned && Event.current.button == 0) // Left click
-                {
-                    VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, true); // Spawn vessels continuously at 1km above terrain.
-                    _continuousVesselSpawning = true;
-                    _autoPilotEnabled = false;
-                }
-                else if (Event.current.button == 1)
-                {
-                    VesselSpawner.Instance.CancelVesselSpawn();
-                    if (_continuousVesselSpawning)
-                        Debug.Log("[BDArmory]: Resetting continuous spawning button.");
-                    _continuousVesselSpawning = false;
-                }
-            }
-
-            if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 7f * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "S", _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
-            {
-                if (!_vesselsSpawned && !_continuousVesselSpawning && Event.current.button == 0) // Left click
-                {
-                    if (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING)
-                        VesselSpawner.Instance.SpawnAllVesselsOnceContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true); // Spawn vessels.
-                    else
-                        VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true); // Spawn vessels.
-                    _vesselsSpawned = true;
-                    _autoPilotEnabled = false;
-                }
-                else if (!_vesselsSpawned && Event.current.button == 2) // Middle click
-                {
-                    // VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false); // Spawn vessels, without killing off other vessels or changing camera positions.
-                    Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
-                    _vesselsSpawned = true;
-                    _autoPilotEnabled = false;
-                    VesselSpawner.Instance.TeamSpawn(
-                        new List<VesselSpawner.SpawnConfig> {
-                            new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5, BDArmorySettings.VESSEL_SPAWN_DISTANCE, ""),
-                            new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 5000, 300, "Targets")
-                        },
-                        true, // Start the competition.
-                        15d, // Wait 15s for the target planes to get going first.
-                        true // Enable startCompetitionNow so the competition starts as soon as the missiles have launched.
-                    ); // FIXME, this is temporary
-                }
-                else if (Event.current.button == 1) // Right click
-                {
-                    VesselSpawner.Instance.CancelVesselSpawn();
-                    if (_vesselsSpawned)
-                        Debug.Log("[BDArmory]: Resetting spawning vessel button.");
-                    _vesselsSpawned = false;
-                }
-            }
-            */
-
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 6 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "M", BDACompetitionMode.Instance.killerGMenabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 if (Event.current.button == 1)

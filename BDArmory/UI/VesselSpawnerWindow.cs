@@ -65,6 +65,10 @@ namespace BDArmory.UI
         private bool _vesselsSpawned = false;
         public bool continuousVesselSpawning = false;
         Dictionary<string, SpawnField> spawnFields;
+
+        // FIXME RUNWAY_PROJECT Round 3
+        VesselSpawner.SpawnConfig targetSpawnConfig;
+        Dictionary<string, SpawnField> targetSpawnFields;
         #endregion
 
         #region Styles
@@ -154,6 +158,22 @@ namespace BDArmory.UI
                 { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
                 { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
             };
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                targetSpawnConfig = new VesselSpawner.SpawnConfig(
+                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
+                    5000,
+                    1000,
+                    true,
+                    "Targets"
+                );
+
+                targetSpawnFields = new Dictionary<string, SpawnField> {
+                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.x, -90, 90) },
+                    { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.y, -180, 180) },
+                    { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.altitude, 0) },
+                };
+            }
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -350,6 +370,43 @@ namespace BDArmory.UI
             }
             // TODO Add a button for adding in spawn locations in the GUI.
 
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                if (GUI.Button(SLeftButtonRect(++line), Localizer.Format("Set target spawn here"), BDArmorySetup.BDGuiSkin.button)) //"Vessel Spawning Location"
+                {
+                    Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
+                    RaycastHit hit;
+                    if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
+                    {
+                        var geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
+                        targetSpawnFields["lat"].currentValue = geoCoords.x;
+                        targetSpawnFields["lon"].currentValue = geoCoords.y;
+                    }
+                }
+                rects = SRight3Rects(line);
+                targetSpawnFields["lat"].tryParseValue(GUI.TextField(rects[0], targetSpawnFields["lat"].possibleValue, 8));
+                targetSpawnFields["lon"].tryParseValue(GUI.TextField(rects[1], targetSpawnFields["lon"].possibleValue, 8));
+                targetSpawnFields["alt"].tryParseValue(GUI.TextField(rects[2], targetSpawnFields["alt"].possibleValue, 8));
+
+                targetSpawnConfig.geoCoords.x = Math.Min(Math.Max(targetSpawnFields["lat"].currentValue, -90), 90);
+                targetSpawnConfig.geoCoords.y = Math.Min(Math.Max(targetSpawnFields["lon"].currentValue, -180), 180);
+                targetSpawnConfig.altitude = Math.Max(0, (float)targetSpawnFields["alt"].currentValue);
+                targetSpawnConfig.absDistanceOrFactor = GUI.Toggle(SLeftRect(++line), targetSpawnConfig.absDistanceOrFactor, Localizer.Format("Target distance: abs vs factor"));  // Toggle between distance factor and absolute distance.
+                if (targetSpawnConfig.absDistanceOrFactor)
+                { // Absolute distance
+                    var value = targetSpawnConfig.distance < 100 ? targetSpawnConfig.distance / 10 : targetSpawnConfig.distance < 1000 ? 9 + targetSpawnConfig.distance / 100 : targetSpawnConfig.distance < 10000 ? 18 + targetSpawnConfig.distance / 1000 : 26 + targetSpawnConfig.distance / 5000;
+                    var displayValue = targetSpawnConfig.distance < 1000 ? targetSpawnConfig.distance.ToString("0") + "m" : (targetSpawnConfig.distance / 1000).ToString("0") + "km";
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("Target spawn distance")}:  ({displayValue})", leftLabel);//Spawn Distance
+                    value = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 30f));
+                    targetSpawnConfig.distance = value < 10 ? 10 * value : value < 19 ? 100 * (value - 9) : value < 28 ? 1000 * (value - 18) : 5000 * (value - 26);
+                }
+                else
+                { // Distance factor
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("Target spawn distance factor")}:  ({targetSpawnConfig.distance})", leftLabel);//Spawn Distance Factor
+                    targetSpawnConfig.distance = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetSpawnConfig.distance / 10f, 1f, 10f) * 10f);
+                }
+            }
+
             ++line;
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_SingleSpawn"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
@@ -386,18 +443,12 @@ namespace BDArmory.UI
                             new List<VesselSpawner.SpawnConfig> {
                             new VesselSpawner.SpawnConfig(
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
-                                5,
+                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                 ""
                             ),
-                            new VesselSpawner.SpawnConfig(
-                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
-                                5000,
-                                100,
-                                false,
-                                "Targets"
-                            )
+                            targetSpawnConfig
                             },
                             true, // Start the competition.
                             15d, // Wait 15s for the target planes to get going first.
