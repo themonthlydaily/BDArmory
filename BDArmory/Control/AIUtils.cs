@@ -35,10 +35,7 @@ namespace BDArmory.Control
         { // Find the closest future time to closest point of approach considering accelerations in addition to velocities. This uses the generalisation of Cardano's solution to finding roots of cubics to find where the derivative of the separation is a minimum.
             if (vessel == null) return 0f; // We don't have a vessel.
             if (v == null) return 0f; // We don't have a target.
-            Vector3 relPosition = v.transform.position - vessel.transform.position;
-            Vector3 relVelocity = v.Velocity() - vessel.Velocity();
-            Vector3 relAcceleration = v.acceleration - vessel.acceleration;
-            return vessel.ClosestTimeToCPA(relPosition, relVelocity, relAcceleration, maxTime);
+            return vessel.ClosestTimeToCPA(v.transform.position, v.Velocity(), v.acceleration, maxTime);
         }
 
         /// <summary>
@@ -50,8 +47,12 @@ namespace BDArmory.Control
         /// <param name="targetAcceleration">The second vessel acceleration.</param>
         /// <param name="maxTime">The maximum time to look ahead.</param>
         /// <returns>
-        public static float ClosestTimeToCPA(this Vessel vessel, Vector3 relPosition, Vector3 relVelocity, Vector3 relAcceleration, float maxTime)
+        public static float ClosestTimeToCPA(this Vessel vessel, Vector3 targetPosition, Vector3 targetVelocity, Vector3 targetAcceleration, float maxTime)
         {
+            if (vessel == null) return 0f; // We don't have a vessel.
+            Vector3 relPosition = targetPosition - vessel.transform.position;
+            Vector3 relVelocity = targetVelocity - vessel.Velocity();
+            Vector3 relAcceleration = targetAcceleration - vessel.acceleration;
             float A = Vector3.Dot(relAcceleration, relAcceleration) / 2f;
             float B = Vector3.Dot(relVelocity, relAcceleration) * 3f / 2f;
             float C = Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration);
