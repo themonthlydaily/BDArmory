@@ -38,6 +38,20 @@ namespace BDArmory.Control
             Vector3 relPosition = v.transform.position - vessel.transform.position;
             Vector3 relVelocity = v.Velocity() - vessel.Velocity();
             Vector3 relAcceleration = v.acceleration - vessel.acceleration;
+            return vessel.ClosestTimeToCPA(relPosition, relVelocity, relAcceleration, maxTime);
+        }
+
+        /// <summary>
+        /// Predict the next time to the closest point of approach within the next maxTime seconds using the same kinematics as PredictPosition (i.e, position, velocity and acceleration).
+        /// </summary>
+        /// <param name="vessel">The first vessel.</param>
+        /// <param name="targetPosition">The second vessel position.</param>
+        /// <param name="targetVelocity">The second vessel velocity.</param>
+        /// <param name="targetAcceleration">The second vessel acceleration.</param>
+        /// <param name="maxTime">The maximum time to look ahead.</param>
+        /// <returns>
+        public static float ClosestTimeToCPA(this Vessel vessel, Vector3 relPosition, Vector3 relVelocity, Vector3 relAcceleration, float maxTime)
+        {
             float A = Vector3.Dot(relAcceleration, relAcceleration) / 2f;
             float B = Vector3.Dot(relVelocity, relAcceleration) * 3f / 2f;
             float C = Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration);
@@ -90,8 +104,6 @@ namespace BDArmory.Control
                 }
             }
         }
-
-
 
         /// <summary>
         /// Get the altitude of terrain below/above a point.
