@@ -1045,7 +1045,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                vessel.FindPartModulesImplementing<BDExplosivePart>().ForEach(explosivePart => explosivePart.DetonateIfPossible());
+                vessel.FindPartModulesImplementing<BDExplosivePart>().ForEach(explosivePart => { if (!explosivePart.manualOverride) explosivePart.DetonateIfPossible(); });
                 if (vessel.FindPartModulesImplementing<BDExplosivePart>().Any(explosivePart => explosivePart.hasDetonated))
                 {
                     HasExploded = true;
