@@ -230,6 +230,7 @@ namespace BDArmory.UI
             if (GUI.Button(new Rect(_windowWidth - _buttonSize - (_margin - 2), _margin, _buttonSize - 2, _buttonSize - 2), "X", BDArmorySetup.BDGuiSkin.button))
             {
                 BDArmorySetup.Instance.showVesselSpawnerGUI = false;
+                BDArmorySetup.SaveConfig();
             }
 
             float line = 0.25f;
