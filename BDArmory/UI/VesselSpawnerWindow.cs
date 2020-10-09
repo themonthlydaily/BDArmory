@@ -69,6 +69,7 @@ namespace BDArmory.UI
         // FIXME RUNWAY_PROJECT Round 3
         VesselSpawner.SpawnConfig targetSpawnConfig;
         Dictionary<string, SpawnField> targetSpawnFields;
+        public float competitionStartDelay = 15;
         #endregion
 
         #region Styles
@@ -169,7 +170,7 @@ namespace BDArmory.UI
                 );
 
                 targetSpawnFields = new Dictionary<string, SpawnField> {
-                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.x, -90, 90) },
+                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.x+1, -90, 90) },
                     { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.y, -180, 180) },
                     { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.altitude, 0) },
                 };
@@ -229,6 +230,7 @@ namespace BDArmory.UI
             if (GUI.Button(new Rect(_windowWidth - _buttonSize - (_margin - 2), _margin, _buttonSize - 2, _buttonSize - 2), "X", BDArmorySetup.BDGuiSkin.button))
             {
                 BDArmorySetup.Instance.showVesselSpawnerGUI = false;
+                BDArmorySetup.SaveConfig();
             }
 
             float line = 0.25f;
@@ -403,15 +405,18 @@ namespace BDArmory.UI
                 { // Absolute distance
                     var value = targetSpawnConfig.distance < 100 ? targetSpawnConfig.distance / 10 : targetSpawnConfig.distance < 1000 ? 9 + targetSpawnConfig.distance / 100 : targetSpawnConfig.distance < 10000 ? 18 + targetSpawnConfig.distance / 1000 : 26 + targetSpawnConfig.distance / 5000;
                     var displayValue = targetSpawnConfig.distance < 1000 ? targetSpawnConfig.distance.ToString("0") + "m" : (targetSpawnConfig.distance / 1000).ToString("0") + "km";
-                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("Target spawn distance")}:  ({displayValue})", leftLabel);//Spawn Distance
+                    GUI.Label(SLeftSliderRect(++line), $"Target spawn distance:  ({displayValue})", leftLabel);//Spawn Distance
                     value = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 30f));
                     targetSpawnConfig.distance = value < 10 ? 10 * value : value < 19 ? 100 * (value - 9) : value < 28 ? 1000 * (value - 18) : 5000 * (value - 26);
                 }
                 else
                 { // Distance factor
-                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("Target spawn distance factor")}:  ({targetSpawnConfig.distance})", leftLabel);//Spawn Distance Factor
+                    GUI.Label(SLeftSliderRect(++line), $"Target spawn distance factor:  ({targetSpawnConfig.distance})", leftLabel);//Spawn Distance Factor
                     targetSpawnConfig.distance = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetSpawnConfig.distance / 10f, 1f, 10f) * 10f);
                 }
+                // Countdown
+                GUI.Label(SLeftSliderRect(++line), $"Countdown:  ({competitionStartDelay})", leftLabel); // Countdown
+                competitionStartDelay = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), competitionStartDelay, 0f, 30f));
             }
 
             ++line;
@@ -458,7 +463,7 @@ namespace BDArmory.UI
                             targetSpawnConfig
                             },
                             true, // Start the competition.
-                            15d, // Wait 15s for the target planes to get going first.
+                            competitionStartDelay, // Wait for the target planes to get going first.
                             true // Enable startCompetitionNow so the competition starts as soon as the missiles have launched.
                         ); // FIXME, this is temporary
                     }

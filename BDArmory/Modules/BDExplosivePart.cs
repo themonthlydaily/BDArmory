@@ -281,7 +281,7 @@ namespace BDArmory.Modules
 
         public void DetonateIfPossible()
         {
-            if (!hasDetonated && Armed && !manualOverride)
+            if (!hasDetonated && Armed)
             {
                 Vector3 direction = default(Vector3);
 
@@ -291,6 +291,7 @@ namespace BDArmory.Modules
                 }
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, null, direction);
                 hasDetonated = true;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + sourcevessel?.vesselName + " detonating.");
             }
         }
 
@@ -298,6 +299,7 @@ namespace BDArmory.Modules
         {
             if (!hasDetonated && Armed)
             {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + sourcevessel?.vesselName + " detonating.");
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part);
                 hasDetonated = true;
                 part.Destroy();

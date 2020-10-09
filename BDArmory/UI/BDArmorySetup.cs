@@ -728,6 +728,8 @@ namespace BDArmory.UI
                 if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
                 {
                     showVesselSpawnerGUI = !showVesselSpawnerGUI;
+                    if(!showVesselSpawnerGUI)
+                        SaveConfig();
                 }
             }
 
