@@ -43,7 +43,7 @@ namespace BDArmory.Modules
         float startTime;
         int missilesAway;
 
-	public float totalHP;
+        public float totalHP;
 
         public bool hasLoadedRippleData;
         float rippleTimer;
@@ -840,7 +840,7 @@ namespace BDArmory.Modules
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
                 GameEvents.onPartDie.Add(OnPartDie);
 
-		GetTotalHP();
+                GetTotalHP();
 
                 using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
                     while (aipilot.MoveNext())
@@ -892,26 +892,26 @@ namespace BDArmory.Modules
             }
         }
 
-	public void GetTotalHP() // get total craft HP
-	{
-	    using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
-		while (p.MoveNext())
-		{
-		    if (p.Current == null) continue;
-		    if (p.Current.Modules.GetModule<MissileLauncher>()) continue; // don't grab missiles
-		    if (p.Current.Modules.GetModule<ModuleDecouple>()) continue; // don't grab bits that are going to fall off
-		    if (p.Current.FindParentModuleImplementing<ModuleDecouple>()) continue; // should grab ModularMissiles too
-		    /*
-			if (p.Current.Modules.GetModule<HitpointTracker>() != null)
-			{
-			    var hp = p.Current.Modules.GetModule<HitpointTracker>();			
-			    totalHP += hp.Hitpoints;
-			}
-			*/
-		    totalHP++;
-		    //Debug.Log(vessel.vesselName + " part count: " + totalHP);
-		}
-	}
+        public void GetTotalHP() // get total craft HP
+        {
+            using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
+                while (p.MoveNext())
+                {
+                    if (p.Current == null) continue;
+                    if (p.Current.Modules.GetModule<MissileLauncher>()) continue; // don't grab missiles
+                    if (p.Current.Modules.GetModule<ModuleDecouple>()) continue; // don't grab bits that are going to fall off
+                    if (p.Current.FindParentModuleImplementing<ModuleDecouple>()) continue; // should grab ModularMissiles too
+                    /*
+                    if (p.Current.Modules.GetModule<HitpointTracker>() != null)
+                    {
+                        var hp = p.Current.Modules.GetModule<HitpointTracker>();			
+                        totalHP += hp.Hitpoints;
+                    }
+                    */
+                    ++totalHP;
+                    //Debug.Log(vessel.vesselName + " part count: " + totalHP);
+                }
+        }
 
         public override void OnUpdate()
         {
