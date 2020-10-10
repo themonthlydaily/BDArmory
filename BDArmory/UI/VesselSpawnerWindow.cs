@@ -170,7 +170,7 @@ namespace BDArmory.UI
                 );
 
                 targetSpawnFields = new Dictionary<string, SpawnField> {
-                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.x+1, -90, 90) },
+                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.x + 1, -90, 90) },
                     { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.y, -180, 180) },
                     { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.altitude, 0) },
                 };
@@ -369,7 +369,7 @@ namespace BDArmory.UI
                         if (BDArmorySettings.RUNWAY_PROJECT) // FIXME Round 3
                         {
                             targetSpawnConfig.geoCoords = spawnLocation.location;
-                            targetSpawnFields["lat"].currentValue = spawnLocation.location.x;
+                            targetSpawnFields["lat"].currentValue = spawnLocation.location.x + 1;
                             targetSpawnFields["lon"].currentValue = spawnLocation.location.y;
                         }
                     }
