@@ -68,8 +68,8 @@ namespace BDArmory.UI
 
         // FIXME RUNWAY_PROJECT Round 3
         VesselSpawner.SpawnConfig targetSpawnConfig;
-        Dictionary<string, SpawnField> targetSpawnFields;
-        public float competitionStartDelay = 15;
+        static Dictionary<string, SpawnField> targetSpawnFields;
+        static float competitionStartDelay = 15;
         #endregion
 
         #region Styles
