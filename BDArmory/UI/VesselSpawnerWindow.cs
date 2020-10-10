@@ -415,7 +415,7 @@ namespace BDArmory.UI
                     targetSpawnConfig.distance = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetSpawnConfig.distance / 10f, 1f, 10f) * 10f);
                 }
                 // Countdown
-                GUI.Label(SLeftSliderRect(++line), $"Countdown:  ({competitionStartDelay})", leftLabel); // Countdown
+                GUI.Label(SLeftSliderRect(++line), $"Countdown:  ({competitionStartDelay}s)", leftLabel); // Countdown
                 competitionStartDelay = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), competitionStartDelay, 0f, 30f));
             }
 
@@ -453,14 +453,14 @@ namespace BDArmory.UI
                         _vesselsSpawned = true;
                         VesselSpawner.Instance.TeamSpawn(
                             new List<VesselSpawner.SpawnConfig> {
-                            new VesselSpawner.SpawnConfig(
-                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
-                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                ""
-                            ),
-                            targetSpawnConfig
+                                new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    ""
+                                ),
+                                targetSpawnConfig
                             },
                             true, // Start the competition.
                             competitionStartDelay, // Wait for the target planes to get going first.
