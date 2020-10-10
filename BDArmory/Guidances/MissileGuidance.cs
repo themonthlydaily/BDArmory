@@ -1,4 +1,5 @@
 using System;
+using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
@@ -145,36 +146,18 @@ namespace BDArmory.Guidances
         {
             float targetDistance = Vector3.Distance(targetPosition, missileVessel.CoM);
 
-            float leadTime = 0;
-
             //Basic lead time calculation
             Vector3 currVel = ((float)missileVessel.srfSpeed * missileVessel.Velocity().normalized);
             timeToImpact = (float)(1 / ((targetVelocity - currVel).magnitude / targetDistance));
-            leadTime = Mathf.Clamp(timeToImpact, 0f, 8f);
 
-            if (timeToImpact < 1)
-            {
-                float accuTimeToImpact = 0;
-                if (CalculateAccurateTimeToImpact(targetDistance, targetVelocity, missileVessel,
-                    missileVessel.acceleration_immediate, targetAcceleration, out accuTimeToImpact))
-                {
-                    timeToImpact = accuTimeToImpact;
-                    return targetPosition + (targetVelocity * accuTimeToImpact) +
-                           targetAcceleration * 0.5f * Mathf.Pow(accuTimeToImpact, 2);
-                }
-
-                return targetPosition + (targetVelocity * leadTime);
-            }
-            if (timeToImpact < 10)
-            {
-                return targetPosition + (targetVelocity * leadTime);
-            }
-
-            return targetPosition;
+            // Calculate time to CPA to determine target position
+            float timeToCPA = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, targetAcceleration, 10f);
+            timeToImpact = (timeToImpact < 10f) ? timeToCPA : timeToImpact;
+            return targetPosition + targetVelocity * timeToCPA + 0.5f * targetAcceleration * timeToCPA * timeToCPA;
         }
 
         /// <summary>
-        /// Calculate a very accurate time to impact, use the out timeToimpact property if the method returned true
+        /// Calculate a very accurate time to impact, use the out timeToimpact property if the method returned true. DEPRECIATED, use TimeToCPA.
         /// </summary>
         /// <param name="targetVelocity"></param>
         /// <param name="missileVessel"></param>
@@ -214,6 +197,7 @@ namespace BDArmory.Guidances
             timeToImpact = Time.fixedDeltaTime * iterations;
             return true;
         }
+
 
         public static Vector3 GetAirToAirFireSolution(MissileBase missile, Vessel targetVessel)
         {
