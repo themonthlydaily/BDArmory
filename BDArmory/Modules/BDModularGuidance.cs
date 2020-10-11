@@ -27,6 +27,9 @@ namespace BDArmory.Modules
 
         public Vessel LegacyTargetVessel;
 
+        private MissileFire weaponManager = null;
+        private bool mfChecked = false;
+
         private readonly List<Part> _vesselParts = new List<Part>();
 
         #region KSP FIELDS
@@ -663,6 +666,12 @@ namespace BDArmory.Modules
             DetonationDistanceState = DetonationDistanceStates.Cruising;
             BDATargetManager.FiredMissiles.Remove(this);
             MissileState = MissileStates.Idle;
+            if (mfChecked && weaponManager != null)
+            {
+                Debug.Log("[BDModularGuidance]: disabling target lock for " + vessel.vesselName);
+                weaponManager.guardFiringMissile = false; // Disable target lock.
+                mfChecked = false;
+            }
         }
 
         private void CheckMiss()
@@ -695,6 +704,17 @@ namespace BDArmory.Modules
             debugString.Length = 0;
             if (guidanceActive && MissileReferenceTransform != null && _velocityTransform != null)
             {
+                if (!mfChecked)
+                {
+                    weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                    mfChecked = true;
+                }
+                if (mfChecked && weaponManager != null && !weaponManager.guardFiringMissile)
+                {
+                    Debug.Log("[BDModularGuidance]: enabling target lock for " + vessel.vesselName);
+                    weaponManager.guardFiringMissile = true; // Enable target lock.
+                }
+
                 if (vessel.Velocity().magnitude < MinSpeedGuidance)
                 {
                     if (!_minSpeedAchieved)
@@ -840,7 +860,7 @@ namespace BDArmory.Modules
         /// </summary>
         public void ExecuteNextStage()
         {
-            Debug.LogFormat("[BDModularGuidance]: BDModularGuidance - executing next stage {0} for {1}", _nextStage, vessel.vesselName);
+            Debug.LogFormat("[BDModularGuidance]: Executing next stage {0} for {1}", _nextStage, vessel.vesselName);
             vessel.ActionGroups.ToggleGroup(
                 (KSPActionGroup)Enum.Parse(typeof(KSPActionGroup), "Custom0" + (int)_nextStage));
 
