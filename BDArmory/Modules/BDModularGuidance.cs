@@ -399,7 +399,7 @@ namespace BDArmory.Modules
                 activeRadarLockTrackCurve.Add(0f, 0f);
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
+                    Debug.Log("[BDModularGuidance]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
 
         }
@@ -564,7 +564,7 @@ namespace BDArmory.Modules
                 TimeToImpact = timeToImpact;
                 if (Vector3.Angle(aamTarget - vessel.CoM, vessel.transform.forward) > maxOffBoresight * 0.75f)
                 {
-                    Debug.LogFormat("[BDArmory]: Missile with Name={0} has exceeded the max off boresight, checking missed target ", vessel.vesselName);
+                    Debug.LogFormat("[BDModularGuidance]: Missile with Name={0} has exceeded the max off boresight, checking missed target ", vessel.vesselName);
                     aamTarget = TargetPosition;
                 }
                 DrawDebugLine(vessel.CoM, aamTarget);
@@ -588,7 +588,7 @@ namespace BDArmory.Modules
 
                     if (targetViewAngle > maxOffBoresight)
                     {
-                        Debug.Log("[BDArmory]: AGM Missile guidance failed - target out of view");
+                        Debug.Log("[BDModularGuidance]: AGM Missile guidance failed - target out of view");
                         guidanceActive = false;
                     }
                 }
@@ -626,6 +626,8 @@ namespace BDArmory.Modules
 
             if (MissileState != MissileStates.PostThrust) return;
 
+            Debug.Log("[BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName + " with target at " + (targetPosition - vessel.CoM).ToString("0.0"));
+
             var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
             if (pilotAI != null)
             {
@@ -634,7 +636,6 @@ namespace BDArmory.Modules
                 return;
             }
 
-            Debug.Log("[BDArmory]: Missile CheckMiss showed miss");
             HasMissed = true;
             guidanceActive = false;
             TargetMf = null;
@@ -644,6 +645,7 @@ namespace BDArmory.Modules
 
         private void ResetMissile()
         {
+            Debug.Log("[BDModularGuidance]: Resetting missile " + vessel.vesselName);
             heatTarget = TargetSignatureData.noTarget;
             vrd = null;
             radarTarget = TargetSignatureData.noTarget;
@@ -656,6 +658,9 @@ namespace BDArmory.Modules
             _missileIgnited = false;
             lockFailTimer = -1;
             guidanceActive = false;
+            HasMissed = false;
+            HasExploded = false;
+            DetonationDistanceState = DetonationDistanceStates.Cruising;
             BDATargetManager.FiredMissiles.Remove(this);
             MissileState = MissileStates.Idle;
         }
@@ -666,6 +671,8 @@ namespace BDArmory.Modules
 
             if (MissileState == MissileStates.PostThrust && (vessel.LandedOrSplashed || vessel.Velocity().magnitude < 10f))
             {
+                Debug.Log("[BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName);
+
                 var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
                 if (pilotAI != null)
                 {
@@ -674,7 +681,6 @@ namespace BDArmory.Modules
                     return;
                 }
 
-                Debug.Log("[BDArmory]: Missile CheckMiss showed miss");
                 HasMissed = true;
                 guidanceActive = false;
                 TargetMf = null;
@@ -744,9 +750,9 @@ namespace BDArmory.Modules
                     }
                 }
                 s.mainThrottle = Throttle;
-            }
 
-            CheckMiss();
+                CheckMiss();
+            }
         }
 
         private void SetRoll()
@@ -834,7 +840,7 @@ namespace BDArmory.Modules
         /// </summary>
         public void ExecuteNextStage()
         {
-            Debug.LogFormat("[BDArmory]: BDModularGuidance - executing next stage {0}", _nextStage);
+            Debug.LogFormat("[BDModularGuidance]: BDModularGuidance - executing next stage {0} for {1}", _nextStage, vessel.vesselName);
             vessel.ActionGroups.ToggleGroup(
                 (KSPActionGroup)Enum.Parse(typeof(KSPActionGroup), "Custom0" + (int)_nextStage));
 
@@ -859,6 +865,20 @@ namespace BDArmory.Modules
         public void AgFire(KSPActionParam param)
         {
             FireMissile();
+        }
+
+        /// <summary>
+        ///     Reset the missile if it has a pilot AI.
+        /// </summary>
+        [KSPAction("Reset Missile")]
+        public void AGReset(KSPActionParam param)
+        {
+            var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
+            if (pilotAI != null)
+            {
+                ResetMissile();
+                pilotAI.ActivatePilot();
+            }
         }
 
         #endregion KSP ACTIONS

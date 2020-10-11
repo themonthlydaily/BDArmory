@@ -4423,10 +4423,10 @@ namespace BDArmory.Modules
         bool GetLaunchAuthorization(Vessel targetV, MissileFire mf)
         {
             bool launchAuthorized = false;
-            Vector3 target = targetV.transform.position;
             MissileBase missile = mf.CurrentMissile;
-            if (missile != null)
+            if (missile != null && targetV != null)
             {
+                Vector3 target = targetV.transform.position;
                 if (!targetV.LandedOrSplashed)
                 {
                     target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
