@@ -68,8 +68,8 @@ namespace BDArmory.UI
 
         // FIXME RUNWAY_PROJECT Round 3
         VesselSpawner.SpawnConfig targetSpawnConfig;
-        Dictionary<string, SpawnField> targetSpawnFields;
-        public float competitionStartDelay = 15;
+        static Dictionary<string, SpawnField> targetSpawnFields;
+        static float competitionStartDelay = 15;
         #endregion
 
         #region Styles
@@ -170,7 +170,7 @@ namespace BDArmory.UI
                 );
 
                 targetSpawnFields = new Dictionary<string, SpawnField> {
-                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.x+1, -90, 90) },
+                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.x + 1, -90, 90) },
                     { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.geoCoords.y, -180, 180) },
                     { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.altitude, 0) },
                 };
@@ -369,7 +369,7 @@ namespace BDArmory.UI
                         if (BDArmorySettings.RUNWAY_PROJECT) // FIXME Round 3
                         {
                             targetSpawnConfig.geoCoords = spawnLocation.location;
-                            targetSpawnFields["lat"].currentValue = spawnLocation.location.x;
+                            targetSpawnFields["lat"].currentValue = spawnLocation.location.x + 1;
                             targetSpawnFields["lon"].currentValue = spawnLocation.location.y;
                         }
                     }
@@ -415,7 +415,7 @@ namespace BDArmory.UI
                     targetSpawnConfig.distance = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetSpawnConfig.distance / 10f, 1f, 10f) * 10f);
                 }
                 // Countdown
-                GUI.Label(SLeftSliderRect(++line), $"Countdown:  ({competitionStartDelay})", leftLabel); // Countdown
+                GUI.Label(SLeftSliderRect(++line), $"Countdown:  ({competitionStartDelay}s)", leftLabel); // Countdown
                 competitionStartDelay = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), competitionStartDelay, 0f, 30f));
             }
 
@@ -453,14 +453,14 @@ namespace BDArmory.UI
                         _vesselsSpawned = true;
                         VesselSpawner.Instance.TeamSpawn(
                             new List<VesselSpawner.SpawnConfig> {
-                            new VesselSpawner.SpawnConfig(
-                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
-                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                ""
-                            ),
-                            targetSpawnConfig
+                                new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    ""
+                                ),
+                                targetSpawnConfig
                             },
                             true, // Start the competition.
                             competitionStartDelay, // Wait for the target planes to get going first.
