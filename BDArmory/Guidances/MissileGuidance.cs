@@ -151,10 +151,12 @@ namespace BDArmory.Guidances
             timeToImpact = (float)(1 / ((targetVelocity - currVel).magnitude / targetDistance));
 
             // Calculate time to CPA to determine target position
-            float timeToCPA = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, targetAcceleration, 10f);
-            timeToImpact = (timeToCPA < 10f) ? timeToCPA : timeToImpact;
-            // Ease in velocity from 10s to 5s, ease in acceleration from 4s to 2s to give smooth adjustments to target point.
-            return AIUtils.PredictPosition(targetPosition, targetVelocity * Mathf.Clamp01(2f - timeToImpact / 5f), targetAcceleration * Mathf.Clamp01(2f - timeToImpact / 2f), Mathf.Clamp(timeToImpact, 0f, 10f));
+            float timeToCPA = missileVessel.ClosestTimeToCPA(targetPosition, targetVelocity, targetAcceleration, 16f);
+            timeToImpact = (timeToCPA < 16f) ? timeToCPA : timeToImpact;
+            // Ease in velocity from 16s to 8s, ease in acceleration from 10s to 1s using the logistic function to give smooth adjustments to target point.
+            float easeAccel = Mathf.Clamp01(1.1f / (1f + Mathf.Exp((timeToCPA - 5f))) - 0.05f);
+            float easeVel = Mathf.Clamp01(2f - timeToCPA / 8f);
+            return AIUtils.PredictPosition(targetPosition, targetVelocity * easeVel, targetAcceleration * easeAccel, timeToCPA);
         }
 
         /// <summary>
