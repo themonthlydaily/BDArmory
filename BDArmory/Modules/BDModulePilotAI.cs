@@ -1020,6 +1020,12 @@ namespace BDArmory.Modules
             float easeVel = Mathf.Clamp01(2f - timeToCPA / 8f);
             Vector3 predictedPosition = AIUtils.PredictPosition(v.transform.position, v.Velocity() * easeVel, v.acceleration * easeAccel, timeToCPA);
 
+            // Set steer mode to aiming for less than 8s left
+            if (timeToCPA < 8f)
+                steerMode = SteerModes.Aiming;
+            else
+                steerMode = SteerModes.NormalFlight;
+
             if (controlSurfaceLag > 0)
                 predictedPosition += -1 * controlSurfaceLag * controlSurfaceLag * (timeToCPA / controlSurfaceLag - 1f + Mathf.Exp(-timeToCPA / controlSurfaceLag)) * vessel.acceleration * easeAccel; // Compensation for control surface lag.
             FlyToPosition(s, predictedPosition);
