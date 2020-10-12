@@ -440,6 +440,11 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
 
+        private string targetMassLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetMass");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetMass", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Mass
+         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightMass = 0;
+
         private string targetFriendliesEngagingLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -3301,6 +3306,7 @@ namespace BDArmory.Modules
             var TargetAccelFields = Fields["targetWeightAccel"];
             var TargetClosureTimeFields = Fields["targetWeightClosureTime"];
             var TargetWeaponNumberFields = Fields["targetWeightWeaponNumber"];
+            var TargetMassFields = Fields["targetWeighMass"];
             var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
             var TargetThreatFields = Fields["targetWeightThreat"];
 
@@ -3312,6 +3318,7 @@ namespace BDArmory.Modules
             float targetAccelValue = target.TargetPriAcceleration();
             float targetClosureTimeValue = target.TargetPriClosureTime(this);
             float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
+            float targetMassValue = target.TargetPriMass(target.weaponManager, this);
             float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this);
             float targetThreatValue = target.TargetPriThreat(target.weaponManager, this);
 
@@ -3322,6 +3329,7 @@ namespace BDArmory.Modules
                 targetWeightAccel * targetAccelValue +
                 targetWeightClosureTime * targetClosureTimeValue +
                 targetWeightWeaponNumber * targetWeaponNumberValue +
+                targetWeightMass * targetMassValue +
                 targetWeightFriendliesEngaging * targetFriendliesEngagingValue +
                 targetWeightThreat * targetThreatValue +
                 targetWeightAoD * targetAoDValue);
@@ -3334,6 +3342,7 @@ namespace BDArmory.Modules
             TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
             TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + targetClosureTimeValue.ToString("0.00");
             TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + targetWeaponNumberValue.ToString("0.00");
+            TargetMassFields.guiName = targetMassLabel + ": " + targetMassValue.ToString("0.00");
             TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
             TargetThreatFields.guiName = targetThreatLabel + ": " + targetThreatValue.ToString("0.00");
 
