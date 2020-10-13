@@ -3306,7 +3306,7 @@ namespace BDArmory.Modules
             var TargetAccelFields = Fields["targetWeightAccel"];
             var TargetClosureTimeFields = Fields["targetWeightClosureTime"];
             var TargetWeaponNumberFields = Fields["targetWeightWeaponNumber"];
-            var TargetMassFields = Fields["targetWeighMass"];
+            var TargetMassFields = Fields["targetWeightMass"];
             var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
             var TargetThreatFields = Fields["targetWeightThreat"];
 
