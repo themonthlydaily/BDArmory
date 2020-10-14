@@ -3094,6 +3094,17 @@ namespace BDArmory.Modules
                         }
                         return;
                     }
+                    else if (!BDArmorySettings.DISABLE_RAMMING)
+                    {
+                        if (!HasWeaponsAndAmmo() && pilotAI != null && pilotAI.allowRamming)
+                        {
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
+                                Debug.Log("[MissileFire]: " + vessel.vesselName + targetDebugText + "ramming.");
+                            }
+                            return;
+                        }
+                    }
                 }
             }
 
