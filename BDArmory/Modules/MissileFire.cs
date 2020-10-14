@@ -3635,16 +3635,13 @@ namespace BDArmory.Modules
                             // not sure on the desired selection priority algorithm, so placeholder By Yield for now
                             float droptime = ((MissileBase)item.Current).dropTime;
 
-                            if (droptime > 0) //make sure it's an airdropped torpedo if flying
-                            {
-                                if (!vessel.LandedOrSplashed)
-                                {
-                                    if (targetYield > canidateYield) continue;
-                                    targetYield = canidateYield;
-                                    targetWeapon = item.Current;
-                                    if (distance > gunRange)
-                                        break;
-                                }
+                            if (droptime > 0 || vessel.LandedOrSplashed) //make sure it's an airdropped torpedo if flying
+                            {                         
+                                if (targetYield > canidateYield) continue;
+                                targetYield = canidateYield;
+                                targetWeapon = item.Current;
+                                if (distance > gunRange)
+                                    break;
                             }
                         }
 
