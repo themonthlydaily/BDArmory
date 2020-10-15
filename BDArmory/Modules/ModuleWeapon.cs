@@ -347,6 +347,8 @@ namespace BDArmory.Modules
 		[KSPField]
 		public string bulletType = "def";
 
+		public string currentBType = "def";
+
 		[KSPField]
 		public string ammoName = "50CalAmmo"; //resource usage
 
@@ -390,6 +392,10 @@ namespace BDArmory.Modules
 		[KSPField] public bool HeatRay = false; //conic AoE
 		[KSPField] public bool electroLaser = false; //Drains EC from target/induces EMP effects
 		float beamDuration = 0.1f; // duration of pulselaser beamFX
+		float beamScoreTime = 0.2f; //frequency of score accumulation for beam lasers, currently 5x/sec
+		float BeamTracker = 0; // timer for scoring shots fired for beams
+		float ScoreAccumulator = 0; //timer for scoring shots hit for beams
+
 		//Rocket info; 
 
 		[KSPField(isPersistant = false)] public string rocketModelPath;
@@ -472,7 +478,7 @@ namespace BDArmory.Modules
 		//Used for scaling laser damage down based on distance.
 		[KSPField]
 		public float tanAngle = 0.0001f;
-		//Angle of divergeance/2. Theoretical minimum value calculated using θ = (1.22 L/RL)/2,
+		//Angle of divergeance/2. Theoretical minimum value calculated using ? = (1.22 L/RL)/2,
 		//where L is laser's wavelength and RL is the radius of the mirror (=gun).
 
 		//audioclip paths
@@ -526,6 +532,15 @@ namespace BDArmory.Modules
 
 		[KSPField]
 		public bool airDetonationTiming = true;
+
+		[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Ammunition Type"),//Ammunition Types
+		 UI_FloatRange(minValue = 1, maxValue = 2, stepIncrement = 1, scene = UI_Scene.All)]
+		public float AmmoTypeNum = 1;
+
+		public List<string> ammoList;
+
+		[KSPField(guiActive = true, guiActiveEditor = true, guiName = "Ammo Type")]//Status
+		public string guiAmmoTypeString = "Slug";
 
 		//auto proximity tracking
 		[KSPField]
@@ -690,7 +705,22 @@ namespace BDArmory.Modules
 			{
 				Fields["roundsPerMinute"].guiActiveEditor = false;
 			}
-
+			int typecount = 0;
+			ammoList = BDAcTools.ParseNames(bulletType);
+			for (int i = 0; i < ammoList.Count; i++)
+			{
+				typecount++;
+			}
+			if (ammoList.Count > 1)
+			{
+				UI_FloatRange ATrange = (UI_FloatRange)Fields["AmmoTypeNum"].uiControlEditor;
+				ATrange.maxValue = (float)typecount;
+			}
+			else //disable ammo selector
+			{
+				Fields["AmmoTypeNum"].guiActiveEditor = false;
+				Fields["AmmoTypeNum"].guiActive = false;
+			}
 			vessel.Velocity();
 			if (BurstFire)
 			{
@@ -860,6 +890,12 @@ namespace BDArmory.Modules
 						hasGunner = true;
 					}
 				}
+
+				if (ammoList.Count > 1)
+				{
+					UI_FloatRange ATrange = (UI_FloatRange)Fields["AmmoTypeNum"].uiControlEditor;
+					ATrange.maxValue = (float)typecount;
+				}
 			}
 			else if (HighLogic.LoadedSceneIsEditor)
 			{
@@ -914,17 +950,16 @@ namespace BDArmory.Modules
 			if (bulletInfo == null)
 			{
 				if (BDArmorySettings.DRAW_DEBUG_LABELS)
-					Debug.Log("[BDArmory]: Failed To load bullet : " + bulletType);
+					Debug.Log("[BDArmory]: Failed To load bullet : " + currentBType);
 			}
 			else
 			{
 				if (BDArmorySettings.DRAW_DEBUG_LABELS)
-					Debug.Log("[BDArmory]: BulletType Loaded : " + bulletType);
+					Debug.Log("[BDArmory]: BulletType Loaded : " + currentBType);
 			}
 
 			BDArmorySetup.OnVolumeChange += UpdateVolume;
 		}
-
 		void OnDestroy()
 		{
 			BDArmorySetup.OnVolumeChange -= UpdateVolume;
@@ -1031,6 +1066,10 @@ namespace BDArmory.Modules
 						hasGunner = true;
 					}
 				}
+			}
+			if (currentBType != ammoList[(int)AmmoTypeNum - 1].ToString())
+			{
+				SetupBullet();
 			}
 		}
 
@@ -1276,22 +1315,7 @@ namespace BDArmory.Modules
 								//animation
 								if (hasFireAnimation)
 								{
-									float unclampedSpeed = (roundsPerMinute * fireState.length) / 60f;
-									float lowFramerateFix = 1;
-									if (roundsPerMinute > 500f)
-									{
-										lowFramerateFix = (0.02f / Time.deltaTime);
-									}
-									fireAnimSpeed = Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
-									fireState.enabled = true;
-									if (unclampedSpeed == fireAnimSpeed || fireState.normalizedTime > 1)
-									{
-										fireState.normalizedTime = 0;
-									}
-									fireState.speed = fireAnimSpeed;
-									fireState.normalizedTime = Mathf.Repeat(fireState.normalizedTime, 1);
-
-									//Debug.Log("fireAnim time: " + fireState.normalizedTime + ", speed; " + fireState.speed);
+									PlayFireAnim();
 								}
 
 								//muzzle flash
@@ -1341,7 +1365,6 @@ namespace BDArmory.Modules
 							}
 
 							//firing bullet
-
 							for (int s = 0; s < SubprojectileCount; s++)
 							{
 								GameObject firedBullet = bulletPool.GetPooledObject();
@@ -1356,7 +1379,7 @@ namespace BDArmory.Modules
 								pBullet.apBulletMod = bulletInfo.apBulletMod;
 								pBullet.bulletDmgMult = bulletDmgMult;
 
-								//A = π x (Ø / 2)^2
+								//A = p x (Ø / 2)^2
 								bulletDragArea = Mathf.PI * Mathf.Pow(caliber / 2f, 2f);
 
 								//Bc = m/Cd * A
@@ -1374,7 +1397,7 @@ namespace BDArmory.Modules
 								timeFired = Time.time - iTime;
 
 								Vector3 firedVelocity =
-									VectorUtils.GaussianDirectionDeviation(fireTransform.forward, maxDeviation / 4) * bulletVelocity;
+									VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation*(SubprojectileCount/2)) / 2) * bulletVelocity; //cannistershot is more inaccurate than slug
 
 								pBullet.currentVelocity = (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
 								firedBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime
@@ -1461,7 +1484,7 @@ namespace BDArmory.Modules
 										break;
 								}
 
-								pBullet.bullet = BulletInfo.bullets[bulletType];
+								pBullet.bullet = BulletInfo.bullets[currentBType];
 								pBullet.gameObject.SetActive(true);
 							}
 							//heat
@@ -1529,6 +1552,26 @@ namespace BDArmory.Modules
 			double chargeAvailable = part.RequestResource("ElectricCharge", drainAmount, ResourceFlowMode.ALL_VESSEL);
 		}
 
+		void PlayFireAnim()
+		{
+			float unclampedSpeed = (roundsPerMinute * fireState.length) / 60f;
+			float lowFramerateFix = 1;
+			if (roundsPerMinute > 500f)
+			{
+				lowFramerateFix = (0.02f / Time.deltaTime);
+			}
+			fireAnimSpeed = Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
+			fireState.enabled = true;
+			if (unclampedSpeed == fireAnimSpeed || fireState.normalizedTime > 1)
+			{
+				fireState.normalizedTime = 0;
+			}
+			fireState.speed = fireAnimSpeed;
+			fireState.normalizedTime = Mathf.Repeat(fireState.normalizedTime, 1);
+
+			//Debug.Log("fireAnim time: " + fireState.normalizedTime + ", speed; " + fireState.speed);
+		}
+
 		#endregion
 
 		#region Laser Fire
@@ -1569,6 +1612,10 @@ namespace BDArmory.Modules
 								++BDACompetitionMode.Instance.Scores[aName].shotsFired;
 							}
 							LaserBeam(aName);
+							if (hasFireAnimation)
+							{
+								PlayFireAnim();
+							}
 						}
 						heat += heatPerShot;
 						if (useRippleFire)
@@ -1580,6 +1627,14 @@ namespace BDArmory.Modules
 					{
 						LaserBeam(aName);
 						heat += heatPerShot * TimeWarp.CurrentRate;
+						BeamTracker += 0.02f;
+						if (BeamTracker > beamScoreTime)
+						{
+							if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
+							{
+								++BDACompetitionMode.Instance.Scores[aName].shotsFired;
+							}
+						}
 						for (float iTime = TimeWarp.fixedDeltaTime; iTime >= 0; iTime -= timeGap)
 							timeFired = Time.time - iTime;
 					}
@@ -1664,7 +1719,7 @@ namespace BDArmory.Modules
 						}
 						if (HEpulses)
 						{
-							ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f),
+							ExplosionFx.CreateExplosion(hit.point,
 										   (laserDamage / 30000),
 										   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName);
 						}
@@ -1685,8 +1740,9 @@ namespace BDArmory.Modules
 						}
 						if (BDArmorySettings.INSTAKILL) p.Destroy();
 						//============ //figure out method for scoring and Beam lasers, otherwise they're hitting 50 times/sec
-						if (pulseLaser)
+						if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime))
 						{
+							ScoreAccumulator = 0;
 							var aName = vesselname;
 							var tName = p.vessel.GetName();
 							if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
@@ -1715,6 +1771,10 @@ namespace BDArmory.Modules
 								else
 									tData.damageFromBullets.Add(aName, damage);
 							}
+						}
+						else
+						{
+							ScoreAccumulator += 0.02f;
 						}
 					}
 
@@ -1875,6 +1935,10 @@ namespace BDArmory.Modules
 										if (!BeltFed)
 										{
 											RoundsRemaining++;
+										}
+										if (hasFireAnimation)
+										{
+											PlayFireAnim();
 										}
 									}
 								}
@@ -2881,13 +2945,46 @@ namespace BDArmory.Modules
 
 		void SetupBullet()
 		{
-			bulletInfo = BulletInfo.bullets[bulletType];
+			ammoList = BDAcTools.ParseNames(bulletType);
+			currentBType = ammoList[(int)AmmoTypeNum - 1].ToString();
+			bulletInfo = BulletInfo.bullets[currentBType];
+			if (bulletInfo.apBulletMod > 1)
+			{
+				if (bulletInfo.tntMass == 0)
+				{
+					guiAmmoTypeString = "Armour-Piercing";
+				}
+				else
+				{
+					guiAmmoTypeString = "High-Explosive Armour-Piercing";
+				}
+			}
+			else if (bulletInfo.tntMass > 0)
+			{
+				if (airDetonation || proximityDetonation)
+				{
+					guiAmmoTypeString = "Flak";
+				}
+				else
+				{
+					guiAmmoTypeString = "High-Explosive";
+				}
+			}
+			else if (bulletInfo.SubprojectileCount > 1)
+			{
+				guiAmmoTypeString = "Cluster";
+			}
+			else
+			{
+				guiAmmoTypeString = "Slug";
+			}
 			if (bulletType != "def")
 			{
 				//use values from bullets.cfg if not the Part Module defaults are used
 				caliber = bulletInfo.caliber;
 				bulletVelocity = bulletInfo.bulletVelocity;
 				bulletMass = bulletInfo.bulletMass;
+				SubprojectileCount = bulletInfo.SubprojectileCount;
 				bulletDragTypeName = bulletInfo.bulletDragTypeName;
 				cannonShellHeat = bulletInfo.blastHeat;
 				cannonShellPower = bulletInfo.blastPower;
@@ -2927,7 +3024,7 @@ namespace BDArmory.Modules
 
 		public override string GetInfo()
 		{
-			BulletInfo binfo = BulletInfo.bullets[bulletType];
+			ammoList = BDAcTools.ParseNames(bulletType);
 			StringBuilder output = new StringBuilder();
 			output.Append(Environment.NewLine);
 			output.AppendLine($"Weapon Type: {weaponType}");
@@ -2935,43 +3032,52 @@ namespace BDArmory.Modules
 			if (weaponType == "laser")
 			{
 				output.AppendLine($"Laser damage: {laserDamage}");
+				output.AppendLine($"Powered By: {ammoName}");
 			}
 			else
 			{
-				output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
 				output.AppendLine($"Ammunition: {ammoName}");
+				output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
 				if (weaponType == "ballistic")
 				{
-					output.AppendLine($"Bullet type: {bulletType}");
-					output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
-					output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
-				}
-				output.AppendLine($"Max Range: {maxEffectiveDistance} m");
-				if (BurstFire)
-				{
-					output.AppendLine($"Burst Fire Weapon");
-					output.AppendLine($" - Rounds Per Burst: {RoundsPerMag}");
-				}
-				if (weaponType == "ballistic")
-				{
+					for (int i = 0; i < ammoList.Count; i++)
+					{
+						BulletInfo binfo = BulletInfo.bullets[ammoList[i].ToString()];
+						output.AppendLine($"Bullet type: {ammoList[i]}");
+						output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
+						output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
+						output.AppendLine($"Explosive: {binfo.explosive}");
+						if (binfo.SubprojectileCount > 1)
+						{
+							output.AppendLine($"Cannister Round");
+							output.AppendLine($" - Submunition count: {binfo.SubprojectileCount}");
+						}
+						if (binfo.explosive)
+						{
+							output.AppendLine($"Blast:");
+							output.AppendLine($"- tnt mass:  {Math.Round((binfo.tntMass > 0 ? binfo.tntMass : binfo.blastPower), 2)} kg");
+							output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
+							output.AppendLine($"Air detonation: {airDetonation}");
+							if (airDetonation)
+							{
+								output.AppendLine($"- auto timing: {airDetonationTiming}");
+								output.AppendLine($"- max range: {maxAirDetonationRange} m");
+							}
+						}
+						output.AppendLine("");
+					}
+					output.ToString();
+					output.AppendLine($"Max Range: {maxEffectiveDistance} m");
+					if (BurstFire)
+					{
+						output.AppendLine($"Burst Fire Weapon");
+						output.AppendLine($" - Rounds Per Burst: {RoundsPerMag}");
+					}
 					if (!BeltFed)
 					{
 						output.AppendLine($"Magazine-Fed");
 						output.AppendLine($" - Rounds Per Magazine: {RoundsPerMag}");
 						output.AppendLine($" - Reload Time: {ReloadTime}");
-					}
-					output.AppendLine($"Explosive: {binfo.explosive}");
-					if (binfo.explosive)
-					{
-						output.AppendLine($"Blast:");
-						output.AppendLine($"- tnt mass:  {Math.Round((binfo.tntMass > 0 ? binfo.tntMass : binfo.blastPower), 2)} kg");
-						output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
-						output.AppendLine($"Air detonation: {airDetonation}");
-						if (airDetonation)
-						{
-							output.AppendLine($"- auto timing: {airDetonationTiming}");
-							output.AppendLine($"- max range: {maxAirDetonationRange} m");
-						}
 					}
 				}
 				if (weaponType == "rocket")
