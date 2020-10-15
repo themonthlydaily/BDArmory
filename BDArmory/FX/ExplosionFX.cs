@@ -122,7 +122,7 @@ namespace BDArmory.FX
                             switch (ExplosionSource)
                             {
                                 case ExplosionSourceType.Missile:
-                                    sourceVesselName = ExplosivePart.FindModuleImplementing<MissileLauncher>()?.SourceVessel.GetName();
+                                    sourceVesselName = ExplosivePart.FindModuleImplementing<BDExplosivePart>()?.sourcevessel.GetName();
                                     break;
                                 case ExplosionSourceType.Bullet:
                                     sourceVesselName = SourceVesselName;
@@ -153,6 +153,8 @@ namespace BDArmory.FX
                                         ++vesselsHitByMissiles[damagedVesselName];
                                     else
                                         vesselsHitByMissiles[damagedVesselName] = 1;
+                                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                        BDAScoreService.Instance.TrackMissileParts(sourceVesselName, damagedVesselName, 1);
                                 }
                             }
                         }
@@ -439,6 +441,8 @@ namespace BDArmory.FX
                                             tData.damageFromMissiles[aName] += damage;
                                         else
                                             tData.damageFromMissiles.Add(aName, damage);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            BDAScoreService.Instance.TrackMissileDamage(aName, tName, damage);
                                         break;
                                     default:
                                         break;
@@ -498,7 +502,7 @@ namespace BDArmory.FX
             eFx.Position = position;
             eFx.Power = tntMassEquivalent;
             eFx.ExplosionSource = explosionSourceType;
-            eFx.SourceVesselName = sourceVesselName != null ? sourceVesselName : explosionSourceType == ExplosionSourceType.Missile ? explosivePart.vessel.GetName() : null; // Use the sourceVesselName if specified, otherwise get the sourceVesselName from the missile if it is one.
+            eFx.SourceVesselName = sourceVesselName != null ? sourceVesselName : explosionSourceType == ExplosionSourceType.Missile ? explosivePart?.vessel.GetName() : null; // Use the sourceVesselName if specified, otherwise get the sourceVesselName from the missile if it is one.
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;

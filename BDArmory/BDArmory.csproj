@@ -57,72 +57,72 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="KSPAssets, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\KSPAssets.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\KSPAssets.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.InputLegacyModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.InputModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.JSONSerializeModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ParticleSystemModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.ParticleSystemModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextCoreModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextCoreModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.TextCoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UI.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIElementsModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIElementsModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UIElementsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UnityWebRequestModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestWWWModule">
-      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -233,8 +233,9 @@
     <Compile Include="Control\BDACompetitionMode.cs" />
     <Compile Include="UI\IBDWMModule.cs" />
     <Compile Include="UI\KrakensbaneDebug.cs" />
-    <Compile Include="UI\VesselSpawner.cs" />
-    <Compile Include="UI\VesselSpawnerField.cs" />
+    <Compile Include="Control\VesselSpawner.cs" />
+    <Compile Include="Control\VesselSpawnerField.cs" />
+    <Compile Include="UI\VesselSpawnerWindow.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BDArmory.Core\BDArmory.Core.csproj">
@@ -629,6 +630,7 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\s-8Launcher\s-8Rocket\rocketTexture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\s-8Launcher\s-8Rocket\srbsmoke.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\s-8Launcher\texture.png" />
+    <Content Include="Distribution\GameData\BDArmory\Parts\SaturnAL31\Jet_Engine_Saturn.dds" />
     <Content Include="Distribution\GameData\BDArmory\Parts\sidewinder\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\smallWarhead\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\smokeCm\muzzle.png" />
