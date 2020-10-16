@@ -1880,6 +1880,7 @@ namespace BDArmory.Modules
 								rocket.sourceVessel = vessel;
 								rocketObj.SetActive(true);
 								rocketObj.transform.SetParent(currentRocketTfm.parent);
+								rocket.rocketName = GetShortName() + " rocket";
 								rocket.parentRB = part.rb;
 
 								if (!BDArmorySettings.INFINITE_AMMO)
@@ -1927,6 +1928,7 @@ namespace BDArmory.Modules
 										rocketObj.SetActive(true);
 										rocketObj.transform.SetParent(currentRocketTfm);
 										rocket.parentRB = part.rb;
+										rocket.rocketName = GetShortName() + " rocket";
 										if (!BDArmorySettings.INFINITE_AMMO)
 										{
 											part.RequestResource(ammoName, 1);
