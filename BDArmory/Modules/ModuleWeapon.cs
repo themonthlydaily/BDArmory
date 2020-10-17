@@ -2187,7 +2187,7 @@ namespace BDArmory.Modules
 			Vector3 originalTarget = targetPosition;
 			Vector3 pointingDirection = fireTransforms[0].forward;
 			targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
-			Vector3 relativeVelocity = targetVelocity - part.rb.velocity;
+			relativeVelocity = targetVelocity - part.rb.velocity;
 
 			if (BDArmorySettings.AIM_ASSIST || aiControlled)
 			{
@@ -2325,7 +2325,7 @@ namespace BDArmory.Modules
 					float simDeltaTime;
 					if (eWeaponType == WeaponTypes.Rocket)
 					{
-						simDeltaTime = 0.02f;
+						simDeltaTime = Time.fixedDeltaTime;
 					}
 					else
 					{
@@ -2362,7 +2362,8 @@ namespace BDArmory.Modules
 
 							if (simTime > 0.04f)
 							{
-								simDeltaTime = 0.02f;
+								///simDeltaTime = 0.02f;
+								simDeltaTime = Time.fixedDeltaTime;
 								if (simTime < thrustTime)
 								{
 									simVelocity += thrust / rocketMass * simDeltaTime * pointingDirection;
@@ -2460,33 +2461,45 @@ namespace BDArmory.Modules
 
 		void CheckAIAutofire()
 		{
-			//autofiring with AI
+			//autofiring with AI // need to add offset sheck for rockets - their firetransform isn't going to be pointing at the target due to rockets more generous lead times
 			if (targetAcquired && aiControlled)
 			{
-				Transform fireTransform = fireTransforms[0];
+				
+					Transform fireTransform = fireTransforms[0];
 
-				Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
-				Vector3 aimDirection = fireTransform.forward;
-				float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
+					Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
+					Vector3 aimDirection = fireTransform.forward;
+					float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
 
-				Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
-				Vector3 projectedTargetPos = targetDiffVec;
-				//projectedTargetPos /= TimeWarp.fixedDeltaTime;
-				//projectedTargetPos *= TimeWarp.fixedDeltaTime;
-				projectedTargetPos *= 2; //project where the target will be in 2 timesteps
-				projectedTargetPos += finalAimTarget;
-
-				targetDiffVec.Normalize();
-				Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
-
-				if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f) //~1 degree of unsafe angle
-					&& targetCosAngle >= maxAutoFireCosAngle) //check if directly on target
+				if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
 				{
-					autoFire = true;
+					Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
+					Vector3 projectedTargetPos = targetDiffVec;
+					//projectedTargetPos /= TimeWarp.fixedDeltaTime;
+					//projectedTargetPos *= TimeWarp.fixedDeltaTime;
+					projectedTargetPos *= 2; //project where the target will be in 2 timesteps
+					projectedTargetPos += finalAimTarget;
+
+					targetDiffVec.Normalize();
+					Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
+
+					if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f) //~1 degree of unsafe angle
+						&& targetCosAngle >= maxAutoFireCosAngle) //check if directly on target
+					{
+						autoFire = true;
+					}
+					else
+					{
+						autoFire = false;
+					}
 				}
-				else
+				else // rockets
 				{
-					autoFire = false;
+					if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f))
+					{
+						if (Vector3.Distance(finalAimTarget, fireTransform.position) > blastForce*2)
+						autoFire = Vector3.Angle(targetRelPos, aimDirection) < 1f; //rockets already calculate where target will be
+					}
 				}
 			}
 			else
@@ -3011,7 +3024,7 @@ namespace BDArmory.Modules
 				{
 					detonationRange = (BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass) * 0.66f);
 				}
-				else if (eWeaponType == WeaponTypes.Rocket && blastForce != 0)
+				else if (eWeaponType == WeaponTypes.Rocket && blastForce != 0) //don't fire rockets ar point blank
 				{
 					detonationRange = (BlastPhysicsUtils.CalculateBlastRange(blastForce) * 0.66f);
 					//should really update rockets to use tntmass instead.
