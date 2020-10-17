@@ -788,7 +788,9 @@ namespace BDArmory.UI
                 //if weapon can ripple, show option and slider.
                 if (ActiveWeaponManager.hasLoadedRippleData && ActiveWeaponManager.canRipple)
                 {
-                    if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun)
+                     if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
+                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket ||
+                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                     {
                         string rippleText = ActiveWeaponManager.rippleFire
                             ? Localizer.Format("#LOC_BDArmory_WMWindow_rippleText1", ActiveWeaponManager.gunRippleRpm.ToString("0"))//"Barrage: " +  + " RPM"
