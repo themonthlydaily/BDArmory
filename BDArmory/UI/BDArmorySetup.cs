@@ -36,6 +36,7 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectTargetingCam;
 
         [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
+        [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
 
         //reflection field lists
         FieldInfo[] iFs;
@@ -91,6 +92,7 @@ namespace BDArmory.UI
         float toolWindowWidth = 300;
         float toolWindowHeight = 100;
         bool showWeaponList;
+        bool showEngageList;
         bool showGuardMenu;
         bool showModules;
         int numberOfModules;
@@ -431,6 +433,7 @@ namespace BDArmory.UI
                 GameEvents.OnGameSettingsApplied.Add(SaveVolumeSettings);
 
                 GameEvents.onVesselChange.Add(VesselChange);
+                GetWeaponManager();
             }
 
             BulletInfo.Load();
@@ -446,16 +449,13 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
-                BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
-                BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-                BDGUIUtils.RepositionWindow(ref WindowRectRwr);
-                BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
-                BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
-                BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
-            }
+            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
+            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
+            BDGUIUtils.RepositionWindow(ref WindowRectRwr);
+            BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
+            BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
+            BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
         }
 
         void Update()
@@ -539,6 +539,7 @@ namespace BDArmory.UI
                     !ActiveWeaponManager.guardMode)
                 {
                     if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
+                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket ||
                         ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                     {
                         ModuleWeapon mw =
@@ -551,19 +552,7 @@ namespace BDArmory.UI
                             drawCursor = true;
                             return;
                         }
-                    }
-                    else if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket)
-                    {
-                        RocketLauncher rl =
-                            ActiveWeaponManager.selectedWeapon.GetPart().FindModuleImplementing<RocketLauncher>();
-                        if (rl.readyToFire && rl.turret)
-                        {
-                            //Screen.showCursor = false;
-                            Cursor.visible = false;
-                            drawCursor = true;
-                            return;
-                        }
-                    }
+                    }                    
                 }
             }
 
@@ -587,6 +576,7 @@ namespace BDArmory.UI
                 {
                     if (mf.Current == null) continue;
                     ActiveWeaponManager = mf.Current;
+                    Debug.Log("[BDARMORY DEBUG]: WM GUI activeweaponmanager: " + ActiveWeaponManager);
                     return;
                 }
             ActiveWeaponManager = null;
@@ -652,7 +642,7 @@ namespace BDArmory.UI
             }
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
-            WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, Localizer.Format("#LOC_BDArmory_WMWindow_title"), BDGuiSkin.window);//"BDA Weapon Manager"
+            WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, Localizer.Format("#LOC_BDArmory_WMWindow_title") + "          ", BDGuiSkin.window);//"BDA Weapon Manager"
             BDGUIUtils.UseMouseEventInRect(WindowRectToolbar);
             if (showWindowGPS && ActiveWeaponManager)
             {
@@ -669,61 +659,77 @@ namespace BDArmory.UI
 
             // big error messages for missing dependencies
             if (ModuleManagerLoaded && PhysicsRangeExtenderLoaded) return;
-            string message = (ModuleManagerLoaded ? "Physics Range Extender" : "Module Manager")
-                             + " is missing. BDA will not work properly.";
+            string message = (ModuleManagerLoaded ? "Physics Range Extender" : "Module Manager") + " is missing. BDA will not work properly.";
             GUI.Label(new Rect(0 + 2, Screen.height / 6 + 2, Screen.width, 100),
               message, redErrorShadowStyle);
             GUI.Label(new Rect(0, Screen.height / 6, Screen.width, 100),
               message, redErrorStyle);
         }
 
-        public bool hasVS = false;
-        public bool showVSGUI;
+        public bool hasVesselSwitcher = false;
+        public bool hasVesselSpawner = false;
+        public bool showVesselSwitcherGUI = false;
+        public bool showVesselSpawnerGUI = false;
 
         float rippleHeight;
         float weaponsHeight;
         float guardHeight;
+        float EngageHeight = 0;
         float modulesHeight;
         float gpsHeight;
         bool toolMinimized;
 
         void WindowBDAToolbar(int windowID)
         {
-            GUI.DragWindow(new Rect(30, 0, toolWindowWidth - 90, 30));
-
             float line = 0;
             float leftIndent = 10;
             float contentWidth = (toolWindowWidth) - (2 * leftIndent);
             float contentTop = 10;
             float entryHeight = 20;
+            float _buttonSize = 26;
+            float _windowMargin = 4;
+
+            GUI.DragWindow(new Rect(_windowMargin + _buttonSize, 0, toolWindowWidth - 2 * _windowMargin - 4 * _buttonSize, _windowMargin + _buttonSize));
 
             line += 1.25f;
             line += 0.25f;
 
             // Version.
-            GUI.Label(new Rect(toolWindowWidth - 30 - 28 - 70, 23, 70, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize - 57, 23, 57, 10), Version, waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
-                GUI.Button(new Rect(toolWindowWidth - 30, 4, 26, 26), settingsIconTexture, BDGuiSkin.button))
+                GUI.Button(new Rect(toolWindowWidth - _windowMargin - _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
             {
                 ToggleWindowSettings();
             }
 
             //vesselswitcher button
-            if (hasVS)
+            if (hasVesselSwitcher)
             {
-                GUIStyle vsStyle = showVSGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(toolWindowWidth - 30 - 28, 4, 26, 26), "VS", vsStyle))
+                GUIStyle vsStyle = showVesselSwitcherGUI ? BDGuiSkin.box : BDGuiSkin.button;
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 2 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
                 {
-                    showVSGUI = !showVSGUI;
+                    showVesselSwitcherGUI = !showVesselSwitcherGUI;
+                }
+            }
+
+            //VesselSpawner button
+            if (hasVesselSpawner)
+            {
+                GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
+                {
+                    showVesselSpawnerGUI = !showVesselSpawnerGUI;
+                    if (!showVesselSpawnerGUI)
+                        SaveConfig();
                 }
             }
 
             if (ActiveWeaponManager != null)
             {
                 //MINIMIZE BUTTON
-                toolMinimized = GUI.Toggle(new Rect(4, 4, 26, 26), toolMinimized, "_",
+                toolMinimized = GUI.Toggle(new Rect(_windowMargin, _windowMargin, _buttonSize, _buttonSize), toolMinimized, "_",
                     toolMinimized ? BDGuiSkin.box : BDGuiSkin.button);
 
                 GUIStyle armedLabelStyle;
@@ -757,10 +763,7 @@ namespace BDArmory.UI
                 GUIStyle teamButtonStyle = BDGuiSkin.box;
                 string teamText = $"{Localizer.Format("#LOC_BDArmory_WMWindow_TeamText")}: {ActiveWeaponManager.Team.Name}";//Team
 
-                if (
-                    GUI.Button(
-                        new Rect(leftIndent + (contentWidth / 2), contentTop + (line * entryHeight), contentWidth / 2,
-                            entryHeight), teamText, teamButtonStyle))
+                if (GUI.Button(new Rect(leftIndent + (contentWidth / 2), contentTop + (line * entryHeight), contentWidth / 2, entryHeight), teamText, teamButtonStyle))
                 {
                     if (Event.current.button == 1)
                     {
@@ -782,7 +785,10 @@ namespace BDArmory.UI
                 //if weapon can ripple, show option and slider.
                 if (ActiveWeaponManager.hasLoadedRippleData && ActiveWeaponManager.canRipple)
                 {
-                    if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun)
+
+                     if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
+                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket ||
+                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                     {
                         string rippleText = ActiveWeaponManager.rippleFire
                             ? Localizer.Format("#LOC_BDArmory_WMWindow_rippleText1", ActiveWeaponManager.gunRippleRpm.ToString("0"))//"Barrage: " +  + " RPM"
@@ -856,9 +862,14 @@ namespace BDArmory.UI
                 {
                     line += 0.25f;
                     Rect weaponListGroupRect = new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10,
-                        ((float)ActiveWeaponManager.weaponArray.Length + 0.1f) * entryHeight);
+                        ((float)ActiveWeaponManager.weaponArray.Length + 2f) * entryHeight);
                     GUI.BeginGroup(weaponListGroupRect, GUIContent.none, BDGuiSkin.box); //darker box
                     weaponLines += 0.1f;
+                    showEngageList =
+    GUI.Toggle(new Rect(leftIndent, contentTop + ((float)ActiveWeaponManager.weaponArray.Length + 0.1f), weaponListGroupRect.width - (2 * leftIndent), entryHeight),
+        showEngageList, showEngageList ? Localizer.Format("#LOC_BDArmory_DisableEngageOptions") : Localizer.Format("#LOC_BDArmory_EnableEngageOptions"), showEngageList ? BDGuiSkin.box : BDGuiSkin.button);//"Enable/Disable Engagement options"
+                    weaponLines += 1.5f;
+
                     for (int i = 0; i < ActiveWeaponManager.weaponArray.Length; i++)
                     {
                         GUIStyle wpnListStyle;
@@ -903,11 +914,53 @@ namespace BDArmory.UI
                         }
                         weaponLines++;
                     }
-                    weaponLines += 0.1f;
                     GUI.EndGroup();
                 }
                 weaponsHeight = Mathf.Lerp(weaponsHeight, weaponLines, 0.15f);
                 line += weaponsHeight;
+
+                float EngageLines = 0;
+                if (showEngageList && showWeaponList && !toolMinimized)
+                {
+                    line += 0.25f;
+                    GUI.BeginGroup(
+                        new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10, 2.3f * entryHeight),
+                        GUIContent.none, BDGuiSkin.box);
+                    EngageLines += 0.1f;
+
+                    string Airlabel = Localizer.Format("#LOC_BDArmory_EngageAir", (ActiveWeaponManager.engageAir ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Air; True, False
+                    if (GUI.Button(new Rect(leftIndent, (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
+                        Airlabel, ActiveWeaponManager.engageAir ? BDGuiSkin.box : BDGuiSkin.button))
+                    {
+                        ActiveWeaponManager.ToggleEngageAir();
+                    }
+                    string Missilelabel = Localizer.Format("#LOC_BDArmory_EngageMissile", (ActiveWeaponManager.engageMissile ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Missile; True, False
+                    if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
+                        Missilelabel, ActiveWeaponManager.engageMissile ? BDGuiSkin.box : BDGuiSkin.button))
+                    {
+                        ActiveWeaponManager.ToggleEngageMissile();
+                    }
+                    EngageLines += 1.1f;
+                    string Srflabel = Localizer.Format("#LOC_BDArmory_EngageSurface", (ActiveWeaponManager.engageSrf ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Surface; True, False
+                    if (GUI.Button(new Rect(leftIndent, (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
+                        Srflabel, ActiveWeaponManager.engageSrf ? BDGuiSkin.box : BDGuiSkin.button))
+                    {
+                        ActiveWeaponManager.ToggleEngageSrf();
+                    }
+
+                    string SLWlabel = Localizer.Format("#LOC_BDArmory_EngageSLW", (ActiveWeaponManager.engageSLW ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage SLW; True, False
+                    if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (EngageLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
+                        SLWlabel, ActiveWeaponManager.engageSLW ? BDGuiSkin.box : BDGuiSkin.button))
+                    {
+                        ActiveWeaponManager.ToggleEngageSLW();
+                    }
+                    EngageLines += 1.1f;
+                    GUI.EndGroup();
+                }
+                EngageHeight = Mathf.Lerp(EngageHeight, EngageLines, 0.15f);
+                //EngageHeight = Mathf.Lerp(EngageHeight, 2.35f, 0.15f);
+                line += EngageHeight;
+                line += 0.1f;
 
                 float guardLines = 0;
                 if (showGuardMenu && !toolMinimized)
@@ -1193,12 +1246,11 @@ namespace BDArmory.UI
             }
 
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
+            var previousWindowHeight = WindowRectToolbar.height;
             WindowRectToolbar.height = toolWindowHeight;
-            // = new Rect(toolbarWindowRect.position.x, toolbarWindowRect.position.y, toolWindowWidth, toolWindowHeight);
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
-            }
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
+                WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
+            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
         }
 
         bool validGPSName = true;
@@ -1563,154 +1615,7 @@ namespace BDArmory.UI
 
                 ++line;
             }
-
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.SPAWN_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnSettingsToggle")))//Show/hide spawn settings.
-            {
-                BDArmorySettings.SPAWN_SETTINGS_TOGGLE = !BDArmorySettings.SPAWN_SETTINGS_TOGGLE;
-            }
-            if (BDArmorySettings.SPAWN_SETTINGS_TOGGLE)
-            {
-                BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING, Localizer.Format("#LOC_BDArmory_Settings_SpawnContinueSingleSpawning"));  // Spawn craft again after single spawn competition finishes.
-                BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = GUI.Toggle(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN, Localizer.Format("#LOC_BDArmory_Settings_SpawnDumpLogsEverySpawn")); //Dump logs every spawn.
-
-                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceFactor")}:  ({BDArmorySettings.VESSEL_SPAWN_DISTANCE})", leftLabel);//Spawn Distance
-                BDArmorySettings.VESSEL_SPAWN_DISTANCE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_DISTANCE / 10f, 1f, 10f) * 10f);
-
-                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnEaseInSpeed")}:  ({BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED})", leftLabel);//Spawn Ease In Speed
-                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, 0.1f, 1f) * 10f) / 10f;
-
-                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnConcurrentVessels")}:  ({(BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0 ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS.ToString() : "Inf")})", leftLabel);//Max Concurrent Vessels (CS)
-                BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS, 0f, 20f);
-
-                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnLivesPerVessel")}:  ({(BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0 ? BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL.ToString() : "Inf")})", leftLabel);//Respawns (CS)
-                BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL, 0f, 20f);
-
-                var outOfAmmoKillTimeStr = "never";
-                if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > -1 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 60)
-                    outOfAmmoKillTimeStr = BDArmorySettings.OUT_OF_AMMO_KILL_TIME.ToString("G0") + "s";
-                else if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > 59 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 61)
-                    outOfAmmoKillTimeStr = "1min";
-                else if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > 60)
-                    outOfAmmoKillTimeStr = ((int)(BDArmorySettings.OUT_OF_AMMO_KILL_TIME / 60f)).ToString("G0") + "mins";
-                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_OutOfAmmoKillTime")}: ({outOfAmmoKillTimeStr})", leftLabel); // Out of ammo kill timer for continuous spawning mode.
-                float outOfAmmoKillTime;
-                switch ((int)BDArmorySettings.OUT_OF_AMMO_KILL_TIME)
-                {
-                    case 0:
-                        outOfAmmoKillTime = 1f;
-                        break;
-                    case 10:
-                        outOfAmmoKillTime = 2f;
-                        break;
-                    case 20:
-                        outOfAmmoKillTime = 3f;
-                        break;
-                    case 30:
-                        outOfAmmoKillTime = 4f;
-                        break;
-                    case 45:
-                        outOfAmmoKillTime = 5f;
-                        break;
-                    case 60:
-                        outOfAmmoKillTime = 6f;
-                        break;
-                    case 120:
-                        outOfAmmoKillTime = 7f;
-                        break;
-                    case 300:
-                        outOfAmmoKillTime = 8f;
-                        break;
-                    default:
-                        outOfAmmoKillTime = 9f;
-                        break;
-                }
-                outOfAmmoKillTime = GUI.HorizontalSlider(SRightSliderRect(line), outOfAmmoKillTime, 1f, 9f);
-                switch ((int)outOfAmmoKillTime)
-                {
-                    case 1:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 0f; // 0s
-                        break;
-                    case 2:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 10f; // 10s
-                        break;
-                    case 3:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 20f; // 20s
-                        break;
-                    case 4:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 30f; // 30s
-                        break;
-                    case 5:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 45f; // 45s
-                        break;
-                    case 6:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 60f; // 1 min
-                        break;
-                    case 7:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 120f;// 2 mins
-                        break;
-                    case 8:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 300f; // 5 mins
-                        break;
-                    default:
-                        BDArmorySettings.OUT_OF_AMMO_KILL_TIME = -1f; // Never
-                        break;
-                }
-
-                if (GUI.Button(SLeftButtonRect(++line), Localizer.Format("#LOC_BDArmory_Settings_VesselSpawnGeoCoords"))) //"Vessel Spawning Location"
-                {
-                    Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
-                    RaycastHit hit;
-                    if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
-                    {
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
-                        spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
-                        spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-                    }
-                }
-                var rects = SRight3Rects(line);
-                spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8));
-                spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8));
-                spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8));
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].currentValue, -90), 90);
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].currentValue, -180), 180);
-                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].currentValue);
-                if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_LOCATIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations")))//Show/hide spawn locations
-                {
-                    BDArmorySettings.SHOW_SPAWN_LOCATIONS = !BDArmorySettings.SHOW_SPAWN_LOCATIONS;
-                }
-                if (BDArmorySettings.SHOW_SPAWN_LOCATIONS)
-                {
-                    line++;
-                    int i = 0;
-                    foreach (var spawnLocation in VesselSpawner.spawnLocations)
-                    {
-                        if (GUI.Button(SQuarterRect(line, i++), spawnLocation.name))
-                        {
-                            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
-                            spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
-                            spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-                            VesselSpawner.Instance.ShowSpawnPoint(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
-                        }
-                    }
-                    line += (i - 1) / 4;
-                }
-
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
-                {
-                    bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
-                    BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
-                    if (remoteLoggingEnabled)
-                    {
-                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
-                        BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
-                    }
-                }
-                else
-                    BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
-
-                ++line;
-            }
-
+            
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle")))//Show/hide radar settings.
             {
                 BDArmorySettings.RADAR_SETTINGS_TOGGLE = !BDArmorySettings.RADAR_SETTINGS_TOGGLE;
@@ -1776,6 +1681,19 @@ namespace BDArmory.UI
             if (HighLogic.LoadedSceneIsFlight)
             {
                 ++line;
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
+                {
+                    bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
+                    BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
+                    if (remoteLoggingEnabled)
+                    {
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
+                        BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                    }
+                }
+                else
+                    BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
+
                 bool origPm = BDArmorySettings.PEACE_MODE;
                 BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
                 if (BDArmorySettings.PEACE_MODE && !origPm)
@@ -1865,10 +1783,7 @@ namespace BDArmory.UI
             line += 1.5f; // Bottom internal margin
             settingsHeight = (line * settingsLineHeight);
             WindowRectSettings.height = settingsHeight;
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-            }
+            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
