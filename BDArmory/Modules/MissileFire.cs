@@ -2487,6 +2487,7 @@ namespace BDArmory.Modules
             SetMissileTurrets();
             SetRotaryRails();
         }
+
         private HashSet<uint> baysOpened = new HashSet<uint>();
         private bool SetCargoBays()
         {
@@ -3605,7 +3606,8 @@ namespace BDArmory.Modules
                             float droptime = ((MissileBase)item.Current).dropTime;
 
                             if (droptime > 0 || vessel.LandedOrSplashed) //make sure it's an airdropped torpedo if flying
-                            {                         
+                            {
+
                                 if (targetYield > canidateYield) continue;
                                 targetYield = canidateYield;
                                 targetWeapon = item.Current;

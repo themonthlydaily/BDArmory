@@ -360,7 +360,7 @@ namespace BDArmory.Targeting
             {
                 float targetMass = mf.vessel.GetTotalMass();
                 float myMass = myMf.vessel.GetTotalMass();
-                return Mathf.Clamp(Mathf.Log10(targetMass / myMass) / 2f, -1, 1); // Ranges -1 to 1, -1 if we are 100 times as heavy as target, 1 target is 100 times as heavy as us
+                return Mathf.Clamp(Mathf.Log10(targetMass / myMass)/2f, -1, 1); // Ranges -1 to 1, -1 if we are 100 times as heavy as target, 1 target is 100 times as heavy as us
             }
             else
             {
