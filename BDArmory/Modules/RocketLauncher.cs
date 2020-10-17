@@ -35,6 +35,7 @@ namespace BDArmory.Modules
 		public float detonationRange;
 		public string explModelPath;
 		public string explSoundPath;
+		public string rocketName;
 
 		public float randomThrustDeviation = 0.05f;
 
@@ -236,9 +237,39 @@ namespace BDArmory.Modules
 						}
 
 
-						if (hitPart == null || (hitPart != null && hitPart.vessel != sourceVessel))
+						if (hitPart == null) 
 						{
 							Detonate(hit.point, false);
+						}
+						if (hitPart != null && hitPart.vessel != sourceVessel)
+						{
+							Detonate(hit.point, false);
+							var aName = sourceVesselName;
+							var tName = hitPart.vessel.GetName();
+
+							if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+							{
+								//Debug.Log("[BDArmory]: Weapon from " + aName + " damaged " + tName);
+
+								if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+								{
+									BDAScoreService.Instance.TrackHit(aName, tName, rocketName, distanceFromStart);
+								}
+
+								// update scoring structure on attacker
+								{
+									var aData = BDACompetitionMode.Instance.Scores[aName];
+									aData.Score += 1;
+									// keep track of who shot who for point keeping
+
+									// competition logic for 'Pinata' mode - this means a pilot can't be named 'Pinata'
+									if (hitPart.vessel.GetName() == "Pinata")
+									{
+										aData.PinataHits++;
+									}
+
+								}							
+							}
 						}
 					}
 					else if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
@@ -322,7 +353,7 @@ namespace BDArmory.Modules
 			BDArmorySetup.numberOfParticleEmitters--;
 			if (!missed)
 			{
-				ExplosionFx.CreateExplosion(pos, BlastPhysicsUtils.CalculateExplosiveMass(blastRadius), explModelPath, explSoundPath, ExplosionSourceType.Bullet, 70, null, sourceVessel.vesselName);
+				ExplosionFx.CreateExplosion(pos, BlastPhysicsUtils.CalculateExplosiveMass(blastRadius), explModelPath, explSoundPath, ExplosionSourceType.Bullet, 70, null, sourceVesselName);
 			} // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
 
 			using (IEnumerator<KSPParticleEmitter> emitter = pEmitters.AsEnumerable().GetEnumerator())

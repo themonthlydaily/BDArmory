@@ -1880,6 +1880,7 @@ namespace BDArmory.Modules
 								rocket.sourceVessel = vessel;
 								rocketObj.SetActive(true);
 								rocketObj.transform.SetParent(currentRocketTfm.parent);
+								rocket.rocketName = GetShortName() + " rocket";
 								rocket.parentRB = part.rb;
 
 								if (!BDArmorySettings.INFINITE_AMMO)
@@ -1927,6 +1928,7 @@ namespace BDArmory.Modules
 										rocketObj.SetActive(true);
 										rocketObj.transform.SetParent(currentRocketTfm);
 										rocket.parentRB = part.rb;
+										rocket.rocketName = GetShortName() + " rocket";
 										if (!BDArmorySettings.INFINITE_AMMO)
 										{
 											part.RequestResource(ammoName, 1);
@@ -2185,106 +2187,93 @@ namespace BDArmory.Modules
 			Vector3 originalTarget = targetPosition;
 			Vector3 pointingDirection = fireTransforms[0].forward;
 			targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
+			relativeVelocity = targetVelocity - part.rb.velocity;
 
-			if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType != WeaponTypes.Laser)
+			if (BDArmorySettings.AIM_ASSIST || aiControlled)
 			{
-				float effectiveVelocity = bulletVelocity;
-				Vector3 relativeVelocity = targetVelocity - part.rb.velocity;
-				Quaternion.FromToRotation(targetAccelerationPrevious, targetAcceleration).ToAngleAxis(out float accelDAngle, out Vector3 accelDAxis);
-				Vector3 leadTarget = targetPosition;
-
-				Vector3 RocketVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f();
-
-				int iterations = 6;
-				while (--iterations >= 0)
+				if (eWeaponType == WeaponTypes.Ballistic)
 				{
-					finalTarget = targetPosition;
-					float time;
-					if (eWeaponType == WeaponTypes.Ballistic)
-					{
-						time = (leadTarget - fireTransforms[0].position).magnitude / effectiveVelocity - (Time.fixedDeltaTime * 1.5f);
-					}
-					else
-					{
-						float a = thrust / rocketMass;
-						float d = (leadTarget - fireTransforms[0].position).magnitude;
-						// rocket vel is linear accel, so we dont have vel or time, so time is how long it would take to accel to target dist
-						// velocity = t*a+(t*a*(1/2t-0.5)); have a(ccel), so
-						//time = (-a+(sqrt a(a+8v))) / 2a
-						time = ((float)Math.Sqrt(a * (a + (8 * d))) - a) / (2 * a) - (Time.fixedDeltaTime * 1.5f);
-						RocketVelocity += (thrust / rocketMass) * time * pointingDirection;
-					}
+					float effectiveVelocity = bulletVelocity;
+					Quaternion.FromToRotation(targetAccelerationPrevious, targetAcceleration).ToAngleAxis(out float accelDAngle, out Vector3 accelDAxis);
+					Vector3 leadTarget = targetPosition;
 
-					if (targetAcquired)
+					int iterations = 6;
+					while (--iterations >= 0)
 					{
-						finalTarget += relativeVelocity * time;
-#if DEBUG
-						relVelAdj = relativeVelocity * time;
-						var vc = finalTarget;
-#endif
-						var accelDExtAngle = accelDAngle * time / 3;
-						var extrapolatedAcceleration =
-							Quaternion.AngleAxis(accelDExtAngle, accelDAxis)
-							* targetAcceleration
-							* Mathf.Cos(accelDExtAngle * Mathf.Deg2Rad * 2.222f);
-						finalTarget += 0.5f * extrapolatedAcceleration * time * time;
-#if DEBUG
-						accAdj = (finalTarget - vc);
-#endif
-					}
-					else if (Misc.Misc.GetRadarAltitudeAtPos(targetPosition) < 2000)
-					{
-						//this vessel velocity compensation against stationary
-						finalTarget += (-(part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * time);
-					}
+						finalTarget = targetPosition;
+						float time = (leadTarget - fireTransforms[0].position).magnitude / effectiveVelocity - (Time.fixedDeltaTime * 1.5f);
 
-					leadTarget = finalTarget;
-
-					if (bulletDrop || eWeaponType == WeaponTypes.Rocket)
-					{
-#if DEBUG
-						var vc = finalTarget;
-#endif
-						Vector3 up = (VectorUtils.GetUpDirection(finalTarget) + 2 * VectorUtils.GetUpDirection(fireTransforms[0].position)).normalized;
-						float gAccel = ((float)FlightGlobals.getGeeForceAtPosition(finalTarget).magnitude
-							+ (float)FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position).magnitude * 2) / 3;
-						Vector3 intermediateTarget = finalTarget + (0.5f * gAccel * time * time * up);
-
-						var avGrav = (FlightGlobals.getGeeForceAtPosition(finalTarget) + 2 * FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position)) / 3;
-						effectiveVelocity = bulletVelocity
-							* (float)Vector3d.Dot((intermediateTarget - fireTransforms[0].position).normalized, (finalTarget - fireTransforms[0].position).normalized)
-							+ Vector3.Project(avGrav, finalTarget - fireTransforms[0].position).magnitude * time / 2 * (Vector3.Dot(avGrav, finalTarget - fireTransforms[0].position) < 0 ? -1 : 1);
-						if (eWeaponType == WeaponTypes.Rocket)
+						if (targetAcquired)
 						{
-							effectiveVelocity = RocketVelocity.magnitude
-														* (float)Vector3d.Dot((intermediateTarget - fireTransforms[0].position).normalized, (finalTarget - fireTransforms[0].position).normalized)
-														+ Vector3.Project(avGrav, finalTarget - fireTransforms[0].position).magnitude * time / 2 * (Vector3.Dot(avGrav, finalTarget - fireTransforms[0].position) < 0 ? -1 : 1);
-						}
-						finalTarget = intermediateTarget;
+							finalTarget += relativeVelocity * time;
 #if DEBUG
-						gravAdj = (finalTarget - vc);
+							relVelAdj = relativeVelocity * time;
+							var vc = finalTarget;
 #endif
-					}
-				}
-				targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
-				fixedLeadOffset = originalTarget - finalTarget; //for aiming fixed guns to moving target
+							var accelDExtAngle = accelDAngle * time / 3;
+							var extrapolatedAcceleration =
+								Quaternion.AngleAxis(accelDExtAngle, accelDAxis)
+								* targetAcceleration
+								* Mathf.Cos(accelDExtAngle * Mathf.Deg2Rad * 2.222f);
+							finalTarget += 0.5f * extrapolatedAcceleration * time * time;
+#if DEBUG
+							accAdj = (finalTarget - vc);
+#endif
+						}
+						else if (Misc.Misc.GetRadarAltitudeAtPos(targetPosition) < 2000)
+						{
+							//this vessel velocity compensation against stationary
+							finalTarget += (-(part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * time);
+						}
 
-				//airdetonation
-				if (airDetonation)
-				{
-					if (targetAcquired && airDetonationTiming)
-					{
-						//detonationRange = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //this returns 0, use detonationRange GUI tweakable instead
-						defaultDetonationRange = targetDistance;// adds variable time fuze if/when proximity fuzes fail
+						leadTarget = finalTarget;
 
-					}
-					else
-					{
-						//detonationRange = defaultDetonationRange;
-						defaultDetonationRange = maxAirDetonationRange; //airburst at max range
-					}
+						if (bulletDrop) //rocket gravity ajdustment already done in TrajectorySim
+						{
+#if DEBUG
+							var vc = finalTarget;
+#endif
+							Vector3 up = (VectorUtils.GetUpDirection(finalTarget) + 2 * VectorUtils.GetUpDirection(fireTransforms[0].position)).normalized;
+							float gAccel = ((float)FlightGlobals.getGeeForceAtPosition(finalTarget).magnitude
+								+ (float)FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position).magnitude * 2) / 3;
+							Vector3 intermediateTarget = finalTarget + (0.5f * gAccel * time * time * up);
+
+							var avGrav = (FlightGlobals.getGeeForceAtPosition(finalTarget) + 2 * FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position)) / 3;
+							effectiveVelocity = bulletVelocity
+								* (float)Vector3d.Dot((intermediateTarget - fireTransforms[0].position).normalized, (finalTarget - fireTransforms[0].position).normalized)
+								+ Vector3.Project(avGrav, finalTarget - fireTransforms[0].position).magnitude * time / 2 * (Vector3.Dot(avGrav, finalTarget - fireTransforms[0].position) < 0 ? -1 : 1);
+							finalTarget = intermediateTarget;
+#if DEBUG
+							gravAdj = (finalTarget - vc);
+#endif
+						}
+					}					
 				}
 			}//removed the detonationange += UnityEngine.random, that gets called every frame and just causes the prox fuze range to wander
+			if (eWeaponType == WeaponTypes.Rocket)
+			{
+				finalTarget += trajectoryOffset;
+				finalTarget += targetVelocity * predictedFlightTime;
+				finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
+			}
+			targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
+
+			//airdetonation
+			if (airDetonation)
+			{
+				if (targetAcquired && airDetonationTiming)
+				{
+					//detonationRange = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //this returns 0, use detonationRange GUI tweakable instead
+					defaultDetonationRange = targetDistance;// adds variable time fuze if/when proximity fuzes fail
+
+				}
+				else
+				{
+					//detonationRange = defaultDetonationRange;
+					defaultDetonationRange = maxAirDetonationRange; //airburst at max range
+				}
+			}
+			fixedLeadOffset = originalTarget - finalTarget; //for aiming fixed guns to moving target
 			finalAimTarget = finalTarget;
 
 			//final turret aiming
@@ -2303,9 +2292,9 @@ namespace BDArmory.Modules
 
 		public void RunTrajectorySimulation()
 		{
-			if (((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Rocket) ||
-				BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS &&
-				(BDArmorySettings.DRAW_DEBUG_LINES || (vessel && vessel.isActiveVessel && !aiControlled && !MapView.MapIsEnabled && !pointingAtSelf && eWeaponType != WeaponTypes.Rocket)))
+			if ( (eWeaponType == WeaponTypes.Rocket && ((BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS && vessel.isActiveVessel) || aiControlled)) ||
+			(BDArmorySettings.AIM_ASSIST && BDArmorySettings.DRAW_AIMERS &&
+			(BDArmorySettings.DRAW_DEBUG_LINES || (vessel && vessel.isActiveVessel && !aiControlled && !MapView.MapIsEnabled && !pointingAtSelf && eWeaponType != WeaponTypes.Rocket))))
 			{
 				Transform fireTransform = fireTransforms[0];
 
@@ -2333,7 +2322,15 @@ namespace BDArmory.Modules
 				{
 					float simTime = 0;
 					Vector3 pointingDirection = fireTransform.forward;
-					float simDeltaTime = 0.155f;
+					float simDeltaTime;
+					if (eWeaponType == WeaponTypes.Rocket)
+					{
+						simDeltaTime = Time.fixedDeltaTime;
+					}
+					else
+					{
+						simDeltaTime = 0.155f;
+					}
 					Vector3 simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (bulletVelocity * fireTransform.forward);
 					Vector3 simCurrPos = fireTransform.position + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
 					Vector3 simPrevPos = simCurrPos;
@@ -2365,7 +2362,8 @@ namespace BDArmory.Modules
 
 							if (simTime > 0.04f)
 							{
-								simDeltaTime = 0.02f;
+								///simDeltaTime = 0.02f;
+								simDeltaTime = Time.fixedDeltaTime;
 								if (simTime < thrustTime)
 								{
 									simVelocity += thrust / rocketMass * simDeltaTime * pointingDirection;
@@ -2378,30 +2376,41 @@ namespace BDArmory.Modules
 							}
 						}
 
-						if (bulletDrop || eWeaponType == WeaponTypes.Rocket) simVelocity += FlightGlobals.getGeeForceAtPosition(simCurrPos) * simDeltaTime;
+						if (bulletDrop || eWeaponType == WeaponTypes.Rocket)
+						{
+							simVelocity += FlightGlobals.getGeeForceAtPosition(simCurrPos) * simDeltaTime;
+						}
 						simCurrPos += simVelocity * simDeltaTime;
 						pointPositions.Add(simCurrPos);
-
-						if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit,
-							Vector3.Distance(simPrevPos, simCurrPos), 9076737))
+						if (!aiControlled && !slaved)
 						{
-							Vessel hitVessel = null;
-							try
+							if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit,
+							Vector3.Distance(simPrevPos, simCurrPos), 9076737))
 							{
-								KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-								hitVessel = (eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>()).vessel;
-							}
-							catch (NullReferenceException)
-							{
-							}
+								Vessel hitVessel = null;
+								try
+								{
+									KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+									hitVessel = (eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>()).vessel;
+								}
+								catch (NullReferenceException)
+								{
+								}
 
-							if (hitVessel == null || (hitVessel != null && hitVessel != vessel))
+								if (hitVessel == null || (hitVessel != null && hitVessel != vessel))
+								{
+									bulletPrediction = hit.point;
+									simulating = false;
+									break;
+								}
+							}
+							else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0)
 							{
-								bulletPrediction = hit.point;
+								bulletPrediction = simCurrPos;
 								simulating = false;
+								break;
 							}
 						}
-
 						simPrevPos = simCurrPos;
 						if (visualTargetVessel != null && visualTargetVessel.loaded && !visualTargetVessel.Landed &&
 							(simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
@@ -2417,6 +2426,8 @@ namespace BDArmory.Modules
 						}
 						simTime += simDeltaTime;
 					}
+					Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
+					trajectoryOffset = pointingPos - bulletPrediction;
 					predictedFlightTime = simTime;
 
 					if (BDArmorySettings.DRAW_DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
@@ -2450,33 +2461,45 @@ namespace BDArmory.Modules
 
 		void CheckAIAutofire()
 		{
-			//autofiring with AI
+			//autofiring with AI // need to add offset sheck for rockets - their firetransform isn't going to be pointing at the target due to rockets more generous lead times
 			if (targetAcquired && aiControlled)
 			{
-				Transform fireTransform = fireTransforms[0];
+				
+					Transform fireTransform = fireTransforms[0];
 
-				Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
-				Vector3 aimDirection = fireTransform.forward;
-				float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
+					Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
+					Vector3 aimDirection = fireTransform.forward;
+					float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
 
-				Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
-				Vector3 projectedTargetPos = targetDiffVec;
-				//projectedTargetPos /= TimeWarp.fixedDeltaTime;
-				//projectedTargetPos *= TimeWarp.fixedDeltaTime;
-				projectedTargetPos *= 2; //project where the target will be in 2 timesteps
-				projectedTargetPos += finalAimTarget;
-
-				targetDiffVec.Normalize();
-				Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
-
-				if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f) //~1 degree of unsafe angle
-					&& targetCosAngle >= maxAutoFireCosAngle) //check if directly on target
+				if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
 				{
-					autoFire = true;
+					Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
+					Vector3 projectedTargetPos = targetDiffVec;
+					//projectedTargetPos /= TimeWarp.fixedDeltaTime;
+					//projectedTargetPos *= TimeWarp.fixedDeltaTime;
+					projectedTargetPos *= 2; //project where the target will be in 2 timesteps
+					projectedTargetPos += finalAimTarget;
+
+					targetDiffVec.Normalize();
+					Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
+
+					if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f) //~1 degree of unsafe angle
+						&& targetCosAngle >= maxAutoFireCosAngle) //check if directly on target
+					{
+						autoFire = true;
+					}
+					else
+					{
+						autoFire = false;
+					}
 				}
-				else
+				else // rockets
 				{
-					autoFire = false;
+					if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f))
+					{
+						if (Vector3.Distance(finalAimTarget, fireTransform.position) > blastForce*2)
+						autoFire = Vector3.Angle(targetRelPos, aimDirection) < 1f; //rockets already calculate where target will be
+					}
 				}
 			}
 			else
@@ -3001,7 +3024,7 @@ namespace BDArmory.Modules
 				{
 					detonationRange = (BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass) * 0.66f);
 				}
-				else if (eWeaponType == WeaponTypes.Rocket && blastForce != 0)
+				else if (eWeaponType == WeaponTypes.Rocket && blastForce != 0) //don't fire rockets ar point blank
 				{
 					detonationRange = (BlastPhysicsUtils.CalculateBlastRange(blastForce) * 0.66f);
 					//should really update rockets to use tntmass instead.

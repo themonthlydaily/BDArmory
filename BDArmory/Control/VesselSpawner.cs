@@ -368,7 +368,11 @@ namespace BDArmory.Control
                 {
                     var distanceUnderWater = (float)(distance * Vector3.Dot(surfaceNormal, localSurfaceNormal) - vessel.altitude);
                     if (distanceUnderWater > 0) // Under water, move the vessel to the surface.
+                    {
                         vessel.SetPosition(vessel.transform.position + distanceUnderWater * surfaceNormal);
+                        if (!spawnAirborne)
+                            vessel.Splashed = true; // Set the vessel as splashed.
+                    }
                 }
                 ray = new Ray(vessel.transform.position, -localSurfaceNormal);
                 Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
