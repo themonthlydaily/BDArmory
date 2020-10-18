@@ -366,15 +366,14 @@ namespace BDArmory.Control
                     vessel.SetPosition(craftSpawnPosition + -1000f * localSurfaceNormal);
                 if (vessel.mainBody.ocean) // Check for being under water.
                 {
-                    var distanceUnderWater = (float)(distance * Vector3.Dot(surfaceNormal, localSurfaceNormal) - vessel.altitude);
+                    var distanceUnderWater = -FlightGlobals.getAltitudeAtPos(vessel.transform.position);
                     if (distanceUnderWater > 0) // Under water, move the vessel to the surface.
                     {
-                        vessel.SetPosition(vessel.transform.position + distanceUnderWater * surfaceNormal);
+                        vessel.SetPosition(vessel.transform.position - distanceUnderWater * FlightGlobals.getGeeForceAtPosition(vessel.transform.position).normalized);
                         if (!spawnAirborne)
                             vessel.Splashed = true; // Set the vessel as splashed.
                     }
                 }
-                ray = new Ray(vessel.transform.position, -localSurfaceNormal);
                 Debug.Log("[VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
             }
             #endregion
