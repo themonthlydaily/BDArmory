@@ -166,6 +166,9 @@ namespace BDArmory.UI
                     5000,
                     1000,
                     true,
+                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                    true,
+                    true,
                     "Targets"
                 );
 
@@ -458,6 +461,9 @@ namespace BDArmory.UI
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                    true,
+                                    true,
                                     ""
                                 ),
                                 targetSpawnConfig
