@@ -1766,7 +1766,6 @@ namespace BDArmory.Control
                 else if (dumpedResults == 0)
                 {
                     Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]:No viable competitors, Automatically dumping scores");
-                    LogResults("automatically");
                     StopCompetition();
                     dumpedResults--;
                 }
@@ -1826,7 +1825,7 @@ namespace BDArmory.Control
         // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>[-tag].log
         public void LogResults(string message = "", string tag = "")
         {
-            if (competitionStartTime < 0)
+            if (competitionStartTime < 0) // Allow dumping logs extra times if called to do so in another location.
             {
                 Debug.Log("[BDArmoryCompetition]: No active competition, not dumping results.");
                 return;
@@ -1843,7 +1842,7 @@ namespace BDArmory.Control
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
             competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
-            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " at " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s");
+            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
 
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
@@ -1964,6 +1963,11 @@ namespace BDArmory.Control
             if (CompetitionID > 0)
             {
                 var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
+                if (BDATournament.Instance.tournamentStatus == TournamentStatus.Running)
+                {
+                    folder = Path.Combine(folder, BDATournament.Instance.tournamentID.ToString(), "Round " + BDATournament.Instance.currentRound);
+                    tag = "Heat " + BDATournament.Instance.currentHeat;
+                }
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
                 File.WriteAllLines(Path.Combine(folder, CompetitionID.ToString() + (tag != "" ? "-" + tag : "") + ".log"), logStrings);
