@@ -34,8 +34,8 @@ namespace BDArmory.Control
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             craftFiles = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{folder}").Where(f => f.EndsWith(".craft")).ToList();
-            vesselsPerHeat = Mathf.Clamp(vesselsPerHeat, 0, craftFiles.Count);
-            if (vesselsPerHeat == 0) vesselsPerHeat = craftFiles.Count; // Unlimited.
+            vesselsPerHeat = Mathf.Clamp(vesselsPerHeat, 1, craftFiles.Count);
+            if (vesselsPerHeat == 1) vesselsPerHeat = craftFiles.Count; // Unlimited.
             rounds = new Dictionary<int, Dictionary<int, VesselSpawner.SpawnConfig>>();
             Debug.Log("[BDATournament]: Generating " + numberOfRounds + " rounds for tournament " + tournamentID + ", each with " + vesselsPerHeat + " vessels per heat.");
             for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
