@@ -247,7 +247,6 @@ namespace BDArmory.Control
                 currentRound = roundIndex;
                 foreach (var heatIndex in tournamentState.rounds[roundIndex].Keys)
                 {
-                    tournamentStatus = TournamentStatus.Running;
                     currentHeat = heatIndex;
                     if (tournamentState.completed.ContainsKey(roundIndex) && tournamentState.completed[roundIndex].Contains(heatIndex)) continue; // We've done that heat.
 
@@ -259,6 +258,7 @@ namespace BDArmory.Control
                     competitionStarted = false;
                     while (!competitionStarted && attempts++ < 3) // 3 attempts is plenty
                     {
+                        tournamentStatus = TournamentStatus.Running;
                         yield return ExecuteHeat(roundIndex, heatIndex);
                         if (!competitionStarted)
                             switch (VesselSpawner.Instance.spawnFailureReason)
