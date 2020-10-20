@@ -1842,7 +1842,7 @@ namespace BDArmory.Control
             // get everyone who's still alive
             HashSet<string> alive = new HashSet<string>();
             competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
-            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s at " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"));
+            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
 
             using (List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator())
@@ -1965,7 +1965,7 @@ namespace BDArmory.Control
                 var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
                 if (BDATournament.Instance.tournamentStatus == TournamentStatus.Running)
                 {
-                    folder = Path.Combine(folder, BDATournament.Instance.tournamentID.ToString(), "Round " + BDATournament.Instance.currentRound);
+                    folder = Path.Combine(folder, "Tournament " + BDATournament.Instance.tournamentID, "Round " + BDATournament.Instance.currentRound);
                     tag = "Heat " + BDATournament.Instance.currentHeat;
                 }
                 if (!Directory.Exists(folder))

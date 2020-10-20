@@ -118,7 +118,7 @@ namespace BDArmory.Control
         }
     }
 
-    public enum TournamentStatus { Stopped, Running, Waiting };
+    public enum TournamentStatus { Stopped, Running, Waiting, Completed };
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class BDATournament : MonoBehaviour
@@ -132,8 +132,12 @@ namespace BDArmory.Control
         private Coroutine runTournamentCoroutine;
         public TournamentStatus tournamentStatus = TournamentStatus.Stopped;
         public uint tournamentID = 0;
+        public int numberOfRounds = 0;
         public int currentRound = 0;
+        public int numberOfHeats = 0;
         public int currentHeat = 0;
+        public int vesselCount = 0;
+        public int heatsRemaining = 0;
         bool competitionStarted = false;
         #endregion
 
@@ -158,6 +162,7 @@ namespace BDArmory.Control
 
         void OnDestroy()
         {
+            StopTournament(); // Stop any running tournament.
             SaveTournamentState(); // Save the last state.
         }
 
@@ -170,12 +175,17 @@ namespace BDArmory.Control
             {
                 message = "Tournament state loaded from " + this.stateFile;
                 tournamentID = tournamentState.tournamentID;
+                vesselCount = tournamentState.craftFiles.Count;
+                numberOfRounds = tournamentState.rounds.Count;
+                numberOfHeats = numberOfRounds > 0 ? tournamentState.rounds[0].Count : 0;
+                heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
             }
             else
                 message = "Failed to load tournament state.";
             Debug.Log("[BDATournament]: " + message);
-            if (BDACompetitionMode.Instance != null)
-                BDACompetitionMode.Instance.competitionStatus.Add(message);
+            // if (BDACompetitionMode.Instance != null)
+            //     BDACompetitionMode.Instance.competitionStatus.Add(message);
+            tournamentStatus = heatsRemaining > 0 ? TournamentStatus.Stopped : TournamentStatus.Completed;
             return true;
         }
 
@@ -187,8 +197,8 @@ namespace BDArmory.Control
             else
                 message = "Failed to save tournament state.";
             Debug.Log("[BDATournament]: " + message);
-            if (BDACompetitionMode.Instance != null)
-                BDACompetitionMode.Instance.competitionStatus.Add(message);
+            // if (BDACompetitionMode.Instance != null)
+            //     BDACompetitionMode.Instance.competitionStatus.Add(message);
             return true;
         }
 
@@ -198,12 +208,15 @@ namespace BDArmory.Control
             tournamentState = new TournamentState();
             tournamentState.Generate(folder, rounds, vesselsPerHeat);
             tournamentID = tournamentState.tournamentID;
-            if (BDACompetitionMode.Instance != null)
-            {
-                message = "Tournament generated for " + tournamentState.craftFiles.Count + " craft found in AutoSpawn" + (folder == "" ? "" : "/" + folder);
-                BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[BDATournament]: " + message);
-            }
+            vesselCount = tournamentState.craftFiles.Count;
+            numberOfRounds = tournamentState.rounds.Count;
+            numberOfHeats = numberOfRounds > 0 ? tournamentState.rounds[0].Count : 0;
+            heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+            tournamentStatus = heatsRemaining > 0 ? TournamentStatus.Stopped : TournamentStatus.Completed;
+            message = "Tournament generated for " + vesselCount + " craft found in AutoSpawn" + (folder == "" ? "" : "/" + folder);
+            BDACompetitionMode.Instance.competitionStatus.Add(message);
+            Debug.Log("[BDATournament]: " + message);
+            SaveTournamentState();
         }
 
         public void RunTournament()
@@ -220,7 +233,7 @@ namespace BDArmory.Control
                 StopCoroutine(runTournamentCoroutine);
                 runTournamentCoroutine = null;
             }
-            tournamentStatus = TournamentStatus.Stopped;
+            tournamentStatus = heatsRemaining > 0 ? TournamentStatus.Stopped : TournamentStatus.Completed;
         }
 
         IEnumerator RunTournamentCoroutine()
@@ -270,8 +283,9 @@ namespace BDArmory.Control
                     if (!tournamentState.completed.ContainsKey(roundIndex)) tournamentState.completed.Add(roundIndex, new HashSet<int>());
                     tournamentState.completed[roundIndex].Add(heatIndex);
                     SaveTournamentState();
+                    heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
 
-                    if (roundIndex < tournamentState.rounds.Count - 1 || heatIndex < tournamentState.rounds[roundIndex].Count - 1)
+                    if (heatsRemaining > 0)
                     {
                         // Wait 10s for any user action
                         tournamentStatus = TournamentStatus.Waiting;
@@ -290,7 +304,7 @@ namespace BDArmory.Control
             message = "All rounds in tournament " + tournamentState.tournamentID + " have been run.";
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             Debug.Log("[BDATournament]: " + message);
-            tournamentStatus = TournamentStatus.Stopped;
+            tournamentStatus = TournamentStatus.Completed;
         }
 
         IEnumerator ExecuteHeat(int roundIndex, int heatIndex)
