@@ -63,7 +63,6 @@ namespace BDArmory.UI
         private float _windowWidth;
         public bool _ready = false;
         private bool _vesselsSpawned = false;
-        public bool continuousVesselSpawning = false;
         Dictionary<string, SpawnField> spawnFields;
 
         // FIXME RUNWAY_PROJECT Round 3
@@ -479,7 +478,7 @@ namespace BDArmory.UI
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_SingleSpawn"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 BDATournament.Instance.StopTournament();
-                if (!_vesselsSpawned && !continuousVesselSpawning && Event.current.button == 0) // Left click
+                if (!_vesselsSpawned && !VesselSpawner.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
                 {
                     if (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING)
                         VesselSpawner.Instance.SpawnAllVesselsOnceContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true); // Spawn vessels.
@@ -492,13 +491,12 @@ namespace BDArmory.UI
                     VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false); // Spawn vessels, without killing off other vessels or changing camera positions.
                 }
             }
-            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_ContinuousSpawning"), continuousVesselSpawning ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_ContinuousSpawning"), VesselSpawner.Instance.vesselsSpawningContinuously ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 BDATournament.Instance.StopTournament();
-                if (!continuousVesselSpawning && !_vesselsSpawned && Event.current.button == 0) // Left click
+                if (!VesselSpawner.Instance.vesselsSpawningContinuously && !_vesselsSpawned && Event.current.button == 0) // Left click
                 {
                     VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, true); // Spawn vessels continuously at 1km above terrain.
-                    continuousVesselSpawning = true;
                 }
             }
             if (BDArmorySettings.RUNWAY_PROJECT)
@@ -506,7 +504,7 @@ namespace BDArmory.UI
                 if (GUI.Button(SLineRect(++line), Localizer.Format("Runway Project Season 2 Round 3"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) // FIXME For round 3 only.
                 {
                     BDATournament.Instance.StopTournament();
-                    if (!_vesselsSpawned && !continuousVesselSpawning && Event.current.button == 0) // Left click
+                    if (!_vesselsSpawned && !VesselSpawner.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
                     {
                         Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
                         _vesselsSpawned = true;
@@ -532,16 +530,15 @@ namespace BDArmory.UI
                     }
                 }
             }
-            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || continuousVesselSpawning) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
+            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || VesselSpawner.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
             {
-                BDATournament.Instance.StopTournament();
-                VesselSpawner.Instance.CancelVesselSpawn();
                 if (_vesselsSpawned)
                     Debug.Log("[BDArmory]: Resetting spawning vessel button.");
                 _vesselsSpawned = false;
-                if (continuousVesselSpawning)
+                if (VesselSpawner.Instance.vesselsSpawningContinuously)
                     Debug.Log("[BDArmory]: Resetting continuous spawning button.");
-                continuousVesselSpawning = false;
+                BDATournament.Instance.StopTournament();
+                VesselSpawner.Instance.CancelVesselSpawn();
             }
 
             line += 1.25f; // Bottom internal margin

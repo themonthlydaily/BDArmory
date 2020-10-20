@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using BDArmory.Core;
+using BDArmory.UI;
 
 namespace BDArmory.Control
 {
@@ -221,8 +222,8 @@ namespace BDArmory.Control
 
         public void RunTournament()
         {
-            VesselSpawner.Instance.CancelVesselSpawn();
             BDACompetitionMode.Instance.StopCompetition();
+            VesselSpawner.Instance.CancelVesselSpawn();
             if (runTournamentCoroutine != null)
                 StopCoroutine(runTournamentCoroutine);
             runTournamentCoroutine = StartCoroutine(RunTournamentCoroutine());
@@ -240,6 +241,7 @@ namespace BDArmory.Control
 
         IEnumerator RunTournamentCoroutine()
         {
+            yield return new WaitForFixedUpdate();
             foreach (var roundIndex in tournamentState.rounds.Keys)
             {
                 currentRound = roundIndex;
