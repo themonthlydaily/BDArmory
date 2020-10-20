@@ -221,6 +221,8 @@ namespace BDArmory.Control
 
         public void RunTournament()
         {
+            VesselSpawner.Instance.CancelVesselSpawn();
+            BDACompetitionMode.Instance.StopCompetition();
             if (runTournamentCoroutine != null)
                 StopCoroutine(runTournamentCoroutine);
             runTournamentCoroutine = StartCoroutine(RunTournamentCoroutine());
