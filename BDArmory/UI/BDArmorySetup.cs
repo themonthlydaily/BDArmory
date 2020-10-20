@@ -497,7 +497,7 @@ namespace BDArmory.UI
             windowSettingsEnabled = !windowSettingsEnabled;
             if (windowSettingsEnabled)
             {
-                LoadConfig();
+                // LoadConfig(); // Don't reload settings, since they're already loaded and mess with other settings windows.
             }
             else
             {

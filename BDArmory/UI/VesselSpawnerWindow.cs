@@ -420,7 +420,10 @@ namespace BDArmory.UI
 
                     default:
                         if (GUI.Button(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TournamentSetup"), BDArmorySetup.BDGuiSkin.button)) // Setup tournament
+                        {
                             BDATournament.Instance.SetupTournament(BDArmorySettings.TOURNAMENT_FILES_LOCATION, BDArmorySettings.TOURNAMENT_ROUNDS, BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT);
+                            BDArmorySetup.SaveConfig();
+                        }
 
                         if (BDATournament.Instance.tournamentStatus != TournamentStatus.Completed)
                         {
