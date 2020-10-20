@@ -1825,7 +1825,7 @@ namespace BDArmory.Control
         // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>[-tag].log
         public void LogResults(string message = "", string tag = "")
         {
-            if (competitionStartTime < 0) // Allow dumping logs extra times if called to do so in another location.
+            if (competitionStartTime < 0)
             {
                 Debug.Log("[BDArmoryCompetition]: No active competition, not dumping results.");
                 return;
