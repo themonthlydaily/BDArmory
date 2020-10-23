@@ -50,9 +50,15 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users
 
         // General slider settings
-        [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                  // Competition duration in minutes
-        [BDAPersistantSettingsField] public static float COMPETITION_DISTANCE = 1000;             // Competition distance.
-        [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 30f;            // Clean up debris after 30s.
+        [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
+        [BDAPersistantSettingsField] public static float COMPETITION_INITIAL_GRACE_PERIOD = 60;        // Competition initial grace period in seconds.
+        [BDAPersistantSettingsField] public static float COMPETITION_FINAL_GRACE_PERIOD = 10;          // Competition final grace period in seconds.
+        [BDAPersistantSettingsField] public static float COMPETITION_KILL_TIMER = 15;                  // Competition kill timer in seconds.
+        [BDAPersistantSettingsField] public static float COMPETITION_KILLER_GM_FREQUENCY = 60;         // Competition killer GM timer in seconds.
+        [BDAPersistantSettingsField] public static float COMPETITION_KILLER_GM_GRACE_PERIOD = 150;     // Competition killer GM grace period in seconds.
+        [BDAPersistantSettingsField] public static float COMPETITION_NONCOMPETITOR_REMOVAL_DELAY = 30; // Competition non-competitor removal delay in seconds.
+        [BDAPersistantSettingsField] public static float COMPETITION_DISTANCE = 1000;                  // Competition distance.
+        [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 15f;                   // Clean up debris after 30s.
         [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;
         [BDAPersistantSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;               // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
         [BDAPersistantSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 3;               // Controls the minimum time between automated camera switches

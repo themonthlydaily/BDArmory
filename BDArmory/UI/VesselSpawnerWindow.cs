@@ -433,6 +433,8 @@ namespace BDArmory.UI
                 }
             }
 
+            /*
+            // Special settings for season 2 round 3
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 ++line;
@@ -473,6 +475,7 @@ namespace BDArmory.UI
                 GUI.Label(SLeftSliderRect(++line), $"Countdown:  ({competitionStartDelay}s)", leftLabel); // Countdown
                 competitionStartDelay = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), competitionStartDelay, 0f, 30f));
             }
+            */
 
             ++line;
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_SingleSpawn"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
@@ -499,6 +502,8 @@ namespace BDArmory.UI
                     VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, true); // Spawn vessels continuously at 1km above terrain.
                 }
             }
+            /*
+            // Special buttons for special rounds.
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 if (GUI.Button(SLineRect(++line), Localizer.Format("Runway Project Season 2 Round 3"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) // FIXME For round 3 only.
@@ -530,6 +535,7 @@ namespace BDArmory.UI
                     }
                 }
             }
+            */
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || VesselSpawner.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
             {
                 if (_vesselsSpawned)
