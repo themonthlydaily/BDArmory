@@ -823,7 +823,6 @@ namespace BDArmory.Control
                             continue;
                         }
                         vessel.Landed = false; // Tell KSP that it's not landed.
-                        vessel.SetReferenceTransform(vessel.rootPart); // Set the reference transform such that spawning orientation gets corrected for.
                         vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
                         if (!craftURLToVesselName.ContainsKey(craftURL))
                         {
