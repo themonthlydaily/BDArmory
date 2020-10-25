@@ -859,7 +859,8 @@ namespace BDArmory.Control
                         break;
                     }
 
-                    // Wait for an update so that the spawned vessels' parts list gets updated.
+                    // Wait for a couple of updates so that the spawned vessels' parts list and reference transform gets updated.
+                    yield return new WaitForFixedUpdate();
                     yield return new WaitForFixedUpdate();
 
                     // Fix control point orientation by setting the reference transformations to that of the root parts and re-orient the vessels accordingly.
