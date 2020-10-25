@@ -66,9 +66,9 @@ namespace BDArmory.UI
         Dictionary<string, SpawnField> spawnFields;
 
         // FIXME RUNWAY_PROJECT Round 3
-        VesselSpawner.SpawnConfig targetSpawnConfig;
-        static Dictionary<string, SpawnField> targetSpawnFields;
-        static float competitionStartDelay = 15;
+        // VesselSpawner.SpawnConfig targetSpawnConfig;
+        // static Dictionary<string, SpawnField> targetSpawnFields;
+        // static float competitionStartDelay = 15;
         #endregion
 
         #region Styles
@@ -158,26 +158,26 @@ namespace BDArmory.UI
                 { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
                 { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
             };
-            if (BDArmorySettings.RUNWAY_PROJECT)
-            {
-                targetSpawnConfig = new VesselSpawner.SpawnConfig(
-                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                    5000,
-                    1000,
-                    true,
-                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                    true,
-                    true,
-                    "Targets"
-                );
+            // if (BDArmorySettings.RUNWAY_PROJECT)
+            // {
+            //     targetSpawnConfig = new VesselSpawner.SpawnConfig(
+            //         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+            //         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+            //         5000,
+            //         1000,
+            //         true,
+            //         BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+            //         true,
+            //         true,
+            //         "Targets"
+            //     );
 
-                targetSpawnFields = new Dictionary<string, SpawnField> {
-                    { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.latitude + 1, -90, 90) },
-                    { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.longitude, -180, 180) },
-                    { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.altitude, 0) },
-                };
-            }
+            //     targetSpawnFields = new Dictionary<string, SpawnField> {
+            //         { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.latitude + 1, -90, 90) },
+            //         { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.longitude, -180, 180) },
+            //         { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.altitude, 0) },
+            //     };
+            // }
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -379,13 +379,13 @@ namespace BDArmory.UI
                         spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
                         spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
                         VesselSpawner.Instance.ShowSpawnPoint(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
-                        if (BDArmorySettings.RUNWAY_PROJECT) // FIXME Round 3
-                        {
-                            targetSpawnConfig.latitude = spawnLocation.location.x;
-                            targetSpawnConfig.longitude = spawnLocation.location.y;
-                            targetSpawnFields["lat"].currentValue = spawnLocation.location.x + 1;
-                            targetSpawnFields["lon"].currentValue = spawnLocation.location.y;
-                        }
+                        // if (BDArmorySettings.RUNWAY_PROJECT) // FIXME Round 3
+                        // {
+                        //     targetSpawnConfig.latitude = spawnLocation.location.x;
+                        //     targetSpawnConfig.longitude = spawnLocation.location.y;
+                        //     targetSpawnFields["lat"].currentValue = spawnLocation.location.x + 1;
+                        //     targetSpawnFields["lon"].currentValue = spawnLocation.location.y;
+                        // }
                     }
                 }
                 line += (i - 1) / 4;

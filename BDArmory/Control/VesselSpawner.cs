@@ -358,17 +358,21 @@ namespace BDArmory.Control
                 shipFacility = spawnedVessels[vesselName].Item5;
                 ray = new Ray(craftSpawnPosition, -localSurfaceNormal);
                 var distance = Physics.Raycast(ray, out hit, (float)(spawnConfig.altitude + 10000f), 1 << 15) ? hit.distance : (float)spawnConfig.altitude + 10000f;
+
+                // Fix control point orientation by setting the reference transformation to that of the root part.
+                spawnedVessels[vesselName].Item1.SetReferenceTransform(spawnedVessels[vesselName].Item1.rootPart);
+
                 if (!spawnAirborne)
                 {
-                    vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -Vector3.forward : Vector3.up, localSurfaceNormal)); // Re-orient the vessel to the terrain normal.
-                    vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(shipFacility == EditorFacility.SPH ? vessel.transform.up : -vessel.transform.forward, direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+                    vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal.
+                    vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(shipFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
                 }
                 else
                 {
                     var geeDirection = FlightGlobals.getGeeForceAtPosition(craftSpawnPosition);
-                    vessel.SetRotation(Quaternion.FromToRotation(-Vector3.up, -geeDirection)); // Re-orient the vessel to the local gravity direction.
-                    vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.transform.forward, direction, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
-                    vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.transform.right) * vessel.transform.rotation); // Tilt 10° outwards.
+                    vessel.SetRotation(Quaternion.FromToRotation(-vessel.ReferenceTransform.up, -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the local gravity direction.
+                    vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.ReferenceTransform.forward, direction, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+                    vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.ReferenceTransform.right) * vessel.transform.rotation); // Tilt 10° outwards.
                 }
                 if (FlightGlobals.currentMainBody.hasSolidSurface)
                     vessel.SetPosition(craftSpawnPosition + localSurfaceNormal * (spawnConfig.altitude + heightFromTerrain - distance)); // Put us at the specified altitude. Vessel rootpart height gets 35 added to it during spawning. We can't use vesselSize.y/2 as 'position' is not central to the vessel.
@@ -819,10 +823,8 @@ namespace BDArmory.Control
                             continue;
                         }
                         vessel.Landed = false; // Tell KSP that it's not landed.
+                        vessel.SetReferenceTransform(vessel.rootPart); // Set the reference transform such that spawning orientation gets corrected for.
                         vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
-                        vessel.SetRotation(Quaternion.FromToRotation(-Vector3.up, -geeDirection)); // Re-orient the vessel to the local gravity direction.
-                        vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.transform.forward, direction, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
-                        vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.transform.right) * vessel.transform.rotation); // Tilt 10° outwards.
                         if (!craftURLToVesselName.ContainsKey(craftURL))
                         {
                             if (craftURLToVesselName.ContainsValue(vessel.GetName())) // Avoid duplicate names.
@@ -857,12 +859,23 @@ namespace BDArmory.Control
                         spawnFailureReason = SpawnFailureReason.VesselFailedToSpawn;
                         break;
                     }
+
+                    // Wait for an update so that the spawned vessels' parts list gets updated.
+                    yield return new WaitForFixedUpdate();
+
+                    // Fix control point orientation by setting the reference transformations to that of the root parts and re-orient the vessels accordingly.
+                    foreach (var vessel in vesselsToActivate)
+                    {
+                        vessel.SetReferenceTransform(vessel.rootPart);
+                        vessel.SetRotation(Quaternion.FromToRotation(-vessel.ReferenceTransform.up, -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the local gravity direction.
+                        vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.ReferenceTransform.forward, vessel.transform.position - spawnPoint, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+                        vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.ReferenceTransform.right) * vessel.transform.rotation); // Tilt 10° outwards.
+                    }
                 }
-                yield return new WaitForFixedUpdate();
                 // Activate the AI and fire up any new weapon managers that appeared.
                 if (vesselsToActivate.Count > 0)
                 {
-                    // Wait for an update so that the spawned vessels' parts list gets updated.
+                    // Wait for an update so that the spawned vessels' FindPart... functions have time to have their internal data updated.
                     yield return new WaitForFixedUpdate();
 
                     LoadedVesselSwitcher.Instance.UpdateList();
@@ -907,7 +920,7 @@ namespace BDArmory.Control
                         var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                         if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
                         {
-                            // Activate the vessel with AG10, or failing that, staging.
+                            // Activate the vessel with AG10.
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
@@ -1142,7 +1155,8 @@ namespace BDArmory.Control
                 this.folder = folder;
                 this.craftFiles = craftFiles;
             }
-            public SpawnConfig(SpawnConfig other) {
+            public SpawnConfig(SpawnConfig other)
+            {
                 this.latitude = other.latitude;
                 this.longitude = other.longitude;
                 this.altitude = other.altitude;
@@ -1153,7 +1167,7 @@ namespace BDArmory.Control
                 this.assignTeams = other.assignTeams;
                 this.folder = other.folder;
                 this.craftFiles = other.craftFiles?.ToList();
-             }
+            }
             public double latitude;
             public double longitude;
             public double altitude;
