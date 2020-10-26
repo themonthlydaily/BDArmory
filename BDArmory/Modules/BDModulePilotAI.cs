@@ -35,6 +35,11 @@ namespace BDArmory.Modules
             get { return extending || requestedExtend; }
         }
 
+        public void StopExtending()
+        {
+            extending = false;
+        }
+
         public void RequestExtend(Vector3 tPosition)
         {
             requestedExtend = true;

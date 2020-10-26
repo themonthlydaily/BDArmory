@@ -3897,6 +3897,7 @@ namespace BDArmory.Modules
                     currentTarget.Disengage(this);
                 }
                 target.Engage(this);
+                if (currentTarget != target && pilotAI && pilotAI.IsExtending) pilotAI.StopExtending();
                 currentTarget = target;
                 guardTarget = target.Vessel;
             }
