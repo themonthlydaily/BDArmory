@@ -1230,7 +1230,8 @@ namespace BDArmory.Modules
             debugString.Append($"possibleAccel: {possibleAccel}");
             debugString.Append(Environment.NewLine);
 
-            float limiter = ((speed - 50) / 330f) + possibleAccel / 15f;
+            // float limiter = ((speed - 50) / 330f) + possibleAccel / 15f;
+            float limiter = ((speed - idleSpeed / 2f) / idleSpeed);
             debugString.Append($"unclamped limiter: { limiter}");
             debugString.Append(Environment.NewLine);
 
