@@ -2575,7 +2575,10 @@ namespace BDArmory.Control
                                 pilot.weaponManager.SetTeam(BDTeam.Get("NO"));
                                 Scores[pilot.vessel.GetName()].tagIsIt = false;
                                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
-                                                                                     // Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
+                                var pilotAI = pilot.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                                if (pilotAI != null) // Stop evading
+                                    pilotAI.StopEvading();
                             }
                         }
                 }

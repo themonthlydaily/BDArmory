@@ -1540,6 +1540,11 @@ namespace BDArmory.Modules
 
         Vector3 threatRelativePosition;
 
+        public void StopEvading()
+        {
+            evasiveTimer = 0;
+        }
+
         void Evasive(FlightCtrlState s)
         {
             if (s == null) return;
@@ -2418,7 +2423,7 @@ namespace BDArmory.Modules
             }
             else if (command == PilotCommands.Attack)
             {
-                if ((BDArmorySettings.RUNWAY_PROJECT) && (targetVessel != null) && ((targetVessel.vesselTransform.position-vessel.vesselTransform.position).sqrMagnitude <= (weaponManager.guardRange * weaponManager.guardRange))) // If the vessel has a target within range, let it fight!
+                if ((BDArmorySettings.RUNWAY_PROJECT) && (targetVessel != null) && ((targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= (weaponManager.guardRange * weaponManager.guardRange))) // If the vessel has a target within range, let it fight!
                 {
                     ReleaseCommand();
                     return;
