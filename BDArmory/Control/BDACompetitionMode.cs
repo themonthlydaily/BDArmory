@@ -2554,6 +2554,7 @@ namespace BDArmory.Control
                     if (pilots.All(p => p.vessel.GetName() != vData.LastPersonWhoDamagedMe())) // IT was killed off by GM or BRB.
                         TagResetTeams();
                     else
+                    {
                         foreach (var pilot in pilots)
                         {
                             if (!Scores.ContainsKey(pilot.vessel.GetName())) { Debug.Log("DEBUG 1 Scores doesn't contain " + pilot.vessel.GetName()); continue; } // How can this happen? This occurred for a vessel that got labelled as a Rover or Debris! Check that the vessel has the mf attached to the cockpit (e.g. JohnF's plane).
@@ -2577,8 +2578,10 @@ namespace BDArmory.Control
                                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
                             }
-                            pilot.weaponManager.ForceScan(); // Update targets.
                         }
+                        foreach (var pilot in pilots)
+                            pilot.weaponManager.ForceScan(); // Update targets.
+                    }
                 }
             }
             else // Vessel that is being updated is dead
@@ -2625,8 +2628,9 @@ namespace BDArmory.Control
                 Scores[pilot.vessel.GetName()].tagIsIt = false;
                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
                 T++;
-                pilot.weaponManager.ForceScan(); // Update targets.
             }
+            foreach (var pilot in pilots)
+                pilot.weaponManager.ForceScan(); // Update targets.
             startTag = true;
         }
         #endregion
