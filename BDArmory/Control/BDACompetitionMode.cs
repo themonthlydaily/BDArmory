@@ -2576,10 +2576,8 @@ namespace BDArmory.Control
                                 Scores[pilot.vessel.GetName()].tagIsIt = false;
                                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetDisplayName() + " is NOT IT!");
-                                var pilotAI = pilot.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
-                                if (pilotAI != null) // Stop evading
-                                    pilotAI.StopEvading();
                             }
+                            pilot.weaponManager.ForceScan(); // Update targets.
                         }
                 }
             }
@@ -2600,6 +2598,8 @@ namespace BDArmory.Control
                             * previousNumberCompetitive * (previousNumberCompetitive - 1) / 5;
                         Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: " + key + " died, " + tagKillerIs + " is IT!"); // FIXME, killing the IT craft with the GM/BRB breaks this.
                         competitionStatus.Add(tagKillerIs + " is IT!");
+                        foreach (var pilot in getAllPilots())
+                            pilot.weaponManager.ForceScan(); // Update targets.
                     }
                     else // We don't have a killer who is alive, reset teams
                         TagResetTeams();
@@ -2625,6 +2625,7 @@ namespace BDArmory.Control
                 Scores[pilot.vessel.GetName()].tagIsIt = false;
                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[9]); // Trigger AG9 on becoming "NOT IT"
                 T++;
+                pilot.weaponManager.ForceScan(); // Update targets.
             }
             startTag = true;
         }
