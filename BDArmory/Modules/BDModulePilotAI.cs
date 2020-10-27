@@ -1541,11 +1541,6 @@ namespace BDArmory.Modules
 
         Vector3 threatRelativePosition;
 
-        public void StopEvading()
-        {
-            evasiveTimer = 0;
-        }
-
         void Evasive(FlightCtrlState s)
         {
             if (s == null) return;
