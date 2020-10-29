@@ -866,6 +866,7 @@ namespace BDArmory.Control
                     // Fix control point orientation by setting the reference transformations to that of the root parts and re-orient the vessels accordingly.
                     foreach (var vessel in vesselsToActivate)
                     {
+                        Debug.Log("DEBUG " + vessel.vesselName + " setting reference transform to that of: " + vessel.rootPart + " refT: " + vessel.ReferenceTransform + " from " + vessel.GetReferenceTransformPart());
                         vessel.SetReferenceTransform(vessel.rootPart);
                         vessel.SetRotation(Quaternion.FromToRotation(-vessel.ReferenceTransform.up, -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the local gravity direction.
                         vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.ReferenceTransform.forward, vessel.transform.position - spawnPoint, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
@@ -1199,7 +1200,7 @@ namespace BDArmory.Control
             {
                 vesselsSpawning = true; // Gets set to false each time spawning is finished, so we need to re-enable it again.
                 vesselSpawnSuccess = false;
-                yield return SpawnAllVesselsOnceCoroutine(spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, spawnConfig.distance, spawnConfig.absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killAllFirst, false, spawnConfig.folder);
+                yield return SpawnAllVesselsOnceCoroutine(spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, spawnConfig.distance, spawnConfig.absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killAllFirst, false, spawnConfig.folder, spawnConfig.craftFiles);
                 if (!vesselSpawnSuccess)
                 {
                     message = "Vessel spawning failed, aborting.";

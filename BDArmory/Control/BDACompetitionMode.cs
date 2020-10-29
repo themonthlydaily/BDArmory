@@ -490,8 +490,10 @@ namespace BDArmory.Control
                         yield break;
                     }
                     leaders.Add(pilotList.Current.Value[0]);
-                    pilotList.Current.Value[0].weaponManager.wingCommander.CommandAllFollow();
                 }
+            yield return new WaitForFixedUpdate();
+            foreach (var leader in leaders)
+                leader.weaponManager.wingCommander.CommandAllFollow();
 
             //wait till the leaders are ready to engage (airborne for PilotAI)
             bool ready = false;
