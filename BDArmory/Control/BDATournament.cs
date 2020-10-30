@@ -319,9 +319,7 @@ namespace BDArmory.Control
                 team1Config.craftFiles = team1Config.craftFiles.Take(team1Config.craftFiles.Count / 2).ToList();
                 var team2Config = new VesselSpawner.SpawnConfig(tournamentState.rounds[roundIndex][heatIndex]);
                 team2Config.craftFiles = team2Config.craftFiles.Skip(team2Config.craftFiles.Count / 2).ToList();
-                team2Config.latitude += 0.5;
-                Debug.Log("DEBUG team1 " + string.Join(", ", team1Config.craftFiles.Select(s => s.Substring(s.LastIndexOf('/') + 1, s.Length - s.LastIndexOf('/') - 7))));
-                Debug.Log("DEBUG team2 " + string.Join(", ", team2Config.craftFiles.Select(s => s.Substring(s.LastIndexOf('/') + 1, s.Length - s.LastIndexOf('/') - 7))));
+                team2Config.latitude += 8;
                 VesselSpawner.Instance.TeamSpawn(new List<VesselSpawner.SpawnConfig> { team1Config, team2Config }, false);
             }
             else
