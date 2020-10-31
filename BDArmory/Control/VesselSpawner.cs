@@ -363,6 +363,9 @@ namespace BDArmory.Control
             foreach (var vesselName in spawnedVessels.Keys)
                 spawnedVesselPartCounts.Add(vesselName, spawnedVessels[vesselName].Item1.parts.Count);
 
+            // Wait another update so that the reference transforms get updated.
+            yield return new WaitForFixedUpdate();
+
             // Now rotate them and put them at the right altitude.
             foreach (var vesselName in spawnedVessels.Keys)
             {
