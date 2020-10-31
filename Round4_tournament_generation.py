@@ -21,7 +21,7 @@ print(f"Found {len(teams)} teams and {len(individuals)} of individuals:")
 for team in teams:
     print(f" - {team} has {len(teams[team])} players,")
 print(f" - and {len(individuals)} individual players.")
-print(f"Generating tournament.state file for {args.rounds} rounds with {len(teams)*(len(teams)-1)} heats per round (each team against another) and {args.perTeam} vessels per team per heat.")
+print(f"Generating tournament.state file for {args.rounds} rounds with {len(teams)*(len(teams)-1)//2} heats per round (each team against another) and {args.perTeam} vessels per team per heat.")
 
 tournamentHeader = json.dumps({
     "tournamentID": 4,  # Has to be a number
@@ -34,7 +34,7 @@ teamQueues = {team: queue.Queue() for team in teams}
 individualsQueue = queue.Queue()
 
 
-def getTeamSelection(team: int, N: int) -> List[str]:
+def getTeamSelection(team: str, N: int) -> List[str]:
     global teamQueues, teams
     selection = []
     while len(selection) < N:
@@ -74,12 +74,11 @@ def fillWithIndividuals(selection: List[str], N: int):
 with open('tournament.state', 'w') as f:
     f.write(tournamentHeader)
 
+    teamNames = list(teams)
     for round in range(args.rounds):
         heats = []
-        for team1 in teams:
-            for team2 in teams:
-                if team1 == team2:
-                    continue
+        for i, team1 in enumerate(teamNames):
+            for team2 in teamNames[i + 1:]:
                 roundConfig.update({"craftFiles": getTeamSelection(team1, args.perTeam) + getTeamSelection(team2, args.perTeam)})
                 heats.append({k: v for k, v in roundConfig.items()})
 
