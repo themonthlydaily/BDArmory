@@ -190,7 +190,7 @@ namespace BDArmory.Control
         public int previousNumberCompetitive = 2; // Also for tag mode
 
         // KILLER GM - how we look for slowest planes
-        public Dictionary<string, double> KillTimer = new Dictionary<string, double>();
+        public Dictionary<string, double> KillTimer = new Dictionary<string, double>(); // Note that this is only used as an indicator, not a controller, now.
         //public Dictionary<string, double> AverageSpeed = new Dictionary<string, double>();
         //public Dictionary<string, double> AverageAltitude = new Dictionary<string, double>();
         //public Dictionary<string, int> FireCount = new Dictionary<string, int>();
@@ -1573,11 +1573,17 @@ namespace BDArmory.Control
                             vData.AverageSpeed += v.Current.srfSpeed;
                             vData.AverageAltitude += v.Current.altitude;
                             vData.averageCount++;
-                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER && (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER))
+                            if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER)
                             {
-                                vesselsToKill.Add(mf.vessel);
-                                competitionStatus.Add(vesselName + " landed too long.");
+                                KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
+                                if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
+                                {
+                                    vesselsToKill.Add(mf.vessel);
+                                    competitionStatus.Add(vesselName + " landed too long.");
+                                }
                             }
+                            else if (KillTimer.ContainsKey(vesselName))
+                                KillTimer.Remove(vesselName);
                         }
 
 
@@ -1814,8 +1820,8 @@ namespace BDArmory.Control
                     }
                 }
                 Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
+                if (KillTimer.ContainsKey(vesselName)) KillTimer.Remove(vesselName);
                 Misc.Misc.ForceDeadVessel(vessel);
-                KillTimer.Remove(vesselName);
             }
 
             if (!(BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY > 60))
@@ -1823,6 +1829,26 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
+                if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 101) // Kill off those flying too high.
+                {
+                    foreach (var weaponManager in LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList())
+                    {
+                        if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude > BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE * 1000)
+                        {
+                            Scores[weaponManager.vessel.vesselName].gmKillReason = GMKillReason.GM;
+                            var killerName = Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe;
+                            if (killerName == "")
+                            {
+                                killerName = "Flew too high!";
+                                Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe = killerName;
+                            }
+                            competitionStatus.Add(weaponManager.vessel.vesselName + " flew too high!");
+                            Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
+                            if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
+                            Misc.Misc.ForceDeadVessel(weaponManager.vessel);
+                        }
+                    }
+                }
                 FindVictim();
             }
             // Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
