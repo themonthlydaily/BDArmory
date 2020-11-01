@@ -25,7 +25,7 @@ print(f"Generating tournament.state file for {args.rounds} rounds with {len(team
 
 tournamentHeader = json.dumps({
     "tournamentID": 4,  # Has to be a number
-    "craftFiles": [craftFile for team in teams for craftFile in teams[team]]
+    "craftFiles": [craftFile for team in teams for craftFile in teams[team]] + individuals
 }, separators=(',', ':'))
 
 roundConfig = {"latitude": -0.04762, "longitude": -74.8593, "altitude": 5000.0, "distance": 20.0, "absDistanceOrFactor": False, "easeInSpeed": 0.7, "killEverythingFirst": True, "assignTeams": False, "folder": "", "round": 2, "heat": 1, "completed": False}
