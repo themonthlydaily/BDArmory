@@ -818,6 +818,13 @@ namespace BDArmory.Control
                     ++spawnCounts[craftURL];
                 }
                 var currentlyActive = LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList().Count;
+                if (spawnQueue.Count + vesselsToActivate.Count == 0 && currentlyActive < 2)// Nothing left to spawn or activate and only 1 vessel surviving. Time to call it quits and let the competition end.
+                {
+                    message = "Spawn queue is empty and not enough vessels are active, ending competition.";
+                    Debug.Log("[VesselSpawner]: " + message);
+                    BDACompetitionMode.Instance.StopCompetition();
+                    break;
+                }
                 while (craftToSpawn.Count + vesselsToActivate.Count + currentlyActive < spawnSlots.Count && spawnQueue.Count > 0)
                     craftToSpawn.Enqueue(spawnQueue.Dequeue());
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
