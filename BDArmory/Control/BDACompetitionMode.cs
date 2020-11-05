@@ -351,7 +351,6 @@ namespace BDArmory.Control
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
             GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
-            // GameEvents.onNewVesselCreated.Remove(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
@@ -364,7 +363,6 @@ namespace BDArmory.Control
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             // I think these three events cover the cases for when an incorrectly built vessel splits into more than one part.
             GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
-            // GameEvents.onNewVesselCreated.Add(CheckVesselTypeNewVesselCreated);
             GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
@@ -688,12 +686,7 @@ namespace BDArmory.Control
                 Debug.Log("[BDACompetitionMode]: CheckVesselType due to part count change (" + vessel + ")");
             CheckVesselType(vessel);
         }
-        void CheckVesselTypeNewVesselCreated(Vessel vessel)
-        {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDACompetitionMode]: CheckVesselType due to new vessel created (" + vessel + ")");
-            CheckVesselType(vessel);
-        }
+
         void CheckVesselTypeVesselCreate(Vessel vessel)
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -725,6 +718,20 @@ namespace BDArmory.Control
                     Debug.Log("[BDACompetitionMode]: " + message);
                     vessel.vesselName = vessel.vesselName.Remove(vessel.vesselName.Length - 6);
                     return;
+                }
+            }
+        }
+
+        void CheckForBadlyNamedVessels()
+        {
+            foreach (var wm in LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).ToList())
+            if (wm != null && wm.vessel != null && wm.vessel.vesselName != null)
+            {
+                if (wm.vessel.vesselType == VesselType.Plane && wm.vessel.vesselName.EndsWith(" Plane") && !Scores.ContainsKey(wm.vessel.vesselName) && Scores.ContainsKey(wm.vessel.vesselName.Remove(wm.vessel.vesselName.Length - 6)) && IsValidVessel(wm.vessel)== InvalidVesselReason.None)
+                {
+                    var message = "DEBUG Found a valid vessel (" + wm.vessel.vesselName + ") tagged with 'Plane' when it shouldn't be, renaming.";
+                    Debug.Log("[BDACompetitionMode]: " + message);
+                    wm.vessel.vesselName = wm.vessel.vesselName.Remove(wm.vessel.vesselName.Length - 6);
                 }
             }
         }
@@ -1379,6 +1386,7 @@ namespace BDArmory.Control
             var now = Planetarium.GetUniversalTime();
             if (now < nextUpdateTick)
                 return;
+            CheckForBadlyNamedVessels();
             double updateTickLength = BDArmorySettings.TAG_MODE ? 0.1 : BDArmorySettings.GRAVITY_HACKS ? 0.5 : 2;
             HashSet<Vessel> vesselsToKill = new HashSet<Vessel>();
             nextUpdateTick = nextUpdateTick + updateTickLength;
