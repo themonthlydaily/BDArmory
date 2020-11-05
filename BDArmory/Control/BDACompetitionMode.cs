@@ -705,15 +705,27 @@ namespace BDArmory.Control
         public void CheckVesselType(Vessel vessel)
         {
             if (!BDArmorySettings.RUNWAY_PROJECT) return;
-            if (vessel != null && vessel.vesselName != null && !validVesselTypes.Contains(vessel.vesselType) && vessel.FindPartModuleImplementing<MissileFire>() != null) // Found an invalid vessel type with a weapon manager.
+            if (vessel != null && vessel.vesselName != null)
             {
-                var message = "Found weapon manager on " + vessel.vesselName + " of type " + vessel.vesselType;
-                if (vessel.vesselName.EndsWith(" " + vessel.vesselType.ToString()))
-                    vessel.vesselName = vessel.vesselName.Remove(vessel.vesselName.Length - vessel.vesselType.ToString().Length - 1);
-                vessel.vesselType = VesselType.Plane;
-                message += ", changing vessel name and type to " + vessel.vesselName + ", " + vessel.vesselType;
-                Debug.Log("[BDACompetitionMode]: " + message);
-                return;
+                var vesselTypeIsValid = validVesselTypes.Contains(vessel.vesselType);
+                var hasMissileFire = vessel.FindPartModuleImplementing<MissileFire>() != null;
+                if (!vesselTypeIsValid && hasMissileFire) // Found an invalid vessel type with a weapon manager.
+                {
+                    var message = "Found weapon manager on " + vessel.vesselName + " of type " + vessel.vesselType;
+                    if (vessel.vesselName.EndsWith(" " + vessel.vesselType.ToString()))
+                        vessel.vesselName = vessel.vesselName.Remove(vessel.vesselName.Length - vessel.vesselType.ToString().Length - 1);
+                    vessel.vesselType = VesselType.Plane;
+                    message += ", changing vessel name and type to " + vessel.vesselName + ", " + vessel.vesselType;
+                    Debug.Log("[BDACompetitionMode]: " + message);
+                    return;
+                }
+                if (vesselTypeIsValid && vessel.vesselType == VesselType.Plane && vessel.vesselName.EndsWith(" Plane") && !Scores.ContainsKey(vessel.vesselName) && Scores.ContainsKey(vessel.vesselName.Remove(vessel.vesselName.Length - 6)) && IsValidVessel(vessel)== InvalidVesselReason.None)
+                {
+                    var message = "Found a valid vessel (" + vessel.vesselName + ") tagged with 'Plane' when it shouldn't be, renaming.";
+                    Debug.Log("[BDACompetitionMode]: " + message);
+                    vessel.vesselName = vessel.vesselName.Remove(vessel.vesselName.Length - 6);
+                    return;
+                }
             }
         }
         #endregion
