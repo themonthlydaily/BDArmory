@@ -905,7 +905,7 @@ namespace BDArmory.Control
                     // Fix control point orientation by setting the reference transformations to that of the root parts and re-orient the vessels accordingly.
                     foreach (var vessel in vesselsToActivate)
                     {
-                        Debug.Log("DEBUG " + vessel.vesselName + " setting reference transform to that of: " + vessel.rootPart + " refT: " + vessel.ReferenceTransform + " from " + vessel.GetReferenceTransformPart());
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[VesselSpawner]: " + vessel.vesselName + " setting reference transform to that of: " + vessel.rootPart + " refT: " + vessel.ReferenceTransform + " from " + vessel.GetReferenceTransformPart());
                         vessel.SetReferenceTransform(vessel.rootPart);
                         vessel.SetRotation(Quaternion.FromToRotation(-vessel.ReferenceTransform.up, -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the local gravity direction.
                         vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.ReferenceTransform.forward, vessel.transform.position - spawnPoint, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
