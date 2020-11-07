@@ -63,8 +63,11 @@ namespace BDArmory.UI
 
         private static System.Random rng;
 
-        static LoadedVesselSwitcher()
+        private void Awake()
         {
+            if (Instance)
+                Destroy(this);
+            Instance = this;
 
             redLight.normal.textColor = Color.red;
             yellowLight.normal.textColor = Color.yellow;
@@ -79,13 +82,6 @@ namespace BDArmory.UI
             ItVessel.fontStyle = FontStyle.Bold;
             ItVesselSelected.fontStyle = FontStyle.Bold;
             rng = new System.Random();
-        }
-
-        private void Awake()
-        {
-            if (Instance)
-                Destroy(this);
-            Instance = this;
         }
 
         private void Start()
