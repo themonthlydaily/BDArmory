@@ -1,9 +1,15 @@
 from pathlib import Path
+import argparse
+
+parser = argparse.ArgumentParser(description="Log-file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("logs", nargs='*', help="Log-files to parse. If none are given, all valid log-files are parsed.")
+args = parser.parse_args()
+
 log_dir = Path(__file__).parent / "Logs"
 output_log_file = log_dir / "results.csv"
 
 craft_data = []
-competition_files = [filename for filename in Path.iterdir(log_dir) if filename.suffix in (".log", ".txt")]  # Pre-scan the files in case something changes (iterators don't like that).
+competition_files = [Path(filename) for filename in args.logs if filename.endswith(".log")] if len(args.logs) > 0 else [filename for filename in Path.iterdir(log_dir) if filename.suffix in (".log", ".txt")]  # Pre-scan the files in case something changes (iterators don't like that).
 for filename in competition_files:
 	with open(log_dir / filename, "r") as file_data:
 		Craft_Name = ""
