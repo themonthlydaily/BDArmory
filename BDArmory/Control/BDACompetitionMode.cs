@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using BDArmory.Core;
-using BDArmory.Control;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Competition;
@@ -2101,8 +2099,7 @@ namespace BDArmory.Control
                 var vessel = rammingInformation[vesselName].vessel;
                 var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
 
-                // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items, and no item is changed more than once, so this ought to be thread-safe.
-                Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
+                foreach(var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
                     var otherPilotAI = otherVessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
@@ -2126,7 +2123,7 @@ namespace BDArmory.Control
                             rammingInformation[otherVesselName].targetInformation[vesselName].lastUpdateTime = currentTime;
                         }
                     }
-                });
+                }
             }
         }
 
@@ -2159,9 +2156,7 @@ namespace BDArmory.Control
             foreach (var vesselName in rammingInformation.Keys)
             {
                 var vessel = rammingInformation[vesselName].vessel;
-                // Use a parallel foreach for speed. Note that we are only changing values in the dictionary, not adding or removing items.
-                // The only variables set more than once are vessel radii and part counts, but they are set to the same value, so this ought to be thread-safe.
-                Parallel.ForEach<string>(rammingInformation[vesselName].targetInformation.Keys, (otherVesselName) =>
+                foreach(var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
                     if (!rammingInformation.ContainsKey(otherVesselName))
                     {
@@ -2229,7 +2224,7 @@ namespace BDArmory.Control
                         rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false;
                         rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false;
                     }
-                });
+                }
             }
         }
 
