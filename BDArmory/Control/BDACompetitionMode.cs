@@ -1335,7 +1335,13 @@ namespace BDArmory.Control
 
         private IEnumerator DelayedVesselRemovalCoroutine(Vessel vessel, float delay)
         {
+            var vesselType = vessel.vesselType;
             yield return new WaitForSeconds(delay);
+            if (vessel != null && vesselType == VesselType.Debris && vessel.vesselType != VesselType.Debris)
+            {
+                Debug.Log("[BDACompetitionMode]: Debris " + vessel.vesselName + " is no longer labelled as debris, not removing.");
+                yield break;
+            }
             if (vessel != null)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
