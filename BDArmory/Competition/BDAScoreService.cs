@@ -520,7 +520,7 @@ namespace BDArmory.Competition
             var deathOrder = BDACompetitionMode.Instance.DeathOrder;
             if (deathOrder.ContainsKey(playerName))
             {
-                var orderData = BDACompetitionMode.Instance.DeathOrder[playerName];
+                var orderData = deathOrder[playerName];
                 return (float)orderData.Item1 / (float)activePlayers.Count;
             }
             else
@@ -534,7 +534,7 @@ namespace BDArmory.Competition
             var deathOrder = BDACompetitionMode.Instance.DeathOrder;
             if (deathOrder.ContainsKey(playerName))
             {
-                var orderData = BDACompetitionMode.Instance.DeathOrder[playerName];
+                var orderData = deathOrder[playerName];
                 return (float)orderData.Item2;
             }
             else
