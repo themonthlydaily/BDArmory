@@ -185,6 +185,11 @@ namespace BDArmory.Bullets
             }
         }
 
+        void OnDisable()
+        {
+            sourceVessel = null;
+        }
+
         void OnDestroy()
         {
             StopCoroutine(FrameDelayedRoutine());
@@ -544,7 +549,7 @@ namespace BDArmory.Bullets
             var aName = this.sourceVessel.GetName();
             var tName = hitPart.vessel.GetName();
 
-            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+            if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
             {
                 //Debug.Log("[BDArmory]: Weapon from " + aName + " damaged " + tName);
 

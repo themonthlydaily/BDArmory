@@ -397,7 +397,7 @@ namespace BDArmory.Modules
         // Target priority variables
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Priority Toggle
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
-        public bool targetPriorityEnabled = false;
+        public bool targetPriorityEnabled = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string TargetLabel = "";
@@ -859,7 +859,12 @@ namespace BDArmory.Modules
             }
         }
 
-        void OnPartDie(Part p = null)
+        void OnPartDie()
+        {
+            OnPartDie(part);
+        }
+
+        void OnPartDie(Part p)
         {
             if (p == part)
             {
@@ -872,6 +877,7 @@ namespace BDArmory.Modules
                 catch (Exception e)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Error OnPartDie: " + e.Message);
+                    Debug.Log("[BDArmory]: Error OnPartDie: " + e.Message);
                 }
             }
             RefreshModules();
@@ -1404,7 +1410,7 @@ namespace BDArmory.Modules
                     SetCargoBays();
 
                     MissileLauncher mlauncher;
-                    while (ml && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - guardTarget.transform.position).sqrMagnitude > 40 * 40))
+                    while (ml && guardTarget && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - guardTarget.transform.position).sqrMagnitude > 40 * 40))
                     {
                         //TODO BDModularGuidance: add turret
                         //try using missile turret to lock target
@@ -2800,7 +2806,7 @@ namespace BDArmory.Modules
                         MissileLauncher launcher = ml.Current as MissileLauncher;
                         if (launcher != null)
                         {
-                            if (launcher.part?.name != weaponArray[weaponIndex]?.GetPart()?.name) continue;
+                            if (weaponArray[weaponIndex].GetPart() == null || launcher.part.name != weaponArray[weaponIndex].GetPart().name) continue;
                         }
                         else
                         {
@@ -2832,7 +2838,7 @@ namespace BDArmory.Modules
                 //TODO BDModularGuidance: Implemente rotaryRail support
                 MissileLauncher missile = CurrentMissile as MissileLauncher;
                 if (missile == null) return null;
-                if (missile && missile.part.name == weaponArray[weaponIndex].GetPart().name)
+                if (weaponArray[weaponIndex].GetPart() != null && missile.part.name == weaponArray[weaponIndex].GetPart().name)
                 {
                     if (!missile.rotaryRail)
                     {
@@ -2847,7 +2853,7 @@ namespace BDArmory.Modules
                     while (ml.MoveNext())
                     {
                         if (ml.Current == null) continue;
-                        if (ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
+                        if (weaponArray[weaponIndex].GetPart() == null || ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
 
                         if (!ml.Current.rotaryRail)
                         {
@@ -3897,6 +3903,7 @@ namespace BDArmory.Modules
                     currentTarget.Disengage(this);
                 }
                 target.Engage(this);
+                if (currentTarget != target && pilotAI && pilotAI.IsExtending) pilotAI.StopExtending();
                 currentTarget = target;
                 guardTarget = target.Vessel;
             }
