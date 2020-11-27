@@ -81,7 +81,7 @@ namespace BDArmory.FX
                 bFX.audioSource.maxDistance = 50;
                 bFX.audioSource.spatialBlend = 1;
                 bulletHitFXTemplate.SetActive(false);
-                bulletHitFXPool = ObjectPool.CreateObjectPool(bulletHitFXTemplate, 10, true, true, 0.3f, false);
+                bulletHitFXPool = ObjectPool.CreateObjectPool(bulletHitFXTemplate, 10, true, true, 10f * Time.deltaTime, false);
             }
             if (penetrationFXPool == null)
             {
@@ -92,7 +92,7 @@ namespace BDArmory.FX
                 bFX.audioSource.maxDistance = 50;
                 bFX.audioSource.spatialBlend = 1;
                 penetrationFXTemplate.SetActive(false);
-                penetrationFXPool = ObjectPool.CreateObjectPool(penetrationFXTemplate, 10, true, true, 0.3f, false);
+                penetrationFXPool = ObjectPool.CreateObjectPool(penetrationFXTemplate, 10, true, true, 10f * Time.deltaTime, false);
             }
         }
 
@@ -241,12 +241,15 @@ namespace BDArmory.FX
         {
             foreach (var pe in pEmitters)
                 if (pe != null)
+                {
                     pe.emit = false;
+                    EffectBehaviour.RemoveParticleEmitter(pe);
+                }
         }
 
         void Update()
         {
-            if (!disabled && Time.time - startTime > 0.03f)
+            if (!disabled && Time.time - startTime > Time.deltaTime)
             {
                 using (var pe = pEmitters.AsEnumerable().GetEnumerator())
                     while (pe.MoveNext())
