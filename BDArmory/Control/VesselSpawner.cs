@@ -327,7 +327,7 @@ namespace BDArmory.Control
                 catch { vessel = null; }
                 if (vessel == null)
                 {
-                    var craftName = craftUrl.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length + 1);
+                    var craftName = craftUrl.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length);
                     Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
                     failedVessels += "\n  -  " + craftName;
                     continue;
@@ -858,7 +858,7 @@ namespace BDArmory.Control
                         catch { vessel = null; }
                         if (vessel == null)
                         {
-                            var craftName = craftURL.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length + 1);
+                            var craftName = craftURL.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length);
                             Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
                             failedVessels += "\n  -  " + craftName;
                             continue;

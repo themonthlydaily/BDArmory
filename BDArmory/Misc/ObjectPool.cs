@@ -23,10 +23,6 @@ namespace BDArmory.Misc
             pool = new List<GameObject>();
         }
 
-        void Start()
-        {
-        }
-
         void OnDestroy()
         {
             foreach (var poolObject in pool)
@@ -132,6 +128,7 @@ namespace BDArmory.Misc
 
         public static ObjectPool CreateObjectPool(GameObject obj, int size, bool canGrow, bool destroyOnLoad, float disableAfterDelay = 0f, bool forceReUse = false)
         {
+            Debug.Log("[ObjectPool]: Creating object pool of size " + size + " for " + obj.name);
             GameObject poolObject = new GameObject(obj.name + "Pool");
             ObjectPool op = poolObject.AddComponent<ObjectPool>();
             op.poolObject = obj;

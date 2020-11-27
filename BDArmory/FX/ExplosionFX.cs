@@ -15,7 +15,7 @@ namespace BDArmory.FX
 {
     public class ExplosionFx : MonoBehaviour
     {
-        public static Dictionary<Tuple<string, string>, ObjectPool> explosionFXPools;
+        public static Dictionary<string, ObjectPool> explosionFXPools;
         public KSPParticleEmitter[] pEmitters { get; set; }
         public Light LightFx { get; set; }
         public float StartTime { get; set; }
@@ -286,11 +286,6 @@ namespace BDArmory.FX
             return false;
         }
 
-        void Awake()
-        {
-            explosionFXPools = new Dictionary<Tuple<string, string>, ObjectPool>(); // Re-initialise the object pool on scene loads involving the script.
-        }
-
         public void Update()
         {
             if (LightFx != null) LightFx.intensity -= 12 * Time.deltaTime;
@@ -482,8 +477,11 @@ namespace BDArmory.FX
         static void CreateObjectPool(string explModelPath, string soundPath)
         {
             if (explosionFXPools == null)
-                explosionFXPools = new Dictionary<Tuple<string, string>, ObjectPool>();
-            var key = new Tuple<string, string>(explModelPath, soundPath);
+            {
+                Debug.Log("Resetting explosionFXPools");
+                explosionFXPools = new Dictionary<string, ObjectPool>();
+            }
+            var key = explModelPath + soundPath;
             if (!explosionFXPools.ContainsKey(key))
             {
                 var explosionFXTemplate = GameDatabase.Instance.GetModel(explModelPath);
@@ -518,7 +516,7 @@ namespace BDArmory.FX
                 rotation = Quaternion.LookRotation(direction);
             }
 
-            GameObject newExplosion = explosionFXPools[new Tuple<string, string>(explModelPath, soundPath)].GetPooledObject();
+            GameObject newExplosion = explosionFXPools[explModelPath + soundPath].GetPooledObject();
             newExplosion.transform.SetPositionAndRotation(position, rotation);
             ExplosionFx eFx = newExplosion.GetComponent<ExplosionFx>();
             eFx.Range = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivalent);
