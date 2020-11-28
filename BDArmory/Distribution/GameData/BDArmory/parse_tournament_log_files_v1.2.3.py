@@ -82,12 +82,12 @@ summary = {
 		'deathCount': len([1 for round in tournamentData.values() for heat in round.values() if craft in heat and heat[craft]['state'] == 'DEAD']),
 		'cleanKills': len([1 for round in tournamentData.values() for heat in round.values() for data in heat.values() if any((field in data and data[field] == craft) for field in ('cleanKillBy', 'cleanMissileKillBy', 'cleanRamKillBy'))]),
 		'assists': len([1 for round in tournamentData.values() for heat in round.values() for data in heat.values() if data['state'] == 'DEAD' and any(field in data and craft in data[field] for field in ('hitsBy', 'missileHitsBy', 'rammedPartsLostBy')) and not any((field in data and data[field] == craft) for field in ('cleanKillBy', 'cleanMissileKillBy', 'cleanRamKillBy'))]),
-		'hits': sum([heat[craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat]),
+		'hits': sum([heat[craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat and 'hits' in heat[craft]]),
 		'bulletDamage': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat.values() for field in ('bulletDamageBy',) if field in data and craft in data[field]]),
 		'missileHits': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat.values() for field in ('missileHitsBy',) if field in data and craft in data[field]]),
 		'missileDamage': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat.values() for field in ('missileDamageBy',) if field in data and craft in data[field]]),
 		'ramScore': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat.values() for field in ('rammedPartsLostBy',) if field in data and craft in data[field]]),
-		'accuracy': CalculateAccuracy(sum([heat[craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat]), sum([heat[craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat])),
+		'accuracy': CalculateAccuracy(sum([heat[craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat and 'hits' in heat[craft]]), sum([heat[craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat and 'shots' in heat[craft]])),
 	}
 	for craft in craftNames
 }
