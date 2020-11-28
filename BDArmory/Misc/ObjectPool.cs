@@ -26,7 +26,8 @@ namespace BDArmory.Misc
         void OnDestroy()
         {
             foreach (var poolObject in pool)
-                Destroy(poolObject);
+                if (poolObject != null)
+                    Destroy(poolObject);
         }
 
         public GameObject GetPooledObject(int index)
@@ -57,11 +58,6 @@ namespace BDArmory.Misc
 
         public GameObject GetPooledObject()
         {
-            if (!poolObject)
-            {
-                Debug.LogWarning("[ObjectPool]: Tried to instantiate a pool object but prefab is missing! (" + poolObjectName + ")");
-            }
-
             // Start at the last index returned and cycle round for efficiency. This makes this a typically O(1) seek operation.
             for (int i = lastIndex + 1; i < pool.Count; ++i)
             {

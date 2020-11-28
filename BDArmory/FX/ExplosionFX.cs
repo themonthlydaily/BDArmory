@@ -15,7 +15,7 @@ namespace BDArmory.FX
 {
     public class ExplosionFx : MonoBehaviour
     {
-        public static Dictionary<string, ObjectPool> explosionFXPools;
+        public static Dictionary<string, ObjectPool> explosionFXPools = new Dictionary<string, ObjectPool>();
         public KSPParticleEmitter[] pEmitters { get; set; }
         public Light LightFx { get; set; }
         public float StartTime { get; set; }
@@ -476,13 +476,8 @@ namespace BDArmory.FX
         // We use an ObjectPool for the ExplosionFx instances as they leak KSPParticleEmitters otherwise.
         static void CreateObjectPool(string explModelPath, string soundPath)
         {
-            if (explosionFXPools == null)
-            {
-                Debug.Log("Resetting explosionFXPools");
-                explosionFXPools = new Dictionary<string, ObjectPool>();
-            }
             var key = explModelPath + soundPath;
-            if (!explosionFXPools.ContainsKey(key))
+            if (!explosionFXPools.ContainsKey(key) || explosionFXPools[key] == null)
             {
                 var explosionFXTemplate = GameDatabase.Instance.GetModel(explModelPath);
                 var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
@@ -498,7 +493,7 @@ namespace BDArmory.FX
                 eFx.LightFx.shadows = LightShadows.None;
 
                 explosionFXTemplate.SetActive(false);
-                explosionFXPools.Add(key, ObjectPool.CreateObjectPool(explosionFXTemplate, 10, true, true, 0f, false));
+                explosionFXPools[key] = ObjectPool.CreateObjectPool(explosionFXTemplate, 10, true, true, 0f, false);
             }
         }
 
