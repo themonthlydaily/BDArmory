@@ -80,7 +80,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float DMG_MULTIPLIER = 100f;
         [BDAPersistantSettingsField] public static float BALLISTIC_DMG_FACTOR = 1.55f;
         [BDAPersistantSettingsField] public static float HITPOINT_MULTIPLIER = 3.0f;
-        public static float EXP_DMG_MOD_BALLISTIC = 0.6f; //1.125f;
+        public static float EXP_DMG_MOD_BALLISTIC = 0.5f; //1.125f;
         public static float EXP_DMG_MOD_MISSILE = 6.75f;
         // [BDAPersistantSettingsField] public static float EXP_DMG_MOD_BALLISTIC = 1.125f;
         // [BDAPersistantSettingsField] public static float EXP_DMG_MOD_MISSILE = 6.75f;
