@@ -91,6 +91,15 @@ summary = {
 	}
 	for craft in craftNames
 }
+
+for craft in summary.values():
+	spawns = craft['survivedCount'] + craft['deathCount']
+	craft.update({
+		'damage/hit': craft['bulletDamage'] / craft['hits'] if craft['hits'] > 0 else 0,
+		'hits/spawn': craft['hits'] / spawns if spawns > 0 else 0,
+		'damage/spawn': craft['bulletDamage'] / spawns if spawns > 0 else 0,
+	})
+
 with open(tournamentDir / 'summary.json', 'w') as outFile:
 	json.dump(summary, outFile, indent=2)
 
@@ -102,13 +111,12 @@ if len(summary) > 0:
 
 	# Write results to console
 	name_length = max([len(craft) for craft in summary])
-	print(f"Name{' '*(name_length-4)}\tSurvive\tDeaths\tKills\tAssists\tHits\tDamage\tMisHits\tMisDam\tRam\tAcc%\tHits/Sp\tDmg/Sp")
+	print(f"Name{' '*(name_length-4)}\tSurvive\tDeaths\tKills\tAssists\tHits\tDamage\tMisHits\tMisDmg\tRam\tAcc%\tDmg/Hit\tHits/Sp\tDmg/Sp")
 	for craft in sorted(summary):
 		spawns = summary[craft]['survivedCount'] + summary[craft]['deathCount']
 		print(
 			f"{craft}{' '*(name_length-len(craft))}\t"
-			+ '\t'.join(f'{score}' if isinstance(score, int) else f'{score:.0f}' if 'Damage' in field else f'{score:.2f}' for field, score in summary[craft].items())
-			+ f"\t{summary[craft]['hits']/spawns if spawns > 0 else 0:.1f}\t{summary[craft]['bulletDamage']/spawns if spawns > 0 else 0:.1f}"
+			+ '\t'.join(f'{score}' if isinstance(score, int) else f'{score:.0f}' if field in ('bulletDamage', 'missileDamage') else f'{score:.1f}' if field in ('damage/hit', 'hits/spawn', 'damage/spawn') else f'{score:.2f}' for field, score in summary[craft].items())
 		)
 else:
 	print("No valid log files found.")
