@@ -8,17 +8,55 @@ using UnityEngine;
 
 namespace BDArmory.FX
 {
+    class Decal : MonoBehaviour
+    {
+        Part parentPart;
+        public static ObjectPool CreateDecalPool(string modelPath)
+        {
+            var template = GameDatabase.Instance.GetModel(modelPath);
+            var decal = template.AddComponent<Decal>();
+            template.SetActive(false);
+            return ObjectPool.CreateObjectPool(template, BDArmorySettings.MAX_NUM_BULLET_DECALS, false, true, 0, true);
+        }
+
+        public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset)
+        {
+            parentPart = hitPart;
+            transform.SetParent(hitPart.transform);
+            transform.position = hit.point + offset;
+            transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
+            parentPart.OnJustAboutToDie += OnParentDestroy;
+            parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
+            gameObject.SetActive(true);
+        }
+
+        public void OnParentDestroy()
+        {
+            if (parentPart)
+            {
+                parentPart.OnJustAboutToDie -= OnParentDestroy;
+                parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
+                parentPart = null;
+                transform.parent = null;
+                gameObject.SetActive(false);
+            }
+        }
+
+        public void OnDestroy()
+        {
+            OnParentDestroy(); // Make sure it's disabled and book-keeping is done.
+        }
+    }
+
     public class BulletHitFX : MonoBehaviour
     {
         KSPParticleEmitter[] pEmitters;
         AudioSource audioSource;
         AudioClip hitSound;
-        public Vector3 normal;
         float startTime;
         public bool ricochet;
         public float caliber;
 
-        public GameObject bulletHoleDecalPrefab;
         public static ObjectPool decalPool_small;
         public static ObjectPool decalPool_large;
         public static ObjectPool decalPool_paint1;
@@ -35,38 +73,34 @@ namespace BDArmory.FX
 
         public static void SetupShellPool()
         {
-            GameObject templateShell_large;
-            templateShell_large = (GameObject)Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal2"));
-            templateShell_large.SetActive(false);
-            if (decalPool_large == null)
-                decalPool_large = ObjectPool.CreateObjectPool(templateShell_large, BDArmorySettings.MAX_NUM_BULLET_DECALS, false, true, 0f, true);
+            if (!BDArmorySettings.PAINTBALL_MODE)
+            {
+                if (decalPool_large == null)
+                    decalPool_large = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal2");
 
-            GameObject templateShell_small;
-            templateShell_small = (GameObject)Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal1"));
-            templateShell_small.SetActive(false);
-            if (decalPool_small == null)
-                decalPool_small = ObjectPool.CreateObjectPool(templateShell_small, BDArmorySettings.MAX_NUM_BULLET_DECALS, false, true, 0f, true);
+                if (decalPool_small == null)
+                    decalPool_small = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal1");
+            }
+            else
+            {
+                if (decalPool_paint1 == null)
+                    decalPool_paint1 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal3");
 
-            GameObject templateShell_paint1;
-            templateShell_paint1 =
-                Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal3"));
-            templateShell_paint1.SetActive(false);
-            if (decalPool_paint1 == null)
-                decalPool_paint1 = ObjectPool.CreateObjectPool(templateShell_paint1, BDArmorySettings.MAX_NUM_BULLET_DECALS, true, true);
+                if (decalPool_paint2 == null)
+                    decalPool_paint2 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal4");
 
-            GameObject templateShell_paint2;
-            templateShell_paint2 =
-                Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal4"));
-            templateShell_paint2.SetActive(false);
-            if (decalPool_paint2 == null)
-                decalPool_paint2 = ObjectPool.CreateObjectPool(templateShell_paint2, BDArmorySettings.MAX_NUM_BULLET_DECALS, true, true);
+                if (decalPool_paint3 == null)
+                    decalPool_paint3 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal5");
+            }
+        }
 
-            GameObject templateShell_paint3;
-            templateShell_paint3 =
-                Instantiate(GameDatabase.Instance.GetModel("BDArmory/Models/bulletDecal/BulletDecal5"));
-            templateShell_paint3.SetActive(false);
-            if (decalPool_paint3 == null)
-                decalPool_paint3 = ObjectPool.CreateObjectPool(templateShell_paint3, BDArmorySettings.MAX_NUM_BULLET_DECALS, true, true);
+        public static void AdjustDecalPoolSizes(int size)
+        {
+            if (decalPool_large != null) decalPool_large.AdjustSize(size);
+            if (decalPool_small != null) decalPool_small.AdjustSize(size);
+            if (decalPool_paint1 != null) decalPool_paint1.AdjustSize(size);
+            if (decalPool_paint2 != null) decalPool_paint2.AdjustSize(size);
+            if (decalPool_paint3 != null) decalPool_paint3.AdjustSize(size);
         }
 
         // We use an ObjectPool for the BulletHitFX and PenFX instances as they leak KSPParticleEmitters otherwise.
@@ -130,25 +164,20 @@ namespace BDArmory.FX
             }
 
             //front hit
-            GameObject decalFront = decalPool_.GetPooledObject();
-
+            var decalFront = decalPool_.GetPooledObject();
             if (decalFront != null && hitPart != null)
             {
-                decalFront.transform.SetParent(hitPart.transform);
-                decalFront.transform.position = hit.point + new Vector3(0.25f, 0f, 0f);
-                decalFront.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
-                decalFront.SetActive(true);
+                var decal = decalFront.GetComponentInChildren<Decal>();
+                decal.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
             }
             //back hole if fully penetrated
             if (penetrationfactor >= 1)
             {
-                GameObject decalBack = decalPool_.GetPooledObject();
+                var decalBack = decalPool_.GetPooledObject();
                 if (decalBack != null && hitPart != null)
                 {
-                    decalBack.transform.SetParent(hitPart.transform);
-                    decalBack.transform.position = hit.point + new Vector3(-0.25f, 0f, 0f);
-                    decalBack.transform.rotation = Quaternion.FromToRotation(Vector3.forward, hit.normal);
-                    decalBack.SetActive(true);
+                    var decal = decalBack.GetComponentInChildren<Decal>();
+                    decal.AttachAt(hitPart, hit, new Vector3(-0.25f, 0f, 0f));
                 }
 
                 if (CanFlamesBeAttached(hitPart))

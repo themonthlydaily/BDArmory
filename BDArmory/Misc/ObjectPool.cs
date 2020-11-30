@@ -35,6 +35,23 @@ namespace BDArmory.Misc
             return pool[index];
         }
 
+        public void AdjustSize(int count)
+        {
+            if (count > size) // Increase the pool.
+                AddObjectsToPool(count - size);
+            else
+            { // Destroy the excess, then shrink the pool.
+                for (int i = count; i < size; ++i)
+                {
+                    if (pool[i] == null) continue;
+                    Destroy(pool[i]);
+                }
+                pool.RemoveRange(count, size - count);
+                lastIndex = 0;
+            }
+            Debug.Log("[ObjectPool]: Resizing " + poolObjectName + " pool to " + size);
+        }
+
         private void AddObjectsToPool(int count)
         {
             for (int i = 0; i < count; ++i)
@@ -48,8 +65,7 @@ namespace BDArmory.Misc
 
         private void ReplacePoolObject(int index)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[ObjectPool]: Object of type " + poolObjectName + " was null at position " + index + ", replacing it.");
+            Debug.Log("[ObjectPool]: Object of type " + poolObjectName + " was null at position " + index + ", replacing it.");
             GameObject obj = Instantiate(poolObject);
             obj.transform.SetParent(transform);
             obj.SetActive(false);
