@@ -946,7 +946,7 @@ namespace BDArmory.Modules
                         weaponManager.ForceScan();
                     }
                 }
-                else //extend if too close for agm attack (agm = air-to-ground missiles -- not actually checked, target is on the ground/water)
+                else if (weaponManager.CurrentMissile && weaponManager.CurrentMissile.engageGround) //extend if too close for agm attack (agm = air-to-ground missiles, target is on the ground/water)
                 {
                     float extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
                     float srfDist = (GetSurfacePosition(targetVessel.transform.position) - GetSurfacePosition(vessel.transform.position)).sqrMagnitude;
