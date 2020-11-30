@@ -15,7 +15,7 @@ namespace BDArmory.Control
     // trivial score keeping structure
     public class ScoringData
     {
-        public Vessel vesselRef;
+        public Vessel vesselRef; // TODO Reuse these fields instead of looking for them each time.
         public MissileFire weaponManagerRef;
         public int Score;
         public int PinataHits;
@@ -2652,6 +2652,7 @@ namespace BDArmory.Control
             strings.Add("Used heap: " + UnityEngine.Profiling.Profiler.usedHeapSizeLong / 1024 / 1024 + "MB");
             strings.Add("Mono heap: " + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong() / 1024 / 1024 + "MB");
             strings.Add("Mono used: " + UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1024 / 1024 + "MB");
+            strings.Add("plus unspecified runtime (native) memory.");
             Debug.Log("DEBUG Memory Usage: " + string.Join(", ", strings));
         }
 
