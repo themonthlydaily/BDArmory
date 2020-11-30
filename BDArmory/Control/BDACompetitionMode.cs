@@ -2647,9 +2647,8 @@ namespace BDArmory.Control
         {
             List<string> strings = new List<string>();
             strings.Add("System memory: " + SystemInfo.systemMemorySize + "MB");
-            strings.Add("Allocated: " + UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1024 / 1024 + "MB");
             strings.Add("Reserved: " + UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() / 1024 / 1024 + "MB");
-            strings.Add("Used heap: " + UnityEngine.Profiling.Profiler.usedHeapSizeLong / 1024 / 1024 + "MB");
+            strings.Add("Allocated: " + UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1024 / 1024 + "MB");
             strings.Add("Mono heap: " + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong() / 1024 / 1024 + "MB");
             strings.Add("Mono used: " + UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1024 / 1024 + "MB");
             strings.Add("plus unspecified runtime (native) memory.");
