@@ -1245,7 +1245,6 @@ namespace BDArmory.Control
             foreach (var vessel in FlightGlobals.Vessels)
             {
                 if (vessel == null) continue;
-                if (vessel.vesselType == VesselType.SpaceObject) continue; // Ignore asteroids and comets, killing them off can cause null refs (especially comets).
                 if (vessel.vesselType == VesselType.Debris) continue; // Handled by DebrisDelayedCleanUp.
                 if (nonCompetitorsToRemove.Contains(vessel)) continue; // Already scheduled for removal.
                 bool activePilot = false;
@@ -1308,12 +1307,14 @@ namespace BDArmory.Control
             }
         }
 
-        void RemoveDebrisNow()
+        public void RemoveDebrisNow()
         {
             foreach (var vessel in FlightGlobals.Vessels)
             {
                 if (vessel == null) continue;
-                if (vessel.vesselType == VesselType.Debris)
+                if (vessel.vesselType == VesselType.Debris) // Clean up any old debris.
+                    StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
+                if (vessel.vesselType == VesselType.SpaceObject) // Remove comets and asteroids to try to avoid null refs.
                     StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
             }
         }
@@ -1837,12 +1838,13 @@ namespace BDArmory.Control
         // This now also writes the competition logs to GameData/BDArmory/Logs/<CompetitionID>[-tag].log
         public void LogResults(string message = "", string tag = "")
         {
-            // CheckHashSetSizes();
             if (competitionStartTime < 0)
             {
                 Debug.Log("[BDArmoryCompetition]: No active competition, not dumping results.");
                 return;
             }
+            CheckMemoryUsage();
+            // CheckHashSetSizes();
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
                 VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
@@ -2639,6 +2641,18 @@ namespace BDArmory.Control
         {
             // Filter stuff based on the message, then log it to the debug log.
             Debug.Log(message);
+        }
+
+        public void CheckMemoryUsage() // DEBUG
+        {
+            List<string> strings = new List<string>();
+            strings.Add("System memory: " + SystemInfo.systemMemorySize + "MB");
+            strings.Add("Allocated: " + UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / 1024 / 1024 + "MB");
+            strings.Add("Reserved: " + UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() / 1024 / 1024 + "MB");
+            strings.Add("Used heap: " + UnityEngine.Profiling.Profiler.usedHeapSizeLong / 1024 / 1024 + "MB");
+            strings.Add("Mono heap: " + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong() / 1024 / 1024 + "MB");
+            strings.Add("Mono used: " + UnityEngine.Profiling.Profiler.GetMonoUsedSizeLong() / 1024 / 1024 + "MB");
+            Debug.Log("DEBUG Memory Usage: " + string.Join(", ", strings));
         }
 
         public void CheckHashSetSizes() // DEBUG
