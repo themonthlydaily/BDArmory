@@ -1538,6 +1538,7 @@ namespace BDArmory.UI
                     }
                 }
                 BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SRightRect(line), BDArmorySettings.BATTLEDAMAGE, "Battle Damage");
+                BDArmorySettings.EXTRA_DAMAGE_SLIDERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.EXTRA_DAMAGE_SLIDERS, "Extra Damage Sliders");
                 if (HighLogic.LoadedSceneIsEditor)
                 {
                     if (BDArmorySettings.SHOW_CATEGORIES != (BDArmorySettings.SHOW_CATEGORIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_CATEGORIES, Localizer.Format("#LOC_BDArmory_Settings_ShowEditorSubcategories"))))//"Show Editor Subcategories"
@@ -1562,6 +1563,17 @@ namespace BDArmory.UI
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_DamageMultiplier")}:  ({BDArmorySettings.DMG_MULTIPLIER})", leftLabel); // Damage Multiplier
                 dmgMultiplier = (int)GUI.HorizontalSlider(SRightSliderRect(line), dmgMultiplier, 1f, 28f);
                 BDArmorySettings.DMG_MULTIPLIER = dmgMultiplier < 11 ? (int)(dmgMultiplier * 10f) : (int)(50f * (dmgMultiplier - 8f));
+                if (BDArmorySettings.EXTRA_DAMAGE_SLIDERS)
+                {
+                    GUI.Label(SLeftSliderRect(++line), $"Ballistic damage factor:  ({BDArmorySettings.BALLISTIC_DMG_FACTOR})", leftLabel);
+                    BDArmorySettings.BALLISTIC_DMG_FACTOR = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_DMG_FACTOR, 0f, 3.0f);
+                    GUI.Label(SLeftSliderRect(++line), $"Explosive damage factor:  ({BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW})", leftLabel);
+                    BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW, 0f, 1.5f);
+                    GUI.Label(SLeftSliderRect(++line), $"Missile explosive damage factor:  ({BDArmorySettings.EXP_DMG_MOD_MISSILE})", leftLabel);
+                    BDArmorySettings.EXP_DMG_MOD_MISSILE = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_MISSILE, 0f, 10.0f);
+                    GUI.Label(SLeftSliderRect(++line), $"Implosive damage factor:  ({BDArmorySettings.EXP_IMP_MOD})", leftLabel);
+                    BDArmorySettings.EXP_IMP_MOD = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_IMP_MOD, 0f, 1.0f);
+                }
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MaxBulletHoles")}:  ({BDArmorySettings.MAX_NUM_BULLET_DECALS})", leftLabel); // Max Bullet Holes
                 if (BDArmorySettings.MAX_NUM_BULLET_DECALS != (BDArmorySettings.MAX_NUM_BULLET_DECALS = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MAX_NUM_BULLET_DECALS, 1f, 999)))

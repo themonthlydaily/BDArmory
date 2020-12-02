@@ -85,6 +85,7 @@ namespace BDArmory.Core
         // [BDAPersistantSettingsField] public static float EXP_DMG_MOD_BALLISTIC = 1.125f;
         // [BDAPersistantSettingsField] public static float EXP_DMG_MOD_MISSILE = 6.75f;
         [BDAPersistantSettingsField] public static float EXP_IMP_MOD = 0.25f;
+        [BDAPersistantSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
 
         // FX
         [BDAPersistantSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
