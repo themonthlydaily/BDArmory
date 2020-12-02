@@ -344,7 +344,7 @@ namespace BDArmory.FX
             if (building)
             {
                 var distanceFactor = Mathf.Clamp01((Range - eventToExecute.Distance) / Range);
-                float damageToBuilding = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC * Power * distanceFactor;
+                float damageToBuilding = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * Power * distanceFactor;
 
                 damageToBuilding *= 2f;
 
@@ -412,6 +412,7 @@ namespace BDArmory.FX
                         eventToExecute.HitPoint + part.rb.velocity * TimeIndex);
 
                     var damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
+                    Debug.Log("DEBUG Explosive damage to " + part + ": " + damage + ", calibre: " + Caliber + ", source: " + ExplosionSource);
 
                     // Update scoring structures
                     switch (ExplosionSource)

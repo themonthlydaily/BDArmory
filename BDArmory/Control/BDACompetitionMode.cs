@@ -1844,7 +1844,7 @@ namespace BDArmory.Control
                 return;
             }
             CheckMemoryUsage();
-            // CheckHashSetSizes();
+            CheckHashSetSizes();
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
                 VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
@@ -2657,7 +2657,6 @@ namespace BDArmory.Control
 
         public void CheckHashSetSizes() // DEBUG
         {
-            // DEBUG leaking pe2, pe4, pe1, pe2b
             List<string> strings = new List<string>();
             strings.Add("FlightGlobals.Vessels: " + FlightGlobals.Vessels.Count);
             strings.Add("Non-competitors to remove: " + nonCompetitorsToRemove.Count);
@@ -2680,8 +2679,9 @@ namespace BDArmory.Control
             Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.Select(pe => pe.Key + ":" + pe.Value)));
 
             strings.Clear();
-            strings.Add("Parts: " + FindObjectsOfType<Part>().Length);
-            strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length);
+            strings.Add("Parts: " + FindObjectsOfType<Part>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Part)).Length);
+            strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Vessel)).Length);
+            strings.Add("CometVessels: " + FindObjectsOfType<CometVessel>().Length);
             Debug.Log("DEBUG " + string.Join(", ", strings));
         }
     }

@@ -546,6 +546,7 @@ namespace BDArmory.Bullets
                 damage = hitPart.AddBallisticDamage(bulletMass, caliber, multiplier, penetrationfactor, bulletDmgMult, impactVelocity);
             }
 
+            Debug.Log("DEBUG ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
             // Update scoring structures
             var aName = this.sourceVessel.GetName();
             var tName = hitPart.vessel.GetName();
