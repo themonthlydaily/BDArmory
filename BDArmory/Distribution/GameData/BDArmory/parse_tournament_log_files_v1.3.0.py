@@ -42,9 +42,7 @@ for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir
 					tournamentData[round.name][heat.name][craft].update({'bulletDamageBy': {player: float(damage) for player, damage in zip(data[1::2], data[::2])}})
 				elif field.startswith('WHOSHOTWHOWITHMISSILES:'):
 					_, craft, shooters = field.split(':', 2)
-					print(craft, shooters)
 					data = shooters.split(':')
-					print(data)
 					tournamentData[round.name][heat.name][craft].update({'missileHitsBy': {player: int(hits) for player, hits in zip(data[1::2], data[::2])}})
 				elif field.startswith('WHODAMAGEDWHOWITHMISSILES:'):
 					_, craft, shooters = field.split(':', 2)
