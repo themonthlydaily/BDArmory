@@ -2678,11 +2678,11 @@ namespace BDArmory.Control
             // }
             // Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.Select(pe => pe.Key + ":" + pe.Value)));
 
-            strings.Clear();
-            strings.Add("Parts: " + FindObjectsOfType<Part>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Part)).Length);
-            strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Vessel)).Length);
-            strings.Add("CometVessels: " + FindObjectsOfType<CometVessel>().Length);
-            Debug.Log("DEBUG " + string.Join(", ", strings));
+            // strings.Clear();
+            // strings.Add("Parts: " + FindObjectsOfType<Part>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Part)).Length);
+            // strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Vessel)).Length);
+            // strings.Add("CometVessels: " + FindObjectsOfType<CometVessel>().Length);
+            // Debug.Log("DEBUG " + string.Join(", ", strings));
         }
     }
 }
