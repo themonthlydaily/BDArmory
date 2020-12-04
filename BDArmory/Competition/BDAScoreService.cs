@@ -251,15 +251,17 @@ namespace BDArmory.Competition
             {
                 yield return ExecuteHeat(hash, model);
                 if (!competitionStarted)
-                    switch (UI.VesselSpawner.Instance.spawnFailureReason)
+                    switch (Control.VesselSpawner.Instance.spawnFailureReason)
                     {
-                        case UI.VesselSpawner.SpawnFailureReason.None: // Successful spawning, but competition failed to start for some reason.
-                        case UI.VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
-                        case UI.VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
-                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + UI.VesselSpawner.Instance.spawnFailureReason + ", trying again.");
+                        case Control.VesselSpawner.SpawnFailureReason.None: // Successful spawning, but competition failed to start for some reason.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + BDACompetitionMode.Instance.competitionStartFailureReason + ", trying again.");
+                            break;
+                        case Control.VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
+                        case Control.VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + Control.VesselSpawner.Instance.spawnFailureReason + ", trying again.");
                             break;
                         default: // Spawning is unrecoverable.
-                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + UI.VesselSpawner.Instance.spawnFailureReason + ", aborting.");
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + Control.VesselSpawner.Instance.spawnFailureReason + ", aborting.");
                             attempts = 3;
                             break;
                     }
@@ -280,23 +282,29 @@ namespace BDArmory.Competition
         private IEnumerator ExecuteHeat(string hash, HeatModel model)
         {
             Debug.Log(string.Format("[BDAScoreService] Running heat {0}/{1}", hash, model.order));
-            UI.VesselSpawner spawner = UI.VesselSpawner.Instance;
+            Control.VesselSpawner spawner = Control.VesselSpawner.Instance;
 
             // orchestrate the match
             activePlayers.Clear();
+            assists.Clear();
+            damageIn.Clear();
+            damageOut.Clear();
+            deaths.Clear();
+            hitsIn.Clear();
             hitsOnTarget.Clear();
             hitsOut.Clear();
-            hitsIn.Clear();
-            damageOut.Clear();
-            damageIn.Clear();
             killsOnTarget.Clear();
-            deaths.Clear();
-            assists.Clear();
             longestHitDistance.Clear();
             longestHitWeapon.Clear();
+            missileDamageIn.Clear();
+            missileDamageOut.Clear();
+            missilePartsIn.Clear();
+            missilePartsOut.Clear();
+            rammedPartsIn.Clear();
+            rammedPartsOut.Clear();
 
             status = StatusType.SpawningVessels;
-            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, hash);
+            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, hash);
             while (spawner.vesselsSpawning)
                 yield return new WaitForFixedUpdate();
             if (!spawner.vesselSpawnSuccess)
@@ -371,9 +379,12 @@ namespace BDArmory.Competition
                 record.mis_parts_in = ComputeTotalMissilePartsIn(player.name);
                 record.mis_dmg_out = ComputeTotalMissileDamageOut(player.name);
                 record.mis_dmg_in = ComputeTotalMissileDamageIn(player.name);
+                record.wins = ComputeWins(player.name);
                 record.kills = ComputeTotalKills(player.name);
                 record.deaths = ComputeTotalDeaths(player.name);
                 record.assists = ComputeTotalAssists(player.name);
+                record.death_order = ComputeDeathOrder(player.name);
+                record.death_time = ComputeDeathTime(player.name);
                 if (longestHitDistance.ContainsKey(player.name))
                 {
                     record.distance = (float)longestHitDistance[player.name];
@@ -495,6 +506,41 @@ namespace BDArmory.Competition
                 result = assists[playerName];
             }
             return result;
+        }
+
+        private int ComputeWins(string playerName)
+        {
+            var stillAlive = !deaths.ContainsKey(playerName);
+            var livingCount = activePlayers.Count - deaths.Count;
+            return (stillAlive && livingCount == 1) ? 1 : 0;
+        }
+
+        private float ComputeDeathOrder(string playerName)
+        {
+            var deathOrder = BDACompetitionMode.Instance.DeathOrder;
+            if (deathOrder.ContainsKey(playerName))
+            {
+                var orderData = deathOrder[playerName];
+                return (float)orderData.Item1 / (float)activePlayers.Count;
+            }
+            else
+            {
+                return 0f;
+            }
+        }
+
+        private float ComputeDeathTime(string playerName)
+        {
+            var deathOrder = BDACompetitionMode.Instance.DeathOrder;
+            if (deathOrder.ContainsKey(playerName))
+            {
+                var orderData = deathOrder[playerName];
+                return (float)orderData.Item2;
+            }
+            else
+            {
+                return 0f;
+            }
         }
 
         public void TrackDamage(string attacker, string target, double damage)
@@ -707,7 +753,7 @@ namespace BDArmory.Competition
         }
 
         /**
-         * Tracks an unattributed death, where no clear attacker exists.
+         * Tracks a death.
          */
         public void TrackDeath(string target)
         {

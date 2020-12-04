@@ -1019,10 +1019,7 @@ namespace BDArmory.Radar
             }
             // End Resizing code.
 
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES)
-            {
-                BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRadar);
-            }
+            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRadar);
         }
 
         internal static void UpdateRadarScale(float diff)
@@ -1299,7 +1296,7 @@ namespace BDArmory.Radar
         {
             while (true)
             {
-                using (List<Vessel>.Enumerator v = BDATargetManager.LoadedVessels.GetEnumerator())
+                using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (v.MoveNext())
                     {
                         if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
@@ -1366,29 +1363,28 @@ namespace BDArmory.Radar
             }
 
             availableExternalVRDs = new List<VesselRadarData>();
-            List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
-            while (v.MoveNext())
-            {
-                if (v.Current == null || !v.Current.loaded || vessel == null || v.Current == vessel) continue;
-
-                BDTeam team = null;
-                List<MissileFire>.Enumerator mf = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
+            using (var v = FlightGlobals.Vessels.GetEnumerator())
+                while (v.MoveNext())
                 {
-                    if (mf.Current == null) continue;
-                    team = mf.Current.Team;
-                    break;
-                }
-                mf.Dispose();
+                    if (v.Current == null || !v.Current.loaded || vessel == null || v.Current == vessel) continue;
 
-                if (team != weaponManager.Team) continue;
-                VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
-                if (vrd && vrd.radarCount > 0)
-                {
-                    availableExternalVRDs.Add(vrd);
+                    BDTeam team = null;
+                    List<MissileFire>.Enumerator mf = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();
+                    while (mf.MoveNext())
+                    {
+                        if (mf.Current == null) continue;
+                        team = mf.Current.Team;
+                        break;
+                    }
+                    mf.Dispose();
+
+                    if (team != weaponManager.Team) continue;
+                    VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
+                    if (vrd && vrd.radarCount > 0)
+                    {
+                        availableExternalVRDs.Add(vrd);
+                    }
                 }
-            }
-            v.Dispose();
         }
 
         public void LinkVRD(VesselRadarData vrd)

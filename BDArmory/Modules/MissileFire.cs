@@ -43,6 +43,7 @@ namespace BDArmory.Modules
         float startTime;
         int missilesAway;
 
+        public float totalHP;
 
         public bool hasLoadedRippleData;
         float rippleTimer;
@@ -396,7 +397,7 @@ namespace BDArmory.Modules
         // Target priority variables
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Priority Toggle
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
-        public bool targetPriorityEnabled = false;
+        public bool targetPriorityEnabled = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string TargetLabel = "";
@@ -438,6 +439,11 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetWeaponNumber", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Weapon Number
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightWeaponNumber = 0;
+
+        private string targetMassLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetMass");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetMass", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Mass
+         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightMass = 0;
 
         private string targetFriendliesEngagingLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_FewerTeammatesEngaging", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Number Friendlies Engaging
@@ -839,6 +845,8 @@ namespace BDArmory.Modules
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
                 GameEvents.onPartDie.Add(OnPartDie);
 
+                GetTotalHP();
+
                 using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
                     while (aipilot.MoveNext())
                     {
@@ -851,7 +859,12 @@ namespace BDArmory.Modules
             }
         }
 
-        void OnPartDie(Part p = null)
+        void OnPartDie()
+        {
+            OnPartDie(part);
+        }
+
+        void OnPartDie(Part p)
         {
             if (p == part)
             {
@@ -864,6 +877,7 @@ namespace BDArmory.Modules
                 catch (Exception e)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Error OnPartDie: " + e.Message);
+                    Debug.Log("[BDArmory]: Error OnPartDie: " + e.Message);
                 }
             }
             RefreshModules();
@@ -887,6 +901,27 @@ namespace BDArmory.Modules
                 RefreshModules();
                 UpdateList();
             }
+        }
+
+        public void GetTotalHP() // get total craft HP
+        {
+            using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
+                while (p.MoveNext())
+                {
+                    if (p.Current == null) continue;
+                    if (p.Current.Modules.GetModule<MissileLauncher>()) continue; // don't grab missiles
+                    if (p.Current.Modules.GetModule<ModuleDecouple>()) continue; // don't grab bits that are going to fall off
+                    if (p.Current.FindParentModuleImplementing<ModuleDecouple>()) continue; // should grab ModularMissiles too
+                    /*
+                    if (p.Current.Modules.GetModule<HitpointTracker>() != null)
+                    {
+                        var hp = p.Current.Modules.GetModule<HitpointTracker>();			
+                        totalHP += hp.Hitpoints;
+                    }
+                    */
+                    ++totalHP;
+                    //Debug.Log(vessel.vesselName + " part count: " + totalHP);
+                }
         }
 
         public override void OnUpdate()
@@ -1375,7 +1410,7 @@ namespace BDArmory.Modules
                     SetCargoBays();
 
                     MissileLauncher mlauncher;
-                    while (ml && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - guardTarget.transform.position).sqrMagnitude > 40 * 40))
+                    while (ml && guardTarget && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - guardTarget.transform.position).sqrMagnitude > 40 * 40))
                     {
                         //TODO BDModularGuidance: add turret
                         //try using missile turret to lock target
@@ -1898,7 +1933,6 @@ namespace BDArmory.Modules
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
-
                 using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
                     while (cm.MoveNext())
                     {
@@ -2410,6 +2444,7 @@ namespace BDArmory.Modules
             SetRotaryRails();
         }
 
+        private HashSet<uint> baysOpened = new HashSet<uint>();
         private bool SetCargoBays()
         {
             if (!guardMode) return false;
@@ -2445,13 +2480,14 @@ namespace BDArmory.Modules
                                     {
                                         anim.Toggle();
                                         openingBays = true;
+                                        baysOpened.Add(bay.Current.GetPersistentId());
                                     }
                                 }
                             }
                             else
                             {
-                                ModuleAnimateGeneric anim =
-                                    bay.Current.part.Modules.GetModule(bay.Current.DeployModuleIndex) as ModuleAnimateGeneric;
+                                if (!baysOpened.Contains(bay.Current.GetPersistentId())) continue; // Only close bays we've opened.
+                                ModuleAnimateGeneric anim = bay.Current.part.Modules.GetModule(bay.Current.DeployModuleIndex) as ModuleAnimateGeneric;
                                 if (anim == null) continue;
 
                                 string toggleOption = anim.Events["Toggle"].guiName;
@@ -2471,8 +2507,8 @@ namespace BDArmory.Modules
                         while (bay.MoveNext())
                         {
                             if (bay.Current == null) continue;
-                            ModuleAnimateGeneric anim =
-                                bay.Current.part.Modules.GetModule(bay.Current.DeployModuleIndex) as ModuleAnimateGeneric;
+                            if (!baysOpened.Contains(bay.Current.GetPersistentId())) continue; // Only close bays we've opened.
+                            ModuleAnimateGeneric anim = bay.Current.part.Modules.GetModule(bay.Current.DeployModuleIndex) as ModuleAnimateGeneric;
                             if (anim == null) continue;
 
                             string toggleOption = anim.Events["Toggle"].guiName;
@@ -2492,6 +2528,7 @@ namespace BDArmory.Modules
                     while (bay.MoveNext())
                     {
                         if (bay.Current == null) continue;
+                        if (!baysOpened.Contains(bay.Current.GetPersistentId())) continue; // Only close bays we've opened.
                         ModuleAnimateGeneric anim = bay.Current.part.Modules.GetModule(bay.Current.DeployModuleIndex) as ModuleAnimateGeneric;
                         if (anim == null) continue;
 
@@ -2769,7 +2806,7 @@ namespace BDArmory.Modules
                         MissileLauncher launcher = ml.Current as MissileLauncher;
                         if (launcher != null)
                         {
-                            if (launcher.part.name != weaponArray[weaponIndex]?.GetPart()?.name) continue;
+                            if (weaponArray[weaponIndex].GetPart() == null || launcher.part.name != weaponArray[weaponIndex].GetPart().name) continue;
                         }
                         else
                         {
@@ -2801,7 +2838,7 @@ namespace BDArmory.Modules
                 //TODO BDModularGuidance: Implemente rotaryRail support
                 MissileLauncher missile = CurrentMissile as MissileLauncher;
                 if (missile == null) return null;
-                if (missile && missile.part.name == weaponArray[weaponIndex].GetPart().name)
+                if (weaponArray[weaponIndex].GetPart() != null && missile.part.name == weaponArray[weaponIndex].GetPart().name)
                 {
                     if (!missile.rotaryRail)
                     {
@@ -2816,7 +2853,7 @@ namespace BDArmory.Modules
                     while (ml.MoveNext())
                     {
                         if (ml.Current == null) continue;
-                        if (ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
+                        if (weaponArray[weaponIndex].GetPart() == null || ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
 
                         if (!ml.Current.rotaryRail)
                         {
@@ -3066,6 +3103,17 @@ namespace BDArmory.Modules
                         }
                         return;
                     }
+                    else if (!BDArmorySettings.DISABLE_RAMMING)
+                    {
+                        if (!HasWeaponsAndAmmo() && pilotAI != null && pilotAI.allowRamming)
+                        {
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
+                                Debug.Log("[MissileFire]: " + vessel.vesselName + targetDebugText + "ramming.");
+                            }
+                            return;
+                        }
+                    }
                 }
             }
 
@@ -3278,6 +3326,7 @@ namespace BDArmory.Modules
             var TargetAccelFields = Fields["targetWeightAccel"];
             var TargetClosureTimeFields = Fields["targetWeightClosureTime"];
             var TargetWeaponNumberFields = Fields["targetWeightWeaponNumber"];
+            var TargetMassFields = Fields["targetWeightMass"];
             var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
             var TargetThreatFields = Fields["targetWeightThreat"];
 
@@ -3289,6 +3338,7 @@ namespace BDArmory.Modules
             float targetAccelValue = target.TargetPriAcceleration();
             float targetClosureTimeValue = target.TargetPriClosureTime(this);
             float targetWeaponNumberValue = target.TargetPriWeapons(target.weaponManager, this);
+            float targetMassValue = target.TargetPriMass(target.weaponManager, this);
             float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this);
             float targetThreatValue = target.TargetPriThreat(target.weaponManager, this);
 
@@ -3299,6 +3349,7 @@ namespace BDArmory.Modules
                 targetWeightAccel * targetAccelValue +
                 targetWeightClosureTime * targetClosureTimeValue +
                 targetWeightWeaponNumber * targetWeaponNumberValue +
+                targetWeightMass * targetMassValue +
                 targetWeightFriendliesEngaging * targetFriendliesEngagingValue +
                 targetWeightThreat * targetThreatValue +
                 targetWeightAoD * targetAoDValue);
@@ -3311,6 +3362,7 @@ namespace BDArmory.Modules
             TargetAccelFields.guiName = targetAccelLabel + ": " + targetAccelValue.ToString("0.00");
             TargetClosureTimeFields.guiName = targetClosureTimeLabel + ": " + targetClosureTimeValue.ToString("0.00");
             TargetWeaponNumberFields.guiName = targetWeaponNumberLabel + ": " + targetWeaponNumberValue.ToString("0.00");
+            TargetMassFields.guiName = targetMassLabel + ": " + targetMassValue.ToString("0.00");
             TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
             TargetThreatFields.guiName = targetThreatLabel + ": " + targetThreatValue.ToString("0.00");
 
@@ -3592,16 +3644,13 @@ namespace BDArmory.Modules
                             // not sure on the desired selection priority algorithm, so placeholder By Yield for now
                             float droptime = ((MissileBase)item.Current).dropTime;
 
-                            if (droptime > 0) //make sure it's an airdropped torpedo if flying
+                            if (droptime > 0 || vessel.LandedOrSplashed) //make sure it's an airdropped torpedo if flying
                             {
-                                if (!vessel.LandedOrSplashed)
-                                {
-                                    if (targetYield > canidateYield) continue;
-                                    targetYield = canidateYield;
-                                    targetWeapon = item.Current;
-                                    if (distance > gunRange)
-                                        break;
-                                }
+                                if (targetYield > canidateYield) continue;
+                                targetYield = canidateYield;
+                                targetWeapon = item.Current;
+                                if (distance > gunRange)
+                                    break;
                             }
                         }
 
@@ -3854,6 +3903,7 @@ namespace BDArmory.Modules
                     currentTarget.Disengage(this);
                 }
                 target.Engage(this);
+                if (currentTarget != target && pilotAI && pilotAI.IsExtending) pilotAI.StopExtending();
                 currentTarget = target;
                 guardTarget = target.Vessel;
             }
@@ -4400,10 +4450,10 @@ namespace BDArmory.Modules
         bool GetLaunchAuthorization(Vessel targetV, MissileFire mf)
         {
             bool launchAuthorized = false;
-            Vector3 target = targetV.transform.position;
             MissileBase missile = mf.CurrentMissile;
-            if (missile != null)
+            if (missile != null && targetV != null)
             {
+                Vector3 target = targetV.transform.position;
                 if (!targetV.LandedOrSplashed)
                 {
                     target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
