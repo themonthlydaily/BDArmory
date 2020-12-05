@@ -194,6 +194,7 @@ namespace BDArmory.UI
 
         private void Update()
         {
+            HotKeys();
         }
 
         private void OnGUI()
@@ -218,6 +219,14 @@ namespace BDArmory.UI
                 BDArmorySetup.BDGuiSkin.window
             );
             Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectVesselSpawner, _guiCheckIndex);
+        }
+
+        void HotKeys()
+        {
+            if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TOURNAMENT_SETUP))
+                BDATournament.Instance.SetupTournament(BDArmorySettings.TOURNAMENT_FILES_LOCATION, BDArmorySettings.TOURNAMENT_ROUNDS, BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT);
+            if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TOURNAMENT_RUN))
+                BDATournament.Instance.RunTournament();
         }
 
         private void SetNewHeight(float windowHeight)

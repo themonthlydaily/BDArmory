@@ -40,9 +40,9 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
 
         //reflection field lists
-        FieldInfo[] iFs;
+        static FieldInfo[] iFs;
 
-        FieldInfo[] inputFields
+        static FieldInfo[] inputFields
         {
             get
             {
@@ -1826,16 +1826,17 @@ namespace BDArmory.UI
 
         void InputSettings()
         {
-            float line = 1.25f;
+            float line = 0f;
             int inputID = 0;
             float origSettingsWidth = settingsWidth;
             float origSettingsHeight = settingsHeight;
             float origSettingsMargin = settingsMargin;
 
-            settingsWidth = origSettingsWidth - 28;
             settingsMargin = 10;
-            Rect viewRect = new Rect(settingsMargin, 20, origSettingsWidth - 12, origSettingsHeight - 100);
-            Rect scrollerRect = new Rect(settingsMargin, 20, origSettingsWidth - 30, settingsHeight * 1.4f);
+            settingsWidth = origSettingsWidth - 2 * settingsMargin;
+            settingsHeight = origSettingsHeight - 100;
+            Rect viewRect = new Rect(2, 20, settingsWidth + GUI.skin.verticalScrollbar.fixedWidth, settingsHeight);
+            Rect scrollerRect = new Rect(0, 0, settingsWidth - GUI.skin.verticalScrollbar.fixedWidth - 1, inputFields != null ? (inputFields.Length + 9) * settingsLineHeight : settingsHeight);
 
             _displayViewerPosition = GUI.BeginScrollView(viewRect, _displayViewerPosition, scrollerRect, false, true);
 
@@ -1857,9 +1858,14 @@ namespace BDArmory.UI
             GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_VesselSwitcher") + " -", centerLabel);//Vessel Switcher
             line++;
             InputSettingsList("VS_", ref inputID, ref line);
+            line++;
+
+            GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Tournament") + " -", centerLabel);//Tournament
+            line++;
+            InputSettingsList("TOURNAMENT_", ref inputID, ref line);
             GUI.EndScrollView();
 
-            line = (origSettingsHeight - 100) / settingsLineHeight;
+            line = settingsHeight / settingsLineHeight;
             line += 2;
             settingsWidth = origSettingsWidth;
             settingsMargin = origSettingsMargin;
@@ -1868,7 +1874,6 @@ namespace BDArmory.UI
                 editKeys = false;
             }
 
-            //line += 1.5f;
             settingsHeight = origSettingsHeight;
             WindowRectSettings.height = origSettingsHeight;
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);

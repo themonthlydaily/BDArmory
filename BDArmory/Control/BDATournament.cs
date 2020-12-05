@@ -31,10 +31,18 @@ namespace BDArmory.Control
          * The last heat in a round will have fewer craft if the number of craft is not divisible by the number of vessels per heat.
          * The vessels per heat is limited to the number of available craft.
          */
-        public void Generate(string folder, int numberOfRounds, int vesselsPerHeat)
+        public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat)
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
-            craftFiles = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{folder}").Where(f => f.EndsWith(".craft")).ToList();
+            var abs_folder = Environment.CurrentDirectory + $"/AutoSpawn/{folder}";
+            if (!Directory.Exists(abs_folder))
+            {
+                var message = "Tournament folder (" + folder + ") containing craft files does not exist.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[BDATournament]: " + message);
+                return false;
+            }
+            craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
             int fullHeatCount;
             switch (vesselsPerHeat)
             {
@@ -81,6 +89,7 @@ namespace BDArmory.Control
                     selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
                 }
             }
+            return true;
         }
 
         Tuple<int, int> OptimiseVesselsPerHeat(int count)
@@ -238,7 +247,7 @@ namespace BDArmory.Control
         {
             if (stateFile != "") this.stateFile = stateFile;
             tournamentState = new TournamentState();
-            tournamentState.Generate(folder, rounds, vesselsPerHeat);
+            if (!tournamentState.Generate(folder, rounds, vesselsPerHeat)) return;
             tournamentID = tournamentState.tournamentID;
             vesselCount = tournamentState.craftFiles.Count;
             numberOfRounds = tournamentState.rounds.Count;
