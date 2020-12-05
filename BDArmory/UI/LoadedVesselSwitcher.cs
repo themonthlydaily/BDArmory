@@ -981,6 +981,11 @@ namespace BDArmory.UI
             }
         }
 
+        public void EnableAutoVesselSwitching(bool enable)
+        {
+            _autoCameraSwitch = enable;
+        }
+
         // Extracted method, so we dont have to call these two lines everywhere
         public void ForceSwitchVessel(Vessel v)
         {

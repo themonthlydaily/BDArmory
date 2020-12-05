@@ -35,14 +35,31 @@ namespace BDArmory.Control
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             craftFiles = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{folder}").Where(f => f.EndsWith(".craft")).ToList();
-            vesselsPerHeat = Mathf.Clamp(vesselsPerHeat, 1, craftFiles.Count);
-            if (vesselsPerHeat == 1) vesselsPerHeat = craftFiles.Count; // Unlimited.
+            int fullHeatCount;
+            switch (vesselsPerHeat)
+            {
+                case 0: // Auto
+                    var autoVesselsPerHeat = OptimiseVesselsPerHeat(craftFiles.Count);
+                    vesselsPerHeat = autoVesselsPerHeat.Item1;
+                    fullHeatCount = Mathf.CeilToInt(craftFiles.Count / vesselsPerHeat) - autoVesselsPerHeat.Item2;
+                    break;
+                case 1: // Unlimited (all vessels in one heat).
+                    vesselsPerHeat = craftFiles.Count;
+                    fullHeatCount = 1;
+                    break;
+                default:
+                    vesselsPerHeat = Mathf.Clamp(vesselsPerHeat, 1, craftFiles.Count);
+                    fullHeatCount = craftFiles.Count / vesselsPerHeat;
+                    break;
+            }
             rounds = new Dictionary<int, Dictionary<int, VesselSpawner.SpawnConfig>>();
             Debug.Log("[BDATournament]: Generating " + numberOfRounds + " rounds for tournament " + tournamentID + ", each with " + vesselsPerHeat + " vessels per heat.");
             for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
             {
-                craftFiles.Shuffle();
-                List<string> selectedFiles = craftFiles.Take(vesselsPerHeat).ToList();
+                // craftFiles.Shuffle();
+                int vesselsThisHeat = vesselsPerHeat;
+                int count = 0;
+                List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
                 rounds.Add(rounds.Count, new Dictionary<int, VesselSpawner.SpawnConfig>());
                 int heatIndex = 0;
                 while (selectedFiles.Count > 0)
@@ -59,9 +76,23 @@ namespace BDArmory.Control
                         null, // No folder, we're going to specify the craft files.
                         selectedFiles.ToList() // Add a copy of the craft files list.
                     ));
-                    selectedFiles = craftFiles.Skip(++heatIndex * vesselsPerHeat).Take(vesselsPerHeat).ToList();
+                    count += vesselsThisHeat;
+                    vesselsThisHeat = heatIndex++ < fullHeatCount ? vesselsPerHeat : vesselsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of craft files.
+                    selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
                 }
             }
+        }
+
+        Tuple<int, int> OptimiseVesselsPerHeat(int count)
+        {
+            var options = new List<int> { 8, 7, 6, 5 };
+            foreach (var val in options)
+            {
+                if (count % val == 0)
+                    return new Tuple<int, int>(val, 0);
+            }
+            var result = OptimiseVesselsPerHeat(count + 1);
+            return new Tuple<int, int>(result.Item1, result.Item2 + 1);
         }
 
         public bool SaveState(string stateFile)

@@ -331,6 +331,8 @@ namespace BDArmory.Control
                     VehiclePhysics.Gravity.Refresh();
                 }
                 RemoveDebrisNow();
+                if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
+                    LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
             }
