@@ -525,7 +525,7 @@ namespace BDArmory.Competition
             }
             else
             {
-                return 0f;
+                return 1.0f;
             }
         }
 
@@ -539,7 +539,7 @@ namespace BDArmory.Competition
             }
             else
             {
-                return 0f;
+                return BDArmorySettings.COMPETITION_DURATION;
             }
         }
 
