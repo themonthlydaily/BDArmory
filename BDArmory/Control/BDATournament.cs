@@ -64,7 +64,7 @@ namespace BDArmory.Control
             Debug.Log("[BDATournament]: Generating " + numberOfRounds + " rounds for tournament " + tournamentID + ", each with " + vesselsPerHeat + " vessels per heat.");
             for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
             {
-                // craftFiles.Shuffle();
+                craftFiles.Shuffle();
                 int vesselsThisHeat = vesselsPerHeat;
                 int count = 0;
                 List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
