@@ -69,6 +69,8 @@ namespace BDArmory.UI
         // VesselSpawner.SpawnConfig targetSpawnConfig;
         // static Dictionary<string, SpawnField> targetSpawnFields;
         // static float competitionStartDelay = 15;
+        // FIXME Round 4
+        public bool round4running = false;
         #endregion
 
         #region Styles
@@ -192,6 +194,7 @@ namespace BDArmory.UI
 
         private void Update()
         {
+            HotKeys();
         }
 
         private void OnGUI()
@@ -216,6 +219,14 @@ namespace BDArmory.UI
                 BDArmorySetup.BDGuiSkin.window
             );
             Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectVesselSpawner, _guiCheckIndex);
+        }
+
+        void HotKeys()
+        {
+            if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TOURNAMENT_SETUP))
+                BDATournament.Instance.SetupTournament(BDArmorySettings.TOURNAMENT_FILES_LOCATION, BDArmorySettings.TOURNAMENT_ROUNDS, BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT);
+            if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TOURNAMENT_RUN))
+                BDATournament.Instance.RunTournament();
         }
 
         private void SetNewHeight(float windowHeight)
@@ -401,11 +412,13 @@ namespace BDArmory.UI
                 GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentFilesLocation")} (AutoSpawn/): ", leftLabel); // Craft files location
                 BDArmorySettings.TOURNAMENT_FILES_LOCATION = GUI.TextField(SRightRect(line), BDArmorySettings.TOURNAMENT_FILES_LOCATION);
 
+                var value = BDArmorySettings.TOURNAMENT_ROUNDS < 21 ? BDArmorySettings.TOURNAMENT_ROUNDS : (16 + BDArmorySettings.TOURNAMENT_ROUNDS / 5);
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentRounds")}:  ({BDArmorySettings.TOURNAMENT_ROUNDS})", leftLabel); // Rounds
-                BDArmorySettings.TOURNAMENT_ROUNDS = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_ROUNDS, 1f, 20f);
+                value = (int)GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 36f);
+                BDArmorySettings.TOURNAMENT_ROUNDS = value < 21 ? value : (value - 16) * 5;
 
-                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentVesselsPerHeat")}:  ({(BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT > 1 ? BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT.ToString() : "Inf")})", leftLabel); // Vessels Per Heat
-                BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT, 1f, 20f);
+                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentVesselsPerHeat")}:  ({(BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT > 1 ? BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT.ToString() : (BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT == 0 ? "Auto" : "Inf"))})", leftLabel); // Vessels Per Heat
+                BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT, 0f, 20f);
 
                 GUI.Label(SLineRect(++line), $"ID: {BDATournament.Instance.tournamentID}, {BDATournament.Instance.vesselCount} vessels, {BDATournament.Instance.numberOfRounds} rounds, {BDATournament.Instance.numberOfHeats} heats per round ({BDATournament.Instance.heatsRemaining} remaining).", leftLabel);
                 switch (BDATournament.Instance.tournamentStatus)
@@ -536,6 +549,15 @@ namespace BDArmory.UI
                 }
             }
             */
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                if (GUI.Button(SLineRect(++line), "Runway Project Season 2 Round 4", !(round4running && BDATournament.Instance.tournamentStatus != TournamentStatus.Completed) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
+                {
+                    round4running = true;
+                    BDATournament.Instance.RunTournament();
+                }
+            }
+
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || VesselSpawner.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
             {
                 if (_vesselsSpawned)
@@ -545,6 +567,7 @@ namespace BDArmory.UI
                     Debug.Log("[BDArmory]: Resetting continuous spawning button.");
                 BDATournament.Instance.StopTournament();
                 VesselSpawner.Instance.CancelVesselSpawn();
+                round4running = false; // FIXME Round 4
             }
 
             line += 1.25f; // Bottom internal margin
