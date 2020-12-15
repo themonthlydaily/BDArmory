@@ -351,8 +351,9 @@ namespace BDArmory.Control
             competitionStartTime = -1;
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
-            GameEvents.onVesselPartCountChanged.Remove(CheckVesselTypePartCountChanged);
-            GameEvents.onVesselCreate.Remove(CheckVesselTypeVesselCreate);
+            GameEvents.onVesselPartCountChanged.Remove(CheckForAutonomousCombatSeat);
+            GameEvents.onVesselPartCountChanged.Remove(CheckVesselType);
+            GameEvents.onVesselCreate.Remove(CheckVesselType);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
         }
@@ -363,8 +364,9 @@ namespace BDArmory.Control
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             // I think these three events cover the cases for when an incorrectly built vessel splits into more than one part.
-            GameEvents.onVesselPartCountChanged.Add(CheckVesselTypePartCountChanged);
-            GameEvents.onVesselCreate.Add(CheckVesselTypeVesselCreate);
+            GameEvents.onVesselPartCountChanged.Add(CheckForAutonomousCombatSeat);
+            GameEvents.onVesselPartCountChanged.Add(CheckVesselType);
+            GameEvents.onVesselCreate.Add(CheckVesselType);
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
@@ -683,19 +685,6 @@ namespace BDArmory.Control
             return InvalidVesselReason.None;
         }
 
-        void CheckVesselTypePartCountChanged(Vessel vessel)
-        {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDACompetitionMode]: CheckVesselType due to part count change (" + vessel + ")");
-            CheckVesselType(vessel);
-        }
-
-        void CheckVesselTypeVesselCreate(Vessel vessel)
-        {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDACompetitionMode]: CheckVesselType due to vessel create (" + vessel + ")");
-            CheckVesselType(vessel);
-        }
 
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
         public void CheckVesselType(Vessel vessel)
@@ -721,6 +710,26 @@ namespace BDArmory.Control
                     Debug.Log("[BDACompetitionMode]: " + message);
                     vessel.vesselName = vessel.vesselName.Remove(vessel.vesselName.Length - 6);
                     return;
+                }
+            }
+        }
+
+        public void CheckForAutonomousCombatSeat(Vessel vessel)
+        {
+            if (BDArmorySettings.AUTONOMOUS_COMBAT_SEATS || vessel == null) return; // Don't do anything if autonomous combat seats are allowed.
+            if (vessel.FindPartModuleImplementing<KerbalSeat>() != null)
+            {
+                var kerbal = vessel.FindPartModuleImplementing<KerbalEVA>();
+                var AI = vessel.FindPartModuleImplementing<BDModulePilotAI>();
+                if (kerbal == null && AI != null && AI.pilotEnabled)
+                {
+                    Debug.Log("[BDACompetitionMode]: DEBUG Kerbal has left the seat of " + vessel.vesselName + ", disabling the AI.");
+                    AI.DeactivatePilot();
+                }
+                if (vessel.parts.Count == 1)
+                {
+                    Debug.Log("[BDACompetitionMode]: DEBUG Found a lone combat seat, killing it.");
+                    PartExploderSystem.AddPartToExplode(vessel.parts[0]);
                 }
             }
         }
