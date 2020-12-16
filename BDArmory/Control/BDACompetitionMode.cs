@@ -721,7 +721,7 @@ namespace BDArmory.Control
         {
             if (vessel == null) return;
             var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
-            if (kerbalEVA != null)
+            if (kerbalEVA != null) // Check for a falling kerbal.
             {
                 if (vessel.parts.Count == 1)
                 {
@@ -732,19 +732,26 @@ namespace BDArmory.Control
                         StartCoroutine(DelayedChuteDeployment(chute));
                     }
                 }
+                return;
             }
             if (vessel.FindPartModuleImplementing<KerbalSeat>() != null)
             {
-                var AI = vessel.FindPartModuleImplementing<BDModulePilotAI>();
-                if (kerbalEVA == null && AI != null && AI.pilotEnabled)
-                {
-                    Debug.Log("[BDACompetitionMode]: Kerbal has left the seat of " + vessel.vesselName + ", disabling the AI.");
-                    AI.DeactivatePilot();
-                }
-                if (vessel.parts.Count == 1)
+                if (vessel.parts.Count == 1) // Check for a falling combat seat.
                 {
                     Debug.Log("[BDACompetitionMode]: Found a lone combat seat, killing it.");
                     PartExploderSystem.AddPartToExplode(vessel.parts[0]);
+                    return;
+                }
+                // Check for a lack of control.
+                var AI = vessel.FindPartModuleImplementing<BDModulePilotAI>();
+                if (kerbalEVA == null && AI != null && AI.pilotEnabled) // If not controlled by a kerbalEVA in a KerbalSeat, check the regular ModuleCommand parts.
+                {
+                    var commandModules = vessel.FindPartModulesImplementing<ModuleCommand>();
+                    if (commandModules.All(c => c.GetControlSourceState() == CommNet.VesselControlState.None))
+                    {
+                        Debug.Log("[BDACompetitionMode]: Kerbal has left the seat of " + vessel.vesselName + " and it has no other controls, disabling the AI.");
+                        AI.DeactivatePilot();
+                    }
                 }
             }
         }
