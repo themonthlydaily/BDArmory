@@ -1447,9 +1447,7 @@ namespace BDArmory.Control
                         : ProtoCrewMember.Gender.Male;
                     KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                     KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
-                    var chuteNode = crewMember.ChuteNode;
-                    foreach (ConfigNode.Value value in chuteNode.values)
-                        Debug.Log("DEBUG chuteNode: " + value.name + " = " + value.value);
+                    crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
 
                     // Add them to the part
                     part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
@@ -1503,6 +1501,7 @@ namespace BDArmory.Control
                     }
                     KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                     KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                    crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
 
                     crewArray[i++] = crewMember;
                 }

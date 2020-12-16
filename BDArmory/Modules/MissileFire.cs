@@ -546,6 +546,19 @@ namespace BDArmory.Modules
             }
         }
 
+        [KSPAction("Deploy Kerbal's Parachute")] // If there's an EVAing kerbal.
+        public void AGDeployKerbalsParachute(KSPActionParam param)
+        {
+            var EVAChutes = vessel.FindPartModulesImplementing<ModuleEvaChute>();
+            foreach (var chute in EVAChutes)
+            {
+                if (chute == null) continue;
+                chute.deployAltitude = (float)vessel.radarAltitude + 100f; // Current height + 100 so that it deploys immediately.
+                chute.deploymentState = ModuleParachute.deploymentStates.ACTIVE;
+                chute.Deploy();
+            }
+        }
+
         public BDTeam Team
         {
             get

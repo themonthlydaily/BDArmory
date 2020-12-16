@@ -716,29 +716,20 @@ namespace BDArmory.Control
             }
         }
 
+        HashSet<ModuleEvaChute> chutesToDeploy = new HashSet<ModuleEvaChute>();
         public void CheckForAutonomousCombatSeat(Vessel vessel)
         {
             if (vessel == null) return;
             var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
             if (kerbalEVA != null)
             {
-                Debug.Log("DEBUG found a kerbal with " + vessel.parts.Count + " parts: " + string.Join(", ", vessel.parts));
                 if (vessel.parts.Count == 1)
                 {
-                    Debug.Log("DEBUG " + kerbalEVA + " is free falling.");
                     var chute = kerbalEVA.vessel.FindPartModuleImplementing<ModuleEvaChute>();
-                    if (chute != null)
+                    if (chute != null && chute.deploymentState != ModuleParachute.deploymentStates.DEPLOYED && !chutesToDeploy.Contains(chute))
                     {
-                        Debug.Log("DEBUG found chute: " + chute);
-                        chute.AllowRepack(true);
-                        chute.Repack();
-                        chute.deployAltitude = 50f;
-                        chute.deploymentState = ModuleParachute.deploymentStates.ACTIVE;
-                        chute.shieldedCanDeploy = true;
-                        chute.Deploy();
-                        var protoCrewMember = vessel.FindPartModuleImplementing<ProtoCrewMember>();
-                        if (protoCrewMember != null)
-                            Debug.Log("DEBUG " + kerbalEVA + " can use parachute? " + chute.CanCrewMemberUseParachute(protoCrewMember));
+                        chutesToDeploy.Add(chute);
+                        StartCoroutine(DelayedChuteDeployment(chute));
                     }
                 }
             }
@@ -755,6 +746,20 @@ namespace BDArmory.Control
                     Debug.Log("[BDACompetitionMode]: Found a lone combat seat, killing it.");
                     PartExploderSystem.AddPartToExplode(vessel.parts[0]);
                 }
+            }
+        }
+
+        IEnumerator DelayedChuteDeployment(ModuleEvaChute chute, float delay = 1f)
+        {
+            yield return new WaitForSeconds(delay);
+            if (chute != null)
+            {
+                Debug.Log("[BDACompetitionMode]: Found a falling kerbal, deploying halo parachute.");
+                if (chute.deploymentState != ModuleParachute.deploymentStates.SEMIDEPLOYED)
+                    chute.deploymentState = ModuleParachute.deploymentStates.STOWED; // Reset the deployment state.
+                chute.deployAltitude = 30f;
+                chute.Deploy();
+                chutesToDeploy.Remove(chute);
             }
         }
 
