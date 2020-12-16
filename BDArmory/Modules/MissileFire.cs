@@ -372,6 +372,14 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
         public float fireBurstLength = 0;
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringTolerance"),//Firing Tolerance
+        UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+        public float AutoFireCosAngleAdjustment = 0.5f; //tune Autofire angle in WM GUI
+
+        private float LastAFCAA = 0; 
+
+        public float adjustedAutoFireCosAngle = 1;
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FieldOfView"),//Field of View
          UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
@@ -973,6 +981,11 @@ namespace BDArmory.Modules
                 }
 
                 CalculateMissilesAway();
+                if (LastAFCAA != AutoFireCosAngleAdjustment)
+                {
+                    adjustedAutoFireCosAngle = Mathf.Cos(AutoFireCosAngleAdjustment);
+                    LastAFCAA = AutoFireCosAngleAdjustment;
+                }
             }
 
             UpdateTargetingAudio();
@@ -4144,7 +4157,8 @@ namespace BDArmory.Modules
                         if (weapon.Current.yawRange >= 5 && (weapon.Current.maxPitch - weapon.Current.minPitch) >= 5)
                             weapon.Current.maxAutoFireCosAngle = 1;
                         else
-                            weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? 0.9993908f : 0.9975641f; //2 : 4 degrees
+                            //weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? 0.9993908f : 0.9975641f; //2 : 4 degrees
+                            weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? adjustedAutoFireCosAngle : 0.9993906f; //user-adjustable from 0-2deg
                     }
             }
 
