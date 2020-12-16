@@ -1445,8 +1445,11 @@ namespace BDArmory.Control
                     crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
                         ? ProtoCrewMember.Gender.Female
                         : ProtoCrewMember.Gender.Male;
-                    KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait);
-                    //crewMember.trait = "Pilot";
+                    KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
+                    KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                    var chuteNode = crewMember.ChuteNode;
+                    foreach (ConfigNode.Value value in chuteNode.values)
+                        Debug.Log("DEBUG chuteNode: " + value.name + " = " + value.value);
 
                     // Add them to the part
                     part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
@@ -1498,7 +1501,8 @@ namespace BDArmory.Control
                     {
                         crewMember.KerbalRef.name = cd.name;
                     }
-                    KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait);
+                    KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
+                    KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
 
                     crewArray[i++] = crewMember;
                 }
@@ -1524,7 +1528,7 @@ namespace BDArmory.Control
             // Create the config node representation of the ProtoVessel
             ConfigNode protoVesselNode = ProtoVessel.CreateVesselNode(vesselData.name, vesselData.vesselType, vesselData.orbit, 0, partNodes, additionalNodes);
 
-            // Additional seetings for a landed vessel
+            // Additional settings for a landed vessel
             if (!vesselData.orbiting)
             {
                 Vector3d norm = vesselData.body.GetRelSurfaceNVector(vesselData.latitude, vesselData.longitude);

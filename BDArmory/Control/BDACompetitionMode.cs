@@ -331,6 +331,8 @@ namespace BDArmory.Control
                     VehiclePhysics.Gravity.Refresh();
                 }
                 RemoveDebrisNow();
+                GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
+                GameEvents.onVesselCreate.Add(OnVesselModified);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
@@ -351,9 +353,8 @@ namespace BDArmory.Control
             competitionStartTime = -1;
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
-            GameEvents.onVesselPartCountChanged.Remove(CheckForAutonomousCombatSeat);
-            GameEvents.onVesselPartCountChanged.Remove(CheckVesselType);
-            GameEvents.onVesselCreate.Remove(CheckVesselType);
+            GameEvents.onVesselPartCountChanged.Remove(OnVesselModified);
+            GameEvents.onVesselCreate.Remove(OnVesselModified);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             rammingInformation = null; // Reset the ramming information.
         }
@@ -363,10 +364,6 @@ namespace BDArmory.Control
             competitionIsActive = true; //start logging ramming now that the competition has officially started
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
-            // I think these three events cover the cases for when an incorrectly built vessel splits into more than one part.
-            GameEvents.onVesselPartCountChanged.Add(CheckForAutonomousCombatSeat);
-            GameEvents.onVesselPartCountChanged.Add(CheckVesselType);
-            GameEvents.onVesselCreate.Add(CheckVesselType);
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
@@ -685,6 +682,11 @@ namespace BDArmory.Control
             return InvalidVesselReason.None;
         }
 
+        public void OnVesselModified(Vessel vessel)
+        {
+            CheckVesselType(vessel);
+            if (!BDArmorySettings.AUTONOMOUS_COMBAT_SEATS) CheckForAutonomousCombatSeat(vessel);
+        }
 
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
         public void CheckVesselType(Vessel vessel)
@@ -716,19 +718,41 @@ namespace BDArmory.Control
 
         public void CheckForAutonomousCombatSeat(Vessel vessel)
         {
-            if (BDArmorySettings.AUTONOMOUS_COMBAT_SEATS || vessel == null) return; // Don't do anything if autonomous combat seats are allowed.
+            if (vessel == null) return;
+            var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
+            if (kerbalEVA != null)
+            {
+                Debug.Log("DEBUG found a kerbal with " + vessel.parts.Count + " parts: " + string.Join(", ", vessel.parts));
+                if (vessel.parts.Count == 1)
+                {
+                    Debug.Log("DEBUG " + kerbalEVA + " is free falling.");
+                    var chute = kerbalEVA.vessel.FindPartModuleImplementing<ModuleEvaChute>();
+                    if (chute != null)
+                    {
+                        Debug.Log("DEBUG found chute: " + chute);
+                        chute.AllowRepack(true);
+                        chute.Repack();
+                        chute.deployAltitude = 50f;
+                        chute.deploymentState = ModuleParachute.deploymentStates.ACTIVE;
+                        chute.shieldedCanDeploy = true;
+                        chute.Deploy();
+                        var protoCrewMember = vessel.FindPartModuleImplementing<ProtoCrewMember>();
+                        if (protoCrewMember != null)
+                            Debug.Log("DEBUG " + kerbalEVA + " can use parachute? " + chute.CanCrewMemberUseParachute(protoCrewMember));
+                    }
+                }
+            }
             if (vessel.FindPartModuleImplementing<KerbalSeat>() != null)
             {
-                var kerbal = vessel.FindPartModuleImplementing<KerbalEVA>();
                 var AI = vessel.FindPartModuleImplementing<BDModulePilotAI>();
-                if (kerbal == null && AI != null && AI.pilotEnabled)
+                if (kerbalEVA == null && AI != null && AI.pilotEnabled)
                 {
-                    Debug.Log("[BDACompetitionMode]: DEBUG Kerbal has left the seat of " + vessel.vesselName + ", disabling the AI.");
+                    Debug.Log("[BDACompetitionMode]: Kerbal has left the seat of " + vessel.vesselName + ", disabling the AI.");
                     AI.DeactivatePilot();
                 }
                 if (vessel.parts.Count == 1)
                 {
-                    Debug.Log("[BDACompetitionMode]: DEBUG Found a lone combat seat, killing it.");
+                    Debug.Log("[BDACompetitionMode]: Found a lone combat seat, killing it.");
                     PartExploderSystem.AddPartToExplode(vessel.parts[0]);
                 }
             }
