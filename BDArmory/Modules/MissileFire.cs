@@ -4623,6 +4623,7 @@ namespace BDArmory.Modules
         public bool CheckAmmo(ModuleWeapon weapon)
         {
             string ammoName = weapon.ammoName;
+            if (ammoName == "ElectricCharge") return true; // Electric charge is almost always rechargable, so weapons that use it always have ammo.
             using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
                 while (p.MoveNext())
                 {
@@ -4653,7 +4654,6 @@ namespace BDArmory.Modules
                 if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
                 if (weapon.GetWeaponClass() == WeaponClasses.Gun)
                 {
-                    if (weapon.GetShortName().EndsWith("Laser")) { hasWeaponsAndAmmo = true; break; } // If it's a laser (counts as a gun) consider it as having ammo, since electric charge can replenish.
                     if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
                 }
                 else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
