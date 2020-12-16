@@ -539,7 +539,7 @@ namespace BDArmory.Competition
             }
             else
             {
-                return BDArmorySettings.COMPETITION_DURATION;
+                return BDArmorySettings.COMPETITION_DURATION*60.0;
             }
         }
 
