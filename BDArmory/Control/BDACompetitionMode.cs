@@ -686,6 +686,7 @@ namespace BDArmory.Control
         {
             CheckVesselType(vessel);
             if (!BDArmorySettings.AUTONOMOUS_COMBAT_SEATS) CheckForAutonomousCombatSeat(vessel);
+            if (BDArmorySettings.DESTROY_UNCONTROLLED_WMS) CheckForUncontrolledVessel(vessel);
         }
 
         HashSet<VesselType> validVesselTypes = new HashSet<VesselType> { VesselType.Plane, VesselType.Ship };
@@ -767,11 +768,11 @@ namespace BDArmory.Control
             if (chute != null)
             {
                 Debug.Log("[BDACompetitionMode]: Found a falling kerbal, deploying halo parachute.");
+                chutesToDeploy.Remove(chute);
                 if (chute.deploymentState != ModuleParachute.deploymentStates.SEMIDEPLOYED)
                     chute.deploymentState = ModuleParachute.deploymentStates.STOWED; // Reset the deployment state.
                 chute.deployAltitude = 30f;
                 chute.Deploy();
-                chutesToDeploy.Remove(chute);
             }
         }
 
@@ -781,8 +782,30 @@ namespace BDArmory.Control
             if (kerbalSeat != null)
             {
                 Debug.Log("[BDACompetitionMode]: Found a kerbal in a combat chair just falling, ejecting.");
-                kerbalSeat.LeaveSeat(new KSPActionParam(KSPActionGroup.Abort, KSPActionType.Activate));
                 seatsToLeave.Remove(kerbalSeat);
+                kerbalSeat.LeaveSeat(new KSPActionParam(KSPActionGroup.Abort, KSPActionType.Activate));
+            }
+        }
+
+        void CheckForUncontrolledVessel(Vessel vessel)
+        {
+            if (vessel == null || vessel.vesselName == null) return;
+            if (vessel.FindPartModuleImplementing<Kerbal>() != null) return; // Check for Kerbals on the inside.
+            if (vessel.FindPartModuleImplementing<KerbalEVA>() != null) return; // Check for Kerbals on the outside.
+            // Check for drones
+            var commandModules = vessel.FindPartModulesImplementing<ModuleCommand>();
+            if (commandModules.All(c => c.GetControlSourceState() == CommNet.VesselControlState.None))
+                if (Scores.ContainsKey(vessel.vesselName) && Scores[vessel.vesselName]?.weaponManagerRef != null)
+                    StartCoroutine(DelayedExplodeWM(Scores[vessel.vesselName].weaponManagerRef, 5f)); // Uncontrolled vessel, destroy its weapon manager in 5s.
+        }
+
+        IEnumerator DelayedExplodeWM(MissileFire weaponManager, float delay = 1f)
+        {
+            yield return new WaitForSeconds(delay);
+            if (weaponManager != null)
+            {
+                Debug.Log("[BDACompetitionMode]: " + weaponManager.vessel.vesselName + " has no form of control, killing the weapon manager.");
+                PartExploderSystem.AddPartToExplode(weaponManager.part);
             }
         }
 
