@@ -717,29 +717,34 @@ namespace BDArmory.Control
         }
 
         HashSet<ModuleEvaChute> chutesToDeploy = new HashSet<ModuleEvaChute>();
+        HashSet<KerbalSeat> seatsToLeave = new HashSet<KerbalSeat>();
         public void CheckForAutonomousCombatSeat(Vessel vessel)
         {
             if (vessel == null) return;
             var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
-            if (kerbalEVA != null) // Check for a falling kerbal.
+            if (kerbalEVA != null && vessel.parts.Count == 1) // Check for a falling kerbal.
             {
-                if (vessel.parts.Count == 1)
+                var chute = kerbalEVA.vessel.FindPartModuleImplementing<ModuleEvaChute>();
+                if (chute != null && chute.deploymentState != ModuleParachute.deploymentStates.DEPLOYED && !chutesToDeploy.Contains(chute))
                 {
-                    var chute = kerbalEVA.vessel.FindPartModuleImplementing<ModuleEvaChute>();
-                    if (chute != null && chute.deploymentState != ModuleParachute.deploymentStates.DEPLOYED && !chutesToDeploy.Contains(chute))
-                    {
-                        chutesToDeploy.Add(chute);
-                        StartCoroutine(DelayedChuteDeployment(chute));
-                    }
+                    chutesToDeploy.Add(chute);
+                    StartCoroutine(DelayedChuteDeployment(chute));
                 }
                 return;
             }
-            if (vessel.FindPartModuleImplementing<KerbalSeat>() != null)
+            var kerbalSeat = vessel.FindPartModuleImplementing<KerbalSeat>();
+            if (kerbalSeat != null)
             {
                 if (vessel.parts.Count == 1) // Check for a falling combat seat.
                 {
                     Debug.Log("[BDACompetitionMode]: Found a lone combat seat, killing it.");
                     PartExploderSystem.AddPartToExplode(vessel.parts[0]);
+                    return;
+                }
+                if (vessel.parts.Count == 2 && kerbalEVA != null) // Just a kerbal in a combat seat.
+                {
+                    seatsToLeave.Add(kerbalSeat);
+                    StartCoroutine(DelayedLeaveSeat(kerbalSeat));
                     return;
                 }
                 // Check for a lack of control.
@@ -767,6 +772,17 @@ namespace BDArmory.Control
                 chute.deployAltitude = 30f;
                 chute.Deploy();
                 chutesToDeploy.Remove(chute);
+            }
+        }
+
+        IEnumerator DelayedLeaveSeat(KerbalSeat kerbalSeat, float delay = 3f)
+        {
+            yield return new WaitForSeconds(delay);
+            if (kerbalSeat != null)
+            {
+                Debug.Log("[BDACompetitionMode]: Found a kerbal in a combat chair just falling, ejecting.");
+                kerbalSeat.LeaveSeat(new KSPActionParam(KSPActionGroup.Abort, KSPActionType.Activate));
+                seatsToLeave.Remove(kerbalSeat);
             }
         }
 
