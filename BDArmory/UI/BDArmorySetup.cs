@@ -10,6 +10,7 @@ using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.CounterMeasure;
+using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Parts;
@@ -39,9 +40,9 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
 
         //reflection field lists
-        FieldInfo[] iFs;
+        static FieldInfo[] iFs;
 
-        FieldInfo[] inputFields
+        static FieldInfo[] inputFields
         {
             get
             {
@@ -1518,10 +1519,11 @@ namespace BDArmory.UI
                 {
                     if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.lastTagUpdateTime = Planetarium.GetUniversalTime();
                 }
-                BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"));//"Paintball Mode"
+                if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
+                    BulletHitFX.SetupShellPool();
                 BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
                 BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
-                if (BDArmorySettings.GRAVITY_HACKS != (BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, Localizer.Format("Increase Gravity on Death"))))//"Gravity hacks"
+                if (BDArmorySettings.GRAVITY_HACKS != (BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, Localizer.Format("#LOC_BDArmory_Settings_GravityHacks"))))//"Gravity hacks"
                 {
                     if (BDArmorySettings.GRAVITY_HACKS)
                     {
@@ -1536,7 +1538,11 @@ namespace BDArmory.UI
                         VehiclePhysics.Gravity.Refresh();
                     }
                 }
-                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SRightRect(line), BDArmorySettings.BATTLEDAMAGE, "Battle Damage");
+                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SRightRect(line), BDArmorySettings.BATTLEDAMAGE, Localizer.Format("#LOC_BDArmory_Settings_BattleDamage"));
+                BDArmorySettings.EXTRA_DAMAGE_SLIDERS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.EXTRA_DAMAGE_SLIDERS, Localizer.Format("#LOC_BDArmory_Settings_ExtraDamageSliders"));
+                BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING, Localizer.Format("#LOC_BDArmory_Settings_AutoEnableVesselSwitching"));
+                BDArmorySettings.AUTONOMOUS_COMBAT_SEATS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTONOMOUS_COMBAT_SEATS, Localizer.Format("#LOC_BDArmory_Settings_AutonomousCombatSeats"));
+                BDArmorySettings.DESTROY_UNCONTROLLED_WMS = GUI.Toggle(SRightRect(line), BDArmorySettings.DESTROY_UNCONTROLLED_WMS, Localizer.Format("#LOC_BDArmory_Settings_DestroyWMWhenNotControlled"));
                 if (HighLogic.LoadedSceneIsEditor)
                 {
                     if (BDArmorySettings.SHOW_CATEGORIES != (BDArmorySettings.SHOW_CATEGORIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_CATEGORIES, Localizer.Format("#LOC_BDArmory_Settings_ShowEditorSubcategories"))))//"Show Editor Subcategories"
@@ -1561,9 +1567,21 @@ namespace BDArmory.UI
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_DamageMultiplier")}:  ({BDArmorySettings.DMG_MULTIPLIER})", leftLabel); // Damage Multiplier
                 dmgMultiplier = (int)GUI.HorizontalSlider(SRightSliderRect(line), dmgMultiplier, 1f, 28f);
                 BDArmorySettings.DMG_MULTIPLIER = dmgMultiplier < 11 ? (int)(dmgMultiplier * 10f) : (int)(50f * (dmgMultiplier - 8f));
+                if (BDArmorySettings.EXTRA_DAMAGE_SLIDERS)
+                {
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BallisticDamageMultiplier")}:  ({BDArmorySettings.BALLISTIC_DMG_FACTOR})", leftLabel);
+                    BDArmorySettings.BALLISTIC_DMG_FACTOR = (int)(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BALLISTIC_DMG_FACTOR * 20f, 0f, 60f)) / 20f;
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ExplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW})", leftLabel);
+                    BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW = (int)(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * 20f, 0f, 30f)) / 20f;
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MissileExplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_DMG_MOD_MISSILE})", leftLabel);
+                    BDArmorySettings.EXP_DMG_MOD_MISSILE = (int)(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_DMG_MOD_MISSILE * 4f, 0f, 40f)) / 4f;
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_ImplosiveDamageMultiplier")}:  ({BDArmorySettings.EXP_IMP_MOD})", leftLabel);
+                    BDArmorySettings.EXP_IMP_MOD = (int)(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.EXP_IMP_MOD * 20, 0f, 20f)) / 20f;
+                }
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MaxBulletHoles")}:  ({BDArmorySettings.MAX_NUM_BULLET_DECALS})", leftLabel); // Max Bullet Holes
-                BDArmorySettings.MAX_NUM_BULLET_DECALS = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MAX_NUM_BULLET_DECALS, 1f, 999);
+                if (BDArmorySettings.MAX_NUM_BULLET_DECALS != (BDArmorySettings.MAX_NUM_BULLET_DECALS = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MAX_NUM_BULLET_DECALS, 1f, 999)))
+                    BulletHitFX.AdjustDecalPoolSizes(BDArmorySettings.MAX_NUM_BULLET_DECALS);
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TerrainAlertFrequency")}:  ({BDArmorySettings.TERRAIN_ALERT_FREQUENCY})", leftLabel); // Terrain alert frequency. Note: this is scaled by (int)(1+(radarAlt/500)^2) to avoid wasting too many cycles.
                 BDArmorySettings.TERRAIN_ALERT_FREQUENCY = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TERRAIN_ALERT_FREQUENCY, 1f, 5f);
@@ -1596,7 +1614,10 @@ namespace BDArmory.UI
 
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionKillerGMFrequency")}: ({(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? "Off" : BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY + "s")}, {(BDACompetitionMode.Instance.killerGMenabled ? "on" : "off")})", leftLabel);
                     BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY / 10f, 1, 6) * 10f; // For now, don't control the killerGMEnabled flag (it's controlled by right clicking M).
-                    // BDACompetitionMode.Instance.killerGMenabled = !(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60);
+                                                                                                                                                                                              // BDACompetitionMode.Instance.killerGMenabled = !(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60);
+
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionKillerGMMaxAltitude")}: ({(BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE > 100 ? "Never" : BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE + "km")})", leftLabel);
+                    BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE, 1f, 101f);
                 }
 
                 ++line;
@@ -1807,16 +1828,17 @@ namespace BDArmory.UI
 
         void InputSettings()
         {
-            float line = 1.25f;
+            float line = 0f;
             int inputID = 0;
             float origSettingsWidth = settingsWidth;
             float origSettingsHeight = settingsHeight;
             float origSettingsMargin = settingsMargin;
 
-            settingsWidth = origSettingsWidth - 28;
             settingsMargin = 10;
-            Rect viewRect = new Rect(settingsMargin, 20, origSettingsWidth - 12, origSettingsHeight - 100);
-            Rect scrollerRect = new Rect(settingsMargin, 20, origSettingsWidth - 30, settingsHeight * 1.4f);
+            settingsWidth = origSettingsWidth - 2 * settingsMargin;
+            settingsHeight = origSettingsHeight - 100;
+            Rect viewRect = new Rect(2, 20, settingsWidth + GUI.skin.verticalScrollbar.fixedWidth, settingsHeight);
+            Rect scrollerRect = new Rect(0, 0, settingsWidth - GUI.skin.verticalScrollbar.fixedWidth - 1, inputFields != null ? (inputFields.Length + 9) * settingsLineHeight : settingsHeight);
 
             _displayViewerPosition = GUI.BeginScrollView(viewRect, _displayViewerPosition, scrollerRect, false, true);
 
@@ -1838,9 +1860,14 @@ namespace BDArmory.UI
             GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_VesselSwitcher") + " -", centerLabel);//Vessel Switcher
             line++;
             InputSettingsList("VS_", ref inputID, ref line);
+            line++;
+
+            GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Tournament") + " -", centerLabel);//Tournament
+            line++;
+            InputSettingsList("TOURNAMENT_", ref inputID, ref line);
             GUI.EndScrollView();
 
-            line = (origSettingsHeight - 100) / settingsLineHeight;
+            line = settingsHeight / settingsLineHeight;
             line += 2;
             settingsWidth = origSettingsWidth;
             settingsMargin = origSettingsMargin;
@@ -1849,7 +1876,6 @@ namespace BDArmory.UI
                 editKeys = false;
             }
 
-            //line += 1.5f;
             settingsHeight = origSettingsHeight;
             WindowRectSettings.height = origSettingsHeight;
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);

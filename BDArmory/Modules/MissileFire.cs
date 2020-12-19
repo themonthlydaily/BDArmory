@@ -365,12 +365,11 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringInterval"),//Firing Interval
          UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float
-            targetScanInterval = 3;
+        public float targetScanInterval = 3;
 
         // extension for feature_engagementenvelope: burst length for guns
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringBurstLength"),//Firing Burst Length
-         UI_FloatRange(minValue = 0f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
         public float fireBurstLength = 0;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FieldOfView"),//Field of View
@@ -397,7 +396,7 @@ namespace BDArmory.Modules
         // Target priority variables
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Priority Toggle
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
-        public bool targetPriorityEnabled = false;
+        public bool targetPriorityEnabled = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true), UI_Label(scene = UI_Scene.All)]
         public string TargetLabel = "";
@@ -544,6 +543,19 @@ namespace BDArmory.Modules
                         if (rocket.Current == null) continue;
                         rocket.Current.Jettison();
                     }
+            }
+        }
+
+        [KSPAction("Deploy Kerbal's Parachute")] // If there's an EVAing kerbal.
+        public void AGDeployKerbalsParachute(KSPActionParam param)
+        {
+            var EVAChutes = vessel.FindPartModulesImplementing<ModuleEvaChute>();
+            foreach (var chute in EVAChutes)
+            {
+                if (chute == null) continue;
+                chute.deployAltitude = (float)vessel.radarAltitude + 100f; // Current height + 100 so that it deploys immediately.
+                chute.deploymentState = ModuleParachute.deploymentStates.ACTIVE;
+                chute.Deploy();
             }
         }
 
@@ -859,7 +871,12 @@ namespace BDArmory.Modules
             }
         }
 
-        void OnPartDie(Part p = null)
+        void OnPartDie()
+        {
+            OnPartDie(part);
+        }
+
+        void OnPartDie(Part p)
         {
             if (p == part)
             {
@@ -872,6 +889,7 @@ namespace BDArmory.Modules
                 catch (Exception e)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Error OnPartDie: " + e.Message);
+                    Debug.Log("[BDArmory]: Error OnPartDie: " + e.Message);
                 }
             }
             RefreshModules();
@@ -1404,7 +1422,7 @@ namespace BDArmory.Modules
                     SetCargoBays();
 
                     MissileLauncher mlauncher;
-                    while (ml && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - guardTarget.transform.position).sqrMagnitude > 40 * 40))
+                    while (ml && guardTarget && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - guardTarget.transform.position).sqrMagnitude > 40 * 40))
                     {
                         //TODO BDModularGuidance: add turret
                         //try using missile turret to lock target
@@ -2800,7 +2818,7 @@ namespace BDArmory.Modules
                         MissileLauncher launcher = ml.Current as MissileLauncher;
                         if (launcher != null)
                         {
-                            if (launcher.part?.name != weaponArray[weaponIndex]?.GetPart()?.name) continue;
+                            if (weaponArray[weaponIndex].GetPart() == null || launcher.part.name != weaponArray[weaponIndex].GetPart().name) continue;
                         }
                         else
                         {
@@ -2832,7 +2850,7 @@ namespace BDArmory.Modules
                 //TODO BDModularGuidance: Implemente rotaryRail support
                 MissileLauncher missile = CurrentMissile as MissileLauncher;
                 if (missile == null) return null;
-                if (missile && missile.part.name == weaponArray[weaponIndex].GetPart().name)
+                if (weaponArray[weaponIndex].GetPart() != null && missile.part.name == weaponArray[weaponIndex].GetPart().name)
                 {
                     if (!missile.rotaryRail)
                     {
@@ -2847,7 +2865,7 @@ namespace BDArmory.Modules
                     while (ml.MoveNext())
                     {
                         if (ml.Current == null) continue;
-                        if (ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
+                        if (weaponArray[weaponIndex].GetPart() == null || ml.Current.part.name != weaponArray[weaponIndex].GetPart().name) continue;
 
                         if (!ml.Current.rotaryRail)
                         {
@@ -3897,6 +3915,7 @@ namespace BDArmory.Modules
                     currentTarget.Disengage(this);
                 }
                 target.Engage(this);
+                if (currentTarget != target && pilotAI && pilotAI.IsExtending) pilotAI.StopExtending();
                 currentTarget = target;
                 guardTarget = target.Vessel;
             }
@@ -4604,6 +4623,7 @@ namespace BDArmory.Modules
         public bool CheckAmmo(ModuleWeapon weapon)
         {
             string ammoName = weapon.ammoName;
+            if (ammoName == "ElectricCharge") return true; // Electric charge is almost always rechargable, so weapons that use it always have ammo.
             using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
                 while (p.MoveNext())
                 {
@@ -4634,7 +4654,6 @@ namespace BDArmory.Modules
                 if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
                 if (weapon.GetWeaponClass() == WeaponClasses.Gun)
                 {
-                    if (weapon.GetShortName().EndsWith("Laser")) { hasWeaponsAndAmmo = true; break; } // If it's a laser (counts as a gun) consider it as having ammo, since electric charge can replenish.
                     if (BDArmorySettings.INFINITE_AMMO || CheckAmmo((ModuleWeapon)weapon)) { hasWeaponsAndAmmo = true; break; } // If the gun has ammo or we're using infinite ammo, return true after cleaning up.
                 }
                 else { hasWeaponsAndAmmo = true; break; } // Other weapon types don't have ammo, or use electric charge, which could recharge.
