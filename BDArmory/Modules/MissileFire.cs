@@ -4177,14 +4177,14 @@ namespace BDArmory.Modules
             if ((targetPriorityEnabled) && (currentTarget))
                 UpdateTargetPriorityUI(currentTarget);
 
-            //scan and acquire new target
-            //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
-            if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 1f)) // stupid hack to stop them retargetting too quickly
+            if (!guardFiringMissile || missilesAway > 0) // Don't retarget, while trying to fire a missile.
             {
-                targetScanTimer = Time.time;
-
-                if (!guardFiringMissile)
+                //scan and acquire new target
+                //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
+                if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 1f)) // stupid hack to stop them retargetting too quickly
                 {
+                    targetScanTimer = Time.time;
+
 
                     SmartFindTarget();
 
