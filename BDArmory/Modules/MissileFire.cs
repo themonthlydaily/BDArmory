@@ -4177,7 +4177,7 @@ namespace BDArmory.Modules
             if ((targetPriorityEnabled) && (currentTarget))
                 UpdateTargetPriorityUI(currentTarget);
 
-            if (!guardFiringMissile || missilesAway > 0) // Don't retarget, while trying to fire a missile.
+            if (!(guardFiringMissile || missilesAway > 0)) // Don't retarget, while trying to fire a missile.
             {
                 //scan and acquire new target
                 //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
