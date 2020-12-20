@@ -1595,6 +1595,18 @@ namespace BDArmory.Radar
             }
         }
 
+        public bool SwitchActiveLockedTarget(Vessel vessel)
+        {
+            var vesselIndex = displayedTargets.FindIndex(t => t.vessel == vessel);
+            if (vesselIndex != -1)
+            {
+                activeLockedTargetIndex = vesselIndex;
+                UpdateLockedTargets();
+                return true;
+            }
+            return false;
+        }
+
         public void UnlockAllTargetsOfRadar(ModuleRadar radar)
         {
             //radar.UnlockTarget();

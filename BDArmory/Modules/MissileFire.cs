@@ -1356,7 +1356,7 @@ namespace BDArmory.Modules
                     {
                         if (vesselRadarData.locked)
                         {
-                            vesselRadarData.UnlockAllTargets();
+                            vesselRadarData.SwitchActiveLockedTarget(guardTarget);
                             yield return null;
                         }
                         //vesselRadarData.TryLockTarget(guardTarget.transform.position+(guardTarget.rb_velocity*Time.fixedDeltaTime));
@@ -1412,7 +1412,7 @@ namespace BDArmory.Modules
                 }
                 else if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
                 {
-                    if (vesselRadarData && vesselRadarData.locked)
+                    if (vesselRadarData && vesselRadarData.locked) // FIXME Why does heat guidance use the radar data structures? This wipes radar guided missiles' targeting data when switching to a heat guided missile.
                     {
                         vesselRadarData.UnlockAllTargets();
                         vesselRadarData.UnslaveTurrets();
@@ -3052,6 +3052,7 @@ namespace BDArmory.Modules
 
         void SmartFindTarget()
         {
+            var lastTarget = currentTarget;
             List<TargetInfo> targetsTried = new List<TargetInfo>();
             string targetDebugText = "";
 
@@ -3310,7 +3311,7 @@ namespace BDArmory.Modules
                 }
                 CycleWeapon(0);
                 SetTarget(null);
-                if (vesselRadarData && vesselRadarData.locked)
+                if (vesselRadarData && vesselRadarData.locked && missilesAway == 0) // Don't unlock targets while we've got missiles in the air.
                 {
                     vesselRadarData.UnlockAllTargets();
                 }
@@ -4178,14 +4179,14 @@ namespace BDArmory.Modules
             if ((targetPriorityEnabled) && (currentTarget))
                 UpdateTargetPriorityUI(currentTarget);
 
-            if (!(guardFiringMissile || missilesAway > 0)) // Don't retarget, while trying to fire a missile.
+            //scan and acquire new target
+            //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
+            if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 1f)) // stupid hack to stop them retargetting too quickly
             {
-                //scan and acquire new target
-                //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
-                if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 1f)) // stupid hack to stop them retargetting too quickly
-                {
-                    targetScanTimer = Time.time;
+                targetScanTimer = Time.time;
 
+                if (!guardFiringMissile)
+                {
 
                     SmartFindTarget();
 
