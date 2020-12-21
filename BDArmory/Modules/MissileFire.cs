@@ -4223,7 +4223,8 @@ namespace BDArmory.Modules
 
                             if (missilesAway < maxMissilesOnTarget)
                             {
-                                if (!guardFiringMissile && launchAuthorized)
+                                if (!guardFiringMissile && launchAuthorized
+                                    && (CurrentMissile != null && (CurrentMissile.TargetingMode != MissileBase.TargetingModes.Radar || (vesselRadarData != null && (!vesselRadarData.locked || vesselRadarData.lockedTargetData.vessel == guardTarget))))) // Allow firing multiple missiles at the same target. FIXME This is a stop-gap until proper multi-locking support is available.
                                 {
                                     StartCoroutine(GuardMissileRoutine());
                                 }

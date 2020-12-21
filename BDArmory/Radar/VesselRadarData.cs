@@ -1595,7 +1595,7 @@ namespace BDArmory.Radar
             }
         }
 
-        public bool SwitchActiveLockedTarget(Vessel vessel)
+        public bool SwitchActiveLockedTarget(Vessel vessel) // FIXME This needs to take into account the maxLocks field.
         {
             var vesselIndex = displayedTargets.FindIndex(t => t.vessel == vessel);
             if (vesselIndex != -1)
