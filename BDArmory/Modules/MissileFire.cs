@@ -1422,14 +1422,14 @@ namespace BDArmory.Modules
                         vesselRadarData.UnlockAllTargets();
                         vesselRadarData.UnslaveTurrets();
                     }
-                    float attemptStartTime = Time.time;
-                    float attemptDuration = Mathf.Max(targetScanInterval * 0.75f, 5f);
 
                     if (SetCargoBays())
                     {
                         yield return new WaitForSeconds(1f);
                     }
 
+                    float attemptStartTime = Time.time;
+                    float attemptDuration = Mathf.Max(targetScanInterval * 0.75f, 5f);
                     MissileLauncher mlauncher;
                     while (ml && guardTarget && Time.time - attemptStartTime < attemptDuration && (!heatTarget.exists || (heatTarget.predictedPosition - guardTarget.transform.position).sqrMagnitude > 40 * 40))
                     {
@@ -1526,17 +1526,17 @@ namespace BDArmory.Modules
                         if (rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
                     }
 
+                    if (SetCargoBays())
+                    {
+                        yield return new WaitForSeconds(1f);
+                    }
+
                     float attemptStartTime = Time.time;
                     float attemptDuration = targetScanInterval * 0.75f;
                     while (Time.time - attemptStartTime < attemptDuration &&
                            (!antiRadTargetAcquired || (antiRadiationTarget - guardTarget.CoM).sqrMagnitude > 20 * 20))
                     {
                         yield return new WaitForFixedUpdate();
-                    }
-
-                    if (SetCargoBays())
-                    {
-                        yield return new WaitForSeconds(1f);
                     }
 
                     if (ml && antiRadTargetAcquired && (antiRadiationTarget - guardTarget.CoM).sqrMagnitude < 20 * 20)
@@ -1563,6 +1563,11 @@ namespace BDArmory.Modules
                             }
                     }
 
+                    if (SetCargoBays())
+                    {
+                        yield return new WaitForSeconds(1f);
+                    }
+
                     //search for a laser point that corresponds with target vessel
                     float attemptStartTime = Time.time;
                     float attemptDuration = targetScanInterval * 0.75f;
@@ -1570,10 +1575,7 @@ namespace BDArmory.Modules
                     {
                         yield return new WaitForFixedUpdate();
                     }
-                    if (SetCargoBays())
-                    {
-                        yield return new WaitForSeconds(1f);
-                    }
+
                     if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 20 * 20)
                     {
                         FireCurrentMissile(true);
