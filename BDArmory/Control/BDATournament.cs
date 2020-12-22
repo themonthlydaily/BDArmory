@@ -331,12 +331,12 @@ namespace BDArmory.Control
 
                     if (heatsRemaining > 0)
                     {
-                        // Wait 10s for any user action
+                        // Wait a bit for any user action
                         tournamentStatus = TournamentStatus.Waiting;
                         double startTime = Planetarium.GetUniversalTime();
-                        while ((Planetarium.GetUniversalTime() - startTime) < 10d)
+                        while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
                         {
-                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (10d - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running next heat.");
+                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running next heat.");
                             yield return new WaitForSeconds(1);
                         }
                     }
