@@ -374,11 +374,9 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringTolerance"),//Firing Tolerance
         UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 0.05f, scene = UI_Scene.All)]
-        public float AutoFireCosAngleAdjustment = 0.5f; //tune Autofire angle in WM GUI
+        public float AutoFireCosAngleAdjustment = 1f; //tune Autofire angle in WM GUI
 
-        private float LastAFCAA = 0; 
-
-        public float adjustedAutoFireCosAngle = 1;
+        public float adjustedAutoFireCosAngle = 0.999484f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FieldOfView"),//Field of View
          UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
@@ -866,7 +864,8 @@ namespace BDArmory.Modules
                 GameEvents.onPartDie.Add(OnPartDie);
 
                 GetTotalHP();
-
+                StartCoroutine(SetAFCAA());
+                
                 using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
                     while (aipilot.MoveNext())
                     {
@@ -981,11 +980,6 @@ namespace BDArmory.Modules
                 }
 
                 CalculateMissilesAway();
-                if (LastAFCAA != AutoFireCosAngleAdjustment)
-                {
-                    adjustedAutoFireCosAngle = Mathf.Cos(AutoFireCosAngleAdjustment);
-                    LastAFCAA = AutoFireCosAngleAdjustment;
-                }
             }
 
             UpdateTargetingAudio();
@@ -1784,7 +1778,15 @@ namespace BDArmory.Modules
         //    }
         //    missilesAway--;
         //}
-
+        private IEnumerator SetAFCAA()
+        {
+            WaitForSeconds wait = new WaitForSeconds(2); //cache this to prevent mem allocation every call from yield return new waitforseconds (n)
+            while (enabled)
+            {
+                adjustedAutoFireCosAngle = Mathf.Cos((AutoFireCosAngleAdjustment * Mathf.Deg2Rad)); //mathf.Cos outputs to rad, apparently? mathf.Cos = -0.416, not 0.9993
+                yield return wait;
+            }
+        }
         #endregion Enumerators
 
         #region Audio
@@ -4155,10 +4157,10 @@ namespace BDArmory.Modules
                         weapon.Current.EnableWeapon();
                         weapon.Current.aiControlled = true;
                         if (weapon.Current.yawRange >= 5 && (weapon.Current.maxPitch - weapon.Current.minPitch) >= 5)
-                            weapon.Current.maxAutoFireCosAngle = 1;
+                            weapon.Current.maxAutoFireCosAngle = 1; //this is why turrets are sniper accurate, knock this down if turrets should be less aim-bot
                         else
                             //weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? 0.9993908f : 0.9975641f; //2 : 4 degrees
-                            weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? adjustedAutoFireCosAngle : 0.9993906f; //user-adjustable from 0-2deg
+                            weapon.Current.maxAutoFireCosAngle = adjustedAutoFireCosAngle; //user-adjustable from 0-2deg
                     }
             }
 
