@@ -774,44 +774,69 @@
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PostBuildEvent>
-      @echo $(Targetname)
+    <PostBuildEvent>@echo $(Targetname)
       SET ModName=BDArmory
 
       rem this step strips the solutionName from the git path to give us the root folder for locating the LocalDev Folder
       rem the echo commands are commented.  used for testing of the desired path.
       set GIT_PATH=$(SolutionDir)
-      rem @echo %25GIT_PATH%25
-      set GIT_PATH=%25GIT_PATH:BDArmoryAI\=%25
-      rem @echo %25GIT_PATH%25
+      rem @echo %2525GIT_PATH%2525
+      set GIT_PATH=%2525GIT_PATH:BDArmory\=%2525
+      rem @echo %2525GIT_PATH%2525
 
       @echo ...
-      @echo set lpath vars from "D:\GitProjects\BDArmoryAI\BDArmory\LocalDev" storage...
-      set /p KSP_DIR=&lt;"D:\GitProjects\BDArmoryAI\BDArmory\LocalDev\ksp_dir.txt"
-      set /p PDB2MDB_EXE=&lt;"D:\GitProjects\BDArmoryAI\BDArmory\LocalDev\pdb2mdb_exe.txt"
-      set /p ZA_DIR=&lt;"D:\GitProjects\BDArmoryAI\BDArmory\LocalDev\7za_dir.txt"
-      set /p DIST_DIR=&lt;"D:\GitProjects\BDArmoryAI\BDArmory\LocalDev\dist_dir.txt"
+      @echo set lpath vars from "%2525GIT_PATH%2525_LocalDev\LocalDev" storage...
+      set /p KSP_DIR=&amp;lt;"%2525GIT_PATH%2525_LocalDev\ksp_dir.txt"
+      set /p PDB2MDB_EXE=&amp;lt;"%2525GIT_PATH%2525_LocalDev\pdb2mdb_exe.txt"
+      set /p ZA_DIR=&amp;lt;"%2525GIT_PATH%2525_LocalDev\7za_dir.txt"
+      set /p DIST_DIR=&amp;lt;"%2525GIT_PATH%2525_LocalDev\dist_dir.txt"
 
       @echo Copying assemblies to Distribution $(Targetname) files...
-      if not exist "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\" mkdir "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\"
-      xcopy /E /Y "$(TargetDir)"BDArmory*.dll "$(ProjectDir)Distribution\GameData\%25ModName%25\Plugins\"
+      if not exist "$(ProjectDir)Distribution\GameData\%2525ModName%2525\Plugins\" mkdir "$(ProjectDir)Distribution\GameData\%2525ModName%2525\Plugins\"
+      xcopy /E /Y "$(TargetDir)"BDArmory*.dll "$(ProjectDir)Distribution\GameData\%2525ModName%2525\Plugins\"
 
       if $(ConfigurationName) == Debug (
       @echo building debug files and symbols...
-      copy /Y "$(TargetDir)"BDArmory*.pdb "%25KSP_DIR%25\GameData\%25ModName%25\Plugins\"
+      copy /Y "$(TargetDir)"BDArmory*.pdb "%2525KSP_DIR%2525\GameData\%2525ModName%2525\Plugins\"
       )
 
       @echo deleting previous build ...
-      if exist "%25DIST_DIR%25\%25ModName%25.*.zip" del "%25DIST_DIR%25\%25ModName%25.*.zip"
+      if exist "%2525DIST_DIR%2525\%2525ModName%2525.*.zip" del "%2525DIST_DIR%2525\%2525ModName%2525.*.zip"
       @echo packaging new build...
-      call "%25ZA_DIR%25\7z.exe" a -tzip -r  "%25DIST_DIR%25\%25ModName%25.@(VersionNumber)_%25DATE:~4,2%25%25DATE:~7,2%25%25DATE:~10,4%25%25time:~0,2%25%25time:~3,2%25.zip" "$(ProjectDir)Distribution\*.*"
+      call "%2525ZA_DIR%2525\7za.exe" a -tzip -r  "%2525DIST_DIR%2525\%2525ModName%2525.@(VersionNumber)_%2525DATE:~4,2%2525%2525DATE:~7,2%2525%2525DATE:~10,4%2525%2525time:~0,2%2525%2525time:~3,2%2525.zip" "$(ProjectDir)Distribution\*.*"
 
-      @echo Deploy $(ProjectDir) Distribution files to test env:  %25KSP_DIR%25\GameData...
-      @echo copying:"$(ProjectDir)Distribution\GameData" to "%25KSP_DIR%25\GameData" 
-      xcopy /E /Y "$(ProjectDir)Distribution\GameData" "%25KSP_DIR%25\GameData"
+      @echo Deploy $(ProjectDir) Distribution files to test env:  %2525KSP_DIR%2525\GameData...
+      @echo copying:"$(ProjectDir)Distribution\GameData" to "%2525KSP_DIR%2525\GameData" 
+      xcopy /E /Y "$(ProjectDir)Distribution\GameData" "%2525KSP_DIR%2525\GameData"
 
 
       @echo Build/deploy complete!
-</PostBuildEvent>
+    &lt;/PostBuildEvent&gt;
+    &lt;PostBuildEvent Condition="'$(OS)' != 'Windows_NT' "&gt;
+      echo $(Targetname)
+      export ModName=BDArmory
+      echo Copying $(ConfigurationName) assemblies to Distribution $(Targetname) files...
+      mkdir -p "$(ProjectDir)/Distribution/GameData/${ModName}/Plugins/"
+      cp -a "$(TargetDir)"BDArmory*.dll "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"
+      if [ "$(ConfigurationName)" = "Debug" ]
+      then
+        echo building debug files and symbols...
+        cp -a "$(TargetDir)"BDArmory*.pdb "$(ProjectDir)Distribution/GameData/${ModName}/Plugins/"
+      fi
+
+      if [ -e "$(ProjectDir)Distribution/${ModName}".*.zip ]
+      then
+        echo deleting previous build ...
+        rm "$(ProjectDir)Distribution/${ModName}".*.zip
+      fi
+      echo packaging new build...
+      7za  a -tzip -r  "$(ProjectDir)Distribution/${ModName}.@(VersionNumber)_`date -u -Iseconds`.zip" "$(ProjectDir)Distribution/*.*"
+
+      export KSP_DIR="`cat $(ProjectDir)../../_LocalDev/ksp_dir.txt`"
+      echo Deploy $(ProjectDir) Distribution files to test env:  "${KSP_DIR}/GameData"...
+      echo copying:"$(ProjectDir)Distribution/GameData" to "${KSP_DIR}/GameData" 
+      cp -a "$(ProjectDir)Distribution/GameData/${ModName}" "${KSP_DIR}/GameData"
+
+      echo Build/deploy complete!</PostBuildEvent>
   </PropertyGroup>
 </Project>
