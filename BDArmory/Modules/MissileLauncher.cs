@@ -1110,8 +1110,9 @@ namespace BDArmory.Modules
                 switch (TargetingModeTerminal)
                 {
                     case TargetingModes.Heat:
-                        // get ground heat targets
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), TargetPosition - GetForwardTransform()), heatTarget.signalStrength, terminalGuidanceDistance, heatThreshold, true, SourceVessel.gameObject.GetComponent<MissileFire>(), true);
+                        // gets ground heat targets and after locking one, disalows the lock to break to another target
+                        if (!TargetAcquired)
+                            heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget.signalStrength, terminalGuidanceDistance, heatThreshold, true, SourceVessel.gameObject.GetComponent<MissileFire>(), true);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -1144,7 +1145,7 @@ namespace BDArmory.Modules
                         // pretend we have an active radar seeker for ground targets:
                         TargetSignatureData[] scannedTargets = new TargetSignatureData[5];
                         TargetSignatureData.ResetTSDArray(ref scannedTargets);
-                        Ray ray = new Ray(transform.position, TargetPosition - GetForwardTransform());
+                        Ray ray = new Ray(transform.position, GetForwardTransform());
 
                         //RadarUtils.UpdateRadarLock(ray, maxOffBoresight, activeRadarMinThresh, ref scannedTargets, 0.4f, true, RadarWarningReceiver.RWRThreatTypes.MissileLock, true);
                         RadarUtils.RadarUpdateMissileLock(ray, maxOffBoresight, ref scannedTargets, 0.4f, this);
