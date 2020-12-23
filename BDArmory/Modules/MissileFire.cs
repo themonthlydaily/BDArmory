@@ -1547,6 +1547,11 @@ namespace BDArmory.Modules
                 }
                 else if (ml.TargetingMode == MissileBase.TargetingModes.Laser)
                 {
+                    if (SetCargoBays())
+                    {
+                        yield return new WaitForSeconds(1f);
+                    }
+
                     if (targetingPods.Count > 0) //if targeting pods are available, slew them onto target and lock.
                     {
                         using (List<ModuleTargetingCamera>.Enumerator tgp = targetingPods.GetEnumerator())
@@ -1561,11 +1566,6 @@ namespace BDArmory.Modules
                                     break;
                                 }
                             }
-                    }
-
-                    if (SetCargoBays())
-                    {
-                        yield return new WaitForSeconds(1f);
                     }
 
                     //search for a laser point that corresponds with target vessel
@@ -4191,7 +4191,7 @@ namespace BDArmory.Modules
 
             //scan and acquire new target
             //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
-            if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 0.2f)) // stupid hack to stop them retargetting too quickly
+            if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 0.5f)) // stupid hack to stop them retargetting too quickly
             {
                 targetScanTimer = Time.time;
 
