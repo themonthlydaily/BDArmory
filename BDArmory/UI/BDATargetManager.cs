@@ -388,8 +388,6 @@ namespace BDArmory.UI
                         continue;
                 }
 
-                
-
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
                 if (angle < scanRadius)
                 {
@@ -414,6 +412,7 @@ namespace BDArmory.UI
                     }
 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
+                    
                     if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
                     {
                         if (Mathf.Abs(score - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
@@ -428,7 +427,6 @@ namespace BDArmory.UI
                         {
                             finalScore = score;
                             finalData = new TargetSignatureData(vessel, score);
-                            return finalData;
                         }
                     }
                 }
