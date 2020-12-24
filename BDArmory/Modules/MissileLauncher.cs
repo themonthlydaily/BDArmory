@@ -1098,7 +1098,7 @@ namespace BDArmory.Modules
             // check if guidance mode should be changed for terminal phase
             float distanceSqr = (TargetPosition - transform.position).sqrMagnitude;
 
-            if ((TargetingModeTerminal != TargetingModes.None) && (distanceSqr < terminalGuidanceDistance * terminalGuidanceDistance) && !terminalGuidanceActive && terminalGuidanceShouldActivate)
+            if (terminalGuidanceShouldActivate && !terminalGuidanceActive && (TargetingModeTerminal != TargetingModes.None) && (distanceSqr < terminalGuidanceDistance * terminalGuidanceDistance))
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                     Debug.Log("[BDArmory][Terminal Guidance]: missile " + this.name + " updating targeting mode: " + terminalGuidanceType);
@@ -1110,13 +1110,16 @@ namespace BDArmory.Modules
                 switch (TargetingModeTerminal)
                 {
                     case TargetingModes.Heat:
-                        // gets ground heat targets and after locking one, disalows the lock to break to another target
-                        if (!TargetAcquired)
-                            heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget.signalStrength, terminalGuidanceDistance, heatThreshold, true, SourceVessel.gameObject.GetComponent<MissileFire>(), true);
+                        // gets ground heat targets and after locking one, disallows the lock to break to another target
+                        // var reason = "sourcevessel: " + SourceVessel + ", vessel: " + vessel + ", heatTarget" + heatTarget + ", signalStrength: " + heatTarget.signalStrength + ", terminalGuidanceDistance: " + terminalGuidanceDistance + ", heatThreshold: " + heatThreshold + ", mf: " + (SourceVessel != null ? SourceVessel.FindPartModuleImplementing<MissileFire>() != null : false);
+                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget.signalStrength, terminalGuidanceDistance, heatThreshold, true, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
                                 Debug.Log("[BDArmory][Terminal Guidance]: Heat target acquired! Position: " + heatTarget.position + ", heatscore: " + heatTarget.signalStrength);
+                                // Debug.Log("DEBUG reason: " + reason);
+                            }
                             TargetAcquired = true;
                             TargetPosition = heatTarget.position + (heatTarget.velocity * Time.fixedDeltaTime);
                             TargetVelocity = heatTarget.velocity;
@@ -1136,7 +1139,10 @@ namespace BDArmory.Modules
                         else
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
                                 Debug.Log("[BDArmory][Terminal Guidance]: Missile heatseeker could not acquire a target lock.");
+                                // Debug.Log("DEBUG reason: " + reason);
+                            }
                         }
                         break;
 
