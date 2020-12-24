@@ -27,7 +27,7 @@ namespace BDArmory.Modules
 
         bool extending;
         double startedExtendingAt = 0;
-        string extendingReason = "";
+        // string extendingReason = "";
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
@@ -40,7 +40,7 @@ namespace BDArmory.Modules
         public void StopExtending()
         {
             extending = false;
-            extendingReason = "";
+            // extendingReason = "";
             startedExtendingAt = 0;
             // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to request");
         }
@@ -919,7 +919,7 @@ namespace BDArmory.Modules
                         //dangerous if low altitude and target is far below you - don't dive into ground!
                         if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
                         extending = true;
-                        extendingReason = "Too steeply below";
+                        // extendingReason = "Too steeply below";
                         lastTargetPosition = targetVessel.vesselTransform.position;
                     }
 
@@ -942,7 +942,7 @@ namespace BDArmory.Modules
                     {
                         if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
                         extending = true;
-                        extendingReason = "Can't turn fast enough";
+                        // extendingReason = "Can't turn fast enough";
                         lastTargetPosition = targetVessel.vesselTransform.position - vessel.Velocity();       //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
                         weaponManager.ForceScan();
                     }
@@ -950,7 +950,7 @@ namespace BDArmory.Modules
                     {
                         //extend if turning circles for too long
                         RequestExtend(targetVessel.vesselTransform.position);
-                        extendingReason = "Turning too long";
+                        // extendingReason = "Turning too long";
                         turningTimer = 0;
                         weaponManager.ForceScan();
                     }
@@ -964,7 +964,7 @@ namespace BDArmory.Modules
                     {
                         if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
                         extending = true;
-                        extendingReason = "Surface target";
+                        // extendingReason = "Surface target";
                         lastTargetPosition = targetVessel.transform.position;
                         weaponManager.ForceScan();
                     }
@@ -1209,7 +1209,7 @@ namespace BDArmory.Modules
                 && vessel.srfSpeed > idleSpeed)
             {
                 RequestExtend(lastTargetPosition); // Get far enough away to use the missile.
-                extendingReason = "Missile";
+                // extendingReason = "Missile";
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -1466,7 +1466,7 @@ namespace BDArmory.Modules
                 if (weaponManager.TargetOverride)
                 {
                     extending = false;
-                    extendingReason = "";
+                    // extendingReason = "";
                     startedExtendingAt = 0;
                     // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to target override");
                 }
@@ -1508,7 +1508,7 @@ namespace BDArmory.Modules
                 else // We're far enough away, stop extending.
                 {
                     extending = false;
-                    extendingReason = "";
+                    // extendingReason = "";
                     startedExtendingAt = 0;
                     // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to gone far enough (" + srfDist + " of " + extendDistance + ")");
                 }
@@ -1516,7 +1516,7 @@ namespace BDArmory.Modules
             else // No weapon manager.
             {
                 extending = false;
-                extendingReason = "";
+                // extendingReason = "";
                 startedExtendingAt = 0;
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to no weapon manager");
             }
