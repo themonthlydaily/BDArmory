@@ -756,7 +756,20 @@ namespace BDArmory.Modules
         {
             BDArmorySetup.windowBDAToolBarEnabled = !BDArmorySetup.windowBDAToolBarEnabled;
         }
-
+        
+        public void SetAFCAA()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["AutoFireCosAngleAdjustment"].uiControlEditor;
+            field.onFieldChanged = OnAFCAAUpdated;
+            field = (UI_FloatRange)Fields["AutoFireCosAngleAdjustment"].uiControlFlight;
+            field.onFieldChanged = OnAFCAAUpdated;
+        }
+        
+        public void OnAFCAAUpdated(BaseField field, object obj)
+        {
+            adjustedAutoFireCosAngle = Mathf.Cos((AutoFireCosAngleAdjustment * Mathf.Deg2Rad)); 
+            //Debug.Log("[DEBUG] AFCAA: " + adjustedAutoFireCosAngle);
+        }
         #endregion KSPFields,events,actions
 
         #endregion Declarations
@@ -864,7 +877,7 @@ namespace BDArmory.Modules
                 GameEvents.onPartDie.Add(OnPartDie);
 
                 GetTotalHP();
-                StartCoroutine(SetAFCAA());
+                SetAFCAA();
                 
                 using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
                     while (aipilot.MoveNext())
@@ -1778,15 +1791,6 @@ namespace BDArmory.Modules
         //    }
         //    missilesAway--;
         //}
-        private IEnumerator SetAFCAA()
-        {
-            WaitForSeconds wait = new WaitForSeconds(2); //cache this to prevent mem allocation every call from yield return new waitforseconds (n)
-            while (enabled)
-            {
-                adjustedAutoFireCosAngle = Mathf.Cos((AutoFireCosAngleAdjustment * Mathf.Deg2Rad)); //mathf.Cos outputs to rad, apparently? mathf.Cos = -0.416, not 0.9993
-                yield return wait;
-            }
-        }
         #endregion Enumerators
 
         #region Audio
