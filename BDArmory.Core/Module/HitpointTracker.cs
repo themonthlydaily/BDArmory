@@ -182,7 +182,14 @@ namespace BDArmory.Core.Module
                 // SuicidalInsanity B9 patch
                 if (part.name.Contains("B9.Aero.Wing.Procedural")) 
                 {
-                    hitpoints = (part.mass * 1000f) * 3.5f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                    if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
+                        {
+                            hitpoints = dryPartmass * 3.5f * hitpointMultiplier * 0.33f; //To account for FAR's Strength-mass Scalar.
+                        }
+                    else
+                    {
+                        hitpoints = (part.mass * 1000f) * 7f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                    }
                 }
 
                 hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
