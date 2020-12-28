@@ -756,19 +756,20 @@ namespace BDArmory.Modules
         {
             BDArmorySetup.windowBDAToolBarEnabled = !BDArmorySetup.windowBDAToolBarEnabled;
         }
-        
+
         public void SetAFCAA()
         {
             UI_FloatRange field = (UI_FloatRange)Fields["AutoFireCosAngleAdjustment"].uiControlEditor;
             field.onFieldChanged = OnAFCAAUpdated;
-            field = (UI_FloatRange)Fields["AutoFireCosAngleAdjustment"].uiControlFlight;
-            field.onFieldChanged = OnAFCAAUpdated;
+            // field = (UI_FloatRange)Fields["AutoFireCosAngleAdjustment"].uiControlFlight; // Not visible in flight mode, use the guard menu instead.
+            // field.onFieldChanged = OnAFCAAUpdated;
+            OnAFCAAUpdated(null, null);
         }
-        
+
         public void OnAFCAAUpdated(BaseField field, object obj)
         {
-            adjustedAutoFireCosAngle = Mathf.Cos((AutoFireCosAngleAdjustment * Mathf.Deg2Rad)); 
-            //Debug.Log("[DEBUG] AFCAA: " + adjustedAutoFireCosAngle);
+            adjustedAutoFireCosAngle = Mathf.Cos((AutoFireCosAngleAdjustment * Mathf.Deg2Rad));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MissileFire]: Setting AFCAA to " + adjustedAutoFireCosAngle);
         }
         #endregion KSPFields,events,actions
 
@@ -818,6 +819,7 @@ namespace BDArmory.Modules
             Team = BDTeam.Deserialize(team);
 
             UpdateMaxGuardRange();
+            SetAFCAA();
 
             startTime = Time.time;
 
@@ -877,8 +879,7 @@ namespace BDArmory.Modules
                 GameEvents.onPartDie.Add(OnPartDie);
 
                 GetTotalHP();
-                SetAFCAA();
-                
+
                 using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
                     while (aipilot.MoveNext())
                     {

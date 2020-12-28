@@ -961,13 +961,15 @@ namespace BDArmory.UI
                     guardLines++;
 
                     // extension for feature_engagementenvelope: set the firing accuracy tolarance
+                    var oldAutoFireCosAngleAdjustment = ActiveWeaponManager.AutoFireCosAngleAdjustment;
                     string accuracyLabel = Localizer.Format("#LOC_BDArmory_WMWindow_FiringTolerance");//"Firing Angle"
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), accuracyLabel, leftLabel);
-					ActiveWeaponManager.AutoFireCosAngleAdjustment =
-						GUI.HorizontalSlider(
-							new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-							ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 2);
-                    if (ActiveWeaponManager.AutoFireCosAngleAdjustment != (ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 100) / 100))
+                    ActiveWeaponManager.AutoFireCosAngleAdjustment =
+                        GUI.HorizontalSlider(
+                            new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 2);
+                    ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20) / 20;
+                    if (ActiveWeaponManager.AutoFireCosAngleAdjustment != oldAutoFireCosAngleAdjustment)
                         ActiveWeaponManager.OnAFCAAUpdated(null, null);
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.AutoFireCosAngleAdjustment.ToString(), leftLabel);
