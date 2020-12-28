@@ -1111,14 +1111,12 @@ namespace BDArmory.Modules
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        // var reason = "sourcevessel: " + SourceVessel + ", vessel: " + vessel + ", heatTarget" + heatTarget + ", signalStrength: " + heatTarget.signalStrength + ", terminalGuidanceDistance: " + terminalGuidanceDistance + ", heatThreshold: " + heatThreshold + ", mf: " + (SourceVessel != null ? SourceVessel.FindPartModuleImplementing<MissileFire>() != null : false);
                         heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget.signalStrength, terminalGuidanceDistance, heatThreshold, true, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             {
                                 Debug.Log("[BDArmory][Terminal Guidance]: Heat target acquired! Position: " + heatTarget.position + ", heatscore: " + heatTarget.signalStrength);
-                                // Debug.Log("DEBUG reason: " + reason);
                             }
                             TargetAcquired = true;
                             TargetPosition = heatTarget.position + (heatTarget.velocity * Time.fixedDeltaTime);
@@ -1141,7 +1139,6 @@ namespace BDArmory.Modules
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             {
                                 Debug.Log("[BDArmory][Terminal Guidance]: Missile heatseeker could not acquire a target lock.");
-                                // Debug.Log("DEBUG reason: " + reason);
                             }
                         }
                         break;
@@ -1210,6 +1207,7 @@ namespace BDArmory.Modules
 
                     case TargetingModes.AntiRad:
                         TargetAcquired = true;
+                        targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody); // Set the GPS coordinates from the current target position.
                         SetAntiRadTargeting(); //should then already work automatically via OnReceiveRadarPing
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             Debug.Log("[BDArmory][Terminal Guidance]: Antiradiation mode set! Waiting for radar signals...");
