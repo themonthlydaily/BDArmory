@@ -5,6 +5,7 @@ using System.Text;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.CounterMeasure;
+using BDArmory.Control;
 using BDArmory.FX;
 using BDArmory.Guidances;
 using BDArmory.Misc;
@@ -429,7 +430,7 @@ namespace BDArmory.Modules
                     DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
 
                 // Update heat target
-                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, targetHeatScore, lockedSensorFOV / 2, heatThreshold, allAspect, SourceVessel?.gameObject?.GetComponent<MissileFire>());
+                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, targetHeatScore, lockedSensorFOV / 2, heatThreshold, allAspect, (SourceVessel != null ? SourceVessel.gameObject?.GetComponent<MissileFire>() : null)); // Unity messes with fake nulls and breaks ?. operators sometimes.
 
                 if (heatTarget.exists)
                 {
@@ -909,7 +910,6 @@ namespace BDArmory.Modules
             return vessel.FindPartModulesImplementing<BDExplosivePart>().Max(x => x.tntMass);
         }
 
-        float closestPartDistance;
         public void CheckDetonationState()
         {
             //Guard clauses
@@ -954,7 +954,6 @@ namespace BDArmory.Modules
                     break;
 
                 case DetonationDistanceStates.Cruising:
-                    closestPartDistance = 2 * Mathf.Max(DetonationDistance, (float)relativeSpeed);
                     if (Vector3.Distance(futureMissilePosition, futureTargetPosition) < GetBlastRadius() * 10)
                     {
                         //We are now close enough to start checking the detonation distance
@@ -1035,12 +1034,10 @@ namespace BDArmory.Modules
                                     //We found a hit a different vessel than ours
                                     if (DetonateAtMinimumDistance)
                                     {
-                                        var distance = Vector3.Distance(partHit.vessel.CoM, vessel.CoM);
-                                        if (distance > 1 && distance < closestPartDistance) // If we're more than 1m away and closing, then wait.
-                                        {
-                                            closestPartDistance = distance;
+                                        var distance = Vector3.Distance(partHit.transform.position, vessel.CoM);
+                                        var predictedDistance = Vector3.Distance(AIUtils.PredictPosition(partHit.transform.position, partHit.vessel.Velocity(), partHit.vessel.acceleration, Time.deltaTime), AIUtils.PredictPosition(vessel, Time.deltaTime));
+                                        if (distance > predictedDistance && distance > Time.fixedDeltaTime * (float)vessel.srfSpeed) // If we're closing and not going to hit within the next update, then wait.
                                             return;
-                                        }
                                     }
                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
                                     return;
