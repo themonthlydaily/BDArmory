@@ -298,6 +298,7 @@ namespace BDArmory.UI
         {
             TargetSignatureData flareTarget = TargetSignatureData.noTarget;
             float bestScore = 0f;
+            float bestUnbiasedScore = 0f;
 
             using (List<CMFlare>.Enumerator flare = BDArmorySetup.Flares.GetEnumerator())
                 while (flare.MoveNext())
@@ -309,18 +310,19 @@ namespace BDArmory.UI
                     {
                         float score = flare.Current.thermal * Mathf.Clamp01(15 / angle); // Reduce score on anything outside 15 deg of look ray
 
+                        score *= (1400 * 1400) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
+                        score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
+
                         // Add bias targets closer to center of seeker FOV
                         float seekerBias = GetSeekerBias(angle, scanRadius);
                         score *= seekerBias;
-
-                        score *= (1400 * 1400) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
-                        score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
                         if (BDArmorySettings.DUMB_IR_SEEKERS) // Pick the hottest flare hotter than heatSignature
                         {
                             if ((score > heatSignature) && (score > bestScore))
                             {
-                                flareTarget = new TargetSignatureData(flare.Current, score);
+                                bestUnbiasedScore = score / seekerBias;
+                                flareTarget = new TargetSignatureData(flare.Current, bestUnbiasedScore);
                                 bestScore = score;
                             }
                         }
@@ -328,7 +330,8 @@ namespace BDArmory.UI
                         {
                             if ((score > 0f) && (Mathf.Abs(score - heatSignature) < Mathf.Abs(bestScore - heatSignature))) // Pick the closest flare to target
                             {
-                                flareTarget = new TargetSignatureData(flare.Current, score);
+                                bestUnbiasedScore = score / seekerBias;
+                                flareTarget = new TargetSignatureData(flare.Current, bestUnbiasedScore);
                                 bestScore = score;
                             }
                         }
@@ -343,6 +346,7 @@ namespace BDArmory.UI
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
+            float finalUnbiasedScore = 0f;
 
             foreach (Vessel vessel in LoadedVessels)
             {
@@ -403,10 +407,6 @@ namespace BDArmory.UI
                     float score = GetVesselHeatSignature(vessel) * Mathf.Clamp01(15 / angle);
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
-                    // Add bias targets closer to center of seeker FOV
-                    float seekerBias = GetSeekerBias(angle, scanRadius);
-                    score *= seekerBias;
-
                     if (vessel.LandedOrSplashed && !favorGroundTargets)
                     {
                         score /= 4;
@@ -414,12 +414,17 @@ namespace BDArmory.UI
 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
+                    // Add bias targets closer to center of seeker FOV
+                    float seekerBias = GetSeekerBias(angle, scanRadius);
+                    score *= seekerBias;
+
                     if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
                     {
                         if (Mathf.Abs(score - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
                         {
                             finalScore = score;
-                            finalData = new TargetSignatureData(vessel, score);
+                            finalUnbiasedScore = score / seekerBias;
+                            finalData = new TargetSignatureData(vessel, finalUnbiasedScore);
                         }
                     }
                     else // Otherwise, pick the highest heat score
@@ -427,7 +432,8 @@ namespace BDArmory.UI
                         if (score > finalScore)
                         {
                             finalScore = score;
-                            finalData = new TargetSignatureData(vessel, score);
+                            finalUnbiasedScore = score / seekerBias;
+                            finalData = new TargetSignatureData(vessel, finalUnbiasedScore);
                         }
                     }
                 }
@@ -445,7 +451,7 @@ namespace BDArmory.UI
 
 
             // No targets above highpassThreshold
-            if (finalScore < highpassThreshold)
+            if (finalUnbiasedScore < highpassThreshold)
             {
                 finalData = TargetSignatureData.noTarget;
 
@@ -457,13 +463,15 @@ namespace BDArmory.UI
 
             // See if a flare is closer in score to priorHeatScore than finalScore
             if (priorHeatScore > 0)
-                flareSuccess = (Mathf.Abs(flareData.signalStrength - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore)) && flareSuccess;
+            {
+                float angle = Vector3.Angle(flareData.position - ray.origin, ray.direction);
+                float seekerBias = GetSeekerBias(angle, scanRadius);
+                flareSuccess = (Mathf.Abs(flareData.signalStrength*seekerBias - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore)) && flareSuccess;
+            }
             else if (BDArmorySettings.DUMB_IR_SEEKERS)
                 flareSuccess = (flareData.signalStrength > finalScore) && flareSuccess;
             else
                 flareSuccess = false;
-
-
 
             if (flareSuccess) // return matching flare
                 return flareData;
@@ -473,8 +481,9 @@ namespace BDArmory.UI
 
         private static float GetSeekerBias(float angle, float scanRadius)
         {
-            float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
-            float seekerBias = Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
+            //float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
+            //float seekerBias = Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
+            float seekerBias = Mathf.Clamp01(-1f * (1f / (angle * angle + 1f));
 
             return seekerBias;
         }
