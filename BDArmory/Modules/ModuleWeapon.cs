@@ -292,6 +292,25 @@ namespace BDArmory.Modules
         public float ECPerShot = 0; //EC to use per shot for weapons like railguns
 
         [KSPField]
+        public bool BeltFed = true; //draws from an ammo bin; default behavior
+
+        [KSPField]
+        public int RoundsPerMag = 1; //For weapons fed from clips/mags. left at one as sanity check, incase this not set if !BeltFed
+        public int RoundsRemaining = 0;
+        public bool isReloading;
+
+        [KSPField]
+        public bool crewserved = false; //does the weapon need a gunner?
+        public bool hasGunner = true; //if so, are they present?
+
+        [KSPField]
+        public float ReloadTime = 10;
+        public float ReloadTimer = 0;
+
+        [KSPField]
+        public bool BurstFire = false; // set to true for weapons that fire multiple times per triggerpull
+
+        [KSPField]
         public string bulletDragTypeName = "AnalyticEstimate";
         public BulletDragTypes bulletDragType;
 
@@ -608,19 +627,26 @@ namespace BDArmory.Modules
                 Fields["useRippleFire"].guiActiveEditor = false;
             }
             vessel.Velocity();
-            if (airDetonation)
+            if (BurstFire)
             {
-                UI_FloatRange detRange = (UI_FloatRange)Fields["maxAirDetonationRange"].uiControlEditor;
-                detRange.maxValue = maxEffectiveDistance; //altitude fuzing clamped to max range
+                BeltFed = false;
             }
-            else //disable fuze GUI elements on un-fuzed munitions
+            if (eWeaponType == WeaponTypes.Ballistic) //moving in prep for rockets/lasers
             {
-                Fields["maxAirDetonationRange"].guiActive = false;
-                Fields["maxAirDetonationRange"].guiActiveEditor = false;
-                Fields["defaultDetonationRange"].guiActive = false;
-                Fields["defaultDetonationRange"].guiActiveEditor = false;
-                Fields["detonationRange"].guiActive = false;
-                Fields["detonationRange"].guiActiveEditor = false;
+                if (airDetonation)
+                {
+                    UI_FloatRange detRange = (UI_FloatRange)Fields["maxAirDetonationRange"].uiControlEditor;
+                    detRange.maxValue = maxEffectiveDistance; //altitude fuzing clamped to max range
+                }
+                else //disable fuze GUI elements on un-fuzed munitions
+                {
+                    Fields["maxAirDetonationRange"].guiActive = false;
+                    Fields["maxAirDetonationRange"].guiActiveEditor = false;
+                    Fields["defaultDetonationRange"].guiActive = false;
+                    Fields["defaultDetonationRange"].guiActiveEditor = false;
+                    Fields["detonationRange"].guiActive = false;
+                    Fields["detonationRange"].guiActiveEditor = false;
+                }
             }
             muzzleFlashEmitters = new List<KSPParticleEmitter>();
             IEnumerator<Transform> mtf = part.FindModelTransforms("muzzleTransform").AsEnumerable().GetEnumerator();
@@ -704,6 +730,18 @@ namespace BDArmory.Modules
                     if (maxTargetingRange < maxEffectiveDistance)
                     {
                         maxEffectiveDistance = maxTargetingRange;
+                    }
+                }
+                if (crewserved)
+                {
+                    KerbalSeat KS = part.Modules.OfType<KerbalSeat>().First(); //account for both lawn chairs and internal cabins
+                    if (KS.Occupant == null || part.protoModuleCrew.Count <= 0)
+                    {
+                        hasGunner = false;
+                    }
+                    else
+                    {
+                        hasGunner = true;
                     }
                 }
             }
@@ -799,7 +837,7 @@ namespace BDArmory.Modules
                         (yawRange == 0 || (maxPitch - minPitch) == 0 ||
                          turret.TargetInRange(finalAimTarget, 10, float.MaxValue)))
                     {
-                        if (useRippleFire && (pointingAtSelf || isOverheated))
+                        if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
                         {
                             StartCoroutine(IncrementRippleIndex(0));
                             finalFire = false;
@@ -840,13 +878,34 @@ namespace BDArmory.Modules
                     vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
                     gauge.UpdateAmmoMeter((float)(ammoCurrent / ammoMax));
 
+                    ammoCount = ammoCurrent;
                     if (showReloadMeter)
                     {
-                        gauge.UpdateReloadMeter((Time.time - timeFired) * roundsPerMinute / 60);
+                        if (isReloading)
+                        {
+                            gauge.UpdateReloadMeter(ReloadTimer);
+                        }
+                        else
+                        {
+                            gauge.UpdateReloadMeter((Time.time - timeFired) * roundsPerMinute / 60);
+                        }
+                    }
+                    gauge.UpdateHeatMeter(heat / maxHeat);
+                }
+                if (!BeltFed)
+                {
+                    ReloadWeapon();
+                }
+                if (crewserved)
+                {
+                    KerbalSeat KS = part.Modules.OfType<KerbalSeat>().First();
+                    if (KS.Occupant == null || part.protoModuleCrew.Count <= 0)
+                    {
+                        hasGunner = false;
                     }
                     else
                     {
-                        gauge.UpdateHeatMeter(heat / maxHeat);
+                        hasGunner = true;
                     }
                 }
             }
@@ -1028,6 +1087,7 @@ namespace BDArmory.Modules
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
             if (Time.time - timeFired > timeGap
                 && !isOverheated
+                && !isReloading
                 && !pointingAtSelf
                 && (aiControlled || !Misc.Misc.CheckMouseIsOnGui())
                 && WMgrAuthorized())
@@ -1181,6 +1241,7 @@ namespace BDArmory.Modules
                             heat += heatPerShot;
                             //EC
                             DrainECPerShot();
+                            RoundsRemaining++;
                         }
                         else
                         {
@@ -1337,6 +1398,11 @@ namespace BDArmory.Modules
                     ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                     return false;
                 }
+            }
+            if (!hasGunner)
+            {
+                ScreenMessages.PostScreenMessage("Weapon Requires Gunner", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                return false;
             }
             if ((BDArmorySettings.INFINITE_AMMO || part.RequestResource(ammoName.GetHashCode(), (double)requestResourceAmount) > 0))
             {
@@ -1919,6 +1985,14 @@ namespace BDArmory.Modules
 
             if (finalFire)
             {
+                if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+                {
+                    finalFire = false;
+                }
+                else
+                {
+                    finalFire = true;
+                }
                 if (eWeaponType == WeaponTypes.Laser)
                 {
                     if (FireLaser())
@@ -1939,21 +2013,20 @@ namespace BDArmory.Modules
                 }
                 else
                 {
-                    if (useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+                    if (eWeaponType == WeaponTypes.Ballistic)
                     {
-                        //timeFired = Time.time + (initialFireDelay - (60f / roundsPerMinute)) * TimeWarp.CurrentRate;
-                        finalFire = false;
+                        if (finalFire)
+                            Fire();
                     }
-                    else
-                    {
-                        finalFire = true;
-                    }
-
-                    if (finalFire)
-                        Fire();
                 }
-
-                finalFire = false;
+                if (BurstFire && (RoundsRemaining < RoundsPerMag))
+                {
+                    finalFire = true;
+                }
+                else
+                {
+                    finalFire = false;
+                }
             }
 
             yield break;
@@ -2040,7 +2113,30 @@ namespace BDArmory.Modules
                 isOverheated = false;
             }
         }
-
+        void ReloadWeapon()
+        {
+            if (isReloading)
+            {
+                ReloadTimer = Mathf.Clamp((ReloadTimer + 1 * TimeWarp.fixedDeltaTime / ReloadTime), 0, 1);
+            }
+            if (RoundsRemaining >= RoundsPerMag && !isReloading)
+            {
+                isReloading = true;
+                autoFire = false;
+                audioSource.Stop();
+                wasFiring = false;
+                weaponManager.ResetGuardInterval();
+                showReloadMeter = true;
+            }
+            if (ReloadTimer >= 1 && isReloading)
+            {
+                RoundsRemaining = 0;
+                gauge.UpdateReloadMeter(1);
+                showReloadMeter = false;
+                isReloading = false;
+                ReloadTimer = 0;
+            }
+        }
         void UpdateTargetVessel()
         {
             targetAcquired = false;
@@ -2332,6 +2428,22 @@ namespace BDArmory.Modules
                         }
                     }
                 }
+            }
+            output.AppendLine("");
+            if (BurstFire)
+            {
+                output.AppendLine($"Burst Fire Weapon");
+                output.AppendLine($" - Rounds Per Burst: {RoundsPerMag}");
+            }
+            if (!BeltFed && !BurstFire)
+            {
+                output.AppendLine($" Reloadable");
+                output.AppendLine($" - Shots before Reload: {RoundsPerMag}");
+                output.AppendLine($" - Reload Time: {ReloadTime}");
+            }
+            if (crewserved)
+            {
+                output.AppendLine($"Crew-served Weapon - Requires onboard Kerbal");
             }
             return output.ToString();
         }
