@@ -184,7 +184,7 @@ namespace BDArmory.Core.Module
                 {
                     if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                         {
-                            hitpoints = dryPartmass * 3.5f * hitpointMultiplier * 0.33f; //To account for FAR's Strength-mass Scalar.
+                            hitpoints = (part.mass * 1000f) * 3.5f * hitpointMultiplier * 0.33f; //To account for FAR's Strength-mass Scalar.
                         }
                     else
                     {
