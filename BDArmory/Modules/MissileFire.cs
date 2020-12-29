@@ -372,6 +372,12 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
         public float fireBurstLength = 0;
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringTolerance"),//Firing Tolerance
+        UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+        public float AutoFireCosAngleAdjustment = 1f; //tune Autofire angle in WM GUI
+
+        public float adjustedAutoFireCosAngle = 0.999484f;
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FieldOfView"),//Field of View
          UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
@@ -751,6 +757,20 @@ namespace BDArmory.Modules
             BDArmorySetup.windowBDAToolBarEnabled = !BDArmorySetup.windowBDAToolBarEnabled;
         }
 
+        public void SetAFCAA()
+        {
+            UI_FloatRange field = (UI_FloatRange)Fields["AutoFireCosAngleAdjustment"].uiControlEditor;
+            field.onFieldChanged = OnAFCAAUpdated;
+            // field = (UI_FloatRange)Fields["AutoFireCosAngleAdjustment"].uiControlFlight; // Not visible in flight mode, use the guard menu instead.
+            // field.onFieldChanged = OnAFCAAUpdated;
+            OnAFCAAUpdated(null, null);
+        }
+
+        public void OnAFCAAUpdated(BaseField field, object obj)
+        {
+            adjustedAutoFireCosAngle = Mathf.Cos((AutoFireCosAngleAdjustment * Mathf.Deg2Rad));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MissileFire]: Setting AFCAA to " + adjustedAutoFireCosAngle);
+        }
         #endregion KSPFields,events,actions
 
         #endregion Declarations
@@ -799,6 +819,7 @@ namespace BDArmory.Modules
             Team = BDTeam.Deserialize(team);
 
             UpdateMaxGuardRange();
+            SetAFCAA();
 
             startTime = Time.time;
 
@@ -1771,7 +1792,6 @@ namespace BDArmory.Modules
         //    }
         //    missilesAway--;
         //}
-
         #endregion Enumerators
 
         #region Audio
@@ -4142,9 +4162,10 @@ namespace BDArmory.Modules
                         weapon.Current.EnableWeapon();
                         weapon.Current.aiControlled = true;
                         if (weapon.Current.yawRange >= 5 && (weapon.Current.maxPitch - weapon.Current.minPitch) >= 5)
-                            weapon.Current.maxAutoFireCosAngle = 1;
+                            weapon.Current.maxAutoFireCosAngle = 1; //this is why turrets are sniper accurate, knock this down if turrets should be less aim-bot
                         else
-                            weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? 0.9993908f : 0.9975641f; //2 : 4 degrees
+                            //weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? 0.9993908f : 0.9975641f; //2 : 4 degrees
+                            weapon.Current.maxAutoFireCosAngle = adjustedAutoFireCosAngle; //user-adjustable from 0-2deg
                     }
             }
 

@@ -293,6 +293,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriWeapons(MissileFire mf, MissileFire myMf) // Relative number of weapons of target compared to own weapons
         {
+            if (mf?.weaponArray == null) return 0; // The target is dead or has no weapons.
             float targetWeapons = mf.CountWeapons(); // Counts weapons
             float myWeapons = myMf.CountWeapons(); // Counts weapons
             // float targetWeapons = mf.weaponArray.Length - 1; // Counts weapon groups
