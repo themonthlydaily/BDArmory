@@ -1011,9 +1011,9 @@ namespace BDArmory.Modules
         }
 
         #endregion KSP Events
-        //some code organization
-        //Ballistics
-        #region Guns 
+
+        #region Fire
+
         private void Fire()
         {
             if (BDArmorySetup.GameIsPaused)
@@ -1052,7 +1052,95 @@ namespace BDArmory.Modules
 
                             if (!effectsShot)
                             {
-                                WeaponFX();
+                                //sound
+                                if (oneShotSound)
+                                {
+                                    audioSource.Stop();
+                                    audioSource.PlayOneShot(fireSound);
+                                }
+                                else
+                                {
+                                    wasFiring = true;
+                                    if (!audioSource.isPlaying)
+                                    {
+                                        audioSource.clip = fireSound;
+                                        audioSource.loop = false;
+                                        audioSource.time = 0;
+                                        audioSource.Play();
+                                    }
+                                    else
+                                    {
+                                        if (audioSource.time >= fireSound.length)
+                                        {
+                                            audioSource.time = soundRepeatTime;
+                                        }
+                                    }
+                                }
+
+                                //animation
+                                if (hasFireAnimation)
+                                {
+                                    float unclampedSpeed = (roundsPerMinute * fireState.length) / 60f;
+                                    float lowFramerateFix = 1;
+                                    if (roundsPerMinute > 500f)
+                                    {
+                                        lowFramerateFix = (0.02f / Time.deltaTime);
+                                    }
+                                    fireAnimSpeed = Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
+                                    fireState.enabled = true;
+                                    if (unclampedSpeed == fireAnimSpeed || fireState.normalizedTime > 1)
+                                    {
+                                        fireState.normalizedTime = 0;
+                                    }
+                                    fireState.speed = fireAnimSpeed;
+                                    fireState.normalizedTime = Mathf.Repeat(fireState.normalizedTime, 1);
+
+                                    //Debug.Log("fireAnim time: " + fireState.normalizedTime + ", speed; " + fireState.speed);
+                                }
+
+                                //muzzle flash
+                                List<KSPParticleEmitter>.Enumerator pEmitter = muzzleFlashEmitters.GetEnumerator();
+                                while (pEmitter.MoveNext())
+                                {
+                                    if (pEmitter.Current == null) continue;
+                                    //KSPParticleEmitter pEmitter = mtf.gameObject.GetComponent<KSPParticleEmitter>();
+                                    if (pEmitter.Current.useWorldSpace && !oneShotWorldParticles) continue;
+                                    if (pEmitter.Current.maxEnergy < 0.5f)
+                                    {
+                                        float twoFrameTime = Mathf.Clamp(Time.deltaTime * 2f, 0.02f, 0.499f);
+                                        pEmitter.Current.maxEnergy = twoFrameTime;
+                                        pEmitter.Current.minEnergy = twoFrameTime / 3f;
+                                    }
+                                    pEmitter.Current.Emit();
+                                }
+                                pEmitter.Dispose();
+
+                                List<BDAGaplessParticleEmitter>.Enumerator gpe = gaplessEmitters.GetEnumerator();
+                                while (gpe.MoveNext())
+                                {
+                                    if (gpe.Current == null) continue;
+                                    gpe.Current.EmitParticles();
+                                }
+                                gpe.Dispose();
+
+                                //shell ejection
+                                if (BDArmorySettings.EJECT_SHELLS)
+                                {
+                                    IEnumerator<Transform> sTf = shellEjectTransforms.AsEnumerable().GetEnumerator();
+                                    while (sTf.MoveNext())
+                                    {
+                                        if (sTf.Current == null) continue;
+                                        GameObject ejectedShell = shellPool.GetPooledObject();
+                                        ejectedShell.transform.position = sTf.Current.position;
+                                        //+(part.rb.velocity*TimeWarp.fixedDeltaTime);
+                                        ejectedShell.transform.rotation = sTf.Current.rotation;
+                                        ejectedShell.transform.localScale = Vector3.one * shellScale;
+                                        ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
+                                        shellComponent.initialV = part.rb.velocity;
+                                        ejectedShell.SetActive(true);
+                                    }
+                                    sTf.Dispose();
+                                }
                                 effectsShot = true;
                             }
 
@@ -1204,9 +1292,7 @@ namespace BDArmory.Modules
                 spinningDown = true;
             }
         }
-        #endregion Guns
-        //lasers
-        #region LaserFire
+
         private bool FireLaser()
         {
             float chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
@@ -1316,130 +1402,7 @@ namespace BDArmory.Modules
                 laserRenderers[i].enabled = false;
             }
         }
-        #endregion
-        //Shared FX and resource consumption code
-        #region WeaponUtilities
-        void DrainECPerShot()
-        {
-            if (ECPerShot == 0) return;
-            //double drainAmount = ECPerShot * TimeWarp.fixedDeltaTime;
-            double drainAmount = ECPerShot;
-            double chargeAvailable = part.RequestResource("ElectricCharge", drainAmount, ResourceFlowMode.ALL_VESSEL);
-        }
 
-        bool CanFire()
-        {
-            if (ECPerShot != 0)
-            {
-                double chargeAvailable = part.RequestResource("ElectricCharge", ECPerShot, ResourceFlowMode.ALL_VESSEL);
-                if (chargeAvailable < ECPerShot * 0.95f)
-                {
-                    ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
-                    return false;
-                }
-            }
-            if ((BDArmorySettings.INFINITE_AMMO || part.RequestResource(ammoName.GetHashCode(), (double)requestResourceAmount) > 0))
-            {
-                return true;
-            }
-
-            return false;
-        }
-        void PlayFireAnim()
-        {
-            float unclampedSpeed = (roundsPerMinute * fireState.length) / 60f;
-            float lowFramerateFix = 1;
-            if (roundsPerMinute > 500f)
-            {
-                lowFramerateFix = (0.02f / Time.deltaTime);
-            }
-            fireAnimSpeed = Mathf.Clamp(unclampedSpeed, 1f * lowFramerateFix, 20f * lowFramerateFix);
-            fireState.enabled = true;
-            if (unclampedSpeed == fireAnimSpeed || fireState.normalizedTime > 1)
-            {
-                fireState.normalizedTime = 0;
-            }
-            fireState.speed = fireAnimSpeed;
-            fireState.normalizedTime = Mathf.Repeat(fireState.normalizedTime, 1);
-
-            //Debug.Log("fireAnim time: " + fireState.normalizedTime + ", speed; " + fireState.speed);
-        }
-        void WeaponFX()
-        {
-            //sound
-            if (oneShotSound)
-            {
-                audioSource.Stop();
-                audioSource.PlayOneShot(fireSound);
-            }
-            else
-            {
-                wasFiring = true;
-                if (!audioSource.isPlaying)
-                {
-                    audioSource.clip = fireSound;
-                    audioSource.loop = false;
-                    audioSource.time = 0;
-                    audioSource.Play();
-                }
-                else
-                {
-                    if (audioSource.time >= fireSound.length)
-                    {
-                        audioSource.time = soundRepeatTime;
-                    }
-                }
-            }
-            //animation
-            if (hasFireAnimation)
-            {
-                PlayFireAnim();
-            }
-            //muzzle flash
-            using (List<KSPParticleEmitter>.Enumerator pEmitter = muzzleFlashEmitters.GetEnumerator())
-                while (pEmitter.MoveNext())
-                {
-                    if (pEmitter.Current == null) continue;
-                    //KSPParticleEmitter pEmitter = mtf.gameObject.GetComponent<KSPParticleEmitter>();
-                    if (pEmitter.Current.useWorldSpace && !oneShotWorldParticles) continue;
-                    if (pEmitter.Current.maxEnergy < 0.5f)
-                    {
-                        float twoFrameTime = Mathf.Clamp(Time.deltaTime * 2f, 0.02f, 0.499f);
-                        pEmitter.Current.maxEnergy = twoFrameTime;
-                        pEmitter.Current.minEnergy = twoFrameTime / 3f;
-                    }
-                    pEmitter.Current.Emit();
-                }
-
-            using (List<BDAGaplessParticleEmitter>.Enumerator gpe = gaplessEmitters.GetEnumerator())
-                while (gpe.MoveNext())
-                {
-                    if (gpe.Current == null) continue;
-                    gpe.Current.EmitParticles();
-                }
-
-            //shell ejection
-            if (BDArmorySettings.EJECT_SHELLS)
-            {
-                IEnumerator<Transform> sTf = shellEjectTransforms.AsEnumerable().GetEnumerator();
-                while (sTf.MoveNext())
-                {
-                    if (sTf.Current == null) continue;
-                    GameObject ejectedShell = shellPool.GetPooledObject();
-                    ejectedShell.transform.position = sTf.Current.position;
-                    //+(part.rb.velocity*TimeWarp.fixedDeltaTime);
-                    ejectedShell.transform.rotation = sTf.Current.rotation;
-                    ejectedShell.transform.localScale = Vector3.one * shellScale;
-                    ShellCasing shellComponent = ejectedShell.GetComponent<ShellCasing>();
-                    shellComponent.initialV = part.rb.velocity;
-                    ejectedShell.SetActive(true);
-                }
-                sTf.Dispose();
-            }
-        }
-        #endregion WeaponUtilities
-        //misc. like check weaponmgr
-        #region WeaponSetup
         bool WMgrAuthorized()
         {
             MissileFire manager = BDArmorySetup.Instance.ActiveWeaponManager;
@@ -1527,7 +1490,36 @@ namespace BDArmory.Modules
                     break;
             }
         }
-        #endregion WeaponSetup
+
+        void DrainECPerShot()
+        {
+            if (ECPerShot == 0) return;
+            //double drainAmount = ECPerShot * TimeWarp.fixedDeltaTime;
+            double drainAmount = ECPerShot;
+            double chargeAvailable = part.RequestResource("ElectricCharge", drainAmount, ResourceFlowMode.ALL_VESSEL);
+        }
+
+        bool CanFire()
+        {
+            if (ECPerShot != 0)
+            {
+                double chargeAvailable = part.RequestResource("ElectricCharge", ECPerShot, ResourceFlowMode.ALL_VESSEL);
+                if (chargeAvailable < ECPerShot * 0.95f)
+                {
+                    ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                    return false;
+                }
+            }
+
+            if ((BDArmorySettings.INFINITE_AMMO || part.RequestResource(ammoName.GetHashCode(), (double)requestResourceAmount) > 0))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        #endregion Fire
 
         #region Audio
 
@@ -1746,7 +1738,111 @@ namespace BDArmory.Modules
                 turret.smoothRotation = origSmooth;
             }
         }
-        //moving RTS to get all the targeting code together for convenience once rockets get added
+
+        void CheckAIAutofire()
+        {
+            //autofiring with AI
+            if (targetAcquired && aiControlled)
+            {
+                Transform fireTransform = fireTransforms[0];
+                Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
+                Vector3 aimDirection = fireTransform.forward;
+                float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
+
+                Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
+                Vector3 projectedTargetPos = targetDiffVec;
+                //projectedTargetPos /= TimeWarp.fixedDeltaTime;
+                //projectedTargetPos *= TimeWarp.fixedDeltaTime;
+                projectedTargetPos *= 2; //project where the target will be in 2 timesteps
+                projectedTargetPos += finalAimTarget;
+
+                targetDiffVec.Normalize();
+                Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
+
+                if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f) //~1 degree of unsafe angle
+                    && targetCosAngle >= maxAutoFireCosAngle) //check if directly on target
+                {
+                    autoFire = true;
+                }
+                else
+                {
+                    autoFire = false;
+                }
+            }
+            else
+            {
+                autoFire = false;
+            }
+
+            //disable autofire after burst length
+            if (autoFire && Time.time - autoFireTimer > autoFireLength)
+            {
+                autoFire = false;
+                visualTargetVessel = null;
+            }
+        }
+
+        IEnumerator AimAndFireAtEndOfFrame()
+        {
+            if (this == null) yield break;
+            if (eWeaponType != WeaponTypes.Laser) yield return new WaitForEndOfFrame();
+
+            UpdateTargetVessel();
+            updateAcceleration(targetVelocity, targetPosition);
+            relativeVelocity = targetVelocity - vessel.rb_velocity;
+
+            RunTrajectorySimulation();
+            Aim();
+            CheckWeaponSafety();
+            CheckAIAutofire();
+
+            if (finalFire)
+            {
+                if (eWeaponType == WeaponTypes.Laser)
+                {
+                    if (FireLaser())
+                    {
+                        for (int i = 0; i < laserRenderers.Length; i++)
+                        {
+                            laserRenderers[i].enabled = true;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < laserRenderers.Length; i++)
+                        {
+                            laserRenderers[i].enabled = false;
+                        }
+                        audioSource.Stop();
+                    }
+                }
+                else
+                {
+                    if (useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+                    {
+                        //timeFired = Time.time + (initialFireDelay - (60f / roundsPerMinute)) * TimeWarp.CurrentRate;
+                        finalFire = false;
+                    }
+                    else
+                    {
+                        finalFire = true;
+                    }
+
+                    if (finalFire)
+                        Fire();
+                }
+
+                finalFire = false;
+            }
+
+            yield break;
+        }
+
+        public Vector3 GetLeadOffset()
+        {
+            return fixedLeadOffset;
+        }
+
         void RunTrajectorySimulation()
         {
             //trajectory simulation
@@ -1854,109 +1950,6 @@ namespace BDArmory.Modules
                     }
                 }
             }
-        }
-        //more organization, grouping like with like
-        public Vector3 GetLeadOffset()
-        {
-            return fixedLeadOffset;
-        }
-        void CheckAIAutofire()
-        {
-            //autofiring with AI
-            if (targetAcquired && aiControlled)
-            {
-                Transform fireTransform = fireTransforms[0];
-                Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
-                Vector3 aimDirection = fireTransform.forward;
-                float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
-
-                Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
-                Vector3 projectedTargetPos = targetDiffVec;
-                //projectedTargetPos /= TimeWarp.fixedDeltaTime;
-                //projectedTargetPos *= TimeWarp.fixedDeltaTime;
-                projectedTargetPos *= 2; //project where the target will be in 2 timesteps
-                projectedTargetPos += finalAimTarget;
-
-                targetDiffVec.Normalize();
-                Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
-
-                if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f) //~1 degree of unsafe angle
-                    && targetCosAngle >= maxAutoFireCosAngle) //check if directly on target
-                {
-                    autoFire = true;
-                }
-                else
-                {
-                    autoFire = false;
-                }
-            }
-            else
-            {
-                autoFire = false;
-            }
-
-            //disable autofire after burst length
-            if (autoFire && Time.time - autoFireTimer > autoFireLength)
-            {
-                autoFire = false;
-                visualTargetVessel = null;
-            }
-        }
-
-        IEnumerator AimAndFireAtEndOfFrame()
-        {
-            if (this == null) yield break;
-            if (eWeaponType != WeaponTypes.Laser) yield return new WaitForEndOfFrame();
-
-            UpdateTargetVessel();
-            updateAcceleration(targetVelocity, targetPosition);
-            relativeVelocity = targetVelocity - vessel.rb_velocity;
-
-            RunTrajectorySimulation();
-            Aim();
-            CheckWeaponSafety();
-            CheckAIAutofire();
-
-            if (finalFire)
-            {
-                if (eWeaponType == WeaponTypes.Laser)
-                {
-                    if (FireLaser())
-                    {
-                        for (int i = 0; i < laserRenderers.Length; i++)
-                        {
-                            laserRenderers[i].enabled = true;
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 0; i < laserRenderers.Length; i++)
-                        {
-                            laserRenderers[i].enabled = false;
-                        }
-                        audioSource.Stop();
-                    }
-                }
-                else
-                {
-                    if (useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
-                    {
-                        //timeFired = Time.time + (initialFireDelay - (60f / roundsPerMinute)) * TimeWarp.CurrentRate;
-                        finalFire = false;
-                    }
-                    else
-                    {
-                        finalFire = true;
-                    }
-
-                    if (finalFire)
-                        Fire();
-                }
-
-                finalFire = false;
-            }
-
-            yield break;
         }
 
         void DrawAlignmentIndicator()
