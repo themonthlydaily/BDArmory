@@ -456,7 +456,8 @@ namespace BDArmory.Control
                         // Check that none of the vessels have lost parts.
                         if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                         {
-                            message = "One of the vessel lost parts after spawning.";
+                            var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
+                            message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1?.vesselName));
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             Debug.Log("[VesselSpawner]: " + message);
                             spawnFailureReason = SpawnFailureReason.VesselLostParts;
@@ -525,7 +526,8 @@ namespace BDArmory.Control
                         // Check that none of the vessels have lost parts.
                         if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                         {
-                            message = "One of the vessel lost parts after spawning.";
+                            var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
+                            message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1?.vesselName));
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             spawnFailureReason = SpawnFailureReason.VesselLostParts;
                             break;
@@ -550,7 +552,8 @@ namespace BDArmory.Control
                     // Check that none of the vessels have lost parts.
                     if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                     {
-                        message = "One of the vessel lost parts after spawning.";
+                        var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
+                        message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1?.vesselName));
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         spawnFailureReason = SpawnFailureReason.VesselLostParts;
                     }
