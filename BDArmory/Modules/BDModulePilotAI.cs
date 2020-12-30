@@ -2457,6 +2457,11 @@ namespace BDArmory.Modules
                     ReleaseCommand();
                     return;
                 }
+                else if (weaponManager.underAttack || weaponManager.underFire)
+                {
+                    ReleaseCommand();
+                    return;
+                }
                 else
                 {
                     currentStatus = "Attack";

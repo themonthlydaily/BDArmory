@@ -210,27 +210,26 @@ namespace BDArmory.Modules
         public string ammoLeft; //#191
 
         public string GetSubLabel() //think BDArmorySetup only calls this for the first instance of a particular ShortName, so this probably won't result in a group of n guns having n GetSublabelCalls per frame
-        {
-            using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
-            {
-                ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
-                int lastAmmoID = this.AmmoID;
-                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
-                    while (weapon.MoveNext())
-                    {
-                        if (weapon.Current == null) continue;
-                        if (weapon.Current.GetShortName() != this.GetShortName()) continue;
-                        if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
-                        {
-                            vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
-                            ammoLeft += "; " + ammoCurrent.ToString("0");
-                            lastAmmoID = weapon.Current.AmmoID;
-                        }
-                    }
-            }
-            return ammoLeft;
-        }
-
+		{
+			using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
+			{
+				ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
+				int lastAmmoID = this.AmmoID;
+				using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+					while (weapon.MoveNext())
+					{
+						if (weapon.Current == null) continue;
+						if (weapon.Current.GetShortName() != this.GetShortName()) continue;
+						if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
+						{
+							vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
+							ammoLeft += "; " + ammoCurrent.ToString("0");
+							lastAmmoID = weapon.Current.AmmoID;
+						}
+					}
+			}
+			return ammoLeft;
+		}
         public string GetMissileType()
         {
             return string.Empty;
