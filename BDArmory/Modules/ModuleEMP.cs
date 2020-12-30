@@ -28,12 +28,11 @@ namespace BDArmory.Modules
 
                     if (targetDistance <= proximity)
                     {
-                        var mdEC = v.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                        if (mdEC == null)
-                        {
-                            v.rootPart.AddModule("ModuleDrainEC");
-                        }
                         var emp = v.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                        if (emp == null)
+                        {
+                            emp = (ModuleDrainEC)v.rootPart.AddModule("ModuleDrainEC");
+                        }
                         emp.incomingDamage += ((proximity - (float)targetDistance) * 10); //this way craft at edge of blast might only get disabled instead of bricked
                         emp.softEMP = false; //can bypass DMP damage cap
                     }
