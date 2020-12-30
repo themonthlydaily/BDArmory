@@ -535,6 +535,9 @@ namespace BDArmory.UI
 
             debugString.Append($"ECM Lockbreak Strength: " + FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselECMJInfo>()?.lockBreakStrength);
             debugString.Append(Environment.NewLine);
+
+            debugString.Append($"Radar Lockbreak Factor: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarLockbreakFactor);
+            debugString.Append(Environment.NewLine);
         }
 
         public void SaveGPSTargets(ConfigNode saveNode = null)

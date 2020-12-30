@@ -143,7 +143,8 @@ namespace BDArmory.Radar
 
                 //4) lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
                 // lockbreak_factor = baseSig/modifiedSig x (1 � lopckBreakStrength/baseSig/100)
-                ti.radarLockbreakFactor = (ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100));
+                // Use clamp to prevent RCS reduction resulting in increased lockbreak factor, which negates value of RCS reduction)
+                ti.radarLockbreakFactor = Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100));
             }
 
             return ti.radarModifiedSignature;
