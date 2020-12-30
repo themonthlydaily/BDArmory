@@ -1147,7 +1147,6 @@ namespace BDArmory.Modules
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
                     for (int i = 0; i < fireTransforms.Length; i++)
                     {
-                        //if ((BDArmorySettings.INFINITE_AMMO || part.RequestResource(ammoName, requestResourceAmount) > 0))
                         if (CanFire(requestResourceAmount))
                         {
                             Transform fireTransform = fireTransforms[i];
@@ -1396,10 +1395,10 @@ namespace BDArmory.Modules
                         for (float iTime = TimeWarp.fixedDeltaTime; iTime >= 0; iTime -= timeGap)
                             timeFired = Time.time - iTime;
                     }
-                    //if (!BeltFed)
-                    //{
-                    //    RoundsRemaining++;
-                    //}
+                    if (!BeltFed)
+                    {
+                       RoundsRemaining++;
+                    }
                     return true;
                 }
                 else
