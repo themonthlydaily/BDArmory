@@ -483,7 +483,7 @@ namespace BDArmory.UI
         {
             //float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
             //float seekerBias = Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
-            float seekerBias = Mathf.Clamp01(-1f * (1f / (angle * angle + 1f));
+            float seekerBias = Mathf.Clamp01(-1f * (1f / (angle * angle + 1f)));
 
             return seekerBias;
         }
