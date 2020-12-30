@@ -301,8 +301,8 @@ namespace BDArmory.Modules
         [KSPField]
         public bool crewserved = false; //does the weapon need a gunner?
         public bool hasGunner = true; //if so, are they present?
-        private KerbalSeat kerbalSeat;
-        private bool kerbalSeatLookedFor = false;
+        private KerbalSeat gunnerSeat;
+        private bool gunnerSeatLookedFor = false;
 
         [KSPField]
         public float ReloadTime = 10;
@@ -2083,16 +2083,16 @@ namespace BDArmory.Modules
         #region Updates
         void CheckCrewed()
         {
-            if (!kerbalSeatLookedFor) // Only find the module once.
+            if (!gunnerSeatLookedFor) // Only find the module once.
             {
                 var kerbalSeats = part.Modules.OfType<KerbalSeat>();
                 if (kerbalSeats.Count() > 0)
-                    kerbalSeat = kerbalSeats.First();
+                    gunnerSeat = kerbalSeats.First();
                 else
-                    kerbalSeat = null;
-                kerbalSeatLookedFor = true;
+                    gunnerSeat = null;
+                gunnerSeatLookedFor = true;
             }
-            if ((kerbalSeat == null || kerbalSeat.Occupant == null) && part.protoModuleCrew.Count <= 0) //account for both lawn chairs and internal cabins
+            if ((gunnerSeat == null || gunnerSeat.Occupant == null) && part.protoModuleCrew.Count <= 0) //account for both lawn chairs and internal cabins
             {
                 hasGunner = false;
             }
