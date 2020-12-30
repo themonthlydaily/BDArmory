@@ -1954,7 +1954,7 @@ namespace BDArmory.Modules
                 while (ecm.MoveNext())
                 {
                     if (ecm.Current == null) continue;
-                    if (ecm.Current.jammerEnabled) yield break;
+                    if (ecm.Current.jammerEnabled) continue;
                     ecm.Current.EnableJammer();
                 }
             yield return new WaitForSeconds(10.0f);
