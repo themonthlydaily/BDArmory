@@ -353,6 +353,8 @@ namespace BDArmory.Modules
         public float incomingMissTime;
         public Vessel priorThreatVessel = null;
 
+        public bool debilitated = false;
+
         public bool guardFiringMissile;
         bool disabledRocketAimers;
         bool antiRadTargetAcquired;
@@ -3457,6 +3459,9 @@ namespace BDArmory.Modules
                         {
                             float canidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float canidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
+                            bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
+
+                            if (electrolaser) continue; //electrolasers useless against missiles
 
                             if (targetWeapon != null && (canidateYTraverse > 0 || canidatePTraverse > 0)) //prioritize turreted lasers
                             {
@@ -3532,6 +3537,10 @@ namespace BDArmory.Modules
                             float candidatePower = ((ModuleWeapon)item.Current).laserDamage;
                             bool canidateGimbal = ((ModuleWeapon)item.Current).turret;
                             float canidateTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
+
+                            if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabld
+
                             if ((targetWeapon != null) && (canidateGimbal = true && canidateTraverse > 0))
                             {
                                 candidatePower *= 1.5f; // weight selection towards turreted lasers
@@ -4584,6 +4593,22 @@ namespace BDArmory.Modules
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
                                     Debug.Log("[BDArmory]: " + selectedWeapon + " is overheated!");
+                                }
+                                return -1;
+                            }
+                            if (weapon.Current.isReloading)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                {
+                                    Debug.Log("[BDArmory]: " + selectedWeapon + " is reloading!");
+                                }
+                                return -1;
+                            }
+                            if (!weapon.Current.hasGunner)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                {
+                                    Debug.Log("[BDArmory]: " + selectedWeapon + " has no gunner!");
                                 }
                                 return -1;
                             }
