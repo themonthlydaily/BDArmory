@@ -4582,6 +4582,14 @@ namespace BDArmory.Modules
                                 }
                                 return -1;
                             }
+                            if (!weapon.Current.hasGunner)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                {
+                                    Debug.Log("[BDArmory]: " + selectedWeapon + " has no gunner!");
+                                }
+                                return -1;
+                            }
                             if (CheckAmmo(weapon.Current) || BDArmorySettings.INFINITE_AMMO)
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
