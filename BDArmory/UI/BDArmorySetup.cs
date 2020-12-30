@@ -436,6 +436,7 @@ namespace BDArmory.UI
             }
 
             BulletInfo.Load();
+            RocketInfo.Load();
 
             // Spawn fields
             spawnFields = new Dictionary<string, SpawnField> {
@@ -538,6 +539,7 @@ namespace BDArmory.UI
                     !ActiveWeaponManager.guardMode)
                 {
                     if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
+                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket ||
                         ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                     {
                         ModuleWeapon mw =
@@ -550,19 +552,7 @@ namespace BDArmory.UI
                             drawCursor = true;
                             return;
                         }
-                    }
-                    else if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket)
-                    {
-                        RocketLauncher rl =
-                            ActiveWeaponManager.selectedWeapon.GetPart().FindModuleImplementing<RocketLauncher>();
-                        if (rl.readyToFire && rl.turret)
-                        {
-                            //Screen.showCursor = false;
-                            Cursor.visible = false;
-                            drawCursor = true;
-                            return;
-                        }
-                    }
+                    }                    
                 }
             }
 
