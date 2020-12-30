@@ -198,26 +198,26 @@ namespace BDArmory.Modules
         public string ammoLeft; //#191
 
         public string GetSubLabel() //think BDArmorySetup only calls this for the first instance of a particular ShortName, so this probably won't result in a group of n guns having n GetSublabelCalls per frame
-		{
-			using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
-			{
-				ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
-				int lastAmmoID = this.AmmoID;
-				using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
-					while (weapon.MoveNext())
-					{
-						if (weapon.Current == null) continue;
-						if (weapon.Current.GetShortName() != this.GetShortName()) continue;
-						if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
-						{
-							vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
-							ammoLeft += "; " + ammoCurrent.ToString("0");
-							lastAmmoID = weapon.Current.AmmoID;
-						}
-					}
-			}
-			return ammoLeft;
-		}
+        {
+            using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
+            {
+                ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
+                int lastAmmoID = this.AmmoID;
+                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                    while (weapon.MoveNext())
+                    {
+                        if (weapon.Current == null) continue;
+                        if (weapon.Current.GetShortName() != this.GetShortName()) continue;
+                        if (weapon.Current.AmmoID != this.AmmoID && weapon.Current.AmmoID != lastAmmoID)
+                        {
+                            vessel.GetConnectedResourceTotals(weapon.Current.AmmoID, out double ammoCurrent, out double ammoMax);
+                            ammoLeft += "; " + ammoCurrent.ToString("0");
+                            lastAmmoID = weapon.Current.AmmoID;
+                        }
+                    }
+            }
+            return ammoLeft;
+        }
         public string GetMissileType()
         {
             return string.Empty;
@@ -301,6 +301,8 @@ namespace BDArmory.Modules
         [KSPField]
         public bool crewserved = false; //does the weapon need a gunner?
         public bool hasGunner = true; //if so, are they present?
+        private KerbalSeat kerbalSeat;
+        private bool kerbalSeatLookedFor = false;
 
         [KSPField]
         public float ReloadTime = 10;
@@ -733,15 +735,7 @@ namespace BDArmory.Modules
                 }
                 if (crewserved)
                 {
-                    KerbalSeat KS = part.Modules.OfType<KerbalSeat>().First(); //account for both lawn chairs and internal cabins
-                    if (KS.Occupant == null || part.protoModuleCrew.Count <= 0)
-                    {
-                        hasGunner = false;
-                    }
-                    else
-                    {
-                        hasGunner = true;
-                    }
+                    CheckCrewed();
                 }
             }
             else if (HighLogic.LoadedSceneIsEditor)
@@ -891,22 +885,6 @@ namespace BDArmory.Modules
                     }
                     gauge.UpdateHeatMeter(heat / maxHeat);
                 }
-                if (!BeltFed)
-                {
-                    ReloadWeapon();
-                }
-                if (crewserved)
-                {
-                    KerbalSeat KS = part.Modules.OfType<KerbalSeat>().First();
-                    if (KS.Occupant == null || part.protoModuleCrew.Count <= 0)
-                    {
-                        hasGunner = false;
-                    }
-                    else
-                    {
-                        hasGunner = true;
-                    }
-                }
             }
         }
 
@@ -954,6 +932,15 @@ namespace BDArmory.Modules
                         laserRenderers[i].enabled = false;
                     }
                     audioSource.Stop();
+                }
+
+                if (!BeltFed)
+                {
+                    ReloadWeapon();
+                }
+                if (crewserved)
+                {
+                    CheckCrewed();
                 }
             }
             lastFinalAimTarget = finalAimTarget;
@@ -2094,7 +2081,26 @@ namespace BDArmory.Modules
         #endregion Targeting
 
         #region Updates
-
+        void CheckCrewed()
+        {
+            if (!kerbalSeatLookedFor) // Only find the module once.
+            {
+                var kerbalSeats = part.Modules.OfType<KerbalSeat>();
+                if (kerbalSeats.Count() > 0)
+                    kerbalSeat = kerbalSeats.First();
+                else
+                    kerbalSeat = null;
+                kerbalSeatLookedFor = true;
+            }
+            if ((kerbalSeat == null || kerbalSeat.Occupant == null) && part.protoModuleCrew.Count <= 0) //account for both lawn chairs and internal cabins
+            {
+                hasGunner = false;
+            }
+            else
+            {
+                hasGunner = true;
+            }
+        }
         void UpdateHeat()
         {
             heat = Mathf.Clamp(heat - heatLoss * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
