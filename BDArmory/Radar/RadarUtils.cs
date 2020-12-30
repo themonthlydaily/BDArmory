@@ -548,7 +548,9 @@ namespace BDArmory.Radar
                                                                  //do not multiply chaff factor here
 
                         // evaluate range
-                        float distance = (loadedvessels.Current.CoM - ray.origin).magnitude;                                      //TODO: Performance! better if we could switch to sqrMagnitude...
+                        float distance = (loadedvessels.Current.CoM - ray.origin).magnitude;
+                        //TODO: Performance! better if we could switch to sqrMagnitude...
+
                         if (distance < missile.activeRadarRange)
                         {
                             //evaluate if we can detect such a signature at that range

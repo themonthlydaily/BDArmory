@@ -412,7 +412,7 @@ namespace BDArmory.UI
                     }
 
                     score *= Mathf.Clamp(Vector3.Angle(vessel.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
-
+                    
                     if ((finalScore > 0f) && (score > 0f) && (priorHeatScore > 0)) // If we were passed a target heat score, look for the most similar non-zero heat score after picking a target
                     {
                         if (Mathf.Abs(score - priorHeatScore) < Mathf.Abs(finalScore - priorHeatScore))
@@ -983,7 +983,7 @@ namespace BDArmory.UI
                     }
                 }
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDTargeting]: Selected " + finalTarget.Vessel.GetDisplayName() + " with target score of " + finalTargetScore.ToString("0.00"));
+                Debug.Log("[BDTargeting]: Selected " + (finalTarget != null ? finalTarget.Vessel.GetDisplayName() : "null") + " with target score of " + finalTargetScore.ToString("0.00"));
 
             mf.UpdateTargetPriorityUI(finalTarget);
             return finalTarget;
