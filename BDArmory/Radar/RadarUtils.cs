@@ -18,11 +18,26 @@ namespace BDArmory.Radar
         private static bool rcsSetupCompleted = false;
         private static int radarResolution = 128;
 
+        private static RenderTexture rcsRenderingVariable;
+        private static RenderTexture rcsRendering1;
+        private static RenderTexture rcsRendering2;
+        private static RenderTexture rcsRendering3;
+
         private static RenderTexture rcsRenderingFrontal;
         private static RenderTexture rcsRenderingLateral;
         private static RenderTexture rcsRenderingVentral;
         private static Camera radarCam;
 
+        private static Texture2D drawTextureVariable;
+        public static Texture2D GetTextureVariable { get { return drawTextureVariable; } }
+        private static Texture2D drawTexture1;
+        public static Texture2D GetTexture1 { get { return drawTexture1; } }
+        private static Texture2D drawTexture2;
+        public static Texture2D GetTexture2 { get { return drawTexture2; } }
+        private static Texture2D drawTexture3;
+        public static Texture2D GetTexture3 { get { return drawTexture3; } }
+
+        // Legacy variables
         private static Texture2D drawTextureFrontal;
         public static Texture2D GetTextureFrontal { get { return drawTextureFrontal; } }
         private static Texture2D drawTextureLateral;
@@ -37,21 +52,124 @@ namespace BDArmory.Radar
         public static Texture2D GetTextureLateral45 { get { return drawTextureLateral45; } }
         private static Texture2D drawTextureVentral45;
         public static Texture2D GetTextureVentral45 { get { return drawTextureVentral45; } }
-
+        
         internal static float rcsFrontal;             // internal so that editor analysis window has access to the details
         internal static float rcsLateral;             // dito
         internal static float rcsVentral;             // dito
         internal static float rcsFrontal45;             // dito
         internal static float rcsLateral45;             // dito
         internal static float rcsVentral45;             // dito
+        // End legacy variables
+
         internal static float rcsTotal;               // dito
 
-        internal const float RCS_NORMALIZATION_FACTOR = 16.0f;       //IMPORTANT FOR RCS CALCULATION! DO NOT CHANGE! (1x1 structural panel frontally facing should yield 1 m^2 of rcs!)
+        internal const float RCS_NORMALIZATION_FACTOR = 4.0f;       //IMPORTANT FOR RCS CALCULATION! DO NOT CHANGE! (sphere with 1m^2 cross section should have 1m^2 RCS)
         internal const float RCS_MISSILES = 999f;                    //default rcs value for missiles if not configured in the part config
         internal const float RWR_PING_RANGE_FACTOR = 2.0f;
         internal const float RADAR_IGNORE_DISTANCE_SQR = 100f;
         internal const float ACTIVE_MISSILE_PING_PERISTS_TIME = 0.2f;
         internal const float MISSILE_DEFAULT_LOCKABLE_RCS = 5f;
+
+        // RCS Aspects
+        private static float[,] rcsAspects = new float[95, 2] {
+                { 2f, 23f},
+                { 11f, 23f},
+                { 19f, 23f},
+                { 29f, 23f},
+                { 41f, 23f},
+                { 47f, 23f},
+                { 59f, 23f},
+                { 71f, 23f},
+                { 79f, 23f},
+                { 89f, 23f},
+                { 101f, 23f},
+                { 109f, 23f},
+                { 127f, 23f},
+                { 131f, 23f},
+                { 139f, 23f},
+                { 149f, 23f},
+                { 163f, 23f},
+                { 173f, 23f},
+                { 179f, 23f},
+                { 2f, 11f},
+                { 11f, 11f},
+                { 19f, 11f},
+                { 29f, 11f},
+                { 41f, 11f},
+                { 47f, 11f},
+                { 59f, 11f},
+                { 71f, 11f},
+                { 79f, 11f},
+                { 89f, 11f},
+                { 101f, 11f},
+                { 109f, 11f},
+                { 127f, 11f},
+                { 131f, 11f},
+                { 139f, 11f},
+                { 149f, 11f},
+                { 163f, 11f},
+                { 173f, 11f},
+                { 179f, 11f},
+                { 2f, 0f},
+                { 11f, 0f},
+                { 19f, 0f},
+                { 29f, 0f},
+                { 41f, 0f},
+                { 47f, 0f},
+                { 59f, 0f},
+                { 71f, 0f},
+                { 79f, 0f},
+                { 89f, 0f},
+                { 101f, 0f},
+                { 109f, 0f},
+                { 127f, 0f},
+                { 131f, 0f},
+                { 139f, 0f},
+                { 149f, 0f},
+                { 163f, 0f},
+                { 173f, 0f},
+                { 179f, 0f},
+                { 2f, -11f},
+                { 11f, -11f},
+                { 19f, -11f},
+                { 29f, -11f},
+                { 41f, -11f},
+                { 47f, -11f},
+                { 59f, -11f},
+                { 71f, -11f},
+                { 79f, -11f},
+                { 89f, -11f},
+                { 101f, -11f},
+                { 109f, -11f},
+                { 127f, -11f},
+                { 131f, -11f},
+                { 139f, -11f},
+                { 149f, -11f},
+                { 163f, -11f},
+                { 173f, -11f},
+                { 179f, -11f},
+                { 2f, -23f},
+                { 11f, -23f},
+                { 19f, -23f},
+                { 29f, -23f},
+                { 41f, -23f},
+                { 47f, -23f},
+                { 59f, -23f},
+                { 71f, -23f},
+                { 79f, -23f},
+                { 89f, -23f},
+                { 101f, -23f},
+                { 109f, -23f},
+                { 127f, -23f},
+                { 131f, -23f},
+                { 139f, -23f},
+                { 149f, -23f},
+                { 163f, -23f},
+                { 173f, -23f},
+                { 179f, -23f}
+            };
+        private static int numAspects = rcsAspects.GetLength(0); // Number of aspects
+        public static float[,] worstRCSAspects = new float[3, 3]; // Worst three aspects
 
         /// <summary>
         /// Get a vessel radar siganture, including all modifiers (ECM, stealth, ...)
@@ -230,6 +348,229 @@ namespace BDArmory.Radar
                 return 0f;
             }
 
+
+            float rcsVariable = 0f;
+            worstRCSAspects = new float[3, 3];
+            double[] rcsValues = new double[numAspects];
+            rcsTotal = 0;
+            Vector3 aspect;
+
+            // Standard aerospace coordinate system
+            Vector3 x_dir;
+            Vector3 y_dir;
+            x_dir = t.right;
+            y_dir = t.up;
+            Vector3 z_dir = -t.forward;
+
+            // Loop through all aspects
+            for (int i = 0; i < numAspects; i++)
+            {
+                // Determine camera vector for aspect
+                aspect = Mathf.Sin(rcsAspects[i, 0] * Mathf.PI / 180f) * Mathf.Cos(rcsAspects[i, 1] * Mathf.PI / 180f) * x_dir +
+                    Mathf.Cos(rcsAspects[i, 0] * Mathf.PI / 180f) * Mathf.Cos(rcsAspects[i, 1] * Mathf.PI / 180f) * y_dir +
+                    Mathf.Sin(rcsAspects[i,1] * Mathf.PI / 180f) * z_dir;
+
+                Debug.Log($"[BDArmory]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
+
+                // Render aspect
+                RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
+
+                // Count pixel colors to determine radar returns
+                rcsVariable = 0;
+
+                for (int x = 0; x < radarResolution; x++)
+                {
+                    for (int y = 0; y < radarResolution; y++)
+                    {
+                        rcsVariable += drawTextureVariable.GetPixel(x, y).maxColorComponent;
+                    }
+                }
+
+                // normalize rcs value, so that the structural 1x1 panel facing the radar exactly gives a return of 1 m^2:
+                rcsVariable /= RCS_NORMALIZATION_FACTOR;
+                rcsValues[i] = (double)rcsVariable;
+
+                // Remember worst three RCS aspects to display in editor
+                if (inEditorZoom)
+                {
+                    if (rcsVariable > worstRCSAspects[0, 2])
+                    {
+                        worstRCSAspects[2, 0] = worstRCSAspects[1, 0];
+                        worstRCSAspects[2, 1] = worstRCSAspects[1, 1];
+                        worstRCSAspects[2, 2] = worstRCSAspects[1, 2];
+
+                        worstRCSAspects[1, 0] = worstRCSAspects[0, 0];
+                        worstRCSAspects[1, 1] = worstRCSAspects[0, 1];
+                        worstRCSAspects[1, 2] = worstRCSAspects[0, 2];
+
+                        worstRCSAspects[0, 0] = rcsAspects[i, 0];
+                        worstRCSAspects[0, 1] = rcsAspects[i, 1];
+                        worstRCSAspects[0, 2] = rcsVariable;
+                    }
+                    else if (rcsVariable > worstRCSAspects[1, 2])
+                    {
+                        worstRCSAspects[2, 0] = worstRCSAspects[1, 0];
+                        worstRCSAspects[2, 1] = worstRCSAspects[1, 1];
+                        worstRCSAspects[2, 2] = worstRCSAspects[1, 2];
+
+                        worstRCSAspects[1, 0] = rcsAspects[i, 0];
+                        worstRCSAspects[1, 1] = rcsAspects[i, 1];
+                        worstRCSAspects[1, 2] = rcsVariable;
+                    }
+                    else if (rcsVariable > worstRCSAspects[2, 2])
+                    {
+                        worstRCSAspects[2, 0] = rcsAspects[i, 0];
+                        worstRCSAspects[2, 1] = rcsAspects[i, 1];
+                        worstRCSAspects[2, 2] = rcsVariable;
+                    }
+                }
+
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log($"[BDArmory]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
+                }
+            }
+
+            // Use third quartile for the total RCS (gives better results than average)
+            rcsTotal = (float)Quartile(rcsValues, 3);
+
+            // If we are in the editor, render the three highest RCS aspects
+            if (inEditorZoom)
+            {
+                // Determine camera vectors for aspects
+                Vector3 aspect1 = Mathf.Sin(worstRCSAspects[0, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[0, 1] * Mathf.PI / 180f) * x_dir +
+                    Mathf.Cos(worstRCSAspects[0, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[0, 1] * Mathf.PI / 180f) * y_dir +
+                    Mathf.Sin(worstRCSAspects[0, 1] * Mathf.PI / 180f) * z_dir;
+                Vector3 aspect2 = Mathf.Sin(worstRCSAspects[1, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[1, 1] * Mathf.PI / 180f) * x_dir +
+                    Mathf.Cos(worstRCSAspects[1, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[0, 1] * Mathf.PI / 180f) * y_dir +
+                    Mathf.Sin(worstRCSAspects[1, 1] * Mathf.PI / 180f) * z_dir;
+                Vector3 aspect3 = Mathf.Sin(worstRCSAspects[2, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[1, 1] * Mathf.PI / 180f) * x_dir +
+                    Mathf.Cos(worstRCSAspects[2, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[2, 1] * Mathf.PI / 180f) * y_dir +
+                    Mathf.Sin(worstRCSAspects[2, 1] * Mathf.PI / 180f) * z_dir;
+
+                // Render three highest aspects
+                RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
+                RenderSinglePass(t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
+                RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
+            }
+            else
+            {
+                // revert presentation (only if outside editor and thus vessel is a real vessel)
+                if (HighLogic.LoadedSceneIsFlight)
+                    v.SetPosition(v.transform.position - presentationPosition);
+            }
+
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log($"[BDArmory]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
+            }
+
+            return rcsTotal;
+        }
+
+        // Used to calculate third quartile for RCS dataset
+        internal static double Quartile(double[] array, int nth_quartile)
+        {
+            System.Array.Sort(array);
+            double dblPercentage = 0;
+
+            switch (nth_quartile)
+            {
+                case 0:
+                    dblPercentage = 0; //Smallest value in the data set
+                    break;
+                case 1:
+                    dblPercentage = 25; //First quartile (25th percentile)
+                    break;
+                case 2:
+                    dblPercentage = 50; //Second quartile (50th percentile)
+                    break;
+
+                case 3:
+                    dblPercentage = 75; //Third quartile (75th percentile)
+                    break;
+
+                case 4:
+                    dblPercentage = 100; //Largest value in the data set
+                    break;
+                default:
+                    dblPercentage = 0;
+                    break;
+            }
+
+
+            if (dblPercentage >= 100.0d) return array[array.Length - 1];
+
+            double position = (double)(array.Length + 1) * dblPercentage / 100.0;
+            double leftNumber = 0.0d, rightNumber = 0.0d;
+
+            double n = dblPercentage / 100.0d * (array.Length - 1) + 1.0d;
+
+            if (position >= 1)
+            {
+                leftNumber = array[(int)System.Math.Floor(n) - 1];
+                rightNumber = array[(int)System.Math.Floor(n)];
+            }
+            else
+            {
+                leftNumber = array[0]; // first data
+                rightNumber = array[1]; // first data
+            }
+
+            if (leftNumber == rightNumber)
+                return leftNumber;
+            else
+            {
+                double part = n - System.Math.Floor(n);
+                return leftNumber + part * (rightNumber - leftNumber);
+            }
+        }
+
+        /// <summary>
+        /// Internal method: do the actual radar snapshot rendering from 3 sides and store it in a vesseltargetinfo attached to the vessel
+        ///
+        /// Note: Transform t is passed separatedly (instead of using v.transform), as the method need to be called from the editor
+        ///         and there we dont have a VESSEL, only a SHIPCONSTRUCT, so the EditorRcSWindow passes the transform separately.
+        /// </summary>
+        /// <param name="inEditorZoom">when true, we try to make the rendered vessel fill the rendertexture completely, for a better detailed view. This does skew the computed cross section, so it is only for a good visual in editor!</param>
+        public static float RenderVesselRadarSnapshotLegacy(Vessel v, Transform t, bool inEditorZoom = false)
+        {
+            const float radarDistance = 1000f;
+            const float radarFOV = 2.0f;
+            Vector3 presentationPosition = -t.forward * radarDistance;
+
+            SetupResources();
+
+            //move vessel up for clear rendering shot (only if outside editor and thus vessel is a real vessel)
+            if (HighLogic.LoadedSceneIsFlight)
+                v.SetPosition(v.transform.position + presentationPosition);
+
+            Bounds vesselbounds = CalcVesselBounds(v, t);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                if (HighLogic.LoadedSceneIsFlight)
+                    Debug.Log($"[BDArmory]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
+                else
+                    Debug.Log("[BDArmory]: Rendering radar snapshot of vessel");
+                Debug.Log("[BDArmory]: - bounds: " + vesselbounds.ToString());
+                //Debug.Log("[BDArmory]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
+            }
+
+            if (vesselbounds.size.sqrMagnitude == 0f)
+            {
+                // SAVE US THE RENDERING, result will be zero anyway...
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory]: - rcs is zero.");
+                }
+
+                // revert presentation (only if outside editor and thus vessel is a real vessel)
+                if (HighLogic.LoadedSceneIsFlight)
+                    v.SetPosition(v.transform.position - presentationPosition);
+
+                return 0f;
+            }
+
             // pass1: frontal
             RenderSinglePass(t, inEditorZoom, t.up, vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal);
             // pass2: lateral
@@ -353,6 +694,38 @@ namespace BDArmory.Radar
             if (!rcsSetupCompleted)
             {
                 //set up rendertargets and textures
+                rcsRenderingVariable = new RenderTexture(radarResolution, radarResolution, 16);
+                rcsRendering1 = new RenderTexture(radarResolution, radarResolution, 16);
+                rcsRendering2 = new RenderTexture(radarResolution, radarResolution, 16);
+                rcsRendering3 = new RenderTexture(radarResolution, radarResolution, 16);
+
+                drawTextureVariable = new Texture2D(radarResolution, radarResolution, TextureFormat.RGB24, false);
+                drawTexture1 = new Texture2D(radarResolution, radarResolution, TextureFormat.RGB24, false);
+                drawTexture2 = new Texture2D(radarResolution, radarResolution, TextureFormat.RGB24, false);
+                drawTexture3 = new Texture2D(radarResolution, radarResolution, TextureFormat.RGB24, false);
+
+                rcsSetupCompleted = true;
+            }
+
+            if (radarCam == null)
+            {
+                //set up camera
+                radarCam = (new GameObject("RadarCamera")).AddComponent<Camera>();
+                radarCam.enabled = false;
+                radarCam.clearFlags = CameraClearFlags.SolidColor;
+                radarCam.backgroundColor = Color.black;
+                radarCam.cullingMask = 1 << 0;   // only layer 0 active, see: http://wiki.kerbalspaceprogram.com/wiki/API:Layers
+            }
+        }
+
+        /// <summary>
+        /// LEGACY Initialization of required resources. Necessary once per scene.
+        /// </summary>
+        public static void SetupResourcesLegacy()
+        {
+            if (!rcsSetupCompleted)
+            {
+                //set up rendertargets and textures
                 rcsRenderingFrontal = new RenderTexture(radarResolution, radarResolution, 16);
                 rcsRenderingLateral = new RenderTexture(radarResolution, radarResolution, 16);
                 rcsRenderingVentral = new RenderTexture(radarResolution, radarResolution, 16);
@@ -381,6 +754,26 @@ namespace BDArmory.Radar
         /// Release of acquired resources. Necessary once at end of scene.
         /// </summary>
         public static void CleanupResources()
+        {
+            if (rcsSetupCompleted)
+            {
+                RenderTexture.Destroy(rcsRenderingVariable);
+                RenderTexture.Destroy(rcsRendering1);
+                RenderTexture.Destroy(rcsRendering2);
+                RenderTexture.Destroy(rcsRendering3);
+                Texture2D.Destroy(drawTextureVariable);
+                Texture2D.Destroy(drawTexture1);
+                Texture2D.Destroy(drawTexture2);
+                Texture2D.Destroy(drawTexture3);
+                GameObject.Destroy(radarCam);
+                rcsSetupCompleted = false;
+            }
+        }
+
+        /// <summary>
+        /// LEGACY Release of acquired resources. Necessary once at end of scene.
+        /// </summary>
+        public static void CleanupResourcesLegacy()
         {
             if (rcsSetupCompleted)
             {
