@@ -3799,9 +3799,9 @@ namespace BDArmory.Modules
                         if (turret != null)
                             if (!TargetInTurretRange(turret, gimbalTolerance))
                                 return false;
-                        //check reloading     
-                        //if (rocket.isReloading || !rocket.hasGunner)
-                            //return false;
+                        //check reloading and crewed
+                        if (rocket.isReloading || !rocket.hasGunner)
+                            return false;
 
                         // check ammo
                         if (CheckAmmo(rocket))
