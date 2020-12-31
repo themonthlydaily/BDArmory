@@ -13,13 +13,12 @@ namespace BDArmory.Bullets
         public bool explosive { get; private set; }
         public float tntMass { get; private set; }
         public string fuzeType { get; private set; }
-        public float apBulletMod { get; private set; }
         public int subProjectileCount { get; private set; }
+        public float apBulletMod { get; private set; }
         public string bulletDragTypeName { get; private set; }
         public string projectileColor { get; private set; }
         public string startColor { get; private set; }
         public bool fadeColor { get; private set; }
-
 
         public static BulletInfos bullets;
 
