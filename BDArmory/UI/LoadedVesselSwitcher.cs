@@ -186,6 +186,7 @@ namespace BDArmory.UI
         {
             weaponManagers.Clear();
 
+            if (FlightGlobals.Vessels == null) return;
             using (var v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
