@@ -89,6 +89,7 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
+                        pe.Current.emit = true;
                         EffectBehaviour.AddParticleEmitter(pe.Current);
                     }
                 }
