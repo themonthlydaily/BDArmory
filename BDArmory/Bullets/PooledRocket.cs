@@ -29,6 +29,7 @@ namespace BDArmory.Bullets
         public float rocketMass;
         public float caliber;
         public float thrust;
+        private Vector3 thrustVector;
         public float thrustTime;
         public bool shaped;
         public float maxAirDetonationRange;
@@ -101,12 +102,13 @@ namespace BDArmory.Bullets
 
             rb.mass = rocketMass;
             rb.isKinematic = true;
-            //rigidbody.velocity = startVelocity;
+            rb.velocity = Vector3.zero;
             if (!FlightGlobals.RefFrameIsRotating) rb.useGravity = false;
 
             rb.useGravity = false;
 
             randThrustSeed = UnityEngine.Random.Range(0f, 100f);
+            thrustVector = new Vector3(0, 0, thrust);
 
             SetupAudio();
 
@@ -144,6 +146,7 @@ namespace BDArmory.Bullets
             {
                 transform.position -= FloatingOrigin.OffsetNonKrakensbane;
                 prevPosition -= FloatingOrigin.OffsetNonKrakensbane;
+                startPosition -= FloatingOrigin.OffsetNonKrakensbane;
             }
             distanceFromStart = Vector3.Distance(transform.position, startPosition);
 
@@ -186,9 +189,9 @@ namespace BDArmory.Bullets
 
                 if (Time.time - startTime < thrustTime && Time.time - startTime > stayTime)
                 {
-                    float random = randomThrustDeviation * (1 - (Mathf.PerlinNoise(4 * Time.time, randThrustSeed) * 2)) / massScalar;//this needs to scale w/ rocket mass, or light projectiles will be 
-                    float random2 = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
-                    rb.AddRelativeForce(new Vector3(random, random2, thrust));
+                    thrustVector.x = randomThrustDeviation * (1 - (Mathf.PerlinNoise(4 * Time.time, randThrustSeed) * 2)) / massScalar;//this needs to scale w/ rocket mass, or light projectiles will be 
+                    thrustVector.y = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
+                    rb.AddRelativeForce(thrustVector);
                 }//0.012/rocketmass - use .012 as baseline, it's the mass of hte hydra, which the randomTurstdeviation was originally calibrated for
             }
 

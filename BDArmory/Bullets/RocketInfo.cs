@@ -63,7 +63,7 @@ namespace BDArmory.Bullets
                         float.Parse(node.GetValue("thrustDeviation")),
                         node.GetValue("rocketModelPath")
                         )
-                        );
+                    );
                 }
             }
             catch (Exception e)
