@@ -1304,6 +1304,7 @@ namespace BDArmory.Radar
                                     using (List<ModuleWeapon>.Enumerator weapon = loadedvessels.Current.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                                         while (weapon.MoveNext())
                                         {
+                                            if (weapon.Current == null || weapon.Current.weaponManager == null) continue;
                                             // If we're being targeted, calculate a miss distance
                                             if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel
                                                 && MissDistance(weapon.Current, myWpnManager.vessel) < results.missDistance)
@@ -1314,7 +1315,6 @@ namespace BDArmory.Radar
                                                 results.threatWeaponManager = weapon.Current.weaponManager;
                                                 results.missDistance = MissDistance(weapon.Current, myWpnManager.vessel);
                                             }
-
                                         }
                                 }
                             }
