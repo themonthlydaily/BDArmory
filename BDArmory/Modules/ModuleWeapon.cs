@@ -23,6 +23,7 @@ namespace BDArmory.Modules
         #region Declarations
 
         public static ObjectPool bulletPool;
+
         public static Dictionary<string, ObjectPool> rocketPool = new Dictionary<string, ObjectPool>(); //for ammo switching
         public static ObjectPool shellPool;
 
@@ -700,6 +701,7 @@ namespace BDArmory.Modules
             {
                 Fields["roundsPerMinute"].guiActiveEditor = false;
             }
+            
             int typecount = 0;
             ammoList = BDAcTools.ParseNames(bulletType);
             for (int i = 0; i < ammoList.Count; i++)
@@ -724,6 +726,7 @@ namespace BDArmory.Modules
                 Fields["AmmoTypeNum"].guiActive = false;
                 Fields["AmmoTypeNum"].guiActiveEditor = false;
             }
+
             vessel.Velocity();
             if (BurstFire)
             {
@@ -782,6 +785,7 @@ namespace BDArmory.Modules
                 Fields["detonationRange"].guiActiveEditor = false;
                 Fields["guiAmmoTypeString"].guiActiveEditor = false; //ammoswap
                 Fields["guiAmmoTypeString"].guiActive = false;
+
             }
             muzzleFlashEmitters = new List<KSPParticleEmitter>();
             IEnumerator<Transform> mtf = part.FindModelTransforms("muzzleTransform").AsEnumerable().GetEnumerator();
@@ -886,6 +890,7 @@ namespace BDArmory.Modules
                 {
                     CheckCrewed();
                 }
+
                 if (ammoList.Count > 1)
                 {
                     UI_FloatRange ATrangeFlight = (UI_FloatRange)Fields["AmmoTypeNum"].uiControlFlight;
@@ -943,6 +948,7 @@ namespace BDArmory.Modules
             if (eWeaponType != WeaponTypes.Laser)
             {
                 SetupAmmo(null, null); 
+
                 if (eWeaponType == WeaponTypes.Rocket)
                 {
                     if (rocketInfo == null)
@@ -962,7 +968,6 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             Debug.Log("[BDArmory]: Failed To load bullet : " + currentType);
-                    }
                     else
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -1543,6 +1548,147 @@ namespace BDArmory.Modules
             }
         }
         private void LaserBeam(string vesselname)
+        {
+            for (int i = 0; i < fireTransforms.Length; i++)
+            {
+                float damage = laserDamage;
+                Transform tf = fireTransforms[i];
+                LineRenderer lr = laserRenderers[i];
+                Vector3 rayDirection = tf.forward;
+
+                Vector3 targetDirection = Vector3.zero; //autoTrack enhancer
+                Vector3 targetDirectionLR = tf.forward;
+                if (pulseLaser)
+                {
+                    rayDirection = VectorUtils.GaussianDirectionDeviation(tf.forward, maxDeviation / 4);
+                    targetDirectionLR = rayDirection.normalized;
+                }
+                else if ((((visualTargetVessel != null && visualTargetVessel.loaded) || slaved) && (turret && (turret.yawRange > 0 && turret.maxPitch > 0))) // causes laser to snap to target CoM if close enough. changed to only apply to turrets
+                    && Vector3.Angle(rayDirection, targetDirection) < 0.25f) //it turret and within .25 deg, snap to target
+                {
+                    //targetDirection = targetPosition + (relativeVelocity * Time.fixedDeltaTime) * 2 - tf.position;
+                    targetDirection = targetPosition - tf.position;
+                    rayDirection = targetDirection;
+                    targetDirectionLR = targetDirection.normalized;
+                }
+                Ray ray = new Ray(tf.position, rayDirection);
+                lr.useWorldSpace = false;
+                lr.SetPosition(0, Vector3.zero);
+                RaycastHit hit;
+
+                if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
+                {
+                    lr.useWorldSpace = true;
+                    laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
+
+                    lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
+                    lr.SetPosition(1, laserPoint);
+
+                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                    Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+
+                    if (p && p.vessel && p.vessel != vessel)
+                    {
+                        float distance = hit.distance;
+                        //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                        if (electroLaser)
+                        {
+                            var mdEC = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                            if (mdEC == null)
+                            {
+                                p.vessel.rootPart.AddModule("ModuleDrainEC");
+                            }
+                            var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                            if (!pulseLaser)
+                            {
+                                emp.incomingDamage += (ECPerShot / 1000);
+                            }
+                            else
+                            {
+                                emp.incomingDamage += (ECPerShot / 20);
+                            }
+                            emp.softEMP = true;
+                        }
+                        else
+                        {
+                            damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
+                            p.AddDamage(damage);
+                        }
+                        if (HEpulses)
+                        {
+                            ExplosionFx.CreateExplosion(hit.point,
+                                           (laserDamage / 30000),
+                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName);
+                        }
+                        if (HeatRay)
+                        {
+                            using (var hitsEnu = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+                            {
+                                while (hitsEnu.MoveNext())
+                                {
+                                    KerbalEVA kerb = hitsEnu.Current.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    Part hitP = kerb ? kerb.part : hitsEnu.Current.GetComponentInParent<Part>();
+                                    if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
+                                    {
+                                        //p.AddDamage(damage);
+                                        p.AddSkinThermalFlux(damage);
+                                    }
+                                }
+                            }
+                        }
+                        if (BDArmorySettings.INSTAKILL) p.Destroy();
+
+                        if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime))
+                        {
+                            ScoreAccumulator = 0;
+                            var aName = vesselname;
+                            var tName = p.vessel.GetName();
+                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                            {
+                                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                {
+                                    BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
+                                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
+                                }
+                                var aData = BDACompetitionMode.Instance.Scores[aName];
+                                aData.Score += 1;
+                                if (p.vessel.GetName() == "Pinata")
+                                {
+                                    aData.PinataHits++;
+                                }
+                                var tData = BDACompetitionMode.Instance.Scores[tName];
+                                tData.lastPersonWhoHitMe = aName;
+                                tData.lastHitTime = Planetarium.GetUniversalTime();
+                                tData.everyoneWhoHitMe.Add(aName);
+                                if (tData.hitCounts.ContainsKey(aName))
+                                    ++tData.hitCounts[aName];
+                                else
+                                    tData.hitCounts.Add(aName, 1);
+                                if (tData.damageFromBullets.ContainsKey(aName))
+                                    tData.damageFromBullets[aName] += damage;
+                                else
+                                    tData.damageFromBullets.Add(aName, damage);
+                            }
+                        }
+                        else
+                        {
+                            ScoreAccumulator += 0.02f;
+                        }
+                    }
+
+                    if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
+                    {
+                        BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0);
+                    }
+                }
+                else
+                {
+                    laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
+                    lr.SetPosition(1, laserPoint);
+                }
+            }
+        }
+        void SetupLaserSpecifics()
         {
             for (int i = 0; i < fireTransforms.Length; i++)
             {
@@ -2445,7 +2591,6 @@ namespace BDArmory.Modules
                                     atmosMultiplier * (0.5f * (simTime)) * 50 * simDeltaTime * Mathf.Deg2Rad, 0);
                             }
                         }
-
                         if (bulletDrop || eWeaponType == WeaponTypes.Rocket)
                         {
                             simVelocity += FlightGlobals.getGeeForceAtPosition(simCurrPos) * simDeltaTime;
@@ -2466,7 +2611,7 @@ namespace BDArmory.Modules
                                 catch (NullReferenceException)
                                 {
                                 }
-
+                                
                                 if (hitVessel == null || (hitVessel != null && hitVessel != vessel))
                                 {
                                     bulletPrediction = hit.point;
