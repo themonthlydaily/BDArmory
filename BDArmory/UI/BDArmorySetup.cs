@@ -552,7 +552,7 @@ namespace BDArmory.UI
                             drawCursor = true;
                             return;
                         }
-                    }                    
+                    }
                 }
             }
 
@@ -1687,6 +1687,14 @@ namespace BDArmory.UI
                     OnVolumeChange();
                 }
                 BDArmorySettings.BDARMORY_WEAPONS_VOLUME = weaponVol;
+
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
+                    {
+                        BDACompetitionMode.Instance.RunDebugChecks();
+                    }
+                }
             }
 
             //competition mode
