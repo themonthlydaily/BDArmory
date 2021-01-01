@@ -66,7 +66,7 @@ namespace BDArmory.Bullets
                         node.GetValue("startColor"),
                         Convert.ToBoolean(node.GetValue("fadeColor"))
                         )
-                        );
+                    );
                 }
             }
             catch (Exception e)
