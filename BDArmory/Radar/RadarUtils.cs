@@ -849,7 +849,6 @@ namespace BDArmory.Radar
                             continue;
 
                         // get vessel's radar signature
-                        Debug.Log("[BDRCS]: Call from RadarUpdateScanBoresight");
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
                         signature *= GetRadarGroundClutterModifier(radar, radar.referenceTransform, ray.origin, loadedvessels.Current.CoM, ti);
@@ -937,7 +936,6 @@ namespace BDArmory.Radar
                             continue;
 
                         // get vessel's radar signature
-                        Debug.Log("[BDRCS]: Call from RadarUpdateMissileLock");
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
                         // no ground clutter modifier for missiles
@@ -1030,7 +1028,6 @@ namespace BDArmory.Radar
                             continue;
 
                         // get vessel's radar signature
-                        Debug.Log("[BDRCS]: Call from RadarUpdateScanLock");
                         TargetInfo ti = GetVesselRadarSignature(loadedvessels.Current);
                         float signature = ti.radarModifiedSignature;
                         //do not multiply chaff factor here
@@ -1166,7 +1163,6 @@ namespace BDArmory.Radar
                 }
 
                 // get vessel's radar signature
-                Debug.Log("[BDRCS]: Call from RadarUpdateLockTrack");
                 TargetInfo ti = GetVesselRadarSignature(lockedVessel);
                 float signature = ti.radarModifiedSignature;
                 signature *= GetRadarGroundClutterModifier(radar, radar.referenceTransform, ray.origin, lockedVessel.CoM, ti);
