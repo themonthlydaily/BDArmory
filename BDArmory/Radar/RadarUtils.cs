@@ -318,11 +318,21 @@ namespace BDArmory.Radar
 
             SetupResources();
 
+            Quaternion priorRotation = Quaternion.Euler(0, 0, 0);
+
             //move vessel up for clear rendering shot (only if outside editor and thus vessel is a real vessel)
+            // set rotation as well, otherwise the CalcVesselBounds results won't match those from the editor
             if (HighLogic.LoadedSceneIsFlight)
+            {
+                priorRotation = v.srfRelRotation;
                 v.SetPosition(v.transform.position + presentationPosition);
+                //v.SetRotation(Quaternion.Euler(Mathf.PI/2, 0, 0));
+                v.SetRotation(new Quaternion(-0.7f, 0f, 0f, -0.7f));
+                t = v.transform;
+            }
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
+            
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 if (HighLogic.LoadedSceneIsFlight)
@@ -330,6 +340,7 @@ namespace BDArmory.Radar
                 else
                     Debug.Log("[BDArmory]: Rendering radar snapshot of vessel");
                 Debug.Log("[BDArmory]: - bounds: " + vesselbounds.ToString());
+                Debug.Log("[BDArmory]: - rotation: " + t.rotation.ToString());
                 //Debug.Log("[BDArmory]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
             }
 
@@ -348,30 +359,19 @@ namespace BDArmory.Radar
                 return 0f;
             }
 
-
             float rcsVariable = 0f;
             worstRCSAspects = new float[3, 3];
             double[] rcsValues = new double[numAspects];
             rcsTotal = 0;
             Vector3 aspect;
 
-            // Standard aerospace coordinate system
-            Vector3 x_dir;
-            Vector3 y_dir;
-            x_dir = t.right;
-            y_dir = t.up;
-            Vector3 z_dir = -t.forward;
-
             // Loop through all aspects
             for (int i = 0; i < numAspects; i++)
             {
                 // Determine camera vector for aspect
-                aspect = Mathf.Sin(rcsAspects[i, 0] * Mathf.PI / 180f) * Mathf.Cos(rcsAspects[i, 1] * Mathf.PI / 180f) * x_dir +
-                    Mathf.Cos(rcsAspects[i, 0] * Mathf.PI / 180f) * Mathf.Cos(rcsAspects[i, 1] * Mathf.PI / 180f) * y_dir +
-                    Mathf.Sin(rcsAspects[i,1] * Mathf.PI / 180f) * z_dir;
-
-                Debug.Log($"[BDArmory]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
-
+                aspect = Vector3.RotateTowards(t.up, -t.up, rcsAspects[i, 0] / 180f * Mathf.PI, 0);
+                aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), rcsAspects[i, 1] / 180f * Mathf.PI, 0);
+                
                 // Render aspect
                 RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
 
@@ -386,7 +386,7 @@ namespace BDArmory.Radar
                     }
                 }
 
-                // normalize rcs value, so that the structural 1x1 panel facing the radar exactly gives a return of 1 m^2:
+                // normalize rcs value, so that a sphere with cross section of 1 m^2 gives a return of 1 m^2:
                 rcsVariable /= RCS_NORMALIZATION_FACTOR;
                 rcsValues[i] = (double)rcsVariable;
 
@@ -427,6 +427,7 @@ namespace BDArmory.Radar
 
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
+                    Debug.Log($"[BDArmory]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
                     Debug.Log($"[BDArmory]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
                 }
             }
@@ -438,15 +439,12 @@ namespace BDArmory.Radar
             if (inEditorZoom)
             {
                 // Determine camera vectors for aspects
-                Vector3 aspect1 = Mathf.Sin(worstRCSAspects[0, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[0, 1] * Mathf.PI / 180f) * x_dir +
-                    Mathf.Cos(worstRCSAspects[0, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[0, 1] * Mathf.PI / 180f) * y_dir +
-                    Mathf.Sin(worstRCSAspects[0, 1] * Mathf.PI / 180f) * z_dir;
-                Vector3 aspect2 = Mathf.Sin(worstRCSAspects[1, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[1, 1] * Mathf.PI / 180f) * x_dir +
-                    Mathf.Cos(worstRCSAspects[1, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[0, 1] * Mathf.PI / 180f) * y_dir +
-                    Mathf.Sin(worstRCSAspects[1, 1] * Mathf.PI / 180f) * z_dir;
-                Vector3 aspect3 = Mathf.Sin(worstRCSAspects[2, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[1, 1] * Mathf.PI / 180f) * x_dir +
-                    Mathf.Cos(worstRCSAspects[2, 0] * Mathf.PI / 180f) * Mathf.Cos(worstRCSAspects[2, 1] * Mathf.PI / 180f) * y_dir +
-                    Mathf.Sin(worstRCSAspects[2, 1] * Mathf.PI / 180f) * z_dir;
+                Vector3 aspect1 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[0, 0] / 180f * Mathf.PI, 0);
+                aspect1 = Vector3.RotateTowards(aspect1, Vector3.Cross(t.right, t.up), worstRCSAspects[0, 1] / 180f * Mathf.PI, 0);
+                Vector3 aspect2 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[1, 0] / 180f * Mathf.PI, 0);
+                aspect2 = Vector3.RotateTowards(aspect2, Vector3.Cross(t.right, t.up), worstRCSAspects[1, 1] / 180f * Mathf.PI, 0);
+                Vector3 aspect3 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[2, 0] / 180f * Mathf.PI, 0);
+                aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
 
                 // Render three highest aspects
                 RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
@@ -457,7 +455,10 @@ namespace BDArmory.Radar
             {
                 // revert presentation (only if outside editor and thus vessel is a real vessel)
                 if (HighLogic.LoadedSceneIsFlight)
+                {
+                    v.SetRotation(priorRotation);
                     v.SetPosition(v.transform.position - presentationPosition);
+                }
             }
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
