@@ -14,7 +14,7 @@ namespace BDArmory.Modules
         int BrickThreshold = 1000; //craft get permanently bricked
         public bool softEMP = true; //can EMPdamage exceed EMPthreshold?
         private bool disabled = false; //prevent further EMP buildup while rebooting
-        private bool bricked = false; //He's dead, jeb
+        public bool bricked = false; //He's dead, jeb
 
         private void EnableVessel()
         {

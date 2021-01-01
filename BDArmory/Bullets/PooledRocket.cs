@@ -132,7 +132,10 @@ namespace BDArmory.Bullets
             BDArmorySetup.numberOfParticleEmitters--;
             foreach (var pe in pEmitters)
                 if (pe != null)
+                {
                     pe.emit = false;
+                    EffectBehaviour.RemoveParticleEmitter(pe);
+                }
             sourceVesselName = null;
         }
 
