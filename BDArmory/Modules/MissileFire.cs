@@ -3345,7 +3345,6 @@ namespace BDArmory.Modules
                         // TODO: for AA, favour higher thrust+turnDPS
 
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
-                        ModuleEMP empWeapon = item.Current as ModuleEMP;
                         float candidateTDPS = 0f;
 
                         if (mlauncher != null)
@@ -3357,7 +3356,6 @@ namespace BDArmory.Modules
                             BDModularGuidance mm = item.Current as BDModularGuidance;
                             candidateTDPS = 5000;
                         }
-                        if (empWeapon != null) continue; //EMPs don't affect missiles. Yet.
                         if ((targetWeapon != null) && ((targetWeapon.GetWeaponClass() == WeaponClasses.Gun) || (targetWeaponTDPS > candidateTDPS)))
                             continue; //dont replace guns or better missiles
 
@@ -3459,7 +3457,6 @@ namespace BDArmory.Modules
                         }
                         if (candidateClass != WeaponClasses.Missile) continue;
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
-                        ModuleEMP empWeapon = item.Current as ModuleEMP;
                         float candidateTDPS = 0f;
 
                         if (mlauncher != null)
@@ -3479,7 +3476,6 @@ namespace BDArmory.Modules
                         }
                         else if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
                         {
-                            if (empWeapon != null && target.isDebilitated) continue; //don't throw additional EMP missiles at something that's already disabled/bricked
                             if (targetWeaponTDPS > candidateTDPS)
                                 continue; //dont better missiles
 
@@ -3505,12 +3501,6 @@ namespace BDArmory.Modules
                         // weapon usable, if missile continue looking for lasers/guns, else take it
                         WeaponClasses candidateClass = item.Current.GetWeaponClass();
 
-                        bool canidateEMP = false;
-                        if (item.Current.GetPart().FindModuleImplementing<ModuleEMP>())
-                        {
-                            canidateEMP = true;
-                        }
-
                         if (candidateClass == WeaponClasses.Missile)
                         {
                             // Priority Sequence:
@@ -3530,7 +3520,6 @@ namespace BDArmory.Modules
                                       ((MissileBase)item.Current).GuidanceMode == MissileBase.GuidanceModes.None))
                                 {
                                     if (targetWeapon != null && targetYield > canidateYield) continue; //prioritize biggest Boom
-                                    if (canidateEMP && target.isDebilitated) continue;
                                     targetYield = canidateYield;
                                     canidateAGM = true;
                                     targetWeapon = item.Current;
@@ -3553,7 +3542,6 @@ namespace BDArmory.Modules
                                 if (canidateAntiRad)
                                 {
                                     if (targetWeapon != null && targetYield > canidateYield) continue; //prioritize biggest Boom
-                                    if (canidateEMP && target.isDebilitated) continue;
                                     targetYield = canidateYield;
                                     targetWeapon = item.Current;
                                     canidateAGM = true;
@@ -3562,7 +3550,6 @@ namespace BDArmory.Modules
                             else if (((MissileBase)item.Current).TargetingMode == MissileBase.TargetingModes.Laser)
                             {
                                 if ((targetWeapon != null && targetYield > canidateYield) && !canidateAntiRad) continue;
-                                if (canidateEMP && target.isDebilitated) continue;
                                 canidateAGM = true;
                                 targetYield = canidateYield;
                                 targetWeapon = item.Current;
@@ -3572,7 +3559,6 @@ namespace BDArmory.Modules
                                 if (!canidateAGM)
                                 {
                                     if (targetWeapon != null && targetYield > canidateYield) continue;
-                                    if (canidateEMP && target.isDebilitated) continue;
                                     targetYield = canidateYield;
                                     targetWeapon = item.Current;
                                 }
@@ -3592,7 +3578,6 @@ namespace BDArmory.Modules
                             if (droptime > 0 || vessel.LandedOrSplashed) //make sure it's an airdropped torpedo if flying
                             {
                                 if (targetYield > canidateYield) continue;
-                                if (canidateEMP && target.isDebilitated) continue;
                                 targetYield = canidateYield;
                                 targetWeapon = item.Current;
                                 if (distance > gunRange)
@@ -3613,7 +3598,6 @@ namespace BDArmory.Modules
                                 if (((MissileBase)item.Current).GuidanceMode == MissileBase.GuidanceModes.AGMBallistic)
                                 {
                                     if (targetYield > canidateYield) continue; //prioritize biggest Boom
-                                    if (canidateEMP && target.isDebilitated) continue;
                                     targetYield = canidateYield;
                                     targetWeapon = item.Current;
                                     if (targetWeapon != null && distance > canidateYield) // don't drop bombs when within blast radius
@@ -3622,7 +3606,6 @@ namespace BDArmory.Modules
                                 if (((MissileBase)item.Current).GuidanceMode == MissileBase.GuidanceModes.None)
                                 {
                                     if (targetYield > canidateYield) continue;
-                                    if (canidateEMP && target.isDebilitated) continue;
                                     targetYield = canidateYield;
                                     targetWeapon = item.Current;
                                     if (targetWeapon != null && distance > canidateYield)

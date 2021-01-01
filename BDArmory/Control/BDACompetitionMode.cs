@@ -794,9 +794,15 @@ namespace BDArmory.Control
             if (vessel.FindPartModuleImplementing<KerbalEVA>() != null) return; // Check for Kerbals on the outside.
             // Check for drones
             var commandModules = vessel.FindPartModulesImplementing<ModuleCommand>();
+            var craftbricked = vessel.FindPartModuleImplementing<ModuleDrainEC>();
             if (commandModules.All(c => c.GetControlSourceState() == CommNet.VesselControlState.None))
                 if (Scores.ContainsKey(vessel.vesselName) && Scores[vessel.vesselName]?.weaponManagerRef != null)
                     StartCoroutine(DelayedExplodeWM(Scores[vessel.vesselName].weaponManagerRef, 5f)); // Uncontrolled vessel, destroy its weapon manager in 5s.
+            if (craftbricked.bricked)
+            {
+                if (Scores.ContainsKey(vessel.vesselName) && Scores[vessel.vesselName]?.weaponManagerRef != null)
+                    StartCoroutine(DelayedExplodeWM(Scores[vessel.vesselName].weaponManagerRef, 2f)); // vessel fried by EMP, destroy its weapon manager in 2s.
+            }
         }
 
         IEnumerator DelayedExplodeWM(MissileFire weaponManager, float delay = 1f)

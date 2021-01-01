@@ -1127,7 +1127,7 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-                            if (!pulseLaser || (pulseLaser && Time.time - timeFired > beamDuration))
+                            if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
                             {
                                 for (int i = 0; i < laserRenderers.Length; i++)
                                 {
@@ -2319,15 +2319,15 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-            }//removed the detonationange += UnityEngine.random, that gets called every frame and just causes the prox fuze range to wander
-            if (eWeaponType == WeaponTypes.Rocket) //rocket aiming
-            {
-                finalTarget += trajectoryOffset;
-                finalTarget += targetVelocity * predictedFlightTime;
-                finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
+                //removed the detonationange += UnityEngine.random, that gets called every frame and just causes the prox fuze range to wander
+                if (eWeaponType == WeaponTypes.Rocket) //rocket aiming
+                {
+                    finalTarget += trajectoryOffset;
+                    finalTarget += targetVelocity * predictedFlightTime;
+                    finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
+                }
+                targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
             }
-            targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
-
             //airdetonation
             if (airDetonation)
             {
@@ -2626,7 +2626,7 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-                            if (!pulseLaser || (pulseLaser && Time.time - timeFired > beamDuration))
+                            if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
                             {
                                 for (int i = 0; i < laserRenderers.Length; i++)
                                 {
@@ -3198,6 +3198,10 @@ namespace BDArmory.Modules
                     output.AppendLine($"Laser damage: {laserDamage}");
                 }
                 output.AppendLine($"Powered By: {ammoName}");
+                if (ECPerShot > 0)
+                {
+                    output.AppendLine($"Electric Charge required per shot: {ammoName}");
+                }
                 if (pulseLaser)
                 {
                     output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
@@ -3213,6 +3217,10 @@ namespace BDArmory.Modules
             {
                 output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
                 output.AppendLine($"Ammunition: {ammoName}");
+                if (ECPerShot > 0)
+                {
+                    output.AppendLine($"Electric Charge required per shot: {ammoName}");
+                }
                 output.AppendLine($"Max Range: {maxEffectiveDistance} m");
                 if (weaponType == "ballistic")
                 {
