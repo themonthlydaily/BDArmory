@@ -1265,12 +1265,10 @@ namespace BDArmory.Control
             if (startCompetition) // Start the competition.
             {
                 var competitionStartDelayStart = Planetarium.GetUniversalTime();
-
                 while (Planetarium.GetUniversalTime() - competitionStartDelayStart < competitionStartDelay - Time.fixedDeltaTime)
                 {
                     var timeLeft = competitionStartDelay - (Planetarium.GetUniversalTime() - competitionStartDelayStart);
                     if ((int)(timeLeft - Time.fixedDeltaTime) < (int)timeLeft)
-
                         BDACompetitionMode.Instance.competitionStatus.Add("Competition starting in T-" + timeLeft.ToString("0") + "s");
                     yield return new WaitForFixedUpdate();
                 }
