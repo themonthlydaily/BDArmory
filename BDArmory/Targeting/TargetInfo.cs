@@ -1,11 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Control;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
-using Contracts.Parameters;
 using UnityEngine;
 
 namespace BDArmory.Targeting
