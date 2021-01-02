@@ -43,36 +43,60 @@ namespace BDArmory.Bullets
 
         public static void Load()
         {
-            try
+            bullets = new BulletInfos();
+            UrlDir.UrlConfig[] nodes = GameDatabase.Instance.GetConfigs("BULLET");
+            for (int i = 0; i < nodes.Length; i++)
             {
-                bullets = new BulletInfos();
-                UrlDir.UrlConfig[] nodes = GameDatabase.Instance.GetConfigs("BULLET");
-                for (int i = 0; i < nodes.Length; i++)
+                string name_ = "";
+                try
                 {
                     ConfigNode node = nodes[i].config;
+                    name_ = (string)ParseField(node, "name", typeof(string));
                     bullets.Add(
                         new BulletInfo(
-                        node.GetValue("name"),
-                        float.Parse(node.GetValue("caliber")),
-                        float.Parse(node.GetValue("bulletVelocity")),
-                        float.Parse(node.GetValue("bulletMass")),
-                        Convert.ToBoolean(node.GetValue("explosive")),
-                        float.Parse(node.GetValue("tntMass")),
-                        node.GetValue("fuzeType"),
-                        float.Parse(node.GetValue("apBulletMod")),
-                        int.Parse(node.GetValue("subProjectileCount")),
-                        node.GetValue("bulletDragTypeName"),
-                        node.GetValue("projectileColor"),
-                        node.GetValue("startColor"),
-                        Convert.ToBoolean(node.GetValue("fadeColor"))
+                            name_,
+                            (float)ParseField(node, "caliber", typeof(float)),
+                            (float)ParseField(node, "bulletVelocity", typeof(float)),
+                            (float)ParseField(node, "bulletMass", typeof(float)),
+                            (bool)ParseField(node, "explosive", typeof(bool)),
+                            (float)ParseField(node, "tntMass", typeof(float)),
+                            (string)ParseField(node, "fuzeType", typeof(string)),
+                            (float)ParseField(node, "apBulletMod", typeof(float)),
+                            (int)ParseField(node, "subProjectileCount", typeof(int)),
+                            (string)ParseField(node, "bulletDragTypeName", typeof(string)),
+                            (string)ParseField(node, "projectileColor", typeof(string)),
+                            (string)ParseField(node, "startColor", typeof(string)),
+                            (bool)ParseField(node, "fadeColor", typeof(bool))
                         )
-                        );
+                    );
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("[BDArmory]: Error Loading Bullet Config '" + name_ + "' | " + e.ToString());
                 }
             }
-            catch (Exception e)
+        }
+
+        private static object ParseField(ConfigNode node, string field, Type type)
+        {
+            if (!node.HasValue(field))
+                throw new ArgumentNullException(field, "Field '" + field + "' is missing.");
+            var value = node.GetValue(field);
+            try
             {
-                Debug.Log("[BDArmory]: Error Loading Bullet Config | " + e.ToString());
+                if (type == typeof(string))
+                { return value; }
+                else if (type == typeof(bool))
+                { return bool.Parse(value); }
+                else if (type == typeof(int))
+                { return int.Parse(value); }
+                else if (type == typeof(float))
+                { return float.Parse(value); }
+                else
+                { throw new ArgumentException("Invalid type specified."); }
             }
+            catch (Exception e)
+            { throw new ArgumentException("Field '" + field + "': '" + value + "' could not be parsed as '" + type.ToString() + "' | " + e.ToString(), field); }
         }
     }
 

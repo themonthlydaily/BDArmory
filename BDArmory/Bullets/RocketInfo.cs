@@ -41,35 +41,59 @@ namespace BDArmory.Bullets
 
         public static void Load()
         {
-            try
+            rockets = new RocketInfos();
+            UrlDir.UrlConfig[] nodes = GameDatabase.Instance.GetConfigs("ROCKET");
+            for (int i = 0; i < nodes.Length; i++)
             {
-                rockets = new RocketInfos();
-                UrlDir.UrlConfig[] nodes = GameDatabase.Instance.GetConfigs("ROCKET");
-                for (int i = 0; i < nodes.Length; i++)
+                string name_ = "";
+                try
                 {
                     ConfigNode node = nodes[i].config;
+                    name_ = (string)ParseField(node, "name", typeof(string));
                     rockets.Add(
                         new RocketInfo(
-                        node.GetValue("name"),
-                        float.Parse(node.GetValue("rocketMass")),
-                        float.Parse(node.GetValue("caliber")),
-                        float.Parse(node.GetValue("thrust")),
-                        float.Parse(node.GetValue("thrustTime")),
-                        Convert.ToBoolean(node.GetValue("shaped")),
-                        Convert.ToBoolean(node.GetValue("flak")),
-                        Convert.ToBoolean(node.GetValue("explosive")),
-                        float.Parse(node.GetValue("tntMass")),
-                        int.Parse(node.GetValue("subProjectileCount")),
-                        float.Parse(node.GetValue("thrustDeviation")),
-                        node.GetValue("rocketModelPath")
+                            name_,
+                            (float)ParseField(node, "rocketMass", typeof(float)),
+                            (float)ParseField(node, "caliber", typeof(float)),
+                            (float)ParseField(node, "thrust", typeof(float)),
+                            (float)ParseField(node, "thrustTime", typeof(float)),
+                            (bool)ParseField(node, "shaped", typeof(bool)),
+                            (bool)ParseField(node, "flak", typeof(bool)),
+                            (bool)ParseField(node, "explosive", typeof(bool)),
+                            (float)ParseField(node, "tntMass", typeof(float)),
+                            (int)ParseField(node, "subProjectileCount", typeof(int)),
+                            (float)ParseField(node, "thrustDeviation", typeof(float)),
+                            (string)ParseField(node, "rocketModelPath", typeof(string))
                         )
                     );
                 }
+                catch (Exception e)
+                {
+                    Debug.LogError("[BDArmory]: Error Loading Rocket Config '" + name_ + "' | " + e.ToString());
+                }
+            }
+        }
+
+        private static object ParseField(ConfigNode node, string field, Type type)
+        {
+            if (!node.HasValue(field))
+                throw new ArgumentNullException(field, "Field '" + field + "' is missing.");
+            var value = node.GetValue(field);
+            try
+            {
+                if (type == typeof(string))
+                { return value; }
+                else if (type == typeof(bool))
+                { return bool.Parse(value); }
+                else if (type == typeof(int))
+                { return int.Parse(value); }
+                else if (type == typeof(float))
+                { return float.Parse(value); }
+                else
+                { throw new ArgumentException("Invalid type specified."); }
             }
             catch (Exception e)
-            {
-                Debug.Log("[BDArmory]: Error Loading Rocket Config | " + e.ToString());
-            }
+            { throw new ArgumentException("Field '" + field + "': '" + value + "' could not be parsed as '" + type.ToString() + "' | " + e.ToString(), field); }
         }
     }
 
