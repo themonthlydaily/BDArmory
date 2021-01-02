@@ -20,7 +20,7 @@ using KSP.Localization;
 
 namespace BDArmory.UI
 {
-    [KSPAddon(KSPAddon.Startup.EveryScene, false)]
+    [KSPAddon(KSPAddon.Startup.EveryScene, true)]
     public class BDArmorySetup : MonoBehaviour
     {
         public static bool SMART_GUARDS = true;
