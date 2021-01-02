@@ -41,6 +41,7 @@ namespace BDArmory.Bullets
 
         public static void Load()
         {
+            if (rockets != null) return; // Only load them once on startup.
             rockets = new RocketInfos();
             UrlDir.UrlConfig[] nodes = GameDatabase.Instance.GetConfigs("ROCKET");
             for (int i = 0; i < nodes.Length; i++)

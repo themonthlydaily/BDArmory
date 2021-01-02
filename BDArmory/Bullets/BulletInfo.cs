@@ -46,7 +46,8 @@ namespace BDArmory.Bullets
 
         public static void Load()
         {
-            if (bullets == null) bullets = new BulletInfos();
+            if (bullets != null) return; // Only load the bullet defs once on startup.
+            bullets = new BulletInfos();
             if (bulletNames == null) bulletNames = new HashSet<string>();
             UrlDir.UrlConfig[] nodes = GameDatabase.Instance.GetConfigs("BULLET");
             ConfigNode node;
