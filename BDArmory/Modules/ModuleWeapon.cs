@@ -523,11 +523,11 @@ namespace BDArmory.Modules
         public float detonationRange = -1f; // give ability to set proximity range
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxDetonationRange"),//Max Detonation Range
-         UI_FloatRange(minValue = 500, maxValue = 8000f, stepIncrement = 5f, scene = UI_Scene.All)]
+        UI_FloatRange(minValue = 500, maxValue = 8000f, stepIncrement = 5f, scene = UI_Scene.All)]
         public float maxAirDetonationRange = 3500; // could probably get rid of this entirely, max engagement range more or less already does this
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Ammo_Type"),//Ammunition Types
- UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
+        UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
         public float AmmoTypeNum = 1;
 
         [KSPField(isPersistant = true)]
@@ -1105,6 +1105,7 @@ namespace BDArmory.Modules
                 {
                     if (weaponState != WeaponStates.PoweringDown || weaponState != WeaponStates.Disabled)
                     {
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ModuleWeapon]: Vessel is uncontrollable, disabling weapon " + part.name);
                         DisableWeapon();
                     }
                     return;
