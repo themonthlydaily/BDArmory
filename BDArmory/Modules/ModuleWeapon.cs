@@ -119,6 +119,12 @@ namespace BDArmory.Modules
         //AI will fire gun if target is within this Cos(angle) of barrel
         public float maxAutoFireCosAngle = 0.9993908f; //corresponds to ~2 degrees
 
+        public bool FireAngleOverride = false;
+
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Firing Angle Override"),
+UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        float FiringTolerance = -1; //per-weapon override of maxcosfireangle
+
         //aimer textures
         Vector3 pointingAtPosition;
         Vector3 bulletPrediction;
@@ -290,6 +296,7 @@ namespace BDArmory.Modules
 
         [KSPField]
         public float maxDeviation = 1; //inaccuracy two standard deviations in degrees (two because backwards compatibility :)
+        private float baseDeviation = 1;
 
         [KSPField]
         public float maxEffectiveDistance = 2500; //used by AI to select appropriate weapon
@@ -901,6 +908,12 @@ namespace BDArmory.Modules
                         Fields["AmmoTypeNum"].guiActive = false;
                     }
                 }
+                if (FiringTolerance != -1) //if custom angle, get
+                {
+                    maxAutoFireCosAngle = Mathf.Cos((FiringTolerance* Mathf.Deg2Rad));
+                    FireAngleOverride = true;
+                }
+                baseDeviation = maxDeviation; //store original MD value
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -1359,7 +1372,7 @@ namespace BDArmory.Modules
                                 timeFired = Time.time - iTime;
 
                                 Vector3 firedVelocity =
-                                    VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation * (ProjectileCount / 2)) / 2) * bulletVelocity; //cannistershot is more inaccurate than slug
+                                    VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity; 
 
                                 pBullet.currentVelocity = (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
                                 firedBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime
@@ -3067,9 +3080,11 @@ namespace BDArmory.Modules
             {
                 bulletInfo = BulletInfo.bullets[currentType];
                 guiAmmoTypeString = " "; //reset name
+                maxDeviation = baseDeviation; //reset modified deviation
                 if (bulletInfo.subProjectileCount > 1)
                 {
                     guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
+                    maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount, 2, 10); //modify deviation if shot vs slug
                 }
                 if (bulletInfo.apBulletMod > 1)
                 {
