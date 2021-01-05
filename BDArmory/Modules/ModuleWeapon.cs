@@ -121,10 +121,6 @@ namespace BDArmory.Modules
 
         public bool FireAngleOverride = false;
 
-        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Firing Angle Override"),
-UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
-        float FiringTolerance = -1; //per-weapon override of maxcosfireangle
-
         //aimer textures
         Vector3 pointingAtPosition;
         Vector3 bulletPrediction;
@@ -287,6 +283,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
         private bool spinningDown;
 
         //weapon specifications
+        [KSPField(isPersistant = true)]
+        public bool FireAngleOverride = false;
+
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FireingAngle"),
+UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        float FiringTolerance = 3; //per-weapon override of maxcosfireangle
+        
         [KSPField]
         public float maxTargetingRange = 2000; //max range for raycasting and sighting
 
@@ -734,7 +737,10 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 Fields["AmmoTypeNum"].guiActive = false;
                 Fields["AmmoTypeNum"].guiActiveEditor = false;
             }
-
+            UI_FloatRange FAOEditor = (UI_FloatRange)Fields["FiringTolerance"].uiControlEditor;
+            FAOEditor.onFieldChanged = FAOCos;
+            UI_FloatRange FAOFlight = (UI_FloatRange)Fields["FiringTolerance"].uiControlFlight;
+            FAOFlight.onFieldChanged = FAOCos;
             vessel.Velocity();
             if (BurstFire)
             {
@@ -908,11 +914,6 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         Fields["AmmoTypeNum"].guiActive = false;
                     }
                 }
-                if (FiringTolerance != -1) //if custom angle, get
-                {
-                    maxAutoFireCosAngle = Mathf.Cos((FiringTolerance* Mathf.Deg2Rad));
-                    FireAngleOverride = true;
-                }
                 baseDeviation = maxDeviation; //store original MD value
             }
             else if (HighLogic.LoadedSceneIsEditor)
@@ -1027,6 +1028,31 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
+        
+        [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireAngleOverride", active = true)]//Disable fire angle override
+        public void ToggleOverrideAngle()
+        {
+            FireAngleOverride = !FireAngleOverride;
+
+            if (FireAngleOverride == false)
+            {
+                Events["ToggleOverrideAngle"].guiName = Localizer.Format("#LOC_BDArmory_Enabled");//"Enable Engage Options"
+            }
+            else
+            {
+                Events["ToggleOverrideAngle"].guiName = Localizer.Format("#LOC_BDArmory_Disabled");//"Disable Engage Options"
+            }
+
+            Fields["FiringTolerance"].guiActive = FireAngleOverride;
+            Fields["FiringTolerance"].guiActiveEditor = FireAngleOverride;
+
+            Misc.Misc.RefreshAssociatedWindows(part);
+        }
+        void FAOCos(BaseField field, object obj)
+        {
+            maxAutoFireCosAngle = Mathf.Cos((FiringTolerance * Mathf.Deg2Rad));
+        }
+        
         void Update()
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && vessel.IsControllable)
