@@ -94,7 +94,7 @@ namespace BDArmory.Modules
         public float autoFireTimer = 0;
 
         //used by AI to lead moving targets
-        private float targetDistance;
+        private float targetDistance = 8000f;
         private Vector3 targetPosition;
         private Vector3 targetVelocity;  // local frame velocity
         private Vector3 targetAcceleration; // local frame
@@ -2368,14 +2368,15 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         }
                     }
                 }
-                //removed the detonationange += UnityEngine.random, that gets called every frame and just causes the prox fuze range to wander
-                if (eWeaponType == WeaponTypes.Rocket) //rocket aiming
+            }
+            if (eWeaponType == WeaponTypes.Rocket) //rocket aiming
+            {
+                targetPosition += trajectoryOffset;
+                if (weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode || weaponManager.AI?.pilotEnabled == true))
                 {
-                    finalTarget += trajectoryOffset;
-                    finalTarget += targetVelocity * predictedFlightTime;
-                    finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
+                    targetPosition += targetVelocity * predictedFlightTime;
+                    targetPosition += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
                 }
-                targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
             }
             //airdetonation
             if (airDetonation)
