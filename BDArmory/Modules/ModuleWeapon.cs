@@ -3112,7 +3112,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 if (bulletInfo.subProjectileCount > 1)
                 {
                     guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
-                    maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount, 2, 10); //modify deviation if shot vs slug
+                    maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount, 2, 5); //modify deviation if shot vs slug
                 }
                 if (bulletInfo.apBulletMod > 1)
                 {
