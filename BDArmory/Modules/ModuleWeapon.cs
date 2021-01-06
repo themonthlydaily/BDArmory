@@ -119,8 +119,6 @@ namespace BDArmory.Modules
         //AI will fire gun if target is within this Cos(angle) of barrel
         public float maxAutoFireCosAngle = 0.9993908f; //corresponds to ~2 degrees
 
-        public bool FireAngleOverride = false;
-
         //aimer textures
         Vector3 pointingAtPosition;
         Vector3 bulletPrediction;
