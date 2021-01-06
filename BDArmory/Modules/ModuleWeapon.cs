@@ -3110,6 +3110,22 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 bulletInfo = BulletInfo.bullets[currentType];
                 guiAmmoTypeString = " "; //reset name
                 maxDeviation = baseDeviation; //reset modified deviation
+                caliber = bulletInfo.caliber;
+                bulletVelocity = bulletInfo.bulletVelocity;
+                bulletMass = bulletInfo.bulletMass;
+                ProjectileCount = bulletInfo.subProjectileCount;
+                bulletDragTypeName = bulletInfo.bulletDragTypeName;
+                projectileColorC = Misc.Misc.ParseColor255(bulletInfo.projectileColor);
+                startColorC = Misc.Misc.ParseColor255(bulletInfo.startColor);
+                fadeColor = bulletInfo.fadeColor;
+                ParseBulletDragType();
+                ParseBulletFuzeType(bulletInfo.fuzeType);
+                tntMass = bulletInfo.tntMass;
+                SetInitialDetonationDistance();        
+                tracerStartWidth = caliber / 300;
+                tracerEndWidth = caliber / 750;
+                nonTracerWidth = caliber / 500;
+                SelectedAmmoType = bulletInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 if (bulletInfo.subProjectileCount > 1)
                 {
                     guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
@@ -3134,23 +3150,6 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 {
                     guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Slug");
                 }
-
-                caliber = bulletInfo.caliber;
-                bulletVelocity = bulletInfo.bulletVelocity;
-                bulletMass = bulletInfo.bulletMass;
-                ProjectileCount = bulletInfo.subProjectileCount;
-                bulletDragTypeName = bulletInfo.bulletDragTypeName;
-                projectileColorC = Misc.Misc.ParseColor255(bulletInfo.projectileColor);
-                startColorC = Misc.Misc.ParseColor255(bulletInfo.startColor);
-                fadeColor = bulletInfo.fadeColor;
-                ParseBulletDragType();
-                ParseBulletFuzeType(bulletInfo.fuzeType);
-                tntMass = bulletInfo.tntMass;
-                SetInitialDetonationDistance();
-                tracerStartWidth = caliber / 300;
-                tracerEndWidth = caliber / 750;
-                nonTracerWidth = caliber / 500;
-                SelectedAmmoType = bulletInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
             }
             if (eWeaponType == WeaponTypes.Rocket)
             {
