@@ -691,14 +691,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             }
             OriginalShortName = shortName;
             WeaponName = shortName;
-            IEnumerator<KSPParticleEmitter> emitter = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator();
-            while (emitter.MoveNext())
-            {
-                if (emitter.Current == null) continue;
-                emitter.Current.emit = false;
-                EffectBehaviour.AddParticleEmitter(emitter.Current);
-            }
-            emitter.Dispose();
+            using (var emitter = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                while (emitter.MoveNext())
+                {
+                    if (emitter.Current == null) continue;
+                    emitter.Current.emit = false;
+                    EffectBehaviour.AddParticleEmitter(emitter.Current);
+                }
 
             if (roundsPerMinute >= 1500 || (eWeaponType == WeaponTypes.Laser && !pulseLaser))
             {
@@ -802,16 +801,15 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
 
             }
             muzzleFlashEmitters = new List<KSPParticleEmitter>();
-            IEnumerator<Transform> mtf = part.FindModelTransforms("muzzleTransform").AsEnumerable().GetEnumerator();
-            while (mtf.MoveNext())
-            {
-                if (mtf.Current == null) continue;
-                KSPParticleEmitter kpe = mtf.Current.GetComponent<KSPParticleEmitter>();
-                EffectBehaviour.AddParticleEmitter(kpe);
-                muzzleFlashEmitters.Add(kpe);
-                kpe.emit = false;
-            }
-            mtf.Dispose();
+            using (var mtf = part.FindModelTransforms("muzzleTransform").AsEnumerable().GetEnumerator())
+                while (mtf.MoveNext())
+                {
+                    if (mtf.Current == null) continue;
+                    KSPParticleEmitter kpe = mtf.Current.GetComponent<KSPParticleEmitter>();
+                    EffectBehaviour.AddParticleEmitter(kpe);
+                    muzzleFlashEmitters.Add(kpe);
+                    kpe.emit = false;
+                }
 
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -847,28 +845,27 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 shellEjectTransforms = part.FindModelTransforms(shellEjectTransformName);
 
                 //setup emitters
-                IEnumerator<KSPParticleEmitter> pe = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator();
-                while (pe.MoveNext())
-                {
-                    if (pe.Current == null) continue;
-                    pe.Current.maxSize *= part.rescaleFactor;
-                    pe.Current.minSize *= part.rescaleFactor;
-                    pe.Current.shape3D *= part.rescaleFactor;
-                    pe.Current.shape2D *= part.rescaleFactor;
-                    pe.Current.shape1D *= part.rescaleFactor;
+                using (var pe = part.FindModelComponents<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                    while (pe.MoveNext())
+                    {
+                        if (pe.Current == null) continue;
+                        pe.Current.maxSize *= part.rescaleFactor;
+                        pe.Current.minSize *= part.rescaleFactor;
+                        pe.Current.shape3D *= part.rescaleFactor;
+                        pe.Current.shape2D *= part.rescaleFactor;
+                        pe.Current.shape1D *= part.rescaleFactor;
 
-                    if (pe.Current.useWorldSpace && !oneShotWorldParticles)
-                    {
-                        BDAGaplessParticleEmitter gpe = pe.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
-                        gpe.part = part;
-                        gaplessEmitters.Add(gpe);
+                        if (pe.Current.useWorldSpace && !oneShotWorldParticles)
+                        {
+                            BDAGaplessParticleEmitter gpe = pe.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
+                            gpe.part = part;
+                            gaplessEmitters.Add(gpe);
+                        }
+                        else
+                        {
+                            EffectBehaviour.AddParticleEmitter(pe.Current);
+                        }
                     }
-                    else
-                    {
-                        EffectBehaviour.AddParticleEmitter(pe.Current);
-                    }
-                }
-                pe.Dispose();
 
                 //setup projectile colors
                 projectileColorC = Misc.Misc.ParseColor255(projectileColor);
