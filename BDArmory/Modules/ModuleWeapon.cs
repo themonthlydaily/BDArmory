@@ -2261,10 +2261,16 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     return;
                 }
             }
-
+            Transform fireTransform = fireTransforms[0];
+            Vector3 finalTarget;
+            if (eWeaponType == WeaponTypes.Rocket && rocketPod)
+            {
+                fireTransform = rockets[0].parent; // support for legacy RLs
+            }
             if (!slaved && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0))
             {
                 //MouseControl
+                float tgtDistance;
                 Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height,
                     0);
                 Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
@@ -2284,11 +2290,14 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         targetPosition = ray.direction * maxTargetingRange +
                                          FlightCamera.fetch.mainCamera.transform.position;
                     }
+                    tgtDistance = Vector3.Distance(hit.point, fireTransform.parent.position);
                 }
                 else
                 {
                     targetPosition = (ray.direction * (maxTargetingRange + (FlightCamera.fetch.Distance * 0.75f))) +
                                      FlightCamera.fetch.mainCamera.transform.position;
+                    tgtDistance = maxTargetingRange;
+                    
                     if (visualTargetVessel != null && visualTargetVessel.loaded)
                     {
                         targetPosition = ray.direction *
@@ -2297,20 +2306,23 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                          FlightCamera.fetch.mainCamera.transform.position;
                     }
                 }
+                if (eWeaponType == WeaponTypes.Rocket) //rocket turret manual aiming
+                {
+                    finalTarget = targetPosition;
+                    targetDistance = tgtDistance;
+                    finalTarget += trajectoryOffset;
+                }
             }
 
             //aim assist
-            Vector3 finalTarget = targetPosition;
+            finalTarget = targetPosition;
             Vector3 originalTarget = targetPosition;
-            Vector3 pointingDirection = fireTransforms[0].forward;
-            targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
-            relativeVelocity = targetVelocity - part.rb.velocity;
 
-            if (BDArmorySettings.AIM_ASSIST || aiControlled)
+           if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
             {
-                if (eWeaponType == WeaponTypes.Ballistic) //Gun targeting
-                {
-                    float effectiveVelocity = bulletVelocity;
+                    targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
+                float effectiveVelocity = bulletVelocity;
+                relativeVelocity = targetVelocity - part.rb.velocity;
                     Quaternion.FromToRotation(targetAccelerationPrevious, targetAcceleration).ToAngleAxis(out float accelDAngle, out Vector3 accelDAxis);
                     Vector3 leadTarget = targetPosition;
 
@@ -2365,16 +2377,15 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
 #endif
                         }
                     }
-                }
+                    targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);                
             }
-            if (eWeaponType == WeaponTypes.Rocket) //rocket aiming
+            if (aiControlled && eWeaponType == WeaponTypes.Rocket)//non-turret and/or AI controlled Rocket targeting,
+                //if (weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode || weaponManager.AI?.pilotEnabled == true))
             {
-                targetPosition += trajectoryOffset;
-                if (weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode || weaponManager.AI?.pilotEnabled == true))
-                {
-                    targetPosition += targetVelocity * predictedFlightTime;
-                    targetPosition += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
-                }
+                targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
+                finalTarget += trajectoryOffset;
+                finalTarget += targetVelocity * predictedFlightTime;
+                finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
             }
             //airdetonation
             if (airDetonation)
@@ -2466,7 +2477,8 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     pointPositions.Add(simCurrPos);
 
                     float atmosMultiplier = Mathf.Clamp01(2.5f * (float)FlightGlobals.getAtmDensity(vessel.staticPressurekPa, vessel.externalTemperature, vessel.mainBody));
-
+                    bool slaved = turret && weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode);
+                    
                     while (simulating)
                     {
                         RaycastHit hit;
@@ -2518,14 +2530,12 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                 {
                                     bulletPrediction = hit.point;
                                     simulating = false;
-                                    break;
                                 }
                             }
                             else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0)
                             {
                                 bulletPrediction = simCurrPos;
                                 simulating = false;
-                                break;
                             }
                         }
                         simPrevPos = simCurrPos;
@@ -2585,8 +2595,11 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             //autofiring with AI
             if (targetAcquired && aiControlled)
             {
-
                 Transform fireTransform = fireTransforms[0];
+                if (eWeaponType == WeaponTypes.Rocket && rocketPod)
+                {
+                    fireTransform = rockets[0].parent; // support for legacy RLs
+                }
 
                 Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
                 Vector3 aimDirection = fireTransform.forward;
@@ -2616,10 +2629,16 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 }
                 else // rockets
                 {
-                    if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999962f))
+                    if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f))
                     {
-                        if (Vector3.Distance(finalAimTarget, fireTransform.position) > blastRadius)
-                            autoFire = Vector3.Angle(targetRelPos, aimDirection) < 1f; //rockets already calculate where target will be
+                        if ((Vector3.Distance(finalAimTarget, fireTransform.position) > blastRadius) && (targetCosAngle >= maxAutoFireCosAngle))
+                        {
+                            autoFire = true; //rockets already calculate where target will be
+                        }
+                        else
+                        {
+                            autoFire = false;
+                        }
                     }
                 }
             }
