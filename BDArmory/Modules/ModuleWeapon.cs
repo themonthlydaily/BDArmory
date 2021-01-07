@@ -2317,10 +2317,10 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             //aim assist
             finalTarget = targetPosition;
             Vector3 originalTarget = targetPosition;
+            targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
 
            if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
-            {
-                    targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
+            {                    
                 float effectiveVelocity = bulletVelocity;
                 relativeVelocity = targetVelocity - part.rb.velocity;
                     Quaternion.FromToRotation(targetAccelerationPrevious, targetAcceleration).ToAngleAxis(out float accelDAngle, out Vector3 accelDAxis);
