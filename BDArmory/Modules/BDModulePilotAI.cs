@@ -1553,7 +1553,7 @@ namespace BDArmory.Modules
 
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
-                Debug.Log("[BDArmory]: AI Pilot reached command destination.");
+                Debug.Log("[BDModulePilotAI]: AI Pilot reached command destination.");
                 command = PilotCommands.Free;
             }
 
