@@ -214,7 +214,11 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
+            if (BDACompetitionMode.Instance.competitionStarting && !BDACompetitionMode.Instance.competitionIsActive)
+                ti.radarBaseSignatureCompetitionUpdate = false; // Reset competition update if a new competition was started
+
+            // Run intensive RCS rendering if 1. It has not been done yet, 2. If the competition just started (capture vessel changes such as gear-raise or robotics)
+            if (ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate || (!ti.radarBaseSignatureCompetitionUpdate && BDACompetitionMode.Instance.competitionIsActive))
             {
                 // is it just some debris? then dont bother doing a real rcs rendering and just fake it with the parts mass
                 if (v.vesselType == VesselType.Debris && !v.IsControllable)
@@ -229,6 +233,7 @@ namespace BDArmory.Radar
 
                 ti.radarBaseSignatureNeedsUpdate = false;
                 ti.alreadyScheduledRCSUpdate = false;
+                ti.radarBaseSignatureCompetitionUpdate = true;
             }
 
             return ti;
@@ -261,7 +266,7 @@ namespace BDArmory.Radar
                 //4) lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
                 // lockbreak_factor = baseSig/modifiedSig x (1 � lopckBreakStrength/baseSig/100)
                 // Use clamp to prevent RCS reduction resulting in increased lockbreak factor, which negates value of RCS reduction)
-                ti.radarLockbreakFactor = Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100));
+                ti.radarLockbreakFactor = Mathf.Max(Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100)), 0.001f); // 0.001 is minimum lockbreak factor
             }
 
             return ti.radarModifiedSignature;
