@@ -7,6 +7,7 @@ using BDArmory.Core;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Competition;
+using BDArmory.Radar;
 using BDArmory.UI;
 using UnityEngine;
 
@@ -371,6 +372,7 @@ namespace BDArmory.Control
             finalGracePeriodStart = -1;
             lastTagUpdateTime = competitionStartTime;
             Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Competition Started");
+            RadarUtils.ForceUpdateRadarCrossSections(); // Update RCS
         }
 
         public void ResetCompetitionScores()

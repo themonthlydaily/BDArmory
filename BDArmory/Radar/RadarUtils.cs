@@ -171,6 +171,15 @@ namespace BDArmory.Radar
         public static float[,] worstRCSAspects = new float[3, 3]; // Worst three aspects
 
         /// <summary>
+        /// Force radar signature update
+        /// </summary>
+        public static void ForceUpdateRadarCrossSections()
+        {
+            foreach (var vessel in FlightGlobals.Vessels)
+                GetVesselRadarCrossSection(vessel, true);
+        }
+
+        /// <summary>
         /// Get a vessel radar siganture, including all modifiers (ECM, stealth, ...)
         /// </summary>
         public static TargetInfo GetVesselRadarSignature(Vessel v)
@@ -187,7 +196,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal method: get a vessel base radar signature
         /// </summary>
-        private static TargetInfo GetVesselRadarCrossSection(Vessel v)
+        private static TargetInfo GetVesselRadarCrossSection(Vessel v, bool force = false)
         {
             //read vesseltargetinfo, or render against radar cameras
             TargetInfo ti = v.gameObject.GetComponent<TargetInfo>();
@@ -214,11 +223,8 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (BDACompetitionMode.Instance.competitionStarting && !BDACompetitionMode.Instance.competitionIsActive)
-                ti.radarBaseSignatureCompetitionUpdate = false; // Reset competition update if a new competition was started
-
             // Run intensive RCS rendering if 1. It has not been done yet, 2. If the competition just started (capture vessel changes such as gear-raise or robotics)
-            if (ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate || (!ti.radarBaseSignatureCompetitionUpdate && BDACompetitionMode.Instance.competitionIsActive))
+            if (force || ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
             {
                 // is it just some debris? then dont bother doing a real rcs rendering and just fake it with the parts mass
                 if (v.vesselType == VesselType.Debris && !v.IsControllable)
@@ -233,7 +239,6 @@ namespace BDArmory.Radar
 
                 ti.radarBaseSignatureNeedsUpdate = false;
                 ti.alreadyScheduledRCSUpdate = false;
-                ti.radarBaseSignatureCompetitionUpdate = true;
             }
 
             return ti;
