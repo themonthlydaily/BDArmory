@@ -374,7 +374,7 @@ namespace BDArmory.Radar
             {
                 // Determine camera vector for aspect
                 aspect = Vector3.RotateTowards(t.up, -t.up, rcsAspects[i, 0] / 180f * Mathf.PI, 0);
-                aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), rcsAspects[i, 1] / 180f * Mathf.PI, 0);
+                aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
                 
                 // Render aspect
                 RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
@@ -440,11 +440,11 @@ namespace BDArmory.Radar
             {
                 // Determine camera vectors for aspects
                 Vector3 aspect1 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[0, 0] / 180f * Mathf.PI, 0);
-                aspect1 = Vector3.RotateTowards(aspect1, Vector3.Cross(t.right, t.up), worstRCSAspects[0, 1] / 180f * Mathf.PI, 0);
+                aspect1 = Vector3.RotateTowards(aspect1, Vector3.Cross(t.right, t.up), -worstRCSAspects[0, 1] / 180f * Mathf.PI, 0);
                 Vector3 aspect2 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[1, 0] / 180f * Mathf.PI, 0);
-                aspect2 = Vector3.RotateTowards(aspect2, Vector3.Cross(t.right, t.up), worstRCSAspects[1, 1] / 180f * Mathf.PI, 0);
+                aspect2 = Vector3.RotateTowards(aspect2, Vector3.Cross(t.right, t.up), -worstRCSAspects[1, 1] / 180f * Mathf.PI, 0);
                 Vector3 aspect3 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[2, 0] / 180f * Mathf.PI, 0);
-                aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
+                aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), -worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
 
                 // Render three highest aspects
                 RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
