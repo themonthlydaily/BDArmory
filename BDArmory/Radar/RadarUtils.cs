@@ -62,7 +62,7 @@ namespace BDArmory.Radar
 
         internal static float rcsTotal;               // dito
 
-        internal const float RCS_NORMALIZATION_FACTOR = 4.0f;       //IMPORTANT FOR RCS CALCULATION! DO NOT CHANGE! (sphere with 1m^2 cross section should have 1m^2 RCS)
+        internal const float RCS_NORMALIZATION_FACTOR = 3.8f;       //IMPORTANT FOR RCS CALCULATION! DO NOT CHANGE! (sphere with 1m^2 cross section should have 1m^2 RCS)
         internal const float RCS_MISSILES = 999f;                    //default rcs value for missiles if not configured in the part config
         internal const float RWR_PING_RANGE_FACTOR = 2.0f;
         internal const float RADAR_IGNORE_DISTANCE_SQR = 100f;
@@ -171,6 +171,15 @@ namespace BDArmory.Radar
         public static float[,] worstRCSAspects = new float[3, 3]; // Worst three aspects
 
         /// <summary>
+        /// Force radar signature update
+        /// </summary>
+        public static void ForceUpdateRadarCrossSections()
+        {
+            foreach (var vessel in FlightGlobals.Vessels)
+                GetVesselRadarCrossSection(vessel, true);
+        }
+
+        /// <summary>
         /// Get a vessel radar siganture, including all modifiers (ECM, stealth, ...)
         /// </summary>
         public static TargetInfo GetVesselRadarSignature(Vessel v)
@@ -187,7 +196,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal method: get a vessel base radar signature
         /// </summary>
-        private static TargetInfo GetVesselRadarCrossSection(Vessel v)
+        private static TargetInfo GetVesselRadarCrossSection(Vessel v, bool force = false)
         {
             //read vesseltargetinfo, or render against radar cameras
             TargetInfo ti = v.gameObject.GetComponent<TargetInfo>();
@@ -214,7 +223,8 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
+            // Run intensive RCS rendering if 1. It has not been done yet, 2. If the competition just started (capture vessel changes such as gear-raise or robotics)
+            if (force || ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
             {
                 // is it just some debris? then dont bother doing a real rcs rendering and just fake it with the parts mass
                 if (v.vesselType == VesselType.Debris && !v.IsControllable)
@@ -261,7 +271,7 @@ namespace BDArmory.Radar
                 //4) lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
                 // lockbreak_factor = baseSig/modifiedSig x (1 � lopckBreakStrength/baseSig/100)
                 // Use clamp to prevent RCS reduction resulting in increased lockbreak factor, which negates value of RCS reduction)
-                ti.radarLockbreakFactor = Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100));
+                ti.radarLockbreakFactor = Mathf.Max(Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100)), 0); // 0 is minimum lockbreak factor
             }
 
             return ti.radarModifiedSignature;
@@ -369,7 +379,7 @@ namespace BDArmory.Radar
             {
                 // Determine camera vector for aspect
                 aspect = Vector3.RotateTowards(t.up, -t.up, rcsAspects[i, 0] / 180f * Mathf.PI, 0);
-                aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), rcsAspects[i, 1] / 180f * Mathf.PI, 0);
+                aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
                 
                 // Render aspect
                 RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
@@ -435,11 +445,11 @@ namespace BDArmory.Radar
             {
                 // Determine camera vectors for aspects
                 Vector3 aspect1 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[0, 0] / 180f * Mathf.PI, 0);
-                aspect1 = Vector3.RotateTowards(aspect1, Vector3.Cross(t.right, t.up), worstRCSAspects[0, 1] / 180f * Mathf.PI, 0);
+                aspect1 = Vector3.RotateTowards(aspect1, Vector3.Cross(t.right, t.up), -worstRCSAspects[0, 1] / 180f * Mathf.PI, 0);
                 Vector3 aspect2 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[1, 0] / 180f * Mathf.PI, 0);
-                aspect2 = Vector3.RotateTowards(aspect2, Vector3.Cross(t.right, t.up), worstRCSAspects[1, 1] / 180f * Mathf.PI, 0);
+                aspect2 = Vector3.RotateTowards(aspect2, Vector3.Cross(t.right, t.up), -worstRCSAspects[1, 1] / 180f * Mathf.PI, 0);
                 Vector3 aspect3 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[2, 0] / 180f * Mathf.PI, 0);
-                aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
+                aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), -worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
 
                 // Render three highest aspects
                 RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
