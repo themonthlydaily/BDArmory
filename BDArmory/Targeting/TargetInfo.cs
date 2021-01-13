@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -23,6 +24,7 @@ namespace BDArmory.Targeting
         public float radarLockbreakFactor;
         public float radarJammingDistance;
         public bool alreadyScheduledRCSUpdate = false;
+        public float radarMassAtUpdate = 0f;
 
         public bool isLandedOrSurfaceSplashed
         {
@@ -239,9 +241,17 @@ namespace BDArmory.Targeting
 
         IEnumerator UpdateRCSDelayed()
         {
-            alreadyScheduledRCSUpdate = true;
-            yield return new WaitForSeconds(1.0f);
-            //radarBaseSignatureNeedsUpdate = true;     //TODO: currently disabled to reduce stuttering effects due to more demanding radar rendering!
+            if (radarMassAtUpdate > 0)
+            {
+                float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
+                if (massPercentageDifference > 0.025f)
+                {
+                    alreadyScheduledRCSUpdate = true;
+                    yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
+                    radarBaseSignatureNeedsUpdate = true;     // Update RCS if vessel mass changed by more than 2.5% after a part was lost
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
+                }
+            }
         }
 
         void Update()
