@@ -461,10 +461,8 @@ namespace BDArmory.Control
             {
                 Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start competition mode - one or more teams is empty");
                 competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
-                yield return new WaitForSeconds(2);
-                competitionStarting = false;
-                competitionIsActive = false;
                 competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
+                StopCompetition();
                 yield break;
             }
 
