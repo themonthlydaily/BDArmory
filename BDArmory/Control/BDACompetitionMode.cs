@@ -372,7 +372,6 @@ namespace BDArmory.Control
             finalGracePeriodStart = -1;
             lastTagUpdateTime = competitionStartTime;
             Log("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Competition Started");
-            RadarUtils.ForceUpdateRadarCrossSections(); // Update RCS
         }
 
         public void ResetCompetitionScores()
@@ -621,6 +620,7 @@ namespace BDArmory.Control
                         yield break;
                     }
             }
+            RadarUtils.ForceUpdateRadarCrossSections(); // Update RCS
             using (var teamPilots = pilots.GetEnumerator())
                 while (teamPilots.MoveNext())
                     using (var pilot = teamPilots.Current.Value.GetEnumerator())
@@ -641,7 +641,6 @@ namespace BDArmory.Control
                         }
 
             competitionStatus.Set("Competition starting!  Good luck!");
-            yield return new WaitForSeconds(2);
             CompetitionStarted();
         }
         #endregion
