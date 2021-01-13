@@ -207,7 +207,7 @@ namespace BDArmory.Modules
         void ReceiveLaunchWarning(Vector3 source, Vector3 direction)
         {
             if (referenceTransform == null) return;
-            if (part == null) return;
+            if (part == null || !part.isActiveAndEnabled) return;
             if (weaponManager == null) return;
 
             float sqrDist = (part.transform.position - source).sqrMagnitude;

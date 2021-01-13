@@ -2635,7 +2635,7 @@ namespace BDArmory.Modules
                     }
                 }
         }
-       
+
         public void CycleWeapon(bool forward)
         {
             if (forward) weaponIndex++;
@@ -2756,6 +2756,7 @@ namespace BDArmory.Modules
                         {
                             return ml.Current;
                         }
+                        if (ml.Current.rotaryRail.readyMissile == null || ml.Current.rotaryRail.readyMissile.part == null) continue;
                         if (ml.Current.rotaryRail.readyToFire && ml.Current.rotaryRail.readyMissile.part.name == weaponArray[weaponIndex].GetPart().name)
                         {
                             return ml.Current.rotaryRail.readyMissile;
@@ -4349,16 +4350,16 @@ namespace BDArmory.Modules
             if (!guardTarget) return;
             if (selectedWeapon == null) return;
 
-                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
-                    while (weapon.MoveNext())
-                    {
-                        if (weapon.Current == null) continue;
-                        if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
-                        weapon.Current.visualTargetVessel = guardTarget;
-                        weapon.Current.autoFireTimer = Time.time;
-                        //weapon.Current.autoFireLength = 3 * targetScanInterval / 4;
-                        weapon.Current.autoFireLength = (fireBurstLength < 0.5) ? targetScanInterval / 2 : fireBurstLength;
-                    }
+            using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
+                    weapon.Current.visualTargetVessel = guardTarget;
+                    weapon.Current.autoFireTimer = Time.time;
+                    //weapon.Current.autoFireLength = 3 * targetScanInterval / 4;
+                    weapon.Current.autoFireLength = (fireBurstLength < 0.5) ? targetScanInterval / 2 : fireBurstLength;
+                }
         }
 
         public void SetOverrideTarget(TargetInfo target)

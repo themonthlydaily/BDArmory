@@ -51,7 +51,7 @@ namespace BDArmory.Radar
         public static Texture2D GetTextureLateral45 { get { return drawTextureLateral45; } }
         private static Texture2D drawTextureVentral45;
         public static Texture2D GetTextureVentral45 { get { return drawTextureVentral45; } }
-        
+
         internal static float rcsFrontal;             // internal so that editor analysis window has access to the details
         internal static float rcsLateral;             // dito
         internal static float rcsVentral;             // dito
@@ -122,10 +122,11 @@ namespace BDArmory.Radar
 
         /// <summary>
         /// Force radar signature update
+        /// Optionally, pass in a list of the vessels to update, otherwise all vessels in FlightGlobals get updated.
         /// </summary>
-        public static void ForceUpdateRadarCrossSections()
+        public static void ForceUpdateRadarCrossSections(List<Vessel> vessels = null)
         {
-            foreach (var vessel in FlightGlobals.Vessels)
+            foreach (var vessel in (vessels == null ? FlightGlobals.Vessels : vessels))
                 GetVesselRadarCrossSection(vessel, true);
         }
 
@@ -189,6 +190,7 @@ namespace BDArmory.Radar
 
                 ti.radarBaseSignatureNeedsUpdate = false;
                 ti.alreadyScheduledRCSUpdate = false;
+                ti.radarMassAtUpdate = v.GetTotalMass();
             }
 
             return ti;
@@ -291,7 +293,7 @@ namespace BDArmory.Radar
             }
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
-            
+
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 if (HighLogic.LoadedSceneIsFlight)
@@ -330,7 +332,7 @@ namespace BDArmory.Radar
                 // Determine camera vector for aspect
                 aspect = Vector3.RotateTowards(t.up, -t.up, rcsAspects[i, 0] / 180f * Mathf.PI, 0);
                 aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
-                
+
                 // Render aspect
                 RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
 
