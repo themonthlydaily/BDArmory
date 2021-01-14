@@ -368,6 +368,7 @@ namespace BDArmory.Modules
             if (GUI.Button(new Rect(BDArmorySetup.WindowRectRwr.width - 18, 2, 16, 16), "X", GUI.skin.button))
             {
                 displayRWR = false;
+                BDArmorySetup.SaveConfig();
             }
             GUI.BeginGroup(new Rect(BorderSize / 2, HeaderSize + (BorderSize / 2), RwrDisplayRect.width, RwrDisplayRect.height));
             //GUI.DragWindow(RwrDisplayRect);
