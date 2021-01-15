@@ -807,6 +807,7 @@ namespace BDArmory.Radar
             if (GUI.Button(new Rect(BDArmorySetup.WindowRectRadar.width - 18, 2, 16, 16), "X", GUI.skin.button))
             {
                 DisableAllRadars();
+                BDArmorySetup.SaveConfig();
                 return;
             }
             if (!referenceTransform) return;
