@@ -3260,28 +3260,53 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             {
                 if (electroLaser)
                 {
-                    output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 20), 2)}/s");
+                    if (pulseLaser)
+					{
+						output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 20), 2)}/s");
+					}
+					else
+					{
+						output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 1000), 2)}/s");
+					}
                     output.AppendLine($"Power Required: {ECPerShot}/s");
                 }
                 else
                 {
                     output.AppendLine($"Laser damage: {laserDamage}");
-                }
-                output.AppendLine($"Powered By: {ammoName}");
-                if (ECPerShot > 0)
-                {
-                    output.AppendLine($"Electric Charge required per shot: {ammoName}");
+                    if (ECPerShot > 0)
+                    {
+                        if (pulseLaser)
+                        {
+                            output.AppendLine($"Electric Charge required per shot: {ECPerShot}");
+                        }
+                        else
+                        {
+                            output.AppendLine($"Electric Charge: {ECPerShot}/s");
+                        }
+                    }
+                    else if (requestResourceAmount > 0)
+                    {
+                        if (pulseLaser)
+                        {
+                            output.AppendLine($"{ammoName} required per shot: {requestResourceAmount}");
+                        }
+                        else
+                        {
+                            output.AppendLine($"{ammoName}: {requestResourceAmount}/s");
+                        }
+                    }
                 }
                 if (pulseLaser)
                 {
                     output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
+                    if (HEpulses)
+                    {
+                        output.AppendLine($"Blast:");
+                        output.AppendLine($"- tnt mass:  {Math.Round((laserDamage / 30000), 2)} kg");
+                        output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(laserDamage / 30000), 2)} m");
+                    }
                 }
-                if (HEpulses)
-                {
-                    output.AppendLine($"Blast:");
-                    output.AppendLine($"- tnt mass:  {Math.Round((laserDamage / 30000), 2)} kg");
-                    output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(laserDamage / 30000), 2)} m");
-                }
+                
             }
             else
             {
