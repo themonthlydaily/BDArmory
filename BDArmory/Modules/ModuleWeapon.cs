@@ -3258,7 +3258,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
 
             if (weaponType == "laser")
             {
-                if (!electroLaser)
+                if (electroLaser)
                 {
                     output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 20), 2)}/s");
                     output.AppendLine($"Power Required: {ECPerShot}/s");
