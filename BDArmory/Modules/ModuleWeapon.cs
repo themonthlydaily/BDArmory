@@ -2380,9 +2380,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                                                   //if (weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode || weaponManager.AI?.pilotEnabled == true))
             {
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
-                finalTarget += trajectoryOffset;
-                finalTarget += targetVelocity * predictedFlightTime;
-                finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
+                finalTarget += AIUtils.PredictPosition(trajectoryOffset, targetVelocity, targetAcceleration, predictedFlightTime);
             }
             //airdetonation
             if (airDetonation)
@@ -2519,11 +2517,12 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                     KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                     hitVessel = (eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>()).vessel;
                                 }
-                                catch (NullReferenceException)
+                                catch (NullReferenceException e)
                                 {
+                                    Debug.LogError("[ModuleWeapon]: NullReferenceException while simulating trajectory: " + e.Message);
                                 }
 
-                                if (hitVessel == null || (hitVessel != null && hitVessel != vessel))
+                                if (hitVessel == null || hitVessel != vessel)
                                 {
                                     bulletPrediction = hit.point;
                                     simulating = false;
@@ -2536,8 +2535,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                             }
                         }
                         simPrevPos = simCurrPos;
-                        if (visualTargetVessel != null && visualTargetVessel.loaded && !visualTargetVessel.Landed &&
-                            (simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
+                        if (visualTargetVessel != null && visualTargetVessel.loaded && (simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
                         {
                             bulletPrediction = simStartPos + (simCurrPos - simStartPos).normalized * targetDistance;
                             simulating = false;
