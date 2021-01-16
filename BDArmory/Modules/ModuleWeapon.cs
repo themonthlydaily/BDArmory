@@ -2366,7 +2366,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 }
                 targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
             }
-            if (aiControlled && eWeaponType == WeaponTypes.Rocket)//Rocket targeting                                                                  
+            if (aiControlled && eWeaponType == WeaponTypes.Rocket)//Rocket targeting
             {
                 targetDistance = Mathf.Clamp(Vector3.Distance(targetPosition, fireTransform.parent.position), 0, maxTargetingRange);
                 finalTarget = targetPosition;
@@ -2455,8 +2455,8 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     {
                         simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f();
                         simCurrPos = fireTransform.position + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
-                        simPrevPos = simCurrPos
-                        simStartPos = simCurrPos
+                        simPrevPos = simCurrPos;
+                        simStartPos = simCurrPos;
                     }
                     bool simulating = true;
 
