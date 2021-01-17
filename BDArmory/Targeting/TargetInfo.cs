@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
