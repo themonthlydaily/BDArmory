@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
@@ -280,6 +281,49 @@ namespace BDArmory.Targeting
             return 0;
         }
 
+        public float MaxThrust(Vessel v)
+        {
+            float maxThrust = 0;
+            float finalThrust = 0;
+
+            using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+                while (engines.MoveNext())
+                {
+                    if (engines.Current == null) continue;
+                    if (!engines.Current.EngineIgnited) continue;
+
+                    MultiModeEngine mme = engines.Current.part.FindModuleImplementing<MultiModeEngine>();
+                    if (IsAfterBurnerEngine(mme))
+                    {
+                        mme.autoSwitch = false;
+                    }
+
+                    if (mme && mme.mode != engines.Current.engineID) continue;
+                    float engineThrust = engines.Current.maxThrust;
+                    if (engines.Current.atmChangeFlow)
+                    {
+                        engineThrust *= engines.Current.flowMultiplier;
+                    }
+                    maxThrust += Mathf.Max(0f, engineThrust * (engines.Current.thrustPercentage / 100f)); // Don't include negative thrust percentage drives (Danny2462 drives) as they don't contribute to the thrust.
+
+                    finalThrust += engines.Current.finalThrust;
+                }
+            return maxThrust;
+        }
+
+        private static bool IsAfterBurnerEngine(MultiModeEngine engine)
+        {
+            if (engine == null)
+            {
+                return false;
+            }
+            if (!engine)
+            {
+                return false;
+            }
+            return engine.primaryEngineID == "Dry" && engine.secondaryEngineID == "Wet";
+        }
+
         #region Target priority
         // Begin methods used for prioritizing targets
         public float TargetPriRange(MissileFire myMf) // 1- Target range normalized with max weapon range
@@ -308,8 +352,8 @@ namespace BDArmory.Targeting
         public float TargetPriAcceleration() // Normalized clamped acceleration for the target
         {
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
-            float forwardAccel = Mathf.Abs((float)Vector3.Dot(vessel.acceleration, vessel.vesselTransform.up)); // Forward acceleration
-            return 0.1f * Mathf.Clamp(forwardAccel / bodyGravity, 0f, 10f); // Output is 0-1 (0.1 is equal to body gravity)
+            float maxAccel = MaxThrust(vessel) / vessel.GetTotalMass(); // This assumes that all thrust is in the same direction.
+            return 0.1f * Mathf.Clamp(maxAccel / bodyGravity, 0f, 10f); // Output is 0-1 (0.1 is equal to body gravity)
         }
 
         public float TargetPriClosureTime(MissileFire myMf) // Time to closest point of approach, normalized for one minute
