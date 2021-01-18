@@ -2259,7 +2259,6 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 }
             }
             Transform fireTransform = fireTransforms[0];
-            Vector3 finalTarget;
             if (eWeaponType == WeaponTypes.Rocket && rocketPod)
             {
                 fireTransform = rockets[0].parent; // support for legacy RLs
@@ -2267,7 +2266,6 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             if (!slaved && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0))
             {
                 //MouseControl
-                float tgtDistance;
                 Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height,
                     0);
                 Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
@@ -2287,13 +2285,11 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         targetPosition = ray.direction * maxTargetingRange +
                                          FlightCamera.fetch.mainCamera.transform.position;
                     }
-                    tgtDistance = Vector3.Distance(hit.point, fireTransform.parent.position);
                 }
                 else
                 {
                     targetPosition = (ray.direction * (maxTargetingRange + (FlightCamera.fetch.Distance * 0.75f))) +
                                      FlightCamera.fetch.mainCamera.transform.position;
-                    tgtDistance = maxTargetingRange;
 
                     if (visualTargetVessel != null && visualTargetVessel.loaded)
                     {
@@ -2303,16 +2299,10 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                          FlightCamera.fetch.mainCamera.transform.position;
                     }
                 }
-                if (eWeaponType == WeaponTypes.Rocket) //rocket turret manual aiming
-                {
-                    finalTarget = targetPosition;
-                    targetDistance = tgtDistance;
-                    finalTarget += trajectoryOffset;
-                }
             }
 
             //aim assist
-            finalTarget = targetPosition;
+            Vector3 finalTarget = targetPosition;
             Vector3 originalTarget = targetPosition;
             targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
 
@@ -2376,11 +2366,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 }
                 targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
             }
-            if (aiControlled && eWeaponType == WeaponTypes.Rocket)//non-turret and/or AI controlled Rocket targeting,
-                                                                  //if (weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode || weaponManager.AI?.pilotEnabled == true))
+            if (aiControlled && eWeaponType == WeaponTypes.Rocket)//Rocket targeting
             {
-                targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
-                finalTarget += AIUtils.PredictPosition(trajectoryOffset, targetVelocity, targetAcceleration, predictedFlightTime);
+                targetDistance = Mathf.Clamp(Vector3.Distance(targetPosition, fireTransform.parent.position), 0, maxTargetingRange);
+                finalTarget = targetPosition;
+                finalTarget += trajectoryOffset;
+                finalTarget += targetVelocity * predictedFlightTime;
+                finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
             }
             //airdetonation
             if (airDetonation)
@@ -2463,8 +2455,8 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     {
                         simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f();
                         simCurrPos = fireTransform.position + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
-                        simPrevPos = fireTransform.position + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
-                        simStartPos = fireTransform.position + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
+                        simPrevPos = simCurrPos;
+                        simStartPos = simCurrPos;
                     }
                     bool simulating = true;
 
@@ -2535,7 +2527,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                             }
                         }
                         simPrevPos = simCurrPos;
-                        if (visualTargetVessel != null && visualTargetVessel.loaded && (simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
+                        if ((simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
                         {
                             bulletPrediction = simStartPos + (simCurrPos - simStartPos).normalized * targetDistance;
                             simulating = false;
