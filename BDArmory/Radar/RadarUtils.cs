@@ -299,7 +299,6 @@ namespace BDArmory.Radar
                         using var engineTransforms = engines.Current.thrustTransforms.GetEnumerator();
                         while (engineTransforms.MoveNext())
                         {
-                            //engineTransforms.Current.SetPositionAndRotation(engineTransforms.Current.transform.position + presentationPosition, engineTransforms.Current.transform.rotation);
                             engineTransforms.Current.transform.position = engineTransforms.Current.transform.position + presentationPosition;
                         }
                     }
@@ -434,7 +433,6 @@ namespace BDArmory.Radar
                             using var engineTransforms = engines.Current.thrustTransforms.GetEnumerator();
                             while (engineTransforms.MoveNext())
                             {
-                                // engineTransforms.Current.SetPositionAndRotation(engineTransforms.Current.transform.position - presentationPosition, engineTransforms.Current.transform.rotation);
                                 engineTransforms.Current.transform.position = engineTransforms.Current.transform.position - presentationPosition;
                             }
                         }
