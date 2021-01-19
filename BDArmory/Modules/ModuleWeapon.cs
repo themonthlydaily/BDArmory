@@ -2506,8 +2506,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                 Vessel hitVessel = null;
                                 try
                                 {
-                                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                    hitVessel = (eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>()).vessel;
+                                    if (hit.collider.gameObject != FlightGlobals.currentMainBody.gameObject) // Ignore terrain hits. FIXME The collider could still be a building (SpaceCenterBuilding?), but chances of this is low.
+                                    {
+                                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                        var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                                        if (part)
+                                            hitVessel = part.vessel;
+                                    }
                                 }
                                 catch (NullReferenceException e)
                                 {
