@@ -473,11 +473,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
         public float heatLoss = 250;
 
         //canon explosion effects
+        public static string defaultExplModelPath =  "BDArmory/Models/explosion/explosion";
         [KSPField]
-        public string explModelPath = "BDArmory/Models/explosion/explosion";
+        public string explModelPath = defaultExplModelPath;
 
+        public static string defaultExplSoundPath = "BDArmory/Sounds/explode1";
         [KSPField]
-        public string explSoundPath = "BDArmory/Sounds/explode1";
+        public string explSoundPath = defaultExplSoundPath;
 
         //Used for scaling laser damage down based on distance.
         [KSPField]
