@@ -473,11 +473,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
         public float heatLoss = 250;
 
         //canon explosion effects
+        public static string defaultExplModelPath =  "BDArmory/Models/explosion/explosion";
         [KSPField]
-        public string explModelPath = "BDArmory/Models/explosion/explosion";
+        public string explModelPath = defaultExplModelPath;
 
+        public static string defaultExplSoundPath = "BDArmory/Sounds/explode1";
         [KSPField]
-        public string explSoundPath = "BDArmory/Sounds/explode1";
+        public string explSoundPath = defaultExplSoundPath;
 
         //Used for scaling laser damage down based on distance.
         [KSPField]
@@ -2506,8 +2508,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                 Vessel hitVessel = null;
                                 try
                                 {
-                                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                    hitVessel = (eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>()).vessel;
+                                    if (hit.collider.gameObject != FlightGlobals.currentMainBody.gameObject) // Ignore terrain hits. FIXME The collider could still be a building (SpaceCenterBuilding?), but chances of this is low.
+                                    {
+                                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                        var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                                        if (part)
+                                            hitVessel = part.vessel;
+                                    }
                                 }
                                 catch (NullReferenceException e)
                                 {
