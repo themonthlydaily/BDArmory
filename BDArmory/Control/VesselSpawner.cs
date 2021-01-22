@@ -1440,24 +1440,45 @@ namespace BDArmory.Control
                     p.temperature = 1.0;
                 }
 
-                //add minimal crew
-                //bool success = false;
-                Part part = shipConstruct.parts.Find(p => p.protoModuleCrew.Count < p.CrewCapacity);
-
-                // Add the crew member
-                if (part != null)
+                // Add crew
+                List<Part> crewParts;
+                ModuleWeapon crewedWeapon;
+                switch (BDArmorySettings.VESSEL_SPAWN_FILL_SEATS)
                 {
-                    // Create the ProtoCrewMember
-                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNextOrNewKerbal(ProtoCrewMember.KerbalType.Crew);
-                    crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
-                        ? ProtoCrewMember.Gender.Female
-                        : ProtoCrewMember.Gender.Male;
-                    KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
-                    KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
-                    crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
+                    case 0: // Minimal plus crewable weapons.
+                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved).ToList(); // Crewed weapons.
+                        var part = shipConstruct.parts.Find(p => p.protoModuleCrew.Count < p.CrewCapacity && !p.FindModuleImplementing<ModuleWeapon>()); // A non-weapon crewed part.
+                        if (part) crewParts.Add(part);
+                        break;
+                    case 1: // All crewable control points plus crewable weapons.
+                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (p.FindModuleImplementing<ModuleCommand>() || p.FindModuleImplementing<KerbalSeat>() || ((crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved))).ToList();
+                        break;
+                    case 2: // All crewable parts.
+                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity).ToList();
+                        break;
+                    default:
+                        throw new IndexOutOfRangeException("Invalid Fill Seats value");
+                }
+                foreach (var part in crewParts)
+                {
+                    int crewToAdd = BDArmorySettings.VESSEL_SPAWN_FILL_SEATS > 0 ? part.CrewCapacity - part.protoModuleCrew.Count : 1;
+                    for (int crewCount = 0; crewCount < crewToAdd; ++crewCount)
+                    {
+                        // Create the ProtoCrewMember
+                        ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNextOrNewKerbal(ProtoCrewMember.KerbalType.Crew);
+                        if (crewMember.experienceLevel == 0) // Assign gender to new crew.
+                        {
+                            crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                ? ProtoCrewMember.Gender.Female
+                                : ProtoCrewMember.Gender.Male;
+                        }
+                        KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
+                        KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                        crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
 
-                    // Add them to the part
-                    part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
+                        // Add them to the part
+                        part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
+                    }
                 }
 
                 // Create a dummy ProtoVessel, we will use this to dump the parts to a config node.
