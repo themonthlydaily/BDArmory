@@ -296,11 +296,11 @@ namespace BDArmory.Radar
                     while (engines.MoveNext())
                     {
                         if (engines.Current == null) continue;
-                        using var engineTransforms = engines.Current.thrustTransforms.GetEnumerator();
-                        while (engineTransforms.MoveNext())
-                        {
-                            engineTransforms.Current.transform.position = engineTransforms.Current.transform.position + presentationPosition;
-                        }
+                        using (var engineTransforms = engines.Current.thrustTransforms.GetEnumerator())
+                            while (engineTransforms.MoveNext())
+                            {
+                                engineTransforms.Current.transform.position = engineTransforms.Current.transform.position + presentationPosition;
+                            }
                     }
             }
 
@@ -430,11 +430,11 @@ namespace BDArmory.Radar
                         while (engines.MoveNext())
                         {
                             if (engines.Current == null) continue;
-                            using var engineTransforms = engines.Current.thrustTransforms.GetEnumerator();
-                            while (engineTransforms.MoveNext())
-                            {
-                                engineTransforms.Current.transform.position = engineTransforms.Current.transform.position - presentationPosition;
-                            }
+                            using (var engineTransforms = engines.Current.thrustTransforms.GetEnumerator())
+                                while (engineTransforms.MoveNext())
+                                {
+                                    engineTransforms.Current.transform.position = engineTransforms.Current.transform.position - presentationPosition;
+                                }
                         }
 
                     v.SetRotation(priorRotation);

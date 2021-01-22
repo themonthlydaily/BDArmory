@@ -493,7 +493,17 @@ namespace BDArmory.FX
             if (!explosionFXPools.ContainsKey(key) || explosionFXPools[key] == null)
             {
                 var explosionFXTemplate = GameDatabase.Instance.GetModel(explModelPath);
+                if (explosionFXTemplate == null)
+                {
+                    Debug.LogError("[ExplosionFX]: " + explModelPath + " was not found, using the default explosion instead. Please fix your model.");
+                    explosionFXTemplate = GameDatabase.Instance.GetModel(ModuleWeapon.defaultExplModelPath);
+                }
                 var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
+                if (soundClip == null)
+                {
+                    Debug.LogError("[ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
+                    soundClip = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                }
                 var eFx = explosionFXTemplate.AddComponent<ExplosionFx>();
                 eFx.ExSound = soundClip;
                 eFx.audioSource = explosionFXTemplate.AddComponent<AudioSource>();
