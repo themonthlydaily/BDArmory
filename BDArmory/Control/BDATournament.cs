@@ -31,7 +31,7 @@ namespace BDArmory.Control
          * The last heat in a round will have fewer craft if the number of craft is not divisible by the number of vessels per heat.
          * The vessels per heat is limited to the number of available craft.
          */
-        public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat)
+        public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat, int numberOfTeams)
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             var abs_folder = Environment.CurrentDirectory + $"/AutoSpawn/{folder}";
@@ -81,6 +81,9 @@ namespace BDArmory.Control
                         BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                         true, // Kill everything first.
                         true, // Assign teams.
+                        numberOfTeams, // Number of teams. For evenly (as possible) splitting vessels into teams. FIXME Instead of randomly assigning teams each round, split the craftFiles list earlier and maintain the teams through the tournament.
+                        null, // List of team numbers. For unevenly splitting vessels into teams based on their order in the tournament state file for the round. E.g., when spawning from folders. FIXME Not implemented yet.
+                        null, // Dictionary of vessels and teams. For splitting specific vessels into specific teams. FIXME Not implemented yet.
                         null, // No folder, we're going to specify the craft files.
                         selectedFiles.ToList() // Add a copy of the craft files list.
                     ));
@@ -141,7 +144,7 @@ namespace BDArmory.Control
                     {
                         var roundConfig = JsonUtility.FromJson<RoundConfig>(strings[i]);
                         if (!rounds.ContainsKey(roundConfig.round)) rounds.Add(roundConfig.round, new Dictionary<int, VesselSpawner.SpawnConfig>());
-                        rounds[roundConfig.round].Add(roundConfig.heat, new VesselSpawner.SpawnConfig(roundConfig.latitude, roundConfig.longitude, roundConfig.altitude, roundConfig.distance, roundConfig.absDistanceOrFactor, roundConfig.easeInSpeed, roundConfig.killEverythingFirst, roundConfig.assignTeams, roundConfig.folder, roundConfig.craftFiles));
+                        rounds[roundConfig.round].Add(roundConfig.heat, new VesselSpawner.SpawnConfig(roundConfig.latitude, roundConfig.longitude, roundConfig.altitude, roundConfig.distance, roundConfig.absDistanceOrFactor, roundConfig.easeInSpeed, roundConfig.killEverythingFirst, roundConfig.assignTeams, roundConfig.numberOfTeams, roundConfig.teamCounts, roundConfig.teamsSpecific, roundConfig.folder, roundConfig.craftFiles));
                         if (roundConfig.completed)
                         {
                             if (!completed.ContainsKey(roundConfig.round)) completed.Add(roundConfig.round, new HashSet<int>());
@@ -243,11 +246,11 @@ namespace BDArmory.Control
             return true;
         }
 
-        public void SetupTournament(string folder, int rounds, int vesselsPerHeat, string stateFile = "")
+        public void SetupTournament(string folder, int rounds, int vesselsPerHeat, int numberOfTeams = 0, string stateFile = "")
         {
             if (stateFile != "") this.stateFile = stateFile;
             tournamentState = new TournamentState();
-            if (!tournamentState.Generate(folder, rounds, vesselsPerHeat)) return;
+            if (!tournamentState.Generate(folder, rounds, vesselsPerHeat, numberOfTeams)) return;
             tournamentID = tournamentState.tournamentID;
             vesselCount = tournamentState.craftFiles.Count;
             numberOfRounds = tournamentState.rounds.Count;

@@ -163,9 +163,9 @@ namespace BDArmory.Control
         }
 
         #region Single spawning
-        public void SpawnAllVesselsOnce(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, string spawnFolder = null, List<string> craftFiles = null)
+        public void SpawnAllVesselsOnce(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
         {
-            SpawnAllVesselsOnce(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, easeInSpeed, killEverythingFirst, assignTeams, spawnFolder, craftFiles));
+            SpawnAllVesselsOnce(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, easeInSpeed, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles));
         }
 
         public void SpawnAllVesselsOnce(SpawnConfig spawnConfig)
@@ -189,9 +189,9 @@ namespace BDArmory.Control
 
         private Coroutine spawnAllVesselsOnceCoroutine;
         // Spawns all vessels in an outward facing ring and lowers them to the ground. An altitude of 5m should be suitable for most cases.
-        private IEnumerator SpawnAllVesselsOnceCoroutine(double latitude, double longitude, double altitude, float spawnDistanceFactor, bool absDistanceOrFactor, float easeInSpeed, bool killEverythingFirst = true, bool assignTeams = true, string folder = null, List<string> craftFiles = null)
+        private IEnumerator SpawnAllVesselsOnceCoroutine(double latitude, double longitude, double altitude, float spawnDistanceFactor, bool absDistanceOrFactor, float easeInSpeed, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
         {
-            yield return SpawnAllVesselsOnceCoroutine(new SpawnConfig(latitude, longitude, altitude, spawnDistanceFactor, absDistanceOrFactor, easeInSpeed, killEverythingFirst, assignTeams, folder, craftFiles));
+            yield return SpawnAllVesselsOnceCoroutine(new SpawnConfig(latitude, longitude, altitude, spawnDistanceFactor, absDistanceOrFactor, easeInSpeed, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, folder, craftFiles));
         }
         private IEnumerator SpawnAllVesselsOnceCoroutine(SpawnConfig spawnConfig)
         {
@@ -594,9 +594,17 @@ namespace BDArmory.Control
             {
                 if (spawnConfig.assignTeams)
                 {
-                    // Assign the vessels to their own teams.
-                    Debug.Log("[VesselSpawner]: Assigning each vessel to its own team.");
-                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
+                    // Assign the vessels to teams.
+                    Debug.Log("[VesselSpawner]: Assigning vessels to teams.");
+                    if (spawnConfig.teamsSpecific == null && spawnConfig.teamCounts == null && spawnConfig.numberOfTeams > 1) // FIXME Handle the "Folders" case with numberOfTeams == 1
+                    {
+                        int numberPerTeam = spawnedVesselCount / spawnConfig.numberOfTeams;
+                        int residue = spawnedVesselCount - numberPerTeam * spawnConfig.numberOfTeams;
+                        spawnConfig.teamCounts = new List<int>();
+                        for (int team = 0; team < spawnConfig.numberOfTeams; ++team)
+                            spawnConfig.teamCounts.Add(numberPerTeam + (team < residue ? 1 : 0));
+                    }
+                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true, spawnConfig.teamCounts, spawnConfig.teamsSpecific);
                     yield return new WaitForFixedUpdate();
                 }
             }
@@ -609,9 +617,9 @@ namespace BDArmory.Control
         private bool vesselsSpawningOnceContinuously = false;
         public Coroutine spawnAllVesselsOnceContinuouslyCoroutine = null;
 
-        public void SpawnAllVesselsOnceContinuously(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, string spawnFolder = null, List<string> craftFiles = null)
+        public void SpawnAllVesselsOnceContinuously(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
         {
-            SpawnAllVesselsOnceContinuously(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, easeInSpeed, killEverythingFirst, true, spawnFolder, craftFiles));
+            SpawnAllVesselsOnceContinuously(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, easeInSpeed, killEverythingFirst, true, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles));
         }
         public void SpawnAllVesselsOnceContinuously(SpawnConfig spawnConfig)
         {
@@ -700,7 +708,7 @@ namespace BDArmory.Control
         // Note: initial vessel separation tends towards 2*pi*spawnDistanceFactor from above for >3 vessels.
         private IEnumerator SpawnVesselsContinuouslyCoroutine(double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, bool killEverythingFirst, string spawnFolder = null)
         {
-            yield return SpawnVesselsContinuouslyCoroutine(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killEverythingFirst, true, spawnFolder));
+            yield return SpawnVesselsContinuouslyCoroutine(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killEverythingFirst, true, 1, null, null, spawnFolder));
         }
         private IEnumerator SpawnVesselsContinuouslyCoroutine(SpawnConfig spawnConfig)
         {
@@ -1195,7 +1203,7 @@ namespace BDArmory.Control
         [Serializable]
         public class SpawnConfig
         {
-            public SpawnConfig(double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, string folder = null, List<string> craftFiles = null)
+            public SpawnConfig(double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
             {
                 this.latitude = latitude;
                 this.longitude = longitude;
@@ -1205,6 +1213,9 @@ namespace BDArmory.Control
                 this.easeInSpeed = easeInSpeed;
                 this.killEverythingFirst = killEverythingFirst;
                 this.assignTeams = assignTeams;
+                this.numberOfTeams = numberOfTeams;
+                this.teamCounts = teamCounts; if (teamCounts != null) this.numberOfTeams = this.teamCounts.Count;
+                this.teamsSpecific = teamsSpecific;
                 this.folder = folder;
                 this.craftFiles = craftFiles;
             }
@@ -1218,6 +1229,9 @@ namespace BDArmory.Control
                 this.easeInSpeed = other.easeInSpeed;
                 this.killEverythingFirst = other.killEverythingFirst;
                 this.assignTeams = other.assignTeams;
+                this.numberOfTeams = other.numberOfTeams;
+                this.teamCounts = other.teamCounts;
+                this.teamsSpecific = other.teamsSpecific;
                 this.folder = other.folder;
                 this.craftFiles = other.craftFiles?.ToList();
             }
@@ -1229,6 +1243,9 @@ namespace BDArmory.Control
             public float easeInSpeed;
             public bool killEverythingFirst = true;
             public bool assignTeams = true;
+            public int numberOfTeams = 0;
+            public List<int> teamCounts;
+            public Dictionary<string, char> teamsSpecific;
             public string folder = null;
             public List<string> craftFiles = null;
         }
@@ -1252,7 +1269,7 @@ namespace BDArmory.Control
             {
                 vesselsSpawning = true; // Gets set to false each time spawning is finished, so we need to re-enable it again.
                 vesselSpawnSuccess = false;
-                yield return SpawnAllVesselsOnceCoroutine(spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, spawnConfig.distance, spawnConfig.absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killAllFirst, false, spawnConfig.folder, spawnConfig.craftFiles);
+                yield return SpawnAllVesselsOnceCoroutine(spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, spawnConfig.distance, spawnConfig.absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killAllFirst, false, 1, null, null, spawnConfig.folder, spawnConfig.craftFiles);
                 if (!vesselSpawnSuccess)
                 {
                     message = "Vessel spawning failed, aborting.";

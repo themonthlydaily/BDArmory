@@ -141,5 +141,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float TOURNAMENT_DELAY_BETWEEN_HEATS = 10;      // Delay between heats
         [BDAPersistantSettingsField] public static int TOURNAMENT_ROUNDS = 1;                      // Rounds
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_HEAT = 8;            // Vessels Per Heat
+        [BDAPersistantSettingsField] public static int TOURNAMENT_NUMBER_OF_TEAMS = 0;             // Number of Teams: 0 - FFA, 1 - Folders, 2-10 specified directly
     }
 }
