@@ -224,6 +224,11 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = 10f, maxValue = 200, stepIncrement = 1.0f, scene = UI_Scene.All)]
         public float minSpeed = 60f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StrafingSpeed", //Strafing Speed
+            groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
+         UI_FloatRange(minValue = 10f, maxValue = 200, stepIncrement = 1.0f, scene = UI_Scene.All)]
+        public float strafingSpeed = 120f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IdleSpeed", //Idle Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
          UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
@@ -365,6 +370,7 @@ namespace BDArmory.Modules
         // float maxDynPresGRecorded;
         float dynDynPresGRecorded = 1.0f; // Start at reasonable non-zero value.
         float dynMaxVelocityMagSqr = 1.0f; // Start at reasonable non-zero value.
+        float dynDecayRate = 1.0f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
 
         float maxAllowedCosAoA;
         float lastAllowedAoA;
@@ -443,6 +449,7 @@ namespace BDArmory.Modules
         bool initialTakeOff = true; // False after the initial take-off.
         float terrainAlertDetectionRadius = 30.0f; // Sphere radius that the vessel occupies. Should cover most vessels. FIXME This could be based on the vessel's maximum width/height.
         float terrainAlertThreatRange; // The distance to the terrain to consider (based on turn radius).
+        float terrainAlertThreshold; // The current threshold for triggering terrain avoidance based on various factors.
         float terrainAlertDistance; // Distance to the terrain (in the direction of the terrain normal).
         Vector3 terrainAlertNormal; // Approximate surface normal at the terrain intercept.
         Vector3 terrainAlertDirection; // Terrain slope in the direction of the velocity at the terrain intercept.
@@ -642,6 +649,9 @@ namespace BDArmory.Modules
             {
                 maxAllowedCosAoA = (float)Math.Cos(maxAllowedAoA * Math.PI / 180.0);
                 lastAllowedAoA = maxAllowedAoA;
+                GameEvents.onVesselPartCountChanged.Add(UpdateTerrainAlertDetectionRadius);
+                UpdateTerrainAlertDetectionRadius(vessel);
+                dynDecayRate = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 60f); // Decay rate for a half-life of 60s.
             }
 
             SetSliderClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
@@ -653,6 +663,12 @@ namespace BDArmory.Modules
             CustomDynamicAxisField = CustomDynamicAxisFields;
             ToggleDynamicDampingFields();
             // InitSteerDamping();
+        }
+
+        protected override void OnDestroy()
+        {
+            GameEvents.onVesselPartCountChanged.Remove(UpdateTerrainAlertDetectionRadius);
+            base.OnDestroy();
         }
 
         public override void ActivatePilot()
@@ -955,9 +971,13 @@ namespace BDArmory.Modules
                         weaponManager.ForceScan();
                     }
                 }
-                else //extend if too close for agm attack (agm = air-to-ground missiles, target is on the ground/water)
+                else //extend if too close for an air-to-ground attack
                 {
-                    float extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
+                    float extendDistance;
+                    if (weaponManager.currentGun) // If using a gun, take the extend multiplier into account.
+                        extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
+                    else
+                        extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
                     float srfDist = (GetSurfacePosition(targetVessel.transform.position) - GetSurfacePosition(vessel.transform.position)).sqrMagnitude;
 
                     if (srfDist < extendDistance * extendDistance && Vector3.Angle(vesselTransform.up, targetVessel.transform.position - vessel.transform.position) > 45)
@@ -1070,6 +1090,8 @@ namespace BDArmory.Modules
             float distanceToTarget = vectorToTarget.magnitude;
             float planarDistanceToTarget = Vector3.ProjectOnPlane(vectorToTarget, upDirection).magnitude;
             float angleToTarget = Vector3.Angle(target - vesselTransform.position, vesselTransform.up);
+            float strafingDistance = -1f;
+            float relativeVelocity = (float)(vessel.srf_velocity - v.srf_velocity).magnitude;
             if (weaponManager)
             {
                 missile = weaponManager.CurrentMissile;
@@ -1159,6 +1181,10 @@ namespace BDArmory.Modules
 
                         if (v.LandedOrSplashed)
                         {
+                            if (distanceToTarget < weapon.maxTargetingRange + relativeVelocity) // Distance until starting to strafe plus 1s for changing speed.
+                            {
+                                strafingDistance = Mathf.Max(0f, distanceToTarget - weapon.maxTargetingRange);
+                            }
                             if (distanceToTarget > defaultAltitude * 2.2f)
                             {
                                 target = FlightPosition(target, defaultAltitude);
@@ -1189,9 +1215,12 @@ namespace BDArmory.Modules
 
             //manage speed when close to enemy
             float finalMaxSpeed = maxSpeed;
-            if (targetDot > 0)
+            if (targetDot > 0f)
             {
-                finalMaxSpeed = Mathf.Max((distanceToTarget - 100) / 8, 0) + (float)v.srfSpeed;
+                if (strafingDistance < 0f) // Beyond range of beginning strafing run.
+                    finalMaxSpeed = Mathf.Max((distanceToTarget - 100f) / 8f, 0f) + (float)v.srfSpeed;
+                else
+                    finalMaxSpeed = strafingSpeed + (float)v.srfSpeed;
                 finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);
             }
             AdjustThrottle(finalMaxSpeed, true);
@@ -1773,6 +1802,14 @@ namespace BDArmory.Modules
             FlyToPosition(s, forwardPoint + upDirection * rise);
         }
 
+        void UpdateTerrainAlertDetectionRadius(Vessel v)
+        {
+            if (v == vessel)
+            {
+                terrainAlertDetectionRadius = 2f * BDACompetitionMode.GetRadius(vessel);
+            }
+        }
+
         bool FlyAvoidTerrain(FlightCtrlState s) // Check for terrain ahead.
         {
             if (initialTakeOff) return false; // Don't do anything during the initial take-off.
@@ -1791,7 +1828,7 @@ namespace BDArmory.Modules
                     belowMinAltitude = false; // Also, reset the belowMinAltitude alert if it's active because of avoiding terrain.
                 terrainAlertDistance = -1.0f; // Reset the terrain alert distance.
                 float turnRadiusTwiddleFactor = turnRadiusTwiddleFactorMax; // A twiddle factor based on the orientation of the vessel, since it often takes considerable time to re-orient before avoiding the terrain. Start with the worst value.
-                terrainAlertThreatRange = 150.0f + turnRadiusTwiddleFactor * turnRadius + (float)vessel.srfSpeed * controlLagTime; // The distance to the terrain to consider.
+                terrainAlertThreatRange = turnRadiusTwiddleFactor * turnRadius + (float)vessel.srfSpeed * controlLagTime; // The distance to the terrain to consider.
 
                 // First, look 45° down, up, left and right from our velocity direction for immediate danger. (This should cover most immediate dangers.)
                 Ray rayForwardUp = new Ray(vessel.transform.position, (vessel.srf_vel_direction - relativeVelocityDownDirection).normalized);
@@ -1851,7 +1888,7 @@ namespace BDArmory.Modules
                         float oneMinusCosTheta = 1.0f - Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
                         turnRadiusTwiddleFactor = (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2.0f - (turnRadiusTwiddleFactorMax - turnRadiusTwiddleFactorMin) / 2.0f * Vector3.Dot(terrainAlertNormal, -vessel.transform.forward); // This would depend on roll rate (i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver) and probably other things.
                         float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, controlLagTime * turnRadiusTwiddleFactor) - vessel.transform.position, terrainAlertNormal)); // Include twiddle factor as more re-orienting requires more control surface movement.
-                        float terrainAlertThreshold = 150.0f + turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
+                        terrainAlertThreshold = turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
                         if (terrainAlertDistance < terrainAlertThreshold) // Only do something about it if the estimated turn amount is a problem.
                         {
                             avoidingTerrain = true;
@@ -1888,7 +1925,7 @@ namespace BDArmory.Modules
                         float oneMinusCosTheta = 1.0f - Mathf.Sqrt(Math.Max(0.0f, 1.0f - sinTheta * sinTheta));
                         turnRadiusTwiddleFactor = (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2.0f - (turnRadiusTwiddleFactorMax - turnRadiusTwiddleFactorMin) / 2.0f * Vector3.Dot(upDirection, -vessel.transform.forward); // This would depend on roll rate (i.e., how quickly the vessel can reorient itself to perform the terrain avoidance maneuver) and probably other things.
                         float controlLagCompensation = Mathf.Max(0f, -Vector3.Dot(AIUtils.PredictPosition(vessel, controlLagTime * turnRadiusTwiddleFactor) - vessel.transform.position, upDirection)); // Include twiddle factor as more re-orienting requires more control surface movement.
-                        float terrainAlertThreshold = 150.0f + turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
+                        terrainAlertThreshold = turnRadiusTwiddleFactor * turnRadius * oneMinusCosTheta + controlLagCompensation;
 
                         if ((float)vessel.altitude < terrainAlertThreshold && (terrainAlertDistance < 0 || (float)vessel.altitude < terrainAlertDistance)) // If the ocean surface is closer than the terrain (if any), then override the terrain alert values.
                         {
@@ -1935,6 +1972,7 @@ namespace BDArmory.Modules
 
         bool FlyAvoidOthers(FlightCtrlState s) // Check for collisions with other vessels and try to avoid them.
         { // Mostly a re-hash of FlyAvoidCollision, but with terrain detection removed.
+            if (vesselCollisionAvoidancePeriod < Time.fixedDeltaTime) return false;
             if (collisionDetectionTimer > vesselCollisionAvoidancePeriod)
             {
                 collisionDetectionTimer = 0;
@@ -2057,11 +2095,11 @@ namespace BDArmory.Modules
             // if (maxPosG > maxDynPresGRecorded)
             //     maxDynPresGRecorded = maxPosG;
 
-            dynDynPresGRecorded *= 0.999615f; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed). Half-life of about 30s.
+            dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
 
-            dynMaxVelocityMagSqr *= 0.999615f; // Decay the max recorded squared velocity at the same rate as the dynamic pressure G-force decays to keep the turnRadius constant if they otherwise haven't changed.
+            dynMaxVelocityMagSqr *= dynDecayRate; // Decay the max recorded squared velocity at the same rate as the dynamic pressure G-force decays to keep the turnRadius constant if they otherwise haven't changed.
             if (!vessel.LandedOrSplashed && (float)vessel.Velocity().sqrMagnitude > dynMaxVelocityMagSqr)
                 dynMaxVelocityMagSqr = (float)vessel.Velocity().sqrMagnitude;
 
@@ -2593,16 +2631,16 @@ namespace BDArmory.Modules
             if (avoidingTerrain)
             {
                 BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, terrainAlertDebugPos, 2, Color.cyan);
-                BDGUIUtils.DrawLineBetweenWorldPositions(terrainAlertDebugPos, terrainAlertDebugPos + 100 * terrainAlertDebugDir, 2, Color.cyan);
+                BDGUIUtils.DrawLineBetweenWorldPositions(terrainAlertDebugPos, terrainAlertDebugPos + (terrainAlertThreshold - terrainAlertDistance) * terrainAlertDebugDir, 2, Color.cyan);
                 if (terrainAlertDebugDraw2)
                 {
                     BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, terrainAlertDebugPos2, 2, Color.yellow);
-                    BDGUIUtils.DrawLineBetweenWorldPositions(terrainAlertDebugPos2, terrainAlertDebugPos2 + 100 * terrainAlertDebugDir2, 2, Color.yellow);
+                    BDGUIUtils.DrawLineBetweenWorldPositions(terrainAlertDebugPos2, terrainAlertDebugPos2 + (terrainAlertThreshold - terrainAlertDistance) * terrainAlertDebugDir2, 2, Color.yellow);
                 }
-                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction - relativeVelocityDownDirection).normalized, 1, Color.grey);
-                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction + relativeVelocityDownDirection).normalized, 1, Color.grey);
-                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction - relativeVelocityRightDirection).normalized, 1, Color.grey);
-                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 100 * (vessel.srf_vel_direction + relativeVelocityRightDirection).normalized, 1, Color.grey);
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 1.5f * terrainAlertDetectionRadius * (vessel.srf_vel_direction - relativeVelocityDownDirection).normalized, 1, Color.grey);
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 1.5f * terrainAlertDetectionRadius * (vessel.srf_vel_direction + relativeVelocityDownDirection).normalized, 1, Color.grey);
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 1.5f * terrainAlertDetectionRadius * (vessel.srf_vel_direction - relativeVelocityRightDirection).normalized, 1, Color.grey);
+                BDGUIUtils.DrawLineBetweenWorldPositions(vessel.transform.position, vessel.transform.position + 1.5f * terrainAlertDetectionRadius * (vessel.srf_vel_direction + relativeVelocityRightDirection).normalized, 1, Color.grey);
             }
         }
     }

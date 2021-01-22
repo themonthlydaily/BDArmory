@@ -51,7 +51,7 @@ namespace BDArmory.Radar
         public static Texture2D GetTextureLateral45 { get { return drawTextureLateral45; } }
         private static Texture2D drawTextureVentral45;
         public static Texture2D GetTextureVentral45 { get { return drawTextureVentral45; } }
-        
+
         internal static float rcsFrontal;             // internal so that editor analysis window has access to the details
         internal static float rcsLateral;             // dito
         internal static float rcsVentral;             // dito
@@ -62,7 +62,7 @@ namespace BDArmory.Radar
 
         internal static float rcsTotal;               // dito
 
-        internal const float RCS_NORMALIZATION_FACTOR = 4.0f;       //IMPORTANT FOR RCS CALCULATION! DO NOT CHANGE! (sphere with 1m^2 cross section should have 1m^2 RCS)
+        internal const float RCS_NORMALIZATION_FACTOR = 3.8f;       //IMPORTANT FOR RCS CALCULATION! DO NOT CHANGE! (sphere with 1m^2 cross section should have 1m^2 RCS)
         internal const float RCS_MISSILES = 999f;                    //default rcs value for missiles if not configured in the part config
         internal const float RWR_PING_RANGE_FACTOR = 2.0f;
         internal const float RADAR_IGNORE_DISTANCE_SQR = 100f;
@@ -70,105 +70,65 @@ namespace BDArmory.Radar
         internal const float MISSILE_DEFAULT_LOCKABLE_RCS = 5f;
 
         // RCS Aspects
-        private static float[,] rcsAspects = new float[95, 2] {
-                { 2f, 23f},
-                { 11f, 23f},
-                { 19f, 23f},
-                { 29f, 23f},
-                { 41f, 23f},
-                { 47f, 23f},
-                { 59f, 23f},
-                { 71f, 23f},
-                { 79f, 23f},
-                { 89f, 23f},
-                { 101f, 23f},
-                { 109f, 23f},
-                { 127f, 23f},
-                { 131f, 23f},
-                { 139f, 23f},
-                { 149f, 23f},
-                { 163f, 23f},
-                { 173f, 23f},
-                { 179f, 23f},
-                { 2f, 11f},
-                { 11f, 11f},
-                { 19f, 11f},
-                { 29f, 11f},
-                { 41f, 11f},
-                { 47f, 11f},
-                { 59f, 11f},
-                { 71f, 11f},
-                { 79f, 11f},
-                { 89f, 11f},
-                { 101f, 11f},
-                { 109f, 11f},
-                { 127f, 11f},
-                { 131f, 11f},
-                { 139f, 11f},
-                { 149f, 11f},
-                { 163f, 11f},
-                { 173f, 11f},
-                { 179f, 11f},
-                { 2f, 0f},
-                { 11f, 0f},
-                { 19f, 0f},
-                { 29f, 0f},
-                { 41f, 0f},
-                { 47f, 0f},
-                { 59f, 0f},
-                { 71f, 0f},
-                { 79f, 0f},
-                { 89f, 0f},
-                { 101f, 0f},
-                { 109f, 0f},
-                { 127f, 0f},
-                { 131f, 0f},
-                { 139f, 0f},
-                { 149f, 0f},
-                { 163f, 0f},
-                { 173f, 0f},
-                { 179f, 0f},
-                { 2f, -11f},
-                { 11f, -11f},
-                { 19f, -11f},
-                { 29f, -11f},
-                { 41f, -11f},
-                { 47f, -11f},
-                { 59f, -11f},
-                { 71f, -11f},
-                { 79f, -11f},
-                { 89f, -11f},
-                { 101f, -11f},
-                { 109f, -11f},
-                { 127f, -11f},
-                { 131f, -11f},
-                { 139f, -11f},
-                { 149f, -11f},
-                { 163f, -11f},
-                { 173f, -11f},
-                { 179f, -11f},
-                { 2f, -23f},
-                { 11f, -23f},
-                { 19f, -23f},
-                { 29f, -23f},
-                { 41f, -23f},
-                { 47f, -23f},
-                { 59f, -23f},
-                { 71f, -23f},
-                { 79f, -23f},
-                { 89f, -23f},
-                { 101f, -23f},
-                { 109f, -23f},
-                { 127f, -23f},
-                { 131f, -23f},
-                { 139f, -23f},
-                { 149f, -23f},
-                { 163f, -23f},
-                { 173f, -23f},
-                { 179f, -23f}
-            };
+        private static float[,] rcsAspects = new float[45, 2] {
+            { 2.000f, -6.133f},
+            { 6.000f, 6.133f},
+            { 10.000f, -14.311f},
+            { 14.000f, 13.289f},
+            { 18.000f, 0.000f},
+            { 22.000f, 19.422f},
+            { 26.000f, -9.200f},
+            { 30.000f, 9.200f},
+            { 34.000f, -21.467f},
+            { 38.000f, -4.089f},
+            { 42.000f, 15.333f},
+            { 46.000f, -16.356f},
+            { 50.000f, 4.089f},
+            { 54.000f, -11.244f},
+            { 58.000f, 21.467f},
+            { 62.000f, -2.044f},
+            { 66.000f, 11.244f},
+            { 70.000f, -19.422f},
+            { 74.000f, 2.044f},
+            { 78.000f, 17.378f},
+            { 82.000f, -7.156f},
+            { 86.000f, -22.489f},
+            { 90.000f, 7.156f},
+            { 94.000f, -13.289f},
+            { 98.000f, 14.311f},
+            { 102.000f, -1.022f},
+            { 106.000f, 22.489f},
+            { 110.000f, -10.222f},
+            { 114.000f, 10.222f},
+            { 118.000f, -18.400f},
+            { 122.000f, 18.400f},
+            { 126.000f, -5.111f},
+            { 130.000f, 5.111f},
+            { 134.000f, -15.333f},
+            { 138.000f, 12.267f},
+            { 142.000f, -8.178f},
+            { 146.000f, 20.444f},
+            { 150.000f, 1.022f},
+            { 154.000f, -20.444f},
+            { 158.000f, 8.178f},
+            { 162.000f, -12.267f},
+            { 166.000f, 16.356f},
+            { 170.000f, -3.067f},
+            { 174.000f, -17.378f},
+            { 178.000f, 3.067f}
+        };
         private static int numAspects = rcsAspects.GetLength(0); // Number of aspects
         public static float[,] worstRCSAspects = new float[3, 3]; // Worst three aspects
+
+        /// <summary>
+        /// Force radar signature update
+        /// Optionally, pass in a list of the vessels to update, otherwise all vessels in FlightGlobals get updated.
+        /// </summary>
+        public static void ForceUpdateRadarCrossSections(List<Vessel> vessels = null)
+        {
+            foreach (var vessel in (vessels == null ? FlightGlobals.Vessels : vessels))
+                GetVesselRadarCrossSection(vessel, true);
+        }
 
         /// <summary>
         /// Get a vessel radar siganture, including all modifiers (ECM, stealth, ...)
@@ -187,7 +147,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal method: get a vessel base radar signature
         /// </summary>
-        private static TargetInfo GetVesselRadarCrossSection(Vessel v)
+        private static TargetInfo GetVesselRadarCrossSection(Vessel v, bool force = false)
         {
             //read vesseltargetinfo, or render against radar cameras
             TargetInfo ti = v.gameObject.GetComponent<TargetInfo>();
@@ -214,7 +174,8 @@ namespace BDArmory.Radar
                 }
             }
 
-            if (ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
+            // Run intensive RCS rendering if 1. It has not been done yet, 2. If the competition just started (capture vessel changes such as gear-raise or robotics)
+            if (force || ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
             {
                 // is it just some debris? then dont bother doing a real rcs rendering and just fake it with the parts mass
                 if (v.vesselType == VesselType.Debris && !v.IsControllable)
@@ -229,6 +190,7 @@ namespace BDArmory.Radar
 
                 ti.radarBaseSignatureNeedsUpdate = false;
                 ti.alreadyScheduledRCSUpdate = false;
+                ti.radarMassAtUpdate = v.GetTotalMass();
             }
 
             return ti;
@@ -261,7 +223,7 @@ namespace BDArmory.Radar
                 //4) lockbreaking strength relative to jammer's lockbreak strength in relation to vessel rcs signature:
                 // lockbreak_factor = baseSig/modifiedSig x (1 � lopckBreakStrength/baseSig/100)
                 // Use clamp to prevent RCS reduction resulting in increased lockbreak factor, which negates value of RCS reduction)
-                ti.radarLockbreakFactor = Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100));
+                ti.radarLockbreakFactor = Mathf.Max(Mathf.Clamp01(ti.radarBaseSignature / ti.radarModifiedSignature) * (1 - (vesseljammer.lockBreakStrength / ti.radarBaseSignature / 100)), 0); // 0 is minimum lockbreak factor
             }
 
             return ti.radarModifiedSignature;
@@ -325,13 +287,25 @@ namespace BDArmory.Radar
             {
                 priorRotation = t.rotation;
                 v.SetPosition(v.transform.position + presentationPosition);
-                //v.SetRotation(Quaternion.Euler(Mathf.PI/2, 0, 0));
                 v.SetRotation(new Quaternion(-0.7f, 0f, 0f, -0.7f));
+
                 t = v.transform;
+
+                //move AB thrust transforms (fix for AirplanePlus .dds engine afterburner FX not using DXT5 standard and showing up in RCS render)
+                using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+                    while (engines.MoveNext())
+                    {
+                        if (engines.Current == null) continue;
+                        using (var engineTransforms = engines.Current.thrustTransforms.GetEnumerator())
+                            while (engineTransforms.MoveNext())
+                            {
+                                engineTransforms.Current.transform.position = engineTransforms.Current.transform.position + presentationPosition;
+                            }
+                    }
             }
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
-            
+
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 if (HighLogic.LoadedSceneIsFlight)
@@ -369,8 +343,8 @@ namespace BDArmory.Radar
             {
                 // Determine camera vector for aspect
                 aspect = Vector3.RotateTowards(t.up, -t.up, rcsAspects[i, 0] / 180f * Mathf.PI, 0);
-                aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), rcsAspects[i, 1] / 180f * Mathf.PI, 0);
-                
+                aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
+
                 // Render aspect
                 RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
 
@@ -422,7 +396,7 @@ namespace BDArmory.Radar
 
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log($"[BDArmory]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
+                    // Debug.Log($"[BDArmory]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
                     Debug.Log($"[BDArmory]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
                 }
             }
@@ -435,11 +409,11 @@ namespace BDArmory.Radar
             {
                 // Determine camera vectors for aspects
                 Vector3 aspect1 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[0, 0] / 180f * Mathf.PI, 0);
-                aspect1 = Vector3.RotateTowards(aspect1, Vector3.Cross(t.right, t.up), worstRCSAspects[0, 1] / 180f * Mathf.PI, 0);
+                aspect1 = Vector3.RotateTowards(aspect1, Vector3.Cross(t.right, t.up), -worstRCSAspects[0, 1] / 180f * Mathf.PI, 0);
                 Vector3 aspect2 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[1, 0] / 180f * Mathf.PI, 0);
-                aspect2 = Vector3.RotateTowards(aspect2, Vector3.Cross(t.right, t.up), worstRCSAspects[1, 1] / 180f * Mathf.PI, 0);
+                aspect2 = Vector3.RotateTowards(aspect2, Vector3.Cross(t.right, t.up), -worstRCSAspects[1, 1] / 180f * Mathf.PI, 0);
                 Vector3 aspect3 = Vector3.RotateTowards(t.up, -t.up, worstRCSAspects[2, 0] / 180f * Mathf.PI, 0);
-                aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
+                aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), -worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
 
                 // Render three highest aspects
                 RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
@@ -451,6 +425,18 @@ namespace BDArmory.Radar
                 // revert presentation (only if outside editor and thus vessel is a real vessel)
                 if (HighLogic.LoadedSceneIsFlight)
                 {
+                    //move AB thrust transforms (fix for AirplanePlus .dds engine afterburner FX not using DXT5 standard and showing up in RCS render)
+                    using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+                        while (engines.MoveNext())
+                        {
+                            if (engines.Current == null) continue;
+                            using (var engineTransforms = engines.Current.thrustTransforms.GetEnumerator())
+                                while (engineTransforms.MoveNext())
+                                {
+                                    engineTransforms.Current.transform.position = engineTransforms.Current.transform.position - presentationPosition;
+                                }
+                        }
+
                     v.SetRotation(priorRotation);
                     v.SetPosition(v.transform.position - presentationPosition);
                 }

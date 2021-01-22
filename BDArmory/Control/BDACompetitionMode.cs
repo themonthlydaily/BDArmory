@@ -7,6 +7,7 @@ using BDArmory.Core;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Competition;
+using BDArmory.Radar;
 using BDArmory.UI;
 using UnityEngine;
 
@@ -460,10 +461,8 @@ namespace BDArmory.Control
             {
                 Debug.Log("[BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start competition mode - one or more teams is empty");
                 competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
-                yield return new WaitForSeconds(2);
-                competitionStarting = false;
-                competitionIsActive = false;
                 competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
+                StopCompetition();
                 yield break;
             }
 
@@ -619,6 +618,7 @@ namespace BDArmory.Control
                         yield break;
                     }
             }
+            RadarUtils.ForceUpdateRadarCrossSections(); // Update RCS
             using (var teamPilots = pilots.GetEnumerator())
                 while (teamPilots.MoveNext())
                     using (var pilot = teamPilots.Current.Value.GetEnumerator())
@@ -639,7 +639,6 @@ namespace BDArmory.Control
                         }
 
             competitionStatus.Set("Competition starting!  Good luck!");
-            yield return new WaitForSeconds(2);
             CompetitionStarted();
         }
         #endregion
@@ -729,7 +728,7 @@ namespace BDArmory.Control
                 if (chute != null && chute.deploymentState != ModuleParachute.deploymentStates.DEPLOYED && !chutesToDeploy.Contains(chute))
                 {
                     chutesToDeploy.Add(chute);
-                    StartCoroutine(DelayedChuteDeployment(chute));
+                    StartCoroutine(DelayedChuteDeployment(chute, kerbalEVA));
                 }
                 return;
             }
@@ -762,10 +761,10 @@ namespace BDArmory.Control
             }
         }
 
-        IEnumerator DelayedChuteDeployment(ModuleEvaChute chute, float delay = 1f)
+        IEnumerator DelayedChuteDeployment(ModuleEvaChute chute, KerbalEVA kerbal, float delay = 1f)
         {
             yield return new WaitForSeconds(delay);
-            if (chute != null)
+            if (chute != null && kerbal != null && !kerbal.IsSeated()) // Check that the kerbal hasn't regained their seat.
             {
                 Debug.Log("[BDACompetitionMode]: Found a falling kerbal, deploying halo parachute.");
                 chutesToDeploy.Remove(chute);

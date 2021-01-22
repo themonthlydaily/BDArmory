@@ -210,7 +210,6 @@ namespace BDArmory.Control
             }
             spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             spawnedVesselCount = 0; // Reset our spawned vessel count.
-            spawnConfig.altitude = Math.Max(2, spawnConfig.altitude); // Don't spawn too low.
             message = "Spawning " + spawnConfig.craftFiles.Count + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : ".");
             Debug.Log("[VesselSpawner]: " + message);
             var spawnAirborne = spawnConfig.altitude > 10;
@@ -376,7 +375,7 @@ namespace BDArmory.Control
                 ray = new Ray(craftSpawnPosition, -localRadialUnitVector);
                 var distanceToCoMainBody = (craftSpawnPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                 float distance;
-                if (Physics.Raycast(ray, out hit, (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15))
+                if (terrainAltitude > 0 && Physics.Raycast(ray, out hit, (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15))
                 {
                     distance = hit.distance;
                     localSurfaceNormal = hit.normal;
@@ -384,7 +383,7 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    distance = FlightGlobals.getAltitudeAtPos(craftSpawnPosition) - (float)terrainAltitude; // If the raycast fails, use the value from FlightGlobals and terrainAltitude of the original spawn point.
+                    distance = FlightGlobals.getAltitudeAtPos(craftSpawnPosition) - (float)terrainAltitude; // If the raycast fails or we're spawning over water, use the value from FlightGlobals and terrainAltitude of the original spawn point.
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[VesselSpawner]: failed to find terrain for spawn adjustments");
                 }
 
@@ -410,11 +409,11 @@ namespace BDArmory.Control
                 if (vessel.mainBody.ocean) // Check for being under water.
                 {
                     var distanceUnderWater = -FlightGlobals.getAltitudeAtPos(finalSpawnPositions[vesselName]);
-                    if (distanceUnderWater > 0) // Under water, move the vessel to the surface.
+                    if (distanceUnderWater >= 0) // Under water, move the vessel to the surface.
                     {
-                        finalSpawnPositions[vesselName] += (float)distanceUnderWater * localRadialUnitVector;
-                        if (!spawnAirborne)
-                            vessel.Splashed = true; // Set the vessel as splashed.
+                        // finalSpawnPositions[vesselName] += (float)distanceUnderWater * localRadialUnitVector;
+                        // if (!spawnAirborne)
+                        vessel.Splashed = true; // Set the vessel as splashed.
                     }
                 }
                 vessel.SetPosition(finalSpawnPositions[vesselName]);
@@ -506,7 +505,7 @@ namespace BDArmory.Control
 
             if (allWeaponManagersAssigned)
             {
-                if (!spawnAirborne)
+                if (spawnConfig.altitude >= 0 && !spawnAirborne)
                 {
                     // Prevent the vessels from falling too fast and check if their velocities in the surface normal direction is below a threshold.
                     var vesselsHaveLanded = spawnedVessels.Keys.ToDictionary(v => v, v => (int)0); // 1=started moving, 2=landed.
@@ -1441,24 +1440,45 @@ namespace BDArmory.Control
                     p.temperature = 1.0;
                 }
 
-                //add minimal crew
-                //bool success = false;
-                Part part = shipConstruct.parts.Find(p => p.protoModuleCrew.Count < p.CrewCapacity);
-
-                // Add the crew member
-                if (part != null)
+                // Add crew
+                List<Part> crewParts;
+                ModuleWeapon crewedWeapon;
+                switch (BDArmorySettings.VESSEL_SPAWN_FILL_SEATS)
                 {
-                    // Create the ProtoCrewMember
-                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNextOrNewKerbal(ProtoCrewMember.KerbalType.Crew);
-                    crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
-                        ? ProtoCrewMember.Gender.Female
-                        : ProtoCrewMember.Gender.Male;
-                    KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
-                    KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
-                    crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
+                    case 0: // Minimal plus crewable weapons.
+                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved).ToList(); // Crewed weapons.
+                        var part = shipConstruct.parts.Find(p => p.protoModuleCrew.Count < p.CrewCapacity && !p.FindModuleImplementing<ModuleWeapon>()); // A non-weapon crewed part.
+                        if (part) crewParts.Add(part);
+                        break;
+                    case 1: // All crewable control points plus crewable weapons.
+                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (p.FindModuleImplementing<ModuleCommand>() || p.FindModuleImplementing<KerbalSeat>() || ((crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved))).ToList();
+                        break;
+                    case 2: // All crewable parts.
+                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity).ToList();
+                        break;
+                    default:
+                        throw new IndexOutOfRangeException("Invalid Fill Seats value");
+                }
+                foreach (var part in crewParts)
+                {
+                    int crewToAdd = BDArmorySettings.VESSEL_SPAWN_FILL_SEATS > 0 ? part.CrewCapacity - part.protoModuleCrew.Count : 1;
+                    for (int crewCount = 0; crewCount < crewToAdd; ++crewCount)
+                    {
+                        // Create the ProtoCrewMember
+                        ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNextOrNewKerbal(ProtoCrewMember.KerbalType.Crew);
+                        if (crewMember.experienceLevel == 0) // Assign gender to new crew.
+                        {
+                            crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                ? ProtoCrewMember.Gender.Female
+                                : ProtoCrewMember.Gender.Male;
+                        }
+                        KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
+                        KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                        crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
 
-                    // Add them to the part
-                    part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
+                        // Add them to the part
+                        part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
+                    }
                 }
 
                 // Create a dummy ProtoVessel, we will use this to dump the parts to a config node.

@@ -174,7 +174,7 @@ namespace BDArmory.UI
             spawnFields = new Dictionary<string, SpawnField> {
                 { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, -90, 90) },
                 { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
-                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
+                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE) },
             };
             // if (BDArmorySettings.RUNWAY_PROJECT)
             // {
@@ -250,9 +250,9 @@ namespace BDArmory.UI
             spawnFields["lat"].tryParseValueNow();
             spawnFields["lon"].tryParseValueNow();
             spawnFields["alt"].tryParseValueNow();
-            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].currentValue, -90), 90);
-            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].currentValue, -180), 180);
-            BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].currentValue);
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnFields["lat"].currentValue;
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
+            BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
         }
 
         private void SetNewHeight(float windowHeight)
@@ -300,10 +300,10 @@ namespace BDArmory.UI
                 BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, 0.1f, 1f) * 10f) / 10f;
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnConcurrentVessels")}:  ({(BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0 ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS.ToString() : "Inf")})", leftLabel);//Max Concurrent Vessels (CS)
-                BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS, 0f, 20f);
+                BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS, 0f, 20f));
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnLivesPerVessel")}:  ({(BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL > 0 ? BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL.ToString() : "Inf")})", leftLabel);//Respawns (CS)
-                BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL, 0f, 20f);
+                BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_LIVES_PER_VESSEL, 0f, 20f));
 
                 var outOfAmmoKillTimeStr = "never";
                 if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > -1 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 60)
@@ -311,10 +311,10 @@ namespace BDArmory.UI
                 else if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > 59 && BDArmorySettings.OUT_OF_AMMO_KILL_TIME < 61)
                     outOfAmmoKillTimeStr = "1min";
                 else if (BDArmorySettings.OUT_OF_AMMO_KILL_TIME > 60)
-                    outOfAmmoKillTimeStr = ((int)(BDArmorySettings.OUT_OF_AMMO_KILL_TIME / 60f)).ToString("G0") + "mins";
+                    outOfAmmoKillTimeStr = Mathf.RoundToInt(BDArmorySettings.OUT_OF_AMMO_KILL_TIME / 60f).ToString("G0") + "mins";
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_OutOfAmmoKillTime")}: ({outOfAmmoKillTimeStr})", leftLabel); // Out of ammo kill timer for continuous spawning mode.
                 float outOfAmmoKillTime;
-                switch ((int)BDArmorySettings.OUT_OF_AMMO_KILL_TIME)
+                switch (Mathf.RoundToInt(BDArmorySettings.OUT_OF_AMMO_KILL_TIME))
                 {
                     case 0:
                         outOfAmmoKillTime = 1f;
@@ -345,7 +345,7 @@ namespace BDArmory.UI
                         break;
                 }
                 outOfAmmoKillTime = GUI.HorizontalSlider(SRightSliderRect(line), outOfAmmoKillTime, 1f, 9f);
-                switch ((int)outOfAmmoKillTime)
+                switch (Mathf.RoundToInt(outOfAmmoKillTime))
                 {
                     case 1:
                         BDArmorySettings.OUT_OF_AMMO_KILL_TIME = 0f; // 0s
@@ -376,6 +376,22 @@ namespace BDArmory.UI
                         break;
                 }
 
+                string fillSeats = "";
+                switch (BDArmorySettings.VESSEL_SPAWN_FILL_SEATS)
+                {
+                    case 0:
+                        fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_Minimal");
+                        break;
+                    case 1:
+                        fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_Default");
+                        break;
+                    case 2:
+                        fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_Cabins");
+                        break;
+                }
+                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats")}:  ({fillSeats})", leftLabel); // Fill Seats
+                BDArmorySettings.VESSEL_SPAWN_FILL_SEATS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_FILL_SEATS, 0f, 2f));
+
                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, Localizer.Format("#LOC_BDArmory_Settings_SpawnDistanceToggle"));  // Toggle between distance factor and absolute distance.
                 BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING, Localizer.Format("#LOC_BDArmory_Settings_SpawnContinueSingleSpawning"));  // Spawn craft again after single spawn competition finishes.
                 BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = GUI.Toggle(SRightRect(line), BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN, Localizer.Format("#LOC_BDArmory_Settings_SpawnDumpLogsEverySpawn")); //Dump logs every spawn.
@@ -395,9 +411,9 @@ namespace BDArmory.UI
                 spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8));
                 spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8));
                 spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8));
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].currentValue, -90), 90);
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].currentValue, -180), 180);
-                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].currentValue);
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnFields["lat"].currentValue;
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
+                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
             }
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_LOCATIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations"), BDArmorySettings.SHOW_SPAWN_LOCATIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide spawn locations
@@ -439,15 +455,15 @@ namespace BDArmory.UI
                 BDArmorySettings.TOURNAMENT_FILES_LOCATION = GUI.TextField(SRightRect(line), BDArmorySettings.TOURNAMENT_FILES_LOCATION);
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentDelayBetweenHeats")}: ({BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS}s)", leftLabel); // Delay between heats
-                BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS, 0f, 15f);
+                BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS, 0f, 15f));
 
                 var value = BDArmorySettings.TOURNAMENT_ROUNDS < 21 ? BDArmorySettings.TOURNAMENT_ROUNDS : (16 + BDArmorySettings.TOURNAMENT_ROUNDS / 5);
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentRounds")}:  ({BDArmorySettings.TOURNAMENT_ROUNDS})", leftLabel); // Rounds
-                value = (int)GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 36f);
+                value = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 36f));
                 BDArmorySettings.TOURNAMENT_ROUNDS = value < 21 ? value : (value - 16) * 5;
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentVesselsPerHeat")}:  ({(BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT > 1 ? BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT.ToString() : (BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT == 0 ? "Auto" : "Inf"))})", leftLabel); // Vessels Per Heat
-                BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT, 0f, 20f);
+                BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT, 0f, 20f));
 
                 GUI.Label(SLineRect(++line), $"ID: {BDATournament.Instance.tournamentID}, {BDATournament.Instance.vesselCount} vessels, {BDATournament.Instance.numberOfRounds} rounds, {BDATournament.Instance.numberOfHeats} heats per round ({BDATournament.Instance.heatsRemaining} remaining).", leftLabel);
                 switch (BDATournament.Instance.tournamentStatus)
