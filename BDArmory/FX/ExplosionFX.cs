@@ -130,7 +130,8 @@ namespace BDArmory.FX
                             switch (ExplosionSource)
                             {
                                 case ExplosionSourceType.Missile:
-                                    sourceVesselName = ExplosivePart.FindModuleImplementing<BDExplosivePart>()?.sourcevessel.GetName();
+                                    var explosivePart = ExplosivePart.FindModuleImplementing<BDExplosivePart>();
+                                    sourceVesselName = explosivePart ? explosivePart.sourcevessel.GetName() : SourceVesselName;
                                     break;
                                 case ExplosionSourceType.Bullet:
                                     sourceVesselName = SourceVesselName;
@@ -424,7 +425,6 @@ namespace BDArmory.FX
                         eventToExecute.HitPoint + part.rb.velocity * TimeIndex);
 
                     var damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
-                    // Debug.Log("DEBUG Explosive damage to " + part + ": " + damage + ", calibre: " + Caliber + ", source: " + ExplosionSource);
 
                     // Update scoring structures
                     switch (ExplosionSource)
