@@ -417,7 +417,7 @@ namespace BDArmory.Modules
                 lockedSensorVelocityBias.Add(30f, 0.1f);
                 lockedSensorVelocityBias.Add(90f, 0f);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorFOVBias curve");
+                    Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorVelocityBias curve");
             }
 
             // fill activeRadarLockTrackCurve with default values if not set by part config:
