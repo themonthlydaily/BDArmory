@@ -294,7 +294,7 @@ namespace BDArmory.UI
         /// <summary>
         /// Find a flare closest in heat signature to passed heat signature
         /// </summary>
-        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, float heatSignature, float biasLevel)
+        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, float heatSignature)
         {
             TargetSignatureData flareTarget = TargetSignatureData.noTarget;
             float bestScore = 0f;
@@ -310,8 +310,8 @@ namespace BDArmory.UI
                         float score = flare.Current.thermal * Mathf.Clamp01(15 / angle); // Reduce score on anything outside 15 deg of look ray
 
                         // Add bias targets closer to center of seeker FOV
-                        score *= Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
-
+                        score *= GetSeekerBias(angle, scanRadius);
+                        
                         score *= (1400 * 1400) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
                         score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
@@ -340,7 +340,6 @@ namespace BDArmory.UI
         public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, float priorHeatScore, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
-            float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
 
@@ -403,8 +402,10 @@ namespace BDArmory.UI
                     float score = GetVesselHeatSignature(vessel) * Mathf.Clamp01(15 / angle);
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
+                    
                     // Add bias targets closer to center of seeker FOV
-                    score *= Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
+                    if (priorHeatScore > 0f)
+                        score *= GetSeekerBias(angle, scanRadius);
 
                     if (vessel.LandedOrSplashed && !favorGroundTargets)
                     {
@@ -438,7 +439,7 @@ namespace BDArmory.UI
             TargetSignatureData flareData = TargetSignatureData.noTarget;
             if (priorHeatScore > 0) // Flares can only decoy if we already had a target
             {
-                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, priorHeatScore, biasLevel);
+                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, priorHeatScore);
                 flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
             }
 
@@ -468,6 +469,15 @@ namespace BDArmory.UI
                 return flareData;
             else //else return the target:
                 return finalData;
+        }
+
+        private static float GetSeekerBias(float angle, float scanRadius)
+        {
+            float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
+            // Add bias targets closer to center of seeker FOV
+            float seekerBias = Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
+
+            return seekerBias;
         }
 
         void UpdateDebugLabels()
