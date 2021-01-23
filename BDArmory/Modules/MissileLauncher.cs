@@ -580,6 +580,30 @@ namespace BDArmory.Modules
 
             SetInitialDetonationDistance();
 
+            // fill lockedSensorFOVBias with default values if not set by part config:
+            if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorFOVBias.minTime == float.MaxValue)
+            {
+                lockedSensorFOVBias.Add(0f, 1f);
+                lockedSensorFOVBias.Add(3f, 0.83f);
+                lockedSensorFOVBias.Add(10f, 0.25f);
+                lockedSensorFOVBias.Add(30f, 0.1f);
+                lockedSensorFOVBias.Add(90f, 0f);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorFOVBias curve");
+            }
+
+            // fill lockedSensorVelocityBias with default values if not set by part config:
+            if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorVelocityBias.minTime == float.MaxValue)
+            {
+                lockedSensorVelocityBias.Add(0f, 1f);
+                lockedSensorVelocityBias.Add(3f, 0.83f);
+                lockedSensorVelocityBias.Add(10f, 0.25f);
+                lockedSensorVelocityBias.Add(30f, 0.1f);
+                lockedSensorVelocityBias.Add(90f, 0f);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorFOVBias curve");
+            }
+
             // fill activeRadarLockTrackCurve with default values if not set by part config:
             if ((TargetingMode == TargetingModes.Radar || TargetingModeTerminal == TargetingModes.Radar) && activeRadarRange > 0 && activeRadarLockTrackCurve.minTime == float.MaxValue)
             {
@@ -1105,7 +1129,7 @@ namespace BDArmory.Modules
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, terminalGuidanceDistance, heatThreshold, true, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
+                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, terminalGuidanceDistance, heatThreshold, true, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)

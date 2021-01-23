@@ -31,9 +31,6 @@ namespace BDArmory.UI
 
         public static bool hasAddedButton;
 
-        internal static FloatCurve SeekerBiasCurvePosition = new FloatCurve();
-        internal static FloatCurve SeekerBiasCurveVelocity = new FloatCurve();
-
         void Awake()
         {
             GameEvents.onGameStateLoad.Add(LoadGPSTargets);
@@ -46,18 +43,6 @@ namespace BDArmory.UI
             GameEvents.onVesselGoOffRails.Add(AddVessel);
             GameEvents.onVesselCreate.Add(AddVessel);
             GameEvents.onVesselDestroy.Add(CleanVesselList);
-
-            SeekerBiasCurvePosition.Add(0f, 1f);
-            SeekerBiasCurvePosition.Add(3f, 0.83f);
-            SeekerBiasCurvePosition.Add(10f, 0.25f);
-            SeekerBiasCurvePosition.Add(30f, 0.1f);
-            SeekerBiasCurvePosition.Add(90f, 0f);
-
-            SeekerBiasCurveVelocity.Add(0f, 1f);
-            SeekerBiasCurveVelocity.Add(3f, 0.83f);
-            SeekerBiasCurveVelocity.Add(10f, 0.25f);
-            SeekerBiasCurveVelocity.Add(30f, 0.1f);
-            SeekerBiasCurveVelocity.Add(90f, 0f);
 
             Instance = this;
         }
@@ -309,7 +294,7 @@ namespace BDArmory.UI
         /// <summary>
         /// Find a flare closest in heat signature to passed heat signature
         /// </summary>
-        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, TargetSignatureData heatTarget)
+        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, TargetSignatureData heatTarget)
         {
             TargetSignatureData flareTarget = TargetSignatureData.noTarget;
             float heatSignature = heatTarget.signalStrength;
@@ -353,7 +338,7 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, bool favorGroundTargets = false)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
             TargetSignatureData finalData = TargetSignatureData.noTarget;
@@ -422,7 +407,7 @@ namespace BDArmory.UI
                     
                     // Add bias targets closer to center of seeker FOV
                     if (priorHeatScore > 0f)
-                        score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), scanRadius);
+                        score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
 
                     if (vessel.LandedOrSplashed && !favorGroundTargets)
                     {
@@ -456,7 +441,7 @@ namespace BDArmory.UI
             TargetSignatureData flareData = TargetSignatureData.noTarget;
             if (priorHeatScore > 0) // Flares can only decoy if we already had a target
             {
-                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, priorHeatTarget);
+                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
                 flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
             }
 
@@ -488,14 +473,9 @@ namespace BDArmory.UI
                 return finalData;
         }
 
-        private static float GetSeekerBias(float anglePos, float angleVel, float scanRadius)
+        private static float GetSeekerBias(float anglePos, float angleVel, FloatCurve seekerBiasCurvePosition, FloatCurve seekerBiasCurveVelocity)
         {
-            //float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
-            // Add bias targets closer to center of seeker FOV
-            //float seekerBias = Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
-
-            float seekerBias = Mathf.Clamp01(SeekerBiasCurvePosition.Evaluate(anglePos))*Mathf.Clamp01(SeekerBiasCurveVelocity.Evaluate(angleVel));
-            //Debug.Log("[BDSeek]: Pos Angle: " + anglePos.ToString("0.0") + " Vel Angle: " + angleVel.ToString("0.0") + " Bias: " + seekerBias.ToString("0.00"));
+            float seekerBias = Mathf.Clamp01(seekerBiasCurvePosition.Evaluate(anglePos))*Mathf.Clamp01(seekerBiasCurveVelocity.Evaluate(angleVel));
 
             return seekerBias;
         }
