@@ -62,7 +62,7 @@ namespace BDArmory.Misc
                 MissileLauncher ml = missile.GetComponent<MissileLauncher>();
                 float maxMissileAccel = ml.thrust / missile.part.mass;
                 float blastRadius = Mathf.Min(missile.GetBlastRadius(), 150f); // Allow missiles with absurd blast ranges to still be launched if desired
-                missileActiveTime = Mathf.Min(missile.dropTime + Mathf.Sqrt(2 * blastRadius / maxMissileAccel), 2f); // Clamp at 2s for now
+                missileActiveTime = Mathf.Min((missile.vessel.LandedOrSplashed ? 0f : missile.dropTime) + Mathf.Sqrt(2 * blastRadius / maxMissileAccel), 2f); // Clamp at 2s for now
             }
 
             float missileMaxRangeTime = 8f; // Placeholder value since this doesn't really matter much in BDA combat
