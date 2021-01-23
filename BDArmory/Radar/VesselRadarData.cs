@@ -623,7 +623,7 @@ namespace BDArmory.Radar
 
             if (lockingRadar != null)
             {
-                return lockingRadar.TryLockTarget(radarTarget.targetData.predictedPosition);
+                return lockingRadar.TryLockTarget(radarTarget.targetData.predictedPosition, radarTarget.vessel);
             }
 
             UpdateLockedTargets();
@@ -807,6 +807,7 @@ namespace BDArmory.Radar
             if (GUI.Button(new Rect(BDArmorySetup.WindowRectRadar.width - 18, 2, 16, 16), "X", GUI.skin.button))
             {
                 DisableAllRadars();
+                BDArmorySetup.SaveConfig();
                 return;
             }
             if (!referenceTransform) return;
