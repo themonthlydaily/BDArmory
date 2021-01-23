@@ -1105,7 +1105,7 @@ namespace BDArmory.Modules
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget.signalStrength, terminalGuidanceDistance, heatThreshold, true, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
+                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, terminalGuidanceDistance, heatThreshold, true, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
