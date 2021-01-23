@@ -312,7 +312,7 @@ namespace BDArmory.UI
 
                         // Add bias targets closer to center of seeker FOV
                         score *= GetSeekerBias(angle, Vector3.Angle(flare.Current.velocity, heatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
-                        
+
                         score *= (1400 * 1400) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
                         score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
 
@@ -404,7 +404,7 @@ namespace BDArmory.UI
                     float score = GetVesselHeatSignature(vessel) * Mathf.Clamp01(15 / angle);
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
-                    
+
                     // Add bias targets closer to center of seeker FOV
                     if (priorHeatScore > 0f)
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
@@ -475,7 +475,7 @@ namespace BDArmory.UI
 
         private static float GetSeekerBias(float anglePos, float angleVel, FloatCurve seekerBiasCurvePosition, FloatCurve seekerBiasCurveVelocity)
         {
-            float seekerBias = Mathf.Clamp01(seekerBiasCurvePosition.Evaluate(anglePos))*Mathf.Clamp01(seekerBiasCurveVelocity.Evaluate(angleVel));
+            float seekerBias = Mathf.Clamp01(seekerBiasCurvePosition.Evaluate(anglePos)) * Mathf.Clamp01(seekerBiasCurveVelocity.Evaluate(angleVel));
 
             return seekerBias;
         }
