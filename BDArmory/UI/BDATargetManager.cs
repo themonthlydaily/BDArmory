@@ -390,7 +390,7 @@ namespace BDArmory.UI
                 }
 
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
-                if (angle < scanRadius)
+                if ((angle < scanRadius) || allAspect) // Allow allAspect missiles to launch 
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
                         continue;
@@ -405,8 +405,8 @@ namespace BDArmory.UI
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
                     
-                    // Add bias targets closer to center of seeker FOV
-                    if (priorHeatScore > 0f)
+                    // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
+                    if ((priorHeatScore > 0f) && (angle < scanRadius))
                         score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
 
                     if (vessel.LandedOrSplashed && !favorGroundTargets)
