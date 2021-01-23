@@ -31,8 +31,9 @@ namespace BDArmory.UI
 
         public static bool hasAddedButton;
 
-        internal static FloatCurve SeekerBiasCurve = new FloatCurve();
-        
+        internal static FloatCurve SeekerBiasCurvePosition = new FloatCurve();
+        internal static FloatCurve SeekerBiasCurveVelocity = new FloatCurve();
+
         void Awake()
         {
             GameEvents.onGameStateLoad.Add(LoadGPSTargets);
@@ -46,11 +47,17 @@ namespace BDArmory.UI
             GameEvents.onVesselCreate.Add(AddVessel);
             GameEvents.onVesselDestroy.Add(CleanVesselList);
 
-            SeekerBiasCurve.Add(0f, 1f);
-            SeekerBiasCurve.Add(3f, 0.83f);
-            SeekerBiasCurve.Add(10f, 0.25f);
-            SeekerBiasCurve.Add(30f, 0.1f);
-            SeekerBiasCurve.Add(90f, 0f);
+            SeekerBiasCurvePosition.Add(0f, 1f);
+            SeekerBiasCurvePosition.Add(3f, 0.83f);
+            SeekerBiasCurvePosition.Add(10f, 0.25f);
+            SeekerBiasCurvePosition.Add(30f, 0.1f);
+            SeekerBiasCurvePosition.Add(90f, 0f);
+
+            SeekerBiasCurveVelocity.Add(0f, 1f);
+            SeekerBiasCurveVelocity.Add(3f, 0.83f);
+            SeekerBiasCurveVelocity.Add(10f, 0.25f);
+            SeekerBiasCurveVelocity.Add(30f, 0.1f);
+            SeekerBiasCurveVelocity.Add(90f, 0f);
 
             Instance = this;
         }
@@ -487,7 +494,7 @@ namespace BDArmory.UI
             // Add bias targets closer to center of seeker FOV
             //float seekerBias = Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
 
-            float seekerBias = Mathf.Clamp01(SeekerBiasCurve.Evaluate(anglePos))*Mathf.Clamp01(SeekerBiasCurve.Evaluate(angleVel));
+            float seekerBias = Mathf.Clamp01(SeekerBiasCurvePosition.Evaluate(anglePos))*Mathf.Clamp01(SeekerBiasCurveVelocity.Evaluate(angleVel));
             //Debug.Log("[BDSeek]: Pos Angle: " + anglePos.ToString("0.0") + " Vel Angle: " + angleVel.ToString("0.0") + " Bias: " + seekerBias.ToString("0.00"));
 
             return seekerBias;
