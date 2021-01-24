@@ -941,7 +941,6 @@ namespace BDArmory.Modules
             }
         }
 
-
         void UpdateGuidance()
         {
             string debugTarget = "none";

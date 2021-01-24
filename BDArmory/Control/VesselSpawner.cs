@@ -163,7 +163,7 @@ namespace BDArmory.Control
         }
 
         #region Single spawning
-        public void SpawnAllVesselsOnce(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
+        public void SpawnAllVesselsOnce(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
         {
             SpawnAllVesselsOnce(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, easeInSpeed, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles));
         }
@@ -189,7 +189,7 @@ namespace BDArmory.Control
 
         private Coroutine spawnAllVesselsOnceCoroutine;
         // Spawns all vessels in an outward facing ring and lowers them to the ground. An altitude of 5m should be suitable for most cases.
-        private IEnumerator SpawnAllVesselsOnceCoroutine(double latitude, double longitude, double altitude, float spawnDistanceFactor, bool absDistanceOrFactor, float easeInSpeed, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
+        private IEnumerator SpawnAllVesselsOnceCoroutine(double latitude, double longitude, double altitude, float spawnDistanceFactor, bool absDistanceOrFactor, float easeInSpeed, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
         {
             yield return SpawnAllVesselsOnceCoroutine(new SpawnConfig(latitude, longitude, altitude, spawnDistanceFactor, absDistanceOrFactor, easeInSpeed, killEverythingFirst, assignTeams, numberOfTeams, teamCounts, teamsSpecific, folder, craftFiles));
         }
@@ -197,8 +197,30 @@ namespace BDArmory.Control
         {
             #region Initialisation and sanity checks
             // Tally up the craft to spawn.
-            if (spawnConfig.craftFiles == null) // Prioritise the list of craftFiles if we're given them.
-                spawnConfig.craftFiles = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Where(f => f.EndsWith(".craft")).ToList();
+            if (spawnConfig.teamsSpecific == null)
+            {
+                if (spawnConfig.numberOfTeams == 1) // Scan subfolders
+                {
+                    spawnConfig.teamsSpecific = new List<List<string>>();
+                    var teamDirs = Directory.GetDirectories(Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}");
+                    var stripStartCount = (Environment.CurrentDirectory + $"/AutoSpawn/").Length;
+                    Debug.Log("[VesselSpawner]: Spawning teams from folders " + string.Join(", ", teamDirs.Select(d => d.Substring(stripStartCount))));
+                    foreach (var teamDir in teamDirs)
+                    {
+                        spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList());
+                    }
+                    spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v).ToList();
+                }
+                else // Just the specified folder.
+                {
+                    if (spawnConfig.craftFiles == null) // Prioritise the list of craftFiles if we're given them.
+                        spawnConfig.craftFiles = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Where(f => f.EndsWith(".craft")).ToList();
+                }
+            }
+            else // Spawn the specific vessels.
+            {
+                spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v).ToList();
+            }
             if (spawnConfig.craftFiles.Count == 0)
             {
                 message = "Vessel spawning: found no craft files in " + Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}";
@@ -312,6 +334,7 @@ namespace BDArmory.Control
             // Spawn the craft in an outward facing ring.
             Debug.Log("[VesselSpawner]: Spawning vessels...");
             var spawnedVessels = new Dictionary<string, Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>>();
+            var craftURLToVesselName = new Dictionary<string, string>();
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
@@ -341,6 +364,7 @@ namespace BDArmory.Control
                 if (spawnedVessels.ContainsKey(vessel.GetName()))
                     vessel.vesselName += "_" + spawnedVesselCount;
                 spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
+                craftURLToVesselName.Add(craftUrl, vessel.vesselName);
                 ++spawnedVesselCount;
             }
             if (failedVessels != "")
@@ -596,7 +620,7 @@ namespace BDArmory.Control
                 {
                     // Assign the vessels to teams.
                     Debug.Log("[VesselSpawner]: Assigning vessels to teams.");
-                    if (spawnConfig.teamsSpecific == null && spawnConfig.teamCounts == null && spawnConfig.numberOfTeams > 1) // FIXME Handle the "Folders" case with numberOfTeams == 1
+                    if (spawnConfig.teamsSpecific == null && spawnConfig.teamCounts == null && spawnConfig.numberOfTeams > 1)
                     {
                         int numberPerTeam = spawnedVesselCount / spawnConfig.numberOfTeams;
                         int residue = spawnedVesselCount - numberPerTeam * spawnConfig.numberOfTeams;
@@ -604,7 +628,7 @@ namespace BDArmory.Control
                         for (int team = 0; team < spawnConfig.numberOfTeams; ++team)
                             spawnConfig.teamCounts.Add(numberPerTeam + (team < residue ? 1 : 0));
                     }
-                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true, spawnConfig.teamCounts, spawnConfig.teamsSpecific);
+                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true, spawnConfig.teamCounts, spawnConfig.teamsSpecific.Select(l => l.Select(url => craftURLToVesselName[url]).ToList()).ToList());
                     yield return new WaitForFixedUpdate();
                 }
             }
@@ -617,7 +641,7 @@ namespace BDArmory.Control
         private bool vesselsSpawningOnceContinuously = false;
         public Coroutine spawnAllVesselsOnceContinuouslyCoroutine = null;
 
-        public void SpawnAllVesselsOnceContinuously(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
+        public void SpawnAllVesselsOnceContinuously(double latitude, double longitude, double altitude = 0, float distance = 10f, bool absDistanceOrFactor = false, float easeInSpeed = 1f, bool killEverythingFirst = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string spawnFolder = null, List<string> craftFiles = null)
         {
             SpawnAllVesselsOnceContinuously(new SpawnConfig(latitude, longitude, altitude, distance, absDistanceOrFactor, easeInSpeed, killEverythingFirst, true, numberOfTeams, teamCounts, teamsSpecific, spawnFolder, craftFiles));
         }
@@ -1203,7 +1227,7 @@ namespace BDArmory.Control
         [Serializable]
         public class SpawnConfig
         {
-            public SpawnConfig(double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, Dictionary<string, char> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
+            public SpawnConfig(double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
             {
                 this.latitude = latitude;
                 this.longitude = longitude;
@@ -1243,9 +1267,9 @@ namespace BDArmory.Control
             public float easeInSpeed;
             public bool killEverythingFirst = true;
             public bool assignTeams = true;
-            public int numberOfTeams = 0;
-            public List<int> teamCounts;
-            public Dictionary<string, char> teamsSpecific;
+            public int numberOfTeams = 0; // Number of teams (or FFA or Folders). For evenly (as possible) splitting vessels into teams.
+            public List<int> teamCounts; // List of team numbers. For unevenly splitting vessels into teams based on their order in the tournament state file for the round. E.g., when spawning from folders.
+            public List<List<string>> teamsSpecific; // Dictionary of vessels and teams. For splitting specific vessels into specific teams.
             public string folder = null;
             public List<string> craftFiles = null;
         }

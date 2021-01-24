@@ -31,7 +31,7 @@ namespace BDArmory.Control
          * The last heat in a round will have fewer craft if the number of craft is not divisible by the number of vessels per heat.
          * The vessels per heat is limited to the number of available craft.
          */
-        public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat, int numberOfTeams)
+        public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat)
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             var abs_folder = Environment.CurrentDirectory + $"/AutoSpawn/{folder}";
@@ -81,7 +81,7 @@ namespace BDArmory.Control
                         BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                         true, // Kill everything first.
                         true, // Assign teams.
-                        numberOfTeams, // Number of teams. For evenly (as possible) splitting vessels into teams. FIXME Instead of randomly assigning teams each round, split the craftFiles list earlier and maintain the teams through the tournament.
+                        0, // Number of teams. For evenly (as possible) splitting vessels into teams. FIXME Instead of randomly assigning teams each round, split the craftFiles list earlier and maintain the teams through the tournament.
                         null, // List of team numbers. For unevenly splitting vessels into teams based on their order in the tournament state file for the round. E.g., when spawning from folders. FIXME Not implemented yet.
                         null, // Dictionary of vessels and teams. For splitting specific vessels into specific teams. FIXME Not implemented yet.
                         null, // No folder, we're going to specify the craft files.
@@ -93,6 +93,20 @@ namespace BDArmory.Control
                 }
             }
             return true;
+        }
+
+        /// <summary>
+        /// Generate a tournament.state file for teams tournaments.
+        /// </summary>
+        /// <param name="folder"></param>
+        /// <param name="numberOfRounds"></param>
+        /// <param name="teamsPerHeat"></param>
+        /// <param name="vesselsPerTeam"></param>
+        /// <param name="numberOfTeams"></param>
+        /// <returns></returns>
+        public bool Generate(string folder, int numberOfRounds, int teamsPerHeat, int vesselsPerTeam, int numberOfTeams)
+        {
+            return false; // FIXME Not currently implemented
         }
 
         Tuple<int, int> OptimiseVesselsPerHeat(int count)
@@ -246,11 +260,18 @@ namespace BDArmory.Control
             return true;
         }
 
-        public void SetupTournament(string folder, int rounds, int vesselsPerHeat, int numberOfTeams = 0, string stateFile = "")
+        public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, string stateFile = "")
         {
             if (stateFile != "") this.stateFile = stateFile;
             tournamentState = new TournamentState();
-            if (!tournamentState.Generate(folder, rounds, vesselsPerHeat, numberOfTeams)) return;
+            if (numberOfTeams == 0) // FFA
+            {
+                if (!tournamentState.Generate(folder, rounds, vesselsPerHeat)) return;
+            }
+            else // Folders or random teams
+            {
+                if (!tournamentState.Generate(folder, rounds, vesselsPerHeat, teamsPerHeat, numberOfTeams)) return;
+            }
             tournamentID = tournamentState.tournamentID;
             vesselCount = tournamentState.craftFiles.Count;
             numberOfRounds = tournamentState.rounds.Count;
