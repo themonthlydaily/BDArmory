@@ -545,7 +545,7 @@ namespace BDArmory.Modules
             {
                 if (chute == null) continue;
                 chute.deployAltitude = (float)vessel.radarAltitude + 100f; // Current height + 100 so that it deploys immediately.
-                chute.deploymentState = ModuleParachute.deploymentStates.ACTIVE;
+                chute.deploymentState = ModuleParachute.deploymentStates.STOWED;
                 chute.Deploy();
             }
         }
