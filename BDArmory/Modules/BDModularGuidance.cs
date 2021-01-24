@@ -396,6 +396,28 @@ namespace BDArmory.Modules
             lockedSensorFOV = 5;
             radarLOAL = true;
 
+            // fill lockedSensorFOVBias with default values if not set by part config:
+            if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorFOVBias.minTime == float.MaxValue)
+            {
+                lockedSensorFOVBias.Add(0f * lockedSensorFOV / 2f, 1f, 0f, 0f);
+                lockedSensorFOVBias.Add(0.2f * lockedSensorFOV / 2f, 0.9933f, -0.08f, -0.08f);
+                lockedSensorFOVBias.Add(0.4f * lockedSensorFOV / 2f, 0.9733f, -0.16f, -0.16f);
+                lockedSensorFOVBias.Add(0.6f * lockedSensorFOV / 2f, 0.94f, -0.24f, -0.24f);
+                lockedSensorFOVBias.Add(0.8f * lockedSensorFOV / 2f, 0.8933f, -0.32f, -0.32f);
+                lockedSensorFOVBias.Add(1f * lockedSensorFOV / 2f, 0.8333f, -0.4f, -0.4f);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorFOVBias curve");
+            }
+
+            // fill lockedSensorVelocityBias with default values if not set by part config:
+            if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorVelocityBias.minTime == float.MaxValue)
+            {
+                lockedSensorVelocityBias.Add(0f, 1f);
+                lockedSensorVelocityBias.Add(180f, 1f);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorVelocityBias curve");
+            }
+
             // fill activeRadarLockTrackCurve with default values if not set by part config:
             if ((TargetingMode == TargetingModes.Radar || TargetingModeTerminal == TargetingModes.Radar) && activeRadarRange > 0 && activeRadarLockTrackCurve.minTime == float.MaxValue)
             {

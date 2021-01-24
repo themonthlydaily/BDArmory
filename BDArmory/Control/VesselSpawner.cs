@@ -1483,12 +1483,6 @@ namespace BDArmory.Control
                     {
                         // Create the ProtoCrewMember
                         ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNextOrNewKerbal(ProtoCrewMember.KerbalType.Crew);
-                        if (crewMember.experienceLevel == 0) // Assign gender to new crew.
-                        {
-                            crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
-                                ? ProtoCrewMember.Gender.Female
-                                : ProtoCrewMember.Gender.Male;
-                        }
                         KerbalRoster.SetExperienceTrait(crewMember, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                         KerbalRoster.SetExperienceLevel(crewMember, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
                         crewMember.isBadass = true; // Make them bad-ass (likes nearby explosions).
