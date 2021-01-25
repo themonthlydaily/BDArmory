@@ -390,6 +390,7 @@ namespace BDArmory.UI
                 }
 
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
+
                 if ((angle < scanRadius) || (allAspect && !priorHeatTarget.exists)) // Allow allAspect=true missiles to find target outside of seeker FOV before launch
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))

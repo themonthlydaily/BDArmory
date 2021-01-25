@@ -57,7 +57,7 @@ namespace BDArmory.Misc
             relSpeed = -Mathf.Sign(Vector3.Dot(relVProjected, vectorToTarget)) * relVProjected.magnitude;
 
             // Basic time estimate for missile to drop and travel a safe distance from vessel assuming constant acceleration and firing vessel not accelerating
-            if (missile.GetComponent<BDModularGuidance>() == null);
+            if (missile.GetComponent<BDModularGuidance>() == null)
             {
                 MissileLauncher ml = missile.GetComponent<MissileLauncher>();
                 float maxMissileAccel = ml.thrust / missile.part.mass;
