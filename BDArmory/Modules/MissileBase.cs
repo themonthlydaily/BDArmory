@@ -429,6 +429,11 @@ namespace BDArmory.Modules
                     lookRay = new Ray(transform.position, vessel.srf_vel_direction);
                 }
 
+                // Prevent seeker from looking past maxOffBoresight
+                float offBoresightAngle = Vector3.Angle(GetForwardTransform(), lookRay.direction);
+                if (offBoresightAngle > maxOffBoresight)
+                    lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight)*Mathf.Deg2Rad, 0));
+
                 if (BDArmorySettings.DRAW_DEBUG_LINES)
                     DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
 
