@@ -287,7 +287,7 @@ namespace BDArmory.Modules
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FireingAngle"),
 UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         float FiringTolerance = 3; //per-weapon override of maxcosfireangle
-
+        
         [KSPField]
         public float maxTargetingRange = 2000; //max range for raycasting and sighting
 
@@ -473,13 +473,11 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
         public float heatLoss = 250;
 
         //canon explosion effects
-        public static string defaultExplModelPath = "BDArmory/Models/explosion/explosion";
         [KSPField]
-        public string explModelPath = defaultExplModelPath;
+        public string explModelPath = "BDArmory/Models/explosion/explosion";
 
-        public static string defaultExplSoundPath = "BDArmory/Sounds/explode1";
         [KSPField]
-        public string explSoundPath = defaultExplSoundPath;
+        public string explSoundPath = "BDArmory/Sounds/explode1";
 
         //Used for scaling laser damage down based on distance.
         [KSPField]
@@ -1027,7 +1025,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
-
+        
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireAngleOverride_Enable", active = true)]//Disable fire angle override
         public void ToggleOverrideAngle()
         {
@@ -1051,7 +1049,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
         {
             maxAutoFireCosAngle = Mathf.Cos((FiringTolerance * Mathf.Deg2Rad));
         }
-
+        
         void Update()
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && vessel.IsControllable)
@@ -1397,7 +1395,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                 timeFired = Time.time - iTime;
 
                                 Vector3 firedVelocity =
-                                    VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity;
+                                    VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity; 
 
                                 pBullet.currentVelocity = (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
                                 firedBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime
@@ -1506,8 +1504,9 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
-            beamDuration = 0.1f * TimeWarp.CurrentRate;
-            if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
+			//beamDuration = 0.1f * TimeWarp.CurrentRate;
+			beamDuration = timeGap*0.8f;
+			if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
                 && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
             {
                 if (CanFire(chargeAmount))
@@ -1601,7 +1600,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 Vector3 targetDirectionLR = tf.forward;
                 if (pulseLaser)
                 {
-                    rayDirection = VectorUtils.GaussianDirectionDeviation(tf.forward, maxDeviation / 4);
+                    rayDirection = VectorUtils.GaussianDirectionDeviation(tf.forward, maxDeviation / 2);
                     targetDirectionLR = rayDirection.normalized;
                 }
                 else if ((((visualTargetVessel != null && visualTargetVessel.loaded) || slaved) && (turret && (turret.yawRange > 0 && turret.maxPitch > 0))) // causes laser to snap to target CoM if close enough. changed to only apply to turrets
@@ -2267,7 +2266,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             }
             if (!slaved && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0))
             {
-                //MouseControl
+                //MouseControl                
                 Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height,
                     0);
                 Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
@@ -2308,67 +2307,68 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             Vector3 originalTarget = targetPosition;
             targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
 
-            if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
-            {
+           if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
+            {                    
                 float effectiveVelocity = bulletVelocity;
                 relativeVelocity = targetVelocity - part.rb.velocity;
-                Quaternion.FromToRotation(targetAccelerationPrevious, targetAcceleration).ToAngleAxis(out float accelDAngle, out Vector3 accelDAxis);
-                Vector3 leadTarget = targetPosition;
+                    Quaternion.FromToRotation(targetAccelerationPrevious, targetAcceleration).ToAngleAxis(out float accelDAngle, out Vector3 accelDAxis);
+                    Vector3 leadTarget = targetPosition;
 
-                int iterations = 6;
-                while (--iterations >= 0)
-                {
-                    finalTarget = targetPosition;
-                    float time = (leadTarget - fireTransforms[0].position).magnitude / effectiveVelocity - (Time.fixedDeltaTime * 1.5f);
-
-                    if (targetAcquired)
+                    int iterations = 6;
+                    while (--iterations >= 0)
                     {
-                        finalTarget += relativeVelocity * time;
-#if DEBUG
-                        relVelAdj = relativeVelocity * time;
-                        var vc = finalTarget;
-#endif
-                        var accelDExtAngle = accelDAngle * time / 3;
-                        var extrapolatedAcceleration =
-                            Quaternion.AngleAxis(accelDExtAngle, accelDAxis)
-                            * targetAcceleration
-                            * Mathf.Cos(accelDExtAngle * Mathf.Deg2Rad * 2.222f);
-                        finalTarget += 0.5f * extrapolatedAcceleration * time * time;
-#if DEBUG
-                        accAdj = (finalTarget - vc);
-#endif
-                    }
-                    else if (Misc.Misc.GetRadarAltitudeAtPos(targetPosition) < 2000)
-                    {
-                        //this vessel velocity compensation against stationary
-                        finalTarget += (-(part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * time);
-                    }
+                        finalTarget = targetPosition;
+                        float time = (leadTarget - fireTransforms[0].position).magnitude / effectiveVelocity - (Time.fixedDeltaTime * 1.5f);
 
-                    leadTarget = finalTarget;
-
-                    if (bulletDrop) //rocket gravity ajdustment already done in TrajectorySim
-                    {
+                        if (targetAcquired)
+                        {
+                            finalTarget += relativeVelocity * time;
 #if DEBUG
-                        var vc = finalTarget;
+                            relVelAdj = relativeVelocity * time;
+                            var vc = finalTarget;
 #endif
-                        Vector3 up = (VectorUtils.GetUpDirection(finalTarget) + 2 * VectorUtils.GetUpDirection(fireTransforms[0].position)).normalized;
-                        float gAccel = ((float)FlightGlobals.getGeeForceAtPosition(finalTarget).magnitude
-                            + (float)FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position).magnitude * 2) / 3;
-                        Vector3 intermediateTarget = finalTarget + (0.5f * gAccel * time * time * up);
-
-                        var avGrav = (FlightGlobals.getGeeForceAtPosition(finalTarget) + 2 * FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position)) / 3;
-                        effectiveVelocity = bulletVelocity
-                            * (float)Vector3d.Dot((intermediateTarget - fireTransforms[0].position).normalized, (finalTarget - fireTransforms[0].position).normalized)
-                            + Vector3.Project(avGrav, finalTarget - fireTransforms[0].position).magnitude * time / 2 * (Vector3.Dot(avGrav, finalTarget - fireTransforms[0].position) < 0 ? -1 : 1);
-                        finalTarget = intermediateTarget;
+                            var accelDExtAngle = accelDAngle * time / 3;
+                            var extrapolatedAcceleration =
+                                Quaternion.AngleAxis(accelDExtAngle, accelDAxis)
+                                * targetAcceleration
+                                * Mathf.Cos(accelDExtAngle * Mathf.Deg2Rad * 2.222f);
+                            finalTarget += 0.5f * extrapolatedAcceleration * time * time;
 #if DEBUG
-                        gravAdj = (finalTarget - vc);
+                            accAdj = (finalTarget - vc);
 #endif
+                        }
+                        else if (Misc.Misc.GetRadarAltitudeAtPos(targetPosition) < 2000)
+                        {
+                            //this vessel velocity compensation against stationary
+                            finalTarget += (-(part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * time);
+                        }
+
+                        leadTarget = finalTarget;
+
+                        if (bulletDrop) //rocket gravity ajdustment already done in TrajectorySim
+                        {
+#if DEBUG
+                            var vc = finalTarget;
+#endif
+                            Vector3 up = (VectorUtils.GetUpDirection(finalTarget) + 2 * VectorUtils.GetUpDirection(fireTransforms[0].position)).normalized;
+                            float gAccel = ((float)FlightGlobals.getGeeForceAtPosition(finalTarget).magnitude
+                                + (float)FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position).magnitude * 2) / 3;
+                            Vector3 intermediateTarget = finalTarget + (0.5f * gAccel * time * time * up);
+
+                            var avGrav = (FlightGlobals.getGeeForceAtPosition(finalTarget) + 2 * FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position)) / 3;
+                            effectiveVelocity = bulletVelocity
+                                * (float)Vector3d.Dot((intermediateTarget - fireTransforms[0].position).normalized, (finalTarget - fireTransforms[0].position).normalized)
+                                + Vector3.Project(avGrav, finalTarget - fireTransforms[0].position).magnitude * time / 2 * (Vector3.Dot(avGrav, finalTarget - fireTransforms[0].position) < 0 ? -1 : 1);
+                            finalTarget = intermediateTarget;
+#if DEBUG
+                            gravAdj = (finalTarget - vc);
+#endif
+                        }
                     }
-                }
-                targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
+                    targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);                
             }
-            if (aiControlled && eWeaponType == WeaponTypes.Rocket)//Rocket targeting
+            if (eWeaponType == WeaponTypes.Rocket)//non-turret and/or AI controlled Rocket targeting,
+                
             {
                 targetDistance = Mathf.Clamp(Vector3.Distance(targetPosition, fireTransform.parent.position), 0, maxTargetingRange);
                 finalTarget = targetPosition;
@@ -2467,7 +2467,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
 
                     float atmosMultiplier = Mathf.Clamp01(2.5f * (float)FlightGlobals.getAtmDensity(vessel.staticPressurekPa, vessel.externalTemperature, vessel.mainBody));
                     bool slaved = turret && weaponManager && (weaponManager.slavingTurrets || weaponManager.guardMode);
-
+                    
                     while (simulating)
                     {
                         RaycastHit hit;
@@ -2508,20 +2508,14 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                 Vessel hitVessel = null;
                                 try
                                 {
-                                    if (hit.collider.gameObject != FlightGlobals.currentMainBody.gameObject) // Ignore terrain hits. FIXME The collider could still be a building (SpaceCenterBuilding?), but chances of this is low.
-                                    {
-                                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                        var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-                                        if (part)
-                                            hitVessel = part.vessel;
-                                    }
+                                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    hitVessel = (eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>()).vessel;
                                 }
-                                catch (NullReferenceException e)
+                                catch (NullReferenceException)
                                 {
-                                    Debug.LogError("[ModuleWeapon]: NullReferenceException while simulating trajectory: " + e.Message);
                                 }
 
-                                if (hitVessel == null || hitVessel != vessel)
+                                if (hitVessel == null || (hitVessel != null && hitVessel != vessel))
                                 {
                                     bulletPrediction = hit.point;
                                     simulating = false;
@@ -2534,17 +2528,20 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                             }
                         }
                         simPrevPos = simCurrPos;
+                        //if (visualTargetVessel != null && visualTargetVessel.loaded && 
+                        //    (simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
                         if ((simStartPos - simCurrPos).sqrMagnitude > targetDistance * targetDistance)
                         {
                             bulletPrediction = simStartPos + (simCurrPos - simStartPos).normalized * targetDistance;
                             simulating = false;
                         }
-
+                        
                         if ((simStartPos - simCurrPos).sqrMagnitude > maxTargetingRange * maxTargetingRange)
                         {
                             bulletPrediction = simStartPos + ((simCurrPos - simStartPos).normalized * maxTargetingRange);
                             simulating = false;
                         }
+                        
                         simTime += simDeltaTime;
                     }
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
@@ -2645,7 +2642,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             if (autoFire && Time.time - autoFireTimer > autoFireLength)
             {
                 autoFire = false;
-                visualTargetVessel = null;
+                //visualTargetVessel = null; //causes rocket turrets to freak out after a salvo is done firing 
             }
         }
 
@@ -3132,7 +3129,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 ParseBulletDragType();
                 ParseBulletFuzeType(bulletInfo.fuzeType);
                 tntMass = bulletInfo.tntMass;
-                SetInitialDetonationDistance();
+                SetInitialDetonationDistance();        
                 tracerStartWidth = caliber / 300;
                 tracerEndWidth = caliber / 750;
                 nonTracerWidth = caliber / 500;
@@ -3257,15 +3254,15 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             {
                 if (electroLaser)
                 {
-                    if (pulseLaser)
-                    {
-                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 20), 2)}/s");
-                    }
-                    else
-                    {
-                        output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 1000), 2)}/s");
-                    }
-                    output.AppendLine($"Power Required: {ECPerShot}/s");
+					if (pulseLaser)
+					{
+						output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 20), 2)}/s");
+					}
+					else
+					{
+						output.AppendLine($"Electrolaser EMP damage: {Math.Round((ECPerShot / 1000), 2)}/s");
+					}
+					output.AppendLine($"Power Required: {ECPerShot}/s");
                 }
                 else
                 {
@@ -3303,7 +3300,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(laserDamage / 30000), 2)} m");
                     }
                 }
-
+                
             }
             else
             {
@@ -3319,13 +3316,6 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     for (int i = 0; i < ammoList.Count; i++)
                     {
                         BulletInfo binfo = BulletInfo.bullets[ammoList[i].ToString()];
-                        if (binfo == null)
-                        {
-                            Debug.LogError("[ModuleWeapon]: The requested bullet type (" + ammoList[i].ToString() + ") does not exist.");
-                            output.AppendLine($"Bullet type: {ammoList[i]} - MISSING");
-                            output.AppendLine("");
-                            continue;
-                        }
                         ParseBulletFuzeType(binfo.fuzeType);
                         output.AppendLine($"Bullet type: {ammoList[i]}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
@@ -3356,15 +3346,8 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     for (int i = 0; i < ammoList.Count; i++)
                     {
                         RocketInfo rinfo = RocketInfo.rockets[ammoList[i].ToString()];
-                        if (rinfo == null)
-                        {
-                            Debug.LogError("[ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
-                            output.AppendLine($"Rocket type: {ammoList[i]} - MISSING");
-                            output.AppendLine("");
-                            continue;
-                        }
                         output.AppendLine($"Rocket type: {ammoList[i]}");
-                        output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass, 2)} kg");
+                        output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass*1000, 2)} kg");
                         //output.AppendLine($"Thrust: {thrust}kn"); mass and thrust don't really tell us the important bit, so lets replace that with accel
                         output.AppendLine($"Acceleration: {rinfo.thrust / rinfo.rocketMass}m/s2");
                         if (rinfo.explosive)

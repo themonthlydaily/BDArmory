@@ -294,10 +294,9 @@ namespace BDArmory.UI
         /// <summary>
         /// Find a flare closest in heat signature to passed heat signature
         /// </summary>
-        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, TargetSignatureData heatTarget)
+        public static TargetSignatureData GetFlareTarget(Ray ray, float scanRadius, float highpassThreshold, bool allAspect, float heatSignature, float biasLevel)
         {
             TargetSignatureData flareTarget = TargetSignatureData.noTarget;
-            float heatSignature = heatTarget.signalStrength;
             float bestScore = 0f;
 
             using (List<CMFlare>.Enumerator flare = BDArmorySetup.Flares.GetEnumerator())
@@ -311,7 +310,7 @@ namespace BDArmory.UI
                         float score = flare.Current.thermal * Mathf.Clamp01(15 / angle); // Reduce score on anything outside 15 deg of look ray
 
                         // Add bias targets closer to center of seeker FOV
-                        score *= GetSeekerBias(angle, Vector3.Angle(flare.Current.velocity, heatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
+                        score *= Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
 
                         score *= (1400 * 1400) / Mathf.Clamp((flare.Current.transform.position - ray.origin).sqrMagnitude, 90000, 36000000);
                         score *= Mathf.Clamp(Vector3.Angle(flare.Current.transform.position - ray.origin, -VectorUtils.GetUpDirection(ray.origin)) / 90, 0.5f, 1.5f);
@@ -338,12 +337,12 @@ namespace BDArmory.UI
             return flareTarget;
         }
 
-        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, TargetSignatureData priorHeatTarget, float scanRadius, float highpassThreshold, bool allAspect, FloatCurve lockedSensorFOVBias, FloatCurve lockedSensorVelocityBias, MissileFire mf = null, bool favorGroundTargets = false)
+        public static TargetSignatureData GetHeatTarget(Vessel sourceVessel, Vessel missileVessel, Ray ray, float priorHeatScore, float scanRadius, float highpassThreshold, bool allAspect, MissileFire mf = null, bool favorGroundTargets = false)
         {
             float minMass = 0.05f;  //otherwise the RAMs have trouble shooting down incoming missiles
+            float biasLevel = 1.2f; // Bias level for targets/flares closer to seeker centerline
             TargetSignatureData finalData = TargetSignatureData.noTarget;
             float finalScore = 0;
-            float priorHeatScore = priorHeatTarget.signalStrength;
 
             foreach (Vessel vessel in LoadedVessels)
             {
@@ -390,8 +389,7 @@ namespace BDArmory.UI
                 }
 
                 float angle = Vector3.Angle(vessel.CoM - ray.origin, ray.direction);
-
-                if ((angle < scanRadius) || (allAspect && !priorHeatTarget.exists)) // Allow allAspect=true missiles to find target outside of seeker FOV before launch
+                if (angle < scanRadius)
                 {
                     if (RadarUtils.TerrainCheck(ray.origin, vessel.transform.position))
                         continue;
@@ -405,10 +403,8 @@ namespace BDArmory.UI
                     float score = GetVesselHeatSignature(vessel) * Mathf.Clamp01(15 / angle);
                     score *= (1400 * 1400) / Mathf.Clamp((vessel.CoM - ray.origin).sqrMagnitude, 90000, 36000000);
 
-                    // Add bias targets closer to center of seeker FOV, only once missile seeker can see target
-                    if ((priorHeatScore > 0f) && (angle < scanRadius))
-
-                        score *= GetSeekerBias(angle, Vector3.Angle(vessel.Velocity(), priorHeatTarget.velocity), lockedSensorFOVBias, lockedSensorVelocityBias);
+                    // Add bias targets closer to center of seeker FOV
+                    score *= Mathf.Clamp(-1f * ((biasLevel - 1f) / (scanRadius * scanRadius)) * angle * angle + biasLevel, 1f, biasLevel); // Equal to biasLevel for angle==0, 1 for angle==scanRadius
 
                     if (vessel.LandedOrSplashed && !favorGroundTargets)
                     {
@@ -442,7 +438,7 @@ namespace BDArmory.UI
             TargetSignatureData flareData = TargetSignatureData.noTarget;
             if (priorHeatScore > 0) // Flares can only decoy if we already had a target
             {
-                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, lockedSensorFOVBias, lockedSensorVelocityBias, priorHeatTarget);
+                flareData = GetFlareTarget(ray, scanRadius, highpassThreshold, allAspect, priorHeatScore, biasLevel);
                 flareSuccess = ((!flareData.Equals(TargetSignatureData.noTarget)) && (flareData.signalStrength > highpassThreshold));
             }
 
@@ -472,13 +468,6 @@ namespace BDArmory.UI
                 return flareData;
             else //else return the target:
                 return finalData;
-        }
-
-        private static float GetSeekerBias(float anglePos, float angleVel, FloatCurve seekerBiasCurvePosition, FloatCurve seekerBiasCurveVelocity)
-        {
-            float seekerBias = Mathf.Clamp01(seekerBiasCurvePosition.Evaluate(anglePos)) * Mathf.Clamp01(seekerBiasCurveVelocity.Evaluate(angleVel));
-
-            return seekerBias;
         }
 
         void UpdateDebugLabels()

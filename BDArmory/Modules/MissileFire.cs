@@ -545,7 +545,7 @@ namespace BDArmory.Modules
             {
                 if (chute == null) continue;
                 chute.deployAltitude = (float)vessel.radarAltitude + 100f; // Current height + 100 so that it deploys immediately.
-                chute.deploymentState = ModuleParachute.deploymentStates.STOWED;
+                chute.deploymentState = ModuleParachute.deploymentStates.ACTIVE;
                 chute.Deploy();
             }
         }
@@ -1274,7 +1274,8 @@ namespace BDArmory.Modules
                             {
                                 if (tgp.Current == null) continue;
                                 if (!tgp.Current.enabled || (tgp.Current.cameraEnabled && tgp.Current.groundStabilized &&
-                                                             !((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude > 20 * 20))) continue;
+                                                             !((tgp.Current.groundTargetPosition -
+                                                                guardTarget.transform.position).sqrMagnitude > 20 * 20))) continue;
                                 tgp.Current.EnableCamera();
                                 yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
                                 //yield return StartCoroutine(tgp.Current.PointToPositionRoutine(TargetInfo.TargetCOMDispersion(guardTarget)));
@@ -1425,7 +1426,7 @@ namespace BDArmory.Modules
                 }
                 else if (ml.TargetingMode == MissileBase.TargetingModes.Heat)
                 {
-                    if (vesselRadarData && vesselRadarData.locked) // FIXME This wipes radar guided missiles' targeting data when switching to a heat guided missile. Radar is used to allow heat seeking missiles with allAspect = true to lock on target and fire when the target is not within sensor FOV
+                    if (vesselRadarData && vesselRadarData.locked) // FIXME Why does heat guidance use the radar data structures? This wipes radar guided missiles' targeting data when switching to a heat guided missile.
                     {
                         vesselRadarData.UnlockAllTargets();
                         vesselRadarData.UnslaveTurrets();
@@ -3063,7 +3064,7 @@ namespace BDArmory.Modules
                 else if (this.targetPriorityEnabled)
                 {
                     potentialTarget = BDATargetManager.GetHighestPriorityTarget(this);
-                    targetDebugText = " is engaging highest priority target (" + (potentialTarget != null ? potentialTarget.Vessel.vesselName : "null") + ") with ";
+                    targetDebugText = " is engaging highest priority target with ";
                 }
                 else
                 {
@@ -3117,7 +3118,8 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory]: " + vessel.vesselName + " is engaging the closest target (" + potentialTarget.Vessel.vesselName + ") with " + selectedWeapon.GetShortName());
+                            Debug.Log("[BDArmory]: " + vessel.vesselName + " is engaging the closest target with " +
+                                      selectedWeapon.GetShortName());
                         }
                         return;
                     }
@@ -4002,7 +4004,7 @@ namespace BDArmory.Modules
                     heatTarget.predictedPosition - CurrentMissile.MissileReferenceTransform.position
                     : CurrentMissile.GetForwardTransform();
 
-                heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), TargetSignatureData.noTarget, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.allAspect, CurrentMissile.lockedSensorFOVBias, CurrentMissile.lockedSensorVelocityBias, this);
+                heatTarget = BDATargetManager.GetHeatTarget(vessel, vessel, new Ray(CurrentMissile.MissileReferenceTransform.position + (50 * CurrentMissile.GetForwardTransform()), direction), 0f, scanRadius, CurrentMissile.heatThreshold, CurrentMissile.allAspect, this);
             }
         }
 
@@ -4162,9 +4164,6 @@ namespace BDArmory.Modules
                             {
                                 launchAuthorized = false;
                             }
-
-                            // Check that launch is possible before entering GuardMissileRoutine
-                            launchAuthorized = launchAuthorized && GetLaunchAuthorization(guardTarget, this);
 
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 Debug.Log("[BDArmory]:" + vessel.vesselName + " launchAuth=" + launchAuthorized + ", pilotAut=" + pilotAuthorized + ", missilesAway/Max=" + missilesAway + "/" + maxMissilesOnTarget);
@@ -4359,7 +4358,7 @@ namespace BDArmory.Modules
                     weapon.Current.visualTargetVessel = guardTarget;
                     weapon.Current.autoFireTimer = Time.time;
                     //weapon.Current.autoFireLength = 3 * targetScanInterval / 4;
-                    weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;
+                    weapon.Current.autoFireLength = (fireBurstLength < 0.5) ? targetScanInterval / 2 : fireBurstLength;
                 }
         }
 
@@ -4401,22 +4400,19 @@ namespace BDArmory.Modules
                     target = MissileGuidance.GetAirToAirFireSolution(missile, targetV);
                 }
 
-                float boresightFactor = (mf.vessel.LandedOrSplashed || targetV.LandedOrSplashed || missile.allAspect) ? 0.75f : 0.35f; // Allow launch at close to maxOffBoresight for ground targets or missiles with allAspect = true
+                float boresightFactor = targetV.LandedOrSplashed ? 0.75f : 0.35f;
 
                 //if(missile.TargetingMode == MissileBase.TargetingModes.Gps) maxOffBoresight = 45;
 
-                // Check that target is within maxOffBoresight now and in future time fTime
-                launchAuthorized = Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < missile.maxOffBoresight * boresightFactor; // Launch is possible now
+                float fTime = 2f;
+                Vector3 futurePos = target + (targetV.Velocity() * fTime);
+                Vector3 myFuturePos = vessel.ReferenceTransform.position + (vessel.Velocity() * fTime);
+                bool fDot = Vector3.Dot(vessel.ReferenceTransform.up, futurePos - myFuturePos) > 0; //check target won't likely be behind me soon
 
-                if (launchAuthorized)
+                if (fDot && Vector3.Angle(missile.GetForwardTransform(), target - missile.transform.position) < missile.maxOffBoresight * boresightFactor)
                 {
-                    float fTime = 2f;
-                    Vector3 futurePos = target + (targetV.Velocity() * fTime);
-                    Vector3 myFuturePos = vessel.ReferenceTransform.position + (vessel.Velocity() * fTime);
-                    launchAuthorized = launchAuthorized && (Vector3.Angle(vessel.ReferenceTransform.up, futurePos - myFuturePos) < missile.maxOffBoresight * boresightFactor); // Launch is likely also possible at fTime
-
+                    launchAuthorized = true;
                 }
-
             }
 
             return launchAuthorized;
