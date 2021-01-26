@@ -605,7 +605,7 @@ namespace BDArmory.Modules
                 {
                     Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorVelocityBias curve to:");
                     Debug.Log("key = 0 1");
-                    Debug.Log("key = 0 180");
+                    Debug.Log("key = 180 1");
                 }
             }
 
