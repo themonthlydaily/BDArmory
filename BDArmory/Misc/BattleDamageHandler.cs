@@ -66,7 +66,7 @@ namespace BDArmory.Misc
                         {
                             //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
                             //engine.thrustPercentage -= ((engine.maxThrust * 0.125f) / 100); //workaround hack
-                            engine.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor/4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage //far too hagh. scale damage back
+                            engine.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor/4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
                             Mathf.Clamp(engine.thrustPercentage, 0.15f, 1); //even heavily damaged engines will still put out something
                             Debug.Log("[BD Debug]: engine thrust: " + engine.thrustPercentage);
                         }
@@ -330,10 +330,10 @@ namespace BDArmory.Misc
                             if (crewMember != null)
                             {
                                 crewMember.UnregisterExperienceTraits(part);
-                                crewMember.outDueToG = true;
+                                //crewMember.outDueToG = true; //implement temp KO to simulate wounding?
                                 crewMember.Die();
-                                //part.RemoveCrewmember(crewMember); // sadly, I wasn't able to get the K.I.A. portrait working
-                                Vessel.CrewWasModified(part.vessel);
+                                part.RemoveCrewmember(crewMember); // sadly, I wasn't able to get the K.I.A. portrait working
+                                //Vessel.CrewWasModified(part.vessel);
                                 Debug.Log(crewMember.name + " was killed by damage to cabin!");
                                 if (HighLogic.CurrentGame.Parameters.Difficulty.MissingCrewsRespawn)
                                 {
