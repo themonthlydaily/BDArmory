@@ -60,8 +60,18 @@ namespace BDArmory.Core.Module
                 {
                     _updateHitpoints = true;
                 }
-                else
-                    enabled = false;
+                else // Loading of the part from a craft in flight mode
+                {
+                    if (BDArmorySettings.RESET_HP) // Reset Max HP
+                    {
+                        _updateHitpoints = true;
+                        maxHitPoints = 0f;
+                    }
+                    else // Don't.
+                    {
+                        enabled = false;
+                    }
+                }
             }
         }
 
