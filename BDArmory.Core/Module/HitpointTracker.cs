@@ -1,4 +1,5 @@
-﻿using BDArmory.Core.Extension;
+﻿using System;
+using BDArmory.Core.Extension;
 using UnityEngine;
 
 namespace BDArmory.Core.Module
@@ -62,10 +63,24 @@ namespace BDArmory.Core.Module
                 }
                 else // Loading of the part from a craft in flight mode
                 {
-                    if (BDArmorySettings.RESET_HP) // Reset Max HP
+                    if (BDArmorySettings.RESET_HP && part.vessel != null) // Reset Max HP
                     {
-                        _updateHitpoints = true;
-                        maxHitPoints = 0f;
+                        var maxHPString = FindPartModuleConfigNodeValue(part.partInfo.partConfig, "HitpointTracker", "maxHitPoints");
+                        if (!string.IsNullOrEmpty(maxHPString)) // Use the default value from the MM patch.
+                        {
+                            try
+                            {
+                                maxHitPoints = float.Parse(maxHPString);
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[HitPointTracker]: setting maxHitPoints of " + part + " on " + part.vessel.vesselName + " to " + maxHitPoints);
+                                _updateHitpoints = true;
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogError("[HitPointTracker]: Failed to parse maxHitPoints configNode: " + e.Message);
+                            }
+                        }
+                        else // Use the stock default value.
+                            maxHitPoints = 0f;
                     }
                     else // Don't.
                     {
@@ -74,6 +89,38 @@ namespace BDArmory.Core.Module
                 }
             }
         }
+
+        private string FindPartModuleConfigNodeValue(ConfigNode configNode, string moduleName, string fieldName)
+        {
+            if (configNode == null) return null;
+            string retval = null;
+            // Search this node.
+            if (configNode.values != null)
+            {
+                if (configNode.name == "MODULE" && configNode.HasValue("name") && configNode.GetValue("name") == moduleName)
+                    if (configNode.HasValue(fieldName))
+                        return configNode.GetValue(fieldName);
+            }
+            // Search sub-nodes.
+            if (configNode.nodes != null)
+            {
+                for (int i = 0; i < configNode.nodes.Count; ++i)
+                    if ((retval = FindPartModuleConfigNodeValue(configNode.nodes[i], moduleName, fieldName)) != null)
+                        return retval;
+            }
+            return null;
+        }
+
+        // private void PrintConfigNode(ConfigNode configNode, string indent = "")
+        // {
+        //     Debug.Log("DEBUG " + indent + configNode.ToString() + ":: ");
+        //     for (int i = 0; i < configNode.values.Count; ++i)
+        //         Debug.Log("DEBUG  " + indent + configNode.values[i].name + ": " + configNode.values[i].value);
+        //     foreach (var node in configNode.GetNodes())
+        //     {
+        //         PrintConfigNode(node, indent + " ");
+        //     }
+        // }
 
         public void SetupPrefab()
         {
