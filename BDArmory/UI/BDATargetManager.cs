@@ -1093,7 +1093,7 @@ namespace BDArmory.UI
                     if (friendlyTarget.Current == null || friendlyTarget.Current == weaponManager.vessel)
                         continue;
                     var wms = friendlyTarget.Current.FindPartModuleImplementing<MissileFire>();
-                    if (wms != null && wms.Team != weaponManager.Team)
+                    if (wms == null || wms.Team != weaponManager.Team)
                         continue;
                     Vector3 targetDistance = friendlyTarget.Current.CoM - weaponManager.vessel.CoM;
                     float friendlyPosDot = Vector3.Dot(targetDistance, aimDirection);
