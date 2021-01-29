@@ -2513,7 +2513,10 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                         KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                         var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
                                         if (part)
+                                        {
                                             hitVessel = part.vessel;
+                                            Debug.Log("DEBUG hitVessel: " + hitVessel);
+                                        }
                                     }
                                 }
                                 catch (NullReferenceException e)
@@ -2662,6 +2665,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             Aim();
             CheckWeaponSafety();
             CheckAIAutofire();
+            // Debug.Log("DEBUG visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
 
             if (finalFire)
             {
