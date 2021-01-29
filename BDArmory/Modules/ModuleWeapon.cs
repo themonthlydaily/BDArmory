@@ -473,7 +473,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
         public float heatLoss = 250;
 
         //canon explosion effects
-        public static string defaultExplModelPath =  "BDArmory/Models/explosion/explosion";
+        public static string defaultExplModelPath = "BDArmory/Models/explosion/explosion";
         [KSPField]
         public string explModelPath = defaultExplModelPath;
 
@@ -2513,7 +2513,10 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                         KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                         var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
                                         if (part)
+                                        {
                                             hitVessel = part.vessel;
+                                            Debug.Log("DEBUG hitVessel: " + hitVessel);
+                                        }
                                     }
                                 }
                                 catch (NullReferenceException e)
@@ -2662,6 +2665,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             Aim();
             CheckWeaponSafety();
             CheckAIAutofire();
+            // Debug.Log("DEBUG visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
 
             if (finalFire)
             {
@@ -3319,6 +3323,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     for (int i = 0; i < ammoList.Count; i++)
                     {
                         BulletInfo binfo = BulletInfo.bullets[ammoList[i].ToString()];
+                        if (binfo == null)
+                        {
+                            Debug.LogError("[ModuleWeapon]: The requested bullet type (" + ammoList[i].ToString() + ") does not exist.");
+                            output.AppendLine($"Bullet type: {ammoList[i]} - MISSING");
+                            output.AppendLine("");
+                            continue;
+                        }
                         ParseBulletFuzeType(binfo.fuzeType);
                         output.AppendLine($"Bullet type: {ammoList[i]}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
@@ -3349,6 +3360,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     for (int i = 0; i < ammoList.Count; i++)
                     {
                         RocketInfo rinfo = RocketInfo.rockets[ammoList[i].ToString()];
+                        if (rinfo == null)
+                        {
+                            Debug.LogError("[ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
+                            output.AppendLine($"Rocket type: {ammoList[i]} - MISSING");
+                            output.AppendLine("");
+                            continue;
+                        }
                         output.AppendLine($"Rocket type: {ammoList[i]}");
                         output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass, 2)} kg");
                         //output.AppendLine($"Thrust: {thrust}kn"); mass and thrust don't really tell us the important bit, so lets replace that with accel
