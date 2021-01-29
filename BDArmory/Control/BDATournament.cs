@@ -37,12 +37,15 @@ namespace BDArmory.Control
         {
             if (teamsSpecific == null) teamsSpecific = new List<List<string>>();
             else teamsSpecific.Clear();
-            var teams = serializedTeams.Substring(1, serializedTeams.Length - 2).Split(new string[] { "],[" }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim(new char[] { '[', ']' })).ToList();
-            foreach (var team in teams)
+            if (!string.IsNullOrEmpty(serializedTeams))
             {
-                var files = team.Split(',').ToList();
-                if (files.Count > 0)
-                    teamsSpecific.Add(files);
+                var teams = serializedTeams.Substring(1, serializedTeams.Length - 2).Split(new string[] { "],[" }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim(new char[] { '[', ']' })).ToList();
+                foreach (var team in teams)
+                {
+                    var files = team.Split(',').ToList();
+                    if (files.Count > 0)
+                        teamsSpecific.Add(files);
+                }
             }
             if (teamsSpecific.Count == 0) teamsSpecific = null;
         }
