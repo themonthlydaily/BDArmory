@@ -209,7 +209,7 @@ namespace BDArmory.Control
                     {
                         spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList());
                     }
-                    spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v).ToList();
+                    spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
                 }
                 else // Just the specified folder.
                 {
@@ -219,7 +219,7 @@ namespace BDArmory.Control
             }
             else // Spawn the specific vessels.
             {
-                spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v).ToList();
+                spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
             }
             if (spawnConfig.craftFiles.Count == 0)
             {
@@ -229,6 +229,10 @@ namespace BDArmory.Control
                 vesselsSpawning = false;
                 spawnFailureReason = SpawnFailureReason.NoCraft;
                 yield break;
+            }
+            if (spawnConfig.teamsSpecific != null)
+            {
+                spawnConfig.teamCounts = spawnConfig.teamsSpecific.Select(tl => tl.Count).ToList();
             }
             spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             spawnedVesselCount = 0; // Reset our spawned vessel count.
@@ -334,38 +338,85 @@ namespace BDArmory.Control
             // Spawn the craft in an outward facing ring.
             Debug.Log("[VesselSpawner]: Spawning vessels...");
             var spawnedVessels = new Dictionary<string, Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>>();
-            var craftURLToVesselName = new Dictionary<string, string>();
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             string failedVessels = "";
             var shipFacility = EditorFacility.None;
-            foreach (var craftUrl in spawnConfig.craftFiles) // First spawn the vessels in the air.
+            List<List<string>> teamVesselNames = null;
+            if (spawnConfig.teamsSpecific == null)
             {
-                var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count;
-                var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
-                craftSpawnPosition = spawnPoint + 1000f * radialUnitVector + spawnDistance * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
-                FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
-                Vessel vessel = null;
-                try
+                foreach (var craftUrl in spawnConfig.craftFiles) // First spawn the vessels in the air.
                 {
-                    vessel = SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, 0, 0f, out shipFacility); // SPAWN
+                    var heading = 360f * spawnedVesselCount / spawnConfig.craftFiles.Count;
+                    var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
+                    craftSpawnPosition = spawnPoint + 1000f * radialUnitVector + spawnDistance * direction; // Spawn 1000m higher than asked for, then adjust the altitude later once the craft's loaded.
+                    FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
+                    Vessel vessel = null;
+                    try
+                    {
+                        vessel = SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, 0, 0f, out shipFacility); // SPAWN
+                    }
+                    catch { vessel = null; }
+                    if (vessel == null)
+                    {
+                        var craftName = craftUrl.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length);
+                        Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
+                        failedVessels += "\n  -  " + craftName;
+                        continue;
+                    }
+                    vessel.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
+                    vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
+                    if (spawnedVessels.ContainsKey(vessel.GetName()))
+                        vessel.vesselName += "_" + spawnedVesselCount;
+                    spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
+                    ++spawnedVesselCount;
                 }
-                catch { vessel = null; }
-                if (vessel == null)
+            }
+            else
+            {
+                teamVesselNames = new List<List<string>>();
+                var currentTeamNames = new List<string>();
+                int spawnedTeamCount = 0;
+                Vector3 teamSpawnPosition;
+                foreach (var team in spawnConfig.teamsSpecific)
                 {
-                    var craftName = craftUrl.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length);
-                    Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
-                    failedVessels += "\n  -  " + craftName;
-                    continue;
+                    currentTeamNames.Clear();
+                    var teamHeading = 360f * spawnedTeamCount / spawnConfig.teamsSpecific.Count;
+                    var teamDirection = Vector3.ProjectOnPlane(Quaternion.AngleAxis(teamHeading, radialUnitVector) * refDirection, radialUnitVector).normalized;
+                    teamSpawnPosition = spawnPoint + 1000f * radialUnitVector + spawnDistance * teamDirection; // Spawn 1000m hight than asked for, then adjust the altitude later once the craft's loaded.
+                    int teamSpawnCount = 0;
+                    foreach (var craftUrl in team)
+                    {
+                        var heading = 360f / team.Count * (teamSpawnCount - (team.Count - 1) / 2f) / team.Count + teamHeading;
+                        var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis(heading, radialUnitVector) * refDirection, radialUnitVector).normalized;
+                        craftSpawnPosition = teamSpawnPosition + spawnDistance / 4f * direction; // Spawn in clusters around the team spawn points.
+                        FlightGlobals.currentMainBody.GetLatLonAlt(craftSpawnPosition, out craftGeoCoords.x, out craftGeoCoords.y, out craftGeoCoords.z); // Convert spawn point to geo-coords for the actual spawning function.
+                        Vessel vessel = null;
+                        try
+                        {
+                            vessel = SpawnVesselFromCraftFile(craftUrl, craftGeoCoords, 0, 0f, out shipFacility); // SPAWN
+                        }
+                        catch { vessel = null; }
+                        if (vessel == null)
+                        {
+                            var craftName = craftUrl.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length);
+                            Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
+                            failedVessels += "\n  -  " + craftName;
+                            continue;
+                        }
+                        vessel.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
+                        vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
+                        if (spawnedVessels.ContainsKey(vessel.GetName()))
+                            vessel.vesselName += "_" + spawnedVesselCount;
+                        currentTeamNames.Add(vessel.vesselName);
+                        spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
+                        ++spawnedVesselCount;
+                        ++teamSpawnCount;
+                    }
+                    teamVesselNames.Add(currentTeamNames.ToList());
+                    ++spawnedTeamCount;
                 }
-                vessel.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
-                vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
-                if (spawnedVessels.ContainsKey(vessel.GetName()))
-                    vessel.vesselName += "_" + spawnedVesselCount;
-                spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
-                craftURLToVesselName.Add(craftUrl, vessel.vesselName);
-                ++spawnedVesselCount;
             }
             if (failedVessels != "")
             {
@@ -628,7 +679,7 @@ namespace BDArmory.Control
                         for (int team = 0; team < spawnConfig.numberOfTeams; ++team)
                             spawnConfig.teamCounts.Add(numberPerTeam + (team < residue ? 1 : 0));
                     }
-                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true, spawnConfig.teamCounts, spawnConfig.teamsSpecific.Select(l => l.Select(url => craftURLToVesselName[url]).ToList()).ToList());
+                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true, spawnConfig.teamCounts, teamVesselNames);
                     yield return new WaitForFixedUpdate();
                 }
             }
@@ -1273,6 +1324,7 @@ namespace BDArmory.Control
             public string folder = null;
             public List<string> craftFiles = null;
         }
+
         #region Team Spawning
         public void TeamSpawn(List<SpawnConfig> spawnConfigs, bool startCompetition = false, double competitionStartDelay = 0d, bool startCompetitionNow = false)
         {
