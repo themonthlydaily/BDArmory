@@ -1345,7 +1345,7 @@ namespace BDArmory.Control
             {
                 vesselsSpawning = true; // Gets set to false each time spawning is finished, so we need to re-enable it again.
                 vesselSpawnSuccess = false;
-                yield return SpawnAllVesselsOnceCoroutine(spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, spawnConfig.distance, spawnConfig.absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killAllFirst, false, 1, null, null, spawnConfig.folder, spawnConfig.craftFiles);
+                yield return SpawnAllVesselsOnceCoroutine(spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, spawnConfig.distance, spawnConfig.absDistanceOrFactor, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, killAllFirst, false, 0, null, null, spawnConfig.folder, spawnConfig.craftFiles);
                 if (!vesselSpawnSuccess)
                 {
                     message = "Vessel spawning failed, aborting.";
