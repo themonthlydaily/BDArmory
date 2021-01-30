@@ -45,6 +45,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool AUTO_ENABLE_VESSEL_SWITCHING = false;     // Automatically enables vessel switching on competition start.
         [BDAPersistantSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistantSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
+        [BDAPersistantSettingsField] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
         [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = true;
@@ -162,12 +163,16 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING = false; // Spawn craft again after single spawn competition finishes.
         [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN = false; // Dump competition scores every time a vessel spawns.
         [BDAPersistantSettingsField] public static bool SHOW_SPAWN_LOCATIONS = false;              // Show the interesting spawn locations.
+        [BDAPersistantSettingsField] public static int VESSEL_SPAWN_NUMBER_OF_TEAMS = 0;           // Number of Teams: 0 - FFA, 1 - Folders, 2-10 specified directly
+        [BDAPersistantSettingsField] public static string VESSEL_SPAWN_FILES_LOCATION = "";        // Spawn files location (under AutoSpawn).
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
-        [BDAPersistantSettingsField] public static string TOURNAMENT_FILES_LOCATION = "";          // Tournament files location (under AutoSpawn).
         [BDAPersistantSettingsField] public static float TOURNAMENT_DELAY_BETWEEN_HEATS = 10;      // Delay between heats
         [BDAPersistantSettingsField] public static int TOURNAMENT_ROUNDS = 1;                      // Rounds
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_HEAT = 8;            // Vessels Per Heat
+        [BDAPersistantSettingsField] public static int TOURNAMENT_TEAMS_PER_HEAT = 2;              // Teams Per Heat
+        [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
+        [BDAPersistantSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
     }
 }
