@@ -529,6 +529,12 @@ namespace BDArmory.Bullets
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
 
+            // Add decals
+            if (BDArmorySettings.BULLET_HITS)
+            {
+                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, hasRichocheted, caliber, penetrationfactor);
+            }
+
             // Apply damage
             float damage;
             //if (explosive)
@@ -567,7 +573,9 @@ namespace BDArmory.Bullets
                     {
                         aData.PinataHits++;
                     }
+
                 }
+
                 // update scoring structure on the defender.
                 {
                     var tData = BDACompetitionMode.Instance.Scores[tName];
@@ -586,11 +594,7 @@ namespace BDArmory.Bullets
                         tData.damageFromBullets.Add(aName, damage);
                 }
             }
-            // Add decals
-            if (BDArmorySettings.BULLET_HITS)
-            {
-                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, hasRichocheted, caliber, penetrationfactor);
-            }                      
+
         }
 
         private void CalculateDragNumericalIntegration()

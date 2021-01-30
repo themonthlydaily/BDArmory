@@ -287,9 +287,21 @@ namespace BDArmory.Radar
             {
                 priorRotation = t.rotation;
                 v.SetPosition(v.transform.position + presentationPosition);
-                //v.SetRotation(Quaternion.Euler(Mathf.PI/2, 0, 0));
                 v.SetRotation(new Quaternion(-0.7f, 0f, 0f, -0.7f));
+
                 t = v.transform;
+
+                //move AB thrust transforms (fix for AirplanePlus .dds engine afterburner FX not using DXT5 standard and showing up in RCS render)
+                using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+                    while (engines.MoveNext())
+                    {
+                        if (engines.Current == null) continue;
+                        using (var engineTransforms = engines.Current.thrustTransforms.GetEnumerator())
+                            while (engineTransforms.MoveNext())
+                            {
+                                engineTransforms.Current.transform.position = engineTransforms.Current.transform.position + presentationPosition;
+                            }
+                    }
             }
 
             Bounds vesselbounds = CalcVesselBounds(v, t);
@@ -413,6 +425,18 @@ namespace BDArmory.Radar
                 // revert presentation (only if outside editor and thus vessel is a real vessel)
                 if (HighLogic.LoadedSceneIsFlight)
                 {
+                    //move AB thrust transforms (fix for AirplanePlus .dds engine afterburner FX not using DXT5 standard and showing up in RCS render)
+                    using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+                        while (engines.MoveNext())
+                        {
+                            if (engines.Current == null) continue;
+                            using (var engineTransforms = engines.Current.thrustTransforms.GetEnumerator())
+                                while (engineTransforms.MoveNext())
+                                {
+                                    engineTransforms.Current.transform.position = engineTransforms.Current.transform.position - presentationPosition;
+                                }
+                        }
+
                     v.SetRotation(priorRotation);
                     v.SetPosition(v.transform.position - presentationPosition);
                 }

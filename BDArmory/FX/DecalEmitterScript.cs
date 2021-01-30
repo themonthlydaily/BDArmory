@@ -1,5 +1,4 @@
-﻿using BDArmory.Misc;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace BDArmory.FX
 {
@@ -17,13 +16,6 @@ namespace BDArmory.FX
 
         private float _highestEnergy;
 
-        public static ObjectPool CreateFireFXPool(string modelPath)
-        {
-            var template = GameDatabase.Instance.GetModel("BDArmory/FX/FlameEffect2/model");
-            var FuelLeakFX = template.AddComponent<DecalEmitterScript>();
-            template.SetActive(false);
-            return ObjectPool.CreateObjectPool(template, 10, true, true);
-        }
         public void Start()
         {
             foreach (var pe in gameObject.GetComponentsInChildren<KSPParticleEmitter>())
