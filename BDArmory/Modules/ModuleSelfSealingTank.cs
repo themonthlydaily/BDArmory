@@ -8,8 +8,8 @@ using UnityEngine;
 
 namespace BDArmory.Modules
 {
-	class ModuleSelfSealingTank : PartModule
-	{
+    class ModuleSelfSealingTank : PartModule
+    {
         [KSPField(isPersistant = true)]
         public bool SSTank = false;
 
@@ -22,13 +22,13 @@ namespace BDArmory.Modules
             {
                 Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_On");//"Disable self-sealing tank"
                 for (int i = 0; i < origValues.Count; i++)
-                {                   
+                {
                     using (IEnumerator<PartResource> resource = part.Resources.GetEnumerator())
                         while (resource.MoveNext())
                         {
-                            if (resource.Current == null) continue;                            
+                            if (resource.Current == null) continue;
                             resource.Current.maxAmount = origValues[resource.Current.resourceName];
-                        }  
+                        }
                 }
                 part.mass = (float)origMass;
             }
@@ -67,16 +67,17 @@ namespace BDArmory.Modules
         {
             base.OnStart(state);
 
+            origValues = new Dictionary<string, double>();
             using (IEnumerator<PartResource> resource = part.Resources.GetEnumerator())
                 while (resource.MoveNext())
                 {
                     if (resource.Current == null) continue;
-                        origValues.Add(resource.Current.resourceName, resource.Current.maxAmount);
+                    origValues.Add(resource.Current.resourceName, resource.Current.maxAmount);
                 }
 
             origMass = part.mass;
             partmass = part.mass * 1.5f;
         }
-       
+
     }
 }
