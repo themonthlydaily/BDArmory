@@ -92,8 +92,7 @@ namespace BDArmory.FX
                         fuel.amount -= (burnRate * TimeWarp.deltaTime);
                     }
                     else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
-                    {
-                        tntMassEquivilent += (float)fuel.amount;
+                    {                        
                         Detonate();
                     }
                     else
