@@ -1564,7 +1564,60 @@ namespace BDArmory.UI
                 }
                 ++line;
             }
+            if (BDArmorySettings.BATTLEDAMAGE)
+            {
+                if (GUI.Button(SLineRect(++line), (BDArmorySettings.GENERAL_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_BDSettingsToggle")))//Show/hide battle damage settings.
+                {
+                    BDArmorySettings.BATTLEDAMAGE_TOGGLE = !BDArmorySettings.BATTLEDAMAGE_TOGGLE;
+                }
+                if (BDArmorySettings.BATTLEDAMAGE_TOGGLE)
+                {
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Proc")}:  ({BDArmorySettings.BD_DAMAGE_CHANCE})", leftLabel); //Proc Chance Frequency
+                    BDArmorySettings.BD_DAMAGE_CHANCE = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BD_DAMAGE_CHANCE, 0f, 100);
 
+                    BDArmorySettings.BD_PROPULSION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_PROPULSION, Localizer.Format("#LOC_BDArmory_Settings_BD_Engines"));//"Propulsion Systems Damage"
+                    if (BDArmorySettings.BD_PROPULSION)
+                    {
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Prop_Dmg_Mult")}:  ({BDArmorySettings.BD_PROP_DAM_RATE}x)", leftLabel); //Propulsion Daamge Multiplier
+                        BDArmorySettings.BD_PROP_DAM_RATE = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_PROP_DAM_RATE, 1), 0, 2));
+                        BDArmorySettings.BD_INTAKES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_BD_Intakes"));//"Intake Damage"
+                        BDArmorySettings.BD_GIMBALS = GUI.Toggle(SRightRect(line), BDArmorySettings.BD_GIMBALS, Localizer.Format("#LOC_BDArmory_Settings_BD_Gimbals"));//"Gimbal Damage"
+                    }
+                    BDArmorySettings.BD_AEROPARTS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_AEROPARTS, Localizer.Format("#LOC_BDArmory_Settings_BD_Aero"));//"Flight Systems Damage"
+                    if (BDArmorySettings.BD_AEROPARTS)
+                    {
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Aero_Dmg_Mult")}:  ({BDArmorySettings.BD_LIFT_LOSS_RATE}x)", leftLabel); //Wing Damage Magnitude
+                        BDArmorySettings.BD_LIFT_LOSS_RATE = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_LIFT_LOSS_RATE, 1), 0, 5));
+                        BDArmorySettings.BD_CTRL_SRF = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_CTRL_SRF, Localizer.Format("#LOC_BDArmory_Settings_BD_CtrlSrf"));//"Ctrl Surface Damage"      
+                    }
+                    BDArmorySettings.BD_COCKPITS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_COCKPITS, Localizer.Format("#LOC_BDArmory_Settings_BD_Command"));//"Command & Control Damage"
+                    if (BDArmorySettings.BD_COCKPITS)
+                    {
+                        BDArmorySettings.BD_PILOT_KILLS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_PILOT_KILLS, Localizer.Format("#LOC_BDArmory_Settings_BD_PilotKill"));//"Crew Fatalities"      
+                    }
+                    BDArmorySettings.BD_TANKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_TANKS, Localizer.Format("#LOC_BDArmory_Settings_BD_Tanks"));//"FuelTank Damage"
+                    if (BDArmorySettings.BD_TANKS)
+                    {
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Leak_Time")}:  ({BDArmorySettings.BD_TANK_LEAK_TIME}s)", leftLabel); // Leak Duration
+                        BDArmorySettings.BD_TANK_LEAK_TIME = (int)(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BD_TANK_LEAK_TIME, 0, 100));
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Leak_Rate")}:  ({BDArmorySettings.BD_TANK_LEAK_RATE}x)", leftLabel); //Leak magnitude
+                        BDArmorySettings.BD_TANK_LEAK_RATE = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_TANK_LEAK_RATE, 1), 0, 5));
+
+                        BDArmorySettings.BD_AMMOBINS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_AMMOBINS, Localizer.Format("#LOC_BDArmory_Settings_BD_Ammo"));//"Ammo Explosions"
+                        if (BDArmorySettings.BD_AMMOBINS)
+                        {
+                            BDArmorySettings.BD_VOLATILE_AMMO = GUI.Toggle(SRightRect(line), BDArmorySettings.BD_VOLATILE_AMMO, Localizer.Format("#LOC_BDArmory_Settings_BD_Volatile_Ammo"));//"Ammo Bins Explode when Destroyed"
+                        }
+                    }
+                    BDArmorySettings.BD_FIRES_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_FIRES_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_BD_Fires"));//"Fires"
+                    if (BDArmorySettings.BD_FIRES_ENABLED)
+                    {
+                        BDArmorySettings.BD_FIRE_DOT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_FIRE_DOT, Localizer.Format("#LOC_BDArmory_Settings_BD_DoT"));//"Fire Damage"     
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Fire_Dmg")}:  ({BDArmorySettings.BD_FIRE_DAMAGE}/s)", leftLabel); // "Fire Damage magnitude"
+                        BDArmorySettings.BD_FIRE_DAMAGE = (int)(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BD_FIRE_DAMAGE, 0f, 20));
+                    }
+                }
+            }
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.SLIDER_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SliderSettingsToggle")))//Show/hide slider settings.
             {
                 BDArmorySettings.SLIDER_SETTINGS_TOGGLE = !BDArmorySettings.SLIDER_SETTINGS_TOGGLE;
