@@ -12,7 +12,7 @@ namespace BDArmory.Misc
     {
         public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, string attacker, RaycastHit hitLoc)
         {
-            if (BDArmorySettings.PAINTBALL_MODE) return;
+            if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
 
             double damageChance = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE * ((1 - part.GetDamagePercentatge()) * 10) * (penetrationFactor / 2)), 0, 100); //more heavily damaged parts more likely to take battledamage
 
@@ -102,7 +102,7 @@ namespace BDArmory.Misc
                         {
                             //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
                             //engine.thrustPercentage -= ((engine.maxThrust * 0.125f) / 100); //workaround hack
-                            enginefx.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor/4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
+                            enginefx.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor / 4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
                             Mathf.Clamp(enginefx.thrustPercentage, 0.15f, 1); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: engine thrust: " + enginefx.thrustPercentage);
                         }
