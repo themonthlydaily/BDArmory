@@ -394,7 +394,7 @@ namespace BDArmory.FX
             if (BDArmorySettings.BD_FIRES_ENABLED)
             {
                 if (FireFXPool == null)
-                    FireFXPool = FireFX.CreateFireFXPool("BDArmory/FX/FlameEffect2/model");
+                    FireFXPool = FireFX.CreateFireFXPool("BDArmory/FX/FireFX/model");
                 var fire = FireFXPool.GetPooledObject();
                 var fireFX = fire.GetComponentInChildren<FireFX>();
                 fireFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f), sourcevessel);
