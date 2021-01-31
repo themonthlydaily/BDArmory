@@ -3,6 +3,7 @@ using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using System;
@@ -18,7 +19,7 @@ namespace BDArmory.Modules
         public int CASELevel = 0; //tier of ammo storage. 0 = nothing, ammosplosion; 1 = base, ammosplosion contained(barely), 2 = blast safely shunted outside, minimal damage to surrounding parts
         private double ammoMass;
         private double ammoQuantity;
-        private double ammoExplosionYield = 100;
+        private double ammoExplosionYield = 0;
 
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
@@ -61,8 +62,7 @@ namespace BDArmory.Modules
                         {
                             ammoMass = ammo.Current.info.density;
                             ammoQuantity = ammo.Current.amount;
-                            part.RemoveResource(ammo.Current);
-                            ammoExplosionYield += (ammoMass / 6) * ammoQuantity;
+                            ammoExplosionYield += (((ammoMass*1000) * ammoQuantity)/6);
                         }
                     }
             }
@@ -90,7 +90,7 @@ namespace BDArmory.Modules
                 {
                     ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield);
-                    using (var blastHits = Physics.OverlapSphere(part.transform.position, (blastRadius / 2), 9076737).AsEnumerable().GetEnumerator())
+                    using (var blastHits = Physics.OverlapSphere(part.transform.position, (Mathf.Clamp((blastRadius / 2), 9076737).AsEnumerable().GetEnumerator())
                     {
                         while (blastHits.MoveNext())
                         {
@@ -183,24 +183,27 @@ namespace BDArmory.Modules
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
-
+            float explDamage = 0;
             if (BDArmorySettings.BULLET_HITS)
             {
                 BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, false, 200, 3);
             }
-            if (CASELevel == 1)
+            if (CASELevel == 2)
             {
-                hitPart.AddDamage((hitPart.MaxDamage() * 0.9f));
+                explDamage = 100;
+                hitPart.AddDamage(explDamage);                
+                float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
+                hitPart.ReduceArmor(armorToReduce);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG]" + hitPart.name + "damaged, armor reduced by "+ armorToReduce);
+            }
+            else //CASE I
+            {
+                explDamage = (hitPart.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f);
+                explDamage = Mathf.Clamp(explDamage, 0, 600);
+                hitPart.AddDamage(explDamage);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG]" + hitPart.name + "damaged for " + (hitPart.MaxDamage() * 0.9f));
                 Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, SourceVessel, hit);
             }
-            if (CASELevel == 2)
-            {
-                hitPart.AddDamage(100);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG]" + hitPart.name + "damaged");
-                hitPart.ReduceArmor(hitPart.GetArmorThickness() * 0.25f);
-            }
-            if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_DOT)
             {
                 var aName = SourceVessel;
                 var tName = part.vessel.GetName();
@@ -209,7 +212,7 @@ namespace BDArmory.Modules
                 {
                     if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                     {
-                        BDAScoreService.Instance.TrackDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
+                        BDAScoreService.Instance.TrackDamage(aName, tName, explDamage);
                     }
                     var aData = BDACompetitionMode.Instance.Scores[aName];
                     aData.Score += 1;
@@ -230,9 +233,9 @@ namespace BDArmory.Modules
                         tData.hitCounts.Add(aName, 1);
                     // Track damage
                     if (tData.damageFromBullets.ContainsKey(aName))
-                        tData.damageFromBullets[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
+                        tData.damageFromBullets[aName] += explDamage;
                     else
-                        tData.damageFromBullets.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
+                        tData.damageFromBullets.Add(aName, explDamage);
 
                 }
             }
@@ -241,7 +244,10 @@ namespace BDArmory.Modules
         {
             if (BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight)
             {
-                DetonateIfPossible();
+                if (!hasDetonated)
+                {
+                    DetonateIfPossible();
+                }
             }
         }
     }
