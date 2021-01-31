@@ -551,7 +551,7 @@ namespace BDArmory.FX
             eFx.Position = position;
             eFx.Power = tntMassEquivalent;
             eFx.ExplosionSource = explosionSourceType;
-            eFx.SourceVesselName = sourceVesselName != null ? sourceVesselName : explosionSourceType == ExplosionSourceType.Missile ? explosivePart?.vessel.GetName() : null; // Use the sourceVesselName if specified, otherwise get the sourceVesselName from the missile if it is one.
+            eFx.SourceVesselName = sourceVesselName != null ? sourceVesselName : explosionSourceType == ExplosionSourceType.Missile ? (explosivePart.vessel != null ? explosivePart.vessel.GetName() : null) : null; // Use the sourceVesselName if specified, otherwise get the sourceVesselName from the missile if it is one.
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;

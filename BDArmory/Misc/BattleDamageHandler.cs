@@ -8,8 +8,8 @@ using BDArmory.Modules;
 
 namespace BDArmory.Misc
 {
-	class BattleDamageHandler
-	{
+    class BattleDamageHandler
+    {
         public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, string attacker, RaycastHit hitLoc)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return;
@@ -46,8 +46,8 @@ namespace BDArmory.Misc
                 var ammo = part.FindModuleImplementing<ModuleCASE>();
                 if (ammo != null)
                 {
-                    double Diceroll = UnityEngine.Random.Range(0, 100);                    
-                    //Debug.Log("[BD Debug]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
+                    double Diceroll = UnityEngine.Random.Range(0, 100);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
                     if (Diceroll <= (damageChance) && part.GetDamagePercentatge() < 0.95f)
                     {
                         ammo.SourceVessel = attacker;
@@ -66,7 +66,7 @@ namespace BDArmory.Misc
                         {
                             //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
                             //engine.thrustPercentage -= ((engine.maxThrust * 0.125f) / 100); //workaround hack
-                            engine.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor/4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
+                            engine.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor / 4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
                             Mathf.Clamp(engine.thrustPercentage, 0.15f, 1); //even heavily damaged engines will still put out something
                             //Debug.Log("[BD Debug]: engine thrust: " + engine.thrustPercentage);
                         }
@@ -181,7 +181,7 @@ namespace BDArmory.Misc
                         wing.deflectionLiftCoeff -= liftDam;
                         wing.deflectionLiftCoeff = Mathf.Clamp(wing.deflectionLiftCoeff, 0.01f, Mathf.Infinity);
                     }
-                    //Debug.Log("[BD DEBUG] " + part.name + "took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] " + part.name + "took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                 }
                 if (part.GetComponent<ModuleControlSurface>() != null && part.GetDamagePercentatge() > 0.125f)
                 {
@@ -211,8 +211,8 @@ namespace BDArmory.Misc
             //Subsystems
             if (BDArmorySettings.BD_SUBSYSTEMS)
             {
-                double Diceroll = UnityEngine.Random.Range(0, 100);                
-                //Debug.Log("[BD Debug]: Subsystem DiceRoll: " + Diceroll + "; needs: " + damageChance);
+                double Diceroll = UnityEngine.Random.Range(0, 100);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: Subsystem DiceRoll: " + Diceroll + "; needs: " + damageChance);
                 if (Diceroll <= (damageChance) && part.GetDamagePercentatge() < 0.95f)
                 {
                     if (part.GetComponent<ModuleReactionWheel>() != null) //should have this be separate dice rolls, else a part with more than one of these will lose them all
@@ -275,7 +275,7 @@ namespace BDArmory.Misc
                         cam = part.GetComponent<ModuleTargetingCamera>(); // gimbal range??
                         part.RemoveModule(cam);
                     }
-                    //Debug.Log("[BD DEBUG] " + part.name + "took subsystem damage");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] " + part.name + "took subsystem damage");
                 }
             }
             //Command parts
@@ -313,7 +313,7 @@ namespace BDArmory.Misc
                                     }
                                 }
                             //GuardRange reduction to sim canopy/sensor damage?
-                            //Debug.Log("[BD DEBUG] " + part.name + "took command damage");
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] " + part.name + "took command damage");
                         }
                     }
                 }
