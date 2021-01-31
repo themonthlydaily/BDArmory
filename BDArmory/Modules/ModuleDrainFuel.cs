@@ -83,6 +83,10 @@ namespace BDArmory.Modules
                 }
                 else
                 {
+                    foreach (var existingLeakFX in part.GetComponentsInChildren<FuelLeakFX>())
+                    {
+                        existingLeakFX.lifeTime = 0; //kill leak FX
+                    }
                     part.RemoveModule(this);
                 }
             }
