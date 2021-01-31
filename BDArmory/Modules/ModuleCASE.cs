@@ -62,7 +62,7 @@ namespace BDArmory.Modules
                         {
                             ammoMass = ammo.Current.info.density;
                             ammoQuantity = ammo.Current.amount;
-                            ammoExplosionYield += (((ammoMass*1000) * ammoQuantity)/6);
+                            ammoExplosionYield += (((ammoMass * 1000) * ammoQuantity) / 6);
                         }
                     }
             }
@@ -89,8 +89,8 @@ namespace BDArmory.Modules
                 else if (CASELevel == 1) // the blast is reduced. Damage is severe, but (potentially) survivable
                 {
                     ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield);
-                    using (var blastHits = Physics.OverlapSphere(part.transform.position, (Mathf.Clamp((blastRadius / 2), 9076737).AsEnumerable().GetEnumerator())
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
+                    using (var blastHits = Physics.OverlapSphere(part.transform.position, blastRadius / 2, 9076737).AsEnumerable().GetEnumerator())
                     {
                         while (blastHits.MoveNext())
                         {
@@ -174,7 +174,7 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                this.part.explode();
+                this.part.Destroy();
             }
         }
         private void ApplyDamage(Part hitPart, RaycastHit hit)
@@ -191,10 +191,10 @@ namespace BDArmory.Modules
             if (CASELevel == 2)
             {
                 explDamage = 100;
-                hitPart.AddDamage(explDamage);                
+                hitPart.AddDamage(explDamage);
                 float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
                 hitPart.ReduceArmor(armorToReduce);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG]" + hitPart.name + "damaged, armor reduced by "+ armorToReduce);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG]" + hitPart.name + "damaged, armor reduced by " + armorToReduce);
             }
             else //CASE I
             {
@@ -242,12 +242,9 @@ namespace BDArmory.Modules
         }
         void OnDestroy()
         {
-            if (BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight)
+            if (BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !VesselSpawner.Instance.vesselsSpawning)
             {
-                if (!hasDetonated)
-                {
-                    DetonateIfPossible();
-                }
+                DetonateIfPossible();
             }
         }
     }

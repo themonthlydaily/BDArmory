@@ -70,7 +70,7 @@ namespace BDArmory.FX
             {
                 return;
             }
-            transform.rotation = Quaternion.FromToRotation(Vector3.up,- FlightGlobals.getGeeForceAtPosition(transform.position));
+            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             PartResource fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             var engine = parentPart.FindModuleImplementing<ModuleEngines>();
             if (engine != null)
@@ -92,7 +92,7 @@ namespace BDArmory.FX
                         fuel.amount -= (burnRate * TimeWarp.deltaTime);
                     }
                     else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
-                    {                        
+                    {
                         Detonate();
                     }
                     else
@@ -234,7 +234,7 @@ namespace BDArmory.FX
                 PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                 if (ec != null)
                 {
-                    tntMassEquivilent += ((float)ec.maxAmount/5000); //fix for cockpit batteries weighing a tonne+
+                    tntMassEquivilent += ((float)ec.maxAmount / 5000); //fix for cockpit batteries weighing a tonne+
                     ec.maxAmount = 0;
                     ec.isVisible = false;
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
@@ -276,7 +276,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel.name);
+                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null);
                 // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
                 gameObject.SetActive(false);
             }
