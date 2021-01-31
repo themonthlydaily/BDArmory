@@ -332,7 +332,14 @@ namespace BDArmory.Misc
                                 crewMember.UnregisterExperienceTraits(part);
                                 //crewMember.outDueToG = true; //implement temp KO to simulate wounding?
                                 crewMember.Die();
-                                part.RemoveCrewmember(crewMember); // sadly, I wasn't able to get the K.I.A. portrait working
+                                if (part.isKerbalEVA())
+                                {
+                                    part.Die();
+                                }
+                                else
+                                {
+                                    part.RemoveCrewmember(crewMember); // sadly, I wasn't able to get the K.I.A. portrait working
+                                }
                                 //Vessel.CrewWasModified(part.vessel);
                                 //Debug.Log(crewMember.name + " was killed by damage to cabin!");
                                 if (HighLogic.CurrentGame.Parameters.Difficulty.MissingCrewsRespawn)
