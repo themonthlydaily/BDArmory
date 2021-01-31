@@ -49,7 +49,6 @@ namespace BDArmory.FX
                 while (pe.MoveNext())
                 {
                     if (pe.Current == null) continue;
-                    pe.Current.force = -FlightGlobals.getGeeForceAtPosition(transform.position) * 2;
                     pe.Current.emit = true;
                     _highestEnergy = pe.Current.maxEnergy;
                     EffectBehaviour.AddParticleEmitter(pe.Current);
@@ -71,6 +70,7 @@ namespace BDArmory.FX
             {
                 return;
             }
+            transform.rotation = Quaternion.FromToRotation(Vector3.up,- FlightGlobals.getGeeForceAtPosition(transform.position));
             PartResource fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             var engine = parentPart.FindModuleImplementing<ModuleEngines>();
             if (engine != null)
@@ -234,7 +234,7 @@ namespace BDArmory.FX
                 PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                 if (ec != null)
                 {
-                    tntMassEquivilent += (parentPart.mass / 80);
+                    tntMassEquivilent += ((float)ec.maxAmount/5000); //fix for cockpit batteries weighing a tonne+
                     ec.maxAmount = 0;
                     ec.isVisible = false;
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
@@ -286,6 +286,7 @@ namespace BDArmory.FX
             parentPart = hitPart;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
+            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
             SourceVessel = sourcevessel;
