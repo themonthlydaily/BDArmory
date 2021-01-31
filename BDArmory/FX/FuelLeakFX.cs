@@ -37,7 +37,6 @@ namespace BDArmory.FX
                 {
                     if (pe.Current == null) continue;
 
-                    pe.Current.force = FlightGlobals.getGeeForceAtPosition(transform.position);
                     pe.Current.emit = true;
                     _highestEnergy = pe.Current.maxEnergy;
                     EffectBehaviour.AddParticleEmitter(pe.Current);
@@ -59,6 +58,7 @@ namespace BDArmory.FX
             {
                 return;
             }
+            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             if (Time.time - startTime >= lifeTime && disableTime < 0)
             {
                 disableTime = Time.time; //grab time when emission stops
@@ -76,6 +76,7 @@ namespace BDArmory.FX
             parentPart = hitPart;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
+            transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
             gameObject.SetActive(true);
