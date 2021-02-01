@@ -69,6 +69,15 @@ namespace BDArmory.Misc
                             engine.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor / 4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
                             Mathf.Clamp(engine.thrustPercentage, 0.15f, 1); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: engine thrust: " + engine.thrustPercentage);
+                            if (BDArmorySettings.BD_BALANCED_THRUST)
+                            {
+                                using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
+                                    while (sym.MoveNext())
+                                    {
+                                        if (sym.Current == null) continue;
+                                        sym.Current.FindModuleImplementing<ModuleEngines>().thrustPercentage = engine.thrustPercentage;
+                                    }
+                            }
                         }
                         if (part.GetDamagePercentatge() < 0.75f || (part.GetDamagePercentatge() < 0.82f && penetrationFactor > 2))
                         {
@@ -95,43 +104,7 @@ namespace BDArmory.Misc
                                 engine.allowRestart = false;
                             }
                         }
-                    }
-                    foreach (var enginefx in part.GetComponentsInChildren<ModuleEnginesFX>())
-                    {
-                        if (enginefx.thrustPercentage > 0) //engines take thrust damage per hit
-                        {
-                            //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
-                            //engine.thrustPercentage -= ((engine.maxThrust * 0.125f) / 100); //workaround hack
-                            enginefx.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor / 4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
-                            Mathf.Clamp(enginefx.thrustPercentage, 0.15f, 1); //even heavily damaged engines will still put out something
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: engine thrust: " + enginefx.thrustPercentage);
-                        }
-                        if (part.GetDamagePercentatge() < 0.75f || (part.GetDamagePercentatge() < 0.82f && penetrationFactor > 2))
-                        {
-                            var leak = part.GetComponentInChildren<FuelLeakFX>();
-                            if (leak == null)
-                            {
-                                BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
-                            }
-                        }
-                        if (part.GetDamagePercentatge() < 0.50f || (part.GetDamagePercentatge() < 0.625f && penetrationFactor > 2))
-                        {
-                            var alreadyburning = part.GetComponentInChildren<FireFX>();
-                            if (alreadyburning == null)
-                            {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
-                            }
-                        }
-                        if (part.GetDamagePercentatge() < 0.25f)
-                        {
-                            if (enginefx.EngineIgnited)
-                            {
-                                enginefx.PlayFlameoutFX(true);
-                                enginefx.Shutdown(); //kill a badly damaged engine and don't allow restart
-                                enginefx.allowRestart = false;
-                            }
-                        }
-                    }
+                    }                    
                 }
                 if (BDArmorySettings.BD_INTAKES) //intake damage
                 {
