@@ -154,6 +154,8 @@
     <Compile Include="FX\DecalEmitterScript.cs" />
     <Compile Include="FX\DecalGaplessParticleEmitter.cs" />
     <Compile Include="FX\ExplosionFX.cs" />
+    <Compile Include="FX\FireFX.cs" />
+    <Compile Include="FX\FuelLeakFX.cs" />
     <Compile Include="FX\ParticleTurbulence.cs" />
     <Compile Include="FX\ShellCasing.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
@@ -166,6 +168,7 @@
     <Compile Include="Misc\BDAcTools.cs" />
     <Compile Include="Misc\BDTeam.cs" />
     <Compile Include="Misc\BahaTurretBullet.cs" />
+    <Compile Include="Misc\BattleDamageHandler.cs" />
     <Compile Include="Misc\DecoupledBooster.cs" />
     <Compile Include="Misc\IBDWeapon.cs" />
     <Compile Include="Misc\KSPForceApplier.cs" />
@@ -197,12 +200,16 @@
     <Compile Include="Modules\MissileTurret.cs" />
     <Compile Include="Modules\ModuleAmmoSwitch.cs" />
     <Compile Include="Modules\ModuleDrainEC.cs" />
+    <Compile Include="Modules\ModuleCASE.cs" />
+    <Compile Include="Modules\ModuleDrainEC.cs" />
+    <Compile Include="Modules\ModuleDrainFuel.cs" />
     <Compile Include="Modules\ModuleECMJammer.cs" />
     <Compile Include="Modules\ModuleEMP.cs" />
     <Compile Include="Modules\ModuleMissileRearm.cs" />
     <Compile Include="Modules\ModuleMovingPart.cs" />
     <Compile Include="Modules\ModuleRadar.cs" />
     <Compile Include="Modules\ModuleReactiveArmor.cs" />
+    <Compile Include="Modules\ModuleSelfSealingTank.cs" />
     <Compile Include="Modules\ModuleSpaceRadar.cs" />
     <Compile Include="Modules\ModuleTargetingCamera.cs" />
     <Compile Include="Modules\ModuleTurret.cs" />

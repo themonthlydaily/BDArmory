@@ -3436,8 +3436,8 @@ namespace BDArmory.Modules
                             {
                                 candidateRPM *= .01f; //if within min range, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
-                            if ((targetWeapon != null) && ((targetWeaponRPM > candidateRPM) || (targetWeapon.GetWeaponClass() == WeaponClasses.Missile)))
-                                continue; //dont replace better guns or missiles
+                            if ((targetWeapon != null) && ((targetWeaponRPM > candidateRPM) || ((targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))))
+                                continue; //dont replace better guns or missiles within their engage range
 
                             targetWeapon = item.Current;
                             targetWeaponRPM = candidateRPM;
@@ -3478,7 +3478,8 @@ namespace BDArmory.Modules
                             BDModularGuidance mm = item.Current as BDModularGuidance;
                             candidateTDPS = 5000;
                         }
-
+                        if (distance < ((EngageableWeapon)item.Current).engageRangeMin)
+                            candidateTDPS *= -1f; // if within min range, negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                         if (targetWeapon == null)
                         {
                             targetWeapon = item.Current;
@@ -3487,7 +3488,7 @@ namespace BDArmory.Modules
                         else if ((!vessel.LandedOrSplashed) || ((distance > gunRange) && (vessel.LandedOrSplashed))) // If we're not airborne, we want to prioritize guns
                         {
                             if (targetWeaponTDPS > candidateTDPS)
-                                continue; //dont better missiles
+                                continue; //don't replace better missiles
 
                             targetWeapon = item.Current;
                             targetWeaponTDPS = candidateTDPS;

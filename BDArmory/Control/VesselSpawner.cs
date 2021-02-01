@@ -386,7 +386,13 @@ namespace BDArmory.Control
                     vessel.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
                     vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
                     if (spawnedVessels.ContainsKey(vessel.GetName()))
-                        vessel.vesselName += "_" + spawnedVesselCount;
+                    {
+                        var count = 1;
+                        var potentialName = vessel.vesselName + "_" + count;
+                        while (spawnedVessels.ContainsKey(potentialName))
+                            potentialName = vessel.vesselName + "_" + (++count);
+                        vessel.vesselName = potentialName;
+                    }
                     spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
                     ++spawnedVesselCount;
                 }
@@ -426,7 +432,13 @@ namespace BDArmory.Control
                         vessel.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
                         vessel.ResumeStaging(); // Trigger staging to resume to get staging icons to work properly.
                         if (spawnedVessels.ContainsKey(vessel.GetName()))
-                            vessel.vesselName += "_" + spawnedVesselCount;
+                        {
+                            var count = 1;
+                            var potentialName = vessel.vesselName + "_" + count;
+                            while (spawnedVessels.ContainsKey(potentialName))
+                                potentialName = vessel.vesselName + "_" + (++count);
+                            vessel.vesselName = potentialName;
+                        }
                         currentTeamNames.Add(vessel.vesselName);
                         spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
                         ++spawnedVesselCount;
@@ -907,7 +919,6 @@ namespace BDArmory.Control
             var spawnCounts = spawnConfig.craftFiles.ToDictionary(c => c, c => 0);
             var spawnQueue = new Queue<string>();
             var craftToSpawn = new Queue<string>();
-            var duplicateCraftCounter = 0;
             bool initialSpawn = true;
             double currentUpdateTick;
             while (vesselsSpawningContinuously)
@@ -977,7 +988,13 @@ namespace BDArmory.Control
                         if (!craftURLToVesselName.ContainsKey(craftURL))
                         {
                             if (craftURLToVesselName.ContainsValue(vessel.GetName())) // Avoid duplicate names.
-                                vessel.vesselName += "_" + (++duplicateCraftCounter);
+                            {
+                                var count = 1;
+                                var potentialName = vessel.vesselName + "_" + count;
+                                while (craftURLToVesselName.ContainsKey(potentialName))
+                                    potentialName = vessel.vesselName + "_" + (++count);
+                                vessel.vesselName = potentialName;
+                            }
                             craftURLToVesselName.Add(craftURL, vessel.GetName()); // Store the craftURL -> vessel name.
                         }
                         vessel.vesselName = craftURLToVesselName[craftURL]; // Assign the same (potentially modified) name to the craft each time.
