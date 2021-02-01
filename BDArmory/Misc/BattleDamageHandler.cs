@@ -18,7 +18,7 @@ namespace BDArmory.Misc
 
             if (BDArmorySettings.BD_TANKS)
             {
-                if (part.HasFuel() && penetrationFactor > 1.2)
+                if (part.HasFuel() && penetrationFactor > 1.2 && part.GetDamagePercentatge() < 0.75f))
                 {
                     BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
                 }
