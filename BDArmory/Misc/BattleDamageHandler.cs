@@ -62,22 +62,33 @@ namespace BDArmory.Misc
                 {
                     foreach (var engine in part.GetComponentsInChildren<ModuleEngines>())
                     {
-                        if (engine.thrustPercentage > 0) //engines take thrust damage per hit
+                        if (engine.thrustPercentage > 20) //engines take thrust damage per hit
                         {
                             //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
                             //engine.thrustPercentage -= ((engine.maxThrust * 0.125f) / 100); //workaround hack
-                            engine.thrustPercentage *= (1 - (((1 - part.GetDamagePercentatge()) * (penetrationFactor / 4)) / BDArmorySettings.BD_PROP_DAM_RATE)); //AP does bonus damage
-                            Mathf.Clamp(engine.thrustPercentage, 0.15f, 1); //even heavily damaged engines will still put out something
+                            engine.thrustPercentage -= (((1 - part.GetDamagePercentatge()) * (penetrationFactor/2)) * BDArmorySettings.BD_PROP_DAM_RATE); //AP does bonus damage                        
+                            Mathf.Clamp(engine.thrustPercentage, 15f, 100); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: engine thrust: " + engine.thrustPercentage);
-                            if (BDArmorySettings.BD_BALANCED_THRUST)
+                            /*
+                            float enginelevel = engine.thrustPercentage;
+                            if (BDArmorySettings.BD_BALANCED_THRUST) //need to poke this more later, not working properly
                             {
-                                using (List<Part>.Enumerator sym = part.symmetryCounterparts.GetEnumerator())
-                                    while (sym.MoveNext())
+                                using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                                    while (pSym.MoveNext())
                                     {
-                                        if (sym.Current == null) continue;
-                                        sym.Current.FindModuleImplementing<ModuleEngines>().thrustPercentage = engine.thrustPercentage;
+                                        if (pSym.Current == null) continue;
+                                        if (pSym.Current != part && pSym.Current.vessel == part.vessel)
+                                        {
+                                            var symEngine = pSym.Current.FindModuleImplementing<ModuleEngines>();
+                                            if (symEngine != null)
+                                            {
+												symEngine.thrustPercentage = enginelevel;
+
+                                            }
+                                        }
                                     }
                             }
+                            */
                         }
                         if (part.GetDamagePercentatge() < 0.75f || (part.GetDamagePercentatge() < 0.82f && penetrationFactor > 2))
                         {
