@@ -3,6 +3,7 @@ using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using System;
@@ -18,7 +19,7 @@ namespace BDArmory.Modules
         public int CASELevel = 0; //tier of ammo storage. 0 = nothing, ammosplosion; 1 = base, ammosplosion contained(barely), 2 = blast safely shunted outside, minimal damage to surrounding parts
         private double ammoMass;
         private double ammoQuantity;
-        private double ammoExplosionYield = 100;
+        private double ammoExplosionYield = 0;
 
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
@@ -52,7 +53,8 @@ namespace BDArmory.Modules
         {
             foreach (PartResource resource in GetResources())
             {
-                using (IEnumerator<PartResource> ammo = part.Resources.GetEnumerator())
+                var resources = part.Resources.ToList();
+                using (IEnumerator<PartResource> ammo = resources.GetEnumerator())
                     while (ammo.MoveNext())
                     {
                         if (ammo.Current == null) continue;
@@ -60,8 +62,7 @@ namespace BDArmory.Modules
                         {
                             ammoMass = ammo.Current.info.density;
                             ammoQuantity = ammo.Current.amount;
-                            part.RemoveResource(ammo.Current);
-                            ammoExplosionYield += (ammoMass / 6) * ammoQuantity;
+                            ammoExplosionYield += (((ammoMass * 1000) * ammoQuantity) / 6);
                         }
                     }
             }
@@ -76,18 +77,20 @@ namespace BDArmory.Modules
         {
             if (!hasDetonated)
             {
+                hasDetonated = true; // Set hasDetonated here to avoid recursive calls due to ammo boxes exploding each other.
+                var vesselName = vessel != null ? vessel.vesselName : null;
                 Vector3 direction = default(Vector3);
                 GetBlastRadius();
                 if (CASELevel == 0) //a considerable quantity of explosives and propellants just detonated inside your ship
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vessel.vesselName, direction);
-                    Debug.Log("[BD DEBUG] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else if (CASELevel == 1) // the blast is reduced. Damage is severe, but (potentially) survivable
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vessel.vesselName, direction, true);
-                    Debug.Log("[BD DEBUG] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield);
-                    using (var blastHits = Physics.OverlapSphere(part.transform.position, (blastRadius / 2), 9076737).AsEnumerable().GetEnumerator())
+                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
+                    using (var blastHits = Physics.OverlapSphere(part.transform.position, blastRadius / 2, 9076737).AsEnumerable().GetEnumerator())
                     {
                         while (blastHits.MoveNext())
                         {
@@ -95,35 +98,40 @@ namespace BDArmory.Modules
                             try
                             {
                                 Part partHit = blastHits.Current.GetComponentInParent<Part>();
-                                if (partHit != null && partHit.mass > 0)
+                                if (partHit == null || partHit == part) continue;
+                                if (partHit.mass > 0)
                                 {
                                     Rigidbody rb = partHit.Rigidbody;
+                                    if (rb == null) continue;
                                     Vector3 distToG0 = part.transform.position - partHit.transform.position;
 
                                     Ray LoSRay = new Ray(part.transform.position, partHit.transform.position - part.transform.position);
                                     RaycastHit hit;
                                     if (Physics.Raycast(LoSRay, out hit, distToG0.magnitude, 9076737))
                                     {
-                                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                        Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-                                        if (p == partHit)
+                                        if (hit.collider.gameObject != FlightGlobals.currentMainBody.gameObject)
                                         {
-                                            if (rb == null) return;
-                                            ApplyDamage(p, hit);
+                                            KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                            Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                                            if (p == partHit)
+                                            {
+                                                ApplyDamage(p, hit);
+                                            }
                                         }
                                     }
                                 }
                             }
-                            catch
+                            catch (Exception e)
                             {
+                                Debug.LogError("[ModuleCASE]: Exception in AmmoExplosion Hit" + e.Message);
                             }
                         }
                     }
                 }
                 else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vessel.vesselName, direction, true);
-                    Debug.Log("[BD DEBUG] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                     Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                     var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);
                     if (hits.Length > 0)
@@ -138,32 +146,35 @@ namespace BDArmory.Modules
                                 Part hitPart = null;
                                 KerbalEVA hitEVA = null;
 
-                                try
+                                if (hit.collider.gameObject != FlightGlobals.currentMainBody.gameObject)
                                 {
-                                    hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
-                                    hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                }
-                                catch (NullReferenceException)
-                                {
-                                    Debug.Log("[BDArmory]:NullReferenceException for AmmoExplosion Hit");
-                                    return;
-                                }
+                                    try
+                                    {
+                                        hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                        hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                    }
+                                    catch (NullReferenceException)
+                                    {
+                                        Debug.Log("[BDArmory]:NullReferenceException for AmmoExplosion Hit");
+                                        continue;
+                                    }
 
-                                if (hitEVA != null)
-                                {
-                                    hitPart = hitEVA.part;
-                                    if (hitPart?.rb != null)
-                                        ApplyDamage(hitPart, hit);
-                                    break;
+                                    if (hitPart == null || hitPart == part) continue;
+
+                                    if (hitEVA != null)
+                                    {
+                                        hitPart = hitEVA.part;
+                                        if (hitPart.rb != null)
+                                            ApplyDamage(hitPart, hit);
+                                        break;
+                                    }
+                                    ApplyDamage(hitPart, hit);
                                 }
-                                ApplyDamage(hitPart, hit);
                             }
                         }
                     }
                 }
-                hasDetonated = true;
-                part.Destroy();
-                this.part.explode();
+                this.part.Destroy();
             }
         }
         private void ApplyDamage(Part hitPart, RaycastHit hit)
@@ -172,22 +183,29 @@ namespace BDArmory.Modules
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
-
+            float explDamage = 0;
             if (BDArmorySettings.BULLET_HITS)
             {
                 BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, false, 200, 3);
             }
-            if (CASELevel == 1)
-            {
-                hitPart.AddDamage((hitPart.MaxDamage() * 0.9f));
-                Debug.Log("[BD DEBUG]" + hitPart.name + "damaged for " + (hitPart.MaxDamage() * 0.9f));
-                Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, SourceVessel, hit);
-            }
             if (CASELevel == 2)
             {
-                hitPart.AddDamage(100);
-                Debug.Log("[BD DEBUG]" + hitPart.name + "damaged");
-                hitPart.ReduceArmor(hitPart.GetArmorThickness() * 0.25f);
+                explDamage = 100;
+                hitPart.AddDamage(explDamage);
+                float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
+                hitPart.ReduceArmor(armorToReduce);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG]" + hitPart.name + "damaged, armor reduced by " + armorToReduce);
+            }
+            else //CASE I
+            {
+                explDamage = (hitPart.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f);
+                explDamage = Mathf.Clamp(explDamage, 0, 600);
+                hitPart.AddDamage(explDamage);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG]" + hitPart.name + "damaged for " + (hitPart.MaxDamage() * 0.9f));
+                if (BDArmorySettings.BATTLEDAMAGE)
+                {
+                    Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, SourceVessel, hit);
+                }
             }
             {
                 var aName = SourceVessel;
@@ -197,7 +215,7 @@ namespace BDArmory.Modules
                 {
                     if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                     {
-                        BDAScoreService.Instance.TrackDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
+                        BDAScoreService.Instance.TrackDamage(aName, tName, explDamage);
                     }
                     var aData = BDACompetitionMode.Instance.Scores[aName];
                     aData.Score += 1;
@@ -218,16 +236,16 @@ namespace BDArmory.Modules
                         tData.hitCounts.Add(aName, 1);
                     // Track damage
                     if (tData.damageFromBullets.ContainsKey(aName))
-                        tData.damageFromBullets[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
+                        tData.damageFromBullets[aName] += explDamage;
                     else
-                        tData.damageFromBullets.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
+                        tData.damageFromBullets.Add(aName, explDamage);
 
                 }
             }
         }
         void OnDestroy()
         {
-            if (BDArmorySettings.BD_VOLATILE_AMMO)
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !VesselSpawner.Instance.vesselsSpawning)
             {
                 DetonateIfPossible();
             }
