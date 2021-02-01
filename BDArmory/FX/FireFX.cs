@@ -53,6 +53,14 @@ namespace BDArmory.FX
                     _highestEnergy = pe.Current.maxEnergy;
                     EffectBehaviour.AddParticleEmitter(pe.Current);
                 }
+            if (parentPart.protoModuleCrew.Count > 0) //crew can extingusih fire
+            {
+                burnTime = 10;
+            }
+            if (parentPart.parent.protoModuleCrew.Count > 0)
+            {
+                burnTime = 20; //though ajdacent parts will take longer to get to and extingusih
+            }
         }
         void onDisable()
         {
