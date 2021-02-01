@@ -118,26 +118,21 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
         [BDAPersistantSettingsField] public static float BD_DAMAGE_CHANCE = 10; //base chance per-hit to proc damage
         [BDAPersistantSettingsField] public static bool BD_SUBSYSTEMS = false; //non-critical module damage?
-
         [BDAPersistantSettingsField] public static bool BD_TANKS = false;      //Fuel tanks, batteries can leak/burn
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_TIME = 20; //Leak duration
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
-
         [BDAPersistantSettingsField] public static bool BD_AMMOBINS = false;   //can ammo bins explode?
-        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
-
-		[BDAPersistantSettingsField] public static bool BD_PROPULSION = false; //engine thrust reduction, fires
+        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed	
+	[BDAPersistantSettingsField] public static bool BD_PROPULSION = false; //engine thrust reduction, fires
+	[BDAPersistantSettingsField] public static bool BD_BALANCED_THRUST = true;     
         [BDAPersistantSettingsField] public static float BD_PROP_DAM_RATE = 1; //rate multiplier, 0.1-2
         [BDAPersistantSettingsField] public static bool BD_INTAKES = false; //Can intakes be damaged?
         [BDAPersistantSettingsField] public static bool BD_GIMBALS = false; //can gimbals be disabled?
-
         [BDAPersistantSettingsField] public static bool BD_AEROPARTS = false; //lift loss & added drag
         [BDAPersistantSettingsField] public static float BD_LIFT_LOSS_RATE = 1; //rate multiplier
         [BDAPersistantSettingsField] public static bool BD_CTRL_SRF = false; //disable ctrl srf actuatiors?
-
         [BDAPersistantSettingsField] public static bool BD_COCKPITS = false;  //control degredation
         [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = false; //cockpit damage can kill pilots?
-
         [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = false;  //can fires occur
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = false; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
