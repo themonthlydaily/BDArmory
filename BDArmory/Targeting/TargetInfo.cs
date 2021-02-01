@@ -1,11 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Control;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
-using Contracts.Parameters;
 using UnityEngine;
 
 namespace BDArmory.Targeting
@@ -134,7 +132,26 @@ namespace BDArmory.Targeting
                 return false;
             }
         }
+        public bool isDebilitated //has the vessel been EMP'd. Could also be used for more exotic munitions that would disable instead of kill
+        {
+            get
+            {
+                if (!Vessel)
+                {
+                    return false;
+                }
 
+                if (isMissile)
+                {
+                    return false;
+                }
+                else if (weaponManager && weaponManager.debilitated)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
         void Awake()
         {
             if (!vessel)
@@ -257,6 +274,7 @@ namespace BDArmory.Targeting
         // Begin methods used for prioritizing targets
         public float TargetPriRange(MissileFire myMf) // 1- Target range normalized with max weapon range
         {
+            if (myMf == null) return 0;
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
             using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
@@ -271,6 +289,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriATA(MissileFire myMf) // Square cosine of antenna train angle
         {
+            if (myMf == null) return 0;
             float ataDot = Vector3.Dot(myMf.vessel.srf_vel_direction, (position - myMf.vessel.vesselTransform.position).normalized);
             ataDot = (ataDot + 1) / 2; // Adjust from 0-1 instead of -1 to 1
             return ataDot * ataDot;
@@ -285,6 +304,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriClosureTime(MissileFire myMf) // Time to closest point of approach, normalized for one minute
         {
+            if (myMf == null) return 0;
             float targetDistance = Vector3.Distance(vessel.transform.position, myMf.vessel.transform.position);
             Vector3 currVel = (float)myMf.vessel.srfSpeed * myMf.vessel.Velocity().normalized;
             float closureTime = Mathf.Clamp((float)(1 / ((vessel.Velocity() - currVel).magnitude / targetDistance)), 0f, 60f);
@@ -293,6 +313,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriWeapons(MissileFire mf, MissileFire myMf) // Relative number of weapons of target compared to own weapons
         {
+            if (mf == null || mf.weaponArray == null || myMf == null) return 0; // The target is dead or has no weapons (or we're dead).
             float targetWeapons = mf.CountWeapons(); // Counts weapons
             float myWeapons = myMf.CountWeapons(); // Counts weapons
             // float targetWeapons = mf.weaponArray.Length - 1; // Counts weapon groups
@@ -320,6 +341,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriThreat(MissileFire mf, MissileFire myMf)
         {
+            if (mf == null || myMf == null) return 0;
             float firingAtMe = 0;
             var pilotAI = myMf.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
             if (mf.vessel == myMf.incomingThreatVessel)
@@ -350,6 +372,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriAoD(MissileFire myMF)
         {
+            if (myMF == null) return 0;
             var relativePosition = vessel.transform.position - myMF.vessel.transform.position;
             float theta = Vector3.Angle(myMF.vessel.srf_vel_direction, relativePosition);
             return Mathf.Clamp(((Mathf.Pow(Mathf.Cos(theta / 2f), 2f) + 1f) * 100f / Mathf.Max(10f, relativePosition.magnitude)) / 2, 0, 1); // Ranges from 0 to 1, clamped at 1 for distances closer than 100m
@@ -357,6 +380,7 @@ namespace BDArmory.Targeting
 
         public float TargetPriMass(MissileFire mf, MissileFire myMf) // Relative mass compared to our own mass
         {
+            if (mf == null || myMf == null) return 0;
             if (mf.vessel != null)
             {
                 float targetMass = mf.vessel.GetTotalMass();

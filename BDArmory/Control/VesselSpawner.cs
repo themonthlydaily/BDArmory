@@ -210,7 +210,6 @@ namespace BDArmory.Control
             }
             spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             spawnedVesselCount = 0; // Reset our spawned vessel count.
-            spawnConfig.altitude = Math.Max(2, spawnConfig.altitude); // Don't spawn too low.
             message = "Spawning " + spawnConfig.craftFiles.Count + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : ".");
             Debug.Log("[VesselSpawner]: " + message);
             var spawnAirborne = spawnConfig.altitude > 10;
@@ -276,7 +275,11 @@ namespace BDArmory.Control
                         lastTerrainDistance = terrainDistance;
                         yield return new WaitForFixedUpdate();
                         terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15) ? hit.distance : -1f; // Oceans shouldn't be more than 10km deep...
-                        if (terrainDistance < 0f) break; // Raycast is failing. If we're spawning airborne, then this won't matter too much.
+                        if (terrainDistance < 0f) // Raycast is failing to find terrain.
+                        {
+                            if (Planetarium.GetUniversalTime() - startTime < 1) continue; // Give the terrain renderer a chance to spawn the terrain.
+                            else break;
+                        }
                         if (Math.Abs(lastTerrainDistance - terrainDistance) > 0.1f)
                             lastStableTimeStart = Planetarium.GetUniversalTime(); // Reset the stable time tracker.
                         stableTime = Planetarium.GetUniversalTime() - lastStableTimeStart;
@@ -372,7 +375,7 @@ namespace BDArmory.Control
                 ray = new Ray(craftSpawnPosition, -localRadialUnitVector);
                 var distanceToCoMainBody = (craftSpawnPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                 float distance;
-                if (Physics.Raycast(ray, out hit, (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15))
+                if (terrainAltitude > 0 && Physics.Raycast(ray, out hit, (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15))
                 {
                     distance = hit.distance;
                     localSurfaceNormal = hit.normal;
@@ -380,7 +383,7 @@ namespace BDArmory.Control
                 }
                 else
                 {
-                    distance = FlightGlobals.getAltitudeAtPos(craftSpawnPosition) - (float)terrainAltitude; // If the raycast fails, use the value from FlightGlobals and terrainAltitude of the original spawn point.
+                    distance = FlightGlobals.getAltitudeAtPos(craftSpawnPosition) - (float)terrainAltitude; // If the raycast fails or we're spawning over water, use the value from FlightGlobals and terrainAltitude of the original spawn point.
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[VesselSpawner]: failed to find terrain for spawn adjustments");
                 }
 
@@ -406,11 +409,11 @@ namespace BDArmory.Control
                 if (vessel.mainBody.ocean) // Check for being under water.
                 {
                     var distanceUnderWater = -FlightGlobals.getAltitudeAtPos(finalSpawnPositions[vesselName]);
-                    if (distanceUnderWater > 0) // Under water, move the vessel to the surface.
+                    if (distanceUnderWater >= 0) // Under water, move the vessel to the surface.
                     {
-                        finalSpawnPositions[vesselName] += (float)distanceUnderWater * localRadialUnitVector;
-                        if (!spawnAirborne)
-                            vessel.Splashed = true; // Set the vessel as splashed.
+                        // finalSpawnPositions[vesselName] += (float)distanceUnderWater * localRadialUnitVector;
+                        // if (!spawnAirborne)
+                        vessel.Splashed = true; // Set the vessel as splashed.
                     }
                 }
                 vessel.SetPosition(finalSpawnPositions[vesselName]);
@@ -456,7 +459,8 @@ namespace BDArmory.Control
                         // Check that none of the vessels have lost parts.
                         if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                         {
-                            message = "One of the vessel lost parts after spawning.";
+                            var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
+                            message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1?.vesselName));
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             Debug.Log("[VesselSpawner]: " + message);
                             spawnFailureReason = SpawnFailureReason.VesselLostParts;
@@ -501,7 +505,7 @@ namespace BDArmory.Control
 
             if (allWeaponManagersAssigned)
             {
-                if (!spawnAirborne)
+                if (spawnConfig.altitude >= 0 && !spawnAirborne)
                 {
                     // Prevent the vessels from falling too fast and check if their velocities in the surface normal direction is below a threshold.
                     var vesselsHaveLanded = spawnedVessels.Keys.ToDictionary(v => v, v => (int)0); // 1=started moving, 2=landed.
@@ -525,7 +529,8 @@ namespace BDArmory.Control
                         // Check that none of the vessels have lost parts.
                         if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                         {
-                            message = "One of the vessel lost parts after spawning.";
+                            var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
+                            message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1?.vesselName));
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             spawnFailureReason = SpawnFailureReason.VesselLostParts;
                             break;
@@ -550,7 +555,8 @@ namespace BDArmory.Control
                     // Check that none of the vessels have lost parts.
                     if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                     {
-                        message = "One of the vessel lost parts after spawning.";
+                        var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
+                        message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1?.vesselName));
                         BDACompetitionMode.Instance.competitionStatus.Add(message);
                         spawnFailureReason = SpawnFailureReason.VesselLostParts;
                     }
@@ -589,6 +595,7 @@ namespace BDArmory.Control
                 if (spawnConfig.assignTeams)
                 {
                     // Assign the vessels to their own teams.
+                    Debug.Log("[VesselSpawner]: Assigning each vessel to its own team.");
                     LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
                     yield return new WaitForFixedUpdate();
                 }

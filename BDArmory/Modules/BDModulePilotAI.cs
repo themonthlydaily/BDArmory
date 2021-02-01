@@ -27,7 +27,7 @@ namespace BDArmory.Modules
 
         bool extending;
         double startedExtendingAt = 0;
-        string extendingReason = "";
+        // string extendingReason = "";
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
@@ -40,9 +40,9 @@ namespace BDArmory.Modules
         public void StopExtending()
         {
             extending = false;
-            extendingReason = "";
+            // extendingReason = "";
             startedExtendingAt = 0;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to request");
+            // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to request");
         }
 
         public void RequestExtend(Vector3 tPosition)
@@ -919,7 +919,7 @@ namespace BDArmory.Modules
                         //dangerous if low altitude and target is far below you - don't dive into ground!
                         if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
                         extending = true;
-                        extendingReason = "Too steeply below";
+                        // extendingReason = "Too steeply below";
                         lastTargetPosition = targetVessel.vesselTransform.position;
                     }
 
@@ -942,7 +942,7 @@ namespace BDArmory.Modules
                     {
                         if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
                         extending = true;
-                        extendingReason = "Can't turn fast enough";
+                        // extendingReason = "Can't turn fast enough";
                         lastTargetPosition = targetVessel.vesselTransform.position - vessel.Velocity();       //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
                         weaponManager.ForceScan();
                     }
@@ -950,7 +950,7 @@ namespace BDArmory.Modules
                     {
                         //extend if turning circles for too long
                         RequestExtend(targetVessel.vesselTransform.position);
-                        extendingReason = "Turning too long";
+                        // extendingReason = "Turning too long";
                         turningTimer = 0;
                         weaponManager.ForceScan();
                     }
@@ -964,7 +964,7 @@ namespace BDArmory.Modules
                     {
                         if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
                         extending = true;
-                        extendingReason = "Surface target";
+                        // extendingReason = "Surface target";
                         lastTargetPosition = targetVessel.transform.position;
                         weaponManager.ForceScan();
                     }
@@ -1209,7 +1209,7 @@ namespace BDArmory.Modules
                 && vessel.srfSpeed > idleSpeed)
             {
                 RequestExtend(lastTargetPosition); // Get far enough away to use the missile.
-                extendingReason = "Missile";
+                // extendingReason = "Missile";
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -1466,9 +1466,9 @@ namespace BDArmory.Modules
                 if (weaponManager.TargetOverride)
                 {
                     extending = false;
-                    extendingReason = "";
+                    // extendingReason = "";
                     startedExtendingAt = 0;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to target override");
+                    // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to target override");
                 }
 
                 float extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
@@ -1485,7 +1485,7 @@ namespace BDArmory.Modules
                     extendDistance = 300 * extendMult; // The effect of this is generally to extend for only 1 frame.
                     desiredMinAltitude = minAltitude;
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " extending for " + (Planetarium.GetUniversalTime() - startedExtendingAt) + "s due to \"" + extendingReason + "\" for distance " + extendDistance + ", expected time " + (extendDistance / vessel.srfSpeed) + "s");
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " extending for " + (Planetarium.GetUniversalTime() - startedExtendingAt) + "s due to \"" + extendingReason + "\" for distance " + extendDistance + ", expected time " + (extendDistance / vessel.srfSpeed) + "s");
 
                 Vector3 srfVector = Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection);
                 float srfDist = srfVector.magnitude;
@@ -1508,17 +1508,17 @@ namespace BDArmory.Modules
                 else // We're far enough away, stop extending.
                 {
                     extending = false;
-                    extendingReason = "";
+                    // extendingReason = "";
                     startedExtendingAt = 0;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to gone far enough (" + srfDist + " of " + extendDistance + ")");
+                    // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to gone far enough (" + srfDist + " of " + extendDistance + ")");
                 }
             }
             else // No weapon manager.
             {
                 extending = false;
-                extendingReason = "";
+                // extendingReason = "";
                 startedExtendingAt = 0;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to no weapon manager");
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG Stop extending due to no weapon manager");
             }
         }
 
@@ -1935,6 +1935,7 @@ namespace BDArmory.Modules
 
         bool FlyAvoidOthers(FlightCtrlState s) // Check for collisions with other vessels and try to avoid them.
         { // Mostly a re-hash of FlyAvoidCollision, but with terrain detection removed.
+            if (vesselCollisionAvoidancePeriod < Time.fixedDeltaTime) return false;
             if (collisionDetectionTimer > vesselCollisionAvoidancePeriod)
             {
                 collisionDetectionTimer = 0;
@@ -2453,6 +2454,11 @@ namespace BDArmory.Modules
             else if (command == PilotCommands.Attack)
             {
                 if ((BDArmorySettings.RUNWAY_PROJECT) && (targetVessel != null) && ((targetVessel.vesselTransform.position - vessel.vesselTransform.position).sqrMagnitude <= (weaponManager.guardRange * weaponManager.guardRange))) // If the vessel has a target within range, let it fight!
+                {
+                    ReleaseCommand();
+                    return;
+                }
+                else if (weaponManager.underAttack || weaponManager.underFire)
                 {
                     ReleaseCommand();
                     return;

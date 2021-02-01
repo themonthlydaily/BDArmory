@@ -27,7 +27,7 @@ namespace BDArmory.UI
             {
                 if (v != possibleValue)
                 {
-                    lastUpdated = Time.time;
+                    lastUpdated = !string.IsNullOrEmpty(v) ? Time.time : Time.time + 0.5; // Give the empty string an extra 0.5s.
                     possibleValue = v;
                     if (!coroutineRunning)
                     {
@@ -36,11 +36,18 @@ namespace BDArmory.UI
                 }
             }
 
-            private IEnumerator UpdateValueCoroutine()
+            IEnumerator UpdateValueCoroutine()
             {
                 coroutineRunning = true;
                 while (Time.time - lastUpdated < 0.5)
                     yield return new WaitForFixedUpdate();
+                tryParseCurrentValue();
+                coroutineRunning = false;
+                yield return new WaitForFixedUpdate();
+            }
+
+            void tryParseCurrentValue()
+            {
                 double newValue;
                 if (double.TryParse(possibleValue, out newValue))
                 {
@@ -48,8 +55,17 @@ namespace BDArmory.UI
                     lastUpdated = Time.time;
                 }
                 possibleValue = currentValue.ToString("G6");
-                coroutineRunning = false;
-                yield return new WaitForFixedUpdate();
+            }
+
+            // Parse the current possible value immediately.
+            public void tryParseValueNow()
+            {
+                tryParseCurrentValue();
+                if (coroutineRunning)
+                {
+                    StopCoroutine(coroutine);
+                    coroutineRunning = false;
+                }
             }
         }
 
@@ -158,7 +174,7 @@ namespace BDArmory.UI
             spawnFields = new Dictionary<string, SpawnField> {
                 { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, -90, 90) },
                 { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
-                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
+                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE) },
             };
             // if (BDArmorySettings.RUNWAY_PROJECT)
             // {
@@ -227,6 +243,16 @@ namespace BDArmory.UI
                 BDATournament.Instance.SetupTournament(BDArmorySettings.TOURNAMENT_FILES_LOCATION, BDArmorySettings.TOURNAMENT_ROUNDS, BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT);
             if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TOURNAMENT_RUN))
                 BDATournament.Instance.RunTournament();
+        }
+
+        void ParseAllSpawnFieldsNow()
+        {
+            spawnFields["lat"].tryParseValueNow();
+            spawnFields["lon"].tryParseValueNow();
+            spawnFields["alt"].tryParseValueNow();
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnFields["lat"].currentValue;
+            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
+            BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
         }
 
         private void SetNewHeight(float windowHeight)
@@ -369,9 +395,9 @@ namespace BDArmory.UI
                 spawnFields["lat"].tryParseValue(GUI.TextField(rects[0], spawnFields["lat"].possibleValue, 8));
                 spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8));
                 spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8));
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = Math.Min(Math.Max(spawnFields["lat"].currentValue, -90), 90);
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = Math.Min(Math.Max(spawnFields["lon"].currentValue, -180), 180);
-                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = Math.Max(0, (float)spawnFields["alt"].currentValue);
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnFields["lat"].currentValue;
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
+                BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
             }
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_LOCATIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations"), BDArmorySettings.SHOW_SPAWN_LOCATIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide spawn locations
@@ -436,6 +462,7 @@ namespace BDArmory.UI
                     default:
                         if (GUI.Button(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TournamentSetup"), BDArmorySetup.BDGuiSkin.button)) // Setup tournament
                         {
+                            ParseAllSpawnFieldsNow();
                             BDATournament.Instance.SetupTournament(BDArmorySettings.TOURNAMENT_FILES_LOCATION, BDArmorySettings.TOURNAMENT_ROUNDS, BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT);
                             BDArmorySetup.SaveConfig();
                         }
@@ -497,6 +524,7 @@ namespace BDArmory.UI
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_SingleSpawn"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 BDATournament.Instance.StopTournament();
+                ParseAllSpawnFieldsNow();
                 if (!_vesselsSpawned && !VesselSpawner.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
                 {
                     if (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING)
@@ -513,6 +541,7 @@ namespace BDArmory.UI
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_ContinuousSpawning"), VesselSpawner.Instance.vesselsSpawningContinuously ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 BDATournament.Instance.StopTournament();
+                ParseAllSpawnFieldsNow();
                 if (!VesselSpawner.Instance.vesselsSpawningContinuously && !_vesselsSpawned && Event.current.button == 0) // Left click
                 {
                     VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, true); // Spawn vessels continuously at 1km above terrain.
