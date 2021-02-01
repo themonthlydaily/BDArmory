@@ -31,7 +31,7 @@ namespace BDArmory.Modules
 
         public void Start()
         {
-            Debug.Log("[KerbalSafety]: Safety manager started.");
+            Debug.Log("[KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY ? " and enabled." : ", but currently disabled."));
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
         }
 
@@ -292,7 +292,7 @@ namespace BDArmory.Modules
         public void OnDestroy()
         {
             StopAllCoroutines();
-            if (!recovered)
+            if (BDArmorySettings.KERBAL_SAFETY && !recovered)
             {
                 Debug.Log("[KerbalSafety]: " + kerbalName + " is MIA.");
             }
