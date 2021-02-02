@@ -1331,7 +1331,7 @@ namespace BDArmory.Control
 
         #region Debris clean-up
         private HashSet<Vessel> nonCompetitorsToRemove = new HashSet<Vessel>();
-        public void RemoveNonCompetitors()
+        public void RemoveNonCompetitors(bool now = false)
         {
             foreach (var vessel in FlightGlobals.Vessels)
             {
@@ -1393,7 +1393,7 @@ namespace BDArmory.Control
                 if (!activePilot)
                 {
                     nonCompetitorsToRemove.Add(vessel);
-                    StartCoroutine(DelayedVesselRemovalCoroutine(vessel, BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY));
+                    StartCoroutine(DelayedVesselRemovalCoroutine(vessel, now ? 0f : BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY));
                 }
             }
         }

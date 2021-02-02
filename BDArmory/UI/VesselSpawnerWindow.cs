@@ -259,7 +259,7 @@ namespace BDArmory.UI
         {
             var previousWindowHeight = BDArmorySetup.WindowRectVesselSpawner.height;
             BDArmorySetup.WindowRectVesselSpawner.height = windowHeight;
-            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && windowHeight < previousWindowHeight && BDArmorySetup.WindowRectVesselSpawner.y + previousWindowHeight == Screen.height) // Window shrunk while being at edge of screen.
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && windowHeight < previousWindowHeight && Mathf.RoundToInt(BDArmorySetup.WindowRectVesselSpawner.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectVesselSpawner.y = Screen.height - BDArmorySetup.WindowRectVesselSpawner.height;
             BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSpawner);
         }
@@ -433,6 +433,18 @@ namespace BDArmory.UI
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnFields["lat"].currentValue;
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
+
+                if (GUI.Button(SLeftButtonRect(++line), Localizer.Format("#LOC_BDArmory_Settings_ClearDebrisNow"), BDArmorySetup.BDGuiSkin.button))
+                {
+                    // Clean up debris now
+                    BDACompetitionMode.Instance.RemoveDebrisNow();
+                }
+                if (GUI.Button(SRightButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_ClearBystandersNow"), BDArmorySetup.BDGuiSkin.button))
+                {
+                    // Clean up bystanders now
+                    BDACompetitionMode.Instance.RemoveNonCompetitors(true);
+                }
+                line += 0.3f;
             }
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.SHOW_SPAWN_LOCATIONS ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SpawnLocations"), BDArmorySettings.SHOW_SPAWN_LOCATIONS ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))//Show/hide spawn locations
@@ -461,6 +473,7 @@ namespace BDArmory.UI
                     }
                 }
                 line += (i - 1) / 4;
+                line += 0.3f;
             }
             // TODO Add a button for adding in spawn locations in the GUI.
 
