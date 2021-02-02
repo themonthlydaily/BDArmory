@@ -1308,7 +1308,7 @@ namespace BDArmory.Control
 
         #region Debris clean-up
         private HashSet<Vessel> nonCompetitorsToRemove = new HashSet<Vessel>();
-        public void RemoveNonCompetitors()
+        public void RemoveNonCompetitors(bool now = false)
         {
             foreach (var vessel in FlightGlobals.Vessels)
             {
@@ -1373,7 +1373,7 @@ namespace BDArmory.Control
                     if (vessel.vesselType == VesselType.SpaceObject) // Deal with any new comets or asteroids that have appeared immediately.
                         StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
                     else
-                        StartCoroutine(DelayedVesselRemovalCoroutine(vessel, BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY));
+                        StartCoroutine(DelayedVesselRemovalCoroutine(vessel, now ? 0f : BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY));
                 }
             }
         }
