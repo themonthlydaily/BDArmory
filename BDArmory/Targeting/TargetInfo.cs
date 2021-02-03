@@ -353,7 +353,7 @@ namespace BDArmory.Targeting
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
             float maxAccel = MaxThrust(vessel) / vessel.GetTotalMass(); // This assumes that all thrust is in the same direction.
             maxAccel = 0.1f * Mathf.Clamp(maxAccel / bodyGravity, 0f, 10f);
-            maxAccel = maxAccel == 0 ? -1 : maxAccel; // If max acceleration is zero (no engnines), set to -1 for stronger target priority
+            maxAccel = maxAccel == 0 ? -1 : maxAccel; // If max acceleration is zero (no engines), set to -1 for stronger target priority
             return maxAccel; // Output is -1 or 0-1 (0.1 is equal to body gravity)
         }
 
