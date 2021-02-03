@@ -225,7 +225,7 @@ namespace BDArmory.Modules
                     {
                         kerbals[crew].recovered = true;
                         Debug.Log("[KerbalSafety]: Recovering " + kerbals[crew].kerbalName + ".");
-                        Destroy(kerbals[crew]);
+                        kerbals[crew].RemoveHandlers();
                     }
                 }
             }
