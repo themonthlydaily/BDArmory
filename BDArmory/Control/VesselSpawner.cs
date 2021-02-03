@@ -43,10 +43,6 @@ namespace BDArmory.Control
             Destroy(spawnLocationCamera);
         }
 
-        private void OnGUI()
-        {
-        }
-
         #region Camera Adjustment
         GameObject spawnLocationCamera;
         Transform originalCameraParentTransform;
