@@ -210,6 +210,27 @@ namespace BDArmory.Modules
                 }
             }
         }
+
+        /// <summary>
+        /// Register all the crew members as recovered, then recover the vessel.
+        /// </summary>
+        /// <param name="vessel">The vessel to recover.</param>
+        public void RecoverVesselNow(Vessel vessel)
+        {
+            foreach (var part in vessel.parts.ToList())
+            {
+                foreach (var crew in part.protoModuleCrew.ToList())
+                {
+                    if (kerbals.ContainsKey(crew))
+                    {
+                        kerbals[crew].recovered = true;
+                        Debug.Log("[KerbalSafety]: Recovering " + kerbals[crew].kerbalName + ".");
+                        Destroy(kerbals[crew]);
+                    }
+                }
+            }
+            ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+        }
     }
 
     public class KerbalSafety : MonoBehaviour
