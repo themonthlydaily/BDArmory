@@ -2993,7 +2993,8 @@ namespace BDArmory.Modules
                 {
                     targetsTried.Add(potentialAirTarget);
                     SetTarget(potentialAirTarget);
-                    if (SmartPickWeapon_EngagementEnvelope(potentialAirTarget))
+                    // Pick target if we have a viable weapon or target priority/FFA targeting is in use
+                    if ((SmartPickWeapon_EngagementEnvelope(potentialAirTarget) || targetPriorityEnabled || BDArmorySettings.DEFAULT_FFA_TARGETING) && HasWeaponsAndAmmo())
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
@@ -3086,7 +3087,9 @@ namespace BDArmory.Modules
                         return;
                     }
                     */
-                    if (SmartPickWeapon_EngagementEnvelope(potentialTarget))
+
+                    // Pick target if we have a viable weapon or target priority/FFA targeting is in use
+                    if (SmartPickWeapon_EngagementEnvelope(potentialTarget) || this.targetPriorityEnabled || BDArmorySettings.DEFAULT_FFA_TARGETING)
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
@@ -3852,18 +3855,23 @@ namespace BDArmory.Modules
 
         void SetTarget(TargetInfo target)
         {
-            if (target)
+            if (target) // We have a target
             {
                 if (currentTarget)
                 {
                     currentTarget.Disengage(this);
                 }
                 target.Engage(this);
-                if (currentTarget != target && pilotAI && pilotAI.IsExtending) pilotAI.StopExtending();
+                if (currentTarget && currentTarget.Vessel != target.Vessel)
+                    if (pilotAI && pilotAI.IsExtending)
+                    {
+                        pilotAI.StopExtending(); // Only stop extending if the target is different
+                    }
                 currentTarget = target;
                 guardTarget = target.Vessel;
+
             }
-            else
+            else // No target, disengage
             {
                 if (currentTarget)
                 {
