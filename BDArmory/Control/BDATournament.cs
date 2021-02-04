@@ -125,7 +125,7 @@ namespace BDArmory.Control
                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                         BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                         true, // Kill everything first.
-                        true, // Assign teams.
+                        BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
                         0, // Number of teams.
                         null, // List of team numbers.
                         null, // List of List of teams' vessels.
@@ -236,8 +236,8 @@ namespace BDArmory.Control
                         BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                         BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                         true, // Kill everything first.
-                        true, // Assign teams.
-                        0, // Not used here.
+                        BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
+                        numberOfTeams, // Number of teams indicator.
                         null, //selectedCraft.Select(c => c.Count).ToList(), // Not used here.
                         selectedCraft, // List of lists of vessels. For splitting specific vessels into specific teams.
                         null, // No folder, we're going to specify the craft files.

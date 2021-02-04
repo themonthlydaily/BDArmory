@@ -412,6 +412,7 @@ namespace BDArmory.Control
                         team = pilot.weaponManager.Team.Name
                     };
                 }
+            if (VesselSpawner.Instance.originalTeams.Count == 0) VesselSpawner.Instance.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
         }
 
         IEnumerator DogfightCompetitionModeRoutine(float distance)
@@ -1724,7 +1725,7 @@ namespace BDArmory.Control
                 else if (pinataAlive && !alive.Contains("Pinata"))
                 {
                     // switch everyone onto separate teams when the Pinata Dies
-                    LoadedVesselSwitcher.Instance.MassTeamSwitch();
+                    LoadedVesselSwitcher.Instance.MassTeamSwitch(true);
                     pinataAlive = false;
                     competitionStatus.Add("Pinata is dead - competition is now a Free for all");
                     // start kill clock
