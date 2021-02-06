@@ -123,7 +123,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_TIME = 20; //Leak duration
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
         [BDAPersistantSettingsField] public static bool BD_AMMOBINS = false;   //can ammo bins explode?
-        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed	
+        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
         [BDAPersistantSettingsField] public static bool BD_PROPULSION = false; //engine thrust reduction, fires
         [BDAPersistantSettingsField] public static bool BD_BALANCED_THRUST = true;
         [BDAPersistantSettingsField] public static float BD_PROP_DAM_RATE = 1; //rate multiplier, 0.1-2
