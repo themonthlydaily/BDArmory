@@ -1968,7 +1968,7 @@ namespace BDArmory.Control
                     alive.Add(vessel.vesselName);
             }
 
-            // General result
+            // General result. (Note: use hand-coded JSON to make parsing easier in python.)
             var survivingTeams = new HashSet<string>();
             foreach (var vesselName in alive)
             {
@@ -1976,13 +1976,18 @@ namespace BDArmory.Control
                     survivingTeams.Add(Scores[vesselName].team);
             }
             if (survivingTeams.Count == 0)
-                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: RESULT: Mutual Annihilation");
+                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: RESULT:Mutual Annihilation");
             else if (survivingTeams.Count == 1)
             {
-                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: RESULT: Win: Team " + survivingTeams.First() + " (" + string.Join(", ", Scores.Where(s => s.Value.team == survivingTeams.First()).Select(s => s.Key)) + ")");
+                var winningTeam = survivingTeams.First();
+                var winningTeamMembers = Scores.Where(s => s.Value.team == winningTeam).Select(s => s.Key);
+                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: RESULT:Win:{\"team\": " + $"\"{winningTeam}\", \"members\": [" + string.Join(", ", winningTeamMembers.Select(m => $"\"{m}\"")) + "]}");
             }
             else
-                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: RESULT: Draw: Teams " + string.Join(", ", survivingTeams) + " (" + string.Join(", ", survivingTeams.Select(t => "{" + t + ": " + string.Join(", ", Scores.Where(s => s.Value.team == t).Select(s => s.Key)) + "}")) + ")");
+            {
+                var drawTeams = survivingTeams.ToDictionary(t => t, t => Scores.Where(s => s.Value.team == t).Select(s => s.Key));
+                logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: RESULT:Draw:[" + string.Join(", ", drawTeams.Select(t => "{\"team\": " + $"\"{t.Key}\"" + ", \"members\": [" + string.Join(", ", t.Value.Select(m => $"\"{m}\"")) + "]}")) + "]");
+            }
 
             // Record ALIVE/DEAD status of each craft.
             foreach (var vesselName in alive) // List ALIVE craft first
