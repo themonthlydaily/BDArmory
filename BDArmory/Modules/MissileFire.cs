@@ -3398,19 +3398,26 @@ namespace BDArmory.Modules
                             float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
                             bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
 
-                            if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabld
+                            if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabled
 
                             if ((targetWeapon != null) && (candidateGimbal = true && candidateTraverse > 0))
                             {
                                 candidatePower *= 1.5f; // weight selection towards turreted lasers
                             }
                             if ((targetWeapon != null) && (targetLaserDamage > candidatePower))
-                                continue; //dont replace better guns (but do replace missiles)
-
-                            targetWeapon = item.Current;
-                            targetLaserDamage = candidatePower;
-                            if (distance <= gunRange)
-                                break;
+                                continue; // Don't replace better lasers or replace with a weapon outside of its engage range
+                            else if ((targetWeapon == null) || (distance > ((EngageableWeapon)item.Current).engageRangeMin))
+                            {
+                                targetWeapon = item.Current;
+                                targetLaserDamage = candidatePower;
+                                if ((distance <= gunRange) && (distance > ((EngageableWeapon)item.Current).engageRangeMin))
+                                    break;  //If within engage range, use the laser
+                                else
+                                    continue; // If outside of engage range, keep looking for viable weapons,
+                            }
+                            else
+                                continue;
+                            
                         }
 
                         if (candidateClass == WeaponClasses.Gun)
