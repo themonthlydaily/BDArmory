@@ -728,7 +728,6 @@ namespace BDArmory.Control
             }
         }
 
-        HashSet<KerbalSeat> seatsToLeave = new HashSet<KerbalSeat>();
         public void CheckForAutonomousCombatSeat(Vessel vessel)
         {
             if (vessel == null) return;
@@ -741,14 +740,8 @@ namespace BDArmory.Control
                     PartExploderSystem.AddPartToExplode(vessel.parts[0]);
                     return;
                 }
-                var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
-                if (vessel.parts.Count == 2 && kerbalEVA != null) // Just a kerbal in a combat seat.
-                {
-                    seatsToLeave.Add(kerbalSeat);
-                    StartCoroutine(DelayedLeaveSeat(kerbalSeat));
-                    return;
-                }
                 // Check for a lack of control.
+                var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
                 var AI = vessel.FindPartModuleImplementing<BDModulePilotAI>();
                 if (kerbalEVA == null && AI != null && AI.pilotEnabled) // If not controlled by a kerbalEVA in a KerbalSeat, check the regular ModuleCommand parts.
                 {
@@ -759,17 +752,6 @@ namespace BDArmory.Control
                         AI.DeactivatePilot();
                     }
                 }
-            }
-        }
-
-        IEnumerator DelayedLeaveSeat(KerbalSeat kerbalSeat, float delay = 3f)
-        {
-            yield return new WaitForSeconds(delay);
-            if (kerbalSeat != null)
-            {
-                Debug.Log("[BDACompetitionMode]: Found a kerbal in a combat chair just falling, ejecting.");
-                seatsToLeave.Remove(kerbalSeat);
-                kerbalSeat.LeaveSeat(new KSPActionParam(KSPActionGroup.Abort, KSPActionType.Activate));
             }
         }
 
@@ -1407,7 +1389,7 @@ namespace BDArmory.Control
             {
                 if (debris != null && debrisTypes.Contains(debris.vesselType))
                 {
-                    StartCoroutine(DelayedVesselRemovalCoroutine(debris, BDArmorySettings.DEBRIS_CLEANUP_DELAY));
+                    StartCoroutine(DelayedVesselRemovalCoroutine(debris, debris.vesselType == VesselType.SpaceObject ? 0 : BDArmorySettings.DEBRIS_CLEANUP_DELAY));
                 }
             }
             catch
@@ -1420,7 +1402,7 @@ namespace BDArmory.Control
         {
             var vesselType = vessel.vesselType;
             yield return new WaitForSeconds(delay);
-            if (vessel != null && vesselType == VesselType.Debris && vessel.vesselType != VesselType.Debris)
+            if (vessel != null && debrisTypes.Contains(vesselType) && !debrisTypes.Contains(vessel.vesselType))
             {
                 Debug.Log("[BDACompetitionMode]: Debris " + vessel.vesselName + " is no longer labelled as debris, not removing.");
                 yield break;
