@@ -277,7 +277,7 @@ namespace BDArmory.Modules
             }
             else if (crew != null) // Eject from a cockpit.
             {
-                Debug.Log("DEBUG skipping ejection for " + kerbalName + " in cockpit " + part + " for now."); return;
+                Debug.Log("[KerbalSafety]: DEBUG skipping ejection for " + kerbalName + " in cockpit " + part + " for now."); return;
                 // kerbalEVA = FlightEVA.fetch.spawnEVA(kerbalPCM, part, part.airlock, true);
                 // if (kerbalEVA)
                 // {
@@ -367,7 +367,7 @@ namespace BDArmory.Modules
                         }
                     }
                     else
-                        Debug.Log("DEBUG " + kerbalName + " was not active.");
+                        Debug.Log("[KerbalSafety]: " + kerbalName + " was not active (probably dead and being cleaned up by KSP already).");
                 }
                 else // It's a crew.
                 {
