@@ -61,6 +61,16 @@ namespace BDArmory.FX
             {
                 burnTime = 20; //though ajdacent parts will take longer to get to and extingusih
             }
+            if (parentPart.GetComponent<ModuleSelfSealingTank>() != null)
+            {
+                ModuleSelfSealingTank FBX;
+                FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
+                if (FBX.FireBottles > 0)
+                {
+                    FBX.FireBottles--;
+                    burnTime = 10;
+                }
+            }
         }
         void onDisable()
         {
