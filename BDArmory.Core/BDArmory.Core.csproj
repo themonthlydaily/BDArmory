@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BDArmory.Core</RootNamespace>
     <AssemblyName>BDArmory.Core</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -21,7 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>6</LangVersion>
+    <LangVersion>default</LangVersion>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -31,90 +31,91 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <LangVersion>6</LangVersion>
+    <LangVersion>default</LangVersion>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BDAPersistantSettingsField.cs" />
+    <Compile Include="BDArmorySettings.cs" />
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="BuildingDamage.cs" />
     <Compile Include="Dependencies.cs" />
     <Compile Include="Enum\DamageOperation.cs" />
+    <Compile Include="Events\DamageEventArgs.cs" />
     <Compile Include="Extension\DamageFX.cs" />
     <Compile Include="Extension\PartExtensions.cs" />
-    <Compile Include="Events\DamageEventArgs.cs" />
     <Compile Include="Extension\VesselExtensions.cs" />
+    <Compile Include="Interface\INotificableService.cs" />
     <Compile Include="Module\HitpointTracker.cs" />
     <Compile Include="PartExploderSystem.cs" />
     <Compile Include="PerformanceLogger.cs" />
-    <Compile Include="Services\DamageService.cs" />
-    <Compile Include="Interface\INotificableService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\NotificableService.cs" />
+    <Compile Include="Services\DamageService.cs" />
     <Compile Include="Services\ModuleDamageService.cs" />
-    <Compile Include="BDArmorySettings.cs" />
+    <Compile Include="Services\NotificableService.cs" />
+    <Compile Include="Utils\BDAMath.cs" />
     <Compile Include="Utils\BlastPhysicsUtils.cs" />
     <Compile Include="Utils\BulletPhysics.cs" />
+    <Compile Include="Utils\ConfigNodeUtils.cs" />
     <Compile Include="Utils\DebugUtils.cs" />
-    <Compile Include="Utils\BDAMath.cs" />
     <Compile Include="Utils\LayerMask.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\BDArmory-1346SI\lib\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="KSPAssets, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\BDArmory-1346SI\lib\KSPAssets.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\KSPAssets.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.ImageConversionModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.IMGUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputLegacyModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.InputModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.InputModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextCoreModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.TextCoreModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextCoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UI.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIElementsModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UIElementsModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIElementsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UnityWebRequestWWWModule">
-      <HintPath>..\..\BDArmory-1346SI\lib\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+      <HintPath>..\..\_LocalDev\KSPRefs\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

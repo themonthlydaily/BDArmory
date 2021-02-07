@@ -207,7 +207,7 @@ namespace BDArmory.Modules
         void ReceiveLaunchWarning(Vector3 source, Vector3 direction)
         {
             if (referenceTransform == null) return;
-            if (part == null) return;
+            if (part == null || !part.isActiveAndEnabled) return;
             if (weaponManager == null) return;
 
             float sqrDist = (part.transform.position - source).sqrMagnitude;
@@ -368,6 +368,7 @@ namespace BDArmory.Modules
             if (GUI.Button(new Rect(BDArmorySetup.WindowRectRwr.width - 18, 2, 16, 16), "X", GUI.skin.button))
             {
                 displayRWR = false;
+                BDArmorySetup.SaveConfig();
             }
             GUI.BeginGroup(new Rect(BorderSize / 2, HeaderSize + (BorderSize / 2), RwrDisplayRect.width, RwrDisplayRect.height));
             //GUI.DragWindow(RwrDisplayRect);
@@ -454,17 +455,16 @@ namespace BDArmory.Modules
 
         public static void PingRWR(Ray ray, float fov, RWRThreatTypes type, float persistTime)
         {
-            List<Vessel>.Enumerator vessel = FlightGlobals.Vessels.GetEnumerator();
-            while (vessel.MoveNext())
-            {
-                if (vessel.Current == null || !vessel.Current.loaded) continue;
-                Vector3 dirToVessel = vessel.Current.transform.position - ray.origin;
-                if (Vector3.Angle(ray.direction, dirToVessel) < fov / 2)
+            using (var vessel = FlightGlobals.Vessels.GetEnumerator())
+                while (vessel.MoveNext())
                 {
-                    PingRWR(vessel.Current, ray.origin, type, persistTime);
+                    if (vessel.Current == null || !vessel.Current.loaded) continue;
+                    Vector3 dirToVessel = vessel.Current.transform.position - ray.origin;
+                    if (Vector3.Angle(ray.direction, dirToVessel) < fov / 2)
+                    {
+                        PingRWR(vessel.Current, ray.origin, type, persistTime);
+                    }
                 }
-            }
-            vessel.Dispose();
         }
 
         public static void WarnMissileLaunch(Vector3 source, Vector3 direction)
