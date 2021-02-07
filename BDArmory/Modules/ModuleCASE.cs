@@ -13,10 +13,13 @@ using UnityEngine;
 
 namespace BDArmory.Modules
 {
-    class ModuleCASE : PartModule
+    class ModuleCASE : PartModule, IPartMassModifier, IPartCostModifier
     {
-        [KSPField]
-        public int CASELevel = 0; //tier of ammo storage. 0 = nothing, ammosplosion; 1 = base, ammosplosion contained(barely), 2 = blast safely shunted outside, minimal damage to surrounding parts
+        public float GetModuleMass(float baseMass, ModifierStagingSituation situation) => CASEmass;
+        public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
+        public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => CASEcost;
+        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
+        
         private double ammoMass;
         private double ammoQuantity;
         private double ammoExplosionYield = 0;
@@ -39,6 +42,87 @@ namespace BDArmory.Modules
                 part.force_activate();
             }
         }
+        
+        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_DryMass")]//CASE mass
+        public float CASEmass = 0f;
+
+        private float CASEcost = 0f;
+        private float origCost = 0;
+        private float origMass = 0f;
+        
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CASE"),//Cellular Ammo Storage Equipment Tier
+        UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)] 
+        public float CASELevel = 0; //tier of ammo storage. 0 = nothing, ammosplosion; 1 = base, ammosplosion contained(barely), 2 = blast safely shunted outside, minimal damage to surrounding parts
+
+public void Start()
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                var internalmag = part.FindModuleImplementing<ModuleWeapon>();
+                if (internalmag != null)
+                {
+                    Fields["CASELevel"].guiActiveEditor = false;
+                    Fields["CASEmass"].guiActiveEditor = false;
+                }
+                else
+                {
+                    UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["CASELevel"].uiControlEditor;
+                    ATrangeEditor.onFieldChanged = CASESetup;
+                }
+                origMass = part.mass;
+                CASEmass = origMass;
+                //origScale = part.rescaleFactor;
+                origCost = part.partInfo.cost;
+                CASESetup(null, null);
+            }
+        }
+        void CASESetup(BaseField field, object obj)
+        {
+                CASEmass = (origMass + ((origMass / 2) * CASELevel));
+                //part.mass = CASEmass;
+                CASEcost = origCost + (CASELevel * 1000);
+                //part.transform.localScale = (Vector3.one * (origScale + (CASELevel/10)));
+                Debug.Log("[SST Debug] part.mass = " + part.mass + "; CASElevel = " + CASELevel + "; CASEMass = " + CASEmass + "; Scale = "+part.transform.localScale);
+        }
+        public override void OnLoad(ConfigNode node)
+        {
+            base.OnLoad(node);
+
+            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) return;
+
+            if (part.partInfo != null)
+            {
+                if (HighLogic.LoadedSceneIsEditor)
+                {
+                    CASESetup(null, null);
+                }
+                else
+                {
+                    if (part.vessel != null) 
+                    {
+                        var CASEString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleCASE", "CASELevel");
+                        if (!string.IsNullOrEmpty(CASEString)) 
+                        {
+                            try
+                            {
+                                CASELevel = float.Parse(CASEString);
+                                CASESetup(null, null);
+                            }
+                            catch (Exception e)
+                            {
+                            }
+                        }
+                        else
+                            CASELevel = 0f;
+                    }
+                    else // Don't.
+                    {
+                        enabled = false;
+                    }
+                }
+            }
+        }
+
         private List<PartResource> GetResources()
         {
             List<PartResource> resources = new List<PartResource>();
