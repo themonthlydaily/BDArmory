@@ -529,8 +529,6 @@ namespace BDArmory.Control
                     var distanceUnderWater = -FlightGlobals.getAltitudeAtPos(finalSpawnPositions[vesselName]);
                     if (distanceUnderWater >= 0) // Under water, move the vessel to the surface.
                     {
-                        // finalSpawnPositions[vesselName] += (float)distanceUnderWater * localRadialUnitVector;
-                        // if (!spawnAirborne)
                         vessel.Splashed = true; // Set the vessel as splashed.
                     }
                 }
