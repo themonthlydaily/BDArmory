@@ -92,7 +92,7 @@ with open(tournamentDir / 'results.json', 'w') as outFile:
 craftNames = sorted(list(set(craft for round in tournamentData.values() for heat in round.values() for craft in heat['craft'].keys())))
 teamWins = Counter([team for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Win" for team in heat['result']['teams']])
 teamDraws = Counter([team for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Draw" for team in heat['result']['teams']])
-teams = {team: members for round in tournamentData.values() for heat in round.values() for team, members in heat['result']['teams'].items()}
+teams = {team: members for round in tournamentData.values() for heat in round.values() if 'teams' in heat['result'] for team, members in heat['result']['teams'].items()}
 summary = {
 	'craft': {
 		craft: {
@@ -158,9 +158,10 @@ if len(summary['craft']) > 0:
 		)
 
 	teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
-	name_length = max([len(team) for team in teamNames])
-	print(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tVessels")
-	for team in teamNames:
-		print(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{summary['teams'][team]}")
+	if len(teamNames) > 0:
+		name_length = max([len(team) for team in teamNames])
+		print(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tVessels")
+		for team in teamNames:
+			print(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{summary['teams'][team]}")
 else:
 	print("No valid log files found.")
