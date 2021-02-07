@@ -268,18 +268,14 @@ namespace BDArmory.Control
                 var dummyVar = EditorFacility.None;
                 Vector3d dummySpawnCoords;
                 FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + 100f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-                Debug.Log("DEBUG Spawning SpawnProbe at " + dummySpawnCoords.ToString("0.0") + " at altitude " + Misc.Misc.GetRadarAltitudeAtPos(FlightGlobals.fetch.transform.position + 100f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized));
                 Vessel spawnProbe = SpawnVesselFromCraftFile($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft", dummySpawnCoords, 0, 0f, out dummyVar);
                 spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
-                Debug.Log("DEBUG Waiting for SpawnProbe to finish spawning.");
                 yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
                 {
                     LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
-                    Debug.Log("DEBUG Waiting for switch to SpawnProbe");
                     yield return new WaitForFixedUpdate();
                 }
-                Debug.Log("DEBUG Ready to proceed.");
                 // Kill all other vessels (including debris).
                 foreach (var vessel in vesselsToKill)
                     RemoveVessel(vessel);
@@ -1471,7 +1467,6 @@ namespace BDArmory.Control
             }
             if (vessel != FlightGlobals.ActiveVessel && vessel.vesselType != VesselType.SpaceObject)
             {
-                Debug.Log("DEBUG Recovering " + vessel.vesselName);
                 if (BDArmorySettings.KERBAL_SAFETY)
                     KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
                 else
@@ -1479,23 +1474,6 @@ namespace BDArmory.Control
             }
             else
             {
-                Debug.Log("DEBUG Killing " + vessel.vesselName);
-                // if (BDArmorySettings.KERBAL_SAFETY)
-                // {
-                //     yield return KerbalSafetyManager.Instance.RecoverCrewFromVesselNow(vessel);
-                //     if (vessel.parts.Count == 1 && vessel.parts[0].isKerbalEVA()) // Vessel is just a kerbal on EVA.
-                //     {
-                //         // Crew being recovered is a kerbal on EVA.
-                //         --removeVesselsPending;
-                //         yield break;
-                //     }
-                //     yield return new WaitForFixedUpdate(); // Give changes a chance to occur.
-                // }
-                // if (vessel == null) // She's dead, Jim.
-                // {
-                //     --removeVesselsPending;
-                //     yield break;
-                // }
                 if (vessel.vesselType == VesselType.SpaceObject)
                 {
                     var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
