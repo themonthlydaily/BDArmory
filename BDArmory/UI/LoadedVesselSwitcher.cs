@@ -617,7 +617,7 @@ namespace BDArmory.UI
             // selects current target
             if (targetName != "")
             {
-                Rect targettingButtonRect = new Rect(_margin + vesselButtonWidth + _offset, height, _buttonHeight, _buttonHeight);
+                Rect targetingButtonRect = new Rect(_margin + vesselButtonWidth + _offset, height, _buttonHeight, _buttonHeight);
                 GUIStyle targButton = BDArmorySetup.BDGuiSkin.button;
                 if (wm.currentGun != null && wm.currentGun.recentlyFiring)
                 {
@@ -634,7 +634,7 @@ namespace BDArmory.UI
                         targButton = blueLight;
                     }
                 }
-                if (GUI.Button(targettingButtonRect, incomingThreat ? "><" : "[]", targButton))
+                if (GUI.Button(targetingButtonRect, incomingThreat ? "><" : "[]", targButton))
                     ForceSwitchVessel(targetVessel);
             }
 
