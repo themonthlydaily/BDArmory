@@ -18,10 +18,17 @@ namespace BDArmory.Misc
 
             if (BDArmorySettings.BD_TANKS)
             {
-                if (part.HasFuel() && penetrationFactor > 1.2 && part.GetDamagePercentage() < 0.75f)
+                if (part.HasFuel())
                 {
-                    BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
-                }
+                    var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (rubbertank != null)
+                    {
+                        if (rubbertank.SSTank && part.GetDamagePercentatge() > 0.75f) return;
+                    }
+                    if (penetrationFactor > 1.2)
+                    {
+                        BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
+                    }
                 if (part.isBattery())
                 {
                     var alreadyburning = part.GetComponentInChildren<FireFX>();
