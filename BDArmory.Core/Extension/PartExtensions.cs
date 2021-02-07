@@ -238,7 +238,7 @@ namespace BDArmory.Core.Extension
             return armor_ / maxArmor_;
         }
 
-        public static float GetDamagePercentatge(this Part p)
+        public static float GetDamagePercentage(this Part p)
         {
             if (p == null) return 0;
 
