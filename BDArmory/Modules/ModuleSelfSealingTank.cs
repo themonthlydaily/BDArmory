@@ -51,17 +51,17 @@ namespace BDArmory.Modules
             Misc.Misc.RefreshAssociatedWindows(part);
         }
 
-        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_DryMass")]//Dry mass
+        [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_AddedMass")]//CASE mass
         public float partmass = 0f;
 
         private float FBmass = 0f;
         private float origMass = 0f;
         
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Fire Bottles"),//Fire Bottles
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireBottles"),//Fire Bottles
         UI_FloatRange(minValue = 0, maxValue = 3, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float FireBottles = 0;
 
-        [KSPField(isPersistant = true, guiActive = true, guiName = "Fire Bottles Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_FB_Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
         public float FBRemaining;
 
         public void Start()
@@ -71,7 +71,6 @@ namespace BDArmory.Modules
                 UI_FloatRange FBEditor = (UI_FloatRange)Fields["FireBottles"].uiControlEditor;
                 FBEditor.onFieldChanged = FBSetup;
                 origMass = part.mass;
-                partmass = origMass;
                 FBSetup(null, null);
             }
             var engine = part.FindModuleImplementing<ModuleEngines>();
@@ -122,7 +121,7 @@ namespace BDArmory.Modules
         {   
             FBmass = (0.01f * FireBottles);
             FBRemaining = FireBottles;
-            partmass = (origMass + FBmass);
+            partmass = FBmass;
             //part.mass = partmass;
             Misc.Misc.RefreshAssociatedWindows(part);
         }
