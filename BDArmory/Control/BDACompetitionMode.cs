@@ -339,6 +339,8 @@ namespace BDArmory.Control
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
+                if (BDArmorySettings.KERBAL_SAFETY)
+                    KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
             }
         }
 
@@ -726,22 +728,9 @@ namespace BDArmory.Control
             }
         }
 
-        HashSet<ModuleEvaChute> chutesToDeploy = new HashSet<ModuleEvaChute>();
-        HashSet<KerbalSeat> seatsToLeave = new HashSet<KerbalSeat>();
         public void CheckForAutonomousCombatSeat(Vessel vessel)
         {
             if (vessel == null) return;
-            var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
-            if (kerbalEVA != null && vessel.parts.Count == 1) // Check for a falling kerbal.
-            {
-                var chute = kerbalEVA.vessel.FindPartModuleImplementing<ModuleEvaChute>();
-                if (chute != null && chute.deploymentState != ModuleParachute.deploymentStates.DEPLOYED && !chutesToDeploy.Contains(chute))
-                {
-                    chutesToDeploy.Add(chute);
-                    StartCoroutine(DelayedChuteDeployment(chute, kerbalEVA));
-                }
-                return;
-            }
             var kerbalSeat = vessel.FindPartModuleImplementing<KerbalSeat>();
             if (kerbalSeat != null)
             {
@@ -751,13 +740,8 @@ namespace BDArmory.Control
                     PartExploderSystem.AddPartToExplode(vessel.parts[0]);
                     return;
                 }
-                if (vessel.parts.Count == 2 && kerbalEVA != null) // Just a kerbal in a combat seat.
-                {
-                    seatsToLeave.Add(kerbalSeat);
-                    StartCoroutine(DelayedLeaveSeat(kerbalSeat));
-                    return;
-                }
                 // Check for a lack of control.
+                var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
                 var AI = vessel.FindPartModuleImplementing<BDModulePilotAI>();
                 if (kerbalEVA == null && AI != null && AI.pilotEnabled) // If not controlled by a kerbalEVA in a KerbalSeat, check the regular ModuleCommand parts.
                 {
@@ -768,31 +752,6 @@ namespace BDArmory.Control
                         AI.DeactivatePilot();
                     }
                 }
-            }
-        }
-
-        IEnumerator DelayedChuteDeployment(ModuleEvaChute chute, KerbalEVA kerbal, float delay = 1f)
-        {
-            yield return new WaitForSeconds(delay);
-            if (chute != null && kerbal != null && !kerbal.IsSeated()) // Check that the kerbal hasn't regained their seat.
-            {
-                Debug.Log("[BDACompetitionMode]: Found a falling kerbal, deploying halo parachute.");
-                chutesToDeploy.Remove(chute);
-                if (chute.deploymentState != ModuleParachute.deploymentStates.SEMIDEPLOYED)
-                    chute.deploymentState = ModuleParachute.deploymentStates.STOWED; // Reset the deployment state.
-                chute.deployAltitude = 30f;
-                chute.Deploy();
-            }
-        }
-
-        IEnumerator DelayedLeaveSeat(KerbalSeat kerbalSeat, float delay = 3f)
-        {
-            yield return new WaitForSeconds(delay);
-            if (kerbalSeat != null)
-            {
-                Debug.Log("[BDACompetitionMode]: Found a kerbal in a combat chair just falling, ejecting.");
-                seatsToLeave.Remove(kerbalSeat);
-                kerbalSeat.LeaveSeat(new KSPActionParam(KSPActionGroup.Abort, KSPActionType.Activate));
             }
         }
 
@@ -1403,7 +1362,10 @@ namespace BDArmory.Control
                 if (!activePilot)
                 {
                     nonCompetitorsToRemove.Add(vessel);
-                    StartCoroutine(DelayedVesselRemovalCoroutine(vessel, now ? 0f : BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY));
+                    if (vessel.vesselType == VesselType.SpaceObject) // Deal with any new comets or asteroids that have appeared immediately.
+                        StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
+                    else
+                        StartCoroutine(DelayedVesselRemovalCoroutine(vessel, now ? 0f : BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY));
                 }
             }
         }
@@ -1415,18 +1377,19 @@ namespace BDArmory.Control
                 if (vessel == null) continue;
                 if (vessel.vesselType == VesselType.Debris) // Clean up any old debris.
                     StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
-                if (vessel.vesselType == VesselType.SpaceObject) // Remove comets and asteroids to try to avoid null refs.
+                if (vessel.vesselType == VesselType.SpaceObject) // Remove comets and asteroids to try to avoid null refs. (Still get null refs from comets, but it seems better with this than without it.)
                     StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
             }
         }
 
+        HashSet<VesselType> debrisTypes = new HashSet<VesselType> { VesselType.Debris, VesselType.SpaceObject }; // Consider space objects as debris.
         void DebrisDelayedCleanUp(Vessel debris)
         {
             try
             {
-                if (debris != null && debris.vesselType == VesselType.Debris)
+                if (debris != null && debrisTypes.Contains(debris.vesselType))
                 {
-                    StartCoroutine(DelayedVesselRemovalCoroutine(debris, BDArmorySettings.DEBRIS_CLEANUP_DELAY));
+                    StartCoroutine(DelayedVesselRemovalCoroutine(debris, debris.vesselType == VesselType.SpaceObject ? 0 : BDArmorySettings.DEBRIS_CLEANUP_DELAY));
                 }
             }
             catch
@@ -1439,24 +1402,41 @@ namespace BDArmory.Control
         {
             var vesselType = vessel.vesselType;
             yield return new WaitForSeconds(delay);
-            if (vessel != null && vesselType == VesselType.Debris && vessel.vesselType != VesselType.Debris)
+            if (vessel != null && debrisTypes.Contains(vesselType) && !debrisTypes.Contains(vessel.vesselType))
             {
                 Debug.Log("[BDACompetitionMode]: Debris " + vessel.vesselName + " is no longer labelled as debris, not removing.");
                 yield break;
             }
             if (vessel != null)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDACompetitionMode]: Removing " + vessel.GetName());
-                vessel.Die();
-            }
-            yield return new WaitForFixedUpdate();
-            if (vessel != null)
-            {
-                var partsToKill = vessel.parts.ToList();
-                foreach (var part in partsToKill)
-                    if (part != null)
-                        part.Die();
+                if (vessel.parts.Count == 1 && vessel.parts[0].isKerbalEVA()) // The vessel is a kerbal on EVA. Ignore it for now.
+                {
+                    // KerbalSafetyManager.Instance.CheckForFallingKerbals(vessel);
+                    if (nonCompetitorsToRemove.Contains(vessel)) nonCompetitorsToRemove.Remove(vessel);
+                    yield break;
+                    // var kerbalEVA = vessel.FindPartModuleImplementing<KerbalEVA>();
+                    // if (kerbalEVA != null)
+                    //     StartCoroutine(KerbalSafetyManager.Instance.RecoverWhenPossible(kerbalEVA));
+                }
+                else
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        Debug.Log("[BDACompetitionMode]: Removing " + vessel.GetName());
+                    if (vessel.vesselType == VesselType.SpaceObject)
+                    {
+                        var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
+                        if (cometVessel) { Destroy(cometVessel); }
+                    }
+                    vessel.Die();
+                    yield return new WaitForFixedUpdate();
+                    if (vessel != null)
+                    {
+                        var partsToKill = vessel.parts.ToList();
+                        foreach (var part in partsToKill)
+                            if (part != null)
+                                part.Die();
+                    }
+                }
             }
             if (nonCompetitorsToRemove.Contains(vessel))
             {
@@ -1957,7 +1937,7 @@ namespace BDArmory.Control
             // get everyone who's still alive
             alive.Clear();
             competitionStatus.Add("Dumping scores for competition " + CompetitionID.ToString() + (tag != "" ? " " + tag : ""));
-            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
+            logStrings.Add("[BDArmoryCompetition:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s (of " + (BDArmorySettings.COMPETITION_DURATION * 60d) + "s) at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
             // Find out who's still alive
             foreach (var vessel in FlightGlobals.Vessels)
