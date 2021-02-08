@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -23,6 +24,7 @@ namespace BDArmory.Targeting
         public float radarLockbreakFactor;
         public float radarJammingDistance;
         public bool alreadyScheduledRCSUpdate = false;
+        public float radarMassAtUpdate = 0f;
 
         public bool isLandedOrSurfaceSplashed
         {
@@ -239,9 +241,17 @@ namespace BDArmory.Targeting
 
         IEnumerator UpdateRCSDelayed()
         {
-            alreadyScheduledRCSUpdate = true;
-            yield return new WaitForSeconds(1.0f);
-            //radarBaseSignatureNeedsUpdate = true;     //TODO: currently disabled to reduce stuttering effects due to more demanding radar rendering!
+            if (radarMassAtUpdate > 0)
+            {
+                float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
+                if (massPercentageDifference > 0.025f)
+                {
+                    alreadyScheduledRCSUpdate = true;
+                    yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
+                    radarBaseSignatureNeedsUpdate = true;     // Update RCS if vessel mass changed by more than 2.5% after a part was lost
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
+                }
+            }
         }
 
         void Update()
@@ -268,6 +278,49 @@ namespace BDArmory.Targeting
                 return friendlies.Count;
             }
             return 0;
+        }
+
+        public float MaxThrust(Vessel v)
+        {
+            float maxThrust = 0;
+            float finalThrust = 0;
+
+            using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+                while (engines.MoveNext())
+                {
+                    if (engines.Current == null) continue;
+                    if (!engines.Current.EngineIgnited) continue;
+
+                    MultiModeEngine mme = engines.Current.part.FindModuleImplementing<MultiModeEngine>();
+                    if (IsAfterBurnerEngine(mme))
+                    {
+                        mme.autoSwitch = false;
+                    }
+
+                    if (mme && mme.mode != engines.Current.engineID) continue;
+                    float engineThrust = engines.Current.maxThrust;
+                    if (engines.Current.atmChangeFlow)
+                    {
+                        engineThrust *= engines.Current.flowMultiplier;
+                    }
+                    maxThrust += Mathf.Max(0f, engineThrust * (engines.Current.thrustPercentage / 100f)); // Don't include negative thrust percentage drives (Danny2462 drives) as they don't contribute to the thrust.
+
+                    finalThrust += engines.Current.finalThrust;
+                }
+            return maxThrust;
+        }
+
+        private static bool IsAfterBurnerEngine(MultiModeEngine engine)
+        {
+            if (engine == null)
+            {
+                return false;
+            }
+            if (!engine)
+            {
+                return false;
+            }
+            return engine.primaryEngineID == "Dry" && engine.secondaryEngineID == "Wet";
         }
 
         #region Target priority
@@ -298,8 +351,10 @@ namespace BDArmory.Targeting
         public float TargetPriAcceleration() // Normalized clamped acceleration for the target
         {
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
-            float forwardAccel = Mathf.Abs((float)Vector3.Dot(vessel.acceleration, vessel.vesselTransform.up)); // Forward acceleration
-            return 0.1f * Mathf.Clamp(forwardAccel / bodyGravity, 0f, 10f); // Output is 0-1 (0.1 is equal to body gravity)
+            float maxAccel = MaxThrust(vessel) / vessel.GetTotalMass(); // This assumes that all thrust is in the same direction.
+            maxAccel = 0.1f * Mathf.Clamp(maxAccel / bodyGravity, 0f, 10f);
+            maxAccel = maxAccel == 0f ? -1f : maxAccel; // If max acceleration is zero (no engines), set to -1 for stronger target priority
+            return maxAccel; // Output is -1 or 0-1 (0.1 is equal to body gravity)
         }
 
         public float TargetPriClosureTime(MissileFire myMf) // Time to closest point of approach, normalized for one minute
@@ -333,8 +388,10 @@ namespace BDArmory.Targeting
             if (myMf == null || myMf.wingCommander == null || myMf.wingCommander.friendlies == null) return 0;
             float friendsEngaging = Mathf.Max(NumFriendliesEngaging(myMf.Team) - 1, 0);
             float teammates = myMf.wingCommander.friendlies.Count;
+            friendsEngaging = 1 - Mathf.Clamp(friendsEngaging / teammates, 0f, 1f);
+            friendsEngaging = friendsEngaging == 0f ? -1f : friendsEngaging;
             if (teammates > 0)
-                return 1 - Mathf.Clamp(friendsEngaging / teammates, 0f, 1f); // Ranges from 0 to 1
+                return friendsEngaging; // Range is -1, 0 to 1. -1 if all teammates are engaging target, between 0-1 otherwise depending on number of teammates engaging
             else
                 return 0; // No teammates
         }

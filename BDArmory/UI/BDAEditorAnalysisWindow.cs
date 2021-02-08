@@ -143,9 +143,9 @@ namespace BDArmory.UI
                 HideToolbarGUI();
             }
 
-            GUI.Label(new Rect(10, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[0, 0]}, El {RadarUtils.worstRCSAspects[0, 1]}", BDArmorySetup.BDGuiSkin.box);
-            GUI.Label(new Rect(220, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[1, 0]}, El {RadarUtils.worstRCSAspects[1, 1]}", BDArmorySetup.BDGuiSkin.box);
-            GUI.Label(new Rect(430, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[2, 0]}, El {RadarUtils.worstRCSAspects[2, 1]}", BDArmorySetup.BDGuiSkin.box);
+            GUI.Label(new Rect(10, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[0, 0].ToString("0")}, El {RadarUtils.worstRCSAspects[0, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
+            GUI.Label(new Rect(220, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[1, 0].ToString("0")}, El {RadarUtils.worstRCSAspects[1, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
+            GUI.Label(new Rect(430, 40, 200, 20), $"Az {RadarUtils.worstRCSAspects[2, 0].ToString("0")}, El {RadarUtils.worstRCSAspects[2, 1].ToString("0")}", BDArmorySetup.BDGuiSkin.box);
 
             if (takeSnapshot)
                 takeRadarSnapshot();
