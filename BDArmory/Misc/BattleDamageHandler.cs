@@ -23,12 +23,13 @@ namespace BDArmory.Misc
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
-                        if (rubbertank.SSTank && part.GetDamagePercentatge() > 0.75f) return;
+                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.75f) return;
                     }
                     if (penetrationFactor > 1.2)
                     {
                         BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
                     }
+                }
                 if (part.isBattery())
                 {
                     var alreadyburning = part.GetComponentInChildren<FireFX>();

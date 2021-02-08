@@ -4,6 +4,7 @@ using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using BDArmory.Misc;
+using BDArmory.Modules;
 using BDArmory.UI;
 using System.Linq;
 using UnityEngine;
