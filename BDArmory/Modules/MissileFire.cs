@@ -4141,8 +4141,7 @@ namespace BDArmory.Modules
                 UpdateTargetPriorityUI(currentTarget);
 
             //scan and acquire new target
-            //if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval,10f)) 
-            if (Time.time - targetScanTimer > Mathf.Max(targetScanInterval, 0.5f)) // stupid hack to stop them retargetting too quickly
+            if (Time.time - targetScanTimer > targetScanInterval)
             {
                 targetScanTimer = Time.time;
 

@@ -5,17 +5,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using BDArmory.Core.Utils;
 
 namespace BDArmory.Modules
 {
-    class ModuleSelfSealingTank : PartModule, IPartMassModifier 
+    class ModuleSelfSealingTank : PartModule, IPartMassModifier
     {
         public float GetModuleMass(float baseMass, ModifierStagingSituation situation)
         {
             return partmass;
         }
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
-        
+
         [KSPField(isPersistant = true)]
         public bool SSTank = false;
 
@@ -56,8 +57,9 @@ namespace BDArmory.Modules
 
         private float FBmass = 0f;
         private float origMass = 0f;
-        
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireBottles"),//Fire Bottles
+
         UI_FloatRange(minValue = 0, maxValue = 3, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float FireBottles = 0;
 
@@ -103,7 +105,10 @@ namespace BDArmory.Modules
                                 SSTank = bool.Parse(SSTString);
                                 FBSetup(null, null);
                             }
-                            catch (Exception e) { }
+                            catch (Exception e)
+                            {
+                                Debug.LogError("[ModuleSelfSealingTank]: Exception parsing SSTank: " + e.Message);
+                            }
                         }
                         else
                         {
@@ -118,7 +123,7 @@ namespace BDArmory.Modules
             }
         }
         void FBSetup(BaseField field, object obj)
-        {   
+        {
             FBmass = (0.01f * FireBottles);
             FBRemaining = FireBottles;
             partmass = FBmass;
