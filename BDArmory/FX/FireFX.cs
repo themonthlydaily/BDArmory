@@ -4,6 +4,7 @@ using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using BDArmory.Misc;
+using BDArmory.Modules;
 using BDArmory.UI;
 using System.Linq;
 using UnityEngine;
@@ -60,6 +61,16 @@ namespace BDArmory.FX
             if (parentPart.parent.protoModuleCrew.Count > 0)
             {
                 burnTime = 20; //though ajdacent parts will take longer to get to and extingusih
+            }
+            if (parentPart.GetComponent<ModuleSelfSealingTank>() != null)
+            {
+                ModuleSelfSealingTank FBX;
+                FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
+                if (FBX.FireBottles > 0)
+                {
+                    FBX.FireBottles--;
+                    burnTime = 10;
+                }
             }
         }
         void onDisable()
