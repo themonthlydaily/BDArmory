@@ -43,7 +43,7 @@ namespace BDArmory.Modules
             }
         }
         
-        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_DryMass")]//CASE mass
+        [KSPField(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_AddedMass")]//CASE mass
         public float CASEmass = 0f;
 
         private float CASEcost = 0f;
@@ -70,7 +70,6 @@ public void Start()
                     ATrangeEditor.onFieldChanged = CASESetup;
                 }
                 origMass = part.mass;
-                CASEmass = origMass;
                 //origScale = part.rescaleFactor;
                 origCost = part.partInfo.cost;
                 CASESetup(null, null);
@@ -78,7 +77,7 @@ public void Start()
         }
         void CASESetup(BaseField field, object obj)
         {
-                CASEmass = (origMass + ((origMass / 2) * CASELevel));
+                CASEmass = ((origMass / 2) * CASELevel);
                 //part.mass = CASEmass;
                 CASEcost = origCost + (CASELevel * 1000);
                 //part.transform.localScale = (Vector3.one * (origScale + (CASELevel/10)));
