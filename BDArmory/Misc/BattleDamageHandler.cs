@@ -16,11 +16,11 @@ namespace BDArmory.Misc
 
             double damageChance = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE * ((1 - part.GetDamagePercentage()) * 10) * (penetrationFactor / 2)), 0, 100); //more heavily damaged parts more likely to take battledamage
 
+            var alreadyburning = part.GetComponentInChildren<FireFX>();
             if (BDArmorySettings.BD_TANKS)
             {
                 if (part.HasFuel())
                 {
-                    var alreadyburning = part.GetComponentInChildren<FireFX>();
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
@@ -39,9 +39,9 @@ namespace BDArmory.Misc
                     }
                 }
             }
-	    if (BDArmorySettings.BD_FIRES_ENABLED)
-	    {
-		if (part.isBattery())
+            if (BDArmorySettings.BD_FIRES_ENABLED)
+            {
+                if (part.isBattery())
                 {
                     if (alreadyburning == null)
                     {
@@ -55,9 +55,9 @@ namespace BDArmory.Misc
                         {
                             BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
                         }
-		    }
-		}
-	    }
+                    }
+                }
+            }
             //AmmoBins
             if (BDArmorySettings.BD_AMMOBINS && penetrationFactor > 1.2 && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
             {
@@ -117,7 +117,6 @@ namespace BDArmory.Misc
                         }
                         if (part.GetDamagePercentage() < 0.50f || (part.GetDamagePercentage() < 0.625f && penetrationFactor > 2))
                         {
-                            var alreadyburning = part.GetComponentInChildren<FireFX>();
                             if (alreadyburning == null)
                             {
                                 BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
