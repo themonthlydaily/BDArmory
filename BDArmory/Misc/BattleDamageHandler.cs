@@ -37,19 +37,20 @@ namespace BDArmory.Misc
                             BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
                         }
                     }
-                if (part.isBattery())
-                {
-                    if (alreadyburning == null)
+                    if (part.isBattery())
                     {
-                        double Diceroll = UnityEngine.Random.Range(0, 100);
-                        if (explosivedamage)
+                        if (alreadyburning == null)
                         {
-                            Diceroll *= 0.66;
-                        }
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: Battery Dice Roll: " + Diceroll);
-                        if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
-                        {
-                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                            double Diceroll = UnityEngine.Random.Range(0, 100);
+                            if (explosivedamage)
+                            {
+                                Diceroll *= 0.66;
+                            }
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD Debug]: Battery Dice Roll: " + Diceroll);
+                            if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
+                            {
+                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                            }
                         }
                     }
                 }
