@@ -24,7 +24,7 @@ namespace BDArmory.Misc
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
-                        if (rubbertank.SSTank && part.GetDamagePercentatge() > 0.66f) return;
+                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.66f) return;
                     }
                     if (penetrationFactor > 1.2)
                     {
@@ -344,7 +344,7 @@ namespace BDArmory.Misc
                             crewMember.UnregisterExperienceTraits(part);
                             //crewMember.outDueToG = true; //implement temp KO to simulate wounding?
                             crewMember.Die();
-                            if (part.isKerbalEVA())
+                            if (part.IsKerbalEVA())
                             {
                                 part.Die();
                             }
