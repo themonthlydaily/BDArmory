@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BDArmory.Core;
+using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Competition;
@@ -1409,7 +1410,7 @@ namespace BDArmory.Control
             }
             if (vessel != null)
             {
-                if (vessel.parts.Count == 1 && vessel.parts[0].isKerbalEVA()) // The vessel is a kerbal on EVA. Ignore it for now.
+                if (vessel.parts.Count == 1 && vessel.parts[0].IsKerbalEVA()) // The vessel is a kerbal on EVA. Ignore it for now.
                 {
                     // KerbalSafetyManager.Instance.CheckForFallingKerbals(vessel);
                     if (nonCompetitorsToRemove.Contains(vessel)) nonCompetitorsToRemove.Remove(vessel);

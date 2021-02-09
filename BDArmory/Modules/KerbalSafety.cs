@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using BDArmory.Core;
+using BDArmory.Core.Extension;
 using BDArmory.Control;
 using BDArmory.Misc;
 using BDArmory.UI;
@@ -156,9 +157,9 @@ namespace BDArmory.Modules
             while (!part.vessel.loaded) yield return new WaitForFixedUpdate(); // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
             kerbalName = crew.displayName;
             this.crew = crew;
-            this.crew.SetDefaultInventory(); // Reset the inventory to a chute and a jetpack.
+            this.crew.ResetInventory(); // Reset the inventory to a chute and a jetpack.
             this.part = part;
-            if (part.isKerbalEVA())
+            if (part.IsKerbalEVA())
             {
                 this.kerbalEVA = part.GetComponent<KerbalEVA>();
                 if (kerbalEVA.IsSeated())

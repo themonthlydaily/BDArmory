@@ -442,5 +442,22 @@ namespace BDArmory.Core.Extension
         {
             return PartGeometryUtil.MergeBounds(part.GetRendererBounds(), part.transform).size;
         }
+
+        /// <summary>
+        /// KSP version dependent query of whether the part is a kerbal on EVA.
+        /// </summary>
+        /// <param name="part">Part to check.</param>
+        /// <returns>true if the part is a kerbal on EVA.</returns>
+        public static bool IsKerbalEVA(this Part part)
+        {
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
+            {
+                return part.isKerbalEVA();
+            }
+            else
+            {
+                return part.FindModuleImplementing<KerbalEVA>() != null;
+            }
+        }
     }
 }
