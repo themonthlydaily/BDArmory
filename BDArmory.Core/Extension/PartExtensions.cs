@@ -452,12 +452,22 @@ namespace BDArmory.Core.Extension
         {
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
-                return part.isKerbalEVA();
+                return part.IsKerbalEVA_1_11();
             }
             else
             {
-                return part.FindModuleImplementing<KerbalEVA>() != null;
+                return part.IsKerbalEVA_1_10();
             }
+        }
+
+        private static bool IsKerbalEVA_1_11(this Part part) // KSP has issues on older versions if this call is in the parent function.
+        {
+            return part.isKerbalEVA();
+        }
+
+        private static bool IsKerbalEVA_1_10(this Part part)
+        {
+            return part.FindModuleImplementing<KerbalEVA>() != null;
         }
     }
 }
