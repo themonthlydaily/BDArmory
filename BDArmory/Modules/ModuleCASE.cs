@@ -7,6 +7,7 @@ using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using System;
+using System.Text;
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
@@ -68,18 +69,17 @@ namespace BDArmory.Modules
                 {
                     UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["CASELevel"].uiControlEditor;
                     ATrangeEditor.onFieldChanged = CASESetup;
+                    origMass = part.mass;
+                    //origScale = part.rescaleFactor;
+                    CASESetup(null, null);
                 }
-                origMass = part.mass;
-                //origScale = part.rescaleFactor;
-                origCost = part.partInfo.cost;
-                CASESetup(null, null);
             }
         }
         void CASESetup(BaseField field, object obj)
         {
             CASEmass = ((origMass / 2) * CASELevel);
             //part.mass = CASEmass;
-            CASEcost = origCost + (CASELevel * 1000);
+            CASEcost = (CASELevel * 1000);
             //part.transform.localScale = (Vector3.one * (origScale + (CASELevel/10)));
             Debug.Log("[SST Debug] part.mass = " + part.mass + "; CASElevel = " + CASELevel + "; CASEMass = " + CASEmass + "; Scale = " + part.transform.localScale);
         }
@@ -333,6 +333,24 @@ namespace BDArmory.Modules
             {
                 DetonateIfPossible();
             }
+        }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+            output.Append(Environment.NewLine);
+            var internalmag = part.FindModuleImplementing<ModuleWeapon>();
+            if (internalmag != null)
+            {
+                output.AppendLine($" Has Intrinsic C.A.S.E. Type {CASELevel}");
+            }
+            else
+            {
+                output.AppendLine($"Can add Cellular Ammo Storage Equipment to reduce ammo explosion damage");
+            }
+            
+            output.AppendLine("");
+
+            return output.ToString();
         }
     }
 }
