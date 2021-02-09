@@ -130,5 +130,20 @@ namespace BDArmory.Modules
             //part.mass = partmass;
             Misc.Misc.RefreshAssociatedWindows(part);
         }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+            output.Append(Environment.NewLine);
+            output.AppendLine($" Can outfit part with Fire Suppression Systems."); //localize this at some point, future me
+            var engine = part.FindModuleImplementing<ModuleEngines>();
+            var engineFX = part.FindModuleImplementing<ModuleEnginesFX>();
+            if (engine == null || engineFX == null)
+            {
+                output.AppendLine($" Can upgrade to Self-Sealing Tank.");
+            }
+            output.AppendLine("");
+
+            return output.ToString();
+        }
     }
 }
