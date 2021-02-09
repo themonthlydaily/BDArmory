@@ -48,7 +48,7 @@ namespace BDArmory.Modules
         public float CASEmass = 0f;
 
         private float CASEcost = 0f;
-        private float origCost = 0;
+        // private float origCost = 0;
         private float origMass = 0f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CASE"),//Cellular Ammo Storage Equipment Tier
