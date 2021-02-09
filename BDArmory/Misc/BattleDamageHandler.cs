@@ -16,11 +16,11 @@ namespace BDArmory.Misc
 
             double damageChance = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE * ((1 - part.GetDamagePercentage()) * 10) * (penetrationFactor / 2)), 0, 100); //more heavily damaged parts more likely to take battledamage
 
-            var alreadyburning = part.GetComponentInChildren<FireFX>();
             if (BDArmorySettings.BD_TANKS)
             {
                 if (part.HasFuel())
                 {
+                    var alreadyburning = part.GetComponentInChildren<FireFX>();
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
@@ -43,6 +43,7 @@ namespace BDArmory.Misc
             {
                 if (part.isBattery())
                 {
+                    var alreadyburning = part.GetComponentInChildren<FireFX>();
                     if (alreadyburning == null)
                     {
                         double Diceroll = UnityEngine.Random.Range(0, 100);
@@ -117,6 +118,7 @@ namespace BDArmory.Misc
                         }
                         if (part.GetDamagePercentage() < 0.50f || (part.GetDamagePercentage() < 0.625f && penetrationFactor > 2))
                         {
+                            var alreadyburning = part.GetComponentInChildren<FireFX>();
                             if (alreadyburning == null)
                             {
                                 BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
