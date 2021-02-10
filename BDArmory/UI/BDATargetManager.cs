@@ -347,7 +347,7 @@ namespace BDArmory.UI
             foreach (Vessel vessel in LoadedVessels)
             {
                 if (vessel == null)
-                    continue; 
+                    continue;
                 if (!vessel || !vessel.loaded)
                     continue;
                 if (vessel == sourceVessel || vessel == missileVessel)
@@ -516,6 +516,9 @@ namespace BDArmory.UI
             debugString.Append(Environment.NewLine);
 
             debugString.Append($"ECM Lockbreak Strength: " + FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselECMJInfo>()?.lockBreakStrength);
+            debugString.Append(Environment.NewLine);
+
+            debugString.Append($"Radar Lockbreak Factor: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarLockbreakFactor);
             debugString.Append(Environment.NewLine);
         }
 
@@ -965,11 +968,13 @@ namespace BDArmory.UI
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
                     {
                         float targetScore = (target.Current == mf.currentTarget ? mf.targetBias : 1f) * (
+                            1f +
                             mf.targetWeightRange * target.Current.TargetPriRange(mf) +
                             mf.targetWeightATA * target.Current.TargetPriATA(mf) +
                             mf.targetWeightAccel * target.Current.TargetPriAcceleration() +
                             mf.targetWeightClosureTime * target.Current.TargetPriClosureTime(mf) +
                             mf.targetWeightWeaponNumber * target.Current.TargetPriWeapons(target.Current.weaponManager, mf) +
+                            mf.targetWeightMass * target.Current.TargetPriMass(target.Current.weaponManager, mf) +
                             mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf) +
                             mf.targetWeightThreat * target.Current.TargetPriThreat(target.Current.weaponManager, mf) +
                             mf.targetWeightAoD * target.Current.TargetPriAoD(mf));
@@ -981,7 +986,7 @@ namespace BDArmory.UI
                     }
                 }
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDTargeting]: Selected " + finalTarget.Vessel.GetDisplayName() + " with target score of " + finalTargetScore.ToString("0.00"));
+                Debug.Log("[BDTargeting]: Selected " + (finalTarget != null ? finalTarget.Vessel.GetDisplayName() : "null") + " with target score of " + finalTargetScore.ToString("0.00"));
 
             mf.UpdateTargetPriorityUI(finalTarget);
             return finalTarget;

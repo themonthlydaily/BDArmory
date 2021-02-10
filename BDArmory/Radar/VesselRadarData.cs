@@ -623,7 +623,7 @@ namespace BDArmory.Radar
 
             if (lockingRadar != null)
             {
-                return lockingRadar.TryLockTarget(radarTarget.targetData.predictedPosition);
+                return lockingRadar.TryLockTarget(radarTarget.targetData.predictedPosition, radarTarget.vessel);
             }
 
             UpdateLockedTargets();
@@ -1296,7 +1296,7 @@ namespace BDArmory.Radar
         {
             while (true)
             {
-                using (List<Vessel>.Enumerator v = BDATargetManager.LoadedVessels.GetEnumerator())
+                using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (v.MoveNext())
                     {
                         if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
@@ -1357,35 +1357,34 @@ namespace BDArmory.Radar
 
         private void RefreshAvailableLinks()
         {
-            if (!HighLogic.LoadedSceneIsFlight || !weaponManager || (FlightGlobals.Vessels == null) || (!FlightGlobals.ready))
+            if (!HighLogic.LoadedSceneIsFlight || vessel == null || weaponManager == null || !FlightGlobals.ready || FlightGlobals.Vessels == null)
             {
                 return;
             }
 
             availableExternalVRDs = new List<VesselRadarData>();
-            List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
-            while (v.MoveNext())
-            {
-                if (v.Current == null || !v.Current.loaded || vessel == null || v.Current == vessel) continue;
-
-                BDTeam team = null;
-                List<MissileFire>.Enumerator mf = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
+            using (var v = FlightGlobals.Vessels.GetEnumerator())
+                while (v.MoveNext())
                 {
-                    if (mf.Current == null) continue;
-                    team = mf.Current.Team;
-                    break;
-                }
-                mf.Dispose();
+                    if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
 
-                if (team != weaponManager.Team) continue;
-                VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
-                if (vrd && vrd.radarCount > 0)
-                {
-                    availableExternalVRDs.Add(vrd);
+                    BDTeam team = null;
+                    List<MissileFire>.Enumerator mf = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();
+                    while (mf.MoveNext())
+                    {
+                        if (mf.Current == null) continue;
+                        team = mf.Current.Team;
+                        break;
+                    }
+                    mf.Dispose();
+
+                    if (team != weaponManager.Team) continue;
+                    VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
+                    if (vrd && vrd.radarCount > 0)
+                    {
+                        availableExternalVRDs.Add(vrd);
+                    }
                 }
-            }
-            v.Dispose();
         }
 
         public void LinkVRD(VesselRadarData vrd)
@@ -1594,6 +1593,18 @@ namespace BDArmory.Radar
                 rad.UnlockTargetAt(rad.currentLockIndex);
                 UpdateLockedTargets();
             }
+        }
+
+        public bool SwitchActiveLockedTarget(Vessel vessel) // FIXME This needs to take into account the maxLocks field.
+        {
+            var vesselIndex = displayedTargets.FindIndex(t => t.vessel == vessel);
+            if (vesselIndex != -1)
+            {
+                activeLockedTargetIndex = vesselIndex;
+                UpdateLockedTargets();
+                return true;
+            }
+            return false;
         }
 
         public void UnlockAllTargetsOfRadar(ModuleRadar radar)

@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using BDArmory.Control;
 using BDArmory.Core;
+using BDArmory.UI;
 
 namespace BDArmory.Competition
 {
@@ -20,11 +21,21 @@ namespace BDArmory.Competition
         private HashSet<string> activePlayers = new HashSet<string>();
         public Dictionary<string, Dictionary<string, double>> timeOfLastHitOnTarget = new Dictionary<string, Dictionary<string, double>>();
         public Dictionary<string, Dictionary<string, int>> hitsOnTarget = new Dictionary<string, Dictionary<string, int>>();
+        public Dictionary<string, int> hitsOut = new Dictionary<string, int>();
+        public Dictionary<string, int> hitsIn = new Dictionary<string, int>();
+        public Dictionary<string, double> damageOut = new Dictionary<string, double>();
+        public Dictionary<string, double> damageIn = new Dictionary<string, double>();
         public Dictionary<string, Dictionary<string, int>> killsOnTarget = new Dictionary<string, Dictionary<string, int>>();
         public Dictionary<string, int> assists = new Dictionary<string, int>();
         public Dictionary<string, int> deaths = new Dictionary<string, int>();
         public Dictionary<string, string> longestHitWeapon = new Dictionary<string, string>();
         public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
+        public Dictionary<string, int> rammedPartsOut = new Dictionary<string, int>();
+        public Dictionary<string, int> rammedPartsIn = new Dictionary<string, int>();
+        public Dictionary<string, int> missilePartsOut = new Dictionary<string, int>();
+        public Dictionary<string, int> missilePartsIn = new Dictionary<string, int>();
+        public Dictionary<string, double> missileDamageOut = new Dictionary<string, double>();
+        public Dictionary<string, double> missileDamageIn = new Dictionary<string, double>();
 
         public enum StatusType
         {
@@ -62,12 +73,17 @@ namespace BDArmory.Competition
             Completed,
             [Description("Cancelled")]
             Cancelled,
+            [Description("Waiting")]
+            Waiting,
+            [Description("Stopped")]
+            Stopped,
             [Description("Invalid")]
             Invalid
         }
 
         private bool pendingSync = false;
-        private StatusType status = StatusType.Offline;
+        private bool competitionStarted = false;
+        public StatusType status = StatusType.Offline;
 
         private Coroutine syncCoroutine;
 
@@ -77,6 +93,8 @@ namespace BDArmory.Competition
 
 
         public BDAScoreClient client;
+
+        public string vesselPath;
 
         void Awake()
         {
@@ -94,15 +112,20 @@ namespace BDArmory.Competition
             {
                 Debug.Log("[BDAScoreService] Cancel due to disable");
                 pendingSync = false;
-                StopCoroutine(syncCoroutine);
+                if (syncCoroutine != null)
+                    StopCoroutine(syncCoroutine);
                 return;
             }
         }
 
         public void Configure(string vesselPath, string hash)
         {
+            this.vesselPath = vesselPath;
             this.client = new BDAScoreClient(this, vesselPath, hash);
+            if (syncCoroutine != null)
+                StopCoroutine(syncCoroutine);
             syncCoroutine = StartCoroutine(SynchronizeWithService(hash));
+            RemoteOrchestrationWindow.Instance.ShowWindow();
         }
 
         public void Cancel()
@@ -111,9 +134,16 @@ namespace BDArmory.Competition
                 StopCoroutine(syncCoroutine);
             BDACompetitionMode.Instance.StopCompetition();
             pendingSync = false;
-            status = StatusType.Cancelled;
-            Debug.Log("[BDAScoreService] Cancelling the heat");
-            // FIXME What else needs to be done to cancel a heat?
+            status = status == StatusType.Waiting ? StatusType.Stopped : StatusType.Cancelled;
+            if (status == StatusType.Cancelled)
+            {
+                Debug.Log("[BDAScoreService]: Cancelling the heat");
+                // FIXME What else needs to be done to cancel a heat?
+            }
+            else
+            {
+                Debug.Log("[BDAScoreService]: Stopping score service.");
+            }
         }
 
         public IEnumerator SynchronizeWithService(string hash)
@@ -140,7 +170,6 @@ namespace BDArmory.Competition
             {
                 status = StatusType.Invalid;
                 pendingSync = false;
-                syncCoroutine = null;
                 yield break;
             }
 
@@ -189,10 +218,16 @@ namespace BDArmory.Competition
             }
         }
 
+        public double retryFindStartedAt = -1;
         private IEnumerator RetryFind(string hash)
         {
-            yield return new WaitForSeconds(30);
-            yield return FindNextHeat(hash);
+            retryFindStartedAt = Planetarium.GetUniversalTime();
+            yield return new WaitWhile(() => Planetarium.GetUniversalTime() - retryFindStartedAt < 30);
+            if (status != StatusType.Cancelled)
+            {
+                status = StatusType.FindingNextHeat;
+                yield return FindNextHeat(hash);
+            }
         }
 
         private IEnumerator FetchAndExecuteHeat(string hash, HeatModel model)
@@ -210,7 +245,27 @@ namespace BDArmory.Competition
             yield return client.StartHeat(hash, model);
 
             // execute heat
-            yield return ExecuteHeat(hash, model);
+            int attempts = 0;
+            competitionStarted = false;
+            while (!competitionStarted && attempts++ < 3) // 3 attempts is plenty
+            {
+                yield return ExecuteHeat(hash, model);
+                if (!competitionStarted)
+                    switch (Control.VesselSpawner.Instance.spawnFailureReason)
+                    {
+                        case Control.VesselSpawner.SpawnFailureReason.None: // Successful spawning, but competition failed to start for some reason.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + BDACompetitionMode.Instance.competitionStartFailureReason + ", trying again.");
+                            break;
+                        case Control.VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
+                        case Control.VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + Control.VesselSpawner.Instance.spawnFailureReason + ", trying again.");
+                            break;
+                        default: // Spawning is unrecoverable.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + Control.VesselSpawner.Instance.spawnFailureReason + ", aborting.");
+                            attempts = 3;
+                            break;
+                    }
+            }
 
             status = StatusType.ReportingResults;
             // report scores
@@ -220,25 +275,36 @@ namespace BDArmory.Competition
             // notify web service to stop heat
             yield return client.StopHeat(hash, model);
 
-            status = StatusType.FindingNextHeat;
+            status = StatusType.Waiting;
             yield return RetryFind(hash);
         }
 
         private IEnumerator ExecuteHeat(string hash, HeatModel model)
         {
             Debug.Log(string.Format("[BDAScoreService] Running heat {0}/{1}", hash, model.order));
-            UI.VesselSpawner spawner = UI.VesselSpawner.Instance;
+            Control.VesselSpawner spawner = Control.VesselSpawner.Instance;
 
             // orchestrate the match
             activePlayers.Clear();
-            hitsOnTarget.Clear();
-            killsOnTarget.Clear();
+            assists.Clear();
+            damageIn.Clear();
+            damageOut.Clear();
             deaths.Clear();
+            hitsIn.Clear();
+            hitsOnTarget.Clear();
+            hitsOut.Clear();
+            killsOnTarget.Clear();
             longestHitDistance.Clear();
             longestHitWeapon.Clear();
+            missileDamageIn.Clear();
+            missileDamageOut.Clear();
+            missilePartsIn.Clear();
+            missilePartsOut.Clear();
+            rammedPartsIn.Clear();
+            rammedPartsOut.Clear();
 
             status = StatusType.SpawningVessels;
-            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, hash);
+            spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, hash);
             while (spawner.vesselsSpawning)
                 yield return new WaitForFixedUpdate();
             if (!spawner.vesselSpawnSuccess)
@@ -246,48 +312,30 @@ namespace BDArmory.Competition
                 Debug.Log("[BDAScoreService] Vessel spawning failed."); // FIXME Now what?
                 yield break;
             }
-            // if (CompetitionHub != null) // Example of how to spawn extra vessels from another folder.
-            // {
-            //     spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS, 1, false, hash+"/"+hubCraftPath);
-            //     while (spawner.vesselsSpawning)
-            //         yield return new WaitForFixedUpdate();
-            //     if (!spawner.vesselSpawnSuccess)
-            //     {
-            //         Debug.Log("[BDAScoreService] Vessel spawning failed for CompetitionHub."); // FIXME Now what?
-            //         yield break;
-            //     }
-            // }
             yield return new WaitForFixedUpdate();
 
             status = StatusType.RunningHeat;
             // NOTE: runs in separate coroutine
-            BDACompetitionMode.Instance.StartCompetitionMode(1000);
+            BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+            yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
 
             // start timer coroutine for the duration specified in settings UI
-            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
-            Debug.Log("[BDAScoreService] Starting a " + duration.ToString("F0") + "s duration competition.");
+            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60d;
+            var message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
+            Debug.Log("[BDAScoreService]: " + message);
+            BDACompetitionMode.Instance.competitionStatus.Add(message);
             while (BDACompetitionMode.Instance.competitionStarting)
                 yield return new WaitForFixedUpdate(); // Wait for the competition to actually start.
             if (!BDACompetitionMode.Instance.competitionIsActive)
             {
-                var message = "Competition failed to start for heat " + hash + ".";
+                message = "Competition failed to start for heat " + hash + ".";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.Log("[BDAScoreService]: " + message);
                 yield break;
             }
-            while (BDACompetitionMode.Instance.competitionIsActive && Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime < duration) // Allow exiting if the competition finishes early.
+            competitionStarted = true;
+            while (BDACompetitionMode.Instance.competitionIsActive) // Wait for the competition to finish (limited duration and log dumping is handled directly by the competition now).
                 yield return new WaitForSeconds(1);
-
-            // stop competition
-            BDACompetitionMode.Instance.StopCompetition();
-            BDACompetitionMode.Instance.LogResults("for BDAScoreService"); // Make sure the results are dumped to the log.
-
-            // status = StatusType.RemovingVessels;
-            // // remove all spawned vehicles // Note: Vessel and debris clean-up happens during vessel spawning (also the currently focussed vessel doesn't get killed when telling it to Die...)
-            // foreach (Vessel v in FlightGlobals.Vessels.Where(e => !e.vesselName.Equals("CompetitionHub")))
-            // {
-            //     v.Die();
-            // }
         }
 
         private IEnumerator SendScores(string hash, HeatModel heat)
@@ -303,32 +351,56 @@ namespace BDArmory.Competition
             Debug.Log(string.Format("[BDAScoreService] Building records for {0} players", playerNames.Count));
             foreach (string playerName in playerNames)
             {
-                PlayerModel player = client.players.Values.FirstOrDefault(e => e.name == playerName);
-                if (player == null)
+                var separatorIndex = playerName.IndexOf('_');
+                if (separatorIndex<0)
                 {
                     Debug.Log(string.Format("[BDAScoreService] Unmatched player {0}", playerName));
                     Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
                     continue;
                 }
-                VesselModel vessel = client.vessels.Values.FirstOrDefault(e => e.player_id == player.id);
+
+                var playerNamePart = playerName.Substring(0, separatorIndex);
+                PlayerModel player = client.players.Values.FirstOrDefault(e => e.name == playerNamePart);
+                if (player == null)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] Unmatched player {0}", playerNamePart));
+                    Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
+                    continue;
+                }
+
+                var vesselNamePart = playerName.Substring(separatorIndex + 1);
+                VesselModel vessel = client.vessels.Values.FirstOrDefault(e => e.player_id == player.id && e.name == vesselNamePart);
                 if (vessel == null)
                 {
                     Debug.Log(string.Format("[BDAScoreService] Unmatched vessel for playerId {0}", player.id));
                     Debug.Log("DEBUG vessels were " + string.Join(", ", client.vessels.Values.Select(p => p.id)));
                     continue;
                 }
+
                 RecordModel record = new RecordModel();
                 record.vessel_id = vessel.id;
                 record.competition_id = int.Parse(hash);
                 record.heat_id = heat.id;
-                record.hits = ComputeTotalHits(player.name);
-                record.kills = ComputeTotalKills(player.name);
-                record.deaths = ComputeTotalDeaths(player.name);
-                record.assists = ComputeTotalAssists(player.name);
-                if (longestHitDistance.ContainsKey(player.name))
+                record.hits_out = ComputeTotalHitsOut(playerName);
+                record.hits_in = ComputeTotalHitsIn(playerName);
+                record.dmg_out = ComputeTotalDamageOut(playerName);
+                record.dmg_in = ComputeTotalDamageIn(playerName);
+                record.ram_parts_out = ComputeTotalRammedPartsOut(playerName);
+                record.ram_parts_in = ComputeTotalRammedPartsIn(playerName);
+                record.mis_parts_out = ComputeTotalMissilePartsOut(playerName);
+                record.mis_parts_in = ComputeTotalMissilePartsIn(playerName);
+                record.mis_dmg_out = ComputeTotalMissileDamageOut(playerName);
+                record.mis_dmg_in = ComputeTotalMissileDamageIn(playerName);
+                record.wins = ComputeWins(playerName);
+                record.kills = ComputeTotalKills(playerName);
+                record.deaths = ComputeTotalDeaths(playerName);
+                record.assists = ComputeTotalAssists(playerName);
+                record.death_order = ComputeDeathOrder(playerName);
+                record.death_time = ComputeDeathTime(playerName);
+                if (longestHitDistance.ContainsKey(playerName) && longestHitWeapon.ContainsKey(playerName))
                 {
-                    record.distance = (float)longestHitDistance[player.name];
-                    record.weapon = longestHitWeapon[player.name];
+                    record.distance = (float)longestHitDistance[playerName];
+                    record.weapon = longestHitWeapon[playerName];
                 }
                 results.Add(record);
             }
@@ -336,14 +408,86 @@ namespace BDArmory.Competition
             return results;
         }
 
-        private int ComputeTotalHits(string playerName)
+        private int ComputeTotalHitsOut(string playerName)
         {
             int result = 0;
-            if (hitsOnTarget.ContainsKey(playerName))
+            if (hitsOut.ContainsKey(playerName))
             {
-                result = hitsOnTarget[playerName].Values.Sum();
+                result = hitsOut[playerName];
             }
             return result;
+        }
+
+        private int ComputeTotalHitsIn(string playerName)
+        {
+            int result = 0;
+            if (hitsIn.ContainsKey(playerName))
+            {
+                result = hitsIn[playerName];
+            }
+            return result;
+        }
+
+        private double ComputeTotalDamageOut(string playerName)
+        {
+            double result = 0;
+            if (damageOut.ContainsKey(playerName))
+            {
+                result = damageOut[playerName];
+            }
+            return result;
+        }
+
+        private double ComputeTotalDamageIn(string playerName)
+        {
+            double result = 0;
+            if (damageIn.ContainsKey(playerName))
+            {
+                result = damageIn[playerName];
+            }
+            return result;
+        }
+
+        private int ComputeTotalRammedPartsOut(string playerName)
+        {
+            if (rammedPartsOut.ContainsKey(playerName))
+                return rammedPartsOut[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalRammedPartsIn(string playerName)
+        {
+            if (rammedPartsIn.ContainsKey(playerName))
+                return rammedPartsIn[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalMissilePartsOut(string playerName)
+        {
+            if (missilePartsOut.ContainsKey(playerName))
+                return missilePartsOut[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalMissilePartsIn(string playerName)
+        {
+            if (missilePartsIn.ContainsKey(playerName))
+                return missilePartsIn[playerName];
+            return 0;
+        }
+
+        private double ComputeTotalMissileDamageOut(string playerName)
+        {
+            if (missileDamageOut.ContainsKey(playerName))
+                return missileDamageOut[playerName];
+            return 0;
+        }
+
+        private double ComputeTotalMissileDamageIn(string playerName)
+        {
+            if (missileDamageIn.ContainsKey(playerName))
+                return missileDamageIn[playerName];
+            return 0;
         }
 
         private int ComputeTotalKills(string playerName)
@@ -376,9 +520,159 @@ namespace BDArmory.Competition
             return result;
         }
 
+        private int ComputeWins(string playerName)
+        {
+            var stillAlive = !deaths.ContainsKey(playerName);
+            var livingCount = activePlayers.Count - deaths.Count;
+            return (stillAlive && livingCount == 1) ? 1 : 0;
+        }
+
+        private float ComputeDeathOrder(string playerName)
+        {
+            var deathOrder = BDACompetitionMode.Instance.DeathOrder;
+            if (deathOrder.ContainsKey(playerName))
+            {
+                var orderData = deathOrder[playerName];
+                return (float)orderData.Item1 / (float)activePlayers.Count;
+            }
+            else
+            {
+                return 1.0f;
+            }
+        }
+
+        private float ComputeDeathTime(string playerName)
+        {
+            var deathOrder = BDACompetitionMode.Instance.DeathOrder;
+            if (deathOrder.ContainsKey(playerName))
+            {
+                var orderData = deathOrder[playerName];
+                return (float)orderData.Item2;
+            }
+            else
+            {
+                return BDArmorySettings.COMPETITION_DURATION*60.0f;
+            }
+        }
+
+        public void TrackDamage(string attacker, string target, double damage)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackDamage by {0} on {1} for {2}hp", target, attacker, damage));
+            }
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (damageOut.ContainsKey(attacker))
+            {
+                damageOut[attacker] += damage;
+            }
+            else
+            {
+                damageOut.Add(attacker, damage);
+            }
+            if (damageIn.ContainsKey(target))
+            {
+                damageIn[target] += damage;
+            }
+            else
+            {
+                damageIn.Add(target, damage);
+            }
+        }
+
+        public void TrackMissileDamage(string attacker, string target, double damage)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackMissileDamage by {0} on {1} for {2}hp", target, attacker, damage));
+            }
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (missileDamageOut.ContainsKey(attacker))
+            {
+                missileDamageOut[attacker] += damage;
+            }
+            else
+            {
+                missileDamageOut.Add(attacker, damage);
+            }
+            if (missileDamageIn.ContainsKey(target))
+            {
+                missileDamageIn[target] += damage;
+            }
+            else
+            {
+                missileDamageIn.Add(target, damage);
+            }
+        }
+
+        public void TrackMissileParts(string attacker, string target, int count)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log(string.Format("[BDAScoreService] TrackMissileParts by {0} on {1} for {2}parts", target, attacker, count));
+
+            double now = Planetarium.GetUniversalTime();
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (missilePartsOut.ContainsKey(attacker))
+                missilePartsOut[attacker] += count;
+            else
+                missilePartsOut.Add(attacker, count);
+            if (missilePartsIn.ContainsKey(target))
+                missilePartsIn[target] += count;
+            else
+                missilePartsIn.Add(target, count);
+
+            if (timeOfLastHitOnTarget.ContainsKey(attacker))
+            {
+                if (timeOfLastHitOnTarget[attacker].ContainsKey(target))
+                    timeOfLastHitOnTarget[attacker][target] = now;
+                else
+                    timeOfLastHitOnTarget[attacker].Add(target, now);
+            }
+            else
+            {
+                timeOfLastHitOnTarget.Add(attacker, new Dictionary<string, double> { { target, now } });
+            }
+        }
+
+        public void TrackRammedParts(string attacker, string target, int count)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log(string.Format("[BDAScoreService] TrackRammedParts by {0} on {1} for {2}parts", target, attacker, count));
+
+            double now = Planetarium.GetUniversalTime();
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (rammedPartsOut.ContainsKey(attacker))
+                rammedPartsOut[attacker] += count;
+            else
+                rammedPartsOut.Add(attacker, count);
+            if (rammedPartsIn.ContainsKey(target))
+                rammedPartsIn[target] += count;
+            else
+                rammedPartsIn.Add(target, count);
+
+            if (timeOfLastHitOnTarget.ContainsKey(attacker))
+            {
+                if (timeOfLastHitOnTarget[attacker].ContainsKey(target))
+                    timeOfLastHitOnTarget[attacker][target] = now;
+                else
+                    timeOfLastHitOnTarget[attacker].Add(target, now);
+            }
+            else
+            {
+                timeOfLastHitOnTarget.Add(attacker, new Dictionary<string, double> { { target, now } });
+            }
+        }
+
         public void TrackHit(string attacker, string target, string weaponName, double hitDistance)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackHit {0} by {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackHit by {0} on {1} with {2} at {3}m", target, attacker, weaponName, hitDistance));
+            }
             double now = Planetarium.GetUniversalTime();
             activePlayers.Add(attacker);
             activePlayers.Add(target);
@@ -399,9 +693,25 @@ namespace BDArmory.Competition
                 newHits.Add(target, 1);
                 hitsOnTarget.Add(attacker, newHits);
             }
+            if (hitsOut.ContainsKey(attacker))
+            {
+                ++hitsOut[attacker];
+            }
+            else
+            {
+                hitsOut.Add(attacker, 1);
+            }
+            if (hitsIn.ContainsKey(target))
+            {
+                ++hitsIn[target];
+            }
+            else
+            {
+                hitsIn.Add(target, 1);
+            }
             if (!longestHitDistance.ContainsKey(attacker) || hitDistance > longestHitDistance[attacker])
             {
-                Debug.Log(string.Format("[BDACompetitionMode] Tracked hit for {0} with {1} at {2}", attacker, weaponName, hitDistance));
+                Debug.Log(string.Format("[BDACompetitionMode] Tracked longest hit for {0} with {1} at {2}m", attacker, weaponName, hitDistance));
                 if (longestHitDistance.ContainsKey(attacker))
                 {
                     longestHitWeapon[attacker] = weaponName;
@@ -432,16 +742,17 @@ namespace BDArmory.Competition
             }
         }
 
-        private void ComputeAssists(string target)
+        public void ComputeAssists(string target, string killer = "", double timeLimit = 30)
         {
             var now = Planetarium.GetUniversalTime();
-            var thresholdTime = now - 30; // anyone who hit this target within the last 30sec
+            var thresholdTime = now - timeLimit; // anyone who hit this target within the last 30sec
 
             foreach (var attacker in timeOfLastHitOnTarget.Keys)
             {
-                if( timeOfLastHitOnTarget[attacker].ContainsKey(target) && timeOfLastHitOnTarget[attacker][target] > thresholdTime)
+                if (attacker == killer) continue; // Don't award assists to the killer.
+                if (timeOfLastHitOnTarget[attacker].ContainsKey(target) && timeOfLastHitOnTarget[attacker][target] > thresholdTime)
                 {
-                    if( assists.ContainsKey(attacker) )
+                    if (assists.ContainsKey(attacker))
                     {
                         ++assists[attacker];
                     }
@@ -454,11 +765,14 @@ namespace BDArmory.Competition
         }
 
         /**
-         * Tracks an unattributed death, where no clear attacker exists.
+         * Tracks a death.
          */
         public void TrackDeath(string target)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackDeath for {0}", target));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackDeath for {0}", target));
+            }
             activePlayers.Add(target);
             IncrementDeath(target);
         }
@@ -467,12 +781,18 @@ namespace BDArmory.Competition
         {
             if (deaths.ContainsKey(target))
             {
-                Debug.Log(string.Format("[BDAScoreService] IncrementDeaths for {0}", target));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] IncrementDeaths for {0}", target));
+                }
                 ++deaths[target];
             }
             else
             {
-                Debug.Log(string.Format("[BDAScoreService] FirstDeath for {0}", target));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] FirstDeath for {0}", target));
+                }
                 deaths.Add(target, 1);
             }
         }
@@ -482,34 +802,45 @@ namespace BDArmory.Competition
          */
         public void TrackKill(string attacker, string target)
         {
-            Debug.Log(string.Format("[BDAScoreService] TrackKill {0} by {1}", target, attacker));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDAScoreService] TrackKill {0} by {1}", target, attacker));
+            }
             activePlayers.Add(attacker);
             activePlayers.Add(target);
 
             IncrementKill(attacker, target);
-            IncrementDeath(target);
-            ComputeAssists(target);
+            ComputeAssists(target, attacker, 30);
         }
 
         private void IncrementKill(string attacker, string target)
-        { 
+        {
             // increment kill counter
             if (killsOnTarget.ContainsKey(attacker))
             {
                 if (killsOnTarget[attacker].ContainsKey(target))
                 {
-                    Debug.Log(string.Format("[BDAScoreService] IncrementKills for {0} on {1}", attacker, target));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    {
+                        Debug.Log(string.Format("[BDAScoreService] IncrementKills for {0} on {1}", attacker, target));
+                    }
                     ++killsOnTarget[attacker][target];
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDAScoreService] Kill for {0} on {1}", attacker, target));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    {
+                        Debug.Log(string.Format("[BDAScoreService] Kill for {0} on {1}", attacker, target));
+                    }
                     killsOnTarget[attacker].Add(target, 1);
                 }
             }
             else
             {
-                Debug.Log(string.Format("[BDAScoreService] FirstKill for {0} on {1}", attacker, target));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log(string.Format("[BDAScoreService] FirstKill for {0} on {1}", attacker, target));
+                }
                 var newKills = new Dictionary<string, int>();
                 newKills.Add(target, 1);
                 killsOnTarget.Add(attacker, newKills);

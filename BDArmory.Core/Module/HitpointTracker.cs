@@ -12,7 +12,7 @@ namespace BDArmory.Core.Module
         public float Hitpoints;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorThickness"),//Armor Thickness
-        UI_FloatRange(minValue = 1f, maxValue = 500f, stepIncrement = 5f, scene = UI_Scene.All)]
+        UI_FloatRange(minValue = 0f, maxValue = 1500f, stepIncrement = 5f, scene = UI_Scene.All)]
         public float Armor = 10f;
 
         [KSPField(isPersistant = true)]
@@ -86,12 +86,12 @@ namespace BDArmory.Core.Module
 
                 //Add Armor
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                armorFieldFlight.maxValue = 500f;
-                armorFieldFlight.minValue = 10;
+                armorFieldFlight.maxValue = 1500f;
+                armorFieldFlight.minValue = 0f;
 
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
-                armorFieldEditor.maxValue = 500f;
-                armorFieldEditor.minValue = 10f;
+                armorFieldEditor.maxValue = 1500f;
+                armorFieldEditor.minValue = 0f;
                 part.RefreshAssociatedWindows();
 
                 if (!ArmorSet) overrideArmorSetFromConfig();
@@ -171,12 +171,25 @@ namespace BDArmory.Core.Module
                 var structuralMass = density * structuralVolume;
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[HitpointTracker]: Hitpoint Calc" + part.name + " | structuralMass : " + structuralMass);
                 //3. final calculations
-                hitpoints = structuralMass * hitpointMultiplier * 0.33f;
+                hitpoints = structuralMass * hitpointMultiplier * 0.333f;
 
                 if (hitpoints > 10 * part.mass * 1000f || hitpoints < 0.1f * part.mass * 1000f)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[HitpointTracker]: Clamping hitpoints for part {part.name}");
                     hitpoints = hitpointMultiplier * part.mass * 333f;
+                }
+
+                // SuicidalInsanity B9 patch
+                if (part.name.Contains("B9.Aero.Wing.Procedural"))
+                {
+                    if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
+                    {
+                        hitpoints = (part.mass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
+                    }
+                    else
+                    {
+                        hitpoints = (part.mass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                    }
                 }
 
                 hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;

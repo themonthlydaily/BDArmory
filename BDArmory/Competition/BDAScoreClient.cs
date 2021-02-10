@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
+using BDArmory.Core;
 
 namespace BDArmory.Competition
 {
@@ -16,7 +17,7 @@ namespace BDArmory.Competition
 
         private string baseUrl = "https://bdascores.herokuapp.com";
 
-        private string vesselPath = "";
+        public string vesselPath = "";
 
         private string competitionHash = "";
 
@@ -230,8 +231,15 @@ namespace BDArmory.Competition
             }
             foreach (VesselModel vesselModel in collection)
             {
-                Debug.Log(string.Format("[BDAScoreClient] Vessel {0}", vesselModel.ToString()));
-                vessels.Add(vesselModel.id, vesselModel);
+                if (!vessels.ContainsKey(vesselModel.id)) // Skip duplicates.
+                {
+                    Debug.Log(string.Format("[BDAScoreClient] Vessel {0}", vesselModel.ToString()));
+                    vessels.Add(vesselModel.id, vesselModel);
+                }
+                else
+                {
+                    Debug.Log("[BDAScoreClient]: Vessel " + vesselModel.ToString() + " is already in the vessel list, skipping.");
+                }
             }
             Debug.Log(string.Format("[BDAScoreClient] Vessels: {0}", vessels.Count));
         }
@@ -244,8 +252,9 @@ namespace BDArmory.Competition
             string requestBody = string.Format("{{\"records\":[{0}]}}", recordsJsonStr);
 
             byte[] rawBody = Encoding.UTF8.GetBytes(requestBody);
-            string uri = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json", baseUrl, hash, heat);
-            Debug.Log(string.Format("[BDAScoreClient] POST {0}:\n{1}", uri, requestBody));
+            string uri = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json?client_secret={3}", baseUrl, hash, heat, BDArmorySettings.REMOTE_CLIENT_SECRET);
+            string uriWithoutSecret = string.Format("{0}/competitions/{1}/heats/{2}/records/batch.json?client_secret=****", baseUrl, hash, heat);
+            Debug.Log(string.Format("[BDAScoreClient] POST {0}:\n{1}", uriWithoutSecret, requestBody));
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))
             {
                 webRequest.SetRequestHeader("Content-Type", "application/json");
@@ -314,15 +323,20 @@ namespace BDArmory.Competition
                 Debug.Log(string.Format("[BDAScoreClient] Failed to save craft for vessel {0}, player {1}", vessel.id, vessel.player_id));
                 return;
             }
-            string filename = string.Format("{0}/{1}.craft", vesselPath, p.name);
+
+            string vesselName = string.Format("{0}_{1}", p.name, vessel.name);
+            string filename = string.Format("{0}/{1}.craft", vesselPath, vesselName);
             System.IO.File.WriteAllBytes(filename, bytes);
 
             // load the file and modify its vessel name to match the player
             string[] lines = File.ReadAllLines(filename);
             string pattern = ".*ship = (.+)";
-            string[] modifiedLines = lines.Select(e => Regex.Replace(e, pattern, "ship = " + p.name)).ToArray();
+            string[] modifiedLines = lines
+                .Select(e => Regex.Replace(e, pattern, "ship = " + vesselName))
+                .Where(e => !e.Contains("VESSELNAMING"))
+                .ToArray();
             File.WriteAllLines(filename, modifiedLines);
-            Debug.Log(string.Format("[BDAScoreClient] Saved craft for player {0}", p.name));
+            Debug.Log(string.Format("[BDAScoreClient] Saved craft for player {0}", vesselName));
         }
 
         public IEnumerator StartHeat(string hash, HeatModel heat)
@@ -335,6 +349,7 @@ namespace BDArmory.Competition
             pendingRequest = true;
 
             this.activeHeat = heat;
+            UI.RemoteOrchestrationWindow.Instance.UpdateClientStatus();
 
             string uri = string.Format("{0}/competitions/{1}/heats/{2}/start", baseUrl, hash, heat.id);
             using (UnityWebRequest webRequest = new UnityWebRequest(uri))

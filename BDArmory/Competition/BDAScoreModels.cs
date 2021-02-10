@@ -142,9 +142,9 @@ namespace BDArmory.Competition
     {
         public int id;
         public int player_id;
-        public int competition_id;
+        public string name;
         public string craft_url;
-        public override string ToString() { return "{id: " + id + ", competition_id: " + competition_id + ", player_id: " + player_id + ", craft_url: " + craft_url + "}"; }
+        public override string ToString() { return "{id: " + id + ", player_id: " + player_id + ", name: " + name + ", craft_url: " + craft_url + "}"; }
         public static List<VesselModel> FromCsv(string csv)
         {
             List<VesselModel> results = new List<VesselModel>();
@@ -167,6 +167,7 @@ namespace BDArmory.Competition
                             model.id = int.Parse(values[0]);
                             model.player_id = int.Parse(values[1]);
                             model.craft_url = values[2];
+                            model.name = values[3];
                             results.Add(model);
                         }
                     }
@@ -186,12 +187,24 @@ namespace BDArmory.Competition
         public int competition_id;
         public int vessel_id;
         public int heat_id;
-        public int hits;
+        public int hits_out;
+        public int hits_in;
+        public double dmg_out;
+        public double dmg_in;
+        public int ram_parts_out;
+        public int ram_parts_in;
+        public int mis_parts_out;
+        public int mis_parts_in;
+        public double mis_dmg_out;
+        public double mis_dmg_in;
         public int assists;
         public int kills;
         public int deaths;
         public float distance;
         public string weapon;
+        public float death_order;
+        public float death_time;
+        public int wins;
 
         public string ToJSON()
         {
