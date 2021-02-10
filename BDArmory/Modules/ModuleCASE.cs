@@ -167,12 +167,12 @@ namespace BDArmory.Modules
                 GetBlastRadius();
                 if (CASELevel == 0) //a considerable quantity of explosives and propellants just detonated inside your ship
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else if (CASELevel == 1) // the blast is reduced. Damage is severe, but (potentially) survivable
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                     using (var blastHits = Physics.OverlapSphere(part.transform.position, blastRadius / 2, 9076737).AsEnumerable().GetEnumerator())
                     {
@@ -214,7 +214,7 @@ namespace BDArmory.Modules
                 }
                 else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                     Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                     var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);

@@ -1659,7 +1659,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         {
                             ExplosionFx.CreateExplosion(hit.point,
                                            (laserDamage / 30000),
-                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName);
+                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                         }
                         if (HeatRay)
                         {
