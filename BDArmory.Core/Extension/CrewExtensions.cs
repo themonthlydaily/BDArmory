@@ -10,11 +10,16 @@ namespace BDArmory.Core.Extension
         {
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
-                crew.SetDefaultInventory(); // Reset the inventory to a chute and a jetpack.
+                crew.ResetInventory_1_11();
             }
             else // Nothing, crew didn't have inventory before. Chute and jetpack were built into KerbalEVA class.
             {
             }
+        }
+
+        private static void ResetInventory_1_11(this ProtoCrewMember crew) // KSP has issues on older versions if this call is in the parent function.
+        {
+            crew.SetDefaultInventory(); // Reset the inventory to a chute and a jetpack.
         }
     }
 }
