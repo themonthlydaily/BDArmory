@@ -358,8 +358,8 @@ namespace BDArmory.Modules
         public float fireBurstLength = 0;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringTolerance"),//Firing Tolerance
-        UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.05f, scene = UI_Scene.All)]
-        public float AutoFireCosAngleAdjustment = 3f; //tune Autofire angle in WM GUI
+        UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 0.05f, scene = UI_Scene.All)]
+        public float AutoFireCosAngleAdjustment = 1.0f; //tune Autofire angle in WM GUI
 
         public float adjustedAutoFireCosAngle = 0.99863f; //increased to 3 deg from 1, max increased to v1.3.8 default of 4
 
@@ -3417,7 +3417,7 @@ namespace BDArmory.Modules
                             }
                             else
                                 continue;
-                            
+
                         }
 
                         if (candidateClass == WeaponClasses.Gun)
@@ -4101,12 +4101,16 @@ namespace BDArmory.Modules
                         weapon.Current.EnableWeapon();
                         weapon.Current.aiControlled = true;
                         if (weapon.Current.yawRange >= 5 && (weapon.Current.maxPitch - weapon.Current.minPitch) >= 5)
+                        {
                             weapon.Current.maxAutoFireCosAngle = 1; //this is why turrets are sniper accurate, knock this down if turrets should be less aim-bot
+                            weapon.Current.FiringTolerance = 0;
+                        }
                         else
                         {
                             //weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? 0.9993908f : 0.9975641f; //2 : 4 degrees
                             if (weapon.Current.FireAngleOverride) continue;// if a weapon-specific accuracy override is present
                             weapon.Current.maxAutoFireCosAngle = adjustedAutoFireCosAngle; //user-adjustable from 0-2deg
+                            weapon.Current.FiringTolerance = AutoFireCosAngleAdjustment;
                         }
                     }
             }

@@ -1824,7 +1824,7 @@ namespace BDArmory.Modules
         {
             if (v == vessel)
             {
-                terrainAlertDetectionRadius = 2f * BDACompetitionMode.GetRadius(vessel);
+                terrainAlertDetectionRadius = 2f * vessel.GetRadius();
             }
         }
 
