@@ -3434,7 +3434,7 @@ namespace BDArmory.Modules
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
                             Vector3 aimDirection = fireTransform.forward;
                             float targetCosAngle = ((ModuleWeapon)item.Current).FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)((ModuleWeapon)item.Current).FiringSolutionVector) : Vector3.Dot(aimDirection, (vessel.vesselTransform.position - fireTransform.position).normalized);
-                            bool outsideFiringCosAngle = targetCosAngle < ((ModuleWeapon)item.Current).maxAutoFireCosAngle;
+                            bool outsideFiringCosAngle = targetCosAngle < ((ModuleWeapon)item.Current).targetAdjustedMaxCosAngle;
 
                             if ((targetWeapon != null) && (candidateGimbal = true && candidateTraverse > 0))
                             {

@@ -96,6 +96,14 @@ namespace BDArmory.Modules
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
         private float targetRadius = 35f; // Radius of target 2° @ 1km.
+        public float targetAdjustedMaxCosAngle
+        {
+            get
+            {
+                var fireTransform = (eWeaponType == WeaponTypes.Rocket && rocketPod) ? rockets[0].parent : fireTransforms[0];
+                return finalAimTarget.IsZero() ? 1f : 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / (finalAimTarget - fireTransform.position).sqrMagnitude;
+            }
+        } // 1 - (x)^2/2 approximation to cos(x), where x = αθ, (which is an approximation to cos(arctan(x)) ~= 1 - (x - (x)^3/3)^2/2 ~= 1 - (x)^2/2 + 9*(x)^4/24)
         private Vector3 targetPosition;
         private Vector3 targetVelocity;  // local frame velocity
         private Vector3 targetAcceleration; // local frame
@@ -2602,7 +2610,7 @@ namespace BDArmory.Modules
                 Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
                 Vector3 aimDirection = fireTransform.forward;
                 float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
-                var maxAutoFireCosAngle2 = 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / targetRelPos.sqrMagnitude; // 1 - (x)^2/2 approximation to cos(x), where x = αθ, (which is an approximation to cos(arctan(x)) ~= 1 - (x - (x)^3/3)^2/2 ~= 1 - (x)^2/2 + 9*(x)^4/24)
+                var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
 
                 if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
                 {
