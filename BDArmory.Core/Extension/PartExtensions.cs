@@ -375,18 +375,7 @@ namespace BDArmory.Core.Extension
             switch (sourceType)
             {
                 case ExplosionSourceType.Missile:
-                    if (BDAMath.Between(armor, 100f, 200f))
-                    {
-                        damage *= 0.95f;
-                    }
-                    else if (BDAMath.Between(armor, 200f, 400f))
-                    {
-                        damage *= 0.875f;
-                    }
-                    else if (BDAMath.Between(armor, 400f, 500f))
-                    {
-                        damage *= 0.80f;
-                    }
+                    damage *= Mathf.Clamp(-0.0005f * armor + 1.025f, 0f, 0.5f); // Cap damage reduction at 50% (armor = 1050)
                     break;
                 default:
                     if (!(penetrationfactor >= 1f))
@@ -410,12 +399,12 @@ namespace BDArmory.Core.Extension
 
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory]: Damage Before Reduction : " + damage / 100);
-                            Debug.Log("[BDArmory]: Damage Reduction : " + _damageReduction / 100);
-                            Debug.Log("[BDArmory]: Damage After Armor : " + (damage *= (_damageReduction / 100f)));
+                            Debug.Log("[BDArmory]: Damage Before Reduction : " + damage);
+                            Debug.Log("[BDArmory]: Damage Reduction (%) : " + 100*(1-Mathf.Clamp01((113f - _damageReduction) / 100f)));
+                            Debug.Log("[BDArmory]: Damage After Armor : " + (damage *= Mathf.Clamp01((113f - _damageReduction) / 100f)));
                         }
 
-                        damage *= (_damageReduction / 100f);
+                        damage *= Mathf.Clamp01((113f - _damageReduction) / 100f); ;
                     }
                     break;
             }
