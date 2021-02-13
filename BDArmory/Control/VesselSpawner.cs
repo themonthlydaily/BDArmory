@@ -6,6 +6,7 @@ using System.Linq;
 using KSP.UI.Screens;
 using UnityEngine;
 using BDArmory.Core;
+using BDArmory.Core.Extension;
 using BDArmory.Modules;
 using BDArmory.Misc;
 using BDArmory.UI;
@@ -1155,7 +1156,7 @@ namespace BDArmory.Control
                                 }
                                 BDACompetitionMode.Instance.rammingInformation[vessel.GetName()].vessel = vessel;
                                 BDACompetitionMode.Instance.rammingInformation[vessel.GetName()].partCount = vessel.parts.Count;
-                                BDACompetitionMode.Instance.rammingInformation[vessel.GetName()].radius = BDACompetitionMode.GetRadius(vessel);
+                                BDACompetitionMode.Instance.rammingInformation[vessel.GetName()].radius = vessel.GetRadius();
                                 foreach (var otherVesselName in BDACompetitionMode.Instance.rammingInformation.Keys)
                                 {
                                     if (otherVesselName == vessel.GetName()) continue;
