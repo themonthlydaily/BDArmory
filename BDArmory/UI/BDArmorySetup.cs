@@ -1879,6 +1879,23 @@ namespace BDArmory.UI
                 }
             }
 
+            // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
+            // {
+            //     var now = Time.realtimeSinceStartup;
+            //     int iters = 1000000;
+            //     for (int i = 0; i < iters; ++i)
+            //     {
+            //         FlightGlobals.ActiveVessel.GetRadius();
+            //     }
+            //     Debug.Log("DEBUG GetRadius " + (Time.realtimeSinceStartup - now) / iters + "s/iter, value: " + FlightGlobals.ActiveVessel.GetRadius());
+            //     now = Time.realtimeSinceStartup;
+            //     for (int i = 0; i < iters; ++i)
+            //     {
+            //         RadarUtils.GetVesselSize(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.transform);
+            //     }
+            //     Debug.Log("DEBUG GetVesselSize " + (Time.realtimeSinceStartup - now) / iters + "s/iter, value: " + RadarUtils.GetVesselSize(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.transform));
+            // }
+
             ++line;
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_EditInputs")))//"Edit Inputs"
             {
