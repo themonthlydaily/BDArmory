@@ -147,10 +147,10 @@ namespace BDArmory.Core.Utils
             else // scaledDistance > 2.78
             {
                 double U = -3.53626218091 + 3.46349745571 * t;
-                ii = 0.686906642409 + 0.0933035304009 * U - 
-                    0.0005849420883 * Math.Pow(U, 2) - 
-                    0.00226884995013 * Math.Pow(U, 3) - 
-                    0.00295908591505 * Math.Pow(U, 4) + 
+                ii = 0.686906642409 + 0.0933035304009 * U -
+                    0.0005849420883 * Math.Pow(U, 2) -
+                    0.00226884995013 * Math.Pow(U, 3) -
+                    0.00295908591505 * Math.Pow(U, 4) +
                     0.00148029868929 * Math.Pow(U, 5);
             }
 
@@ -171,14 +171,14 @@ namespace BDArmory.Core.Utils
             double ii = 0;
 
             double U = -0.202425716178 + 1.37784223635 * t;
-            ii = -0.0591634288046 + 1.35706496258 * U + 
-                0.052492798645 * Math.Pow(U, 2) - 
-                0.196563954086 * Math.Pow(U, 3) - 
-                0.0601770052288 * Math.Pow(U, 4) + 
-                0.0696360270981 * Math.Pow(U, 5) + 
-                0.0215297490092 * Math.Pow(U, 6) - 
-                0.0161658930785 * Math.Pow(U, 7) - 
-                0.00232531970294 * Math.Pow(U, 8) + 
+            ii = -0.0591634288046 + 1.35706496258 * U +
+                0.052492798645 * Math.Pow(U, 2) -
+                0.196563954086 * Math.Pow(U, 3) -
+                0.0601770052288 * Math.Pow(U, 4) +
+                0.0696360270981 * Math.Pow(U, 5) +
+                0.0215297490092 * Math.Pow(U, 6) -
+                0.0161658930785 * Math.Pow(U, 7) -
+                0.00232531970294 * Math.Pow(U, 8) +
                 0.00147752067524 * Math.Pow(U, 9);
 
             ii = Math.Pow(10, ii);
@@ -216,7 +216,7 @@ namespace BDArmory.Core.Utils
         /// <returns>explosive range in meters </returns>
         public static float CalculateExplosiveMass(float range)
         {
-            return (float)Math.Pow((range / 14.8f), 3);
+            return (float)Math.Pow((range / 14.8f), 3);
         }
     }
 
