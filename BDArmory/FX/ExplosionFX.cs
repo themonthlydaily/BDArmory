@@ -44,7 +44,7 @@ namespace BDArmory.FX
 
         public static List<DestructibleBuilding> IgnoreBuildings = new List<DestructibleBuilding>();
 
-        internal static readonly float ExplosionVelocity = 343f;
+        internal static readonly float ExplosionVelocity = 422.75f;
 
         private float particlesMaxEnergy;
 

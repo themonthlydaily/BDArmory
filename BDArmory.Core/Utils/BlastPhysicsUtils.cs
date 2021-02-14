@@ -159,6 +159,33 @@ namespace BDArmory.Core.Utils
             return ii;
         }
 
+        // Calculate duration of explosion event in seconds
+        public static float CalculateMaxTime(float tntMass)
+        {
+            float range = CalculateBlastRange(tntMass);
+            range = ClampRange(tntMass, range);
+            double scaledDistance = CalculateScaledDistance(tntMass, range);
+
+            double t = Math.Log(scaledDistance) / Math.Log(10);
+            double cubeRootOfChargeWeight = Math.Pow(tntMass, 0.3333333);
+            double ii = 0;
+
+            double U = -0.202425716178 + 1.37784223635 * t;
+            ii = -0.0591634288046 + 1.35706496258 * U + 
+                0.052492798645 * Math.Pow(U, 2) - 
+                0.196563954086 * Math.Pow(U, 3) - 
+                0.0601770052288 * Math.Pow(U, 4) + 
+                0.0696360270981 * Math.Pow(U, 5) + 
+                0.0215297490092 * Math.Pow(U, 6) - 
+                0.0161658930785 * Math.Pow(U, 7) - 
+                0.00232531970294 * Math.Pow(U, 8) + 
+                0.00147752067524 * Math.Pow(U, 9);
+
+            ii = Math.Pow(10, ii);
+            ii = ii * cubeRootOfChargeWeight / 1000f;
+            return (float)ii;
+        }
+
         /// <summary>
         /// Calculate newtons from the pressure in kPa and the surface on Square meters
         /// </summary>
