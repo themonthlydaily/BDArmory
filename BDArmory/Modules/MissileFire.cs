@@ -3303,6 +3303,9 @@ namespace BDArmory.Modules
             if (AI != null && AI.pilotEnabled && !AI.CanEngage())
                 return false;
 
+            if ((target.isMissile) && (target.isSplashed || target.isUnderwater))
+                return false; // Don't try to engage torpedos, it doesn't work
+
             // Part 2: check weapons against individual target types
             // ------
 
@@ -3318,6 +3321,8 @@ namespace BDArmory.Modules
 
             if (target.isMissile)
             {
+                
+
                 // iterate over weaponTypesMissile and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
                 // Prioritize by:
                 // 1. Lasers
@@ -3553,6 +3558,8 @@ namespace BDArmory.Modules
                         if (!CheckEngagementEnvelope(item.Current, distance)) continue;
                         // weapon usable, if missile continue looking for lasers/guns, else take it
                         WeaponClasses candidateClass = item.Current.GetWeaponClass();
+                        if ((candidateClass == WeaponClasses.Missile || candidateClass == WeaponClasses.SLW) && (missilesAway >= maxMissilesOnTarget))
+                            continue; // Max missiles are fired, try another weapon
 
                         if (candidateClass == WeaponClasses.Missile)
                         {
