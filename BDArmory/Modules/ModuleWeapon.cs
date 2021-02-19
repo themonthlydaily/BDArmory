@@ -2223,6 +2223,7 @@ namespace BDArmory.Modules
                 audioSource.priority = 10;
                 audioSource.dopplerLevel = 0;
                 audioSource.spatialBlend = 1;
+                audioSource.playOnAwake = false;
             }
 
             if (!audioSource2)
@@ -2234,6 +2235,7 @@ namespace BDArmory.Modules
                 audioSource2.dopplerLevel = 0;
                 audioSource2.priority = 10;
                 audioSource2.spatialBlend = 1;
+                audioSource2.playOnAwake = false;
             }
 
             if (reloadAudioPath != string.Empty)
