@@ -564,6 +564,18 @@ namespace BDArmory.Modules
             }
         }
 
+        [KSPAction("Self-destruct")] // Self-destruct
+        public void AGSelfDestruct(KSPActionParam param)
+        {
+            foreach (var part in vessel.parts)
+            {
+                if (part.protoModuleCrew.Count > 0)
+                {
+                    PartExploderSystem.AddPartToExplode(part);
+                }
+            }
+        }
+
         public BDTeam Team
         {
             get
