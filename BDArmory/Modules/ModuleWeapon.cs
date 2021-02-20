@@ -1151,7 +1151,7 @@ namespace BDArmory.Modules
             {
                 if (!vessel.IsControllable)
                 {
-                    if (weaponState != WeaponStates.PoweringDown || weaponState != WeaponStates.Disabled)
+                    if (!(weaponState == WeaponStates.PoweringDown || weaponState == WeaponStates.Disabled))
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ModuleWeapon]: Vessel is uncontrollable, disabling weapon " + part.name);
                         DisableWeapon();
