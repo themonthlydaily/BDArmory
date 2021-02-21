@@ -983,7 +983,7 @@ namespace BDArmory.UI
                     ActiveWeaponManager.AutoFireCosAngleAdjustment =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 2);
+                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 3);
                     ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20) / 20;
                     if (ActiveWeaponManager.AutoFireCosAngleAdjustment != oldAutoFireCosAngleAdjustment)
                         ActiveWeaponManager.OnAFCAAUpdated(null, null);
@@ -1786,13 +1786,14 @@ namespace BDArmory.UI
                         BDACompetitionMode.Instance.RunDebugChecks();
                     }
                 }
+
+                ++line;
             }
 
             //competition mode
             if (HighLogic.LoadedSceneIsFlight)
             {
-                ++line;
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
+                if (BDArmorySettings.REMOTE_LOGGING_VISIBLE)
                 {
                     bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
                     BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
@@ -1800,11 +1801,14 @@ namespace BDArmory.UI
                     {
                         GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
                         BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RemoteInterheatDelay")}: ({BDArmorySettings.REMOTE_INTERHEAT_DELAY}s)", leftLabel); // Inter-heat delay
+                        BDArmorySettings.REMOTE_INTERHEAT_DELAY = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.REMOTE_INTERHEAT_DELAY, 1f, 30f);
                     }
                 }
                 else
                     BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
 
+                ++line;
                 bool origPm = BDArmorySettings.PEACE_MODE;
                 BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
                 if (BDArmorySettings.PEACE_MODE && !origPm)
@@ -1881,19 +1885,27 @@ namespace BDArmory.UI
 
             // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
             // {
+            //     var test = FlightGlobals.ActiveVessel.transform.position;
+            //     float FiringTolerance = 1f;
+            //     float targetRadius = 20f;
+            //     Vector3 finalAimTarget = new Vector3(10f, 20f, 30f);
+            //     Vector3 pos = new Vector3(2f, 3f, 4f);
+            //     float theta_const = Mathf.Deg2Rad * 1f;
+            //     float test_out = 0f;
+            //     int iters = 10000000;
             //     var now = Time.realtimeSinceStartup;
-            //     int iters = 1000000;
             //     for (int i = 0; i < iters; ++i)
             //     {
-            //         FlightGlobals.ActiveVessel.GetRadius();
+            //         test_out = i > iters ? 1f : 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / (finalAimTarget - pos).sqrMagnitude;
             //     }
-            //     Debug.Log("DEBUG GetRadius " + (Time.realtimeSinceStartup - now) / iters + "s/iter, value: " + FlightGlobals.ActiveVessel.GetRadius());
+            //     Debug.Log("DEBUG sqrMagnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
             //     now = Time.realtimeSinceStartup;
             //     for (int i = 0; i < iters; ++i)
             //     {
-            //         RadarUtils.GetVesselSize(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.transform);
+            //         var theta = FiringTolerance * targetRadius / (finalAimTarget - pos).magnitude + theta_const;
+            //         test_out = i > iters ? 1f : 1f - 0.5f * (theta * theta);
             //     }
-            //     Debug.Log("DEBUG GetVesselSize " + (Time.realtimeSinceStartup - now) / iters + "s/iter, value: " + RadarUtils.GetVesselSize(FlightGlobals.ActiveVessel, FlightGlobals.ActiveVessel.transform));
+            //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
             // }
 
             ++line;
