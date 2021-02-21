@@ -3321,8 +3321,6 @@ namespace BDArmory.Modules
 
             if (target.isMissile)
             {
-                
-
                 // iterate over weaponTypesMissile and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
                 // Prioritize by:
                 // 1. Lasers
