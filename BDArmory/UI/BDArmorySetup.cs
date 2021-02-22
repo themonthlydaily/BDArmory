@@ -983,7 +983,7 @@ namespace BDArmory.UI
                     ActiveWeaponManager.AutoFireCosAngleAdjustment =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 4);
+                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 3);
                     ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20) / 20;
                     if (ActiveWeaponManager.AutoFireCosAngleAdjustment != oldAutoFireCosAngleAdjustment)
                         ActiveWeaponManager.OnAFCAAUpdated(null, null);
@@ -1593,11 +1593,12 @@ namespace BDArmory.UI
                         KSP.UI.Screens.PartCategorizer.Instance.editorPartList.Refresh();
                     }
                 }
+                BDArmorySettings.ADVANCED_TARGETING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ADVANCED_TARGETING, Localizer.Format("#LOC_BDArmory_Settings_AdvTargeting"));
                 ++line;
             }
             if (BDArmorySettings.BATTLEDAMAGE)
             {
-                if (GUI.Button(SLineRect(++line), (BDArmorySettings.GENERAL_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_BDSettingsToggle")))//Show/hide battle damage settings.
+                if (GUI.Button(SLineRect(++line), (BDArmorySettings.BATTLEDAMAGE_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_BDSettingsToggle")))//Show/hide battle damage settings.
                 {
                     BDArmorySettings.BATTLEDAMAGE_TOGGLE = !BDArmorySettings.BATTLEDAMAGE_TOGGLE;
                 }
@@ -1646,6 +1647,34 @@ namespace BDArmory.UI
                         BDArmorySettings.BD_FIRE_DOT = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.BD_FIRE_DOT, Localizer.Format("#LOC_BDArmory_Settings_BD_DoT"));//"Fire Damage"
                         GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Fire_Dmg")}:  ({BDArmorySettings.BD_FIRE_DAMAGE}/s)", leftLabel); // "Fire Damage magnitude"
                         BDArmorySettings.BD_FIRE_DAMAGE = (int)(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.BD_FIRE_DAMAGE, 0f, 20));
+                    }
+                    ++line;
+                }
+            }
+            if (BDArmorySettings.ADVANCED_TARGETING)
+            {
+                if (GUI.Button(SLineRect(++line), (BDArmorySettings.ADV_TARGET_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_AdvTargetToggle")))//Show/hide battle damage settings.
+                {
+                    BDArmorySettings.ADV_TARGET_TOGGLE = !BDArmorySettings.ADV_TARGET_TOGGLE;
+                }
+                if (BDArmorySettings.ADV_TARGET_TOGGLE)
+                {
+                    line += 0.2f;
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_NumTargets")}: ({BDArmorySettings.MULTI_TARGET_NUM})", leftLabel); //Max Targets
+                    BDArmorySettings.MULTI_TARGET_NUM = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MULTI_TARGET_NUM, 1f, 10);
+                    BDArmorySettings.TARGET_COM = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TARGET_COM, Localizer.Format("#LOC_BDArmory_Settings_AT_COM"));//"Target CoM"
+                    if (!BDArmorySettings.TARGET_COM)
+                    {
+
+                        BDArmorySettings.TARGET_WEAPONS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TARGET_WEAPONS, Localizer.Format("#LOC_BDArmory_Settings_AT_Weapons"));//"Target Weapons"
+                        BDArmorySettings.TARGET_ENGINES = GUI.Toggle(SRightRect(line), BDArmorySettings.TARGET_ENGINES, Localizer.Format("#LOC_BDArmory_Settings_AT_Engines"));//"Target Engines"
+                        BDArmorySettings.TARGET_COMMAND = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TARGET_COMMAND, Localizer.Format("#LOC_BDArmory_Settings_AT_Command"));//"Target Command Parts"
+                    }
+                    else
+                    {
+                        BDArmorySettings.TARGET_WEAPONS = false;
+                        BDArmorySettings.TARGET_ENGINES = false;
+                        BDArmorySettings.TARGET_COMMAND = false;
                     }
                     ++line;
                 }
@@ -1786,13 +1815,14 @@ namespace BDArmory.UI
                         BDACompetitionMode.Instance.RunDebugChecks();
                     }
                 }
+
+                ++line;
             }
 
             //competition mode
             if (HighLogic.LoadedSceneIsFlight)
             {
-                ++line;
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.REMOTE_LOGGING_VISIBLE)
+                if (BDArmorySettings.REMOTE_LOGGING_VISIBLE)
                 {
                     bool remoteLoggingEnabled = BDArmorySettings.REMOTE_LOGGING_ENABLED;
                     BDArmorySettings.REMOTE_LOGGING_ENABLED = GUI.Toggle(SLeftRect(++line), remoteLoggingEnabled, Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging"));//"Remote Logging"
@@ -1800,11 +1830,14 @@ namespace BDArmory.UI
                     {
                         GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionID")}: ", leftLabel); // Competition hash.
                         BDArmorySettings.COMPETITION_HASH = GUI.TextField(SRightRect(line), BDArmorySettings.COMPETITION_HASH);
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RemoteInterheatDelay")}: ({BDArmorySettings.REMOTE_INTERHEAT_DELAY}s)", leftLabel); // Inter-heat delay
+                        BDArmorySettings.REMOTE_INTERHEAT_DELAY = (int)GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.REMOTE_INTERHEAT_DELAY, 1f, 30f);
                     }
                 }
                 else
                     BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
 
+                ++line;
                 bool origPm = BDArmorySettings.PEACE_MODE;
                 BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
                 if (BDArmorySettings.PEACE_MODE && !origPm)
@@ -1878,6 +1911,31 @@ namespace BDArmory.UI
                     }
                 }
             }
+
+            // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
+            // {
+            //     var test = FlightGlobals.ActiveVessel.transform.position;
+            //     float FiringTolerance = 1f;
+            //     float targetRadius = 20f;
+            //     Vector3 finalAimTarget = new Vector3(10f, 20f, 30f);
+            //     Vector3 pos = new Vector3(2f, 3f, 4f);
+            //     float theta_const = Mathf.Deg2Rad * 1f;
+            //     float test_out = 0f;
+            //     int iters = 10000000;
+            //     var now = Time.realtimeSinceStartup;
+            //     for (int i = 0; i < iters; ++i)
+            //     {
+            //         test_out = i > iters ? 1f : 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / (finalAimTarget - pos).sqrMagnitude;
+            //     }
+            //     Debug.Log("DEBUG sqrMagnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
+            //     now = Time.realtimeSinceStartup;
+            //     for (int i = 0; i < iters; ++i)
+            //     {
+            //         var theta = FiringTolerance * targetRadius / (finalAimTarget - pos).magnitude + theta_const;
+            //         test_out = i > iters ? 1f : 1f - 0.5f * (theta * theta);
+            //     }
+            //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
+            // }
 
             ++line;
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_EditInputs")))//"Edit Inputs"

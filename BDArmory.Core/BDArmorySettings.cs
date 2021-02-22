@@ -139,12 +139,22 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = false; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
 
+        //Advanced Targeting settings
+        [BDAPersistantSettingsField] public static int MULTI_TARGET_NUM = 1;
+        [BDAPersistantSettingsField] public static bool ADVANCED_TARGETING = false;
+        [BDAPersistantSettingsField] public static bool ADV_TARGET_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool TARGET_COM = true; //target CoM Y/N
+        [BDAPersistantSettingsField] public static bool TARGET_WEAPONS = false; //target guns/turrets
+        [BDAPersistantSettingsField] public static bool TARGET_ENGINES = false; //Exactly what is says on the tin
+        [BDAPersistantSettingsField] public static bool TARGET_COMMAND = false; //Cockpits/probecores
 
         // Remote logging
-        [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;            // Show/hide the remote orchestration toggle
-        [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;            // Enable/disable remote orchestration
-        [BDAPersistantSettingsField] public static string REMOTE_CLIENT_SECRET = "";               // Token used to authorize remote orchestration client
-        [BDAPersistantSettingsField] public static string COMPETITION_HASH = "";                   // Competition hash used for orchestration
+        [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle
+        [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_ENABLED = false;                                   // Enable/disable remote orchestration
+        [BDAPersistantSettingsField] public static string REMOTE_ORCHESTRATION_BASE_URL = "bdascores.herokuapp.com";      // Base URL used for orchestration (note: we can't include the https:// as it breaks KSP's serialisation routine)
+        [BDAPersistantSettingsField] public static string REMOTE_CLIENT_SECRET = "";                                      // Token used to authorize remote orchestration client
+        [BDAPersistantSettingsField] public static string COMPETITION_HASH = "";                                          // Competition hash used for orchestration
+        [BDAPersistantSettingsField] public static float REMOTE_INTERHEAT_DELAY = 30;                                     // Delay between heats.
 
         // Spawner settings
         [BDAPersistantSettingsField] public static bool SHOW_SPAWN_OPTIONS = true;                 // Show spawn options.
