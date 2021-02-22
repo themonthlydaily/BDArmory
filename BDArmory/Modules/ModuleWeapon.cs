@@ -104,6 +104,7 @@ namespace BDArmory.Modules
         public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
+        private Part visualTargetPart;
         bool targetAcquired;
 
         public Vector3? FiringSolutionVector => finalAimTarget.IsZero() ? (Vector3?)null : (finalAimTarget - fireTransforms[0].position).normalized;
@@ -2295,10 +2296,20 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
 
                     if (visualTargetVessel != null && visualTargetVessel.loaded)
                     {
-                        targetPosition = ray.direction *
-                                         Vector3.Distance(visualTargetVessel.transform.position,
-                                             FlightCamera.fetch.mainCamera.transform.position) +
-                                         FlightCamera.fetch.mainCamera.transform.position;
+                        if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM &&visualTargetPart != null)
+                        {
+                            targetPosition = ray.direction *
+                                             Vector3.Distance(visualTargetPart.transform.position,
+                                                 FlightCamera.fetch.mainCamera.transform.position) +
+                                             FlightCamera.fetch.mainCamera.transform.position;
+                        }
+                        else
+                        {
+                            targetPosition = ray.direction *
+                                             Vector3.Distance(visualTargetVessel.transform.position,
+                                                 FlightCamera.fetch.mainCamera.transform.position) +
+                                             FlightCamera.fetch.mainCamera.transform.position;
+                        }
                     }
                 }
             }
@@ -2649,6 +2660,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             {
                 autoFire = false;
                 visualTargetVessel = null;
+                visualTargetPart = null;
             }
         }
 
@@ -2868,6 +2880,17 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
                 {
                     targetPosition = visualTargetVessel.CoM;
+                    if (!BDArmorySettings.TARGET_COM)
+                    {
+                        TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
+                        if (visualTargetPart == null)
+                        {
+                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            visualTargetPart = currentTarget.targetPartList[targetID];                        
+                            //Debug.Log("[MTD] MW TargetID: " + targetID);
+                        }                        
+                        targetPosition = visualTargetPart.transform.position;
+                    }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;
                     return;
