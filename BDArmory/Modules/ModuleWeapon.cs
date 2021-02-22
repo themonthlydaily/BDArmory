@@ -2896,7 +2896,7 @@ namespace BDArmory.Modules
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
                         if (visualTargetPart == null)
                         {
-                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            var targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
                             visualTargetPart = currentTarget.targetPartList[targetID];
                             //Debug.Log("[MTD] MW TargetID: " + targetID);
                         }
