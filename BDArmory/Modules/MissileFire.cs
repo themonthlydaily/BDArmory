@@ -4509,7 +4509,7 @@ namespace BDArmory.Modules
                     if (weapon.Current.turret && BDArmorySettings.MULTI_TARGET_NUM > 1)
                     {
                         //Debug.Log("[MTD]: Targets Assigned: " + targetsAssigned.Count);
-                        if (TurretID > Mathf.Min((targetsAssigned.Count-1), BDArmorySettings.MULTI_TARGET_NUM))
+                        if (TurretID > Mathf.Min((targetsAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
                         {
                             TurretID = 0; //if more turrets than targets, loop target list
                         }
@@ -4520,7 +4520,7 @@ namespace BDArmory.Modules
                                 (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
                                 (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
                             {
-                                if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel)) 
+                                if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel))
                                 {
                                     weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
                                     //Debug.Log("[MTD]: " + weapon.Current.GetShortName() + " assigned " + targetsAssigned[TurretID].Vessel.name);
