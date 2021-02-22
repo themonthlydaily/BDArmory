@@ -115,6 +115,7 @@ namespace BDArmory.Modules
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
         private Part visualTargetPart;
+        private int targetID = 0;
         bool targetAcquired;
 
         public Vector3? FiringSolutionVector => finalAimTarget.IsZero() ? (Vector3?)null : (finalAimTarget - fireTransforms[0].position).normalized;
@@ -2896,7 +2897,11 @@ namespace BDArmory.Modules
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
                         if (visualTargetPart == null)
                         {
-                            var targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            if (!turret) //make fixed guns all get the same target part
+                            {
+                                targetID = 0;
+                            }
                             visualTargetPart = currentTarget.targetPartList[targetID];
                             //Debug.Log("[MTD] MW TargetID: " + targetID);
                         }
