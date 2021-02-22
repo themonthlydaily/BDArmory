@@ -930,8 +930,14 @@ namespace BDArmory.Modules
             }
             RefreshModules();
             UpdateList();
-            var TI = this.vessel.gameObject.GetComponent<TargetInfo>();
-            TI.UpdateTargetPartList();
+            if (vessel != null)
+            {
+                var TI = vessel.gameObject.GetComponent<TargetInfo>();
+                if (TI != null)
+                {
+                    TI.UpdateTargetPartList();
+                }
+            }
         }
 
         void OnVesselCreate(Vessel v)
