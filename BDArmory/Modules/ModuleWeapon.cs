@@ -105,6 +105,7 @@ namespace BDArmory.Modules
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
         private Part visualTargetPart;
+        private int targetID = 0;
         bool targetAcquired;
 
         public Vector3? FiringSolutionVector => finalAimTarget.IsZero() ? (Vector3?)null : (finalAimTarget - fireTransforms[0].position).normalized;
