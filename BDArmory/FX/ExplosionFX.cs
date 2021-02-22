@@ -119,6 +119,22 @@ namespace BDArmory.FX
             List<DestructibleBuilding> buildingAdded = new List<DestructibleBuilding>();
             Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
 
+            string sourceVesselName = null;
+            if (BDACompetitionMode.Instance)
+            {
+                switch (ExplosionSource)
+                {
+                    case ExplosionSourceType.Missile:
+                        var explosivePart = ExplosivePart ? ExplosivePart.FindModuleImplementing<BDExplosivePart>() : null;
+                        sourceVesselName = explosivePart ? explosivePart.sourcevessel.GetName() : SourceVesselName;
+                        break;
+                    case ExplosionSourceType.Bullet:
+                        sourceVesselName = SourceVesselName;
+                        break;
+                    default:
+                        break;
+                }
+            }
             using (var hitCollidersEnu = Physics.OverlapSphere(Position, Range, 9076737).AsEnumerable().GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())
@@ -129,22 +145,6 @@ namespace BDArmory.FX
 
                     if (partHit != null && partHit.mass > 0 && !partsAdded.Contains(partHit))
                     {
-                        string sourceVesselName = null;
-                        if (BDACompetitionMode.Instance)
-                        {
-                            switch (ExplosionSource)
-                            {
-                                case ExplosionSourceType.Missile:
-                                    var explosivePart = ExplosivePart ? ExplosivePart.FindModuleImplementing<BDExplosivePart>() : null;
-                                    sourceVesselName = explosivePart ? explosivePart.sourcevessel.GetName() : SourceVesselName;
-                                    break;
-                                case ExplosionSourceType.Bullet:
-                                    sourceVesselName = SourceVesselName;
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
                         var damaged = ProcessPartEvent(partHit, sourceVesselName, result, partsAdded);
                         // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
                         if (damaged && ExplosionSource == ExplosionSourceType.Missile && BDACompetitionMode.Instance)
