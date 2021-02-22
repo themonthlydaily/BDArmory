@@ -2306,7 +2306,7 @@ namespace BDArmory.Modules
 
                     if (visualTargetVessel != null && visualTargetVessel.loaded)
                     {
-                        if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM &&visualTargetPart != null)
+                        if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM && visualTargetPart != null)
                         {
                             targetPosition = ray.direction *
                                              Vector3.Distance(visualTargetPart.transform.position,
@@ -2897,9 +2897,9 @@ namespace BDArmory.Modules
                         if (visualTargetPart == null)
                         {
                             targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
-                            visualTargetPart = currentTarget.targetPartList[targetID];                        
+                            visualTargetPart = currentTarget.targetPartList[targetID];
                             //Debug.Log("[MTD] MW TargetID: " + targetID);
-                        }                        
+                        }
                         targetPosition = visualTargetPart.transform.position;
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
