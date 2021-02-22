@@ -284,6 +284,7 @@ namespace BDArmory.Targeting
         public void UpdateTargetPartList()
         {
             targetPartList.Clear();
+            int targetCount = 0;
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {
@@ -293,6 +294,7 @@ namespace BDArmory.Targeting
                         if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
                         {
                             targetPartList.Add(part.Current);
+                            targetCount++;
                         }
                     }
                     if (BDArmorySettings.TARGET_ENGINES)
@@ -300,6 +302,7 @@ namespace BDArmory.Targeting
                         if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
                         {
                             targetPartList.Add(part.Current);
+                            targetCount++;
                         }
                     }
                     if (BDArmorySettings.TARGET_COMMAND)
@@ -307,10 +310,11 @@ namespace BDArmory.Targeting
                         if (part.Current.FindModuleImplementing<ModuleCommand>())
                         {
                             targetPartList.Add(part.Current);
+                            targetCount++;
                         }
                     }
-                    //else
-                    if (!BDArmorySettings.TARGET_COMMAND && !BDArmorySettings.TARGET_ENGINES && !BDArmorySettings.TARGET_WEAPONS)
+                    //else if nothing prioritized, or all priority targets destroyed
+                    if (!BDArmorySettings.TARGET_COMMAND && !BDArmorySettings.TARGET_ENGINES && !BDArmorySettings.TARGET_WEAPONS || (targetCount < 1))
                     {
                         targetPartList.Add(part.Current);
                     }
