@@ -2886,6 +2886,10 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         if (visualTargetPart == null)
                         {
                             targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            if (!turret) //make fixed guns all get the same target part
+                            {
+                                targetID = 0;
+                            }
                             visualTargetPart = currentTarget.targetPartList[targetID];                        
                             //Debug.Log("[MTD] MW TargetID: " + targetID);
                         }                        
