@@ -146,7 +146,7 @@ if len(summary['craft']) > 0:
 		",".join(('deathCount', 'dcB', 'dcM', 'dcR', 'dcA', 'dcS')) if k == 'deathCount' else
 		",".join(('cleanKills', 'ckB', 'ckM', 'ckR')) if k == 'cleanKills' else
 		k for k in next(iter(summary['craft'].values())).keys()) + "\n"
-	csv_summary += "\n".join(craft + "," + ",".join(str(v) if not isinstance(v, tuple) else ",".join(str(sf) for sf in v) for v in scores.values()) for craft, scores in summary['craft'].items())
+	csv_summary += "\n".join(craft + "," + ",".join(str(int(100 * v) / 100) if not isinstance(v, tuple) else ",".join(str(int(100 * sf) / 100) for sf in v) for v in scores.values()) for craft, scores in summary['craft'].items())
 	with open(tournamentDir / 'summary.csv', 'w') as outFile:
 		outFile.write(csv_summary)
 
