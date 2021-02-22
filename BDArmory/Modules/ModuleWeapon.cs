@@ -2897,7 +2897,7 @@ namespace BDArmory.Modules
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
                         if (visualTargetPart == null)
                         {
-                            var targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
                             if (!turret) //make fixed guns all get the same target part
                             {
                                 targetID = 0;
