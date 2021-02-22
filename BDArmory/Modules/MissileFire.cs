@@ -904,6 +904,8 @@ namespace BDArmory.Modules
             }
             RefreshModules();
             UpdateList();
+            var TI = this.vessel.gameObject.GetComponent<TargetInfo>();
+            TI.UpdateTargetPartList();
         }
 
         void OnVesselCreate(Vessel v)
@@ -4476,7 +4478,7 @@ namespace BDArmory.Modules
                     if (weapon.Current.turret && BDArmorySettings.MULTI_TARGET_NUM > 1)
                     {
                         //Debug.Log("[MTD]: Targets Assigned: " + targetsAssigned.Count);
-                        if (TurretID > Mathf.Min(targetsAssigned.Count, BDArmorySettings.MULTI_TARGET_NUM))
+                        if (TurretID > Mathf.Min((targetsAssigned.Count-1), BDArmorySettings.MULTI_TARGET_NUM))
                         {
                             TurretID = 0; //if more turrets than targets, loop target list
                         }
