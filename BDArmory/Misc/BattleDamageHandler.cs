@@ -24,7 +24,7 @@ namespace BDArmory.Misc
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
-                        if (rubbertank.SSTank && part.GetDamagePercentatge() > 0.66f) return;
+                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.66f) return;
                     }
                     if (penetrationFactor > 1.2)
                     {
@@ -39,10 +39,11 @@ namespace BDArmory.Misc
                     }
                 }
             }
-	    if (BDArmorySettings.BD_FIRES_ENABLED)
-	    {
-		if (part.isBattery())
+            if (BDArmorySettings.BD_FIRES_ENABLED)
+            {
+                if (part.isBattery())
                 {
+                    var alreadyburning = part.GetComponentInChildren<FireFX>();
                     if (alreadyburning == null)
                     {
                         double Diceroll = UnityEngine.Random.Range(0, 100);
@@ -55,9 +56,9 @@ namespace BDArmory.Misc
                         {
                             BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
                         }
-		    }
-		}
-	    }
+                    }
+                }
+            }
             //AmmoBins
             if (BDArmorySettings.BD_AMMOBINS && penetrationFactor > 1.2 && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
             {
@@ -344,7 +345,7 @@ namespace BDArmory.Misc
                             crewMember.UnregisterExperienceTraits(part);
                             //crewMember.outDueToG = true; //implement temp KO to simulate wounding?
                             crewMember.Die();
-                            if (part.isKerbalEVA())
+                            if (part.IsKerbalEVA())
                             {
                                 part.Die();
                             }

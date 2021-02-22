@@ -228,7 +228,7 @@ namespace BDArmory.Control
             else // Spawn the specific vessels.
             {
                 spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
-                spawnConfig.numberOfTeams = 1;
+                // spawnConfig.numberOfTeams = 1;
             }
             if (spawnConfig.craftFiles.Count == 0)
             {
@@ -409,7 +409,7 @@ namespace BDArmory.Control
                 teamVesselNames = new List<List<string>>();
                 var currentTeamNames = new List<string>();
                 int spawnedTeamCount = 0;
-                if (spawnConfig.assignTeams) useOriginalTeamNames = true;
+                if (spawnConfig.assignTeams && spawnConfig.numberOfTeams == 1) useOriginalTeamNames = true;
                 Vector3 teamSpawnPosition;
                 foreach (var team in spawnConfig.teamsSpecific)
                 {
@@ -448,10 +448,13 @@ namespace BDArmory.Control
                             vessel.vesselName = potentialName;
                         }
                         currentTeamNames.Add(vessel.vesselName);
-                        if (spawnConfig.assignTeams) // Assign team names based on folders.
+                        if (spawnConfig.assignTeams)
                         {
-                            var paths = craftUrl.Split(Path.DirectorySeparatorChar);
-                            originalTeams[vessel.vesselName] = paths[paths.Length - 2];
+                            if (spawnConfig.numberOfTeams == 1) // Assign team names based on folders.
+                            {
+                                var paths = craftUrl.Split(Path.DirectorySeparatorChar);
+                                originalTeams[vessel.vesselName] = paths[paths.Length - 2];
+                            }
                         }
                         spawnedVessels.Add(vessel.GetName(), new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
                         ++spawnedVesselCount;

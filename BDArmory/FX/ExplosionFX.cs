@@ -27,6 +27,7 @@ namespace BDArmory.FX
         public float Caliber { get; set; }
         public ExplosionSourceType ExplosionSource { get; set; }
         public string SourceVesselName { get; set; }
+        public string SourceWeaponName { get; set; }
         public float Power { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Direction { get; set; }
@@ -188,7 +189,7 @@ namespace BDArmory.FX
                 string message = "";
                 foreach (var vesselName in vesselsHitByMissiles.Keys)
                     message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
-                message += " parts damaged due to missile strike.";
+                message += " parts damaged due to missile strike" + (SourceWeaponName != null ? " (" + SourceWeaponName + ")" : "") + (SourceVesselName != null ? " from " + SourceVesselName : "") + ".";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
             }
@@ -530,7 +531,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType, float caliber = 0, Part explosivePart = null, string sourceVesselName = null, Vector3 direction = default(Vector3), bool isfx = false)
+        public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType, float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), bool isfx = false)
         {
             CreateObjectPool(explModelPath, soundPath);
 
@@ -552,6 +553,7 @@ namespace BDArmory.FX
             eFx.Power = tntMassEquivalent;
             eFx.ExplosionSource = explosionSourceType;
             eFx.SourceVesselName = sourceVesselName != null ? sourceVesselName : explosionSourceType == ExplosionSourceType.Missile ? (explosivePart != null && explosivePart.vessel != null ? explosivePart.vessel.GetName() : null) : null; // Use the sourceVesselName if specified, otherwise get the sourceVesselName from the missile if it is one.
+            eFx.SourceWeaponName = sourceWeaponName;
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;
