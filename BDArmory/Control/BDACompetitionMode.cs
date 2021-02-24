@@ -361,6 +361,7 @@ namespace BDArmory.Control
             GameEvents.onVesselPartCountChanged.Remove(OnVesselModified);
             GameEvents.onVesselCreate.Remove(OnVesselModified);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
+            GameEvents.onNewVesselCreated.Remove(RemoveCometVessel);
             rammingInformation = null; // Reset the ramming information.
         }
 
@@ -370,6 +371,7 @@ namespace BDArmory.Control
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
+            GameEvents.onNewVesselCreated.Add(RemoveCometVessel);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
@@ -1395,6 +1397,15 @@ namespace BDArmory.Control
             catch
             {
                 Debug.Log("DEBUG debris " + debris.vesselName + " is a component? " + (debris is Component) + ", is a monobehaviour? " + (debris is MonoBehaviour));
+            }
+        }
+
+        void RemoveCometVessel(Vessel vessel)
+        {
+            if (vessel.vesselType == VesselType.SpaceObject)
+            {
+                Debug.Log("[BDACompetitionMode]: Found a newly spawned " + (vessel.FindVesselModuleImplementing<CometVessel>() != null ? "comet" : "asteroid") + " vessel! Removing it.");
+                StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0f));
             }
         }
 
