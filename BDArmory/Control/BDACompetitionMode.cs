@@ -593,12 +593,12 @@ namespace BDArmory.Control
                             StopCompetition();
                             yield break;
                         }
-                        var sqrTeamDistance = (800 + 100 * pilots[leader.Current.weaponManager.Team].Count) * (800 + 100 * pilots[leader.Current.weaponManager.Team].Count);
+                        var teamDistance = 800f + 100f * pilots[leader.Current.weaponManager.Team].Count;
                         using (var pilot = pilots[leader.Current.weaponManager.Team].GetEnumerator())
                             while (pilot.MoveNext())
                                 if (pilot.Current != null
                                         && pilot.Current.currentCommand == PilotCommands.Follow
-                                        && (pilot.Current.vessel.CoM - pilot.Current.commandLeader.vessel.CoM).sqrMagnitude > 1000f * 1000f)
+                                        && (pilot.Current.vessel.CoM - pilot.Current.commandLeader.vessel.CoM).sqrMagnitude > teamDistance * teamDistance)
                                     waiting = true;
 
                         if (waiting) break;
