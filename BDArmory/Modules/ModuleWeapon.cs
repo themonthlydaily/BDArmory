@@ -297,7 +297,7 @@ namespace BDArmory.Modules
         public bool FireAngleOverride = false;
 
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringAngle"),
-            UI_FloatRange(minValue = 0f, maxValue = 3, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+            UI_FloatRange(minValue = 0f, maxValue = 4, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float FiringTolerance = 1.0f; //per-weapon override of maxcosfireangle
 
         [KSPField]
