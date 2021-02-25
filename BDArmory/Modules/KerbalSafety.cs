@@ -45,6 +45,7 @@ namespace BDArmory.Modules
         public void OnDestroy()
         {
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
+            GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
         }
 
         public void HandleSceneChange(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
@@ -182,24 +183,6 @@ namespace BDArmory.Modules
                 }
         }
 
-        public void FixedUpdate()
-        {
-            foreach (var kerbal in evaKerbalsToMonitor.ToList()) // Check for Kraken'd kerbals both here and in EatenByTheKraken.
-            {
-                if (kerbal == null || kerbal.vessel == null) continue;
-                if (kerbal.transform.position.IsInvalid())
-                {
-                    var message = kerbal.vessel.vesselName + " got eaten by the Kraken!";
-                    Debug.Log("[KerbalSafety]: (FixedUpdate) " + message);
-                    BDACompetitionMode.Instance.competitionStatus.Add(message);
-                    kerbal.gameObject.SetActive(false);
-                    evaKerbalsToMonitor.Remove(kerbal);
-                    Destroy(kerbal);
-                    LoadedVesselSwitcher.Instance.TriggerSwitchVessel(0);
-                }
-            }
-        }
-
         /// <summary>
         /// Register all the crew members as recovered, then recover the vessel.
         /// </summary>
@@ -226,7 +209,7 @@ namespace BDArmory.Modules
             if (evaKerbalsToMonitor.Where(k => k != null).Select(k => k.vessel).Contains(fromTo.host))
             {
                 var message = fromTo.host.vesselName + " got eaten by the Kraken!";
-                Debug.Log("[KerbalSafety]: (EatenByTheKraken) " + message);
+                Debug.Log("[KerbalSafety]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 fromTo.host.gameObject.SetActive(false);
                 evaKerbalsToMonitor.Remove(evaKerbalsToMonitor.Find(k => k.vessel == fromTo.host));
@@ -237,7 +220,7 @@ namespace BDArmory.Modules
             {
                 if (fromTo.host != null)
                 {
-                    Debug.Log("[KerbalSafety]: (EatenByTheKraken) " + fromTo.host + " got eaten by the Kraken!");
+                    Debug.Log("[KerbalSafety]: " + fromTo.host + " got eaten by the Kraken!");
                     fromTo.host.gameObject.SetActive(false);
                     fromTo.host.Die();
                 }

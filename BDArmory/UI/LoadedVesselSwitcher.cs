@@ -1053,7 +1053,6 @@ namespace BDArmory.UI
 
         public void TriggerSwitchVessel(float delay)
         {
-
             lastCameraSwitch = delay > 0 ? Planetarium.GetUniversalTime() - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY - delay) : 0f;
             lastCameraCheck = 0f;
             UpdateCamera();
