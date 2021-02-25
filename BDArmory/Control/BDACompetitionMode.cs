@@ -679,7 +679,7 @@ namespace BDArmory.Control
 
         #region Vessel validity
         public enum InvalidVesselReason { None, NullVessel, NoAI, NoWeaponManager, NoCommand };
-        public InvalidVesselReason IsValidVessel(Vessel vessel)
+        public InvalidVesselReason IsValidVessel(Vessel vessel, bool attemptFix = true)
         {
             if (vessel == null)
                 return InvalidVesselReason.NullVessel;
@@ -688,7 +688,7 @@ namespace BDArmory.Control
                 return InvalidVesselReason.NoAI;
             if (vessel.FindPartModuleImplementing<MissileFire>() == null) // Check for a weapon manager.
                 return InvalidVesselReason.NoWeaponManager;
-            if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
+            if (attemptFix && vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
                 CheckVesselType(vessel); // Attempt to fix it.
             if (vessel.FindPartModuleImplementing<ModuleCommand>() == null && vessel.FindPartModuleImplementing<KerbalSeat>() == null) // Check for a cockpit or command seat.
                 return InvalidVesselReason.NoCommand;
@@ -720,7 +720,7 @@ namespace BDArmory.Control
                     Debug.Log("[BDACompetitionMode]: " + message);
                     return;
                 }
-                if (vesselTypeIsValid && vessel.vesselType == VesselType.Plane && vessel.vesselName.EndsWith(" Plane") && !Scores.ContainsKey(vessel.vesselName) && Scores.ContainsKey(vessel.vesselName.Remove(vessel.vesselName.Length - 6)) && IsValidVessel(vessel) == InvalidVesselReason.None)
+                if (vesselTypeIsValid && vessel.vesselType == VesselType.Plane && vessel.vesselName.EndsWith(" Plane") && !Scores.ContainsKey(vessel.vesselName) && Scores.ContainsKey(vessel.vesselName.Remove(vessel.vesselName.Length - 6)) && IsValidVessel(vessel, false) == InvalidVesselReason.None)
                 {
                     var message = "Found a valid vessel (" + vessel.vesselName + ") tagged with 'Plane' when it shouldn't be, renaming.";
                     Debug.Log("[BDACompetitionMode]: " + message);
