@@ -189,7 +189,7 @@ if len(summary['craft']) > 0:
 			strings.append(''.join(f"{summary_strings[craft][header]:{column_widths[header]}s}" for header in headers))
 
 		teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
-		if len(teamNames) > 0:
+		if len(teamNames) > 0 and teamNames != [chr(k) for k in range(ord('A'), ord('A') + len(teamNames))]:  # Don't do teams if they're assigned as 'A', 'B', ... as they won't be consistent between rounds.
 			name_length = max([len(team) for team in teamNames])
 			strings.append(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tVessels")
 			for team in teamNames:
