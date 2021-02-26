@@ -1,6 +1,7 @@
 # Standard library imports
 import argparse
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -8,9 +9,20 @@ parser = argparse.ArgumentParser(description="Tournament log parser", formatter_
 parser.add_argument('tournament', type=str, nargs='?', help="Tournament folder to parse.")
 parser.add_argument('-q', '--quiet', action='store_true', help="Don't print results summary to console.")
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
+parser.add_argument('-s', '--score', action='store_true', help="Compute scores.")
+parser.add_argument('-w', '--weights', type=str, default="1,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0,0,5e-2", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 args = parser.parse_args()
 tournamentDir = Path(args.tournament) if args.tournament is not None else Path('')
 tournamentData = {}
+
+if args.score:
+	try:
+		weights = list(float(w) for w in args.weights.split(','))
+	except:
+		weights = []
+	if len(weights) != 12:
+		print('Invalid set of weights.')
+		sys.exit()
 
 
 def CalculateAccuracy(hits, shots): return 100 * hits / shots if shots > 0 else 0
@@ -99,6 +111,7 @@ teams = {team: members for round in tournamentData.values() for heat in round.va
 summary = {
 	'craft': {
 		craft: {
+			'wins': len([1 for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Win" and craft in next(iter(heat['result']['teams'].values())).split(", ")]),
 			'survivedCount': len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE']),
 			'deathCount': (
 				len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'DEAD']),  # Total
@@ -141,6 +154,24 @@ for craft in summary['craft'].values():
 		'damage/spawn': craft['bulletDamage'] / spawns if spawns > 0 else 0,
 	})
 
+if args.score:
+	for craft in summary['craft'].values():
+		craft.update({
+			'score':
+			weights[0] * craft['wins'] + 
+			weights[1] * craft['survivedCount'] + 
+			weights[2] * craft['deathCount'][0] + 
+			weights[3] * craft['deathOrder'] + 
+			weights[4] * craft['deathTime'] +
+			weights[5] * craft['cleanKills'][0] +
+			weights[6] * craft['assists'] + 
+			weights[7] * craft['hits'] + 
+			weights[8] * craft['bulletDamage'] + 
+			weights[9] * craft['missileHits'] +
+			weights[10] * craft['missileDamage'] +
+			weights[11] * craft['ramScore']
+		})
+
 if not args.no_files:
 	with open(tournamentDir / 'summary.json', 'w') as outFile:
 		json.dump(summary, outFile, indent=2)
@@ -158,7 +189,9 @@ if len(summary['craft']) > 0:
 	if not args.quiet:
 		# Write results to console
 		strings = []
-		headers = ['Name', 'Survive', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisDmg', 'Ram', 'Acc%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp']
+		headers = ['Name', 'Wins', 'Survive', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisDmg', 'Ram', 'Acc%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp']
+		if args.score:
+			headers += ['Score']
 		summary_strings = {'header': {field: field for field in headers}}
 		for craft in sorted(summary['craft']):
 			tmp = summary['craft'][craft]
@@ -166,6 +199,7 @@ if len(summary['craft']) > 0:
 			summary_strings.update({
 				craft: {
 					'Name': craft,
+					'Wins': f"{tmp['wins']}",
 					'Survive': f"{tmp['survivedCount']}",
 					'Deaths (BMRAS)': f"{tmp['deathCount'][0]} ({' '.join(str(s) for s in tmp['deathCount'][1:])})",
 					'D.Order': f"{tmp['deathOrder']:.3f}",
@@ -183,9 +217,11 @@ if len(summary['craft']) > 0:
 					'Dmg/Sp': f"{tmp['damage/spawn']:.1f}"
 				}
 			})
+			if args.score:
+				summary_strings[craft]['Score'] = f"{tmp['score']:.3f}"
 		column_widths = {column: max(len(craft[column]) + 2 for craft in summary_strings.values()) for column in headers}
 		strings.append(''.join(f"{header:{column_widths[header]}s}" for header in headers))
-		for craft in sorted(summary['craft']):
+		for craft in sorted(summary['craft'], key=None if not args.score else lambda craft: summary['craft'][craft]['score'], reverse=False if not args.score else True):
 			strings.append(''.join(f"{summary_strings[craft][header]:{column_widths[header]}s}" for header in headers))
 
 		teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
