@@ -158,7 +158,7 @@ if len(summary['craft']) > 0:
 	if not args.quiet:
 		# Write results to console
 		name_length = max([len(craft) for craft in summary['craft']])
-		print(f"Name{' '*(name_length-4)}\tSurvive\tDeaths (BMRAS)\t\tD.Order\tD.Time\tKills (BMR)\tAssists\tHits\tDamage\tMisHits\tMisDmg\tRam\tAcc%\tDmg/Hit\tHits/Sp\tDmg/Sp")
+		print(f"Name{' '*(name_length-4)}\tSurvive\tDeaths (BMRAS)\tD.Order\tD.Time\tKills (BMR)\tAssists\tHits\tDamage\tMisHits\tMisDmg\tRam\tAcc%\tDmg/Hit\tHits/Sp\tDmg/Sp")
 		for craft in sorted(summary['craft']):
 			spawns = summary['craft'][craft]['survivedCount'] + summary['craft'][craft]['deathCount'][0]
 			print(
