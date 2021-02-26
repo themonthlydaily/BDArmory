@@ -5,7 +5,9 @@ from collections import Counter
 from pathlib import Path
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('tournament', type=str, nargs='?', help="Tournament folder to parse")
+parser.add_argument('tournament', type=str, nargs='?', help="Tournament folder to parse.")
+parser.add_argument('-q', '--quiet', action='store_true', help="Don't print results summary to console.")
+parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 args = parser.parse_args()
 tournamentDir = Path(args.tournament) if args.tournament is not None else Path('')
 tournamentData = {}
@@ -85,8 +87,9 @@ for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir
 						tournamentData[round.name][heat.name]['result'] = {'result': result_type}
 				# Ignore Tag mode for now.
 
-with open(tournamentDir / 'results.json', 'w') as outFile:
-	json.dump(tournamentData, outFile, indent=2)
+if not args.no_files:
+	with open(tournamentDir / 'results.json', 'w') as outFile:
+		json.dump(tournamentData, outFile, indent=2)
 
 
 craftNames = sorted(list(set(craft for round in tournamentData.values() for heat in round.values() for craft in heat['craft'].keys())))
@@ -138,33 +141,36 @@ for craft in summary['craft'].values():
 		'damage/spawn': craft['bulletDamage'] / spawns if spawns > 0 else 0,
 	})
 
-with open(tournamentDir / 'summary.json', 'w') as outFile:
-	json.dump(summary, outFile, indent=2)
+if not args.no_files:
+	with open(tournamentDir / 'summary.json', 'w') as outFile:
+		json.dump(summary, outFile, indent=2)
 
 if len(summary['craft']) > 0:
-	csv_summary = "craft," + ",".join(
-		",".join(('deathCount', 'dcB', 'dcM', 'dcR', 'dcA', 'dcS')) if k == 'deathCount' else
-		",".join(('cleanKills', 'ckB', 'ckM', 'ckR')) if k == 'cleanKills' else
-		k for k in next(iter(summary['craft'].values())).keys()) + "\n"
-	csv_summary += "\n".join(craft + "," + ",".join(str(int(100 * v) / 100) if not isinstance(v, tuple) else ",".join(str(int(100 * sf) / 100) for sf in v) for v in scores.values()) for craft, scores in summary['craft'].items())
-	with open(tournamentDir / 'summary.csv', 'w') as outFile:
-		outFile.write(csv_summary)
+	if not args.no_files:
+		csv_summary = "craft," + ",".join(
+			",".join(('deathCount', 'dcB', 'dcM', 'dcR', 'dcA', 'dcS')) if k == 'deathCount' else
+			",".join(('cleanKills', 'ckB', 'ckM', 'ckR')) if k == 'cleanKills' else
+			k for k in next(iter(summary['craft'].values())).keys()) + "\n"
+		csv_summary += "\n".join(craft + "," + ",".join(str(int(100 * v) / 100) if not isinstance(v, tuple) else ",".join(str(int(100 * sf) / 100) for sf in v) for v in scores.values()) for craft, scores in summary['craft'].items())
+		with open(tournamentDir / 'summary.csv', 'w') as outFile:
+			outFile.write(csv_summary)
 
-	# Write results to console
-	name_length = max([len(craft) for craft in summary['craft']])
-	print(f"Name{' '*(name_length-4)}\tSurvive\tDeaths (BMRAS)\tD.Order\tD.Time\tKills (BMR)\tAssists\tHits\tDamage\tMisHits\tMisDmg\tRam\tAcc%\tDmg/Hit\tHits/Sp\tDmg/Sp")
-	for craft in sorted(summary['craft']):
-		spawns = summary['craft'][craft]['survivedCount'] + summary['craft'][craft]['deathCount'][0]
-		print(
-			f"{craft}{' '*(name_length-len(craft))}\t"
-			+ '\t'.join(f'{score}' if isinstance(score, int) else f'{score:.0f}' if field in ('bulletDamage', 'missileDamage') else f'{score[0]} ({" ".join(str(s) for s in score[1:])})' if field in ('deathCount', 'cleanKills') else f'{score:.1f}' if field in ('deathTime', 'damage/hit', 'hits/spawn', 'damage/spawn') else f'{score:.3f}' if field in ('deathOrder',) else f'{score:.2f}' for field, score in summary['craft'][craft].items())
-		)
+	if not args.quiet:
+		# Write results to console
+		name_length = max([len(craft) for craft in summary['craft']])
+		print(f"Name{' '*(name_length-4)}\tSurvive\tDeaths (BMRAS)\t\tD.Order\tD.Time\tKills (BMR)\tAssists\tHits\tDamage\tMisHits\tMisDmg\tRam\tAcc%\tDmg/Hit\tHits/Sp\tDmg/Sp")
+		for craft in sorted(summary['craft']):
+			spawns = summary['craft'][craft]['survivedCount'] + summary['craft'][craft]['deathCount'][0]
+			print(
+				f"{craft}{' '*(name_length-len(craft))}\t"
+				+ '\t'.join(f'{score}' if isinstance(score, int) else f'{score:.0f}' if field in ('bulletDamage', 'missileDamage') else f'{score[0]} ({" ".join(str(s) for s in score[1:])})' if field in ('deathCount', 'cleanKills') else f'{score:.1f}' if field in ('deathTime', 'damage/hit', 'hits/spawn', 'damage/spawn') else f'{score:.3f}' if field in ('deathOrder',) else f'{score:.2f}' for field, score in summary['craft'][craft].items())
+			)
 
-	teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
-	if len(teamNames) > 0:
-		name_length = max([len(team) for team in teamNames])
-		print(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tVessels")
-		for team in teamNames:
-			print(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{summary['teams'][team]}")
+		teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
+		if len(teamNames) > 0:
+			name_length = max([len(team) for team in teamNames])
+			print(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tVessels")
+			for team in teamNames:
+				print(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{summary['teams'][team]}")
 else:
 	print("No valid log files found.")
