@@ -157,20 +157,44 @@ if len(summary['craft']) > 0:
 
 	if not args.quiet:
 		# Write results to console
-		name_length = max([len(craft) for craft in summary['craft']])
-		print(f"Name{' '*(name_length-4)}\tSurvive\tDeaths (BMRAS)\tD.Order\tD.Time\tKills (BMR)\tAssists\tHits\tDamage\tMisHits\tMisDmg\tRam\tAcc%\tDmg/Hit\tHits/Sp\tDmg/Sp")
+		strings = []
+		headers = ['Name', 'Survive', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisDmg', 'Ram', 'Acc%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp']
+		summary_strings = {'header': {field: field for field in headers}}
 		for craft in sorted(summary['craft']):
-			spawns = summary['craft'][craft]['survivedCount'] + summary['craft'][craft]['deathCount'][0]
-			print(
-				f"{craft}{' '*(name_length-len(craft))}\t"
-				+ '\t'.join(f'{score}' if isinstance(score, int) else f'{score:.0f}' if field in ('bulletDamage', 'missileDamage') else f'{score[0]} ({" ".join(str(s) for s in score[1:])})' if field in ('deathCount', 'cleanKills') else f'{score:.1f}' if field in ('deathTime', 'damage/hit', 'hits/spawn', 'damage/spawn') else f'{score:.3f}' if field in ('deathOrder',) else f'{score:.2f}' for field, score in summary['craft'][craft].items())
-			)
+			tmp = summary['craft'][craft]
+			spawns = tmp['survivedCount'] + tmp['deathCount'][0]
+			summary_strings.update({
+				craft: {
+					'Name': craft,
+					'Survive': f"{tmp['survivedCount']}",
+					'Deaths (BMRAS)': f"{tmp['deathCount'][0]} ({' '.join(str(s) for s in tmp['deathCount'][1:])})",
+					'D.Order': f"{tmp['deathOrder']:.3f}",
+					'D.Time': f"{tmp['deathTime']:.1f}",
+					'Kills (BMR)': f"{tmp['cleanKills'][0]} ({' '.join(str(s) for s in tmp['cleanKills'][1:])})",
+					'Assists': f"{tmp['assists']}",
+					'Hits': f"{tmp['hits']}",
+					'Damage': f"{tmp['bulletDamage']:.0f}",
+					'MisHits': f"{tmp['missileHits']}",
+					'MisDmg': f"{tmp['missileDamage']:.0f}",
+					'Ram': f"{tmp['ramScore']}",
+					'Acc%': f"{tmp['accuracy']:.2f}",
+					'Dmg/Hit': f"{tmp['damage/hit']:.1f}",
+					'Hits/Sp': f"{tmp['hits/spawn']:.1f}",
+					'Dmg/Sp': f"{tmp['damage/spawn']:.1f}"
+				}
+			})
+		column_widths = {column: max(len(craft[column]) + 2 for craft in summary_strings.values()) for column in headers}
+		strings.append(''.join(f"{header:{column_widths[header]}s}" for header in headers))
+		for craft in sorted(summary['craft']):
+			strings.append(''.join(f"{summary_strings[craft][header]:{column_widths[header]}s}" for header in headers))
 
 		teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
 		if len(teamNames) > 0:
 			name_length = max([len(team) for team in teamNames])
-			print(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tVessels")
+			strings.append(f"\nTeam{' '*(name_length-4)}\tWins\tDraws\tVessels")
 			for team in teamNames:
-				print(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{summary['teams'][team]}")
+				strings.append(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{summary['teams'][team]}")
+		for string in strings:
+			print(string)
 else:
 	print("No valid log files found.")
