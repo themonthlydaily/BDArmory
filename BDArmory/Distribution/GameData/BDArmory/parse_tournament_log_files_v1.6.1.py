@@ -160,15 +160,15 @@ if args.score:
 	for craft in summary['craft'].values():
 		craft.update({
 			'score':
-			weights[0] * craft['wins'] + 
-			weights[1] * craft['survivedCount'] + 
-			weights[2] * craft['deathCount'][0] + 
-			weights[3] * craft['deathOrder'] + 
+			weights[0] * craft['wins'] +
+			weights[1] * craft['survivedCount'] +
+			weights[2] * craft['deathCount'][0] +
+			weights[3] * craft['deathOrder'] +
 			weights[4] * craft['deathTime'] +
 			weights[5] * craft['cleanKills'][0] +
-			weights[6] * craft['assists'] + 
-			weights[7] * craft['hits'] + 
-			weights[8] * craft['bulletDamage'] + 
+			weights[6] * craft['assists'] +
+			weights[7] * craft['hits'] +
+			weights[8] * craft['bulletDamage'] +
 			weights[9] * craft['missileHits'] +
 			weights[10] * craft['missileDamage'] +
 			weights[11] * craft['ramScore']
@@ -193,7 +193,7 @@ if len(summary['craft']) > 0:
 		strings = []
 		headers = ['Name', 'Wins', 'Survive', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisDmg', 'Ram', 'Acc%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
 		if args.score:
-			headers += ['Score']
+			headers.insert(1, 'Score')
 		summary_strings = {'header': {field: field for field in headers}}
 		for craft in sorted(summary['craft']):
 			tmp = summary['craft'][craft]
