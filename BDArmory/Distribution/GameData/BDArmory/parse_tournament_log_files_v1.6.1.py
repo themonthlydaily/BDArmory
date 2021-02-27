@@ -10,8 +10,10 @@ parser.add_argument('tournament', type=str, nargs='?', help="Tournament folder t
 parser.add_argument('-q', '--quiet', action='store_true', help="Don't print results summary to console.")
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_true', help="Compute scores.")
+parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
 parser.add_argument('-w', '--weights', type=str, default="1,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0,0,5e-2", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 args = parser.parse_args()
+args.score = args.score or args.scores_only
 tournamentDir = Path(args.tournament) if args.tournament is not None else Path('')
 tournamentData = {}
 
@@ -189,7 +191,7 @@ if len(summary['craft']) > 0:
 	if not args.quiet:
 		# Write results to console
 		strings = []
-		headers = ['Name', 'Wins', 'Survive', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisDmg', 'Ram', 'Acc%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp']
+		headers = ['Name', 'Wins', 'Survive', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisDmg', 'Ram', 'Acc%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
 		if args.score:
 			headers += ['Score']
 		summary_strings = {'header': {field: field for field in headers}}
