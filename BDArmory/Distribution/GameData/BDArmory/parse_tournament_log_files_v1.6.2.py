@@ -9,12 +9,27 @@ parser = argparse.ArgumentParser(description="Tournament log parser", formatter_
 parser.add_argument('tournament', type=str, nargs='?', help="Tournament folder to parse.")
 parser.add_argument('-q', '--quiet', action='store_true', help="Don't print results summary to console.")
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
-parser.add_argument('-s', '--score', action='store_true', help="Compute scores.")
+parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="1,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0,0,5e-2", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
+parser.add_argument('-w', '--weights', type=str, default="1,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0.01,1e-7,5e-2", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
+parser.add_argument('-l', '--latest', action='store_true', help="Parse the latest 'Tournament XXXX' folder if no folder is specified.")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
-tournamentDir = Path(args.tournament) if args.tournament is not None else Path('')
+
+flatTournamentDir = True
+if args.tournament is None:
+	tournamentDir = Path('')  # No specified tournament dir and not latest
+	logsDir = Path(__file__).parent / "Logs"
+	if args.latest and logsDir.exists():
+		tournamentFolders = list(logsDir.resolve().glob("Tournament*"))
+		if len(tournamentFolders)>0:
+			tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()))
+		if len(tournamentFolders) > 0:
+			tournamentDir = tournamentFolders[-1]  # Latest tournament dir
+			flatTournamentDir = False
+else:
+	tournamentDir = Path(args.tournament)  # Specified tournament dir
+	flatTournamentDir = False
 tournamentData = {}
 
 if args.score:
@@ -30,9 +45,9 @@ if args.score:
 def CalculateAccuracy(hits, shots): return 100 * hits / shots if shots > 0 else 0
 
 
-for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()) if args.tournament is not None else (tournamentDir,):
+for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()) if not flatTournamentDir else (tournamentDir,):
 	tournamentData[round.name] = {}
-	for heat in sorted(round.glob("*.log")):
+	for heat in sorted(round.glob("[0-9]*.log")):
 		with open(heat, "r") as logFile:
 			tournamentData[round.name][heat.name] = {'result': None, 'duration': 0, 'craft': {}}
 			for line in logFile:
