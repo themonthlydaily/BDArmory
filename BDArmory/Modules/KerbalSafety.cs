@@ -138,7 +138,6 @@ namespace BDArmory.Modules
             var verticalSpeed = Vector3.Dot(-gee.normalized, velocity);
             float verticalSpeedAdjustment = 0f;
             var position = kerbal.vessel.GetWorldPos3D();
-            var initialFrameVelocity = Krakensbane.GetFrameVelocityV3f();
             if (kerbal.vessel.radarAltitude + verticalSpeed * Time.fixedDeltaTime < 2f) // Crashed into terrain, explode upwards.
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) verticalSpeedAdjustment = 3f * (float)gee.magnitude - verticalSpeed;
@@ -153,8 +152,11 @@ namespace BDArmory.Modules
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) verticalSpeedAdjustment = 1.5f * (float)gee.magnitude;
             }
             verticalSpeed = Vector3.Dot(-gee.normalized, velocity);
+            kerbal.vessel.SetRotation(UnityEngine.Random.rotation);
+            kerbal.vessel.rootPart.AddTorque(UnityEngine.Random.onUnitSphere * UnityEngine.Random.Range(1, 2));
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[KerbalSafety]: Setting " + kerbal.vessel.vesselName + "'s position to " + position.ToString("0.00") + " (" + kerbal.vessel.GetWorldPos3D().ToString("0.00") + ", altitude: " + kerbal.vessel.radarAltitude.ToString("0.00") + ") and velocity to " + velocity.magnitude.ToString("0.00") + " (" + verticalSpeed.ToString("0.00") + "m/s vertically, adjusted by " + verticalSpeedAdjustment.ToString("0.00") + "m/s)");
             var startTime = Time.realtimeSinceStartup;
+            kerbal.vessel.rootPart.SetDetectCollisions(false);
             while (kerbal != null && kerbal.isActiveAndEnabled && kerbal.vessel != null && kerbal.vessel.isActiveAndEnabled && Time.realtimeSinceStartup - startTime < realTime)
             {
                 if (verticalSpeed < 0f && kerbal.vessel.radarAltitude + verticalSpeed * (realTime - (Time.realtimeSinceStartup - startTime)) < 100f)
@@ -175,6 +177,10 @@ namespace BDArmory.Modules
                 kerbal.vessel.SetWorldVelocity(velocity + Krakensbane.GetLastCorrection());
                 yield return new WaitForFixedUpdate();
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[KerbalSafety]: Setting " + kerbal.vessel.vesselName + "'s position to " + position.ToString("0.00") + " (" + kerbal.vessel.GetWorldPos3D().ToString("0.00") + ", altitude: " + kerbal.vessel.radarAltitude.ToString("0.00") + ") and velocity to " + velocity.magnitude.ToString("0.00") + " (" + kerbal.vessel.Velocity().magnitude.ToString("0.00") + ", " + verticalSpeed.ToString("0.00") + "m/s vertically, adjusted by " + verticalSpeedAdjustment.ToString("0.00") + "m/s)." + " (offset: " + !FloatingOrigin.Offset.IsZero() + ", frameVel: " + !Krakensbane.GetFrameVelocity().IsZero() + ")" + " " + Krakensbane.GetFrameVelocityV3f().ToString("0.0") + ", corr: " + Krakensbane.GetLastCorrection().ToString("0.0"));
+            }
+            if (kerbal != null && kerbal.vessel != null)
+            {
+                kerbal.vessel.rootPart.SetDetectCollisions(true);
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS) for (int count = 0; kerbal != null && kerbal.isActiveAndEnabled && kerbal.vessel != null && kerbal.vessel.isActiveAndEnabled && count < 10; ++count)
                 {
