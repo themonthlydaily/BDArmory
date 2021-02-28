@@ -12,24 +12,27 @@ parser.add_argument('-n', '--no-files', action='store_true', help="Don't create 
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
 parser.add_argument('-w', '--weights', type=str, default="1,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0.01,1e-7,5e-2", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
-parser.add_argument('-l', '--latest', action='store_true', help="Parse the latest 'Tournament XXXX' folder if no folder is specified.")
+parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
 
-flatTournamentDir = True
-if args.tournament is None:
-	tournamentDir = Path('')  # No specified tournament dir and not latest
-	logsDir = Path(__file__).parent / "Logs"
-	if args.latest and logsDir.exists():
-		tournamentFolders = list(logsDir.resolve().glob("Tournament*"))
-		if len(tournamentFolders)>0:
-			tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()))
-		if len(tournamentFolders) > 0:
-			tournamentDir = tournamentFolders[-1]  # Latest tournament dir
-			flatTournamentDir = False
+if args.current_dir:
+	tournamentDir = Path('')
 else:
-	tournamentDir = Path(args.tournament)  # Specified tournament dir
-	flatTournamentDir = False
+	if args.tournament is None:
+		tournamentDir = None
+		logsDir = Path(__file__).parent / "Logs"
+		if logsDir.exists():
+			tournamentFolders = list(logsDir.resolve().glob("Tournament*"))
+			if len(tournamentFolders) > 0:
+				tournamentFolders = sorted(list(dir for dir in tournamentFolders if dir.is_dir()))
+			if len(tournamentFolders) > 0:
+				tournamentDir = tournamentFolders[-1]  # Latest tournament dir
+		if tournamentDir is None:  # Didn't find a tournament dir, revert to current-dir
+			tournamentDir = Path('')
+			args.current_dir = True
+	else:
+		tournamentDir = Path(args.tournament)  # Specified tournament dir
 tournamentData = {}
 
 if args.score:
@@ -45,7 +48,7 @@ if args.score:
 def CalculateAccuracy(hits, shots): return 100 * hits / shots if shots > 0 else 0
 
 
-for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()) if not flatTournamentDir else (tournamentDir,):
+for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()) if not args.current_dir else (tournamentDir,):
 	tournamentData[round.name] = {}
 	for heat in sorted(round.glob("[0-9]*.log")):
 		with open(heat, "r") as logFile:
