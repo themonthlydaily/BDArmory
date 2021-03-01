@@ -281,7 +281,7 @@ namespace BDArmory.Modules
             while (!part.vessel.loaded) yield return new WaitForFixedUpdate(); // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
             kerbalName = crew.displayName;
             this.crew = crew;
-            this.crew.ResetInventory(); // Reset the inventory to a chute and a jetpack.
+            this.crew.ResetInventory(false); // Reset the inventory to just a chute.
             this.part = part;
             if (part.IsKerbalEVA())
             {
@@ -328,12 +328,23 @@ namespace BDArmory.Modules
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
                 DisableConstructionMode(kerbalEVA);
+                RemoveJetpack(kerbalEVA);
             }
         }
         private void DisableConstructionMode(KerbalEVA kerbalEVA)
         {
             if (kerbalEVA.InConstructionMode)
                 kerbalEVA.InConstructionMode = false;
+        }
+
+        private void RemoveJetpack(KerbalEVA kerbalEVA)
+        {
+            var inventory = kerbalEVA.ModuleInventoryPartReference;
+            if (inventory.ContainsPart("evaJetpack"))
+            {
+                inventory.RemoveNPartsFromInventory("evaJetpack", 1, false);
+            }
+            kerbalEVA.part.UpdateMass();
         }
 
         public void OnDestroy()
