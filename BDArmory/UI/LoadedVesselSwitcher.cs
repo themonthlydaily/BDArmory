@@ -679,6 +679,10 @@ namespace BDArmory.UI
                 {
                     BDTeamSelector.Instance.Open(wm, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
                 }
+                else if (Event.current.button == 2)
+                {
+                    wm.SetTeam(BDTeam.Get("Neutral"));
+                }
                 else
                 {
                     wm.NextTeam();
