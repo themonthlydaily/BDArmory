@@ -361,7 +361,7 @@ namespace BDArmory.Control
             GameEvents.onVesselPartCountChanged.Remove(OnVesselModified);
             GameEvents.onVesselCreate.Remove(OnVesselModified);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
-            GameEvents.onNewVesselCreated.Remove(RemoveCometVessel);
+            GameEvents.onCometSpawned.Remove(RemoveCometVessel);
             rammingInformation = null; // Reset the ramming information.
         }
 
@@ -371,7 +371,7 @@ namespace BDArmory.Control
             competitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
-            GameEvents.onNewVesselCreated.Add(RemoveCometVessel);
+            GameEvents.onCometSpawned.Add(RemoveCometVessel);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
