@@ -271,6 +271,9 @@ namespace BDArmory.Modules
         public Transform[] fireTransforms;
 
         [KSPField]
+        public string muzzleTransformName = "muzzleTransform";
+
+        [KSPField]
         public string shellEjectTransformName = "shellEject";
         public Transform[] shellEjectTransforms;
 
@@ -815,7 +818,7 @@ namespace BDArmory.Modules
 
             }
             muzzleFlashEmitters = new List<KSPParticleEmitter>();
-            using (var mtf = part.FindModelTransforms("muzzleTransform").AsEnumerable().GetEnumerator())
+            using (var mtf = part.FindModelTransforms(muzzleTransformName).AsEnumerable().GetEnumerator())
                 while (mtf.MoveNext())
                 {
                     if (mtf.Current == null) continue;
