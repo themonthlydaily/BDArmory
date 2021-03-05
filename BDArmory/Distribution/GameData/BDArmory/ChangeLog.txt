@@ -1,4 +1,8 @@
-﻿v1.4.2.2
+﻿v1.4.2.3
+FIXES
+	- Fix the issue of player names in the remote orchestration containing the separator character.
+
+v1.4.2.2
 FIXES
 	- Correct logic for checking if a weapon is powering down/disabled.
 	- Actually use the modified team starting distance for teams.
