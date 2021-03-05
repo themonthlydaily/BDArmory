@@ -7,6 +7,7 @@ using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using System;
+using System.Text;
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
@@ -47,7 +48,7 @@ namespace BDArmory.Modules
         public float CASEmass = 0f;
 
         private float CASEcost = 0f;
-        private float origCost = 0;
+        // private float origCost = 0;
         private float origMass = 0f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_CASE"),//Cellular Ammo Storage Equipment Tier
@@ -68,18 +69,17 @@ namespace BDArmory.Modules
                 {
                     UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["CASELevel"].uiControlEditor;
                     ATrangeEditor.onFieldChanged = CASESetup;
+                    origMass = part.mass;
+                    //origScale = part.rescaleFactor;
+                    CASESetup(null, null);
                 }
-                origMass = part.mass;
-                //origScale = part.rescaleFactor;
-                origCost = part.partInfo.cost;
-                CASESetup(null, null);
             }
         }
         void CASESetup(BaseField field, object obj)
         {
             CASEmass = ((origMass / 2) * CASELevel);
             //part.mass = CASEmass;
-            CASEcost = origCost + (CASELevel * 1000);
+            CASEcost = (CASELevel * 1000);
             //part.transform.localScale = (Vector3.one * (origScale + (CASELevel/10)));
             Debug.Log("[SST Debug] part.mass = " + part.mass + "; CASElevel = " + CASELevel + "; CASEMass = " + CASEmass + "; Scale = " + part.transform.localScale);
         }
@@ -167,12 +167,12 @@ namespace BDArmory.Modules
                 GetBlastRadius();
                 if (CASELevel == 0) //a considerable quantity of explosives and propellants just detonated inside your ship
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else if (CASELevel == 1) // the blast is reduced. Damage is severe, but (potentially) survivable
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                     using (var blastHits = Physics.OverlapSphere(part.transform.position, blastRadius / 2, 9076737).AsEnumerable().GetEnumerator())
                     {
@@ -214,7 +214,7 @@ namespace BDArmory.Modules
                 }
                 else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BD DEBUG] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                     Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                     var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);
@@ -333,6 +333,24 @@ namespace BDArmory.Modules
             {
                 DetonateIfPossible();
             }
+        }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+            output.Append(Environment.NewLine);
+            var internalmag = part.FindModuleImplementing<ModuleWeapon>();
+            if (internalmag != null)
+            {
+                output.AppendLine($" Has Intrinsic C.A.S.E. Type {CASELevel}");
+            }
+            else
+            {
+                output.AppendLine($"Can add Cellular Ammo Storage Equipment to reduce ammo explosion damage");
+            }
+            
+            output.AppendLine("");
+
+            return output.ToString();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace BDArmory.Competition
     {
         private BDAScoreService service;
 
-        private string baseUrl = "https://bdascores.herokuapp.com";
+        private string baseUrl;
 
         public string vesselPath = "";
 
@@ -33,9 +34,12 @@ namespace BDArmory.Competition
 
         public Dictionary<int, PlayerModel> players = new Dictionary<int, PlayerModel>();
 
+        public Dictionary<string, Tuple<string, string>> playerVessels = new Dictionary<string, Tuple<string, string>>(); // Registry of in-game vessel names with actual player and vessel names.
+
 
         public BDAScoreClient(BDAScoreService service, string vesselPath, string hash)
         {
+            this.baseUrl = "https://" + BDArmorySettings.REMOTE_ORCHESTRATION_BASE_URL;
             this.service = service;
             this.vesselPath = vesselPath + "/" + hash;
             this.competitionHash = hash;
@@ -294,6 +298,7 @@ namespace BDArmory.Competition
                 Directory.CreateDirectory(vesselPath);
             }
 
+            playerVessels.Clear();
             // already have the vessels in memory; just need to fetch the files
             foreach (VesselModel v in vessels.Values)
             {
@@ -325,6 +330,7 @@ namespace BDArmory.Competition
             }
 
             string vesselName = string.Format("{0}_{1}", p.name, vessel.name);
+            playerVessels.Add(vesselName, new Tuple<string, string>(p.name, vessel.name));
             string filename = string.Format("{0}/{1}.craft", vesselPath, vesselName);
             System.IO.File.WriteAllBytes(filename, bytes);
 

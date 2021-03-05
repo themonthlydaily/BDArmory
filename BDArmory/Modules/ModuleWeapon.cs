@@ -95,6 +95,16 @@ namespace BDArmory.Modules
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
+        private float targetRadius = 35f; // Radius of target 2° @ 1km.
+        public float targetAdjustedMaxCosAngle
+        {
+            get
+            {
+                var fireTransform = (eWeaponType == WeaponTypes.Rocket && rocketPod) ? rockets[0].parent : fireTransforms[0];
+                var theta = FiringTolerance * targetRadius / (finalAimTarget - fireTransform.position).magnitude + Mathf.Deg2Rad * maxDeviation / 2f; // Approximation to arctan(α*r/d) + θ/2. (arctan(x) = x-x^3/3 + O(x^5))
+                return finalAimTarget.IsZero() ? 1f : 1f - 0.5f * theta * theta; // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
+            }
+        }
         private Vector3 targetPosition;
         private Vector3 targetVelocity;  // local frame velocity
         private Vector3 targetAcceleration; // local frame
@@ -104,6 +114,8 @@ namespace BDArmory.Modules
         public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
+        private Part visualTargetPart;
+        private int targetID = 0;
         bool targetAcquired;
 
         public Vector3? FiringSolutionVector => finalAimTarget.IsZero() ? (Vector3?)null : (finalAimTarget - fireTransforms[0].position).normalized;
@@ -259,6 +271,9 @@ namespace BDArmory.Modules
         public Transform[] fireTransforms;
 
         [KSPField]
+        public string muzzleTransformName = "muzzleTransform";
+
+        [KSPField]
         public string shellEjectTransformName = "shellEject";
         public Transform[] shellEjectTransforms;
 
@@ -284,15 +299,15 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true)]
         public bool FireAngleOverride = false;
 
-        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FireingAngle"),
-UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
-        float FiringTolerance = 3; //per-weapon override of maxcosfireangle
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringAngle"),
+            UI_FloatRange(minValue = 0f, maxValue = 4, stepIncrement = 0.05f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float FiringTolerance = 1.0f; //per-weapon override of maxcosfireangle
 
         [KSPField]
         public float maxTargetingRange = 2000; //max range for raycasting and sighting
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Rate of Fire"),
-        UI_FloatRange(minValue = 100f, maxValue = 1500, stepIncrement = 25f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
+            UI_FloatRange(minValue = 100f, maxValue = 1500, stepIncrement = 25f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
         public float roundsPerMinute = 650; //rocket RoF slider
 
         [KSPField]
@@ -803,7 +818,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
 
             }
             muzzleFlashEmitters = new List<KSPParticleEmitter>();
-            using (var mtf = part.FindModelTransforms("muzzleTransform").AsEnumerable().GetEnumerator())
+            using (var mtf = part.FindModelTransforms(muzzleTransformName).AsEnumerable().GetEnumerator())
                 while (mtf.MoveNext())
                 {
                     if (mtf.Current == null) continue;
@@ -1141,7 +1156,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             {
                 if (!vessel.IsControllable)
                 {
-                    if (weaponState != WeaponStates.PoweringDown || weaponState != WeaponStates.Disabled)
+                    if (!(weaponState == WeaponStates.PoweringDown || weaponState == WeaponStates.Disabled))
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ModuleWeapon]: Vessel is uncontrollable, disabling weapon " + part.name);
                         DisableWeapon();
@@ -1506,7 +1521,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
-            beamDuration = timeGap*0.8f;
+            beamDuration = timeGap * 0.8f;
             if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
                 && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
             {
@@ -1659,7 +1674,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         {
                             ExplosionFx.CreateExplosion(hit.point,
                                            (laserDamage / 30000),
-                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName);
+                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
                         }
                         if (HeatRay)
                         {
@@ -2295,10 +2310,20 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
 
                     if (visualTargetVessel != null && visualTargetVessel.loaded)
                     {
-                        targetPosition = ray.direction *
-                                         Vector3.Distance(visualTargetVessel.transform.position,
-                                             FlightCamera.fetch.mainCamera.transform.position) +
-                                         FlightCamera.fetch.mainCamera.transform.position;
+                        if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM && visualTargetPart != null)
+                        {
+                            targetPosition = ray.direction *
+                                             Vector3.Distance(visualTargetPart.transform.position,
+                                                 FlightCamera.fetch.mainCamera.transform.position) +
+                                             FlightCamera.fetch.mainCamera.transform.position;
+                        }
+                        else
+                        {
+                            targetPosition = ray.direction *
+                                             Vector3.Distance(visualTargetVessel.transform.position,
+                                                 FlightCamera.fetch.mainCamera.transform.position) +
+                                             FlightCamera.fetch.mainCamera.transform.position;
+                        }
                     }
                 }
             }
@@ -2515,7 +2540,6 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                                         if (part)
                                         {
                                             hitVessel = part.vessel;
-                                            Debug.Log("DEBUG hitVessel: " + hitVessel);
                                         }
                                     }
                                 }
@@ -2601,6 +2625,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
                 Vector3 aimDirection = fireTransform.forward;
                 float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
+                var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
 
                 if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
                 {
@@ -2615,7 +2640,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
 
                     if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999962f) //~0.5 degree of unsafe angle, was 0.999848f (1deg)
-                        && targetCosAngle >= maxAutoFireCosAngle) //check if directly on target
+                        && targetCosAngle >= maxAutoFireCosAngle2) //check if directly on target
                     {
                         autoFire = true;
                     }
@@ -2628,7 +2653,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 {
                     if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999848f))
                     {
-                        if ((Vector3.Distance(finalAimTarget, fireTransform.position) > blastRadius) && (targetCosAngle >= maxAutoFireCosAngle))
+                        if ((Vector3.Distance(finalAimTarget, fireTransform.position) > blastRadius) && (targetCosAngle >= maxAutoFireCosAngle2))
                         {
                             autoFire = true; //rockets already calculate where target will be
                         }
@@ -2649,6 +2674,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
             {
                 autoFire = false;
                 visualTargetVessel = null;
+                visualTargetPart = null;
             }
         }
 
@@ -2867,7 +2893,23 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 if (aiControlled && weaponManager && visualTargetVessel &&
                     (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
                 {
+                    targetRadius = visualTargetVessel.GetRadius();
                     targetPosition = visualTargetVessel.CoM;
+                    if (!BDArmorySettings.TARGET_COM)
+                    {
+                        TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
+                        if (visualTargetPart == null)
+                        {
+                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            if (!turret) //make fixed guns all get the same target part
+                            {
+                                targetID = 0;
+                            }
+                            visualTargetPart = currentTarget.targetPartList[targetID];
+                            //Debug.Log("[MTD] MW TargetID: " + targetID);
+                        }
+                        targetPosition = visualTargetPart.transform.position;
+                    }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;
                     return;
@@ -2876,6 +2918,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                 if (weaponManager.slavingTurrets && turret)
                 {
                     slaved = true;
+                    targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
                     targetPosition = weaponManager.slavedPosition;
                     targetVelocity = weaponManager.slavedTarget.vessel?.rb_velocity ?? (weaponManager.slavedVelocity - Krakensbane.GetFrameVelocityV3f());
                     targetAcquired = true;
@@ -2887,11 +2930,13 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                     TargetSignatureData targetData = weaponManager.vesselRadarData.lockedTargetData.targetData;
                     targetVelocity = targetData.velocity - Krakensbane.GetFrameVelocityV3f();
                     targetPosition = targetData.predictedPosition;
+                    targetRadius = 35f;
                     targetAcceleration = targetData.acceleration;
                     if (targetData.vessel)
                     {
                         targetVelocity = targetData.vessel?.rb_velocity ?? targetVelocity;
                         targetPosition = targetData.vessel.CoM;
+                        targetRadius = targetData.vessel.GetRadius();
                     }
                     targetAcquired = true;
                     return;
@@ -2933,6 +2978,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                         if (tgt == null) return;
                         targetAcquired = true;
                         atprAcquired = true;
+                        targetRadius = tgt.GetRadius();
                         targetPosition = tgt.CoM;
                         targetVelocity = tgt.rb_velocity;
                     }
@@ -3368,7 +3414,7 @@ UI_FloatRange(minValue = 0f, maxValue = 6, stepIncrement = 0.05f, scene = UI_Sce
                             continue;
                         }
                         output.AppendLine($"Rocket type: {ammoList[i]}");
-                        output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass*1000, 2)} kg");
+                        output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass * 1000, 2)} kg");
                         //output.AppendLine($"Thrust: {thrust}kn"); mass and thrust don't really tell us the important bit, so lets replace that with accel
                         output.AppendLine($"Acceleration: {rinfo.thrust / rinfo.rocketMass}m/s2");
                         if (rinfo.explosive)

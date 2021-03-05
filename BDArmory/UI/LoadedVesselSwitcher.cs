@@ -679,6 +679,10 @@ namespace BDArmory.UI
                 {
                     BDTeamSelector.Instance.Open(wm, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
                 }
+                else if (Event.current.button == 2)
+                {
+                    wm.SetTeam(BDTeam.Get("Neutral"));
+                }
                 else
                 {
                     wm.NextTeam();
@@ -1049,6 +1053,13 @@ namespace BDArmory.UI
             lastCameraSwitch = Planetarium.GetUniversalTime();
             FlightGlobals.ForceSetActiveVessel(v);
             FlightInputHandler.ResumeVesselCtrlState(v);
+        }
+
+        public void TriggerSwitchVessel(float delay)
+        {
+            lastCameraSwitch = delay > 0 ? Planetarium.GetUniversalTime() - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY - delay) : 0f;
+            lastCameraCheck = 0f;
+            UpdateCamera();
         }
 
         /// <summary>

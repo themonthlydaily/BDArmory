@@ -3,9 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using UnityEngine;
-using UnityEngine.Networking;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.UI;
@@ -222,7 +220,7 @@ namespace BDArmory.Competition
         private IEnumerator RetryFind(string hash)
         {
             retryFindStartedAt = Planetarium.GetUniversalTime();
-            yield return new WaitWhile(() => Planetarium.GetUniversalTime() - retryFindStartedAt < 30);
+            yield return new WaitWhile(() => Planetarium.GetUniversalTime() - retryFindStartedAt < BDArmorySettings.REMOTE_INTERHEAT_DELAY);
             if (status != StatusType.Cancelled)
             {
                 status = StatusType.FindingNextHeat;
@@ -351,15 +349,14 @@ namespace BDArmory.Competition
             Debug.Log(string.Format("[BDAScoreService] Building records for {0} players", playerNames.Count));
             foreach (string playerName in playerNames)
             {
-                var separatorIndex = playerName.IndexOf('_');
-                if (separatorIndex < 0)
+                if (!client.playerVessels.ContainsKey(playerName))
                 {
                     Debug.Log(string.Format("[BDAScoreService] Unmatched player {0}", playerName));
                     Debug.Log("DEBUG players were " + string.Join(", ", client.players.Values));
                     continue;
                 }
 
-                var playerNamePart = playerName.Substring(0, separatorIndex);
+                var playerNamePart = client.playerVessels[playerName].Item1;
                 PlayerModel player = client.players.Values.FirstOrDefault(e => e.name == playerNamePart);
                 if (player == null)
                 {
@@ -368,7 +365,7 @@ namespace BDArmory.Competition
                     continue;
                 }
 
-                var vesselNamePart = playerName.Substring(separatorIndex + 1);
+                var vesselNamePart = client.playerVessels[playerName].Item2;
                 VesselModel vessel = client.vessels.Values.FirstOrDefault(e => e.player_id == player.id && e.name == vesselNamePart);
                 if (vessel == null)
                 {
