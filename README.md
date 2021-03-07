@@ -22,7 +22,6 @@ Contributors:
 - [CeruleanEyes]()
 - [Fluffy]()
 - [Cl0by](https://github.com/Cl0by)
-- [Toonu](https://github.com/Toonu)
 - And all the previous maintainers.
 
 Previous Maintainers:
