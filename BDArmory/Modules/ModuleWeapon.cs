@@ -95,7 +95,7 @@ namespace BDArmory.Modules
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
-        private float targetRadius = 35f; // Radius of target 2° @ 1km.
+        public float targetRadius = 35f; // Radius of target 2° @ 1km.
         public float targetAdjustedMaxCosAngle
         {
             get
@@ -296,6 +296,10 @@ namespace BDArmory.Modules
         private bool spinningDown;
 
         //weapon specifications
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringPriority"),
+    UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float priority = 0; //per-weapon priority selection override
+
         [KSPField(isPersistant = true)]
         public bool FireAngleOverride = false;
 
