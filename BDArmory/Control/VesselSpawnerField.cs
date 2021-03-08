@@ -30,12 +30,15 @@ namespace BDArmory.Control
             new SpawnLocation("Canyon", new Vector2d(-52.7592, -4.71081)),
             new SpawnLocation("Big Canyon", new Vector2d(6.97865, -170.804)),
             new SpawnLocation("Manley Valley", new Vector2d(45.6, -137.3)),
+            new SpawnLocation("Manley Delta", new Vector2d(39.0705, -136.193)),
             new SpawnLocation("Half-pipe", new Vector2d(-21.1388, 72.6437)),
             new SpawnLocation("Kurgan's spot", new Vector2d(-28.4595, -9.15156)),
             new SpawnLocation("Bowl 1", new Vector2d(35.6559, -77.4941)),
             new SpawnLocation("Bowl 2", new Vector2d(3.8744, -78.0039)),
             new SpawnLocation("Bowl 3", new Vector2d(0.268284, -80.5195)),
             new SpawnLocation("Pyramids", new Vector2d(-6.4743, -141.662)),
+            new SpawnLocation("Mtn. Springs", new Vector2d(30.6516, -40.6589)),
+            new SpawnLocation("Src of deNile", new Vector2d(28.8112, -134.795)),
         };
 
         public static void Save()
