@@ -1094,8 +1094,7 @@ namespace BDArmory.Modules
                                   (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled &&
                                   !aiControlled);
                     if ((userFiring || autoFire || agHoldFiring) &&
-                        (yawRange == 0 || (maxPitch - minPitch) == 0 ||
-                         turret.TargetInRange(finalAimTarget, 10, float.MaxValue)))
+                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue)))
                     {
                         if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
                         {
@@ -1109,6 +1108,12 @@ namespace BDArmory.Modules
                     }
                     else
                     {
+                        if (weaponManager.gunRippleIndex == rippleIndex)
+                        {
+                            StartCoroutine(IncrementRippleIndex(0));
+                            finalFire = false;
+                        }
+
                         if (spinDownAnimation) spinningDown = true;
                         if (!oneShotSound && wasFiring)
                         {
@@ -1180,7 +1185,7 @@ namespace BDArmory.Modules
                         if ((userFiring || autoFire || agHoldFiring) &&
                             (!turret || turret.TargetInRange(targetPosition, 10, float.MaxValue)))
                         {
-                            if (useRippleFire && (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
+                            if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
                             {
                                 StartCoroutine(IncrementRippleIndex(0));
                                 finalFire = false;
@@ -1502,7 +1507,10 @@ namespace BDArmory.Modules
 
                 if (useRippleFire)
                 {
-                    StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                    if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                    {
+                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                    }
                 }
             }
             else
@@ -1573,7 +1581,10 @@ namespace BDArmory.Modules
                         heat += heatPerShot;
                         if (useRippleFire)
                         {
-                            StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                            if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                            {
+                                StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                            }
                         }
                     }
                     else
@@ -1923,7 +1934,10 @@ namespace BDArmory.Modules
             }
             if (useRippleFire)
             {
-                StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                {
+                    StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                }
             }
         }
 
