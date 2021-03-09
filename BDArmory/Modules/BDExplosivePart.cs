@@ -281,6 +281,7 @@ namespace BDArmory.Modules
 
         public void DetonateIfPossible()
         {
+            if (part == null) return;
             if (!hasDetonated && Armed)
             {
                 Vector3 direction = default(Vector3);
@@ -289,9 +290,9 @@ namespace BDArmory.Modules
                 {
                     direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
                 }
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel?.vesselName, part.FindModuleImplementing<EngageableWeapon>().GetShortName(), direction);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, part.FindModuleImplementing<EngageableWeapon>().GetShortName(), direction);
                 hasDetonated = true;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + sourcevessel?.vesselName + " detonating.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
             }
         }
 
