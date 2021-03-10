@@ -432,13 +432,13 @@ namespace BDArmory.Modules
                 // Prevent seeker from looking past maxOffBoresight
                 float offBoresightAngle = Vector3.Angle(GetForwardTransform(), lookRay.direction);
                 if (offBoresightAngle > maxOffBoresight)
-                    lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight)*Mathf.Deg2Rad, 0));
+                    lookRay = new Ray(lookRay.origin, Vector3.RotateTowards(lookRay.direction, GetForwardTransform(), (offBoresightAngle - maxOffBoresight) * Mathf.Deg2Rad, 0));
 
                 if (BDArmorySettings.DRAW_DEBUG_LINES)
                     DrawDebugLine(lookRay.origin, lookRay.origin + lookRay.direction * 10000, Color.magenta);
 
                 // Update heat target
-                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, allAspect, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel != null ? SourceVessel.gameObject?.GetComponent<MissileFire>() : null)); // Unity messes with fake nulls and breaks ?. operators sometimes.
+                heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, lookRay, predictedHeatTarget, lockedSensorFOV / 2, heatThreshold, allAspect, lockedSensorFOVBias, lockedSensorVelocityBias, (SourceVessel == null ? null : SourceVessel.gameObject == null ? null : SourceVessel.gameObject.GetComponent<MissileFire>()));
 
                 if (heatTarget.exists)
                 {
@@ -945,8 +945,9 @@ namespace BDArmory.Modules
                             try
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
 
-                                if (partHit?.vessel != vessel && partHit?.vessel == SourceVessel) // Not ourselves, but the source vessel.
+                                if (partHit.vessel != vessel && partHit.vessel == SourceVessel) // Not ourselves, but the source vessel.
                                 {
                                     //We found a hit to the vessel
                                     return;
@@ -1003,8 +1004,9 @@ namespace BDArmory.Modules
                                     try
                                     {
                                         var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                                        if (hitPart==null) continue;
 
-                                        if (hitPart?.vessel != SourceVessel && hitPart?.vessel != vessel)
+                                        if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                         {
                                             //We found a hit to other vessel
                                             vessel.SetPosition(hit.point);
@@ -1036,8 +1038,9 @@ namespace BDArmory.Modules
                                 {
                                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 
-                                    if (partHit?.vessel == vessel || partHit?.vessel == SourceVessel) continue;
-                                    if (partHit?.vessel.vesselType == VesselType.Debris) continue; // Ignore debris
+                                    if (partHit==null) continue;
+                                    if (partHit.vessel == vessel || partHit.vessel == SourceVessel) continue;
+                                    if (partHit.vessel.vesselType == VesselType.Debris) continue; // Ignore debris
 
                                     Debug.Log("[BDArmory]: Missile proximity sphere hit | Distance overlap = " + optimalDistance + "| Part name = " + partHit.name);
 

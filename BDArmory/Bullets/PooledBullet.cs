@@ -322,7 +322,7 @@ namespace BDArmory.Bullets
                             {
                                 hitPart = hitEVA.part;
                                 // relative velocity, separate from the below statement, because the hitpart might be assigned only above
-                                if (hitPart?.rb != null)
+                                if (hitPart.rb != null)
                                     impactVelocity = (currentVelocity * dragVelocityFactor
                                         - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
                                 else
@@ -331,10 +331,10 @@ namespace BDArmory.Bullets
                                 break;
                             }
 
-                            if (hitPart?.vessel == sourceVessel) continue;  //avoid autohit;
+                            if (hitPart != null && hitPart.vessel == sourceVessel) continue;  //avoid autohit;
 
                             Vector3 impactVector = currentVelocity;
-                            if (hitPart?.rb != null)
+                            if (hitPart != null && hitPart.rb != null)
                                 // using relative velocity vector instead of just bullet velocity
                                 // since KSP vessels might move faster than bullets
                                 impactVector = currentVelocity * dragVelocityFactor - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f());
@@ -414,7 +414,7 @@ namespace BDArmory.Bullets
                                     float accelerationMagnitude =
                                         forceAverageMagnitude / (hitPart.vessel.GetTotalMass() * 1000);
 
-                                    hitPart?.rb.AddForceAtPosition(impactVector.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
+                                    hitPart.rb.AddForceAtPosition(impactVector.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
 
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                         Debug.Log("[BDArmory]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| bullet effective mass =" + (bulletMass - tntMass));
@@ -508,7 +508,7 @@ namespace BDArmory.Bullets
                             try
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit?.vessel == sourceVessel) continue;
+                                if (partHit!=null && partHit.vessel == sourceVessel) continue;
 
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                     Debug.Log("[BDArmory]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);

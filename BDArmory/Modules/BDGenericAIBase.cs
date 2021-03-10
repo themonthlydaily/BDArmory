@@ -307,8 +307,16 @@ namespace BDArmory.Modules
         {
             if (weaponManager != null && !weaponManager.guardMode)
             {
-                if (weaponManager.Team.IsEnemy(vessel.targetObject?.GetVessel()?.FindPartModuleImplementing<MissileFire>()?.Team))
-                    targetVessel = (Vessel)vessel.targetObject;
+                if (vessel.targetObject != null)
+                {
+                    var nonGuardTargetVessel = vessel.targetObject.GetVessel();
+                    if (nonGuardTargetVessel != null)
+                    {
+                        var targetWeaponManager = nonGuardTargetVessel.FindPartModuleImplementing<MissileFire>();
+                        if (targetWeaponManager != null && weaponManager.Team.IsEnemy(targetWeaponManager.Team))
+                            targetVessel = (Vessel)vessel.targetObject;
+                    }
+                }
             }
         }
 

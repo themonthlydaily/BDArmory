@@ -208,7 +208,7 @@ namespace BDArmory.Bullets
                 foreach (var pe in pEmitters)
                     if (pe != null)
                         pe.emit = false;
-            }            
+            }
             if (Time.time - startTime > 0.1f + stayTime)
             {
                 hasPenetrated = true;
@@ -248,7 +248,7 @@ namespace BDArmory.Bullets
                             {
                                 hitPart = hitEVA.part;
                                 // relative velocity, separate from the below statement, because the hitpart might be assigned only above
-                                if (hitPart?.rb != null)
+                                if (hitPart.rb != null)
                                     impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
                                 else
                                     impactVelocity = rb.velocity.magnitude;
@@ -256,10 +256,10 @@ namespace BDArmory.Bullets
                                 break;
                             }
 
-                            if (hitPart?.vessel == sourceVessel) continue;  //avoid autohit;
+                            if (hitPart != null && hitPart.vessel == sourceVessel) continue;  //avoid autohit;
 
                             Vector3 impactVector = rb.velocity;
-                            if (hitPart?.rb != null)
+                            if (hitPart != null && hitPart.rb != null)
                                 // using relative velocity vector instead of just rocket velocity
                                 // since KSP vessels can easily be moving faster than rockets
                                 impactVector = rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f());
@@ -281,11 +281,11 @@ namespace BDArmory.Bullets
                             float penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, anglemultiplier, hit, penetration, thickness, caliber);
                             if (penetration > thickness)
                             {
-                                rb.velocity = rb.velocity * (float)Math.Sqrt(thickness / penetration); 
+                                rb.velocity = rb.velocity * (float)Math.Sqrt(thickness / penetration);
                                 if (penTicker > 0) rb.velocity *= 0.55f;
                             }
 
-                            if (penetrationFactor > 1) 
+                            if (penetrationFactor > 1)
                             {
                                 hasPenetrated = true;
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
@@ -310,7 +310,7 @@ namespace BDArmory.Bullets
                                     float accelerationMagnitude =
                                         forceAverageMagnitude / (hitPart.vessel.GetTotalMass() * 1000);
 
-                                    hitPart?.rb.AddForceAtPosition(impactVector.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
+                                    hitPart.rb.AddForceAtPosition(impactVector.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
 
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                         Debug.Log("[BDArmory]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| rocket effective mass =" + rocketMass);
@@ -322,7 +322,7 @@ namespace BDArmory.Bullets
                                 hasDetonated = true;
                             }
 
-                            if (penTicker >= 2) 
+                            if (penTicker >= 2)
                             {
                                 Detonate(hit.point, false);
                                 return;
@@ -378,7 +378,7 @@ namespace BDArmory.Bullets
                         try
                         {
                             Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                            if (partHit?.vessel != sourceVessel)
+                            if (partHit != null && partHit.vessel != sourceVessel)
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                     Debug.Log("[BDArmory]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
