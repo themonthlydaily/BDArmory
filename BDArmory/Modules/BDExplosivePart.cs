@@ -257,7 +257,8 @@ namespace BDArmory.Modules
 
         private void GetTeamID()
         {
-            IFFID = sourcevessel.FindPartModuleImplementing<MissileFire>()?.teamString;
+            var weaponManager = sourcevessel.FindPartModuleImplementing<MissileFire>();
+            IFFID = weaponManager != null ? weaponManager.teamString : null;
         }
 
         private void OnUpdateEditor()
@@ -300,8 +301,8 @@ namespace BDArmory.Modules
         {
             if (!hasDetonated && Armed)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + sourcevessel?.vesselName + " detonating.");
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel?.vesselName, part.FindModuleImplementing<EngageableWeapon>().GetShortName());
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, part.FindModuleImplementing<EngageableWeapon>().GetShortName());
                 hasDetonated = true;
                 part.Destroy();
             }
@@ -339,10 +340,11 @@ namespace BDArmory.Modules
 
                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
                     if (partHit == null || partHit.vessel == null) continue;
-                    if (partHit?.vessel == vessel || partHit?.vessel == sourcevessel) continue;
-                    if (partHit?.vessel.vesselType == VesselType.Debris) continue;
+                    if (partHit.vessel == vessel || partHit.vessel == sourcevessel) continue;
+                    if (partHit.vessel.vesselType == VesselType.Debris) continue;
                     if (sourcevessel != null && partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;
-                    if (IFF_On && partHit.vessel.FindPartModuleImplementing<MissileFire>()?.teamString == IFFID) continue;
+                    var weaponManager = partHit.vessel.FindPartModuleImplementing<MissileFire>();
+                    if (IFF_On && (weaponManager == null || weaponManager.teamString == IFFID)) continue;
                     if (detonateAtMinimumDistance)
                     {
                         var distance = Vector3.Distance(partHit.transform.position + partHit.CoMOffset, transform.position);
