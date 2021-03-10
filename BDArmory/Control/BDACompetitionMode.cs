@@ -488,7 +488,7 @@ namespace BDArmory.Control
                     }
                     leaders.Add(pilotList.Current.Value[0]);
                 }
-            while (leaders.Any(leader => leader == null || leader.weaponManager == null || leader.weaponManager.wingCommander || leader.weaponManager.wingCommander.weaponManager == null))
+            while (leaders.Any(leader => leader == null || leader.weaponManager == null || leader.weaponManager.wingCommander == null || leader.weaponManager.wingCommander.weaponManager == null))
             {
                 yield return new WaitForFixedUpdate();
                 if (leaders.Any(leader => leader == null || leader.weaponManager == null))

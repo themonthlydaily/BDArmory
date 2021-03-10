@@ -1,4 +1,8 @@
-﻿v1.4.2.3
+﻿FIXES
+	- Fix various NREs.
+	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
+
+v1.4.2.3
 FIXES
 	- Fix the issue of player names in the remote orchestration containing the separator character.
 
