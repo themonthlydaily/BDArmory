@@ -2,7 +2,6 @@
 	- Fix various NREs.
 	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
 	- Multi-Target barrage fix: weapons targeting a target outside their fire arc will now be skipped instead of bringing the barrage to a halt until the offending weapon can be brought to bear.
-	- Avoid long delay due to KSP repeatedly reverting active vessel switch to SpawnProbe.
 
 IMPROVEMENTS
 	- Added a few more interesting spawning points (currently requires removing the old spawn_locations.cfg file in order to update, this will be changed soon).
