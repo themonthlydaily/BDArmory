@@ -159,14 +159,15 @@ namespace BDArmory.Modules
             kerbal.vessel.rootPart.SetDetectCollisions(false);
             while (kerbal != null && kerbal.isActiveAndEnabled && kerbal.vessel != null && kerbal.vessel.isActiveAndEnabled && Time.realtimeSinceStartup - startTime < realTime)
             {
+                // Note: 0.968f gives a reduction in speed to ~20% over 1s.
                 if (verticalSpeed < 0f && kerbal.vessel.radarAltitude + verticalSpeed * (realTime - (Time.realtimeSinceStartup - startTime)) < 100f)
                 {
-                    velocity = velocity * 0.99f + gee * verticalSpeed / 10f * Time.fixedDeltaTime;
+                    velocity = velocity * 0.968f + gee * verticalSpeed / 10f * Time.fixedDeltaTime;
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) verticalSpeedAdjustment = Vector3.Dot(-gee.normalized, gee * verticalSpeed / 10f * Time.fixedDeltaTime);
                 }
                 else
                 {
-                    velocity = velocity * 0.99f + gee * Time.fixedDeltaTime;
+                    velocity = velocity * 0.968f + gee * Time.fixedDeltaTime;
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) verticalSpeedAdjustment = Vector3.Dot(-gee.normalized, gee * Time.fixedDeltaTime);
                 }
                 verticalSpeed = Vector3.Dot(-gee.normalized, velocity);
