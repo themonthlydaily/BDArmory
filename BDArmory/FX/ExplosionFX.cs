@@ -284,7 +284,7 @@ namespace BDArmory.FX
                         {
                             continue;
                         }
-                        if (hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
+                        if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
                         var partHP = partHit.Damage();
                         var partArmour = partHit.GetArmorThickness();
                         if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
