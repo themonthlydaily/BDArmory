@@ -175,6 +175,7 @@
     <Compile Include="Misc\Misc.cs" />
     <Compile Include="Misc\MissileLaunchParams.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
+    <Compile Include="Misc\ProjectileUtils.cs" />
     <Compile Include="Misc\RippleOption.cs" />
     <Compile Include="Misc\VectorUtils.cs" />
     <Compile Include="Misc\ViewScanResults.cs" />

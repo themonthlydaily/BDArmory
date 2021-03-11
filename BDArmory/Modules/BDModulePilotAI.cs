@@ -943,7 +943,7 @@ namespace BDArmory.Modules
 
                     if (weaponManager)
                     {
-                        if (weaponManager.rwr?.rwrEnabled ?? false) //use rwr to check missile threat direction
+                        if (weaponManager.rwr != null ? weaponManager.rwr.rwrEnabled : false) //use rwr to check missile threat direction
                         {
                             Vector3 missileThreat = Vector3.zero;
                             bool missileThreatDetected = false;
@@ -1084,7 +1084,7 @@ namespace BDArmory.Modules
 
         bool PredictCollisionWithVessel(Vessel v, float maxTime, out Vector3 badDirection)
         {
-            if (vessel == null || v == null || v == weaponManager?.incomingMissileVessel
+            if (vessel == null || v == null || v == (weaponManager != null ? weaponManager.incomingMissileVessel : null)
                 || v.rootPart.FindModuleImplementing<MissileBase>() != null) //evasive will handle avoiding missiles
             {
                 badDirection = Vector3.zero;
@@ -2071,7 +2071,8 @@ namespace BDArmory.Modules
                         if (vs.Current == null) continue;
                         if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
                         if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime, out collisionAvoidDirection)) continue;
-                        if (vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel) continue;
+                        var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
+                        if (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel) continue;
                         vesselCollision = true;
                         break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
                     }

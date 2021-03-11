@@ -1096,7 +1096,8 @@ namespace BDArmory.Modules
             var parts = this.vessel.Parts.ToArray();
             for (int i = parts.Length - 1; i >= 0; i--)
             {
-                parts[i]?.explode();
+                if (parts[i] != null)
+                    parts[i].explode();
             }
 
             parts = null;

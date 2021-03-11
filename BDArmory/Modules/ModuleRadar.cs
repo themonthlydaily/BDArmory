@@ -734,7 +734,7 @@ namespace BDArmory.Modules
                     currLocks = lockedTargets.Count;
 
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                        Debug.Log("[BDArmory]: - Acquired lock on target (" + attemptedLocks[i].vessel?.name + ")");
+                        Debug.Log("[BDArmory]: - Acquired lock on target (" + (attemptedLocks[i].vessel != null ? attemptedLocks[i].vessel.name : null) + ")");
 
                     vesselRadarData.AddRadarContact(this, lockedTarget, true);
                     vesselRadarData.UpdateLockedTargets();

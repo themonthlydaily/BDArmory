@@ -488,10 +488,10 @@ namespace BDArmory.Control
                     }
                     leaders.Add(pilotList.Current.Value[0]);
                 }
-            while (leaders.Any(leader => leader?.weaponManager?.wingCommander?.weaponManager == null))
+            while (leaders.Any(leader => leader == null || leader.weaponManager == null || leader.weaponManager.wingCommander == null || leader.weaponManager.wingCommander.weaponManager == null))
             {
                 yield return new WaitForFixedUpdate();
-                if (leaders.Any(leader => leader?.weaponManager == null))
+                if (leaders.Any(leader => leader == null || leader.weaponManager == null))
                 {
                     competitionStatus.Set("Competition: One of the team leaders disappeared during start-up, aborting.");
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
@@ -766,11 +766,11 @@ namespace BDArmory.Control
             var commandModules = vessel.FindPartModulesImplementing<ModuleCommand>();
             var craftbricked = vessel.FindPartModuleImplementing<ModuleDrainEC>();
             if (commandModules.All(c => c.GetControlSourceState() == CommNet.VesselControlState.None))
-                if (Scores.ContainsKey(vessel.vesselName) && Scores[vessel.vesselName]?.weaponManagerRef != null)
+                if (Scores.ContainsKey(vessel.vesselName) && Scores[vessel.vesselName].weaponManagerRef != null)
                     StartCoroutine(DelayedExplodeWM(Scores[vessel.vesselName].weaponManagerRef, 5f)); // Uncontrolled vessel, destroy its weapon manager in 5s.
             if (craftbricked != null && craftbricked.bricked)
             {
-                if (Scores.ContainsKey(vessel.vesselName) && Scores[vessel.vesselName]?.weaponManagerRef != null)
+                if (Scores.ContainsKey(vessel.vesselName) && Scores[vessel.vesselName].weaponManagerRef != null)
                     StartCoroutine(DelayedExplodeWM(Scores[vessel.vesselName].weaponManagerRef, 2f)); // vessel fried by EMP, destroy its weapon manager in 2s.
             }
         }
@@ -1451,7 +1451,7 @@ namespace BDArmory.Control
             }
             if (nonCompetitorsToRemove.Contains(vessel))
             {
-                Debug.Log("[BDACompetitionMode]: " + vessel?.vesselName + " removed.");
+                Debug.Log("[BDACompetitionMode]: " + (vessel != null ? vessel.vesselName : null) + " removed.");
                 nonCompetitorsToRemove.Remove(vessel);
             }
         }
@@ -1801,7 +1801,7 @@ namespace BDArmory.Control
                                 killReasons.Add("Missiles");
                             if (Scores[key].everyoneWhoRammedMe.Count > 0)
                                 killReasons.Add("Rams");
-                            whoKilledMe = String.Join(" ", killReasons) + ": " + String.Join(", ", Scores[key].EveryOneWhoDamagedMe()) + (Scores[key].gmKillReason != GMKillReason.None ? ", " + Scores[key].gmKillReason : "");
+                            whoKilledMe = String.Join(", ", Scores[key].EveryOneWhoDamagedMe()) + (Scores[key].gmKillReason != GMKillReason.None ? ", " + Scores[key].gmKillReason : "") + " (" + String.Join(" ", killReasons) + ")";
 
                             foreach (var killer in Scores[key].EveryOneWhoDamagedMe())
                             {
@@ -1819,7 +1819,7 @@ namespace BDArmory.Control
                                     competitionStatus.Add(key + " was killed by " + whoKilledMe);
                                     break;
                                 case DamageFrom.Ram:
-                                    competitionStatus.Add(key + " was rammed by " + whoKilledMe);
+                                    competitionStatus.Add(key + " was rammed to death by " + whoKilledMe);
                                     break;
                                 default:
                                     break;
@@ -2166,12 +2166,12 @@ namespace BDArmory.Control
             foreach (var vesselName in rammingInformation.Keys)
             {
                 var vessel = rammingInformation[vesselName].vessel;
-                var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                var pilotAI = vessel != null ? vessel.FindPartModuleImplementing<BDModulePilotAI>() : null; // Get the pilot AI if the vessel has one.
 
                 foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                 {
                     var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                    var otherPilotAI = otherVessel?.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
+                    var otherPilotAI = otherVessel != null ? otherVessel.FindPartModuleImplementing<BDModulePilotAI>() : null; // Get the pilot AI if the vessel has one.
                     if (pilotAI == null || otherPilotAI == null) // One of the vessels or pilot AIs has been destroyed.
                     {
                         rammingInformation[vesselName].targetInformation[otherVesselName].timeToCPA = maxTimeToCPA; // Set the timeToCPA to maxTimeToCPA, so that it's not considered for new potential collisions.
@@ -2437,8 +2437,8 @@ namespace BDArmory.Control
                     if (currentTime - rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime > potentialCollisionDetectionTime) // We've waited long enough for the parts that are going to explode to explode.
                     {
                         var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                        var pilotAI = vessel?.FindPartModuleImplementing<BDModulePilotAI>();
-                        var otherPilotAI = otherVessel?.FindPartModuleImplementing<BDModulePilotAI>();
+                        var pilotAI = vessel != null ? vessel.FindPartModuleImplementing<BDModulePilotAI>() : null;
+                        var otherPilotAI = otherVessel != null ? otherVessel.FindPartModuleImplementing<BDModulePilotAI>() : null;
 
                         // Count the number of parts lost.
                         var rammedPartsLost = (otherPilotAI == null) ? rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision : rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision - otherVessel.parts.Count;

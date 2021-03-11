@@ -2896,7 +2896,7 @@ namespace BDArmory.Modules
 
                                     if ((p == null || p == ml.part) && p != null) continue;
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                        Debug.Log("[BDArmory]: RAYCAST HIT, clearance is FALSE! part=" + p?.name + ", collider=" + p?.collider);
+                                        Debug.Log("[BDArmory]: RAYCAST HIT, clearance is FALSE! part=" + (p != null ? p.name : null) + ", collider=" + (p != null ? p.collider : null));
                                     return false;
                                 }
                         }
@@ -2911,7 +2911,7 @@ namespace BDArmory.Modules
                         Part p = t.Current.collider.GetComponentInParent<Part>();
                         if ((p == null || p == ml.part) && p != null) continue;
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            Debug.Log("[BDArmory]: RAYCAST HIT, clearance is FALSE! part=" + p?.name + ", collider=" + p?.collider);
+                            Debug.Log("[BDArmory]: RAYCAST HIT, clearance is FALSE! part=" + (p != null ? p.name : null) + ", collider=" + (p != null ? p.collider : null));
                         return false;
                     }
             }
@@ -4500,7 +4500,7 @@ namespace BDArmory.Modules
                     TargetInfo nearbyFriendly = BDATargetManager.GetClosestFriendly(this);
                     TargetInfo nearbyThreat = BDATargetManager.GetTargetFromWeaponManager(results.threatWeaponManager);
 
-                    if (nearbyThreat?.weaponManager != null && nearbyFriendly?.weaponManager != null)
+                    if (nearbyThreat!=null && nearbyThreat.weaponManager != null && nearbyFriendly!=null && nearbyFriendly.weaponManager != null)
                         if (Team.IsEnemy(nearbyThreat.weaponManager.Team) &&
                             nearbyFriendly.weaponManager.Team == Team)
                         //turns out that there's no check for AI on the same team going after each other due to this.  Who knew?
