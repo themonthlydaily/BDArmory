@@ -202,6 +202,7 @@
     <Compile Include="Modules\ModuleAmmoSwitch.cs" />
     <Compile Include="Modules\ModuleCASE.cs" />
     <Compile Include="Modules\ModuleDrainEC.cs" />
+    <Compile Include="Modules\ModuleDrainIntakes.cs" />
     <Compile Include="Modules\ModuleDrainFuel.cs" />
     <Compile Include="Modules\ModuleECMJammer.cs" />
     <Compile Include="Modules\ModuleEMP.cs" />
@@ -217,6 +218,7 @@
     <Compile Include="Modules\ModuleWeapon.cs" />
     <Compile Include="Modules\ModuleWingCommander.cs" />
     <Compile Include="Modules\RadarWarningReceiver.cs" />
+    <Compile Include="Modules\RWPS3R2NukeModule.cs" />
     <Compile Include="Parts\GPSTargetInfo.cs" />
     <Compile Include="Parts\SeismicChargeFX.cs" />
     <Compile Include="Parts\TGPCamRotator.cs" />
