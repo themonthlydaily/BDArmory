@@ -1,6 +1,18 @@
 ﻿FIXES
 	- Fix various NREs.
 	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
+	- Multi-Target barrage fix: weapons targeting a target outside their fire arc will now be skipped instead of bringing the barrage to a halt until the offending weapon can be brought to bear.
+	- Avoid long delay due to KSP repeatedly reverting active vessel switch to SpawnProbe.
+
+IMPROVEMENTS
+	- Added a few more interesting spawning points (currently requires removing the old spawn_locations.cfg file in order to update, this will be changed soon).
+	- Re-work rocket damage to do kinetic damage and penetrate armour and correctly report scoring info.
+	- Shared bullet/rocket code moved to Misc.ProjectileUtils.cs.
+	- Weapon priority adjustments:
+		- Guns targeting ground will now prioritize biggest impact (bullet mass * velocity) instead of tntmass.
+		- Guns targeting air will now prioritize RPM for fighter-sized targets, and prioritize larger caliber guns when targeting larger targets (bombers/zeppelins/Ace Combat superweapons).
+		- Add weapon priority slider allowing setting custom weapon selection order for guns/rockets.
+	- Update the list of maintainers and contributors in the README.
 
 v1.4.2.3
 FIXES
