@@ -20,6 +20,7 @@ namespace BDArmory.Control
 
         // Interesting spawn locations on Kerbin.
         public static string spawnLocationsCfg = "GameData/BDArmory/spawn_locations.cfg";
+        [VesselSpawnerField] public static bool UpdateSpawnLocations = true;
         [VesselSpawnerField] public static List<SpawnLocation> spawnLocations;
 
         private string message;
@@ -281,7 +282,6 @@ namespace BDArmory.Control
                 yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
                 {
-                    RemoveVessel(FlightGlobals.ActiveVessel);
                     LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
                     yield return new WaitForFixedUpdate();
                 }
