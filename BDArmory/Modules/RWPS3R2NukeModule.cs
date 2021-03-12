@@ -1,4 +1,6 @@
-﻿using BDArmory.Control;
+﻿using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.FX;
@@ -33,6 +35,9 @@ namespace BDArmory.Modules
 		public float yield = 0.05f;
 
 		[KSPField(isPersistant = true)]
+		public float fluence = 0.05f;
+
+		[KSPField(isPersistant = true)]
 		public float tntEquivilent = 500;
 
 		[KSPField(isPersistant = true)]
@@ -41,6 +46,8 @@ namespace BDArmory.Modules
 		double blastImpulse;
 		private int FuelID;
 		private bool hasDetonated = false;
+
+		public string Sourcevessel;
 		public override void OnStart(StartState state)
 		{
 			if (HighLogic.LoadedSceneIsFlight)
@@ -48,6 +55,7 @@ namespace BDArmory.Modules
 				FuelID = PartResourceLibrary.Instance.GetDefinition("LiquidFuel").id;
 				vessel.GetConnectedResourceTotals(FuelID, out double fuelCurrent, out double fuelMax);
 				fuelleft = fuelCurrent;
+				Sourcevessel = this.part.vessel.GetName();
 				var engine = part.FindModuleImplementing<ModuleEngines>();
 				if (engine != null)
 				{
@@ -96,7 +104,7 @@ namespace BDArmory.Modules
 									Detonate(); //nuke engine off after comp start, detonate.
 								}
 							}
-						}						
+						}
 					}
 				}
 
@@ -104,11 +112,16 @@ namespace BDArmory.Modules
 		}
 		void Detonate() //borrowed from Stockalike Project Orion
 		{
-			hasDetonated = true;
+			if (hasDetonated)
+			{
+				return;
+			}
 			Debug.Log("[NukeTest] Running Detonate()");
 			//affect any nearby parts/vessels that aren't the source vessel		
 
-			using (var blastHits = Physics.OverlapSphere(part.transform.position, 750, 9076737).AsEnumerable().GetEnumerator())
+			Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
+
+			using (var blastHits = Physics.OverlapSphere(part.transform.position, thermalRadius, 9076737).AsEnumerable().GetEnumerator())
 			{
 				while (blastHits.MoveNext())
 				{
@@ -121,11 +134,11 @@ namespace BDArmory.Modules
 							Rigidbody rb = partHit.Rigidbody;
 							Vector3 distToG0 = part.transform.position - partHit.transform.position;
 							//if (partHit.vessel != this.vessel)
-							if (partHit != this.part) 
+							if (partHit != this.part)
 							{
 								blastImpulse = ((((((((Math.Pow((Math.Pow((Math.Pow((9.54 * Math.Pow(10.0, -3.0) * (2200.0 / distToG0.magnitude)), 1.95)), 4.0) + Math.Pow((Math.Pow((3.01 * (1100.0 / distToG0.magnitude)), 1.25)), 4.0)), 0.25)) * 6.894)
 								* vessel.atmDensity) * Math.Pow(yield, (1.0 / 3.0))))))) * (partHit.radiativeArea / 3.0); //assuming a 0.05 kT yield
-								partHit.skinTemperature += (((((yield * 337000000) / (4 * Math.PI * Math.Pow(distToG0.magnitude, 2.0))) * (partHit.radiativeArea / 2.0))) / partHit.skinThermalMass); // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
+								partHit.skinTemperature += ((((fluence * 3370000000) / (4 * Math.PI * Math.Pow(distToG0.magnitude, 2.0))) * partHit.radiativeArea / 2)); // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,							
 							} // everything gets heated via atmosphere
 
 							Ray LoSRay = new Ray(part.transform.position, partHit.transform.position - part.transform.position);
@@ -134,31 +147,56 @@ namespace BDArmory.Modules
 							{
 								KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
 								Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+								float blastDamage = 100;
 								if (p == partHit)
 								{
 									if (rb == null) return;
-									if (p.vessel != this.vessel)
-									//if (p != this.part)
+									//if (p.vessel != this.vessel)
+									if (p != this.part && p.mass > 0)
 									{
 										p.rb.AddForceAtPosition((partHit.transform.position - part.transform.position).normalized * (float)blastImpulse, partHit.transform.position, ForceMode.Impulse);
-										if (distToG0.magnitude < (thermalRadius*.66f))
+										blastDamage = ((float)((yield * 3370000000) / (4 * Math.PI * Math.Pow(distToG0.magnitude, 2.0)) * (partHit.radiativeArea / 2)));
+										p.AddExplosiveDamage(blastDamage, 100, ExplosionSourceType.Missile);
+
+
+										if (BDACompetitionMode.Instance.Scores.ContainsKey(Sourcevessel)) // Check that the source vessel is in the competition.
 										{
-											var choked = p.FindModuleImplementing<ModuleDrainIntakes>();
-											if (choked != null)
+											var damagedVesselName = p.vessel != null ? p.vessel.GetName() : null;
+											if (damagedVesselName != null && damagedVesselName != Sourcevessel && BDACompetitionMode.Instance.Scores.ContainsKey(damagedVesselName)) // Check that the damaged vessel is in the competition and isn't the source vessel.
 											{
-												choked.drainDuration += ADTimer;
+												if (BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts.ContainsKey(Sourcevessel))
+													++BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts[Sourcevessel];
+												else
+													BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts[Sourcevessel] = 1;
+												if (!BDACompetitionMode.Instance.Scores[damagedVesselName].everyoneWhoHitMeWithMissiles.Contains(Sourcevessel))
+													BDACompetitionMode.Instance.Scores[damagedVesselName].everyoneWhoHitMeWithMissiles.Add(Sourcevessel);
+												++BDACompetitionMode.Instance.Scores[Sourcevessel].totalDamagedPartsDueToMissiles;
+												BDACompetitionMode.Instance.Scores[damagedVesselName].lastMissileHitTime = Planetarium.GetUniversalTime();
+												BDACompetitionMode.Instance.Scores[damagedVesselName].lastPersonWhoHitMeWithAMissile = Sourcevessel;
+												if (vesselsHitByMissiles.ContainsKey(damagedVesselName))
+													++vesselsHitByMissiles[damagedVesselName];
+												else
+													vesselsHitByMissiles[damagedVesselName] = 1;
+												if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+													BDAScoreService.Instance.TrackMissileParts(Sourcevessel, damagedVesselName, 1);
 											}
+										}
+										var aName = Sourcevessel; // Attacker
+										var tName = p.vessel.GetName(); // Target
+										if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
+										{
+											var tData = BDACompetitionMode.Instance.Scores[tName];
+											// Track damage
+											if (tData.damageFromMissiles.ContainsKey(aName))
+												tData.damageFromMissiles[aName] += blastDamage;
 											else
-											{
-												choked = (ModuleDrainIntakes)p.AddModule("ModuleDrainIntakes");
-												choked.drainDuration = ADTimer;
-											}
-											Debug.Log("[BDArmory]: Localized Atmospheric deprevation; intakes choked on " + p.vessel.vesselName);
+												tData.damageFromMissiles.Add(aName, blastDamage);
+											if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+												BDAScoreService.Instance.TrackMissileDamage(aName, tName, blastDamage);
 										}
 									}
 								}
 							}
-
 						}
 						else
 						{
@@ -184,10 +222,18 @@ namespace BDArmory.Modules
 
 				}
 			}
-			ExplosionFx.CreateExplosion(part.transform.position, tntEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, null, this.part.vessel.vesselName, "Reactor Containment Failure");
-			Debug.Log("[NukeTest] ExplosionFX spawned");
+			if (vesselsHitByMissiles.Count > 0)
+			{
+				string message = "";
+				foreach (var vesselName in vesselsHitByMissiles.Keys)
+					message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
+				message += " parts damaged " + " (Blast Wave) by " + Sourcevessel + "'s exploding engine core.";
+				BDACompetitionMode.Instance.competitionStatus.Add(message);
+				// Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
+			}
+			ExplosionFx.CreateExplosion(part.transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, null, this.part.vessel.vesselName, "Reactor Containment Failure");
+			hasDetonated = true;
 			this.part.Destroy();
-			Debug.Log("[NukeTest] part did not destruct; Debug");
 		}
 	}
 }

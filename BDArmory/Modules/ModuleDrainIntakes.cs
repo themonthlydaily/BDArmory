@@ -7,8 +7,8 @@ namespace BDArmory.Modules
 {
     public class ModuleDrainIntakes : PartModule
     {
-        public float drainRate = 999;
         public float drainDuration = 20;
+
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -23,15 +23,17 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight)
             {
                 drainDuration -= Time.deltaTime;
+                var Intake = part.FindModuleImplementing<ModuleResourceIntake>();
                 if (drainDuration > 0)
                 {
-                    part.RequestResource("IntakeAir", (double)(drainRate * Time.deltaTime), ResourceFlowMode.ALL_VESSEL);
-                    part.RequestResource("IntakeAtm", (double)(drainRate * Time.deltaTime), ResourceFlowMode.ALL_VESSEL);
+                    Intake.intakeEnabled = false;
                 }
                 else
                 {
+                    Intake.intakeEnabled = true;
                     part.RemoveModule(this);
                 }
+                
             }
         }
     }
