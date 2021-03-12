@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.2.4
+FIXES
 	- Fix various NREs.
 	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
 	- Multi-Target barrage fix: weapons targeting a target outside their fire arc will now be skipped instead of bringing the barrage to a halt until the offending weapon can be brought to bear.
@@ -11,6 +12,7 @@ IMPROVEMENTS
 		- Guns targeting ground will now prioritize biggest impact (bullet mass * velocity) instead of tntmass.
 		- Guns targeting air will now prioritize RPM for fighter-sized targets, and prioritize larger caliber guns when targeting larger targets (bombers/zeppelins/Ace Combat superweapons).
 		- Add weapon priority slider allowing setting custom weapon selection order for guns/rockets.
+	- Added Chernobyl Nuke module for RWP S3R2.
 	- Update the list of maintainers and contributors in the README.
 
 v1.4.2.3
