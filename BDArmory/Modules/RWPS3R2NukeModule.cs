@@ -2,12 +2,8 @@
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.FX;
-using BDArmory.UI;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace BDArmory.Modules
@@ -102,6 +98,7 @@ namespace BDArmory.Modules
 
             }
         }
+
         void Detonate() //borrowed from Stockalike Project Orion
         {
             hasDetonated = true;
