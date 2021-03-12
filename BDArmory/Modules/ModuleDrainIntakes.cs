@@ -1,7 +1,4 @@
-﻿using BDArmory.FX;
-using BDArmory.UI;
-using System.Linq;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace BDArmory.Modules
 {
