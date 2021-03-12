@@ -299,7 +299,7 @@ namespace BDArmory.Control
 
         Tuple<int, int> OptimiseVesselsPerHeat(int count)
         {
-            var options = new List<int> { 8, 7, 6 };
+            var options = count < 11 ? new List<int> { 8, 7, 6, 5 } : new List<int> { 8, 7, 6 };
             foreach (var val in options)
             {
                 if (count % val == 0)
