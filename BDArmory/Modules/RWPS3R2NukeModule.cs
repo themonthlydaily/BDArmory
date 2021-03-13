@@ -30,6 +30,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true)]
         public float yield = 0.05f;
+        float yieldCubeRoot;
 
         [KSPField(isPersistant = true)]
         public float fluence = 0.05f;
@@ -59,6 +60,7 @@ namespace BDArmory.Modules
                 {
                     engine.allowShutdown = false;
                 }
+                yieldCubeRoot = Mathf.Pow(yield, 1f / 3f);
                 part.force_activate();
                 part.OnJustAboutToBeDestroyed += Detonate;
             }
@@ -153,12 +155,23 @@ namespace BDArmory.Modules
                                     //if (p.vessel != this.vessel)
                                     if (p != part && p.mass > 0)
                                     {
-                                        var blastImpulse = Math.Pow(3.01 * 1100.0 / distToG0, 1.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0;
+                                        var blastImpulse = Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) * 6.894f * (float)vessel.atmDensity * yieldCubeRoot * (float)partHit.radiativeArea / 3f;
                                         // Math.Pow(Math.Pow(Math.Pow(9.54e-3 * 2200.0 / distToG0, 1.95), 4.0) + Math.Pow(Math.Pow(3.01 * 1100.0 / distToG0, 1.25), 4.0), 0.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0; //assuming a 0.05 kT yield
-                                        p.rb.AddForceAtPosition((partHit.transform.position - part.transform.position).normalized * (float)blastImpulse, partHit.transform.position, ForceMode.Impulse);
-                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest] Applying " + blastImpulse.ToString("0.0") + " impulse to " + p + " of mass " + p.mass + " at distance " + distToG0 + "m");
-                                        if (double.IsNaN(blastImpulse)) Debug.LogWarning("[NukeTest] blast impulse is NaN. distToG0: " + distToG0 + ", atmDensity: " + vessel.atmDensity + ", yield: " + yield + ", radiativeArea: " + part.radiativeArea);
-                                        blastDamage = ((float)((yield * 3370000000) / (4 * Math.PI * Math.Pow(distToG0, 2.0)) * (partHit.radiativeArea / 2)));
+                                        if (float.IsNaN(blastImpulse))
+                                        {
+                                            Debug.LogWarning("[NukeTest] blast impulse is NaN. distToG0: " + distToG0 + ", vessel: " + vessel + ", atmDensity: " + vessel.atmDensity + ", yield: " + yield + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + partHit + ", radiativeArea: " + partHit.radiativeArea + " | math.pow: " + Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) + ", arg: " + (3.01f * 1100f / distToG0) + ", rest: " + (6.894f * (float)vessel.atmDensity * yieldCubeRoot) + ", " + ((float)partHit.radiativeArea / 3f));
+                                        }
+                                        else
+                                        {
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest] Applying " + blastImpulse.ToString("0.0") + " impulse to " + p + " of mass " + p.mass + " at distance " + distToG0 + "m");
+                                            p.rb.AddForceAtPosition((partHit.transform.position - part.transform.position).normalized * (float)blastImpulse, partHit.transform.position, ForceMode.Impulse);
+                                        }
+                                        blastDamage = ((float)((yield * 3370000000) / (4f * Mathf.PI * distToG0 * distToG0) * ((float)partHit.radiativeArea / 2f)));
+                                        if (float.IsNaN(blastDamage))
+                                        {
+                                            Debug.LogWarning("[NukeTest]: blast damage is NaN. distToG0: " + distToG0 + ", yield: " + yield + ", part: " + partHit + ", radiativeArea: " + partHit.radiativeArea + " | parts: " + (yield * 3370000000) + ", " + ((4f * Mathf.PI * distToG0 * distToG0)) + ", " + ((float)partHit.radiativeArea / 2f));
+                                            continue;
+                                        }
                                         p.AddExplosiveDamage(blastDamage, 100, ExplosionSourceType.Missile);
 
 
@@ -210,9 +223,9 @@ namespace BDArmory.Modules
                             if (building != null)
                             {
                                 var distToEpicenter = Mathf.Max((part.transform.position - building.transform.position).magnitude, 1f);
-                                var blastImpulse = Math.Pow(3.01 * 1100.0 / distToEpicenter, 1.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0);
+                                var blastImpulse = Mathf.Pow(3.01f * 1100f / distToEpicenter, 1.25f) * 6.894f * (float)vessel.atmDensity * yieldCubeRoot;
                                 // blastImpulse = (((((Math.Pow((Math.Pow((Math.Pow((9.54 * Math.Pow(10.0, -3.0) * (2200.0 / distToEpicenter)), 1.95)), 4.0) + Math.Pow((Math.Pow((3.01 * (1100.0 / distToEpicenter)), 1.25)), 4.0)), 0.25)) * 6.894) * (vessel.atmDensity)) * Math.Pow(yield, (1.0 / 3.0))));
-                                if (blastImpulse > 140) //140kPa, level at which reinforced concrete structures are destroyed
+                                if (!double.IsNaN(blastImpulse) && blastImpulse > 140) //140kPa, level at which reinforced concrete structures are destroyed
                                 {
                                     building.Demolish();
                                 }
