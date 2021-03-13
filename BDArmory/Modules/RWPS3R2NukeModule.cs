@@ -243,7 +243,7 @@ namespace BDArmory.Modules
                 string message = "";
                 foreach (var vesselName in vesselsHitByMissiles.Keys)
                     message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
-                message += " parts damaged " + " (Blast Wave) by " + Sourcevessel + "'s exploding engine core.";
+                message += " parts damaged (Blast Wave) by " + Sourcevessel + "'s exploding engine core.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.Log("[NukeTest]: " + message);
             }
