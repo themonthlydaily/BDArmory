@@ -40,11 +40,11 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true)]
         public float ADTimer = 20;
 
-        double blastImpulse;
         private int FuelID;
         private bool hasDetonated = false;
 
         public string Sourcevessel;
+        HashSet<Part> partsHit = new HashSet<Part>();
 
         public override void OnStart(StartState state)
         {
@@ -77,7 +77,7 @@ namespace BDArmory.Modules
                     {
                         if (!hasDetonated)
                         {
-                            Debug.Log("[NukeTest] nerva out of fuel, detonating");
+                            Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel, detonating");
                             Detonate(); //bingo fuel, detonate
                         }
                     }
@@ -88,7 +88,7 @@ namespace BDArmory.Modules
                         {
                             if (!hasDetonated)
                             {
-                                Debug.Log("[NukeTest] nerva Off, detonating");
+                                Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is Off, detonating");
                                 Detonate(); //nuke engine off after comp start, detonate.
                             }
                         }
@@ -98,7 +98,7 @@ namespace BDArmory.Modules
                             {
                                 if (!hasDetonated)
                                 {
-                                    Debug.Log("[NukeTest] nerva manually thrust limited, detonating");
+                                    Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
                                     Detonate(); //nuke engine off after comp start, detonate.
                                 }
                             }
@@ -114,34 +114,35 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            Debug.Log("[NukeTest] Running Detonate()");
+            Debug.Log("[NukeTest] Running Detonate() on nerva in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
 
             Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
 
             using (var blastHits = Physics.OverlapSphere(part.transform.position, thermalRadius, 9076737).AsEnumerable().GetEnumerator())
             {
+                partsHit.Clear();
                 while (blastHits.MoveNext())
                 {
                     if (blastHits.Current == null) continue;
                     try
                     {
                         Part partHit = blastHits.Current.GetComponentInParent<Part>();
+                        if (partsHit.Contains(partHit)) continue; // Don't hit the same part multiple times.
+                        partsHit.Add(partHit);
                         if (partHit != null && partHit.mass > 0)
                         {
                             Rigidbody rb = partHit.Rigidbody;
-                            Vector3 distToG0 = part.transform.position - partHit.transform.position;
+                            var distToG0 = Math.Max((part.transform.position - partHit.transform.position).magnitude, 1f);
                             //if (partHit.vessel != this.vessel)
                             if (partHit != part)
                             {
-                                blastImpulse = ((((((((Math.Pow((Math.Pow((Math.Pow((9.54 * Math.Pow(10.0, -3.0) * (2200.0 / distToG0.magnitude)), 1.95)), 4.0) + Math.Pow((Math.Pow((3.01 * (1100.0 / distToG0.magnitude)), 1.25)), 4.0)), 0.25)) * 6.894)
-                                * vessel.atmDensity) * Math.Pow(yield, (1.0 / 3.0))))))) * (partHit.radiativeArea / 3.0); //assuming a 0.05 kT yield
-                                partHit.skinTemperature += ((((fluence * 3370000000) / (4 * Math.PI * Math.Pow(distToG0.magnitude, 2.0))) * partHit.radiativeArea / 2)); // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
+                                partHit.skinTemperature += fluence * 3370000000 / (4 * Math.PI * Math.Pow(distToG0, 2.0)) * partHit.radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
                             } // everything gets heated via atmosphere
 
                             Ray LoSRay = new Ray(part.transform.position, partHit.transform.position - part.transform.position);
                             RaycastHit hit;
-                            if (Physics.Raycast(LoSRay, out hit, distToG0.magnitude, 9076737)) // only add impulse to parts with line of sight to detonation
+                            if (Physics.Raycast(LoSRay, out hit, distToG0, 9076737)) // only add impulse to parts with line of sight to detonation
                             {
                                 KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                 Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -152,8 +153,12 @@ namespace BDArmory.Modules
                                     //if (p.vessel != this.vessel)
                                     if (p != part && p.mass > 0)
                                     {
+                                        var blastImpulse = Math.Pow(3.01 * 1100.0 / distToG0, 1.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0;
+                                        // Math.Pow(Math.Pow(Math.Pow(9.54e-3 * 2200.0 / distToG0, 1.95), 4.0) + Math.Pow(Math.Pow(3.01 * 1100.0 / distToG0, 1.25), 4.0), 0.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0; //assuming a 0.05 kT yield
                                         p.rb.AddForceAtPosition((partHit.transform.position - part.transform.position).normalized * (float)blastImpulse, partHit.transform.position, ForceMode.Impulse);
-                                        blastDamage = ((float)((yield * 3370000000) / (4 * Math.PI * Math.Pow(distToG0.magnitude, 2.0)) * (partHit.radiativeArea / 2)));
+                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest] Applying " + blastImpulse.ToString("0.0") + " impulse to " + p + " of mass " + p.mass + " at distance " + distToG0 + "m");
+                                        if (double.IsNaN(blastImpulse)) Debug.LogWarning("[NukeTest] blast impulse is NaN. distToG0: " + distToG0 + ", atmDensity: " + vessel.atmDensity + ", yield: " + yield + ", radiativeArea: " + part.radiativeArea);
+                                        blastDamage = ((float)((yield * 3370000000) / (4 * Math.PI * Math.Pow(distToG0, 2.0)) * (partHit.radiativeArea / 2)));
                                         p.AddExplosiveDamage(blastDamage, 100, ExplosionSourceType.Missile);
 
 
@@ -191,6 +196,7 @@ namespace BDArmory.Modules
                                                 tData.damageFromMissiles.Add(aName, blastDamage);
                                             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                                 BDAScoreService.Instance.TrackMissileDamage(aName, tName, blastDamage);
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m (" + hit.distance.ToString("0.000") + "m)");
                                         }
                                     }
                                 }
@@ -203,19 +209,19 @@ namespace BDArmory.Modules
 
                             if (building != null)
                             {
-                                Vector3 distToEpicenter = part.transform.position - building.transform.position;
-                                blastImpulse = (((((Math.Pow((Math.Pow((Math.Pow((9.54 * Math.Pow(10.0, -3.0) * (2200.0 / distToEpicenter.magnitude)), 1.95)), 4.0) + Math.Pow((Math.Pow((3.01 * (1100.0 / distToEpicenter.magnitude)), 1.25)), 4.0)), 0.25)) * 6.894)
-                            * (vessel.atmDensity)) * Math.Pow(yield, (1.0 / 3.0))));
+                                var distToEpicenter = Mathf.Max((part.transform.position - building.transform.position).magnitude, 1f);
+                                var blastImpulse = Math.Pow(3.01 * 1100.0 / distToEpicenter, 1.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0);
+                                // blastImpulse = (((((Math.Pow((Math.Pow((Math.Pow((9.54 * Math.Pow(10.0, -3.0) * (2200.0 / distToEpicenter)), 1.95)), 4.0) + Math.Pow((Math.Pow((3.01 * (1100.0 / distToEpicenter)), 1.25)), 4.0)), 0.25)) * 6.894) * (vessel.atmDensity)) * Math.Pow(yield, (1.0 / 3.0))));
+                                if (blastImpulse > 140) //140kPa, level at which reinforced concrete structures are destroyed
+                                {
+                                    building.Demolish();
+                                }
                             }
-                            if (blastImpulse > 140) //140kPa, level at which reinforced concrete structures are destroyed
-                            {
-                                building.Demolish();
-                            }
-
                         }
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        Debug.LogError("[NukeTest]: " + e.Message);
                     }
 
                 }
@@ -227,8 +233,9 @@ namespace BDArmory.Modules
                     message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
                 message += " parts damaged " + " (Blast Wave) by " + Sourcevessel + "'s exploding engine core.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[NukeTest]: " + message);
             }
-            ExplosionFx.CreateExplosion(part.transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, null, part.vessel != null ? part.vessel.vesselName : null, "Reactor Containment Failure");
+            ExplosionFx.CreateExplosion(part.transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, null, Sourcevessel, "Reactor Containment Failure");
             hasDetonated = true;
             if (part.vessel != null) // Already in the process of being destroyed.
                 part.Destroy();
