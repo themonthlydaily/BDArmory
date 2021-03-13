@@ -136,10 +136,11 @@ namespace BDArmory.Modules
                         {
                             Rigidbody rb = partHit.Rigidbody;
                             var distToG0 = Math.Max((part.transform.position - partHit.transform.position).magnitude, 1f);
+							float radiativeArea = !double.IsNaN(partHit.radiativeArea) ? (float)partHit.radiativeArea : partHit.GetArea();
                             //if (partHit.vessel != this.vessel)
                             if (partHit != part)
                             {
-                                partHit.skinTemperature += fluence * 3370000000 / (4 * Math.PI * Math.Pow(distToG0, 2.0)) * partHit.radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
+                                partHit.skinTemperature += fluence * 3370000000 / (4 * Math.PI * Math.Pow(distToG0, 2.0)) * radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
                             } // everything gets heated via atmosphere
 
                             Ray LoSRay = new Ray(part.transform.position, partHit.transform.position - part.transform.position);
@@ -155,21 +156,21 @@ namespace BDArmory.Modules
                                     //if (p.vessel != this.vessel)
                                     if (p != part && p.mass > 0)
                                     {
-                                        var blastImpulse = Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) * 6.894f * (float)vessel.atmDensity * yieldCubeRoot * (float)partHit.radiativeArea / 3f;
+                                        var blastImpulse = Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) * 6.894f * (float)vessel.atmDensity * yieldCubeRoot * radiativeArea / 3f;
                                         // Math.Pow(Math.Pow(Math.Pow(9.54e-3 * 2200.0 / distToG0, 1.95), 4.0) + Math.Pow(Math.Pow(3.01 * 1100.0 / distToG0, 1.25), 4.0), 0.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0; //assuming a 0.05 kT yield
                                         if (float.IsNaN(blastImpulse))
                                         {
-                                            Debug.LogWarning("[NukeTest] blast impulse is NaN. distToG0: " + distToG0 + ", vessel: " + vessel + ", atmDensity: " + vessel.atmDensity + ", yield: " + yield + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + partHit + ", radiativeArea: " + partHit.radiativeArea + " | math.pow: " + Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) + ", arg: " + (3.01f * 1100f / distToG0) + ", rest: " + (6.894f * (float)vessel.atmDensity * yieldCubeRoot) + ", " + ((float)partHit.radiativeArea / 3f));
+                                            Debug.LogWarning("[NukeTest] blast impulse is NaN. distToG0: " + distToG0 + ", vessel: " + vessel + ", atmDensity: " + vessel.atmDensity + ", yield: " + yield + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + partHit + ", radiativeArea: " + partHit.radiativeArea);
                                         }
                                         else
                                         {
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest] Applying " + blastImpulse.ToString("0.0") + " impulse to " + p + " of mass " + p.mass + " at distance " + distToG0 + "m");
                                             p.rb.AddForceAtPosition((partHit.transform.position - part.transform.position).normalized * (float)blastImpulse, partHit.transform.position, ForceMode.Impulse);
                                         }
-                                        blastDamage = ((float)((yield * 3370000000) / (4f * Mathf.PI * distToG0 * distToG0) * ((float)partHit.radiativeArea / 2f)));
+                                        blastDamage = ((float)((yield * 3370000000) / (4f * Mathf.PI * distToG0 * distToG0) * (radiativeArea / 2f)));
                                         if (float.IsNaN(blastDamage))
                                         {
-                                            Debug.LogWarning("[NukeTest]: blast damage is NaN. distToG0: " + distToG0 + ", yield: " + yield + ", part: " + partHit + ", radiativeArea: " + partHit.radiativeArea + " | parts: " + (yield * 3370000000) + ", " + ((4f * Mathf.PI * distToG0 * distToG0)) + ", " + ((float)partHit.radiativeArea / 2f));
+                                            Debug.LogWarning("[NukeTest]: blast damage is NaN. distToG0: " + distToG0 + ", yield: " + yield + ", part: " + partHit + ", radiativeArea: " + partHit.radiativeArea);
                                             continue;
                                         }
                                         p.AddExplosiveDamage(blastDamage, 100, ExplosionSourceType.Missile);
