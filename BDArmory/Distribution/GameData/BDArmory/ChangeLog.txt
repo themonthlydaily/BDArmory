@@ -1,4 +1,14 @@
-﻿v1.4.2.4
+﻿v1.4.2.5
+FIXES
+	- Wait for reference transforms to be assigned during spawning to avoid NREs.
+	- Tweak auto number of vessels for FFA with only a few craft.
+	- Fix a variety of NREs in the nuclear engine code.
+	- Avoid applying forces to physicsless parts (no rigid body), which removes the need for try..catch block. Clean up code.
+	- Track last valid atmDensity of nuclear engine to ensure correct value while vessel being destroyed.
+	- Use the approximate GetArea function instead of the radiative area if the radiative area is not available.
+	- Clean up formulas for blast impulse. Only apply damage/impulse to each part once per explosion.
+
+v1.4.2.4
 FIXES
 	- Fix various NREs.
 	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
