@@ -145,7 +145,7 @@ namespace BDArmory.Modules
 
         void Detonate() //borrowed from Stockalike Project Orion
         {
-            if (hasDetonated || FlightGlobals.currentMainBody == null)
+            if (hasDetonated || FlightGlobals.currentMainBody == null || VesselSpawner.Instance.vesselsSpawning) // Don't trigger on scene changes or during spawning.
             {
                 return;
             }
