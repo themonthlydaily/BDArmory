@@ -114,7 +114,7 @@ namespace BDArmory.Modules
 
         void Detonate() //borrowed from Stockalike Project Orion
         {
-            if (hasDetonated)
+            if (hasDetonated || FlightGlobals.currentMainBody == null)
             {
                 return;
             }
