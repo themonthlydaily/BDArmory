@@ -5,6 +5,7 @@ using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.FX;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -43,6 +44,7 @@ namespace BDArmory.Modules
 
         private int FuelID;
         private bool hasDetonated = false;
+        private bool goingCritical = false;
         private float lastValidAtmDensity = 0f;
         public string Sourcevessel;
         HashSet<Part> partsHit = new HashSet<Part>();
@@ -63,6 +65,8 @@ namespace BDArmory.Modules
                 yieldCubeRoot = Mathf.Pow(yield, 1f / 3f);
                 part.force_activate();
                 part.OnJustAboutToBeDestroyed += Detonate;
+                GameEvents.onVesselPartCountChanged.Add(CheckAttached);
+                GameEvents.onVesselCreate.Add(CheckAttached);
             }
             base.OnStart(state);
         }
@@ -79,10 +83,10 @@ namespace BDArmory.Modules
                     fuelleft = fuelCurrent;
                     if (fuelleft <= 0)
                     {
-                        if (!hasDetonated)
+                        if (!hasDetonated && !goingCritical)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel, detonating");
-                            Detonate(); //bingo fuel, detonate
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel.");
+                            StartCoroutine(DelayedDetonation(0.5f)); //bingo fuel, detonate
                         }
                     }
                     var engine = part.FindModuleImplementing<ModuleEngines>();
@@ -110,6 +114,33 @@ namespace BDArmory.Modules
                     }
                 }
             }
+        }
+
+        void CheckAttached(Vessel v)
+        {
+            if (v == vessel && !hasDetonated && !goingCritical)
+            {
+                if (v.FindPartModuleImplementing<MissileFire>() == null)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Nuclear engine on " + Sourcevessel + " has become detached.");
+                    goingCritical = true;
+                    StartCoroutine(DelayedDetonation(0.5f));
+                }
+            }
+        }
+
+        IEnumerator DelayedDetonation(float delay)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
+            goingCritical = true;
+            yield return new WaitForSeconds(delay);
+            if (!hasDetonated && part != null) Detonate();
+        }
+
+        public void OnDestroy()
+        {
+            GameEvents.onVesselPartCountChanged.Remove(CheckAttached);
+            GameEvents.onVesselCreate.Remove(CheckAttached);
         }
 
         void Detonate() //borrowed from Stockalike Project Orion
@@ -187,7 +218,7 @@ namespace BDArmory.Modules
                                     // Scoring
                                     var aName = Sourcevessel; // Attacker
                                     var tName = p.vessel.GetName(); // Target
-                                    if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
+                                    if (tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
                                     {
                                         // Part hit counts
                                         if (BDACompetitionMode.Instance.Scores[tName].missilePartDamageCounts.ContainsKey(aName))
@@ -214,7 +245,7 @@ namespace BDArmory.Modules
                                             tData.damageFromMissiles.Add(aName, blastDamage);
                                         if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                             BDAScoreService.Instance.TrackMissileDamage(aName, tName, blastDamage);
-                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m (" + hit.distance.ToString("0.000") + "m)");
+                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m");
                                     }
                                 }
                             }
