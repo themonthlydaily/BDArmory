@@ -81,7 +81,7 @@ namespace BDArmory.Modules
                     {
                         if (!hasDetonated)
                         {
-                            Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel, detonating");
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel, detonating");
                             Detonate(); //bingo fuel, detonate
                         }
                     }
@@ -92,7 +92,7 @@ namespace BDArmory.Modules
                         {
                             if (!hasDetonated)
                             {
-                                Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is Off, detonating");
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is Off, detonating");
                                 Detonate(); //nuke engine off after comp start, detonate.
                             }
                         }
@@ -102,7 +102,7 @@ namespace BDArmory.Modules
                             {
                                 if (!hasDetonated)
                                 {
-                                    Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
                                     Detonate(); //nuke engine off after comp start, detonate.
                                 }
                             }
@@ -118,7 +118,7 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            Debug.Log("[NukeTest]: Running Detonate() on nerva in vessel " + Sourcevessel);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Running Detonate() on nerva in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
 
             Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
