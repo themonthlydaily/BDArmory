@@ -191,7 +191,7 @@ namespace BDArmory.Modules
                                 if (p != part)
                                 {
                                     // Forces
-                                    if (p.rb != null && p.mass > 0) // Don't apply forces to physicsless parts.
+                                    if (p.rb != null && p.rb.mass > 0) // Don't apply forces to physicsless parts.
                                     {
                                         var blastImpulse = Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot * radiativeArea / 3f;
                                         // Math.Pow(Math.Pow(Math.Pow(9.54e-3 * 2200.0 / distToG0, 1.95), 4.0) + Math.Pow(Math.Pow(3.01 * 1100.0 / distToG0, 1.25), 4.0), 0.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0; //assuming a 0.05 kT yield

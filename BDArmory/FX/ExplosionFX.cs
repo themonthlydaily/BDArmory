@@ -433,11 +433,14 @@ namespace BDArmory.FX
                             NegativeForce = blastInfo.VelocityChange * 0.25f
                         });
 
-                        AddForceAtPosition(rb,
-                            (eventToExecute.HitPoint + part.rb.velocity * TimeIndex - Position).normalized *
-                            blastInfo.VelocityChange *
-                            BDArmorySettings.EXP_IMP_MOD,
-                            eventToExecute.HitPoint + part.rb.velocity * TimeIndex);
+                        if (rb != null && rb.mass > 0)
+                        {
+                            AddForceAtPosition(rb,
+                                (eventToExecute.HitPoint + part.rb.velocity * TimeIndex - Position).normalized *
+                                blastInfo.VelocityChange *
+                                BDArmorySettings.EXP_IMP_MOD,
+                                eventToExecute.HitPoint + part.rb.velocity * TimeIndex);
+                        }
 
                         var damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
                         if (BDArmorySettings.BATTLEDAMAGE)
@@ -497,7 +500,8 @@ namespace BDArmory.FX
                             " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
                             " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
                     }
-                    AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
+                    if (rb != null && rb.mass > 0)
+                        AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
                 }
             }
             catch
@@ -582,7 +586,7 @@ namespace BDArmory.FX
             //////////////////////////////////////////////////////////
             // Add The force to part
             //////////////////////////////////////////////////////////
-            if (rb == null) return;
+            if (rb == null || rb.mass == 0) return;
             rb.AddForceAtPosition(force, position, ForceMode.VelocityChange);
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {

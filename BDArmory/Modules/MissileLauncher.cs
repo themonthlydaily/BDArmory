@@ -1926,6 +1926,7 @@ namespace BDArmory.Modules
         void SimpleDrag()
         {
             part.dragModel = Part.DragModel.NONE;
+            if (part.rb == null || part.rb.mass == 0) return;
             //float simSpeedSquared = (float)vessel.Velocity.sqrMagnitude;
             float simSpeedSquared = (part.rb.GetPointVelocity(part.transform.TransformPoint(simpleCoD)) + (Vector3)Krakensbane.GetFrameVelocity()).sqrMagnitude;
             Vector3 currPos = transform.position;
