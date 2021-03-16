@@ -177,6 +177,7 @@ namespace BDArmory.Core.Extension
             // Add The force to part
             //////////////////////////////////////////////////////////
 
+            if (rb == null || rb.mass == 0) return;
             rb.AddForceAtPosition(force, position, mode);
             Debug.Log("[BDArmory]: Force Applied : " + force.magnitude);
         }
@@ -400,7 +401,7 @@ namespace BDArmory.Core.Extension
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
                             Debug.Log("[BDArmory]: Damage Before Reduction : " + damage);
-                            Debug.Log("[BDArmory]: Damage Reduction (%) : " + 100*(1-Mathf.Clamp01((113f - _damageReduction) / 100f)));
+                            Debug.Log("[BDArmory]: Damage Reduction (%) : " + 100 * (1 - Mathf.Clamp01((113f - _damageReduction) / 100f)));
                             Debug.Log("[BDArmory]: Damage After Armor : " + (damage *= Mathf.Clamp01((113f - _damageReduction) / 100f)));
                         }
 

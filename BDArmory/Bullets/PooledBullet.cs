@@ -406,7 +406,7 @@ namespace BDArmory.Bullets
                             {
                                 //New method
 
-                                if (hitPart.rb != null)
+                                if (hitPart.rb != null && hitPart.rb.mass > 0)
                                 {
                                     float forceAverageMagnitude = impactVelocity * impactVelocity *
                                                           (1f / hit.distance) * (bulletMass - tntMass);
@@ -508,7 +508,7 @@ namespace BDArmory.Bullets
                             try
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit!=null && partHit.vessel == sourceVessel) continue;
+                                if (partHit != null && partHit.vessel == sourceVessel) continue;
 
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                     Debug.Log("[BDArmory]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);

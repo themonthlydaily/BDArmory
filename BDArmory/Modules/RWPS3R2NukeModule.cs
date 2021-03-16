@@ -5,6 +5,7 @@ using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.FX;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -43,6 +44,7 @@ namespace BDArmory.Modules
 
         private int FuelID;
         private bool hasDetonated = false;
+        private bool goingCritical = false;
         private float lastValidAtmDensity = 0f;
         public string Sourcevessel;
         HashSet<Part> partsHit = new HashSet<Part>();
@@ -63,6 +65,8 @@ namespace BDArmory.Modules
                 yieldCubeRoot = Mathf.Pow(yield, 1f / 3f);
                 part.force_activate();
                 part.OnJustAboutToBeDestroyed += Detonate;
+                GameEvents.onVesselPartCountChanged.Add(CheckAttached);
+                GameEvents.onVesselCreate.Add(CheckAttached);
             }
             base.OnStart(state);
         }
@@ -79,10 +83,10 @@ namespace BDArmory.Modules
                     fuelleft = fuelCurrent;
                     if (fuelleft <= 0)
                     {
-                        if (!hasDetonated)
+                        if (!hasDetonated && !goingCritical)
                         {
-                            Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel, detonating");
-                            Detonate(); //bingo fuel, detonate
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel.");
+                            StartCoroutine(DelayedDetonation(0.5f)); //bingo fuel, detonate
                         }
                     }
                     var engine = part.FindModuleImplementing<ModuleEngines>();
@@ -92,7 +96,7 @@ namespace BDArmory.Modules
                         {
                             if (!hasDetonated)
                             {
-                                Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is Off, detonating");
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is Off, detonating");
                                 Detonate(); //nuke engine off after comp start, detonate.
                             }
                         }
@@ -102,7 +106,7 @@ namespace BDArmory.Modules
                             {
                                 if (!hasDetonated)
                                 {
-                                    Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
                                     Detonate(); //nuke engine off after comp start, detonate.
                                 }
                             }
@@ -112,13 +116,40 @@ namespace BDArmory.Modules
             }
         }
 
+        void CheckAttached(Vessel v)
+        {
+            if (v == vessel && !hasDetonated && !goingCritical)
+            {
+                if (v.FindPartModuleImplementing<MissileFire>() == null)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Nuclear engine on " + Sourcevessel + " has become detached.");
+                    goingCritical = true;
+                    StartCoroutine(DelayedDetonation(0.5f));
+                }
+            }
+        }
+
+        IEnumerator DelayedDetonation(float delay)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
+            goingCritical = true;
+            yield return new WaitForSeconds(delay);
+            if (!hasDetonated && part != null) Detonate();
+        }
+
+        public void OnDestroy()
+        {
+            GameEvents.onVesselPartCountChanged.Remove(CheckAttached);
+            GameEvents.onVesselCreate.Remove(CheckAttached);
+        }
+
         void Detonate() //borrowed from Stockalike Project Orion
         {
-            if (hasDetonated || FlightGlobals.currentMainBody == null)
+            if (hasDetonated || FlightGlobals.currentMainBody == null || VesselSpawner.Instance.vesselsSpawning) // Don't trigger on scene changes or during spawning.
             {
                 return;
             }
-            Debug.Log("[NukeTest]: Running Detonate() on nerva in vessel " + Sourcevessel);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Running Detonate() on nerva in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
 
             Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
@@ -160,7 +191,7 @@ namespace BDArmory.Modules
                                 if (p != part)
                                 {
                                     // Forces
-                                    if (p.rb != null && p.mass > 0) // Don't apply forces to physicsless parts.
+                                    if (p.rb != null && p.rb.mass > 0) // Don't apply forces to physicsless parts.
                                     {
                                         var blastImpulse = Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot * radiativeArea / 3f;
                                         // Math.Pow(Math.Pow(Math.Pow(9.54e-3 * 2200.0 / distToG0, 1.95), 4.0) + Math.Pow(Math.Pow(3.01 * 1100.0 / distToG0, 1.25), 4.0), 0.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0; //assuming a 0.05 kT yield
@@ -187,7 +218,7 @@ namespace BDArmory.Modules
                                     // Scoring
                                     var aName = Sourcevessel; // Attacker
                                     var tName = p.vessel.GetName(); // Target
-                                    if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
+                                    if (tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
                                     {
                                         // Part hit counts
                                         if (BDACompetitionMode.Instance.Scores[tName].missilePartDamageCounts.ContainsKey(aName))
@@ -214,7 +245,7 @@ namespace BDArmory.Modules
                                             tData.damageFromMissiles.Add(aName, blastDamage);
                                         if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                             BDAScoreService.Instance.TrackMissileDamage(aName, tName, blastDamage);
-                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m (" + hit.distance.ToString("0.000") + "m)");
+                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m");
                                     }
                                 }
                             }

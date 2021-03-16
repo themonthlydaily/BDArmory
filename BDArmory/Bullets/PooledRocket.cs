@@ -302,7 +302,7 @@ namespace BDArmory.Bullets
                             }
                             else // stopped by armor
                             {
-                                if (hitPart.rb != null)
+                                if (hitPart.rb != null && hitPart.rb.mass > 0)
                                 {
                                     float forceAverageMagnitude = impactVelocity * impactVelocity *
                                                           (1f / hit.distance) * rocketMass;
