@@ -1,4 +1,8 @@
-﻿v1.4.2.6
+﻿v1.4.2.7
+FIXES
+	- Add a "Kerbal Inventory" slider to configure how kerbals' inventories are adjusted when "Kerbal Safety" is enabled (default is "Parachute Only").
+
+v1.4.2.6
 FIXES
 	- Fix bug in loading spawn locations on fresh installs.
 	- Give vessel spawning more than 5 frames to wait for the reference transforms.
