@@ -92,6 +92,7 @@ namespace BDArmory.Modules
         public bool autoFire;
         public float autoFireLength = 0;
         public float autoFireTimer = 0;
+        public float autofireShotCount = 0;
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
@@ -225,6 +226,7 @@ namespace BDArmory.Modules
         }
 
         public double ammoCount;
+        public double ammoMaxCount;
         public string ammoLeft; //#191
 
         public string GetSubLabel() //think BDArmorySetup only calls this for the first instance of a particular ShortName, so this probably won't result in a group of n guns having n GetSublabelCalls per frame
@@ -301,6 +303,13 @@ namespace BDArmory.Modules
         public float priority = 0; //per-weapon priority selection override
 
         [KSPField(isPersistant = true)]
+        public bool BurstOverride = false;
+
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringBurstCount"),//Burst Firing Count
+ UI_FloatRange(minValue = 1f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
+        public float fireBurstLength = 1;
+
+        [KSPField(isPersistant = true)]
         public bool FireAngleOverride = false;
 
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringAngle"),
@@ -355,6 +364,8 @@ namespace BDArmory.Modules
         [KSPField]
         public float ReloadTime = 10;
         public float ReloadTimer = 0;
+        public float ReloadAnimTime = 10;
+        public float AnimTimer = 0;
 
         [KSPField]
         public bool BurstFire = false; // set to true for weapons that fire multiple times per triggerpull
@@ -761,6 +772,8 @@ namespace BDArmory.Modules
             FAOFlight.onFieldChanged = FAOCos;
             Fields["FiringTolerance"].guiActive = FireAngleOverride;
             Fields["FiringTolerance"].guiActiveEditor = FireAngleOverride;
+            Fields["fireBurstLength"].guiActive = BurstOverride;
+            Fields["fireBurstLength"].guiActiveEditor = BurstOverride;
             vessel.Velocity();
             if (BurstFire)
             {
@@ -788,6 +801,11 @@ namespace BDArmory.Modules
                 if (rocketPod && externalAmmo)
                 {
                     BeltFed = false;
+                    PartResource rocketResource = GetRocketResource();
+                    if (rocketResource != null)
+                    {
+                        part.resourcePriorityOffset = +2; //make rocketpods draw from internal ammo first, if any, before using external supply
+                    }
                 }
                 if (!rocketPod)
                 {
@@ -971,6 +989,7 @@ namespace BDArmory.Modules
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
                 deployState.enabled = true;
+                ReloadAnimTime = (ReloadTime - deployState.length);
             }
             if (hasFireAnimation)
             {
@@ -1066,6 +1085,25 @@ namespace BDArmory.Modules
 
             Misc.Misc.RefreshAssociatedWindows(part);
         }
+        [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BurstLengthOverride_Enable", active = true)]//Burst length override
+        public void ToggleBurstLengthOverride()
+        {
+            BurstOverride = !BurstOverride;
+
+            if (BurstOverride == false)
+            {
+                Events["ToggleBurstLengthOverride"].guiName = Localizer.Format("#LOC_BDArmory_BurstLengthOverride_Enable");// Enable Burst Fire length Override
+            }
+            else
+            {
+                Events["ToggleBurstLengthOverride"].guiName = Localizer.Format("#LOC_BDArmory_BurstLengthOverride_Disable");// Disable Burst Fire length Override
+            }
+
+            Fields["fireBurstLength"].guiActive = BurstOverride;
+            Fields["fireBurstLength"].guiActiveEditor = BurstOverride;
+
+            Misc.Misc.RefreshAssociatedWindows(part);
+        }
         void FAOCos(BaseField field, object obj)
         {
             maxAutoFireCosAngle = Mathf.Cos((FiringTolerance * Mathf.Deg2Rad));
@@ -1139,10 +1177,8 @@ namespace BDArmory.Modules
                 // Draw gauges
                 if (vessel.isActiveVessel)
                 {
-                    vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax);
-                    gauge.UpdateAmmoMeter((float)(ammoCurrent / ammoMax));
+                    gauge.UpdateAmmoMeter((float)(ammoCount / ammoMaxCount));
 
-                    ammoCount = ammoCurrent;
                     if (showReloadMeter)
                     {
                         if (isReloading)
@@ -1219,7 +1255,9 @@ namespace BDArmory.Modules
                     }
                     audioSource.Stop();
                 }
-
+                vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); //ammo count was originally updating only for active vessel, while reload can be called by any loaded vessel, and needs current ammo count
+                ammoCount = ammoCurrent;
+                ammoMaxCount = ammoMax;
                 if (!BeltFed)
                 {
                     ReloadWeapon();
@@ -1492,6 +1530,10 @@ namespace BDArmory.Modules
                             //EC
                             DrainECPerShot();
                             RoundsRemaining++;
+                            if (BurstOverride)
+                            {
+                                autofireShotCount++;
+                            }
                         }
                         else
                         {
@@ -1605,6 +1647,10 @@ namespace BDArmory.Modules
                     if (!BeltFed)
                     {
                         RoundsRemaining++;
+                    }
+                    if (BurstOverride)
+                    {
+                        autofireShotCount++;
                     }
                     return true;
                 }
@@ -1806,7 +1852,6 @@ namespace BDArmory.Modules
                 bool effectsShot = false;
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
                 {
-
                     if (BDArmorySettings.INFINITE_AMMO)
                     {
                         rocketsLeft = 1;
@@ -1862,7 +1907,7 @@ namespace BDArmory.Modules
                             {
                                 if (externalAmmo)
                                 {
-                                    part.RequestResource(ammoName, 1d);
+                                    part.RequestResource(ammoName.GetHashCode(), (double)requestResourceAmount, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE);
                                 }
                                 else
                                 {
@@ -1872,6 +1917,10 @@ namespace BDArmory.Modules
                             if (!BeltFed)
                             {
                                 RoundsRemaining++;
+                            }
+                            if (BurstOverride)
+                            {
+                                autofireShotCount++;
                             }
                             UpdateRocketScales();
                         }
@@ -1911,14 +1960,18 @@ namespace BDArmory.Modules
                                         rocket.rocketName = GetShortName() + " rocket";
                                         rocketObj.SetActive(true);
                                     }
-                                    if (!BDArmorySettings.INFINITE_AMMO)
+                                    if (externalAmmo)
                                     {
-                                        part.RequestResource(ammoName, 1d);
+                                        part.RequestResource(ammoName, (double)requestResourceAmount, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE);
                                     }
                                     heat += heatPerShot;
                                     if (!BeltFed)
                                     {
                                         RoundsRemaining++;
+                                    }
+                                    if (BurstOverride)
+                                    {
+                                        autofireShotCount++;
                                     }
                                 }
                             }
@@ -1972,7 +2025,7 @@ namespace BDArmory.Modules
             else
             {
                 rocketQty = (RoundsPerMag - RoundsRemaining);
-                rocketsMax = RoundsPerMag;
+                rocketsMax = Mathf.Min(RoundsPerMag, (float)ammoCount);
             }
             var rocketsLeft = Math.Floor(rocketQty);
 
@@ -2688,11 +2741,24 @@ namespace BDArmory.Modules
             }
 
             //disable autofire after burst length
-            if (autoFire && Time.time - autoFireTimer > autoFireLength)
+            if (BurstOverride)
             {
-                autoFire = false;
-                visualTargetVessel = null;
-                visualTargetPart = null;
+                if (autoFire && autofireShotCount >= fireBurstLength)
+                {
+                    autoFire = false;
+                    visualTargetVessel = null;
+                    visualTargetPart = null;
+                    autofireShotCount = 0;
+                }
+            }
+            else
+            {
+                if (autoFire && Time.time - autoFireTimer > autoFireLength)
+                {
+                    autoFire = false;
+                    visualTargetVessel = null;
+                    visualTargetPart = null;
+                }
             }
         }
 
@@ -2879,23 +2945,52 @@ namespace BDArmory.Modules
             if (isReloading)
             {
                 ReloadTimer = Mathf.Clamp((ReloadTimer + 1 * TimeWarp.fixedDeltaTime / ReloadTime), 0, 1);
+                if (hasDeployAnim)
+                {
+                    AnimTimer = Mathf.Clamp((AnimTimer + 1 * TimeWarp.fixedDeltaTime / (ReloadAnimTime)), 0, 1);
+                }
             }
-            if (RoundsRemaining >= RoundsPerMag && !isReloading)
+            if ((RoundsRemaining >= RoundsPerMag && !isReloading) && (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO))
             {
+                Debug.Log("[RELOAD] Ammo left " + ammoCount);
                 isReloading = true;
                 autoFire = false;
                 audioSource.Stop();
                 wasFiring = false;
                 weaponManager.ResetGuardInterval();
                 showReloadMeter = true;
+                StopShutdownStartupRoutines();
+                shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
+            }
+            if (hasDeployAnim && (AnimTimer >= 1 && isReloading))
+            {
+                if (rocketPod)
+                {
+                    RoundsRemaining = 0;
+                    UpdateRocketScales();
+                }
+                if (weaponState == WeaponStates.Disabled || weaponState == WeaponStates.PoweringDown)
+                {
+                }
+                else
+                {
+                    StopShutdownStartupRoutines(); //if weapon un-selected while reloading, don't activate weapon
+                    startupRoutine = StartCoroutine(StartupRoutine(true));
+                }
             }
             if (ReloadTimer >= 1 && isReloading)
             {
                 RoundsRemaining = 0;
+                autofireShotCount = 0;
                 gauge.UpdateReloadMeter(1);
                 showReloadMeter = false;
                 isReloading = false;
                 ReloadTimer = 0;
+                AnimTimer = 0;
+                if (rocketPod)
+                {
+                    UpdateRocketScales();
+                }
             }
         }
         void UpdateTargetVessel()
@@ -3023,11 +3118,13 @@ namespace BDArmory.Modules
             guiStatusString = weaponState.ToString();
         }
 
-        IEnumerator StartupRoutine()
+        IEnumerator StartupRoutine(bool calledByReload = false)
         {
-            weaponState = WeaponStates.PoweringUp;
-            UpdateGUIWeaponState();
-
+            if (!calledByReload)
+            {
+                weaponState = WeaponStates.PoweringUp;
+                UpdateGUIWeaponState();
+            }
             if (hasDeployAnim && deployState)
             {
                 deployState.enabled = true;
@@ -3036,20 +3133,32 @@ namespace BDArmory.Modules
                 {
                     yield return null;
                 }
+                if (calledByReload)
+                {
+                    Debug.Log("[RELOAD]: finishing reload Anim");
+                }
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
                 deployState.enabled = false;
             }
-
-            weaponState = WeaponStates.Enabled;
+            if (!calledByReload)
+            {
+                weaponState = WeaponStates.Enabled;
+            }
             UpdateGUIWeaponState();
             BDArmorySetup.Instance.UpdateCursorState();
         }
-
-        IEnumerator ShutdownRoutine()
+        IEnumerator ShutdownRoutine(bool calledByReload = false)
         {
-            weaponState = WeaponStates.PoweringDown;
-            UpdateGUIWeaponState();
+            if (!calledByReload) //allow isreloading to co-opt the startup/shutdown anim without disabling weapon in the process
+            {
+                weaponState = WeaponStates.PoweringDown;
+                UpdateGUIWeaponState();
+            }
+            else
+            {
+                guiStatusString = "Reloading";
+            }
             BDArmorySetup.Instance.UpdateCursorState();
             if (turret)
             {
@@ -3060,7 +3169,6 @@ namespace BDArmory.Modules
                     yield return new WaitForFixedUpdate();
                 }
             }
-
             if (hasDeployAnim)
             {
                 deployState.enabled = true;
@@ -3069,13 +3177,19 @@ namespace BDArmory.Modules
                 {
                     yield return null;
                 }
+                if (calledByReload)
+                {
+                    Debug.Log("[RELOAD]: starting reload Anim");
+                }
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
                 deployState.enabled = false;
             }
-
-            weaponState = WeaponStates.Disabled;
-            UpdateGUIWeaponState();
+            if (!calledByReload)
+            {
+                weaponState = WeaponStates.Disabled;
+                UpdateGUIWeaponState();
+            }
         }
 
         void StopShutdownStartupRoutines()
