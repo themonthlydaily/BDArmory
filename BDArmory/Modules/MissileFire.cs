@@ -4547,70 +4547,76 @@ namespace BDArmory.Modules
                     if (weapon.Current == null) continue;
                     if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
 
-                    if (weapon.Current.turret && BDArmorySettings.MULTI_TARGET_NUM > 1)
+                    if (BDArmorySettings.ADVANCED_TARGETING && BDArmorySettings.MULTI_TARGET_NUM > 1)
                     {
-                        //Debug.Log("[MTD]: Targets Assigned: " + targetsAssigned.Count);
-                        if (TurretID > Mathf.Min((targetsAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
+                        if (weapon.Current.turret)
                         {
-                            TurretID = 0; //if more turrets than targets, loop target list
-                        }
-                        if (targetsAssigned[TurretID].Vessel != null)
-                        {
-                            //Debug.Log("[MTD]: TurretID ["+TurretID +"] within index bounds");
-                            if ((weapon.Current.engageAir && targetsAssigned[TurretID].isFlying) ||
-                                (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
-                                (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
+                            //Debug.Log("[MTD]: Targets Assigned: " + targetsAssigned.Count);
+                            if (TurretID > Mathf.Min((targetsAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
                             {
-                                if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel))
-                                {
-                                    weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
-                                    //Debug.Log("[MTD]: " + weapon.Current.GetShortName() + " assigned " + targetsAssigned[TurretID].Vessel.name);
-                                }
-                                else //else try remaining targets
-                                {
-                                    using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
-                                        while (item.MoveNext())
-                                        {
-                                            if (item.Current.Vessel == null) continue;
-                                            if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
-                                            {
-                                                weapon.Current.visualTargetVessel = item.Current.Vessel;
-                                                //Debug.Log("[MTD]: original target outside turret arc, new target " + item.Current.Vessel.name);
-                                                break;
-                                            }
-                                        }
-                                }
+                                TurretID = 0; //if more turrets than targets, loop target list
                             }
-                            if (weapon.Current.engageMissile && missilesAssigned.Count > 0) //if can engage missiles, override targeting to prioritize missiles
+                            if (targetsAssigned[TurretID].Vessel != null)
                             {
-                                if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[TurretID].Vessel))
+                                //Debug.Log("[MTD]: TurretID ["+TurretID +"] within index bounds");
+                                if ((weapon.Current.engageAir && targetsAssigned[TurretID].isFlying) ||
+                                    (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
+                                    (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
                                 {
-                                    weapon.Current.visualTargetVessel = missilesAssigned[TurretID].Vessel; // if target within turret fire zone, assign
-                                    //Debug.Log("[MTD]: " + weapon.Current.GetShortName() + " assigned " + missilesAssigned[TurretID].Vessel.name);
-                                }
-
-                                TargetInfo targetableMissile = null;
-                                using (List<TargetInfo>.Enumerator item = missilesAssigned.GetEnumerator())
-                                    while (item.MoveNext())
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel))
                                     {
-                                        if (item.Current.Vessel == null) continue;
-                                        if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
+                                        weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
+                                                                                                              //Debug.Log("[MTD]: " + weapon.Current.GetShortName() + " assigned " + targetsAssigned[TurretID].Vessel.name);
+                                    }
+                                    else //else try remaining targets
+                                    {
+                                        using (List<TargetInfo>.Enumerator item = targetsAssigned.GetEnumerator())
+                                            while (item.MoveNext())
+                                            {
+                                                if (item.Current.Vessel == null) continue;
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
+                                                {
+                                                    weapon.Current.visualTargetVessel = item.Current.Vessel;
+                                                    //Debug.Log("[MTD]: original target outside turret arc, new target " + item.Current.Vessel.name);
+                                                    break;
+                                                }
+                                            }
+                                    }
+                                }
+                                if (weapon.Current.engageMissile && missilesAssigned.Count > 0) //if can engage missiles, override targeting to prioritize missiles
+                                {
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[TurretID].Vessel))
+                                    {
+                                        weapon.Current.visualTargetVessel = missilesAssigned[TurretID].Vessel; // if target within turret fire zone, assign
+                                                                                                               //Debug.Log("[MTD]: " + weapon.Current.GetShortName() + " assigned " + missilesAssigned[TurretID].Vessel.name);
+                                    }
+                                    else//assigned target outside turret arc, try the other targets on the list
+                                    {
+                                        TargetInfo targetableMissile = null;
+                                        using (List<TargetInfo>.Enumerator item = missilesAssigned.GetEnumerator())
+                                            while (item.MoveNext())
+                                            {
+                                                if (item.Current.Vessel == null) continue;
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
+                                                {
+                                                    targetableMissile = item.Current;
+                                                    break;
+                                                }
+                                            }
+                                        if (targetableMissile != null)
                                         {
-                                            targetableMissile = item.Current;
-                                            break;
+                                            weapon.Current.visualTargetVessel = targetableMissile.Vessel;
                                         }
                                     }
-                                if (targetableMissile != null)
-                                {
-                                    weapon.Current.visualTargetVessel = targetableMissile.Vessel;
                                 }
+                                TurretID++;
+                                //Debug.Log("[MTD]: TurretID incremented");
                             }
-                            TurretID++;
-                            //Debug.Log("[MTD]: TurretID incremented");
                         }
                         else
                         {
-                            weapon.Current.visualTargetVessel = guardTarget;
+                            //weapon.Current.visualTargetVessel = guardTarget;
+                            weapon.Current.visualTargetVessel = targetsAssigned[0].Vessel; //make sure all guns targeting the same target, to ensure the leadOffest is the same, and that the Ai isn't trying to use the leadOffset from a turret
                             //Debug.Log("[MTD]: target from list was null, defaulting to " + guardTarget.name);
                         }
                     }
