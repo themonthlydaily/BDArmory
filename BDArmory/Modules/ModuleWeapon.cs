@@ -1975,9 +1975,9 @@ namespace BDArmory.Modules
                                         rocket.rocketName = GetShortName() + " rocket";
                                         rocketObj.SetActive(true);
                                     }
-                                    if (externalAmmo)
+                                    if (!BDArmorySettings.INFINITE_AMMO)
                                     {
-                                        part.RequestResource(ammoName, (double)requestResourceAmount, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE);
+                                        part.RequestResource(ammoName.GetHashCode(), (double)requestResourceAmount, ResourceFlowMode.STAGE_PRIORITY_FLOW_BALANCE);
                                     }
                                     heat += heatPerShot;
                                     if (!BeltFed)
