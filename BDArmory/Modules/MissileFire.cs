@@ -2949,6 +2949,9 @@ namespace BDArmory.Modules
             List<TargetInfo> targetsTried = new List<TargetInfo>();
             string targetDebugText = "";
 
+            targetsAssigned.Clear(); //fixes fixed guns not firing if Multitargeting >1
+            missilesAssigned.Clear();
+
             if (overrideTarget) //begin by checking the override target, since that takes priority
             {
                 targetsTried.Add(overrideTarget);
@@ -3397,7 +3400,7 @@ namespace BDArmory.Modules
             float targetYield = 0;
             float targetRocketPower = 0;
             float targetRocketAccel = 0;
-            float targetWeaponPriority = 0;
+            int targetWeaponPriority = 0;
             if (target.isMissile)
             {
                 // iterate over weaponTypesMissile and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
@@ -3484,7 +3487,7 @@ namespace BDArmory.Modules
                 // 1. AA missiles (if we're flying, otherwise use guns if we're within gun range)
                 // 1. Lasers
                 // 2. Guns
-                //
+                // 3. rockets
                 using (List<IBDWeapon>.Enumerator item = weaponTypesAir.GetEnumerator())
                     while (item.MoveNext())
                     {
@@ -3493,37 +3496,45 @@ namespace BDArmory.Modules
                         if (!CheckEngagementEnvelope(item.Current, distance)) continue;
                         // weapon usable, if missile continue looking for lasers/guns, else take it
                         WeaponClasses candidateClass = item.Current.GetWeaponClass();
-
-                        if (candidateClass == WeaponClasses.DefenseLaser)
+                        // any rocketpods work?
+                        if (candidateClass == WeaponClasses.Rocket)
                         {
-                            // For AA, favour higher power/turreted
-                            float candidatePower = ((ModuleWeapon)item.Current).laserDamage;
-                            bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
-                            float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
-                            bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
+                            //for AA, favor higher accel and proxifuze
+                            float candidateRocketAccel = (((ModuleWeapon)item.Current).thrust / ((ModuleWeapon)item.Current).rocketMass);
+                            float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
+                            bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
+                            int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
 
-                            if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabled
+                            if (targetWeaponPriority > candidatePriority)
+                                continue; //dont replace a higher priority weapon with a lower priority one
 
-                            if ((targetWeapon != null) && (candidateGimbal = true && candidateTraverse > 0))
+                            if ((targetWeapon != null) && targetRocketAccel < candidateRocketAccel)
                             {
-                                candidatePower *= 1.5f; // weight selection towards turreted lasers
+                                candidateRPM *= 1.5f; //weight towards faster rockets
                             }
-                            if ((targetWeapon != null) && (targetLaserDamage > candidatePower))
-                                continue; // Don't replace better lasers or replace with a weapon outside of its engage range
-                            else if ((targetWeapon == null) || (distance > ((EngageableWeapon)item.Current).engageRangeMin))
+                            if (candidatePFuzed)
+                            {
+                                candidateRPM *= 1.5f; // weight selection towards flak ammo
+                            }
+                            if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
                                 targetWeapon = item.Current;
-                                targetLaserDamage = candidatePower;
-                                if ((distance <= gunRange) && (distance > ((EngageableWeapon)item.Current).engageRangeMin))
-                                    break;  //If within engage range, use the laser
-                                else
-                                    continue; // If outside of engage range, keep looking for viable weapons,
+                                targetWeaponRPM = candidateRPM;
+                                targetRocketAccel = candidateRocketAccel;
+                                targetWeaponPriority = candidatePriority;
                             }
-                            else
-                                continue;
-
+                            if (targetWeaponPriority == candidatePriority) //if equal priority, use standard weighting
+                            {
+                                if (targetWeaponRPM < candidateRPM) //or best gun
+                                {
+                                    targetWeapon = item.Current;
+                                    targetWeaponRPM = candidateRPM;
+                                    targetRocketAccel = candidateRocketAccel;
+                                    targetWeaponPriority = candidatePriority;
+                                }
+                            }
                         }
-
+                        //Guns have higher priority than rockets; selected gun will override rocket selection
                         if (candidateClass == WeaponClasses.Gun)
                         {
                             // For AtA, generally favour higher RPM and turrets
@@ -3538,7 +3549,7 @@ namespace BDArmory.Modules
                             bool candidateVTFuzed = ((ModuleWeapon)item.Current).airDetonation;
                             float Cannistershot = ((ModuleWeapon)item.Current).ProjectileCount;
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
-                            float candidatePriority = ((ModuleWeapon)item.Current).priority;
+                            int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             float candidateRadius = ((ModuleWeapon)item.Current).targetRadius;
                             float candidateCaliber = ((ModuleWeapon)item.Current).caliber;
 
@@ -3546,89 +3557,125 @@ namespace BDArmory.Modules
                             Vector3 aimDirection = fireTransform.forward;
                             float targetCosAngle = ((ModuleWeapon)item.Current).FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)((ModuleWeapon)item.Current).FiringSolutionVector) : Vector3.Dot(aimDirection, (vessel.vesselTransform.position - fireTransform.position).normalized);
                             bool outsideFiringCosAngle = targetCosAngle < ((ModuleWeapon)item.Current).targetAdjustedMaxCosAngle;
+                            bool compareRocketRPM = false;
 
-                            if ((targetWeapon != null) && (targetWeaponPriority > candidatePriority))
-                                continue; //keep higher priority weapon
-                            targetWeaponPriority = candidatePriority;
+                                if (targetWeaponPriority > candidatePriority)
+                                    continue; //keep higher priority weapon
 
+                                if (candidateRadius > 8) //most fighters are, what, at most 15m in their largest dimension? That said, maybe make this configurable in the weapon PAW...
+                                {//weight selection towards larger caliber bullets, modified by turrets/fuzes/range settings when shooting bombers
+                                    if (candidateGimbal = true && candidateTraverse > 0)
+                                    {
+                                        candidateCaliber *= 1.5f; // weight selection towards turrets
+                                    }
+                                    if (candidatePFuzed || candidateVTFuzed)
+                                    {
+                                        candidateCaliber *= 1.5f; // weight selection towards flak ammo
+                                    }
+                                    if (outsideFiringCosAngle)
+                                    {
+                                        candidateCaliber *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                    }
+                                    if (candidateMinrange > distance)
+                                    {
+                                        candidateCaliber *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                    }
+                                    candidateRPM = candidateCaliber;
+                                }
+                                else //weight selection towards RoF, modified by turrets/fuzes/shot quantity/range
+                                {
+                                    if (candidateGimbal = true && candidateTraverse > 0)
+                                    {
+                                        candidateRPM *= 1.5f; // weight selection towards turrets
+                                    }
+                                    if (candidatePFuzed || candidateVTFuzed)
+                                    {
+                                        candidateRPM *= 1.5f; // weight selection towards flak ammo
+                                    }
+                                    if (Cannistershot > 0)
+                                    {
+                                        candidateRPM *= (1 + (Cannistershot / 2)); // weight selection towards cluster ammo based on submunition count
+                                    }
+                                    if (outsideFiringCosAngle)
+                                    {
+                                        candidateRPM *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                    }
+                                    if (candidateMinrange > distance)
+                                    {
+                                        candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                    }
+                                }
+                                if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
+                                    continue; //dont replace missiles within their engage range
 
-                            if (candidateRadius > 8) //most fighters are, what, at most 15m in thier largest dimension? That said, maybe make this configurable in the weapon PAW...
-                            {//weight selection towards larger caliber bullets, modified by turrets/fuzes/range settings when shooting bombers
-                                if ((targetWeapon != null) && (candidateGimbal = true && candidateTraverse > 0))
+                                if (targetWeaponPriority < candidatePriority) //use priority gun
                                 {
-                                    candidateCaliber *= 1.5f; // weight selection towards turrets
+                                    targetWeapon = item.Current;
+                                    targetWeaponRPM = candidateRPM;
+                                    targetWeaponPriority = candidatePriority;
                                 }
-                                if (targetWeapon != null && (candidatePFuzed || candidateVTFuzed))
+                                else //if equal priority, use standard weighting
                                 {
-                                    candidateCaliber *= 1.5f; // weight selection towards flak ammo
+                                    if ((targetWeapon != null) && targetWeapon.GetWeaponClass() == WeaponClasses.Rocket)
+                                    {
+                                        compareRocketRPM = true;
+                                    }
+                                    if ((compareRocketRPM && (targetWeaponRPM / 2) < candidateRPM) || (!compareRocketRPM && (targetWeaponRPM) < candidateRPM))
+                                    {
+                                        targetWeapon = item.Current;
+                                        targetWeaponRPM = candidateRPM;
+                                        targetWeaponPriority = candidatePriority;
+                                    }
                                 }
-                                if (outsideFiringCosAngle)
-                                {
-                                    candidateCaliber *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                }
-                                if (candidateMinrange > distance)
-                                {
-                                    candidateCaliber *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                }
-                                candidateRPM = candidateCaliber;
-                            }
-                            else //weight selection towards RoF, modified by turrets/fuzes/shot quantity/range
-                            {
-                                if ((targetWeapon != null) && (candidateGimbal = true && candidateTraverse > 0))
-                                {
-                                    candidateRPM *= 1.5f; // weight selection towards turrets
-                                }
-                                if (targetWeapon != null && (candidatePFuzed || candidateVTFuzed))
-                                {
-                                    candidateRPM *= 1.5f; // weight selection towards flak ammo
-                                }
-                                if (targetWeapon != null && Cannistershot > 0)
-                                {
-                                    candidateRPM *= (1 + (Cannistershot / 2)); // weight selection towards cluster ammo based on submunition count
-                                }
-                                if (outsideFiringCosAngle)
-                                {
-                                    candidateRPM *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                }
-                                if (candidateMinrange > distance)
-                                {
-                                    candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                }
-                            }
-                            if ((targetWeapon != null) && ((targetWeaponRPM > candidateRPM) || ((targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))))
-                                continue; //dont replace better guns or missiles within their engage range
-
-                            targetWeapon = item.Current;
-                            targetWeaponRPM = candidateRPM;
                         }
-                        if (candidateClass == WeaponClasses.Rocket)
+                        //if lasers, lasers will override gun selection
+                        if (candidateClass == WeaponClasses.DefenseLaser)
                         {
-                            //for AA, favor higher accel and proxifuze
-                            float candidateRocketAccel = (((ModuleWeapon)item.Current).thrust / ((ModuleWeapon)item.Current).rocketMass);
+                            // For AA, favour higher power/turreted
+                            float candidatePower = ((ModuleWeapon)item.Current).laserDamage;
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
-                            bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
-                            float candidatePriority = ((ModuleWeapon)item.Current).priority;
+                            bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
+                            float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
+                            bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
+                            bool pulseLaser = ((ModuleWeapon)item.Current).pulseLaser;
 
-                            if ((targetWeapon != null) && (targetWeaponPriority > candidatePriority))
-                                continue; //dont replace a higher priority weapon with a lower priority one
-                            targetWeaponPriority = candidatePriority;
+                            bool compareProjectileRPM = false;
 
-                            if ((targetWeapon != null) && (targetRocketAccel > candidateRocketAccel))
+                            if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabled
+
+                            if (targetWeaponPriority > candidatePriority)
+                                continue; //keep higher priority weapon
+
+                            if (!pulseLaser) //if beamlaser, compare power instead
                             {
-                                candidateRPM *= 1.5f; //weight towards faster rockets
+                                candidateRPM = candidatePower;
                             }
-                            if (targetWeapon != null && candidatePFuzed)
+                            if (candidateGimbal = true && candidateTraverse > 0)
                             {
-                                candidateRPM *= 1.5f; // weight selection towards flak ammo
+                                candidateRPM *= 1.5f; // weight selection towards turreted lasers
                             }
-                            if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Gun)) continue;// don't replace guns
-                            if ((targetWeapon != null) && (targetWeaponRPM > candidateRPM))
-                                continue;
-
-                            targetWeapon = item.Current;
-                            targetWeaponRPM = candidateRPM;
-                            targetRocketAccel = candidateRocketAccel;
-                        }
+                            if (targetWeaponPriority < candidatePriority) //use priority gun
+                            {
+                                targetWeapon = item.Current;
+                                targetWeaponRPM = candidateRPM;
+                                targetWeaponPriority = candidatePriority;
+                            }
+                            else //if equal priority, use standard weighting
+                            {
+                                if ((targetWeapon != null) && targetWeapon.GetWeaponClass() == WeaponClasses.Rocket || targetWeapon.GetWeaponClass() == WeaponClasses.Gun)
+                                {
+                                    compareProjectileRPM = true; //halve rocket RPm to compare to gun
+                                }
+                                if ((compareProjectileRPM && (targetWeaponRPM / 4) < candidateRPM) || (!compareProjectileRPM && (targetWeaponRPM) < candidateRPM))
+                                {
+                                    targetWeapon = item.Current;
+                                    targetWeaponRPM = candidateRPM;
+                                    targetWeaponPriority = candidatePriority;
+                                }
+                            }
+                        }                      
+                        //projectile weapon selected, any missiles that take precedence?
                         if (candidateClass != WeaponClasses.Missile) continue;
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
                         float candidateTDPS = 0f;
@@ -3794,21 +3841,30 @@ namespace BDArmory.Modules
                         if (candidateClass == WeaponClasses.Rocket)
                         {
                             float candidateRocketPower = ((ModuleWeapon)item.Current).tntMass;
-                            float candidateRanking = ((ModuleWeapon)item.Current).priority;
+                            int candidateRanking = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
 
-                            if ((targetWeapon != null) && (targetWeaponPriority > candidateRanking))
+                            if (targetWeaponPriority > candidateRanking)
                                 continue; //don't select a lower priority weapon over a higher priority one
-                            targetWeaponPriority = candidateRanking;
 
-                            if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Bomb)) continue;
+                            if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Bomb) continue;
                             // dont replace bombs
 
-                            if ((targetWeapon != null) && (targetRocketPower > candidateRocketPower))
-                                continue; //don't replace higher yield rockets
-                            targetWeapon = item.Current;
-                            targetRocketPower = candidateRocketPower;
+                            if (targetWeaponPriority < candidateRanking) //use priority gun
+                            {
+                                targetWeapon = item.Current;
+                                targetRocketPower = candidateRocketPower;
+                                targetWeaponPriority = candidateRanking;
+                            }
+                            else //if equal priority, use standard weighting
+                            {
+                                if (targetRocketPower < candidateRocketPower) //don't replace higher yield rockets
+                                {
+                                    targetWeapon = item.Current;
+                                    targetRocketPower = candidateRocketPower;
+                                    targetWeaponPriority = candidateRanking;
+                                }
+                            }
                         }
-
                         if ((candidateClass != WeaponClasses.Gun)) continue;
                         // Flying: prefer bombs/rockets/missiles
                         if (!vessel.LandedOrSplashed)
@@ -3820,17 +3876,27 @@ namespace BDArmory.Modules
                             continue;
                         // For Ground Attack, favour higher blast strength
                         float candidateImpact = (((ModuleWeapon)item.Current).bulletMass * ((ModuleWeapon)item.Current).bulletVelocity);
-                        float candidatePriority = ((ModuleWeapon)item.Current).priority;
+                        int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
 
-                        if ((targetWeapon != null) && (targetWeaponPriority > candidatePriority))
+                        if (targetWeaponPriority > candidatePriority)
                             continue; //dont replace better guns or missiles within their engage range
-                        targetWeaponPriority = candidatePriority;
 
-                        if ((targetWeapon != null) && (targetWeaponImpact > candidateImpact))
-                            continue; //dont replace better guns
+                        if (targetWeaponPriority < candidatePriority) //use priority gun
+                        {
+                            targetWeapon = item.Current;
+                            targetWeaponImpact = candidateImpact;
+                            targetWeaponPriority = candidatePriority;
+                        }
+                        else //if equal priority, use standard weighting
+                        {
+                            if (targetWeaponImpact < candidateImpact) //don't replace bigger guns
+                            {
+                                targetWeapon = item.Current;
+                                targetWeaponImpact = candidateImpact;
+                                targetWeaponPriority = candidatePriority;
+                            }
+                        }
 
-                        targetWeapon = item.Current;
-                        targetWeaponImpact = candidateImpact;
                     }
             }
             else if (target.isUnderwater)
@@ -4294,6 +4360,7 @@ namespace BDArmory.Modules
                         if (weapon.Current == null) continue;
                         if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
                         weapon.Current.autoFire = false;
+                        weapon.Current.autofireShotCount = 0;
                         weapon.Current.visualTargetVessel = null;
                     }
             }

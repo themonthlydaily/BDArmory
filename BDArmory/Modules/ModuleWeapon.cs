@@ -30,6 +30,7 @@ namespace BDArmory.Modules
 
         Coroutine startupRoutine;
         Coroutine shutdownRoutine;
+        Coroutine reloadRoutine;
 
         bool finalFire;
 
@@ -285,6 +286,13 @@ namespace BDArmory.Modules
         [KSPField]
         public string deployAnimName = "deployAnim";
         AnimationState deployState;
+
+        [KSPField]
+        public bool hasReloadAnim = false;
+
+        [KSPField]
+        public string reloadAnimName = "reloadAnim";
+        AnimationState reloadState;
 
         [KSPField]
         public bool hasFireAnimation = false;
@@ -990,6 +998,13 @@ namespace BDArmory.Modules
                 deployState.speed = 0;
                 deployState.enabled = true;
                 ReloadAnimTime = (ReloadTime - deployState.length);
+            }
+            if (hasReloadAnim)
+            {
+                reloadState = Misc.Misc.SetUpSingleAnimation(reloadAnimName, part);
+                reloadState.normalizedTime = 0;
+                reloadState.speed = 0;
+                reloadState.enabled = true;
             }
             if (hasFireAnimation)
             {
@@ -2743,12 +2758,14 @@ namespace BDArmory.Modules
             //disable autofire after burst length
             if (BurstOverride)
             {
+                Debug.Log("AutoFire length: " + autofireShotCount);
                 if (autoFire && autofireShotCount >= fireBurstLength)
                 {
                     autoFire = false;
                     visualTargetVessel = null;
                     visualTargetPart = null;
                     autofireShotCount = 0;
+                    Debug.Log("shotcount reset; length: " + autofireShotCount);
                 }
             }
             else
@@ -2938,6 +2955,8 @@ namespace BDArmory.Modules
             if (heat < maxHeat / 3 && isOverheated) //reset on cooldown
             {
                 isOverheated = false;
+                autofireShotCount = 0;
+                Debug.Log("AutoFire length: " + autofireShotCount);
             }
         }
         void ReloadWeapon()
@@ -2952,17 +2971,28 @@ namespace BDArmory.Modules
             }
             if ((RoundsRemaining >= RoundsPerMag && !isReloading) && (ammoCount > 0 || BDArmorySettings.INFINITE_AMMO))
             {
-                Debug.Log("[RELOAD] Ammo left " + ammoCount);
                 isReloading = true;
                 autoFire = false;
                 audioSource.Stop();
                 wasFiring = false;
                 weaponManager.ResetGuardInterval();
                 showReloadMeter = true;
-                StopShutdownStartupRoutines();
-                shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
+                if (hasReloadAnim)
+                {
+                    if (reloadRoutine != null)
+                    {
+                        StopCoroutine(reloadRoutine);
+                        reloadRoutine = null;
+                    }
+                    reloadRoutine = StartCoroutine(ReloadRoutine());
+                }
+                else
+                {
+                    StopShutdownStartupRoutines();
+                    shutdownRoutine = StartCoroutine(ShutdownRoutine(true));
+                }
             }
-            if (hasDeployAnim && (AnimTimer >= 1 && isReloading))
+            if (!hasReloadAnim && hasDeployAnim && (AnimTimer >= 1 && isReloading))
             {
                 if (rocketPod)
                 {
@@ -3120,9 +3150,15 @@ namespace BDArmory.Modules
 
         IEnumerator StartupRoutine(bool calledByReload = false)
         {
+            if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
+            {
+                while (reloadState.normalizedTime < 1)
+                {
+                    yield return null;
+                }
+            }
             if (!calledByReload)
             {
-                weaponState = WeaponStates.PoweringUp;
                 UpdateGUIWeaponState();
             }
             if (hasDeployAnim && deployState)
@@ -3132,10 +3168,6 @@ namespace BDArmory.Modules
                 while (deployState.normalizedTime < 1) //wait for animation here
                 {
                     yield return null;
-                }
-                if (calledByReload)
-                {
-                    Debug.Log("[RELOAD]: finishing reload Anim");
                 }
                 deployState.normalizedTime = 1;
                 deployState.speed = 0;
@@ -3150,6 +3182,13 @@ namespace BDArmory.Modules
         }
         IEnumerator ShutdownRoutine(bool calledByReload = false)
         {
+            if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
+            {
+                while (reloadState.normalizedTime < 1)
+                {
+                    yield return null;
+                }
+            }
             if (!calledByReload) //allow isreloading to co-opt the startup/shutdown anim without disabling weapon in the process
             {
                 weaponState = WeaponStates.PoweringDown;
@@ -3177,10 +3216,6 @@ namespace BDArmory.Modules
                 {
                     yield return null;
                 }
-                if (calledByReload)
-                {
-                    Debug.Log("[RELOAD]: starting reload Anim");
-                }
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
                 deployState.enabled = false;
@@ -3191,7 +3226,23 @@ namespace BDArmory.Modules
                 UpdateGUIWeaponState();
             }
         }
+        IEnumerator ReloadRoutine()
+        {
+            guiStatusString = "Reloading";
 
+            reloadState.normalizedTime = 0;
+            reloadState.enabled = true;
+            reloadState.speed = (reloadState.length/ReloadTime);//ensure relaod anim is not longer than reload time
+            while (reloadState.normalizedTime < 1) //wait for animation here
+            {
+                yield return null;
+            }
+            reloadState.normalizedTime = 1;
+            reloadState.speed = 0;
+            reloadState.enabled = false;
+
+            UpdateGUIWeaponState();
+        }
         void StopShutdownStartupRoutines()
         {
             if (shutdownRoutine != null)
