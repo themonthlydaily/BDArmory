@@ -386,127 +386,120 @@ namespace BDArmory.FX
         {
             if (eventToExecute.Part == null || eventToExecute.Part.Rigidbody == null || eventToExecute.Part.vessel == null || eventToExecute.Part.partInfo == null) return;
 
-            try
+            Part part = eventToExecute.Part;
+            Rigidbody rb = part.Rigidbody;
+            var realDistance = eventToExecute.Distance;
+
+            if (!eventToExecute.IsNegativePressure)
             {
-                Part part = eventToExecute.Part;
-                Rigidbody rb = part.Rigidbody;
-                var realDistance = eventToExecute.Distance;
+                BlastInfo blastInfo =
+                    BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance,
+                        part.vessel.totalMass * 1000f, Power, Range);
 
-                if (!eventToExecute.IsNegativePressure)
-                {
-                    BlastInfo blastInfo =
-                        BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance,
-                            part.vessel.totalMass * 1000f, Power, Range);
+                // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armour in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
+                // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
+                var damageWithoutIntermediateParts = blastInfo.Damage;
+                var cumulativeHPOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item2).Sum();
+                var cumulativeArmourOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum();
+                blastInfo.Damage = Mathf.Max(0f, blastInfo.Damage - 0.5f * cumulativeHPOfIntermediateParts - cumulativeArmourOfIntermediateParts);
 
-                    // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armour in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
-                    // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
-                    var damageWithoutIntermediateParts = blastInfo.Damage;
-                    var cumulativeHPOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item2).Sum();
-                    var cumulativeArmourOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum();
-                    blastInfo.Damage = Mathf.Max(0f, blastInfo.Damage - 0.5f * cumulativeHPOfIntermediateParts - cumulativeArmourOfIntermediateParts);
-
-                    if (blastInfo.Damage > 0)
-                    {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                        {
-                            Debug.Log(
-                                "[BDArmory]: Executing blast event Part: {" + part.name + "}, " +
-                                " VelocityChange: {" + blastInfo.VelocityChange + "}," +
-                                " Distance: {" + realDistance + "}," +
-                                " TotalPressure: {" + blastInfo.TotalPressure + "}," +
-                                " Damage: {" + blastInfo.Damage + "} (reduced from " + damageWithoutIntermediateParts + " by " + eventToExecute.IntermediateParts.Count + " parts)," +
-                                " EffectiveArea: {" + blastInfo.EffectivePartArea + "}," +
-                                " Positive Phase duration: {" + blastInfo.PositivePhaseDuration + "}," +
-                                " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
-                                " TimeIndex: {" + TimeIndex + "}," +
-                                " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
-                                " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
-                        }
-
-                        // Add Reverse Negative Event
-                        ExplosionEvents.Enqueue(new PartBlastHitEvent()
-                        {
-                            Distance = Range - realDistance,
-                            Part = part,
-                            TimeToImpact = 2 * (Range / ExplosionVelocity) + (Range - realDistance) / ExplosionVelocity,
-                            IsNegativePressure = true,
-                            NegativeForce = blastInfo.VelocityChange * 0.25f
-                        });
-
-                        if (rb != null && rb.mass > 0)
-                        {
-                            AddForceAtPosition(rb,
-                                (eventToExecute.HitPoint + part.rb.velocity * TimeIndex - Position).normalized *
-                                blastInfo.VelocityChange *
-                                BDArmorySettings.EXP_IMP_MOD,
-                                eventToExecute.HitPoint + part.rb.velocity * TimeIndex);
-                        }
-
-                        var damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
-                        if (BDArmorySettings.BATTLEDAMAGE)
-                        {
-                            Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, SourceVesselName, eventToExecute.Hit);
-                        }
-
-                        // Update scoring structures
-                        switch (ExplosionSource)
-                        {
-                            case ExplosionSourceType.Bullet:
-                            case ExplosionSourceType.Missile:
-                                var aName = eventToExecute.SourceVesselName; // Attacker
-                                var tName = part.vessel.GetName(); // Target
-                                if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                                {
-                                    var tData = BDACompetitionMode.Instance.Scores[tName];
-                                    // Track damage
-                                    switch (ExplosionSource)
-                                    {
-                                        case ExplosionSourceType.Bullet:
-                                            if (tData.damageFromBullets.ContainsKey(aName))
-                                                tData.damageFromBullets[aName] += damage;
-                                            else
-                                                tData.damageFromBullets.Add(aName, damage);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                BDAScoreService.Instance.TrackDamage(aName, tName, damage);
-                                            break;
-                                        case ExplosionSourceType.Missile:
-                                            if (tData.damageFromMissiles.ContainsKey(aName))
-                                                tData.damageFromMissiles[aName] += damage;
-                                            else
-                                                tData.damageFromMissiles.Add(aName, damage);
-                                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                                BDAScoreService.Instance.TrackMissileDamage(aName, tName, damage);
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
-                else
+                if (blastInfo.Damage > 0)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                     {
                         Debug.Log(
                             "[BDArmory]: Executing blast event Part: {" + part.name + "}, " +
-                            " VelocityChange: {" + eventToExecute.NegativeForce + "}," +
+                            " VelocityChange: {" + blastInfo.VelocityChange + "}," +
                             " Distance: {" + realDistance + "}," +
+                            " TotalPressure: {" + blastInfo.TotalPressure + "}," +
+                            " Damage: {" + blastInfo.Damage + "} (reduced from " + damageWithoutIntermediateParts + " by " + eventToExecute.IntermediateParts.Count + " parts)," +
+                            " EffectiveArea: {" + blastInfo.EffectivePartArea + "}," +
+                            " Positive Phase duration: {" + blastInfo.PositivePhaseDuration + "}," +
                             " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
                             " TimeIndex: {" + TimeIndex + "}," +
                             " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
                             " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
                     }
+
+                    // Add Reverse Negative Event
+                    ExplosionEvents.Enqueue(new PartBlastHitEvent()
+                    {
+                        Distance = Range - realDistance,
+                        Part = part,
+                        TimeToImpact = 2 * (Range / ExplosionVelocity) + (Range - realDistance) / ExplosionVelocity,
+                        IsNegativePressure = true,
+                        NegativeForce = blastInfo.VelocityChange * 0.25f
+                    });
+
                     if (rb != null && rb.mass > 0)
-                        AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
+                    {
+                        AddForceAtPosition(rb,
+                            (eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized *
+                            blastInfo.VelocityChange *
+                            BDArmorySettings.EXP_IMP_MOD,
+                            eventToExecute.HitPoint + rb.velocity * TimeIndex);
+                    }
+
+                    var damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
+                    if (BDArmorySettings.BATTLEDAMAGE)
+                    {
+                        Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, SourceVesselName, eventToExecute.Hit);
+                    }
+
+                    // Update scoring structures
+                    switch (ExplosionSource)
+                    {
+                        case ExplosionSourceType.Bullet:
+                        case ExplosionSourceType.Missile:
+                            var aName = eventToExecute.SourceVesselName; // Attacker
+                            var tName = part.vessel.GetName(); // Target
+                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
+                            {
+                                var tData = BDACompetitionMode.Instance.Scores[tName];
+                                // Track damage
+                                switch (ExplosionSource)
+                                {
+                                    case ExplosionSourceType.Bullet:
+                                        if (tData.damageFromBullets.ContainsKey(aName))
+                                            tData.damageFromBullets[aName] += damage;
+                                        else
+                                            tData.damageFromBullets.Add(aName, damage);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            BDAScoreService.Instance.TrackDamage(aName, tName, damage);
+                                        break;
+                                    case ExplosionSourceType.Missile:
+                                        if (tData.damageFromMissiles.ContainsKey(aName))
+                                            tData.damageFromMissiles[aName] += damage;
+                                        else
+                                            tData.damageFromMissiles.Add(aName, damage);
+                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                            BDAScoreService.Instance.TrackMissileDamage(aName, tName, damage);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
-            catch
+            else
             {
-                // ignored due to depending on previous event an object could be disposed
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log(
+                        "[BDArmory]: Executing blast event Part: {" + part.name + "}, " +
+                        " VelocityChange: {" + eventToExecute.NegativeForce + "}," +
+                        " Distance: {" + realDistance + "}," +
+                        " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
+                        " TimeIndex: {" + TimeIndex + "}," +
+                        " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
+                        " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
+                }
+                if (rb != null && rb.mass > 0)
+                    AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
             }
         }
 
