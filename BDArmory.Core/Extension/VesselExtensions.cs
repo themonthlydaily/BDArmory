@@ -14,8 +14,9 @@ namespace BDArmory.Core.Extension
                         v.situation == Vessel.Situations.SUB_ORBITAL ||
                         v.situation == Vessel.Situations.ESCAPING);
             }
-            catch
+            catch (Exception e)
             {
+                Debug.LogWarning("[VesselExtensions]: Exception thrown in InOrbit: " + e.Message + " - " + e.Source);
                 return false;
             }
         }
@@ -38,8 +39,9 @@ namespace BDArmory.Core.Extension
                     return v.obt_velocity;
                 }
             }
-            catch
+            catch (Exception e)
             {
+                Debug.LogWarning("[VesselExtensions]: Exception thrown in Velocity: " + e.Message + " - " + e.Source);
                 //return v.srf_velocity;
                 return new Vector3d(0, 0, 0);
             }
@@ -53,7 +55,7 @@ namespace BDArmory.Core.Extension
             return GetRadarAltitudeAtPos(futurePosition);
         }
 
-        public static Vector3 GetFuturePosition (this Vessel vessel, float predictionTime = 10)
+        public static Vector3 GetFuturePosition(this Vessel vessel, float predictionTime = 10)
         {
             return vessel.CoM + vessel.Velocity() * predictionTime + 0.5f * vessel.acceleration_immediate * Math.Pow(predictionTime, 2);
         }

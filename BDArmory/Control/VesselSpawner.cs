@@ -395,7 +395,7 @@ namespace BDArmory.Control
                     if (vessel == null)
                     {
                         var craftName = craftUrl.Substring((Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Length);
-                        Debug.Log("[VesselSpawner]: Failed to spawn craft " + craftName);
+                        Debug.LogWarning("[VesselSpawner]: Failed to spawn craft " + craftName);
                         failedVessels += "\n  -  " + craftName;
                         continue;
                     }

@@ -692,7 +692,10 @@ namespace BDArmory.UI
 
                 Debug.Log("[BDArmory]: Loaded GPS Targets.");
             }
-            catch { }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[BDATargetManager]: Exception thrown in StringToGPSList: " + e.Message + " - " + e.Source);
+            }
         }
 
         IEnumerator CleanDatabaseRoutine()

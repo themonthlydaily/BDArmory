@@ -222,9 +222,9 @@ namespace BDArmory.Modules
                     {
                         hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
                     }
-                    catch (NullReferenceException)
+                    catch (NullReferenceException e)
                     {
-                        Debug.Log("[BDArmory]:NullReferenceException for Submunition Hit");
+                        Debug.LogWarning("[BDArmory]:NullReferenceException for Submunition Hit: " + e.Message);
                         return;
                     }
 
@@ -259,7 +259,10 @@ namespace BDArmory.Modules
             {
                 building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[ClusterBomb]: Exception thrown in CheckBuildingHit: " + e.Message + " - " + e.Source);
+            }
 
             if (building != null && building.IsIntact)
             {

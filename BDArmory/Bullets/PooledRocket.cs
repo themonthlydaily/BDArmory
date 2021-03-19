@@ -238,9 +238,9 @@ namespace BDArmory.Bullets
                                 hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
                                 hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                             }
-                            catch (NullReferenceException)
+                            catch (NullReferenceException e)
                             {
-                                Debug.Log("[BDArmory]:NullReferenceException for Kinetic Hit");
+                                Debug.LogWarning("[BDArmory]:NullReferenceException for Kinetic Hit: "+e.Message);
                                 return;
                             }
 
@@ -385,8 +385,9 @@ namespace BDArmory.Bullets
                                 return detonate = true;
                             }
                         }
-                        catch
+                        catch (Exception e)
                         {
+                            Debug.LogWarning("[PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + " - " + e.Source);
                         }
                     }
                 }

@@ -237,9 +237,9 @@ namespace BDArmory.Modules
                                         hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
                                         hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                     }
-                                    catch (NullReferenceException)
+                                    catch (NullReferenceException e)
                                     {
-                                        Debug.Log("[BDArmory]:NullReferenceException for AmmoExplosion Hit");
+                                        Debug.LogWarning("[BDArmory]:NullReferenceException for AmmoExplosion Hit: " + e.Message);
                                         continue;
                                     }
 

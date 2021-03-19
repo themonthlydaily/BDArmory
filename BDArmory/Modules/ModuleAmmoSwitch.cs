@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using BDArmory.Misc;
 using UnityEngine;
@@ -309,9 +310,9 @@ namespace BDArmory.Modules
                         resourceList[tankCount].Add(double.Parse(resourceAmountArray[amountCount].Trim()));
                         initialResourceList[tankCount].Add(double.Parse(initialResourceAmountArray[amountCount].Trim()));
                     }
-                    catch
+                    catch (Exception e)
                     {
-                        Debug.Log("BDAcAmmoSwitch: error parsing resource amount " + tankCount + "/" + amountCount + ": '" + resourceTankArray[amountCount] + "': '" + resourceAmountArray[amountCount].Trim() + "'");
+                        Debug.Log("BDAcAmmoSwitch: error parsing resource amount " + tankCount + "/" + amountCount + ": '" + resourceTankArray[amountCount] + "': '" + resourceAmountArray[amountCount].Trim() + "'. Exception: " + e.Message);
                     }
                 }
             }

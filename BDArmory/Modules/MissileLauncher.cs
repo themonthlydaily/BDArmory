@@ -590,7 +590,7 @@ namespace BDArmory.Modules
                     Debug.Log("[BDArmory]: OnStart missile " + shortName + ": setting default lockedSensorFOVBias curve to:");
                 for (int i = 0; i < 6; i++)
                 {
-                    lockedSensorFOVBias.Add(x[i], b / (a * a) * x[i] * x[i] + 1f, -1f / 3f *x[i] / (a*a), -1f / 3f * x[i] / (a * a));
+                    lockedSensorFOVBias.Add(x[i], b / (a * a) * x[i] * x[i] + 1f, -1f / 3f * x[i] / (a * a), -1f / 3f * x[i] / (a * a));
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         Debug.Log("key = " + x[i] + " " + (b / (a * a) * x[i] * x[i] + 1f) + " " + (-1f / 3f * x[i] / (a * a)) + " " + (-1f / 3f * x[i] / (a * a)));
                 }
@@ -1707,7 +1707,7 @@ namespace BDArmory.Modules
                     }
                 }
             }
-            
+
             Vector3 agmTarget = MissileGuidance.GetAirToGroundTarget(TargetPosition, TargetVelocity, vessel, agmDescentRatio);
             DoAero(agmTarget);
         }
@@ -1900,8 +1900,10 @@ namespace BDArmory.Modules
                 {
                     drawLabels();
                 }
-                catch (Exception)
-                { }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("[MissileLauncher]: Exception thrown in OnGUI: " + e.Message + " - " + e.Source);
+                }
             }
         }
 

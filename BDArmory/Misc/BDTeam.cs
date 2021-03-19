@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using BDArmory.UI;
+using UnityEngine;
 
 namespace BDArmory.Misc
 {
@@ -61,8 +62,9 @@ namespace BDArmory.Misc
                 }
                 return BDArmorySetup.Instance.Teams[team.Name];
             }
-            catch
+            catch (Exception e)
             {
+                Debug.LogWarning("[BDTeam]: Exception thrown in Deserialize: " + e.Message + " - " + e.Source);
                 return BDTeam.Get("A");
             }
         }

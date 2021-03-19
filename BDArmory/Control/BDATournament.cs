@@ -323,8 +323,9 @@ namespace BDArmory.Control
                 File.WriteAllLines(Path.Combine(Environment.CurrentDirectory, stateFile), strings);
                 return true;
             }
-            catch
+            catch (Exception e)
             {
+                Debug.LogWarning("[BDATournament]: Exception thrown in SaveState: " + e.Message + " - " + e.Source);
                 return false;
             }
         }

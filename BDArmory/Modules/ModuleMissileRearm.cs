@@ -236,9 +236,9 @@ namespace BDArmory.Modules
             {
                 using (var field = module.Fields.GetEnumerator()) { };
             }
-            catch
+            catch (Exception e)
             {
-                Debug.Log("[ModuleMissileRearm]: WORKAROUND. Module {0} on part prefab is not awaken. Call Awake on it", module);
+                Debug.Log("[ModuleMissileRearm]: WORKAROUND. Module " + module + " on part prefab is not awaken. Call Awake on it. Exception: " + e.Message);
                 AwakePartModule(module);
             }
             foreach (var field in module.Fields)
@@ -266,9 +266,10 @@ namespace BDArmory.Modules
                 {
                     CleanupFieldsInModule(module);
                 }
-                catch
+                catch (Exception e)
                 {
                     badModules.Add(module);
+                    Debug.LogWarning("[ModuleMissileRearm]: Exception thrown in CleanupModuleFieldsInPart: " + e.Message + " - " + e.Source);
                 }
             }
             // Cleanup modules that block KIS. It's a bad thing to do but not working KIS is worse.

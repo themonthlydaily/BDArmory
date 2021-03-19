@@ -10,8 +10,8 @@ using UnityEngine;
 
 namespace BDArmory.Misc
 {
-	class ProjectileUtils
-	{
+    class ProjectileUtils
+    {
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool hasRichocheted, Vessel sourceVessel, string name)
         {
             //hitting a vessel Part
@@ -151,7 +151,10 @@ namespace BDArmory.Misc
                 building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
                 building.damageDecay = 600f;
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[ProjectileUtils]: Exception thrown in CheckBuildingHit: " + e.Message + " - " + e.Source);
+            }
 
             if (building != null && building.IsIntact)
             {

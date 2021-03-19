@@ -163,9 +163,9 @@ namespace BDArmory.CounterMeasure
                 {
                     gEmitter.Current.pEmitter.worldVelocity = 2 * ParticleTurbulence.flareTurbulence + downForce;
                 }
-                catch (NullReferenceException)
+                catch (NullReferenceException e)
                 {
-                    Debug.LogWarning("CMFlare NRE setting worldVelocity");
+                    Debug.LogWarning("CMFlare NRE setting worldVelocity: " + e.Message);
                 }
 
                 try
@@ -175,9 +175,9 @@ namespace BDArmory.CounterMeasure
                         gEmitter.Current.emit = false;
                     }
                 }
-                catch (NullReferenceException)
+                catch (NullReferenceException e)
                 {
-                    Debug.LogWarning("CMFlare NRE checking density");
+                    Debug.LogWarning("CMFlare NRE checking density: " + e.Message);
                 }
             }
             gEmitter.Dispose();

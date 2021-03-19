@@ -1,4 +1,5 @@
-﻿using BDArmory.Competition;
+﻿using System;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -297,8 +298,9 @@ namespace BDArmory.FX
                                     }
                                 }
                             }
-                            catch
+                            catch (Exception e)
                             {
+                                Debug.LogWarning("[FireFX]: Exception thrown in Detonate: " + e.Message + " - " + e.Source);
                             }
                         }
                     }

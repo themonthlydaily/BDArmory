@@ -103,8 +103,9 @@ namespace BDArmory.UI
                         return output;
                     }
                 }
-                catch (System.Exception)
+                catch (System.Exception e)
                 {
+                    Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + " - " + e.Source);
                 }
             }
 
@@ -119,9 +120,10 @@ namespace BDArmory.UI
                         return inputString;
                     }
                 }
-                catch (UnityException)
+                catch (UnityException e)
                 {
                     Debug.Log("Invalid mouse: " + inputString);
+                    Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + " - " + e.Source);
                 }
             }
 
@@ -138,8 +140,9 @@ namespace BDArmory.UI
                             return inputString;
                         }
                     }
-                    catch (UnityException)
+                    catch (UnityException e)
                     {
+                        Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + " - " + e.Source);
                         return string.Empty;
                     }
                 }

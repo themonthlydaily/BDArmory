@@ -953,9 +953,10 @@ namespace BDArmory.Modules
                                     return;
                                 }
                             }
-                            catch
+                            catch (Exception e)
                             {
                                 // ignored
+                                Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + " - " + e.Source);
                             }
                         }
                     }
@@ -1004,7 +1005,7 @@ namespace BDArmory.Modules
                                     try
                                     {
                                         var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
-                                        if (hitPart==null) continue;
+                                        if (hitPart == null) continue;
 
                                         if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                         {
@@ -1015,9 +1016,10 @@ namespace BDArmory.Modules
                                             return;
                                         }
                                     }
-                                    catch
+                                    catch (Exception e)
                                     {
                                         // ignored
+                                        Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + " - " + e.Source);
                                     }
                                 }
                             }
@@ -1038,7 +1040,7 @@ namespace BDArmory.Modules
                                 {
                                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 
-                                    if (partHit==null) continue;
+                                    if (partHit == null) continue;
                                     if (partHit.vessel == vessel || partHit.vessel == SourceVessel) continue;
                                     if (partHit.vessel.vesselType == VesselType.Debris) continue; // Ignore debris
 
@@ -1055,9 +1057,10 @@ namespace BDArmory.Modules
                                     DetonationDistanceState = DetonationDistanceStates.Detonate;
                                     return;
                                 }
-                                catch
+                                catch (Exception e)
                                 {
                                     // ignored
+                                    Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + " - " + e.Source);
                                 }
                             }
                         }

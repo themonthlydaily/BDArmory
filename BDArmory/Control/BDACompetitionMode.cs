@@ -576,8 +576,9 @@ namespace BDArmory.Control
                                     if ((leader.Current.transform.position - otherLeader.Current.transform.position).sqrMagnitude < sqrDistance)
                                         waiting = true;
                                 }
-                                catch
+                                catch (Exception e)
                                 {
+                                    Debug.LogWarning("[BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message + " - " + e.Source);
                                     competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
                                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                                     StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
@@ -1394,9 +1395,9 @@ namespace BDArmory.Control
                     StartCoroutine(DelayedVesselRemovalCoroutine(debris, debris.vesselType == VesselType.SpaceObject ? 0 : BDArmorySettings.DEBRIS_CLEANUP_DELAY));
                 }
             }
-            catch
+            catch (Exception e)
             {
-                Debug.Log("DEBUG debris " + debris.vesselName + " is a component? " + (debris is Component) + ", is a monobehaviour? " + (debris is MonoBehaviour));
+                Debug.Log("DEBUG debris " + debris.vesselName + " is a component? " + (debris is Component) + ", is a monobehaviour? " + (debris is MonoBehaviour) + ". Exception: " + e.Message);
             }
         }
 

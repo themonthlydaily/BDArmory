@@ -186,9 +186,9 @@ namespace BDArmory.Modules
                             rippleDictionary.Add(wpnName, ro);
                         }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    //Debug.Log("[BDArmory]: Ripple data was invalid.");
+                    Debug.LogWarning("[BDArmory]: Ripple data was invalid: " + e.Message);
                     rippleData = string.Empty;
                 }
             }
@@ -3559,74 +3559,74 @@ namespace BDArmory.Modules
                             bool outsideFiringCosAngle = targetCosAngle < ((ModuleWeapon)item.Current).targetAdjustedMaxCosAngle;
                             bool compareRocketRPM = false;
 
-                                if (targetWeaponPriority > candidatePriority)
-                                    continue; //keep higher priority weapon
+                            if (targetWeaponPriority > candidatePriority)
+                                continue; //keep higher priority weapon
 
-                                if (candidateRadius > 8) //most fighters are, what, at most 15m in their largest dimension? That said, maybe make this configurable in the weapon PAW...
-                                {//weight selection towards larger caliber bullets, modified by turrets/fuzes/range settings when shooting bombers
-                                    if (candidateGimbal = true && candidateTraverse > 0)
-                                    {
-                                        candidateCaliber *= 1.5f; // weight selection towards turrets
-                                    }
-                                    if (candidatePFuzed || candidateVTFuzed)
-                                    {
-                                        candidateCaliber *= 1.5f; // weight selection towards flak ammo
-                                    }
-                                    if (outsideFiringCosAngle)
-                                    {
-                                        candidateCaliber *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                    }
-                                    if (candidateMinrange > distance)
-                                    {
-                                        candidateCaliber *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                    }
-                                    candidateRPM = candidateCaliber;
-                                }
-                                else //weight selection towards RoF, modified by turrets/fuzes/shot quantity/range
+                            if (candidateRadius > 8) //most fighters are, what, at most 15m in their largest dimension? That said, maybe make this configurable in the weapon PAW...
+                            {//weight selection towards larger caliber bullets, modified by turrets/fuzes/range settings when shooting bombers
+                                if (candidateGimbal = true && candidateTraverse > 0)
                                 {
-                                    if (candidateGimbal = true && candidateTraverse > 0)
-                                    {
-                                        candidateRPM *= 1.5f; // weight selection towards turrets
-                                    }
-                                    if (candidatePFuzed || candidateVTFuzed)
-                                    {
-                                        candidateRPM *= 1.5f; // weight selection towards flak ammo
-                                    }
-                                    if (Cannistershot > 0)
-                                    {
-                                        candidateRPM *= (1 + (Cannistershot / 2)); // weight selection towards cluster ammo based on submunition count
-                                    }
-                                    if (outsideFiringCosAngle)
-                                    {
-                                        candidateRPM *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                    }
-                                    if (candidateMinrange > distance)
-                                    {
-                                        candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
-                                    }
+                                    candidateCaliber *= 1.5f; // weight selection towards turrets
                                 }
-                                if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
-                                    continue; //dont replace missiles within their engage range
+                                if (candidatePFuzed || candidateVTFuzed)
+                                {
+                                    candidateCaliber *= 1.5f; // weight selection towards flak ammo
+                                }
+                                if (outsideFiringCosAngle)
+                                {
+                                    candidateCaliber *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                }
+                                if (candidateMinrange > distance)
+                                {
+                                    candidateCaliber *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                }
+                                candidateRPM = candidateCaliber;
+                            }
+                            else //weight selection towards RoF, modified by turrets/fuzes/shot quantity/range
+                            {
+                                if (candidateGimbal = true && candidateTraverse > 0)
+                                {
+                                    candidateRPM *= 1.5f; // weight selection towards turrets
+                                }
+                                if (candidatePFuzed || candidateVTFuzed)
+                                {
+                                    candidateRPM *= 1.5f; // weight selection towards flak ammo
+                                }
+                                if (Cannistershot > 0)
+                                {
+                                    candidateRPM *= (1 + (Cannistershot / 2)); // weight selection towards cluster ammo based on submunition count
+                                }
+                                if (outsideFiringCosAngle)
+                                {
+                                    candidateRPM *= .01f; //if outside firing angle, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                }
+                                if (candidateMinrange > distance)
+                                {
+                                    candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                }
+                            }
+                            if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
+                                continue; //dont replace missiles within their engage range
 
-                                if (targetWeaponPriority < candidatePriority) //use priority gun
+                            if (targetWeaponPriority < candidatePriority) //use priority gun
+                            {
+                                targetWeapon = item.Current;
+                                targetWeaponRPM = candidateRPM;
+                                targetWeaponPriority = candidatePriority;
+                            }
+                            else //if equal priority, use standard weighting
+                            {
+                                if ((targetWeapon != null) && targetWeapon.GetWeaponClass() == WeaponClasses.Rocket)
+                                {
+                                    compareRocketRPM = true;
+                                }
+                                if ((compareRocketRPM && (targetWeaponRPM / 2) < candidateRPM) || (!compareRocketRPM && (targetWeaponRPM) < candidateRPM))
                                 {
                                     targetWeapon = item.Current;
                                     targetWeaponRPM = candidateRPM;
                                     targetWeaponPriority = candidatePriority;
                                 }
-                                else //if equal priority, use standard weighting
-                                {
-                                    if ((targetWeapon != null) && targetWeapon.GetWeaponClass() == WeaponClasses.Rocket)
-                                    {
-                                        compareRocketRPM = true;
-                                    }
-                                    if ((compareRocketRPM && (targetWeaponRPM / 2) < candidateRPM) || (!compareRocketRPM && (targetWeaponRPM) < candidateRPM))
-                                    {
-                                        targetWeapon = item.Current;
-                                        targetWeaponRPM = candidateRPM;
-                                        targetWeaponPriority = candidatePriority;
-                                    }
-                                }
+                            }
                         }
                         //if lasers, lasers will override gun selection
                         if (candidateClass == WeaponClasses.DefenseLaser)
@@ -3674,7 +3674,7 @@ namespace BDArmory.Modules
                                     targetWeaponPriority = candidatePriority;
                                 }
                             }
-                        }                      
+                        }
                         //projectile weapon selected, any missiles that take precedence?
                         if (candidateClass != WeaponClasses.Missile) continue;
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
@@ -4567,7 +4567,7 @@ namespace BDArmory.Modules
                     TargetInfo nearbyFriendly = BDATargetManager.GetClosestFriendly(this);
                     TargetInfo nearbyThreat = BDATargetManager.GetTargetFromWeaponManager(results.threatWeaponManager);
 
-                    if (nearbyThreat!=null && nearbyThreat.weaponManager != null && nearbyFriendly!=null && nearbyFriendly.weaponManager != null)
+                    if (nearbyThreat != null && nearbyThreat.weaponManager != null && nearbyFriendly != null && nearbyFriendly.weaponManager != null)
                         if (Team.IsEnemy(nearbyThreat.weaponManager.Team) &&
                             nearbyFriendly.weaponManager.Team == Team)
                         //turns out that there's no check for AI on the same team going after each other due to this.  Who knew?

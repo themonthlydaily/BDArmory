@@ -615,9 +615,9 @@ namespace BDArmory.UI
                 BDAPersistantSettingsField.Load();
                 BDInputSettingsFields.LoadSettings();
             }
-            catch (NullReferenceException)
+            catch (NullReferenceException e)
             {
-                Debug.Log("[BDArmory]=== Failed to load settings config ===");
+                Debug.LogWarning("[BDArmory]=== Failed to load settings config ===: " + e.Message);
             }
         }
 
@@ -636,9 +636,9 @@ namespace BDArmory.UI
                     OnSavedSettings();
                 }
             }
-            catch (NullReferenceException)
+            catch (NullReferenceException e)
             {
-                Debug.Log("[BDArmory]: === Failed to save settings.cfg ====");
+                Debug.LogWarning("[BDArmory]: === Failed to save settings.cfg ====: " + e.Message);
             }
         }
 
@@ -2100,9 +2100,9 @@ namespace BDArmory.UI
                 {
                     inputInfo = (BDInputInfo)typeof(BDInputSettingsFields).GetField(fieldName).GetValue(null);
                 }
-                catch (NullReferenceException)
+                catch (NullReferenceException e)
                 {
-                    Debug.Log("[BDArmory]: Reflection failed to find input info of field: " + fieldName);
+                    Debug.LogWarning("[BDArmory]: Reflection failed to find input info of field: " + fieldName + ": " + e.Message);
                     editKeys = false;
                     return;
                 }

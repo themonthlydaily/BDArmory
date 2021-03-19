@@ -119,8 +119,9 @@ namespace BDArmory.Misc
             {
                 return Mathf.Sqrt(-2 * Mathf.Log(UnityEngine.Random.value)) * Mathf.Cos(Mathf.PI * UnityEngine.Random.value);
             }
-            catch (Exception)
+            catch (Exception e)
             { // I have no idea what exception Mathf.Log raises when it gets a zero
+                Debug.LogWarning("[VectorUtils]: Exception thrown in Gaussian: " + e.Message + " - " + e.Source);
                 return 0;
             }
         }
@@ -139,8 +140,9 @@ namespace BDArmory.Misc
             {
                 return Mathf.Sqrt(-2 * Mathf.Log(UnityEngine.Random.value));
             }
-            catch (Exception)
+            catch (Exception e)
             { // I have no idea what exception Mathf.Log raises when it gets a zero
+                Debug.LogWarning("[VectorUtils]: Exception thrown in Rayleigh: " + e.Message + " - " + e.Source);
                 return 0;
             }
         }
