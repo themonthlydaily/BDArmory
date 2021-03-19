@@ -1,4 +1,4 @@
-﻿using BDArmory.Competition;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
