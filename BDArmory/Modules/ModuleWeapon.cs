@@ -307,14 +307,14 @@ namespace BDArmory.Modules
 
         //weapon specifications
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringPriority"),
-    UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+            UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float priority = 0; //per-weapon priority selection override
 
         [KSPField(isPersistant = true)]
         public bool BurstOverride = false;
 
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringBurstCount"),//Burst Firing Count
- UI_FloatRange(minValue = 1f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 1f, maxValue = 100f, stepIncrement = 1, scene = UI_Scene.All)]
         public float fireBurstLength = 1;
 
         [KSPField(isPersistant = true)]
@@ -3232,7 +3232,7 @@ namespace BDArmory.Modules
 
             reloadState.normalizedTime = 0;
             reloadState.enabled = true;
-            reloadState.speed = (reloadState.length/ReloadTime);//ensure relaod anim is not longer than reload time
+            reloadState.speed = (reloadState.length / ReloadTime);//ensure relaod anim is not longer than reload time
             while (reloadState.normalizedTime < 1) //wait for animation here
             {
                 yield return null;

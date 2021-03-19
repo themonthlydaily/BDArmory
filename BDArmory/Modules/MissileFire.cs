@@ -3396,7 +3396,7 @@ namespace BDArmory.Modules
             float targetWeaponRPM = 0;
             float targetWeaponTDPS = 0;
             float targetWeaponImpact = 0;
-            float targetLaserDamage = 0;
+            // float targetLaserDamage = 0;
             float targetYield = 0;
             float targetRocketPower = 0;
             float targetRocketAccel = 0;
