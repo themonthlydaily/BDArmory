@@ -258,7 +258,8 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                this.part.Destroy();
+                if (part.vessel != null) // Already in the process of being destroyed.
+                    part.Destroy();
             }
         }
         private void ApplyDamage(Part hitPart, RaycastHit hit)
@@ -347,7 +348,7 @@ namespace BDArmory.Modules
             {
                 output.AppendLine($"Can add Cellular Ammo Storage Equipment to reduce ammo explosion damage");
             }
-            
+
             output.AppendLine("");
 
             return output.ToString();

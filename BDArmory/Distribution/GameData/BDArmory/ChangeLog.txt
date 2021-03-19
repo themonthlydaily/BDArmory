@@ -1,4 +1,27 @@
-﻿v1.4.2.4
+﻿v1.4.2.7
+FIXES
+	- Add a "Kerbal Inventory" slider to configure how kerbals' inventories are adjusted when "Kerbal Safety" is enabled (default is "Parachute Only").
+
+v1.4.2.6
+FIXES
+	- Fix bug in loading spawn locations on fresh installs.
+	- Give vessel spawning more than 5 frames to wait for the reference transforms.
+	- Add checks in various parts of the code to avoid potentially applying forces to physicsless parts.
+
+IMPROVEMENTS
+	- Tweak explosions from the nuclear engine code to include triggering on detachment (i.e., no WM) and give a 0.5s delay after detachment or running out of fuel before exploding.
+
+v1.4.2.5
+FIXES
+	- Wait for reference transforms to be assigned during spawning to avoid NREs.
+	- Tweak auto number of vessels for FFA with only a few craft.
+	- Fix a variety of NREs in the nuclear engine code.
+	- Avoid applying forces to physicsless parts (no rigid body), which removes the need for try..catch block. Clean up code.
+	- Track last valid atmDensity of nuclear engine to ensure correct value while vessel being destroyed.
+	- Use the approximate GetArea function instead of the radiative area if the radiative area is not available.
+	- Clean up formulas for blast impulse. Only apply damage/impulse to each part once per explosion.
+
+v1.4.2.4
 FIXES
 	- Fix various NREs.
 	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
