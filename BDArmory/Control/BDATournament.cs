@@ -325,7 +325,7 @@ namespace BDArmory.Control
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[BDATournament]: Exception thrown in SaveState: " + e.Message + " - " + e.Source);
+                Debug.LogWarning("[BDATournament]: Exception thrown in SaveState: " + e.Message + "\n" + e.StackTrace);
                 return false;
             }
         }

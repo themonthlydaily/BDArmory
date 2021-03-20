@@ -300,7 +300,7 @@ namespace BDArmory.FX
                             }
                             catch (Exception e)
                             {
-                                Debug.LogWarning("[FireFX]: Exception thrown in Detonate: " + e.Message + " - " + e.Source);
+                                Debug.LogWarning("[FireFX]: Exception thrown in Detonate: " + e.Message + "\n" + e.StackTrace);
                             }
                         }
                     }

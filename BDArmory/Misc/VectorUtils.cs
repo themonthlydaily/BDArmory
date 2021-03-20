@@ -121,7 +121,7 @@ namespace BDArmory.Misc
             }
             catch (Exception e)
             { // I have no idea what exception Mathf.Log raises when it gets a zero
-                Debug.LogWarning("[VectorUtils]: Exception thrown in Gaussian: " + e.Message + " - " + e.Source);
+                Debug.LogWarning("[VectorUtils]: Exception thrown in Gaussian: " + e.Message + "\n" + e.StackTrace);
                 return 0;
             }
         }
@@ -142,7 +142,7 @@ namespace BDArmory.Misc
             }
             catch (Exception e)
             { // I have no idea what exception Mathf.Log raises when it gets a zero
-                Debug.LogWarning("[VectorUtils]: Exception thrown in Rayleigh: " + e.Message + " - " + e.Source);
+                Debug.LogWarning("[VectorUtils]: Exception thrown in Rayleigh: " + e.Message + "\n" + e.StackTrace);
                 return 0;
             }
         }

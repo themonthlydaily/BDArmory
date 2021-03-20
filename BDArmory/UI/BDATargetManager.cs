@@ -694,7 +694,7 @@ namespace BDArmory.UI
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[BDATargetManager]: Exception thrown in StringToGPSList: " + e.Message + " - " + e.Source);
+                Debug.LogWarning("[BDATargetManager]: Exception thrown in StringToGPSList: " + e.Message + "\n" + e.StackTrace);
             }
         }
 

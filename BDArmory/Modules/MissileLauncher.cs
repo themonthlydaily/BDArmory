@@ -1902,7 +1902,7 @@ namespace BDArmory.Modules
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning("[MissileLauncher]: Exception thrown in OnGUI: " + e.Message + " - " + e.Source);
+                    Debug.LogWarning("[MissileLauncher]: Exception thrown in OnGUI: " + e.Message + "\n" + e.StackTrace);
                 }
             }
         }

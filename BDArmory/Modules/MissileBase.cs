@@ -956,7 +956,7 @@ namespace BDArmory.Modules
                             catch (Exception e)
                             {
                                 // ignored
-                                Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + " - " + e.Source);
+                                Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + "\n" + e.StackTrace);
                             }
                         }
                     }
@@ -1019,7 +1019,7 @@ namespace BDArmory.Modules
                                     catch (Exception e)
                                     {
                                         // ignored
-                                        Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + " - " + e.Source);
+                                        Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + "\n" + e.StackTrace);
                                     }
                                 }
                             }
@@ -1060,7 +1060,7 @@ namespace BDArmory.Modules
                                 catch (Exception e)
                                 {
                                     // ignored
-                                    Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + " - " + e.Source);
+                                    Debug.LogWarning("[MissileBase]: Exception thrown in CheckDetonatationState: " + e.Message + "\n" + e.StackTrace);
                                 }
                             }
                         }

@@ -578,7 +578,7 @@ namespace BDArmory.Control
                                 }
                                 catch (Exception e)
                                 {
-                                    Debug.LogWarning("[BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message + " - " + e.Source);
+                                    Debug.LogWarning("[BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message + "\n" + e.StackTrace);
                                     competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
                                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                                     StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.

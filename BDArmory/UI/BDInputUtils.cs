@@ -105,7 +105,7 @@ namespace BDArmory.UI
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + " - " + e.Source);
+                    Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + "\n" + e.StackTrace);
                 }
             }
 
@@ -123,7 +123,7 @@ namespace BDArmory.UI
                 catch (UnityException e)
                 {
                     Debug.Log("Invalid mouse: " + inputString);
-                    Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + " - " + e.Source);
+                    Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + "\n" + e.StackTrace);
                 }
             }
 
@@ -142,7 +142,7 @@ namespace BDArmory.UI
                     }
                     catch (UnityException e)
                     {
-                        Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + " - " + e.Source);
+                        Debug.LogWarning("[BDInputUtils]: Exception thrown in GetInputString: " + e.Message + "\n" + e.StackTrace);
                         return string.Empty;
                     }
                 }

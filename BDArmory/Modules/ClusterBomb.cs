@@ -261,7 +261,7 @@ namespace BDArmory.Modules
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[ClusterBomb]: Exception thrown in CheckBuildingHit: " + e.Message + " - " + e.Source);
+                Debug.LogWarning("[ClusterBomb]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
             }
 
             if (building != null && building.IsIntact)

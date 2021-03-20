@@ -269,7 +269,7 @@ namespace BDArmory.Modules
                 catch (Exception e)
                 {
                     badModules.Add(module);
-                    Debug.LogWarning("[ModuleMissileRearm]: Exception thrown in CleanupModuleFieldsInPart: " + e.Message + " - " + e.Source);
+                    Debug.LogWarning("[ModuleMissileRearm]: Exception thrown in CleanupModuleFieldsInPart: " + e.Message + "\n" + e.StackTrace);
                 }
             }
             // Cleanup modules that block KIS. It's a bad thing to do but not working KIS is worse.

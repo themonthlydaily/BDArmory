@@ -387,7 +387,7 @@ namespace BDArmory.Bullets
                         }
                         catch (Exception e)
                         {
-                            Debug.LogWarning("[PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + " - " + e.Source);
+                            Debug.LogWarning("[PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                         }
                     }
                 }

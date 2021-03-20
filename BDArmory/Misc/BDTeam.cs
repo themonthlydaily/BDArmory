@@ -64,7 +64,7 @@ namespace BDArmory.Misc
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[BDTeam]: Exception thrown in Deserialize: " + e.Message + " - " + e.Source);
+                Debug.LogWarning("[BDTeam]: Exception thrown in Deserialize: " + e.Message + "\n" + e.StackTrace);
                 return BDTeam.Get("A");
             }
         }

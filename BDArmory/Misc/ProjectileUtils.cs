@@ -149,11 +149,12 @@ namespace BDArmory.Misc
             try
             {
                 building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                building.damageDecay = 600f;
+                if (building != null)
+                    building.damageDecay = 600f;
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[ProjectileUtils]: Exception thrown in CheckBuildingHit: " + e.Message + " - " + e.Source);
+                Debug.LogWarning("[ProjectileUtils]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
             }
 
             if (building != null && building.IsIntact)
