@@ -321,8 +321,9 @@ namespace BDArmory.Bullets
         /// Check for bullet collision in the upcoming period. 
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
+        /// <param name="reverse">Also perform raycast in reverse to detect collisions from rays starting within an object.</param>
         /// <returns>true if a collision is detected, false otherwise.</returns>
-        public bool CheckBulletCollision(float period)
+        public bool CheckBulletCollision(float period, bool reverse = false)
         {
             //reset our hit variables to default state
             hasPenetrated = true;
@@ -334,6 +335,15 @@ namespace BDArmory.Bullets
             float dist = currentVelocity.magnitude * period;
             bulletRay = new Ray(currPosition, currentVelocity);
             var hits = Physics.RaycastAll(bulletRay, dist, 9076737);
+            if (reverse)
+            {
+                var reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
+                for (int i = 0; i < reverseHits.Length; ++i)
+                {
+                    reverseHits[i].distance = dist - reverseHits[i].distance;
+                }
+                hits = hits.Concat(reverseHits).ToArray();
+            }
             if (hits.Length > 0)
             {
                 var orderedHits = hits.OrderBy(x => x.distance);

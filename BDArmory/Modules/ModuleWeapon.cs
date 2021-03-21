@@ -1537,7 +1537,7 @@ namespace BDArmory.Modules
                                 pBullet.bullet = BulletInfo.bullets[currentType];
                                 pBullet.gameObject.SetActive(true);
 
-                                if (!pBullet.CheckBulletCollision(iTime)) // Check that the bullet won't immediately hit anything.
+                                if (!pBullet.CheckBulletCollision(iTime, true)) // Check that the bullet won't immediately hit anything.
                                 {
                                     pBullet.MoveBullet(iTime); // Move the bullet forward by the amount of time within the physics frame determined by it's firing rate.
                                 }
