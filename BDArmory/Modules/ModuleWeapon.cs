@@ -1447,7 +1447,7 @@ namespace BDArmory.Modules
                                 PooledBullet pBullet = firedBullet.GetComponent<PooledBullet>();
 
 
-                                firedBullet.transform.position = fireTransform.position;
+                                pBullet.transform.position = fireTransform.position;
 
                                 pBullet.caliber = bulletInfo.caliber;
                                 pBullet.bulletVelocity = bulletInfo.bulletVelocity;
@@ -1473,12 +1473,9 @@ namespace BDArmory.Modules
 
                                 timeFired = Time.time - iTime;
 
-                                Vector3 firedVelocity =
-                                    VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity;
-
+                                Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity;
                                 pBullet.currentVelocity = (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
-                                firedBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime
-                                                                    + pBullet.currentVelocity * iTime;
+                                pBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime; // Initially, put the bullet at the fireTransform position at the start of the next physics frame
 
                                 pBullet.sourceVessel = vessel;
                                 pBullet.bulletTexturePath = bulletTexturePath;
@@ -1539,6 +1536,15 @@ namespace BDArmory.Modules
 
                                 pBullet.bullet = BulletInfo.bullets[currentType];
                                 pBullet.gameObject.SetActive(true);
+
+                                if (!pBullet.CheckBulletCollision(iTime)) // Check that the bullet won't immediately hit anything.
+                                {
+                                    pBullet.MoveBullet(iTime); // Move the bullet forward by the amount of time within the physics frame determined by it's firing rate.
+                                }
+                                else
+                                {
+                                    // Debug.Log("DEBUG immediately hit after " + pBullet.DistanceTraveled + "m and time " + iTime);
+                                }
                             }
                             //heat
                             heat += heatPerShot;
