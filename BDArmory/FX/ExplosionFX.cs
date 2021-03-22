@@ -484,6 +484,10 @@ namespace BDArmory.FX
                             break;
                     }
                 }
+                else if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[ExplosiveFX]: Part " + part.name + " at distance " + realDistance + "m took no damage due to parts with " + cumulativeHPOfIntermediateParts + "HP and " + cumulativeArmourOfIntermediateParts + " Armour in the way.");
+                }
             }
             else
             {

@@ -2788,7 +2788,7 @@ namespace BDArmory.Modules
         IEnumerator AimAndFireAtEndOfFrame()
         {
             if (eWeaponType != WeaponTypes.Laser) yield return new WaitForEndOfFrame();
-            if (this == null) yield break;
+            if (this == null || FlightGlobals.currentMainBody == null) yield break;
 
             UpdateTargetVessel();
             updateAcceleration(targetVelocity, targetPosition);

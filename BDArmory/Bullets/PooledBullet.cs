@@ -354,7 +354,6 @@ namespace BDArmory.Bullets
                     {
                         if (!hasPenetrated || hasRicocheted || hasDetonated)
                         {
-                            // Debug.Log("DEBUG hasPenetrated: " + hasPenetrated + ", hasRicocheted: " + hasRicocheted + ", hasDetonated: " + hasDetonated);
                             return true;
                         }
 
@@ -383,7 +382,6 @@ namespace BDArmory.Bullets
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
                             distanceTraveled += hit.distance;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
-                            // Debug.Log("DEBUG hit " + hitEVA + " at distance " + distanceTraveled + "m");
                             return true;
                         }
 
@@ -407,13 +405,11 @@ namespace BDArmory.Bullets
                                 ExplosiveDetonation(hitPart, hit, bulletRay);
                                 KillBullet();
                                 distanceTraveled += hit.distance;
-                                // Debug.Log("DEBUG hit ground or building at distance " + distanceTraveled + "m and detonated");
                                 return true;
                             }
                             else
                             {
                                 DoRicochet(hitPart, hit, hitAngle, hit.distance / dist, period);
-                                // Debug.Log("DEBUG hit ground or building at distance " + distanceTraveled + "m and ricocheted");
                                 return true;
                             }
                         }
@@ -459,7 +455,6 @@ namespace BDArmory.Bullets
                                 transform.position += (currentVelocity * period) / 3;
 
                                 distanceTraveled += hit.distance;
-                                // Debug.Log("DEBUG hit and detonated after fully penetrating " + hitPart + " at distance " + distanceTraveled + "m");
                                 ExplosiveDetonation(hitPart, hit, bulletRay);
                                 hasDetonated = true;
                                 KillBullet();
@@ -483,7 +478,6 @@ namespace BDArmory.Bullets
                             }
 
                             distanceTraveled += hit.distance;
-                            // Debug.Log("DEBUG hit and detonated without fully penetrating " + hitPart + " at distance " + distanceTraveled + "m");
                             hasPenetrated = false;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
                             ExplosiveDetonation(hitPart, hit, bulletRay);
@@ -503,7 +497,6 @@ namespace BDArmory.Bullets
                             //detonate
                             ExplosiveDetonation(hitPart, hit, bulletRay, airDetonation);
                             distanceTraveled += hit.distance;
-                            // Debug.Log("DEBUG hit and exploded after penetrating or ricocheting off of " + hitPart + " at distance " + distanceTraveled + "m");
                             return true;
                         }
 
@@ -517,7 +510,6 @@ namespace BDArmory.Bullets
                             }
                             KillBullet();
                             distanceTraveled += hit.distance;
-                            // Debug.Log("DEBUG hit and stopped " + hitPart + " at distance " + distanceTraveled + "m");
                             return true;
                         }
                     }//end While
@@ -616,9 +608,7 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f),
-                                                    GetExplosivePower(),
-                                                    explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction: currentVelocity);
+                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName);
                     }
 
                     KillBullet();
