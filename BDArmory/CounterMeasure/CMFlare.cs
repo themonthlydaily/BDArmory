@@ -48,7 +48,7 @@ namespace BDArmory.CounterMeasure
             thermal *= UnityEngine.Random.Range(thermalMinMult, thermalMaxMult);
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0") + " mult: " + thermalMinMult + "-" + thermalMaxMult);
+                Debug.Log("[BDArmory.CMFlare]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0") + " mult: " + thermalMinMult + "-" + thermalMaxMult);
             */
 
             // NEW (1.10 and later): generate flare within spectrum of emitting vessel's heat signature, but narrow range for low heats
@@ -59,7 +59,7 @@ namespace BDArmory.CounterMeasure
             thermal *= UnityEngine.Random.Range(thermalMinMult, 1.75f - thermalMinMult + 0.65f);
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0"));
+                Debug.Log("[BDArmory.CMFlare]: New flare generated from " + sourceVessel.GetDisplayName() + ":" + BDATargetManager.GetVesselHeatSignature(sourceVessel).ToString("0.0") + ", heat: " + thermal.ToString("0.0"));
         }
 
         void OnEnable()
@@ -165,7 +165,7 @@ namespace BDArmory.CounterMeasure
                 }
                 catch (NullReferenceException e)
                 {
-                    Debug.LogWarning("CMFlare NRE setting worldVelocity: " + e.Message);
+                    Debug.LogWarning("[BDArmory.CMFlare]: NRE setting worldVelocity: " + e.Message);
                 }
 
                 try
@@ -177,7 +177,7 @@ namespace BDArmory.CounterMeasure
                 }
                 catch (NullReferenceException e)
                 {
-                    Debug.LogWarning("CMFlare NRE checking density: " + e.Message);
+                    Debug.LogWarning("[BDArmory.CMFlare]: NRE checking density: " + e.Message);
                 }
             }
             gEmitter.Dispose();

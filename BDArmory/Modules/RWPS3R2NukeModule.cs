@@ -85,7 +85,7 @@ namespace BDArmory.Modules
                     {
                         if (!hasDetonated && !goingCritical)
                         {
-                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is out of fuel.");
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: nerva on " + Sourcevessel + " is out of fuel.");
                             StartCoroutine(DelayedDetonation(0.5f)); //bingo fuel, detonate
                         }
                     }
@@ -96,7 +96,7 @@ namespace BDArmory.Modules
                         {
                             if (!hasDetonated)
                             {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is Off, detonating");
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: nerva on " + Sourcevessel + " is Off, detonating");
                                 Detonate(); //nuke engine off after comp start, detonate.
                             }
                         }
@@ -106,7 +106,7 @@ namespace BDArmory.Modules
                             {
                                 if (!hasDetonated)
                                 {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: nerva on " + Sourcevessel + " is manually thrust limited, detonating");
                                     Detonate(); //nuke engine off after comp start, detonate.
                                 }
                             }
@@ -122,7 +122,7 @@ namespace BDArmory.Modules
             {
                 if (v.FindPartModuleImplementing<MissileFire>() == null)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Nuclear engine on " + Sourcevessel + " has become detached.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Nuclear engine on " + Sourcevessel + " has become detached.");
                     goingCritical = true;
                     StartCoroutine(DelayedDetonation(0.5f));
                 }
@@ -131,7 +131,7 @@ namespace BDArmory.Modules
 
         IEnumerator DelayedDetonation(float delay)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Nuclear engine on " + Sourcevessel + " going critical in " + delay.ToString("0.0") + "s.");
             goingCritical = true;
             yield return new WaitForSeconds(delay);
             if (!hasDetonated && part != null) Detonate();
@@ -149,7 +149,7 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Running Detonate() on nerva in vessel " + Sourcevessel);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Running Detonate() on nerva in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
 
             Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
@@ -170,7 +170,7 @@ namespace BDArmory.Modules
                         float radiativeArea = !double.IsNaN(partHit.radiativeArea) ? (float)partHit.radiativeArea : partHit.GetArea();
                         if (BDArmorySettings.DRAW_DEBUG_LABELS && double.IsNaN(partHit.radiativeArea))
                         {
-                            Debug.Log("[NukeTest]: radiative area of part " + partHit + " was NaN, using approximate area " + radiativeArea + " instead.");
+                            Debug.Log("[BDArmory.NukeTest]: radiative area of part " + partHit + " was NaN, using approximate area " + radiativeArea + " instead.");
                         }
                         //if (partHit.vessel != this.vessel)
                         if (partHit != part)
@@ -197,11 +197,11 @@ namespace BDArmory.Modules
                                         // Math.Pow(Math.Pow(Math.Pow(9.54e-3 * 2200.0 / distToG0, 1.95), 4.0) + Math.Pow(Math.Pow(3.01 * 1100.0 / distToG0, 1.25), 4.0), 0.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0; //assuming a 0.05 kT yield
                                         if (float.IsNaN(blastImpulse))
                                         {
-                                            Debug.LogWarning("[NukeTest]: blast impulse is NaN. distToG0: " + distToG0 + ", vessel: " + vessel + ", atmDensity: " + lastValidAtmDensity + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + partHit + ", radiativeArea: " + radiativeArea);
+                                            Debug.LogWarning("[BDArmory.NukeTest]: blast impulse is NaN. distToG0: " + distToG0 + ", vessel: " + vessel + ", atmDensity: " + lastValidAtmDensity + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + partHit + ", radiativeArea: " + radiativeArea);
                                         }
                                         else
                                         {
-                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: Applying " + blastImpulse.ToString("0.0") + " impulse to " + p + " of mass " + p.mass + " at distance " + distToG0 + "m");
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Applying " + blastImpulse.ToString("0.0") + " impulse to " + p + " of mass " + p.mass + " at distance " + distToG0 + "m");
                                             p.rb.AddForceAtPosition((partHit.transform.position - part.transform.position).normalized * (float)blastImpulse, partHit.transform.position, ForceMode.Impulse);
                                         }
                                     }
@@ -210,7 +210,7 @@ namespace BDArmory.Modules
                                     blastDamage = ((float)((yield * 3370000000) / (4f * Mathf.PI * distToG0 * distToG0) * (radiativeArea / 2f)));
                                     if (float.IsNaN(blastDamage))
                                     {
-                                        Debug.LogWarning("[NukeTest]: blast damage is NaN. distToG0: " + distToG0 + ", yield: " + yield + ", part: " + partHit + ", radiativeArea: " + radiativeArea);
+                                        Debug.LogWarning("[BDArmory.NukeTest]: blast damage is NaN. distToG0: " + distToG0 + ", yield: " + yield + ", part: " + partHit + ", radiativeArea: " + radiativeArea);
                                         continue;
                                     }
                                     p.AddExplosiveDamage(blastDamage, 100, ExplosionSourceType.Missile);
@@ -245,7 +245,7 @@ namespace BDArmory.Modules
                                             tData.damageFromMissiles.Add(aName, blastDamage);
                                         if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                             BDAScoreService.Instance.TrackMissileDamage(aName, tName, blastDamage);
-                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m");
+                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m");
                                     }
                                 }
                             }
@@ -276,7 +276,7 @@ namespace BDArmory.Modules
                     message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
                 message += " parts damaged (Blast Wave) by " + Sourcevessel + "'s exploding engine core.";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[NukeTest]: " + message);
+                Debug.Log("[BDArmory.NukeTest]: " + message);
             }
             ExplosionFx.CreateExplosion(part.transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, null, Sourcevessel, "Reactor Containment Failure");
             hasDetonated = true;

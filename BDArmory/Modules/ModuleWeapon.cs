@@ -629,7 +629,7 @@ namespace BDArmory.Modules
             }
             weaponManager.gunRippleIndex = weaponManager.gunRippleIndex + 1;
 
-            //Debug.Log("incrementing ripple index to: " + weaponManager.gunRippleIndex);
+            //Debug.Log([BDArmory.ModuleWeapon]: incrementing ripple index to: " + weaponManager.gunRippleIndex);
         }
 
         #endregion KSPFields
@@ -1021,12 +1021,12 @@ namespace BDArmory.Modules
                     if (rocketInfo == null)
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            Debug.Log("[BDArmory]: Failed To load rocket : " + currentType);
+                            Debug.Log("[BDArmory.ModuleWeapon]: Failed To load rocket : " + currentType);
                     }
                     else
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            Debug.Log("[BDArmory]: AmmoType Loaded : " + currentType);
+                            Debug.Log("[BDArmory.ModuleWeapon]: AmmoType Loaded : " + currentType);
                     }
                 }
                 else
@@ -1034,12 +1034,12 @@ namespace BDArmory.Modules
                     if (bulletInfo == null)
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            Debug.Log("[BDArmory]: Failed To load bullet : " + currentType);
+                            Debug.Log("[BDArmory.ModuleWeapon]: Failed To load bullet : " + currentType);
                     }
                     else
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                            Debug.Log("[BDArmory]: BulletType Loaded : " + currentType);
+                            Debug.Log("[BDArmory.ModuleWeapon]: BulletType Loaded : " + currentType);
                     }
                 }
             }
@@ -1218,7 +1218,7 @@ namespace BDArmory.Modules
                 {
                     if (!(weaponState == WeaponStates.PoweringDown || weaponState == WeaponStates.Disabled))
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ModuleWeapon]: Vessel is uncontrollable, disabling weapon " + part.name);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Vessel is uncontrollable, disabling weapon " + part.name);
                         DisableWeapon();
                     }
                     return;
@@ -2120,7 +2120,7 @@ namespace BDArmory.Modules
             fireState.speed = fireAnimSpeed;
             fireState.normalizedTime = Mathf.Repeat(fireState.normalizedTime, 1);
 
-            //Debug.Log("fireAnim time: " + fireState.normalizedTime + ", speed; " + fireState.speed);
+            //Debug.Log("[BDArmory.ModuleWeapon]: fireAnim time: " + fireState.normalizedTime + ", speed; " + fireState.speed);
         }
 
         void WeaponFX()
@@ -2637,7 +2637,7 @@ namespace BDArmory.Modules
                                 }
                                 catch (NullReferenceException e)
                                 {
-                                    Debug.LogError("[ModuleWeapon]: NullReferenceException while simulating trajectory: " + e.Message);
+                                    Debug.LogError("[BDArmory.ModuleWeapon]: NullReferenceException while simulating trajectory: " + e.Message);
                                 }
 
                                 if (hitVessel == null || hitVessel != vessel)
@@ -2764,14 +2764,14 @@ namespace BDArmory.Modules
             //disable autofire after burst length
             if (BurstOverride)
             {
-                Debug.Log("AutoFire length: " + autofireShotCount);
+                Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
                 if (autoFire && autofireShotCount >= fireBurstLength)
                 {
                     autoFire = false;
                     visualTargetVessel = null;
                     visualTargetPart = null;
                     autofireShotCount = 0;
-                    Debug.Log("shotcount reset; length: " + autofireShotCount);
+                    Debug.Log("[BDArmory.ModuleWeapon]: shotcount reset; length: " + autofireShotCount);
                 }
             }
             else
@@ -2962,7 +2962,7 @@ namespace BDArmory.Modules
             {
                 isOverheated = false;
                 autofireShotCount = 0;
-                Debug.Log("AutoFire length: " + autofireShotCount);
+                Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
             }
         }
         void ReloadWeapon()
@@ -3055,7 +3055,7 @@ namespace BDArmory.Modules
                                 targetID = 0;
                             }
                             visualTargetPart = currentTarget.targetPartList[targetID];
-                            //Debug.Log("[MTD] MW TargetID: " + targetID);
+                            //Debug.Log("[BDArmory.MTD] MW TargetID: " + targetID);
                         }
                         targetPosition = visualTargetPart.transform.position;
                     }
@@ -3341,7 +3341,7 @@ namespace BDArmory.Modules
                 var RocketTemplate = GameDatabase.Instance.GetModel(modelpath);
                 if (RocketTemplate == null)
                 {
-                    Debug.LogError("[ModuleWeapon]: model '" + modelpath + "' not found. Expect exceptions if trying to use this rocket.");
+                    Debug.LogError("[BDArmory.ModuleWeapon]: model '" + modelpath + "' not found. Expect exceptions if trying to use this rocket.");
                     return;
                 }
                 RocketTemplate.SetActive(false);
@@ -3477,7 +3477,7 @@ namespace BDArmory.Modules
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: DetonationDistance = : " + detonationRange);
+                Debug.Log("[BDArmory.ModuleWeapon]: DetonationDistance = : " + detonationRange);
             }
         }
 
@@ -3560,7 +3560,7 @@ namespace BDArmory.Modules
                         BulletInfo binfo = BulletInfo.bullets[ammoList[i].ToString()];
                         if (binfo == null)
                         {
-                            Debug.LogError("[ModuleWeapon]: The requested bullet type (" + ammoList[i].ToString() + ") does not exist.");
+                            Debug.LogError("[BDArmory.ModuleWeapon]: The requested bullet type (" + ammoList[i].ToString() + ") does not exist.");
                             output.AppendLine($"Bullet type: {ammoList[i]} - MISSING");
                             output.AppendLine("");
                             continue;
@@ -3597,7 +3597,7 @@ namespace BDArmory.Modules
                         RocketInfo rinfo = RocketInfo.rockets[ammoList[i].ToString()];
                         if (rinfo == null)
                         {
-                            Debug.LogError("[ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
+                            Debug.LogError("[BDArmory.ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
                             output.AppendLine($"Rocket type: {ammoList[i]} - MISSING");
                             output.AppendLine("");
                             continue;

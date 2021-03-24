@@ -537,7 +537,7 @@ namespace BDArmory.UI
         public void SaveGPSTargets(ConfigNode saveNode = null)
         {
             string saveTitle = HighLogic.CurrentGame.Title;
-            Debug.Log("[BDArmory]: Save title: " + saveTitle);
+            Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
             ConfigNode fileNode = ConfigNode.Load("GameData/BDArmory/gpsTargets.cfg");
             if (fileNode == null)
             {
@@ -593,7 +593,7 @@ namespace BDArmory.UI
                 string targetString = GPSListToString();
                 gpsNode.SetValue("Targets", targetString, true);
                 fileNode.Save("GameData/BDArmory/gpsTargets.cfg");
-                Debug.Log("[BDArmory]: ==== Saved BDA GPS Targets ====");
+                Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
             }
         }
 
@@ -615,15 +615,15 @@ namespace BDArmory.UI
                             string targetString = gpsNode.GetValue("Targets");
                             if (targetString == string.Empty)
                             {
-                                Debug.Log("[BDArmory]: ==== BDA GPS Target string was empty! ====");
+                                Debug.Log("[BDArmory.BDATargetManager]: ==== BDA GPS Target string was empty! ====");
                                 return;
                             }
                             StringToGPSList(targetString);
-                            Debug.Log("[BDArmory]: ==== Loaded BDA GPS Targets ====");
+                            Debug.Log("[BDArmory.BDATargetManager]: ==== Loaded BDA GPS Targets ====");
                         }
                         else
                         {
-                            Debug.Log("[BDArmory]: ==== No BDA GPS Targets value found! ====");
+                            Debug.Log("[BDArmory.BDATargetManager]: ==== No BDA GPS Targets value found! ====");
                         }
                     }
                 }
@@ -690,11 +690,11 @@ namespace BDArmory.UI
             {
                 GPSTargets = JsonUtility.FromJson<SerializableGPSData>(Misc.Misc.JsonDecompat(listString)).Load();
 
-                Debug.Log("[BDArmory]: Loaded GPS Targets.");
+                Debug.Log("[BDArmory.BDATargetManager]: Loaded GPS Targets.");
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[BDATargetManager]: Exception thrown in StringToGPSList: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogWarning("[BDArmory.BDATargetManager]: Exception thrown in StringToGPSList: " + e.Message + "\n" + e.StackTrace);
             }
         }
 
@@ -1007,7 +1007,7 @@ namespace BDArmory.UI
                     }
                 }
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDTargeting]: Selected " + (finalTarget != null ? finalTarget.Vessel.GetDisplayName() : "null") + " with target score of " + finalTargetScore.ToString("0.00"));
+                Debug.Log("[BDArmory.BDATargetManager]: Selected " + (finalTarget != null ? finalTarget.Vessel.GetDisplayName() : "null") + " with target score of " + finalTargetScore.ToString("0.00"));
 
             mf.UpdateTargetPriorityUI(finalTarget);
             return finalTarget;
@@ -1038,7 +1038,7 @@ namespace BDArmory.UI
                         else
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                Debug.LogWarning("checking target missile -  doesn't have missile module");
+                                Debug.LogWarning("[BDArmory.BDATargetManager]: checking target missile -  doesn't have missile module");
                         }
 
                         if (((finalTarget == null && target.Current.NumFriendliesEngaging(mf.Team) < 2) || (finalTarget != null && target.Current.NumFriendliesEngaging(mf.Team) < finalTarget.NumFriendliesEngaging(mf.Team))))

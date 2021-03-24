@@ -74,7 +74,7 @@ namespace BDArmory.FX
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]:Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
+                Debug.Log("[BDArmory.ExplosionFX]:Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
         }
 
@@ -104,7 +104,7 @@ namespace BDArmory.FX
 
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                     {
-                        Debug.Log("[BDArmory]: Enqueueing Blast Event");
+                        Debug.Log("[BDArmory.ExplosionFX]: Enqueueing Blast Event");
                     }
 
                     ExplosionEvents.Enqueue(enuEvents.Current);
@@ -345,7 +345,7 @@ namespace BDArmory.FX
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory]:Explosion Finished");
+                    Debug.Log("[BDArmory.ExplosionFX]:Explosion Finished");
                 }
 
                 gameObject.SetActive(false);
@@ -375,7 +375,7 @@ namespace BDArmory.FX
                 }
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory]: Explosion hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
+                    Debug.Log("[BDArmory.ExplosionFX]: Explosion hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
                              ", Building Damage : " + Mathf.Round(building.Damage) +
                              " Building Threshold : " + building.impactMomentumThreshold);
                 }
@@ -408,7 +408,7 @@ namespace BDArmory.FX
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                     {
                         Debug.Log(
-                            "[BDArmory]: Executing blast event Part: {" + part.name + "}, " +
+                            "[BDArmory.ExplosionFX]: Executing blast event Part: {" + part.name + "}, " +
                             " VelocityChange: {" + blastInfo.VelocityChange + "}," +
                             " Distance: {" + realDistance + "}," +
                             " TotalPressure: {" + blastInfo.TotalPressure + "}," +
@@ -486,7 +486,7 @@ namespace BDArmory.FX
                 }
                 else if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[ExplosiveFX]: Part " + part.name + " at distance " + realDistance + "m took no damage due to parts with " + cumulativeHPOfIntermediateParts + "HP and " + cumulativeArmourOfIntermediateParts + " Armour in the way.");
+                    Debug.Log("[BDArmory.ExplosiveFX]: Part " + part.name + " at distance " + realDistance + "m took no damage due to parts with " + cumulativeHPOfIntermediateParts + "HP and " + cumulativeArmourOfIntermediateParts + " Armour in the way.");
                 }
             }
             else
@@ -494,7 +494,7 @@ namespace BDArmory.FX
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     Debug.Log(
-                        "[BDArmory]: Executing blast event Part: {" + part.name + "}, " +
+                        "[BDArmory.ExplosionFX]: Executing blast event Part: {" + part.name + "}, " +
                         " VelocityChange: {" + eventToExecute.NegativeForce + "}," +
                         " Distance: {" + realDistance + "}," +
                         " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
@@ -516,13 +516,13 @@ namespace BDArmory.FX
                 var explosionFXTemplate = GameDatabase.Instance.GetModel(explModelPath);
                 if (explosionFXTemplate == null)
                 {
-                    Debug.LogError("[ExplosionFX]: " + explModelPath + " was not found, using the default explosion instead. Please fix your model.");
+                    Debug.LogError("[BDArmory.ExplosionFX]: " + explModelPath + " was not found, using the default explosion instead. Please fix your model.");
                     explosionFXTemplate = GameDatabase.Instance.GetModel(ModuleWeapon.defaultExplModelPath);
                 }
                 var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
                 if (soundClip == null)
                 {
-                    Debug.LogError("[ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
+                    Debug.LogError("[BDArmory.ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
                     soundClip = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
                 }
                 var eFx = explosionFXTemplate.AddComponent<ExplosionFx>();
@@ -587,7 +587,7 @@ namespace BDArmory.FX
             rb.AddForceAtPosition(force, position, ForceMode.VelocityChange);
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: Force Applied | Explosive : " + Math.Round(force.magnitude, 2));
+                Debug.Log("[BDArmory.ExplosionFX]: Force Applied | Explosive : " + Math.Round(force.magnitude, 2));
             }
         }
     }

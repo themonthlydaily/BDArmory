@@ -173,7 +173,7 @@ namespace BDArmory.Control
             {
                 Debug.LogException(e);
             }
-            Debug.LogError("[VesselSpawnerField]: Failed to parse settings field of type " + type + " and value " + value);
+            Debug.LogError("[BDArmory.VesselSpawnerField]: Failed to parse settings field of type " + type + " and value " + value);
             return null;
         }
     }

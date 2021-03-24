@@ -224,7 +224,7 @@ namespace BDArmory.Modules
                     }
                     catch (NullReferenceException e)
                     {
-                        Debug.LogWarning("[BDArmory]:NullReferenceException for Submunition Hit: " + e.Message);
+                        Debug.LogWarning("[BDArmory.ClusterBomb]:NullReferenceException for Submunition Hit: " + e.Message);
                         return;
                     }
 
@@ -261,7 +261,7 @@ namespace BDArmory.Modules
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[ClusterBomb]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogWarning("[BDArmory.ClusterBomb]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
             }
 
             if (building != null && building.IsIntact)

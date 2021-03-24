@@ -622,7 +622,7 @@ namespace BDArmory.UI
                     BDATournament.Instance.StopTournament();
                     if (!_vesselsSpawned && !VesselSpawner.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
                     {
-                        Debug.Log("[VesselSpawner]: Spawning 'Round 3' configuration.");
+                        Debug.Log("[BDArmory.VesselSpawnerWindow]: Spawning 'Round 3' configuration.");
                         _vesselsSpawned = true;
                         VesselSpawner.Instance.TeamSpawn(
                             new List<VesselSpawner.SpawnConfig> {
@@ -659,10 +659,10 @@ namespace BDArmory.UI
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || VesselSpawner.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
             {
                 if (_vesselsSpawned)
-                    Debug.Log("[BDArmory]: Resetting spawning vessel button.");
+                    Debug.Log("[BDArmory.VesselSpawnerWindow]: Resetting spawning vessel button.");
                 _vesselsSpawned = false;
                 if (VesselSpawner.Instance.vesselsSpawningContinuously)
-                    Debug.Log("[BDArmory]: Resetting continuous spawning button.");
+                    Debug.Log("[BDArmory.VesselSpawnerWindow]: Resetting continuous spawning button.");
                 BDATournament.Instance.StopTournament();
                 VesselSpawner.Instance.CancelVesselSpawn();
                 round4running = false; // FIXME Round 4

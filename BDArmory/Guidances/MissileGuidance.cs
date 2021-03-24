@@ -192,7 +192,7 @@ namespace BDArmory.Guidances
 
                 if (currentDistanceSqr <= previousDistanceSqr)
                 {
-                    Debug.Log("[BDArmory]: Accurate time to impact failed");
+                    Debug.Log("[BDArmory.MissileGuidance]: Accurate time to impact failed");
 
                     timeToImpact = 0;
                     return false;

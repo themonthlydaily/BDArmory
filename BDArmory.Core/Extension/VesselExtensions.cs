@@ -17,7 +17,7 @@ namespace BDArmory.Core.Extension
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[VesselExtensions]: Exception thrown in InOrbit: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogWarning("[BDArmory.VesselExtensions]: Exception thrown in InOrbit: " + e.Message + "\n" + e.StackTrace);
                 return false;
             }
         }
@@ -43,7 +43,7 @@ namespace BDArmory.Core.Extension
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[VesselExtensions]: Exception thrown in Velocity: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogWarning("[BDArmory.VesselExtensions]: Exception thrown in Velocity: " + e.Message + "\n" + e.StackTrace);
                 //return v.srf_velocity;
                 return new Vector3d(0, 0, 0);
             }

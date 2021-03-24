@@ -56,7 +56,7 @@ namespace BDArmory.Bullets
                     if (nodes[i].parent.name != "BD_Rockets") continue; // Ignore other config files.
                     node = nodes[i].config;
                     if (!node.HasValue("name") || (string)ParseField(nodes[i].config, "name", typeof(string)) != "def") continue; // Ignore other configs.
-                    Debug.Log("[BDArmory]: Parsing default rocket definition from " + nodes[i].parent.name);
+                    Debug.Log("[BDArmory.RocketInfo]: Parsing default rocket definition from " + nodes[i].parent.name);
                     defaultRocket = new RocketInfo(
                         "def",
                         (float)ParseField(node, "rocketMass", typeof(float)),
@@ -88,10 +88,10 @@ namespace BDArmory.Bullets
                     if (rocketNames.Contains(name_)) // Avoid duplicates.
                     {
                         if (nodes[i].parent.name != "BD_Rockets" || name_ != "def") // Don't report the default bullet definition as a duplicate.
-                            Debug.LogError("[BDArmory]: Rocket definition " + name_ + " from " + nodes[i].parent.name + " already exists, skipping.");
+                            Debug.LogError("[BDArmory.RocketInfo]: Rocket definition " + name_ + " from " + nodes[i].parent.name + " already exists, skipping.");
                         continue;
                     }
-                    Debug.Log("[BDArmory]: Parsing definition of rocket " + name_ + " from " + nodes[i].parent.name);
+                    Debug.Log("[BDArmory.RocketInfo]: Parsing definition of rocket " + name_ + " from " + nodes[i].parent.name);
                     rockets.Add(
                         new RocketInfo(
                             name_,
@@ -112,7 +112,7 @@ namespace BDArmory.Bullets
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError("[BDArmory]: Error Loading Rocket Config '" + name_ + "' | " + e.ToString());
+                    Debug.LogError("[BDArmory.RocketInfo]: Error Loading Rocket Config '" + name_ + "' | " + e.ToString());
                 }
             }
         }
@@ -146,7 +146,7 @@ namespace BDArmory.Bullets
                 {
                     // Give a warning about the missing or invalid value, then use the default value using reflection to find the field.
                     var defaultValue = typeof(RocketInfo).GetProperty(field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultRocket);
-                    Debug.LogError("[BDArmory]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+                    Debug.LogError("[BDArmory.RocketInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
                     return defaultValue;
                 }
                 else

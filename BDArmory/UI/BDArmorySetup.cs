@@ -610,14 +610,14 @@ namespace BDArmory.UI
         {
             try
             {
-                Debug.Log("[BDArmory]=== Loading settings.cfg ===");
+                Debug.Log("[BDArmory.BDArmorySetup]=== Loading settings.cfg ===");
 
                 BDAPersistantSettingsField.Load();
                 BDInputSettingsFields.LoadSettings();
             }
             catch (NullReferenceException e)
             {
-                Debug.LogWarning("[BDArmory]=== Failed to load settings config ===: " + e.Message);
+                Debug.LogWarning("[BDArmory.BDArmorySetup]=== Failed to load settings config ===: " + e.Message);
             }
         }
 
@@ -625,7 +625,7 @@ namespace BDArmory.UI
         {
             try
             {
-                Debug.Log("[BDArmory] == Saving settings.cfg ==	");
+                Debug.Log("[BDArmory.BDArmorySetup] == Saving settings.cfg ==	");
 
                 BDAPersistantSettingsField.Save();
 
@@ -638,7 +638,7 @@ namespace BDArmory.UI
             }
             catch (NullReferenceException e)
             {
-                Debug.LogWarning("[BDArmory]: === Failed to save settings.cfg ====: " + e.Message);
+                Debug.LogWarning("[BDArmory.BDArmorySetup]: === Failed to save settings.cfg ====: " + e.Message);
             }
         }
 
@@ -2103,7 +2103,7 @@ namespace BDArmory.UI
                 }
                 catch (NullReferenceException e)
                 {
-                    Debug.LogWarning("[BDArmory]: Reflection failed to find input info of field: " + fieldName + ": " + e.Message);
+                    Debug.LogWarning("[BDArmory.BDArmorySetup]: Reflection failed to find input info of field: " + fieldName + ": " + e.Message);
                     editKeys = false;
                     return;
                 }
@@ -2168,7 +2168,7 @@ namespace BDArmory.UI
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: Loaded vessel: " + v.vesselName + ", Velocity: " + v.Velocity() + ", packed: " + v.packed);
+                Debug.Log("[BDArmory.BDArmorySetup]: Loaded vessel: " + v.vesselName + ", Velocity: " + v.Velocity() + ", packed: " + v.packed);
                 //v.SetWorldVelocity(Vector3d.zero);
             }
         }

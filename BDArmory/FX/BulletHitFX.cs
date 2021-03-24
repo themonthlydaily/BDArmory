@@ -391,7 +391,7 @@ namespace BDArmory.FX
                         leakFX.lifeTime = (100 * BDArmorySettings.BD_TANK_LEAK_TIME);
                     }
                 }
-                Debug.Log("[BDArmory]: BulletHit attaching fuel leak, drainrate: " + leak.drainRate);
+                Debug.Log("[BDArmory.BulletHitFX]: BulletHit attaching fuel leak, drainrate: " + leak.drainRate);
 
                 fuelLeak.SetActive(true);
             }
@@ -408,7 +408,7 @@ namespace BDArmory.FX
                 fireFX.burnRate = (((caliber / 50) * BDArmorySettings.BD_TANK_LEAK_RATE)*ignitedLeaks);
                 //fireFX.transform.localScale = Vector3.one * (caliber/10);
 
-                Debug.Log("[BDArmory]: BulletHit fire, burn rate: " + fireFX.burnRate);
+                Debug.Log("[BDArmory.BulletHitFX]: BulletHit fire, burn rate: " + fireFX.burnRate);
 
                 fire.SetActive(true);
             }

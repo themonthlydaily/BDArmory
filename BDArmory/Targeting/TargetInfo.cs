@@ -253,7 +253,7 @@ namespace BDArmory.Targeting
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
                     radarBaseSignatureNeedsUpdate = true;     // Update RCS if vessel mass changed by more than 2.5% after a part was lost
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
                 }
             }
         }
@@ -321,7 +321,7 @@ namespace BDArmory.Targeting
                 }
             targetPartList = targetPartList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
             targetPartList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
-            //Debug.Log("[MTD]: Rebuilt target part list, count: " + targetPartList.Count);
+            //Debug.Log("[BDArmory.MTD]: Rebuilt target part list, count: " + targetPartList.Count);
         }
 
         public int NumFriendliesEngaging(BDTeam team)

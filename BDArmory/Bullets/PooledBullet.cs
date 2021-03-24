@@ -368,7 +368,7 @@ namespace BDArmory.Bullets
                         }
                         catch (NullReferenceException e)
                         {
-                            Debug.Log("[BDArmory]:NullReferenceException for Ballistic Hit: " + e.Message);
+                            Debug.Log("[BDArmory.PooledBullet]:NullReferenceException for Ballistic Hit: " + e.Message);
                             return true;
                         }
 
@@ -474,7 +474,7 @@ namespace BDArmory.Bullets
                                 hitPart.rb.AddForceAtPosition(impactVector.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
 
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| bullet effective mass =" + (bulletMass - tntMass));
+                                    Debug.Log("[BDArmory.PooledBullet]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| bullet effective mass =" + (bulletMass - tntMass));
                             }
 
                             distanceTraveled += hit.distance;
@@ -506,7 +506,7 @@ namespace BDArmory.Bullets
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             {
-                                Debug.Log("[BDArmory]: Bullet Velocity too low, stopping");
+                                Debug.Log("[BDArmory.PooledBullet]: Bullet Velocity too low, stopping");
                             }
                             KillBullet();
                             distanceTraveled += hit.distance;
@@ -545,14 +545,14 @@ namespace BDArmory.Bullets
                                 if (partHit != null && partHit.vessel == sourceVessel) continue;
 
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
+                                    Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
 
                                 return detonate = true;
                             }
                             catch (Exception e)
                             {
                                 // ignored
-                                Debug.LogWarning("[PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
+                                Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                             }
                         }
                     }
@@ -599,7 +599,7 @@ namespace BDArmory.Bullets
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                     {
-                        Debug.Log("[BDArmory]: Detonation Triggered | penetration: " + hasPenetrated + " penTick: " + penTicker + " airDet: " + airDetonation);
+                        Debug.Log("[BDArmory.PooledBullet]: Detonation Triggered | penetration: " + hasPenetrated + " penTick: " + penTicker + " airDet: " + airDetonation);
                     }
 
                     if (airDetonation)
@@ -660,7 +660,7 @@ namespace BDArmory.Bullets
             //15 degrees should virtually guarantee a ricochet, but 75 degrees should nearly always be fine
             float chance = (((angleFromNormal - 5) / 75) * (hitTolerance / 150)) * 100 / Mathf.Clamp01(impactVel / 600);
             float random = UnityEngine.Random.Range(0f, 100f);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory]: Ricochet chance: " + chance);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.PooledBullet]: Ricochet chance: " + chance);
             if (random < chance)
             {
                 DoRicochet(p, hit, angleFromNormal, fractionOfDistance, period);

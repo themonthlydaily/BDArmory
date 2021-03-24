@@ -116,7 +116,7 @@ namespace BDArmory.Core
                 return new Vector2d(x, y);
             }
 
-            Debug.LogError("[BDArmory]: BDAPersistantSettingsField to parse settings field of type " + type + " and value " + value);
+            Debug.LogError("[BDArmory.BDAPersistantSettingsField]: BDAPersistantSettingsField to parse settings field of type " + type + " and value " + value);
             return null;
         }
     }

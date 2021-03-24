@@ -79,7 +79,7 @@ namespace BDArmory.Parts
             }
             catch (NullReferenceException e)
             {
-                Debug.LogWarning("[SeismicChargeFX]: Exception thrown in OnTriggerEnter: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogWarning("[BDArmory.SeismicChargeFX]: Exception thrown in OnTriggerEnter: " + e.Message + "\n" + e.StackTrace);
             }
 
             if (explodePart != null)
@@ -96,7 +96,7 @@ namespace BDArmory.Parts
                 }
                 catch (NullReferenceException e)
                 {
-                    Debug.LogWarning("[SeismicChargeFX]: Exception thrown in OnTriggerEnter: " + e.Message + "\n" + e.StackTrace);
+                    Debug.LogWarning("[BDArmory.SeismicChargeFX]: Exception thrown in OnTriggerEnter: " + e.Message + "\n" + e.StackTrace);
                 }
                 if (hitBuilding != null && hitBuilding.IsIntact)
                 {

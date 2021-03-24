@@ -309,12 +309,12 @@ namespace BDArmory.Radar
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 if (HighLogic.LoadedSceneIsFlight)
-                    Debug.Log($"[BDArmory]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
+                    Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
                 else
-                    Debug.Log("[BDArmory]: Rendering radar snapshot of vessel");
-                Debug.Log("[BDArmory]: - bounds: " + vesselbounds.ToString());
-                Debug.Log("[BDArmory]: - rotation: " + t.rotation.ToString());
-                //Debug.Log("[BDArmory]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
+                    Debug.Log("[BDArmory.RadarUtils]: Rendering radar snapshot of vessel");
+                Debug.Log("[BDArmory.RadarUtils]: - bounds: " + vesselbounds.ToString());
+                Debug.Log("[BDArmory.RadarUtils]: - rotation: " + t.rotation.ToString());
+                //Debug.Log("[BDArmory.RadarUtils]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
             }
 
             if (vesselbounds.size.sqrMagnitude == 0f)
@@ -322,7 +322,7 @@ namespace BDArmory.Radar
                 // SAVE US THE RENDERING, result will be zero anyway...
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory]: - rcs is zero.");
+                    Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
 
                 // revert presentation (only if outside editor and thus vessel is a real vessel)
@@ -396,8 +396,8 @@ namespace BDArmory.Radar
 
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    // Debug.Log($"[BDArmory]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
-                    Debug.Log($"[BDArmory]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
+                    // Debug.Log($"[BDArmory.RadarUtils]: RCS Aspect Vector for (az/el) {rcsAspects[i, 0]}/{rcsAspects[i, 1]}  is: " + aspect.ToString());
+                    Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs for (az/el) is: {rcsAspects[i, 0]}/{rcsAspects[i, 1]} = rcsVariable: {rcsVariable}");
                 }
             }
 
@@ -444,7 +444,7 @@ namespace BDArmory.Radar
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log($"[BDArmory]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
+                Debug.Log($"[BDArmory.RadarUtils]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
             }
 
             return rcsTotal;
@@ -531,11 +531,11 @@ namespace BDArmory.Radar
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 if (HighLogic.LoadedSceneIsFlight)
-                    Debug.Log($"[BDArmory]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
+                    Debug.Log($"[BDArmory.RadarUtils]: Rendering radar snapshot of vessel {v.name}, type {v.vesselType}");
                 else
-                    Debug.Log("[BDArmory]: Rendering radar snapshot of vessel");
-                Debug.Log("[BDArmory]: - bounds: " + vesselbounds.ToString());
-                //Debug.Log("[BDArmory]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
+                    Debug.Log("[BDArmory.RadarUtils]: Rendering radar snapshot of vessel");
+                Debug.Log("[BDArmory.RadarUtils]: - bounds: " + vesselbounds.ToString());
+                //Debug.Log("[BDArmory.RadarUtils]: - size: " + vesselbounds.size + ", magnitude: " + vesselbounds.size.magnitude);
             }
 
             if (vesselbounds.size.sqrMagnitude == 0f)
@@ -543,7 +543,7 @@ namespace BDArmory.Radar
                 // SAVE US THE RENDERING, result will be zero anyway...
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory]: - rcs is zero.");
+                    Debug.Log("[BDArmory.RadarUtils]: - rcs is zero.");
                 }
 
                 // revert presentation (only if outside editor and thus vessel is a real vessel)
@@ -605,7 +605,7 @@ namespace BDArmory.Radar
                 rcsTotal = (Mathf.Max(rcsFrontal, rcsFrontal45) + Mathf.Max(rcsLateral, rcsLateral45) + Mathf.Max(rcsVentral, rcsVentral45)) / 3f;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log($"[BDArmory]: - Vessel rcs is (frontal/lateral/ventral), (frontal45/lateral45/ventral45): {rcsFrontal}/{rcsLateral}/{rcsVentral}, {rcsFrontal45}/{rcsLateral45}/{rcsVentral45} = rcsTotal: {rcsTotal}");
+                    Debug.Log($"[BDArmory.RadarUtils]: - Vessel rcs is (frontal/lateral/ventral), (frontal45/lateral45/ventral45): {rcsFrontal}/{rcsLateral}/{rcsVentral}, {rcsFrontal45}/{rcsLateral45}/{rcsVentral45} = rcsTotal: {rcsTotal}");
                 }
             }
 
@@ -1231,7 +1231,7 @@ namespace BDArmory.Radar
                         float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;
                         if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2 && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2)
                         {
-                            //Debug.Log("Found vessel: " + vessel.vesselName);
+                            //Debug.Log("[BDArmory.RadarUtils]: Found vessel: " + vessel.vesselName);
                             if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
                                 continue; //blocked by terrain
 

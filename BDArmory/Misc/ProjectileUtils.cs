@@ -40,7 +40,7 @@ namespace BDArmory.Misc
 
             if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
             {
-                //Debug.Log("[BDArmory]: Weapon from " + aName + " damaged " + tName);
+                //Debug.Log("[BDArmory.ProjectileUtils]: Weapon from " + aName + " damaged " + tName);
 
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 {
@@ -91,7 +91,7 @@ namespace BDArmory.Misc
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: Armor penetration = " + penetration + " | Thickness = " + thickness);
+                Debug.Log("[BDArmory.ProjectileUtils]: Armor penetration = " + penetration + " | Thickness = " + thickness);
             }
 
             bool fullyPenetrated = penetration > thickness; //check whether bullet penetrates the plate
@@ -104,7 +104,7 @@ namespace BDArmory.Misc
 
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory]: Bullet Stopped by Armor");
+                    Debug.Log("[BDArmory.ProjectileUtils]: Bullet Stopped by Armor");
                 }
             }
             hitPart.ReduceArmor(massToReduce);
@@ -154,7 +154,7 @@ namespace BDArmory.Misc
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[ProjectileUtils]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogWarning("[BDArmory.ProjectileUtils]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
             }
 
             if (building != null && building.IsIntact)
@@ -169,7 +169,7 @@ namespace BDArmory.Misc
                     building.Demolish();
                 }
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory]: Ballistic hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
+                    Debug.Log("[BDArmory.ProjectileUtils]: Ballistic hit destructible building! Hitpoints Applied: " + Mathf.Round(damageToBuilding) +
                              ", Building Damage : " + Mathf.Round(building.Damage) +
                              " Building Threshold : " + building.impactMomentumThreshold);
 
@@ -232,7 +232,7 @@ namespace BDArmory.Misc
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: Explosive Probablitliy " + probability);
+                Debug.Log("[BDArmory.ProjectileUtils]: Explosive Probablitliy " + probability);
             }
 
             return probability;
@@ -259,7 +259,7 @@ namespace BDArmory.Misc
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: Penetration of bullet detonated fuel!");
+                Debug.Log("[BDArmory.ProjectileUtils]: Penetration of bullet detonated fuel!");
             }
 
             resources.Dispose();
