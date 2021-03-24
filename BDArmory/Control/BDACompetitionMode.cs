@@ -788,7 +788,7 @@ namespace BDArmory.Control
 
         void CheckForBadlyNamedVessels()
         {
-            foreach (var wm in LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).ToList())
+            foreach (var wm in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).ToList())
                 if (wm != null && wm.vessel != null && wm.vessel.vesselName != null)
                 {
                     if (wm.vessel.vesselType == VesselType.Plane && wm.vessel.vesselName.EndsWith(" Plane") && !Scores.ContainsKey(wm.vessel.vesselName) && Scores.ContainsKey(wm.vessel.vesselName.Remove(wm.vessel.vesselName.Length - 6)) && IsValidVessel(wm.vessel) == InvalidVesselReason.None)
@@ -1839,7 +1839,7 @@ namespace BDArmory.Control
             }
             deadOrAlive = doaUpdate;
 
-            var numberOfCompetitiveTeams = LoadedVesselSwitcher.Instance.weaponManagers.Count;
+            var numberOfCompetitiveTeams = LoadedVesselSwitcher.Instance.WeaponManagers.Count;
             if (now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD && (numberOfCompetitiveVessels < 2 || (!BDArmorySettings.TAG_MODE && numberOfCompetitiveTeams < 2)) && !VesselSpawner.Instance.vesselsSpawningContinuously)
             {
                 if (finalGracePeriodStart < 0)
@@ -1851,6 +1851,7 @@ namespace BDArmory.Control
                     {
                         competitionStatus.Add(key + " wins the round!");
                     }
+                    Debug.Log("DEBUG vessels: " + numberOfCompetitiveVessels + ", teams: " + numberOfCompetitiveTeams);
                     Debug.Log("[BDACompetitionMode:" + CompetitionID.ToString() + "]:No viable competitors, Automatically dumping scores");
                     StopCompetition();
                 }
@@ -1898,7 +1899,7 @@ namespace BDArmory.Control
             {
                 if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 101) // Kill off those flying too high.
                 {
-                    foreach (var weaponManager in LoadedVesselSwitcher.Instance.weaponManagers.SelectMany(tm => tm.Value).ToList())
+                    foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                     {
                         if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude > BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE * 1000)
                         {

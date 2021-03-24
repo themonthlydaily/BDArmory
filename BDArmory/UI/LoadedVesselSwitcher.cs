@@ -42,8 +42,19 @@ namespace BDArmory.UI
         //gui params
         private float _windowHeight; //auto adjusting
 
-        public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
+        private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
         private Dictionary<string, float> cameraScores = new Dictionary<string, float>();
+
+        private bool upToDateWMs = false;
+        public SortedList<string, List<MissileFire>> WeaponManagers
+        {
+            get
+            {
+                if (!upToDateWMs)
+                    UpdateList();
+                return weaponManagers;
+            }
+        }
 
         // booleans to track state of buttons affecting everyone
         private bool _teamsAssigned = false;
@@ -148,6 +159,7 @@ namespace BDArmory.UI
         {
             if (_ready)
             {
+                upToDateWMs = false;
                 if (BDArmorySetup.Instance.showVesselSwitcherGUI != _showGui)
                 {
                     updateTimer -= Time.fixedDeltaTime;
@@ -203,6 +215,7 @@ namespace BDArmory.UI
                                 break;
                             }
                 }
+            upToDateWMs = true;
         }
 
         private void ToggleGuardModes()
