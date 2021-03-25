@@ -1834,7 +1834,6 @@ namespace BDArmory.Modules
         void WarnTarget()
         {
             if (legacyTargetVessel == null) return;
-            if (legacyTargetVessel == null) return;
             List<MissileFire>.Enumerator wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
             while (wpm.MoveNext())
             {
