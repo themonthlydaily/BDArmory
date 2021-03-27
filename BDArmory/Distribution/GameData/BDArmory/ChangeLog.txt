@@ -7,7 +7,6 @@ FIXES
 	- Add debug log warnings for previously silently ignored exceptions and fix a couple of NREs.
 	- Fix exception in explosion handling when part.rb is null (but part.Rigidbody isn't).
 	- Reloading/MultiTarget fix/weaponPriority
-	- Reload anim support
 	- Multitarget fix
 	- Chernobyl bugfixes
 	- Various NRE fixes
@@ -18,6 +17,7 @@ IMPROVEMENTS
 	- Added a slider for configuration of specific RWP rounds.
 	- Adjust parsing scripts for updated logging tags format. Add slider for setting the length of time of the death camera.
 	- Standardise the format of debug log messages to '[BDArmory.ModuleName']: ...
+	- Reload anim support
 
 v1.4.2.7
 FIXES
