@@ -61,7 +61,15 @@ namespace BDArmory.Modules
             Debug.Log("[BDArmory.KerbalSafety]: Enabling kerbal safety.");
             foreach (var ks in kerbals.Values)
                 ks.AddHandlers();
-            GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
+                {
+                    case 33:
+                        GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
+                        break;
+                }
+            }
             CheckAllVesselsForKerbals(); // Check for new vessels that were added while we weren't active.
         }
 
@@ -70,7 +78,15 @@ namespace BDArmory.Modules
             Debug.Log("[BDArmory.KerbalSafety]: Disabling kerbal safety.");
             foreach (var ks in kerbals.Values)
                 ks.RemoveHandlers();
-            GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
+                {
+                    case 33:
+                        GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
+                        break;
+                }
+            }
         }
 
         public void CheckAllVesselsForKerbals()

@@ -291,6 +291,7 @@ namespace BDArmory.Control
         #region Competition start/stop routines
         //Competition mode
         public bool competitionStarting = false;
+        public bool sequencedCompetitionStarting = false;
         public bool competitionIsActive = false;
         Coroutine competitionRoutine;
         public CompetitionStartFailureReason competitionStartFailureReason;
@@ -355,6 +356,7 @@ namespace BDArmory.Control
 
             competitionStarting = false;
             competitionIsActive = false;
+            sequencedCompetitionStarting = false;
             competitionStartTime = -1;
             competitionShouldBeRunning = false;
             GameEvents.onCollision.Remove(AnalyseCollision);
@@ -809,12 +811,37 @@ namespace BDArmory.Control
         public void StartRapidDeployment(float distance)
         {
             if (!BDArmorySettings.RUNWAY_PROJECT) return;
-            if (!competitionStarting)
+            if (!sequencedCompetitionStarting)
             {
                 ResetCompetitionScores();
                 Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Starting Rapid Deployment ");
-                string commandString = "0:SetThrottle:100\n0:ActionGroup:14:0\n0:Stage\n35:ActionGroup:1\n10:ActionGroup:2\n3:RemoveFairings\n0:ActionGroup:3\n0:ActionGroup:12:1\n1:TogglePilot:1\n6:ToggleGuard:1\n0:ActionGroup:16:0\n5:EnableGM\n5:RemoveDebris\n0:ActionGroup:16:0\n";
-                competitionRoutine = StartCoroutine(SequencedCompetition(commandString));
+                RemoveDebrisNow();
+                GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
+                GameEvents.onVesselCreate.Add(OnVesselModified);
+                if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
+                    LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
+                if (BDArmorySettings.KERBAL_SAFETY)
+                    KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
+                var commandSequence = new List<string>{
+                    "0:MassTrim", // t=0, mass trim
+                    "0:ActionGroup:14:0", // t=0, Disable brakes
+                    "0:ActionGroup:4", // t=0, AG4 - Launch: Activate base craft engine, retract airbrakes
+                    "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
+                    "0:SetThrottle:100", // t=0, Full throttle
+                    "35:ActionGroup:1", // t=35, AG1 - Engine shutdown, extend airbrakes
+                    "10:ActionGroup:2", // t=45, AG2 - Deploy fairing
+                    "3:RemoveFairings", // t=48, Remove fairings from the game
+                    "0:ActionGroup:3", // t=48, AG3 - Decouple base craft (-> add your custom engine activations and timers here <-)
+                    "0:ActionGroup:12:1", // t=48, Enable RCS
+                    "0:ActivateEngines", // t=48, Activate engines (if they're not activated by AG3)
+                    "1:TogglePilot:1", // t=49, Activate pilots
+                    "6:ToggleGuard:1", // t=55, Activate guard mode (attack)
+                    "0:ActionGroup:16:0", // t=55, Retract gear (if it's not retracted)
+                    "5:EnableGM", // t=60, Activate the killer GM
+                    "5:RemoveDebris", // t=65, Remove any other debris and spectators
+                    "0:ActionGroup:16:0" // t=65, Retract gear (if it's not retracted)
+                };
+                competitionRoutine = StartCoroutine(SequencedCompetition(commandSequence));
             }
         }
 
@@ -915,13 +942,13 @@ namespace BDArmory.Control
             }
         }
 
-        private void DoRapidDeploymentMassTrim()
+        private void DoRapidDeploymentMassTrim(float targetMass = 65f)
         {
             // in rapid deployment this verified masses etc. 
             var oreID = PartResourceLibrary.Instance.GetDefinition("Ore").id;
             var pilots = getAllPilots();
-            var lowestMass = 100000000000000f;
-            var highestMass = 0f;
+            var lowestMass = float.MaxValue;
+            var highestMass = targetMass; // Trim to highest mass or target mass, whichever is higher.
             foreach (var pilot in pilots)
             {
 
@@ -938,6 +965,7 @@ namespace BDArmory.Control
                         {
                             notShieldedCount++;
                         }
+                        // Empty the ore tank and set the fuel tanks to the correct amount.
                         using (IEnumerator<PartResource> resources = parts.Current.Resources.GetEnumerator())
                             while (resources.MoveNext())
                             {
@@ -949,11 +977,6 @@ namespace BDArmory.Control
                                     {
                                         resources.Current.amount = 0;
                                     }
-                                    // oreMass = 10;
-                                    // ore to add = difference / 10;
-                                    // is mass in tons or KG?
-                                    //Debug.Log("[BDArmory.BDACompetitionMode]: RESOURCE:" + parts.Current.partName + ":" + resources.Current.maxAmount);
-
                                 }
                                 else if (resources.Current.resourceName == "LiquidFuel")
                                 {
@@ -974,9 +997,8 @@ namespace BDArmory.Control
                 }
                 var mass = pilot.vessel.GetTotalMass();
 
-                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] UNSHIELDED:" + notShieldedCount.ToString() + ":" + pilot.vessel.GetName());
-
-                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] MASS:" + mass.ToString() + ":" + pilot.vessel.GetName());
+                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: UNSHIELDED:" + notShieldedCount.ToString() + ":" + pilot.vessel.GetName());
+                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MASS:" + mass.ToString() + ":" + pilot.vessel.GetName());
                 if (mass < lowestMass)
                 {
                     lowestMass = mass;
@@ -987,8 +1009,6 @@ namespace BDArmory.Control
                 }
             }
 
-            var difference = highestMass - lowestMass;
-            //
             foreach (var pilot in pilots)
             {
                 if (pilot.vessel == null) continue;
@@ -1007,14 +1027,13 @@ namespace BDArmory.Control
                                 {
                                     // oreMass = 10;
                                     // ore to add = difference / 10;
-                                    // is mass in tons or KG?
                                     if (resources.Current.maxAmount == 1500)
                                     {
                                         var oreAmount = extraMass / 0.01; // 10kg per unit of ore
                                         if (oreAmount > 1500) oreAmount = 1500;
                                         resources.Current.amount = oreAmount;
                                     }
-                                    Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] RESOURCEUPDATE:" + pilot.vessel.GetName() + ":" + resources.Current.amount);
+                                    Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESOURCEUPDATE:" + pilot.vessel.GetName() + ":" + resources.Current.amount);
                                     massAdded = true;
                                 }
                             }
@@ -1023,160 +1042,214 @@ namespace BDArmory.Control
             }
         }
 
-        // transmits a bunch of commands to make things happen
-        // this is a really dumb sequencer with text commands
-        // 0:ThrottleMax
-        // 0:Stage
-        // 30:ActionGroup:1
-        // 35:ActionGroup:2
-        // 40:ActionGroup:3
-        // 41:TogglePilot
-        // 45:ToggleGuard
-        IEnumerator SequencedCompetition(string commandList)
+        IEnumerator SequencedCompetition(List<string> commandSequence)
         {
-            competitionStarting = true;
+            var pilots = getAllPilots();
+            if (pilots.Count < 2)
+            {
+                Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Unable to start sequenced competition - one or more teams is empty");
+                competitionStatus.Set("Competition: Failed!  One or more teams is empty.");
+                competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
+                StopCompetition();
+                yield break;
+            }
+            sequencedCompetitionStarting = true;
             double startTime = Planetarium.GetUniversalTime();
             double nextStep = startTime;
-            // split list of events into lines
-            var events = commandList.Split('\n');
 
-            foreach (var cmdEvent in events)
+            foreach (var cmdEvent in commandSequence)
             {
                 // parse the event
-                competitionStatus.Set(cmdEvent);
+                competitionStatus.Add(cmdEvent);
                 var parts = cmdEvent.Split(':');
                 if (parts.Count() == 1)
                 {
-                    Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Competition Command not parsed correctly " + cmdEvent);
-                    break;
+                    Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Competition Command not parsed correctly " + cmdEvent);
+                    StopCompetition();
+                    yield break;
                 }
                 var timeStep = int.Parse(parts[0]);
                 nextStep = Planetarium.GetUniversalTime() + timeStep;
                 while (Planetarium.GetUniversalTime() < nextStep)
                 {
-                    yield return null;
+                    yield return new WaitForFixedUpdate();
                 }
 
-                List<IBDAIControl> pilots;
                 var command = parts[1];
 
                 switch (command)
                 {
                     case "Stage":
-                        // activate stage
-                        pilots = getAllPilots();
-                        foreach (var pilot in pilots)
                         {
-                            Misc.Misc.fireNextNonEmptyStage(pilot.vessel);
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Staging.");
+                            // activate stage
+                            pilots = getAllPilots();
+                            foreach (var pilot in pilots)
+                            {
+                                Misc.Misc.fireNextNonEmptyStage(pilot.vessel);
+                            }
+                            break;
                         }
-                        break;
                     case "ActionGroup":
-                        pilots = getAllPilots();
-                        foreach (var pilot in pilots)
                         {
+                            if (parts.Count() < 3 || parts.Count() > 4)
+                            {
+                                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Competition Command not parsed correctly " + cmdEvent);
+                                StopCompetition();
+                                yield break;
+                            }
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Jiggling action group " + parts[2] + ".");
+                            pilots = getAllPilots();
+                            foreach (var pilot in pilots)
+                            {
+                                if (parts.Count() == 3)
+                                {
+                                    pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[int.Parse(parts[2])]);
+                                }
+                                else if (parts.Count() == 4)
+                                {
+                                    bool state = false;
+                                    if (parts[3] != "0")
+                                    {
+                                        state = true;
+                                    }
+                                    pilot.vessel.ActionGroups.SetGroup(KM_dictAG[int.Parse(parts[2])], state);
+                                }
+                            }
+                            break;
+                        }
+                    case "TogglePilot":
+                        {
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Toggling autopilot.");
                             if (parts.Count() == 3)
                             {
-                                pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[int.Parse(parts[2])]);
-                            }
-                            else if (parts.Count() == 4)
-                            {
-                                bool state = false;
-                                if (parts[3] != "0")
+                                var newState = true;
+                                if (parts[2] == "0")
                                 {
-                                    state = true;
+                                    newState = false;
                                 }
-                                pilot.vessel.ActionGroups.SetGroup(KM_dictAG[int.Parse(parts[2])], state);
+                                pilots = getAllPilots();
+                                foreach (var pilot in pilots)
+                                {
+                                    if (newState != pilot.pilotEnabled)
+                                        pilot.TogglePilot();
+                                }
+                                if (newState)
+                                    competitionStarting = true;
                             }
                             else
                             {
-                                Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Competition Command not parsed correctly " + cmdEvent);
-                            }
-                        }
-                        break;
-                    case "TogglePilot":
-                        if (parts.Count() == 3)
-                        {
-                            var newState = true;
-                            if (parts[2] == "0")
-                            {
-                                newState = false;
-                            }
-                            pilots = getAllPilots();
-                            foreach (var pilot in pilots)
-                            {
-                                if (newState != pilot.pilotEnabled)
+                                pilots = getAllPilots();
+                                foreach (var pilot in pilots)
+                                {
                                     pilot.TogglePilot();
+                                }
                             }
+                            break;
                         }
-                        else
-                        {
-                            pilots = getAllPilots();
-                            foreach (var pilot in pilots)
-                            {
-                                pilot.TogglePilot();
-                            }
-                        }
-                        break;
                     case "ToggleGuard":
-                        if (parts.Count() == 3)
                         {
-                            var newState = true;
-                            if (parts[2] == "0")
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Toggling guard mode.");
+                            if (parts.Count() == 3)
                             {
-                                newState = false;
+                                var newState = true;
+                                if (parts[2] == "0")
+                                {
+                                    newState = false;
+                                }
+                                pilots = getAllPilots();
+                                foreach (var pilot in pilots)
+                                {
+                                    if (pilot.weaponManager != null && pilot.weaponManager.guardMode != newState)
+                                        pilot.weaponManager.ToggleGuardMode();
+                                }
                             }
-                            pilots = getAllPilots();
-                            foreach (var pilot in pilots)
+                            else
                             {
-                                if (pilot.weaponManager != null && pilot.weaponManager.guardMode != newState)
-                                    pilot.weaponManager.ToggleGuardMode();
+                                pilots = getAllPilots();
+                                foreach (var pilot in pilots)
+                                {
+                                    if (pilot.weaponManager != null) pilot.weaponManager.ToggleGuardMode();
+                                }
                             }
+                            break;
                         }
-                        else
-                        {
-                            pilots = getAllPilots();
-                            foreach (var pilot in pilots)
-                            {
-                                if (pilot.weaponManager != null) pilot.weaponManager.ToggleGuardMode();
-                            }
-                        }
-
-                        break;
                     case "SetThrottle":
-                        if (parts.Count() == 3)
                         {
-                            pilots = getAllPilots();
-                            foreach (var pilot in pilots)
+                            if (parts.Count() == 3)
                             {
-                                var throttle = int.Parse(parts[2]) * 0.01f;
-                                pilot.vessel.ctrlState.mainThrottle = throttle;
-                                pilot.vessel.ctrlState.killRot = true;
+                                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adjusting throttle to " + parts[2] + "%.");
+                                pilots = getAllPilots();
+                                var someOtherVessel = pilots[0].vessel == FlightGlobals.ActiveVessel ? pilots[1].vessel : pilots[0].vessel;
+                                foreach (var pilot in pilots)
+                                {
+                                    bool currentVesselIsActive = pilot.vessel == FlightGlobals.ActiveVessel;
+                                    if (currentVesselIsActive) LoadedVesselSwitcher.Instance.ForceSwitchVessel(someOtherVessel); // Temporarily switch away so that the throttle change works.
+                                    var throttle = int.Parse(parts[2]) * 0.01f;
+                                    pilot.vessel.ctrlState.killRot = true;
+                                    pilot.vessel.ctrlState.mainThrottle = throttle;
+                                    if (currentVesselIsActive) LoadedVesselSwitcher.Instance.ForceSwitchVessel(pilot.vessel); // Switch back again.
+                                }
                             }
+                            break;
                         }
-                        break;
                     case "RemoveDebris":
-                        // remove anything that doesn't contain BD Armory modules
-                        RemoveNonCompetitors();
-                        break;
+                        {
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Removing debris and non-competitors.");
+                            // remove anything that doesn't contain BD Armory modules
+                            RemoveNonCompetitors(true);
+                            RemoveDebrisNow();
+                            break;
+                        }
                     case "RemoveFairings":
-                        // removes the fairings after deplyment to stop the physical objects consuming CPU
-                        var rmObj = new List<physicalObject>();
-                        foreach (var phyObj in FlightGlobals.physicalObjects)
                         {
-                            if (phyObj.name == "FairingPanel") rmObj.Add(phyObj);
-                            Debug.Log("[BDArmory.RemoveFairings] " + phyObj.name);
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Removing fairings.");
+                            // removes the fairings after deplyment to stop the physical objects consuming CPU
+                            var rmObj = new List<physicalObject>();
+                            foreach (var phyObj in FlightGlobals.physicalObjects)
+                            {
+                                if (phyObj.name == "FairingPanel") rmObj.Add(phyObj);
+                            }
+                            foreach (var phyObj in rmObj)
+                            {
+                                FlightGlobals.removePhysicalObject(phyObj);
+                            }
+                            break;
                         }
-                        foreach (var phyObj in rmObj)
-                        {
-                            FlightGlobals.removePhysicalObject(phyObj);
-                        }
-
-                        break;
                     case "EnableGM":
-                        killerGMenabled = true;
-                        decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : Planetarium.GetUniversalTime() + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY;
-                        ResetSpeeds();
-                        break;
+                        {
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating killer GM.");
+                            killerGMenabled = true;
+                            decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : Planetarium.GetUniversalTime() + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY;
+                            ResetSpeeds();
+                            break;
+                        }
+                    case "ActivateEngines":
+                        {
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
+                            foreach (var pilot in getAllPilots())
+                            {
+                                if (!pilot.vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
+                                {
+                                    Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
+                                    foreach (var engine in pilot.vessel.FindPartModulesImplementing<ModuleEngines>())
+                                        engine.Activate();
+                                }
+                            }
+                            break;
+                        }
+                    case "MassTrim":
+                        {
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Performing mass trim.");
+                            DoRapidDeploymentMassTrim();
+                            break;
+                        }
+                    default:
+                        {
+                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Unknown sequenced command: " + command + ".");
+                            StopCompetition();
+                            yield break;
+                        }
                 }
             }
             // will need a terminator routine

@@ -647,6 +647,7 @@ namespace BDArmory.UI
                 }
             }
             */
+            /* 
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 if (GUI.Button(SLineRect(++line), "Runway Project Season 2 Round 4", !(round4running && BDATournament.Instance.tournamentStatus != TournamentStatus.Completed) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
@@ -655,7 +656,7 @@ namespace BDArmory.UI
                     BDATournament.Instance.RunTournament();
                 }
             }
-
+            */
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || VesselSpawner.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
             {
                 if (_vesselsSpawned)

@@ -157,6 +157,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static string REMOTE_CLIENT_SECRET = "";                                      // Token used to authorize remote orchestration client
         [BDAPersistantSettingsField] public static string COMPETITION_HASH = "";                                          // Competition hash used for orchestration
         [BDAPersistantSettingsField] public static float REMOTE_INTERHEAT_DELAY = 30;                                     // Delay between heats.
+        [BDAPersistantSettingsField] public static int RUNWAY_PROJECT_ROUND = 10;                                         // RWP round index.
 
         // Spawner settings
         [BDAPersistantSettingsField] public static bool SHOW_SPAWN_OPTIONS = true;                 // Show spawn options.

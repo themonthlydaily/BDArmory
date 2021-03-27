@@ -612,7 +612,20 @@ namespace BDArmory.Control
             yield return new WaitForFixedUpdate();
 
             // NOTE: runs in separate coroutine
-            BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
+                {
+                    case 33:
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                        break;
+                    default:
+                        BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
+                        break;
+                }
+            }
+            else
+                BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
             yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
 
             // start timer coroutine for the duration specified in settings UI
@@ -620,7 +633,7 @@ namespace BDArmory.Control
             message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
             Debug.Log("[BDArmory.BDATournament]: " + message);
             BDACompetitionMode.Instance.competitionStatus.Add(message);
-            while (BDACompetitionMode.Instance.competitionStarting)
+            while (BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.sequencedCompetitionStarting)
                 yield return new WaitForFixedUpdate(); // Wait for the competition to actually start.
             if (!BDACompetitionMode.Instance.competitionIsActive)
             {
