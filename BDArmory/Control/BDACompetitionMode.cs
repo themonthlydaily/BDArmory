@@ -1042,15 +1042,6 @@ namespace BDArmory.Control
             }
         }
 
-        // transmits a bunch of commands to make things happen
-        // this is a really dumb sequencer with text commands
-        // 0:ThrottleMax
-        // 0:Stage
-        // 30:ActionGroup:1
-        // 35:ActionGroup:2
-        // 40:ActionGroup:3
-        // 41:TogglePilot
-        // 45:ToggleGuard
         IEnumerator SequencedCompetition(List<string> commandSequence)
         {
             var pilots = getAllPilots();
