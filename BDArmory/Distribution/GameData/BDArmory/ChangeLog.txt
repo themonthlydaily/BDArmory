@@ -1,4 +1,25 @@
-﻿v1.4.2.7
+﻿v1.4.2.8
+FIXES
+	- Make the Kraken eating things code specific to certain RWP rounds and only active during a competition.
+	- Fixes to sequenced competition for RWP S3R3 to work with the remote orchestration.
+	- Update vessel switcher teams list as necessary.
+	- Remove direction from explosions of impacting bullets as that makes no sense.
+	- Add debug log warnings for previously silently ignored exceptions and fix a couple of NREs.
+	- Fix exception in explosion handling when part.rb is null (but part.Rigidbody isn't).
+	- Reloading/MultiTarget fix/weaponPriority
+	- Reload anim support
+	- Multitarget fix
+	- Chernobyl bugfixes
+	- Various NRE fixes
+
+IMPROVEMENTS
+	- Separate bullet movement and collision detection into separate functions. Detect collisions in the initial frame of a bullet so point blank shots work.
+	- Detect exit collision with objects when the barrel of the gun is within the object's collider, i.e., sub-point-blank shots.
+	- Added a slider for configuration of specific RWP rounds.
+	- Adjust parsing scripts for updated logging tags format. Add slider for setting the length of time of the death camera.
+	- Standardise the format of debug log messages to '[BDArmory.ModuleName']: ...
+
+v1.4.2.7
 FIXES
 	- Add a "Kerbal Inventory" slider to configure how kerbals' inventories are adjusted when "Kerbal Safety" is enabled (default is "Parachute Only").
 
