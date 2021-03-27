@@ -65,7 +65,8 @@ namespace BDArmory.Modules
             {
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                 {
-                    case 33:
+                    case 32: // Nuclear engines
+                    case 33: // Rapid deployment II
                         GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
                         break;
                 }
@@ -82,7 +83,8 @@ namespace BDArmory.Modules
             {
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                 {
-                    case 33:
+                    case 32: // Nuclear engines round
+                    case 33: // Rapid deployment II
                         GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
                         break;
                 }
