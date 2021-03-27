@@ -37,7 +37,6 @@ namespace BDArmory.Modules
             Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY ? " and enabled." : ", but currently disabled."));
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
             evaKerbalsToMonitor = new List<KerbalEVA>();
-            GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
             if (BDArmorySettings.KERBAL_SAFETY)
                 CheckAllVesselsForKerbals();
         }
@@ -45,7 +44,6 @@ namespace BDArmory.Modules
         public void OnDestroy()
         {
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
-            GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
         }
 
         public void HandleSceneChange(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
@@ -63,6 +61,7 @@ namespace BDArmory.Modules
             Debug.Log("[BDArmory.KerbalSafety]: Enabling kerbal safety.");
             foreach (var ks in kerbals.Values)
                 ks.AddHandlers();
+            GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
             CheckAllVesselsForKerbals(); // Check for new vessels that were added while we weren't active.
         }
 
@@ -71,6 +70,7 @@ namespace BDArmory.Modules
             Debug.Log("[BDArmory.KerbalSafety]: Disabling kerbal safety.");
             foreach (var ks in kerbals.Values)
                 ks.RemoveHandlers();
+            GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
         }
 
         public void CheckAllVesselsForKerbals()
@@ -213,6 +213,7 @@ namespace BDArmory.Modules
 
         void EatenByTheKraken(GameEvents.HostedFromToAction<Vessel, CelestialBody> fromTo)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return;
             if (evaKerbalsToMonitor.Where(k => k != null).Select(k => k.vessel).Contains(fromTo.host))
             {
                 var message = fromTo.host.vesselName + " got eaten by the Kraken!";
