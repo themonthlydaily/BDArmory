@@ -1294,7 +1294,7 @@ namespace BDArmory.Control
 
                     bool vesselNotFired = (Planetarium.GetUniversalTime() - vData.lastFiredTime) > 120; // if you can't shoot in 2 minutes you're at the front of line
 
-                    Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] Victim Check " + vesselName + " " + averageSpeed.ToString() + " " + vesselNotFired.ToString());
+                    Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Victim Check " + vesselName + " " + averageSpeed.ToString() + " " + vesselNotFired.ToString());
                     if (hasFired)
                     {
                         if (vesselNotFired)
@@ -1331,7 +1331,7 @@ namespace BDArmory.Control
                     Scores[vesselName].gmKillReason = GMKillReason.GM; // Indicate that it was us who killed it.
                 }
                 competitionStatus.Add(vesselName + " was killed by the GM for being too slow.");
-                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "] GM killing " + vesselName + " for being too slow.");
+                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: GM killing " + vesselName + " for being too slow.");
                 Misc.Misc.ForceDeadVessel(worstVessel);
             }
             ResetSpeeds();
