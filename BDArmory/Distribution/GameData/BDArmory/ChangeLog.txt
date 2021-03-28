@@ -1,4 +1,11 @@
-﻿v1.4.2.8
+﻿v1.4.2.9
+FIXES
+	- Fixes for Killer GM scoring attribution and ramming detection.
+	- Fix for if a rootpart is null during spawning.
+	- Set the kraken eating things active for the correct RWP rounds.
+	- Fix local tournament sequencing when using sequenced competition (S3R3).
+
+v1.4.2.8
 FIXES
 	- Make the Kraken eating things code specific to certain RWP rounds and only active during a competition.
 	- Fixes to sequenced competition for RWP S3R3 to work with the remote orchestration.
