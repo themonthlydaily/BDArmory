@@ -1,4 +1,13 @@
-﻿v1.4.2.9
+﻿v1.4.2.10
+FIXES
+	- Prevent log spam from ModuleWeapon.CheckAIAutoFire.
+	- Fix width of drag window in Loaded Vessel Switcher.
+
+IMPROVEMENTS
+	- Add a min altitude limit for the killer GM (once a competition is active).
+	- Make the sequenced competition command sequence dependent on the BDA round.
+
+v1.4.2.9
 FIXES
 	- Fixes for Killer GM scoring attribution and ramming detection.
 	- Fix for if a rootpart is null during spawning.
