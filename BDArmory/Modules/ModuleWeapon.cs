@@ -2764,14 +2764,14 @@ namespace BDArmory.Modules
             //disable autofire after burst length
             if (BurstOverride)
             {
-                Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
                 if (autoFire && autofireShotCount >= fireBurstLength)
                 {
                     autoFire = false;
                     visualTargetVessel = null;
                     visualTargetPart = null;
                     autofireShotCount = 0;
-                    Debug.Log("[BDArmory.ModuleWeapon]: shotcount reset; length: " + autofireShotCount);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: shotcount reset; length: " + autofireShotCount);
                 }
             }
             else
