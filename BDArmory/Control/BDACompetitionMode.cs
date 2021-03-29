@@ -1367,6 +1367,51 @@ namespace BDArmory.Control
             ResetSpeeds();
         }
 
+        private void CheckAltitudeLimits()
+        {
+            if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 46f) // Kill off those flying too high.
+            {
+                var limit = (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 10f ? BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE / 10f : BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 30f ? BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE - 9f : (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE - 29f) * 5f + 20f) * 1000f;
+                foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
+                {
+                    if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude > limit)
+                    {
+                        Scores[weaponManager.vessel.vesselName].gmKillReason = GMKillReason.GM;
+                        var killerName = Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe;
+                        if (killerName == "")
+                        {
+                            killerName = "Flew too high!";
+                            Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe = killerName;
+                        }
+                        competitionStatus.Add(weaponManager.vessel.vesselName + " flew too high!");
+                        Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
+                        if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
+                        Misc.Misc.ForceDeadVessel(weaponManager.vessel);
+                    }
+                }
+            }
+            if (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE > -1) // Kill off those flying too low.
+            {
+                var limit = (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE < 10f ? BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE / 10f : BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE < 30f ? BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE - 9f : (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE - 29f) * 5f + 20f) * 1000f;
+                foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
+                {
+                    if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude < limit)
+                    {
+                        Scores[weaponManager.vessel.vesselName].gmKillReason = GMKillReason.GM;
+                        var killerName = Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe;
+                        if (killerName == "")
+                        {
+                            killerName = "Flew too low!";
+                            Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe = killerName;
+                        }
+                        competitionStatus.Add(weaponManager.vessel.vesselName + " flew too low!");
+                        Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
+                        if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
+                        Misc.Misc.ForceDeadVessel(weaponManager.vessel);
+                    }
+                }
+            }
+        }
         // reset all the tracked speeds, and copy the shot clock over, because I wanted 2 minutes of shooting to count
         private void ResetSpeeds()
         {
@@ -1985,26 +2030,7 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
-                if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 101) // Kill off those flying too high.
-                {
-                    foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
-                    {
-                        if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude > BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE * 1000)
-                        {
-                            Scores[weaponManager.vessel.vesselName].gmKillReason = GMKillReason.GM;
-                            var killerName = Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe;
-                            if (killerName == "")
-                            {
-                                killerName = "Flew too high!";
-                                Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe = killerName;
-                            }
-                            competitionStatus.Add(weaponManager.vessel.vesselName + " flew too high!");
-                            Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
-                            if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
-                            Misc.Misc.ForceDeadVessel(weaponManager.vessel);
-                        }
-                    }
-                }
+                CheckAltitudeLimits();
                 FindVictim();
             }
             // Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");

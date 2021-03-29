@@ -1762,8 +1762,21 @@ namespace BDArmory.UI
                     BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY / 10f, 1, 6)) * 10f; // For now, don't control the killerGMEnabled flag (it's controlled by right clicking M).
                     // BDACompetitionMode.Instance.killerGMenabled = !(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60);
 
-                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionKillerGMMaxAltitude")}: ({(BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE > 100 ? "Never" : BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE + "km")})", leftLabel);
-                    BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE, 1f, 101f));
+                    string killerGMMaxAltitudeText;
+                    if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE > 45f) killerGMMaxAltitudeText = "Never";
+                    else if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 10f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE * 100f) + "m";
+                    else if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 30f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE - 9f) + "km";
+                    else killerGMMaxAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE - 29f) * 5f + 20f) + "km";
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionKillerGMMaxAltitude")}: ({killerGMMaxAltitudeText})", leftLabel);
+                    BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE, 1f, 46f));
+
+                    string killerGMMinAltitudeText;
+                    if (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE < 0f) killerGMMinAltitudeText = "Never";
+                    else if (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE < 10f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE * 100f) + "m";
+                    else if (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE < 30f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE - 9f) + "km";
+                    else killerGMMinAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE - 29f) * 5f + 20f) + "km";
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionKillerGMMinAltitude")}: ({killerGMMinAltitudeText})", leftLabel);
+                    BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE, -1f, 35f));
 
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RunwayProjectRound")}: ({(BDArmorySettings.RUNWAY_PROJECT_ROUND > 10 ? $"S{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) / 10}R{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) % 10 + 1}" : "—")})", leftLabel); // RWP round
                     BDArmorySettings.RUNWAY_PROJECT_ROUND = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RUNWAY_PROJECT_ROUND, 10f, 40f));
