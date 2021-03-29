@@ -807,7 +807,6 @@ namespace BDArmory.Control
         #region Runway Project
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
-        public bool OneOfAKind = false;
 
         public void StartRapidDeployment(float distance)
         {
@@ -823,25 +822,50 @@ namespace BDArmory.Control
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                 if (BDArmorySettings.KERBAL_SAFETY)
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
-                var commandSequence = new List<string>{
-                    "0:MassTrim", // t=0, mass trim
-                    "0:ActionGroup:14:0", // t=0, Disable brakes
-                    "0:ActionGroup:4", // t=0, AG4 - Launch: Activate base craft engine, retract airbrakes
-                    "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
-                    "0:SetThrottle:100", // t=0, Full throttle
-                    "35:ActionGroup:1", // t=35, AG1 - Engine shutdown, extend airbrakes
-                    "10:ActionGroup:2", // t=45, AG2 - Deploy fairing
-                    "3:RemoveFairings", // t=48, Remove fairings from the game
-                    "0:ActionGroup:3", // t=48, AG3 - Decouple base craft (-> add your custom engine activations and timers here <-)
-                    "0:ActionGroup:12:1", // t=48, Enable RCS
-                    "0:ActivateEngines", // t=48, Activate engines (if they're not activated by AG3)
-                    "1:TogglePilot:1", // t=49, Activate pilots
-                    "6:ToggleGuard:1", // t=55, Activate guard mode (attack)
-                    "0:ActionGroup:16:0", // t=55, Retract gear (if it's not retracted)
-                    "5:EnableGM", // t=60, Activate the killer GM
-                    "5:RemoveDebris", // t=65, Remove any other debris and spectators
-                    "0:ActionGroup:16:0" // t=65, Retract gear (if it's not retracted)
-                };
+                List<string> commandSequence;
+                switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
+                {
+                    case 33:
+                        commandSequence = new List<string>{
+                            "0:MassTrim", // t=0, mass trim
+                            "0:ActionGroup:14:0", // t=0, Disable brakes
+                            "0:ActionGroup:4", // t=0, AG4 - Launch: Activate base craft engine, retract airbrakes
+                            "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
+                            "0:SetThrottle:100", // t=0, Full throttle
+                            "35:ActionGroup:1", // t=35, AG1 - Engine shutdown, extend airbrakes
+                            "10:ActionGroup:2", // t=45, AG2 - Deploy fairing
+                            "3:RemoveFairings", // t=48, Remove fairings from the game
+                            "0:ActionGroup:3", // t=48, AG3 - Decouple base craft (-> add your custom engine activations and timers here <-)
+                            "0:ActionGroup:12:1", // t=48, Enable RCS
+                            "0:ActivateEngines", // t=48, Activate engines (if they're not activated by AG3)
+                            "1:TogglePilot:1", // t=49, Activate pilots
+                            "0:ActionGroup:16:0", // t=55, Retract gear (if it's not retracted)
+                            "6:ToggleGuard:1", // t=55, Activate guard mode (attack)
+                            "5:RemoveDebris", // t=60, Remove any other debris and spectators
+                            // "0:EnableGM", // t=60, Activate the killer GM
+                        };
+                        break;
+                    default: // Same as S3R3 for now, until we do something different.
+                        commandSequence = new List<string>{
+                            "0:MassTrim", // t=0, mass trim
+                            "0:ActionGroup:14:0", // t=0, Disable brakes
+                            "0:ActionGroup:4", // t=0, AG4 - Launch: Activate base craft engine, retract airbrakes
+                            "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
+                            "0:SetThrottle:100", // t=0, Full throttle
+                            "35:ActionGroup:1", // t=35, AG1 - Engine shutdown, extend airbrakes
+                            "10:ActionGroup:2", // t=45, AG2 - Deploy fairing
+                            "3:RemoveFairings", // t=48, Remove fairings from the game
+                            "0:ActionGroup:3", // t=48, AG3 - Decouple base craft (-> add your custom engine activations and timers here <-)
+                            "0:ActionGroup:12:1", // t=48, Enable RCS
+                            "0:ActivateEngines", // t=48, Activate engines (if they're not activated by AG3)
+                            "1:TogglePilot:1", // t=49, Activate pilots
+                            "0:ActionGroup:16:0", // t=55, Retract gear (if it's not retracted)
+                            "6:ToggleGuard:1", // t=55, Activate guard mode (attack)
+                            // "5:EnableGM", // t=60, Activate the killer GM
+                            "5:RemoveDebris", // t=65, Remove any other debris and spectators
+                        };
+                        break;
+                }
                 competitionRoutine = StartCoroutine(SequencedCompetition(commandSequence));
             }
         }
@@ -878,7 +902,13 @@ namespace BDArmory.Control
         public void enforcePartCount(Vessel vessel)
         {
             if (!BDArmorySettings.RUNWAY_PROJECT) return;
-            if (!OneOfAKind) return;
+            switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
+            {
+                case 18:
+                    break;
+                default:
+                    return;
+            }
             using (List<Part>.Enumerator parts = vessel.parts.GetEnumerator())
             {
                 Dictionary<string, int> partCounts = new Dictionary<string, int>();
