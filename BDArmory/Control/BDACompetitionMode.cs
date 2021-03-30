@@ -861,8 +861,8 @@ namespace BDArmory.Control
                             "1:TogglePilot:1", // t=49, Activate pilots
                             "0:ActionGroup:16:0", // t=55, Retract gear (if it's not retracted)
                             "6:ToggleGuard:1", // t=55, Activate guard mode (attack)
-                            // "5:EnableGM", // t=60, Activate the killer GM
-                            "5:RemoveDebris", // t=65, Remove any other debris and spectators
+                            "5:RemoveDebris", // t=60, Remove any other debris and spectators
+                            // "0:EnableGM", // t=60, Activate the killer GM
                         };
                         break;
                 }
@@ -1369,9 +1369,9 @@ namespace BDArmory.Control
 
         private void CheckAltitudeLimits()
         {
-            if (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 46f) // Kill off those flying too high.
+            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 46f) // Kill off those flying too high.
             {
-                var limit = (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 10f ? BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE / 10f : BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE < 30f ? BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE - 9f : (BDArmorySettings.COMPETITION_KILLER_GM_MAX_ALTITUDE - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 29f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude > limit)
@@ -1390,9 +1390,9 @@ namespace BDArmory.Control
                     }
                 }
             }
-            if (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE > -1) // Kill off those flying too low.
+            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -1) // Kill off those flying too low.
             {
-                var limit = (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE < 10f ? BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE / 10f : BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE < 30f ? BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE - 9f : (BDArmorySettings.COMPETITION_KILLER_GM_MIN_ALTITUDE - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 29f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude < limit)
@@ -2028,9 +2028,9 @@ namespace BDArmory.Control
             if (!(BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY > 60))
                 RemoveNonCompetitors();
 
+            CheckAltitudeLimits();
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
-                CheckAltitudeLimits();
                 FindVictim();
             }
             // Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
