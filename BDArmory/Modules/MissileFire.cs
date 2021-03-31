@@ -240,6 +240,7 @@ namespace BDArmory.Modules
 
         //missile warning
         public bool missileIsIncoming;
+        public float lastIncomingMissileDetected = 0;
         public float incomingMissileDistance = float.MaxValue;
         public Vessel incomingMissileVessel;
 
@@ -1277,8 +1278,9 @@ namespace BDArmory.Modules
         {
             while (enabled)
             {
+                yield return new WaitUntil(() => missileIsIncoming && Time.time - lastIncomingMissileDetected > 1f); // Wait until 1s after no missiles are detected.
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) { Debug.Log("[BDArmory.MissileFire]: Silencing missile warning on " + vessel.vesselName); }
                 missileIsIncoming = false;
-                yield return new WaitForSeconds(1);
             }
         }
 
@@ -1453,7 +1455,7 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory.MissileFire]: Firing on target: " + guardTarget.GetName());
+                            Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " firing on target " + guardTarget.GetName());
                         }
                         FireCurrentMissile(true);
                         //StartCoroutine(MissileAwayRoutine(mlauncher));
@@ -1547,7 +1549,7 @@ namespace BDArmory.Modules
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
-                            Debug.Log("[BDArmory.MissileFire]: Firing on target: " + guardTarget.GetName());
+                            Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " firing on target " + guardTarget.GetName());
                         }
 
                         FireCurrentMissile(true);
@@ -1994,7 +1996,7 @@ namespace BDArmory.Modules
         IEnumerator ChaffRoutine(int repetition, float interval)
         {
             isChaffing = true;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Starting chaff routine");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting chaff routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
@@ -2012,13 +2014,13 @@ namespace BDArmory.Modules
             }
             yield return new WaitForSeconds(cmWaitTime);
             isChaffing = false;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Ending chaff routine");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending chaff routine");
         }
 
         IEnumerator FlareRoutine(int repetition, float interval)
         {
             isFlaring = true;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Starting flare routine");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting flare routine");
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
@@ -2035,7 +2037,7 @@ namespace BDArmory.Modules
             }
             yield return new WaitForSeconds(cmWaitTime);
             isFlaring = false;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Ending flare routine");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending flare routine");
         }
 
         IEnumerator AllCMRoutine(int count)
@@ -2043,7 +2045,7 @@ namespace BDArmory.Modules
             // Use this routine for missile threats that are outside of the cmThreshold
             isFlaring = true;
             isChaffing = true;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Starting All CM routine");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting All CM routine");
             for (int i = 0; i < count; i++)
             {
                 using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
@@ -2061,7 +2063,7 @@ namespace BDArmory.Modules
             }
             isFlaring = false;
             isChaffing = false;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Ending All CM routine");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending All CM routine");
         }
 
         IEnumerator LegacyCMRoutine()
@@ -2098,7 +2100,9 @@ namespace BDArmory.Modules
                 StartCoroutine(WarningSoundRoutine(distance, ml));
             }
 
+            if (BDArmorySettings.DRAW_DEBUG_LABELS && distance < 1000f) Debug.Log("[BDArmory.MissileFire]: Legacy missile warning for " + vessel.vesselName + " at distance " + distance.ToString("0.0") + "m from " + ml.shortName);
             missileIsIncoming = true;
+            lastIncomingMissileDetected = Time.time;
             incomingMissileDistance = distance;
         }
 
@@ -4481,6 +4485,12 @@ namespace BDArmory.Modules
 
             if (results.foundMissile)
             {
+                if (results.missileThreatDistance < float.MaxValue)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS && (!missileIsIncoming || results.missileThreatDistance < 1000f)) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " incoming missile (" + results.threatVessel.vesselName + " from " + (results.threatWeaponManager != null && results.threatWeaponManager.vessel != null ? results.threatWeaponManager.vessel.vesselName : "unknown") + ") found at distance " + results.missileThreatDistance + "m");
+                    missileIsIncoming = true;
+                    lastIncomingMissileDetected = Time.time;
+                }
                 if (rwr && !rwr.rwrEnabled) rwr.EnableRWR();
                 if (rwr && rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
             }

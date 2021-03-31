@@ -1,4 +1,11 @@
-﻿v1.4.2.10
+﻿FIXES
+	- Fix rockets overriding the weapon name and breaking the editor.
+	- Maintain incoming missile warning while missiles are still incoming.
+
+IMPROVEMENTS
+	- Make altitude limits independent of RWP and change localisation.
+
+v1.4.2.10
 FIXES
 	- Prevent log spam from ModuleWeapon.CheckAIAutoFire.
 	- Fix width of drag window in Loaded Vessel Switcher.

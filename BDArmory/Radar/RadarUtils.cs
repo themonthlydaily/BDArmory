@@ -1252,6 +1252,8 @@ namespace BDArmory.Radar
 
                                         results.foundMissile = true;
                                         results.threatVessel = missileBase.vessel;
+                                        if (missileBase.SourceVessel != null)
+                                            results.threatWeaponManager = missileBase.SourceVessel.FindPartModuleImplementing<MissileFire>();
                                         Vector3 vectorFromMissile = myWpnManager.vessel.CoM - missileBase.part.transform.position;
                                         Vector3 relV = missileBase.vessel.Velocity() - myWpnManager.vessel.Velocity();
                                         bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;

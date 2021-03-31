@@ -1769,13 +1769,12 @@ namespace BDArmory.Modules
 
             if (legacyTargetVessel != null)
             {
-                List<MissileFire>.Enumerator wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (wpm.MoveNext())
-                {
-                    if (wpm.Current == null) continue;
-                    wpm.Current.missileIsIncoming = false;
-                }
-                wpm.Dispose();
+                using (var wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    while (wpm.MoveNext())
+                    {
+                        if (wpm.Current == null) continue;
+                        wpm.Current.missileIsIncoming = false;
+                    }
             }
 
             if (SourceVessel == null) SourceVessel = vessel;
@@ -1834,14 +1833,13 @@ namespace BDArmory.Modules
         void WarnTarget()
         {
             if (legacyTargetVessel == null) return;
-            List<MissileFire>.Enumerator wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (wpm.MoveNext())
-            {
-                if (wpm.Current == null) continue;
-                wpm.Current.MissileWarning(Vector3.Distance(transform.position, legacyTargetVessel.transform.position), this);
-                break;
-            }
-            wpm.Dispose();
+            using (var wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                while (wpm.MoveNext())
+                {
+                    if (wpm.Current == null) continue;
+                    wpm.Current.MissileWarning(Vector3.Distance(transform.position, legacyTargetVessel.transform.position), this);
+                    break;
+                }
         }
 
         void SetupRCS()
