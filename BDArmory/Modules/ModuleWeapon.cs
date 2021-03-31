@@ -3406,17 +3406,16 @@ namespace BDArmory.Modules
                 ammoList = BDAcTools.ParseNames(bulletType);
                 currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
                 rocketInfo = RocketInfo.rockets[currentType];
-                guiAmmoTypeString = "";
-                name = rocketInfo.name;
+                guiAmmoTypeString = " "; //reset name
                 rocketMass = rocketInfo.rocketMass;
                 caliber = rocketInfo.caliber;
                 thrust = rocketInfo.thrust;
                 thrustTime = rocketInfo.thrustTime;
                 ProjectileCount = rocketInfo.subProjectileCount;
                 rocketModelPath = rocketInfo.rocketModelPath;
+                SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
 
                 tntMass = rocketInfo.tntMass;
-                guiAmmoTypeString = " "; //reset name
                 if (rocketInfo.subProjectileCount > 1)
                 {
                     guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " "; // maybe add an int value to these for future Missilefire SmartPick expansion? For now, choose loadouts carefuly!
@@ -3449,9 +3448,12 @@ namespace BDArmory.Modules
                     proximityDetonation = false;
                 }
                 PAWRefresh();
-                SetInitialDetonationDistance();
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
-                SetupRocketPool(SelectedAmmoType, rocketModelPath);
+                if (HighLogic.LoadedSceneIsFlight)
+                {
+                    SetInitialDetonationDistance();
+                    SetupRocketPool(SelectedAmmoType, rocketModelPath);
+                }
             }
         }
         protected void SetInitialDetonationDistance()
