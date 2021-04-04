@@ -1,4 +1,5 @@
 ﻿using BDArmory.Control;
+using BDArmory.Core;
 using BDArmory.UI;
 using System.Collections;
 using System.Linq;
@@ -127,6 +128,7 @@ namespace BDArmory.Modules
         }
         private void DisableVessel()
         {
+	    rebootTimer = BDArmorySettings.WEAPON_FX_DURATION;
             foreach (Part p in vessel.parts)
             {
                 var camera = p.FindModuleImplementing<ModuleTargetingCamera>();
