@@ -9,6 +9,7 @@ using BDArmory.Shaders;
 using BDArmory.Control;
 using UnityEngine;
 using BDArmory.Misc;
+using BDArmory.Modules;
 
 namespace BDArmory.Bullets
 {
