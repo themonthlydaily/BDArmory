@@ -14,6 +14,10 @@ namespace BDArmory.Bullets
         public float thrustTime { get; private set; }
         public bool shaped { get; private set; }
         public bool flak { get; private set; }
+        public bool EMP { get; private set; }
+        public bool choker { get; private set; }
+        public bool gravitic { get; private set; }
+        public bool impulse { get; private set; }
         public bool explosive { get; private set; }
         public float tntMass { get; private set; }
         public int subProjectileCount { get; private set; }
@@ -24,8 +28,8 @@ namespace BDArmory.Bullets
         public static HashSet<string> rocketNames;
         public static RocketInfo defaultRocket;
 
-        public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime,
-                          bool shaped, bool flak, bool explosive, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
+         public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime,
+                          bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, bool explosive, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
         {
             this.name = name;
             this.rocketMass = rocketMass;
@@ -34,6 +38,10 @@ namespace BDArmory.Bullets
             this.thrustTime = thrustTime;
             this.shaped = shaped;
             this.flak = flak;
+            this.EMP = EMP;
+            this.choker = choker;
+            this.gravitic = gravitic;
+            this.impulse = impulse;
             this.explosive = explosive;
             this.tntMass = tntMass;
             this.subProjectileCount = subProjectileCount;
@@ -65,6 +73,10 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "thrustTime", typeof(float)),
                         (bool)ParseField(node, "shaped", typeof(bool)),
                         (bool)ParseField(node, "flak", typeof(bool)),
+                        (bool)ParseField(node, "EMP", typeof(bool)),
+                        (bool)ParseField(node, "choker", typeof(bool)),
+                        (bool)ParseField(node, "gravitic", typeof(bool)),
+                        (bool)ParseField(node, "impulse", typeof(bool)),
                         (bool)ParseField(node, "explosive", typeof(bool)),
                         (float)ParseField(node, "tntMass", typeof(float)),
                         (int)ParseField(node, "subProjectileCount", typeof(int)),
@@ -101,6 +113,10 @@ namespace BDArmory.Bullets
                             (float)ParseField(node, "thrustTime", typeof(float)),
                             (bool)ParseField(node, "shaped", typeof(bool)),
                             (bool)ParseField(node, "flak", typeof(bool)),
+                            (bool)ParseField(node, "EMP", typeof(bool)),
+                            (bool)ParseField(node, "choker", typeof(bool)),
+                            (bool)ParseField(node, "gravitic", typeof(bool)),
+                            (bool)ParseField(node, "impulse", typeof(bool)),
                             (bool)ParseField(node, "explosive", typeof(bool)),
                             (float)ParseField(node, "tntMass", typeof(float)),
                             (int)ParseField(node, "subProjectileCount", typeof(int)),
