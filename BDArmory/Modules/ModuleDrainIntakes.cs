@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using UnityEngine;
+using System.Collections.Generic;
 
 namespace BDArmory.Modules
 {
@@ -6,14 +7,7 @@ namespace BDArmory.Modules
     {
         public float drainRate = 999;
         public float drainDuration = 20;
-        public override void OnStart(StartState state)
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                part.force_activate();
-            }
-            base.OnStart(state);
-        }
+        private bool initialized = false;
 
         public void Update()
         {
