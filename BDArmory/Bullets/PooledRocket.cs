@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -28,6 +29,12 @@ namespace BDArmory.Bullets
         public bool shaped;
         public float maxAirDetonationRange;
         public bool flak;
+        public bool concussion;
+        public bool gravitic;
+        public bool EMP;
+        public bool choker;
+        public float massMod = 0;
+        public float impulse = 0;
         public float detonationRange;
         public float tntMass;
         bool explosive = true;
@@ -64,6 +71,8 @@ namespace BDArmory.Bullets
         float randThrustSeed;
 
         public AudioSource audioSource;
+
+        HashSet<Vessel> craftHit = new HashSet<Vessel>();
 
         void OnEnable()
         {
@@ -274,6 +283,23 @@ namespace BDArmory.Bullets
                             }
 
                             impactVelocity = impactVector.magnitude;
+                            if (gravitic)
+                            {
+                                var ME = hitPart.FindModuleImplementing<ModuleMassAdjust>();
+                                if (ME == null)
+                                {
+                                    ME = (ModuleMassAdjust)hitPart.AddModule("ModuleMassAdjust");
+                                }
+                                ME.massMod += massMod;
+                                ME.duration += BDArmorySettings.WEAPON_FX_DURATION;
+                            }
+                            if (concussion)
+                            {
+                                hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
+                                Detonate(hit.point, false);
+                                hasDetonated = true;
+                                return; //impulse rounds shouldn't penetrate/do damage
+                            }
                             float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
 
                             float thickness = ProjectileUtils.CalculateThickness(hitPart, anglemultiplier);
@@ -431,7 +457,77 @@ namespace BDArmory.Bullets
                     {
                         direction = (pos + rb.velocity * Time.deltaTime).normalized;
                     }
-                    ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
+                    if (concussion || EMP || choker)
+                    {
+                        using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, 557057).AsEnumerable().GetEnumerator())
+                        {
+                            craftHit.Clear();
+                            while (hitsEnu.MoveNext())
+                            {
+                                if (hitsEnu.Current == null) continue;
+                                if (hitsEnu.Current.gameObject == FlightGlobals.currentMainBody.gameObject) continue; // Ignore terrain hits.
+                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                if (craftHit.Contains(partHit.vessel)) continue; // Don't hit the same craft multiple times.
+                                craftHit.Add(partHit.vessel);
+
+                                float Distance = Vector3.Distance(partHit.transform.position, this.transform.position);
+                                if (partHit != null)
+                                {
+                                    if (concussion && partHit.mass > 0)
+                                    {
+                                        partHit.rb.AddForceAtPosition((partHit.transform.position - this.transform.position).normalized * impulse, partHit.transform.position, ForceMode.Acceleration);
+                                    }
+                                    if (EMP)
+                                    {
+                                        var MDEC = partHit.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                        if (MDEC == null)
+                                        {
+                                            MDEC = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
+                                        }
+                                        MDEC.incomingDamage += ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
+                                        MDEC.softEMP = false; //can bypass EMP damage cap                                            
+                                    }
+                                    if (choker)
+                                    {
+                                        var ash = partHit.vessel.rootPart.FindModuleImplementing<ModuleDrainIntakes>();
+                                        if (ash == null)
+                                        {
+                                            ash = (ModuleDrainIntakes)partHit.vessel.rootPart.AddModule("ModuleDrainIntakes");
+                                        }
+                                        ash.drainDuration += BDArmorySettings.WEAPON_FX_DURATION * (1 - (Distance / 25)); //reduce intake knockout time based on distance from epicenter                                        
+                                    }
+                                }
+                            }
+                        }
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction, true);
+                    }
+                    else
+                    {
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
+                    }
+                    if (gravitic)
+                    {
+                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
+                        {
+                            while (hitsEnu.MoveNext())
+                            {
+                                if (hitsEnu.Current == null) continue;
+
+                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                if (partHit != null && partHit.mass > 0)
+                                {
+                                    float distance = Vector3.Distance(transform.position, partHit.transform.position);
+                                    var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
+                                    if (ME == null)
+                                    {
+                                        ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
+                                    }
+                                    ME.massMod += (massMod * (1- (distance/blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
+                                    ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
+                                }
+                            }
+                        }
+                    }
                 }
             } // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
             gameObject.SetActive(false);
