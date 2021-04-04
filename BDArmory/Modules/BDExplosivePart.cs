@@ -294,7 +294,7 @@ namespace BDArmory.Modules
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction);
                 hasDetonated = true;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
             }
         }
 
@@ -302,7 +302,7 @@ namespace BDArmory.Modules
         {
             if (!hasDetonated && Armed)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
                 ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null);
                 hasDetonated = true;
@@ -356,7 +356,7 @@ namespace BDArmory.Modules
                             return detonate = false;
                         }
                     }
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: Proxifuze triggered by " + partHit.partName + " from " + partHit.vessel.vesselName);
                     return detonate = true;
                 }
             }

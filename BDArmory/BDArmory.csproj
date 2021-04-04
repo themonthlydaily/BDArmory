@@ -167,7 +167,6 @@
     <Compile Include="Misc\BDATooltips.cs" />
     <Compile Include="Misc\BDAcTools.cs" />
     <Compile Include="Misc\BDTeam.cs" />
-    <Compile Include="Misc\BahaTurretBullet.cs" />
     <Compile Include="Misc\BattleDamageHandler.cs" />
     <Compile Include="Misc\DecoupledBooster.cs" />
     <Compile Include="Misc\IBDWeapon.cs" />

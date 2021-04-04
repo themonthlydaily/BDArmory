@@ -238,9 +238,9 @@ namespace BDArmory.Bullets
                                 hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
                                 hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                             }
-                            catch (NullReferenceException)
+                            catch (NullReferenceException e)
                             {
-                                Debug.Log("[BDArmory]:NullReferenceException for Kinetic Hit");
+                                Debug.LogWarning("[BDArmory.BDArmory]:NullReferenceException for Kinetic Hit: "+e.Message);
                                 return;
                             }
 
@@ -302,7 +302,7 @@ namespace BDArmory.Bullets
                             }
                             else // stopped by armor
                             {
-                                if (hitPart.rb != null)
+                                if (hitPart.rb != null && hitPart.rb.mass > 0)
                                 {
                                     float forceAverageMagnitude = impactVelocity * impactVelocity *
                                                           (1f / hit.distance) * rocketMass;
@@ -313,7 +313,7 @@ namespace BDArmory.Bullets
                                     hitPart.rb.AddForceAtPosition(impactVector.normalized * accelerationMagnitude, hit.point, ForceMode.Acceleration);
 
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                        Debug.Log("[BDArmory]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| rocket effective mass =" + rocketMass);
+                                        Debug.Log("[BDArmory.PooledRocket]: Force Applied " + Math.Round(accelerationMagnitude, 2) + "| Vessel mass in kgs=" + hitPart.vessel.GetTotalMass() * 1000 + "| rocket effective mass =" + rocketMass);
                                 }
 
                                 hasPenetrated = false;
@@ -332,7 +332,7 @@ namespace BDArmory.Bullets
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
-                                    Debug.Log("[BDArmory]: Rocket ballistic velocity too low, stopping");
+                                    Debug.Log("[BDArmory.PooledRocket]: Rocket ballistic velocity too low, stopping");
                                 }
                                 Detonate(hit.point, false);
                                 return;
@@ -381,12 +381,13 @@ namespace BDArmory.Bullets
                             if (partHit != null && partHit.vessel != sourceVessel)
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
+                                    Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
                                 return detonate = true;
                             }
                         }
-                        catch
+                        catch (Exception e)
                         {
+                            Debug.LogWarning("[BDArmory.PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                         }
                     }
                 }

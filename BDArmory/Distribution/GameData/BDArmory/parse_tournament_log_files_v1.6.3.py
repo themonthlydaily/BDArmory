@@ -57,7 +57,7 @@ for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir
 			tournamentData[round.name][heat.name] = {'result': None, 'duration': 0, 'craft': {}}
 			for line in logFile:
 				line = line.strip()
-				if 'BDArmoryCompetition' not in line:
+				if 'BDArmory.BDACompetitionMode' not in line:
 					continue  # Ignore irrelevant lines
 				_, field = line.split(' ', 1)
 				if field.startswith('Dumping Results'):

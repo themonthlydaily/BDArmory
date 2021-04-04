@@ -1,4 +1,71 @@
-﻿v1.4.2.4
+﻿FIXES
+	- Fix rockets overriding the weapon name and breaking the editor.
+	- Maintain incoming missile warning while missiles are still incoming.
+
+IMPROVEMENTS
+	- Make altitude limits independent of RWP and change localisation.
+
+v1.4.2.10
+FIXES
+	- Prevent log spam from ModuleWeapon.CheckAIAutoFire.
+	- Fix width of drag window in Loaded Vessel Switcher.
+
+IMPROVEMENTS
+	- Add a min altitude limit for the killer GM (once a competition is active).
+	- Make the sequenced competition command sequence dependent on the BDA round.
+
+v1.4.2.9
+FIXES
+	- Fixes for Killer GM scoring attribution and ramming detection.
+	- Fix for if a rootpart is null during spawning.
+	- Set the kraken eating things active for the correct RWP rounds.
+	- Fix local tournament sequencing when using sequenced competition (S3R3).
+
+v1.4.2.8
+FIXES
+	- Make the Kraken eating things code specific to certain RWP rounds and only active during a competition.
+	- Fixes to sequenced competition for RWP S3R3 to work with the remote orchestration.
+	- Update vessel switcher teams list as necessary.
+	- Remove direction from explosions of impacting bullets as that makes no sense.
+	- Add debug log warnings for previously silently ignored exceptions and fix a couple of NREs.
+	- Fix exception in explosion handling when part.rb is null (but part.Rigidbody isn't).
+	- Reloading/MultiTarget fix/weaponPriority
+	- Multitarget fix
+	- Chernobyl bugfixes
+	- Various NRE fixes
+
+IMPROVEMENTS
+	- Separate bullet movement and collision detection into separate functions. Detect collisions in the initial frame of a bullet so point blank shots work.
+	- Detect exit collision with objects when the barrel of the gun is within the object's collider, i.e., sub-point-blank shots.
+	- Added a slider for configuration of specific RWP rounds.
+	- Adjust parsing scripts for updated logging tags format. Add slider for setting the length of time of the death camera.
+	- Standardise the format of debug log messages to '[BDArmory.ModuleName']: ...
+	- Reload anim support
+
+v1.4.2.7
+FIXES
+	- Add a "Kerbal Inventory" slider to configure how kerbals' inventories are adjusted when "Kerbal Safety" is enabled (default is "Parachute Only").
+
+v1.4.2.6
+FIXES
+	- Fix bug in loading spawn locations on fresh installs.
+	- Give vessel spawning more than 5 frames to wait for the reference transforms.
+	- Add checks in various parts of the code to avoid potentially applying forces to physicsless parts.
+
+IMPROVEMENTS
+	- Tweak explosions from the nuclear engine code to include triggering on detachment (i.e., no WM) and give a 0.5s delay after detachment or running out of fuel before exploding.
+
+v1.4.2.5
+FIXES
+	- Wait for reference transforms to be assigned during spawning to avoid NREs.
+	- Tweak auto number of vessels for FFA with only a few craft.
+	- Fix a variety of NREs in the nuclear engine code.
+	- Avoid applying forces to physicsless parts (no rigid body), which removes the need for try..catch block. Clean up code.
+	- Track last valid atmDensity of nuclear engine to ensure correct value while vessel being destroyed.
+	- Use the approximate GetArea function instead of the radiative area if the radiative area is not available.
+	- Clean up formulas for blast impulse. Only apply damage/impulse to each part once per explosion.
+
+v1.4.2.4
 FIXES
 	- Fix various NREs.
 	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
