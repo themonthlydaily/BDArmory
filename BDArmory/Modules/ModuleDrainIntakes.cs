@@ -20,15 +20,34 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight)
             {
                 drainDuration -= Time.deltaTime;
-                if (drainDuration > 0)
+                if (drainDuration <= 0)
                 {
-                    part.RequestResource("IntakeAir", (double)(drainRate * Time.deltaTime), ResourceFlowMode.ALL_VESSEL);
-                    part.RequestResource("IntakeAtm", (double)(drainRate * Time.deltaTime), ResourceFlowMode.ALL_VESSEL);
-                }
-                else
-                {
+                    using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
+                    {
+                        using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
+                            while (intake.MoveNext())
+                            {
+                                if (intake.Current == null) continue;
+                                intake.Current.intakeEnabled = true;
+                            }
+                    }
                     part.RemoveModule(this);
                 }
+            }
+            if (!initialized)
+            {
+                //Debug.Log("[CHOKER]: " + this.part.name + "choked!");
+                initialized = true;
+                using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
+                {
+                    using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
+                        while (intake.MoveNext())
+                        {
+                            if (intake.Current == null) continue;
+                            intake.Current.intakeEnabled = false;
+                        }
+                }
+
             }
         }
     }
