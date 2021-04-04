@@ -205,6 +205,7 @@
     <Compile Include="Modules\ModuleDrainFuel.cs" />
     <Compile Include="Modules\ModuleECMJammer.cs" />
     <Compile Include="Modules\ModuleEMP.cs" />
+    <Compile Include="Modules\ModuleMassAdjust.cs" />
     <Compile Include="Modules\ModuleMissileRearm.cs" />
     <Compile Include="Modules\ModuleMovingPart.cs" />
     <Compile Include="Modules\ModuleRadar.cs" />
