@@ -15,7 +15,8 @@ namespace BDArmory.Modules
         public bool softEMP = true; //can EMPdamage exceed EMPthreshold?
         private bool disabled = false; //prevent further EMP buildup while rebooting
         public bool bricked = false; //He's dead, jeb
-
+        private float rebootTimer = 15;
+	
         private void EnableVessel()
         {
             foreach (Part p in vessel.parts)
@@ -78,18 +79,34 @@ namespace BDArmory.Modules
         }
         void UpdateEMPLevel()
         {
-            if ((!disabled || (disabled && !softEMP)) && incomingDamage > 0)
+                       if ((!disabled || (disabled && !softEMP)) && incomingDamage > 0)
             {
                 EMPDamage += incomingDamage; //only accumulate EMP damage if it's hard EMP or craft isn't disabled
                 incomingDamage = 0; //reset incoming damage amount
+                if (disabled && !softEMP)
+                {
+                    if (rebootTimer > 0)
+                    {
+                        rebootTimer += incomingDamage / 100; //if getting hit by new sources of hard EMP, add to reboot timer
+                    }
+                }
             }
             if (disabled)
             {
-                EMPDamage = Mathf.Clamp(EMPDamage - 5 * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity); //speed EMP cooldown, if electrolaser'd takes about ~10 sec to reboot. may need to be reduced further
-            }                                                                                       //fatal if fast+low alt, but higher alt or good glide ratio is survivable
+                //EMPDamage = Mathf.Clamp(EMPDamage - 5 * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity); //speed EMP cooldown, if electrolaser'd takes about ~10 sec to reboot. may need to be reduced further
+                //fatal if fast+low alt, but higher alt or good glide ratio is survivable
+                if (rebootTimer > 0)
+                {
+                    rebootTimer -= 1 * TimeWarp.fixedDeltaTime;
+                }
+                else
+                {
+                    EMPDamage = 0;
+                }
+            }                                                                                      
             else
             {
-                EMPDamage = Mathf.Clamp(EMPDamage - 1 * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
+                EMPDamage = Mathf.Clamp(EMPDamage - 5 * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity); //have EMP buildup dissipate over time
             }
             if (EMPDamage > EMPThreshold && !bricked && !disabled) //does the damage exceed the soft cap, but not the hard cap?
             {
