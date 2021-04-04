@@ -62,6 +62,10 @@ namespace BDArmory.Bullets
         public string explModelPath;
         public string explSoundPath;
 
+        //gravitic parameters
+        public float impulse = 0;
+        public float massMod = 0;
+
         Vector3 startPosition;
         public bool airDetonation = false;
         public bool proximityDetonation = false;
@@ -416,6 +420,21 @@ namespace BDArmory.Bullets
 
                         //Standard Pipeline Hitpoints, Armor and Explosives
                         impactVelocity = impactVector.magnitude;
+                         if (massMod != 0)
+                         {
+                            var ME = hitPart.FindModuleImplementing<ModuleMassAdjust>();
+                            if (ME == null)
+                            {
+                                ME = (ModuleMassAdjust)hitPart.AddModule("ModuleMassAdjust");
+                            }
+                            ME.massMod += massMod;
+                            ME.duration += BDArmorySettings.WEAPON_FX_DURATION;
+                        }
+                        if (impulse != 0)
+                        {
+                            hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
+                            break; //impulse rounds shouldn't penetrate/do damage
+                        }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
 
                         float thickness = ProjectileUtils.CalculateThickness(hitPart, anglemultiplier);
