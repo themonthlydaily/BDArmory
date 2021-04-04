@@ -439,6 +439,7 @@ namespace BDArmory.Modules
         public float thrust = 1;
         public float thrustTime = 1;
         public float blastRadius = 1;
+        public bool choker = false;
         public bool descendingOrder = true;
         public float thrustDeviation = 0.10f;
         [KSPField] public bool rocketPod = true; //is the RL a rocketpod, or a gyrojet gun?
@@ -448,6 +449,18 @@ namespace BDArmory.Modules
         private RocketInfo rocketInfo;
 
         public float tntMass = 0;
+
+        [KSPField]
+        public bool impulseWeapon = false;
+
+        [KSPField]
+        public bool graviticWeapon = false;
+
+        [KSPField]
+        public float Impulse = 0;
+
+        [KSPField]
+        public float massAdjustment = 0; //tons
 
         //deprectated
         //[KSPField] public float cannonShellRadius = 30; //max radius of explosion forces/damage
@@ -1519,6 +1532,14 @@ namespace BDArmory.Modules
                                     pBullet.bulletType = PooledBullet.PooledBulletTypes.Standard;
                                     pBullet.airDetonation = false;
                                 }
+                                if (impulseWeapon)
+                                {
+                                    pBullet.impulse = Impulse;
+                                }
+                                if (graviticWeapon)
+                                {
+                                    pBullet.massMod = massAdjustment;
+                                }
                                 switch (bulletDragType)
                                 {
                                     case BulletDragTypes.None:
@@ -1596,7 +1617,7 @@ namespace BDArmory.Modules
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
-            beamDuration = timeGap * 0.8f;
+            //beamDuration = timeGap * 0.8f;
             if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
                 && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
             {
@@ -1747,6 +1768,24 @@ namespace BDArmory.Modules
                             }
                             emp.softEMP = true;
                         }
+                        else if (impulseWeapon)
+                        {
+                            if (!pulseLaser)
+                            {
+                                damage = Impulse * TimeWarp.fixedDeltaTime;
+                            }
+                            if (p.rb != null && p.rb.mass > 0)
+                            {
+                                if (Impulse > 0)
+                                {
+                                    p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                }
+                                else
+                                {
+                                    p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                }                                
+                            }
+                        }
                         else
                         {
                             damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
@@ -1772,6 +1811,24 @@ namespace BDArmory.Modules
                                         p.AddSkinThermalFlux(damage);
                                     }
                                 }
+                            }
+                        }
+                        if (graviticWeapon)
+                        {
+                            if (p.rb != null && p.rb.mass > 0)
+                            {
+                                float duration = BDArmorySettings.WEAPON_FX_DURATION;
+                                if (!pulseLaser)
+                                {
+                                    duration = BDArmorySettings.WEAPON_FX_DURATION * TimeWarp.fixedDeltaTime;
+                                }
+                                var ME = p.FindModuleImplementing<ModuleMassAdjust>();
+                                if (ME == null)
+                                {
+                                    ME = (ModuleMassAdjust)p.AddModule("ModuleMassAdjust");
+                                }
+                                ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
+                                ME.duration += duration;
                             }
                         }
                         if (BDArmorySettings.INSTAKILL) p.Destroy();
@@ -1915,6 +1972,12 @@ namespace BDArmory.Modules
                                 rocket.maxAirDetonationRange = maxAirDetonationRange;
                                 rocket.tntMass = rocketInfo.tntMass;
                                 rocket.shaped = rocketInfo.shaped;
+                                rocket.concussion = impulseWeapon;
+                                rocket.gravitic = graviticWeapon;
+                                rocket.EMP = electroLaser; //borrowing this as a EMP weapon bool, since a rocket isn't going to be a laser
+                                rocket.choker = choker;
+                                rocket.impulse = Impulse;
+                                rocket.massMod = massAdjustment;
                                 rocket.randomThrustDeviation = thrustDeviation;
                                 rocket.bulletDmgMult = bulletDmgMult;
                                 rocket.sourceVessel = vessel;
@@ -1972,6 +2035,12 @@ namespace BDArmory.Modules
                                         rocket.maxAirDetonationRange = maxAirDetonationRange;
                                         rocket.tntMass = rocketInfo.tntMass;
                                         rocket.shaped = rocketInfo.shaped;
+                                        rocket.concussion = impulseWeapon;
+                                        rocket.gravitic = graviticWeapon;
+                                        rocket.EMP = electroLaser;
+                                        rocket.choker = choker;
+                                        rocket.impulse = Impulse;
+                                        rocket.massMod = massAdjustment;
                                         rocket.randomThrustDeviation = thrustDeviation;
                                         rocket.bulletDmgMult = bulletDmgMult;
                                         rocket.sourceVessel = vessel;
@@ -2962,7 +3031,7 @@ namespace BDArmory.Modules
             {
                 isOverheated = false;
                 autofireShotCount = 0;
-                Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
+                //Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
             }
         }
         void ReloadWeapon()
@@ -3424,15 +3493,34 @@ namespace BDArmory.Modules
                 {
                     if (rocketInfo.flak)
                     {
-                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak");
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
                     }
                     else if (rocketInfo.shaped)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Shaped") + " ";
                     }
+                    if (rocketInfo.EMP || rocketInfo.choker || rocketInfo.impulse)
+                    {
+                        if (rocketInfo.EMP)
+                        {
+                            guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_EMP") + " ";
+                        }
+                        if (rocketInfo.choker)
+                        {
+                            guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Choker") + " ";
+                        }
+                        if (rocketInfo.impulse)
+                        {
+                            guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Impulse") + " ";
+                        }
+                    }
                     else
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_HE") + " ";
+                    }
+                    if (rocketInfo.gravitic)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Gravitic") + " ";
                     }
                 }
                 else
@@ -3447,6 +3535,10 @@ namespace BDArmory.Modules
                 {
                     proximityDetonation = false;
                 }
+                graviticWeapon = rocketInfo.gravitic;
+                impulseWeapon = rocketInfo.impulse;
+                electroLaser = rocketInfo.EMP; //borrowing electrolaser bool, should really rename it empWeapon
+                choker = rocketInfo.choker;
                 PAWRefresh();
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 if (HighLogic.LoadedSceneIsFlight)
@@ -3589,6 +3681,20 @@ namespace BDArmory.Modules
                                 output.AppendLine($"- max range: {maxAirDetonationRange} m");
                             }
                         }
+                        if (impulseWeapon || graviticWeapon)
+                        {
+                            output.AppendLine($"Special Weapon:");
+                            if (impulseWeapon)
+                            {
+                                output.AppendLine($"Concussive:");
+                                output.AppendLine($"- Impulse to target:{Impulse}");
+                            }
+                            if (graviticWeapon)
+                            {
+                                output.AppendLine($"Gravitic:");
+                                output.AppendLine($"- weight added per hit:{massAdjustment * 1000} kg");
+                            }                            
+                        }
                         output.AppendLine("");
                     }
                 }
@@ -3620,6 +3726,30 @@ namespace BDArmory.Modules
                         {
                             output.AppendLine($"Cluster Rocket");
                             output.AppendLine($" - Submunition count: {rinfo.subProjectileCount}");
+                        }
+                        if (impulseWeapon || graviticWeapon || choker || electroLaser)
+                        {
+                            output.AppendLine($"Special Weapon:");
+                            if (impulseWeapon)
+                            {
+                                output.AppendLine($"Concussion warhead:");
+                                output.AppendLine($"- Impulse to target:{Impulse}");
+                            }
+                            if (graviticWeapon)
+                            {
+                                output.AppendLine($"Gravitic warhead:");
+                                output.AppendLine($"- weight added per part hit:{massAdjustment*1000} kg");
+                            }
+                            if (electroLaser)
+                            {
+                                output.AppendLine($"EMP warhead:");
+                                output.AppendLine($"- can temporarily shut down targets");
+                            }
+                            if (choker)
+                            {
+                                output.AppendLine($"Atmospheric Deprivation Warhead:");
+                                output.AppendLine($"- Will temporarily knock out air intakes");
+                            }
                         }
                     }
                     if (externalAmmo)
