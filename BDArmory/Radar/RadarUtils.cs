@@ -1233,14 +1233,10 @@ namespace BDArmory.Radar
                         {
                             if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
                             {
-                                // Debug.Log("DEBUG " + myWpnManager.vessel.vesselName + " : " + loadedvessels.Current.vesselName + ", blocked by terrain");
                                 continue; //blocked by terrain
                             }
 
                             BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
-
-                            // vesselDistance = Mathf.Sqrt(vesselDistance);
-                            // Vector3 predictedRelativeDirection = loadedvessels.Current.transform.position - myWpnManager.vessel.PredictPosition(vesselDistance / (950 + Vector3.Dot(myWpnManager.vessel.Velocity(), vesselDirection.normalized))); // Not used
 
                             TargetInfo tInfo;
                             if ((tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>()))
@@ -1255,11 +1251,15 @@ namespace BDArmory.Radar
                                         Vector3 vectorFromMissile = myWpnManager.vessel.CoM - missileBase.part.transform.position;
                                         Vector3 relV = missileBase.vessel.Velocity() - myWpnManager.vessel.Velocity();
                                         bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
+                                        var missileBlastRadiusSqr = missileBase.GetBlastRadius();
+                                        missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
-                                        // FIXME Also check CPA in the next 2s to avoid proximity detonations.
-                                        if (missileBase.HasFired && missileBase.TimeIndex > 1f && approaching && (missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < 3600)
+                                        if (missileBase.HasFired && missileBase.TimeIndex > 1f && approaching &&
+                                            (
+                                                (missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
+                                                myWpnManager.vessel.PredictClosestApproachSqrSeparation(missileBase.vessel, 2f) < missileBlastRadiusSqr // Closest approach is within blast radius of missile. 
+                                            ))
                                         {
-                                            // Debug.Log("DEBUG " + myWpnManager.vessel.vesselName + " incoming missile " + missileBase.vessel.vesselName + " at dist " + Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position).ToString("0.0"));
                                             results.incomingMissiles.Add(new IncomingMissile
                                             {
                                                 guidanceType = missileBase.TargetingMode,
@@ -1280,10 +1280,6 @@ namespace BDArmory.Radar
                                                     results.foundAGM = true;
                                                     break;
                                             }
-                                        }
-                                        else
-                                        {
-                                            // Debug.Log("DEBUG " + myWpnManager.vessel.vesselName + " ignoring missile " + loadedvessels.Current.vesselName + ": hasFired: " + missileBase.HasFired + ", timeIndex: " + missileBase.TimeIndex + ", approaching: " + approaching + ", aim: " + (missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude.ToString("0.0") + "m");
                                         }
                                     }
                                     else
@@ -1312,10 +1308,6 @@ namespace BDArmory.Radar
                                             }
                                         }
                                 }
-                            }
-                            else
-                            {
-                                // Debug.Log("DEBUG no target info for " + loadedvessels.Current.vesselName);
                             }
                         }
                     }
