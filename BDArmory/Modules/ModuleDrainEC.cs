@@ -17,7 +17,7 @@ namespace BDArmory.Modules
         private bool disabled = false; //prevent further EMP buildup while rebooting
         public bool bricked = false; //He's dead, jeb
         private float rebootTimer = 15;
-	
+
         private void EnableVessel()
         {
             foreach (Part p in vessel.parts)
@@ -80,7 +80,7 @@ namespace BDArmory.Modules
         }
         void UpdateEMPLevel()
         {
-                       if ((!disabled || (disabled && !softEMP)) && incomingDamage > 0)
+            if ((!disabled || (disabled && !softEMP)) && incomingDamage > 0)
             {
                 EMPDamage += incomingDamage; //only accumulate EMP damage if it's hard EMP or craft isn't disabled
                 incomingDamage = 0; //reset incoming damage amount
@@ -104,7 +104,7 @@ namespace BDArmory.Modules
                 {
                     EMPDamage = 0;
                 }
-            }                                                                                      
+            }
             else
             {
                 EMPDamage = Mathf.Clamp(EMPDamage - 5 * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity); //have EMP buildup dissipate over time
@@ -128,7 +128,7 @@ namespace BDArmory.Modules
         }
         private void DisableVessel()
         {
-	    rebootTimer = BDArmorySettings.WEAPON_FX_DURATION;
+            rebootTimer = BDArmorySettings.WEAPON_FX_DURATION;
             foreach (Part p in vessel.parts)
             {
                 var camera = p.FindModuleImplementing<ModuleTargetingCamera>();
@@ -215,8 +215,8 @@ namespace BDArmory.Modules
 
     }
 
-	internal class EMPShock : MonoBehaviour
-	{
+    internal class EMPShock : MonoBehaviour
+    {
         public void Start()
         {
             foreach (var pe in gameObject.GetComponentsInChildren<KSPParticleEmitter>())

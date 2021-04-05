@@ -28,8 +28,8 @@ namespace BDArmory.Bullets
         public static HashSet<string> rocketNames;
         public static RocketInfo defaultRocket;
 
-         public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime,
-                          bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, bool explosive, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
+        public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime,
+                         bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, bool explosive, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
         {
             this.name = name;
             this.rocketMass = rocketMass;
