@@ -22,7 +22,7 @@ namespace BDArmory.Modules
         {
             massMod = 0;
             part.RemoveModule(this);
-            //Debug.Log("[ME DEBUG] ME field expired, " + this.part.name + "mass: " + this.part.mass);
+            //Debug.Log("[BDArmory.ModuleMassAdjust]: ME field expired, " + this.part.name + "mass: " + this.part.mass);
         }
 
         void Update()
@@ -47,7 +47,7 @@ namespace BDArmory.Modules
                     massMod = Mathf.Clamp(massMod, (-startMass * 0.95f), Mathf.Infinity); //clamp mod mass to min of 5% of original value to prevent negative mass and whatever Kraken that summons
                 }
 				oldmassMod = massMod;
-                //Debug.Log("[ME DEBUG]applying additional ME field to " + this.part.name + ", orig mass: " + startMass + ", massMod = " + massMod);
+                //Debug.Log("[BDArmory.ModuleMassAdjust]: Applying additional ME field to " + this.part.name + ", orig mass: " + startMass + ", massMod = " + massMod);
             }
         }
         
@@ -55,7 +55,7 @@ namespace BDArmory.Modules
         {
             startMass = this.part.mass;
             hasSetup = true;
-            Debug.Log("[ME DEBUG]applying ME field to " + this.part.name + ", orig mass: " + startMass + ", massMod = " + massMod);
+            Debug.Log("[BDArmory.ModuleMassAdjust]: Applying ME field to " + this.part.name + ", orig mass: " + startMass + ", massMod = " + massMod);
         }
     }
 }
