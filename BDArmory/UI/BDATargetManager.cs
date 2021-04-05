@@ -488,50 +488,36 @@ namespace BDArmory.UI
             using (var team = TargetDatabase.GetEnumerator())
                 while (team.MoveNext())
                 {
-                    debugString.Append($"Team {team.Current.Key} targets:");
-                    debugString.Append(Environment.NewLine);
+                    debugString.AppendLine($"Team {team.Current.Key} targets:");
                     foreach (TargetInfo targetInfo in team.Current.Value)
                     {
                         if (targetInfo)
                         {
                             if (!targetInfo.Vessel)
                             {
-                                debugString.Append($"- A target with no vessel reference.");
-                                debugString.Append(Environment.NewLine);
+                                debugString.AppendLine($"- A target with no vessel reference.");
                             }
                             else
                             {
-                                debugString.Append($"- {targetInfo.Vessel.vesselName} Engaged by {targetInfo.TotalEngaging()}");
-                                debugString.Append(Environment.NewLine);
+                                debugString.AppendLine($"- {targetInfo.Vessel.vesselName} Engaged by {targetInfo.TotalEngaging()}");
                             }
                         }
                         else
                         {
-                            debugString.Append($"- null target info.");
-                            debugString.Append(Environment.NewLine);
+                            debugString.AppendLine($"- null target info.");
                         }
                     }
                 }
 
             debugString.Append(Environment.NewLine);
-            debugString.Append($"Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel):#####}");
-            debugString.Append(Environment.NewLine);
-
-            debugString.Append($"Radar Signature: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarModifiedSignature);
-            debugString.Append(Environment.NewLine);
-
-            debugString.Append($"Chaff multiplier: " + RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel));
-            debugString.Append(Environment.NewLine);
+            debugString.AppendLine($"Heat Signature: {GetVesselHeatSignature(FlightGlobals.ActiveVessel):#####}");
+            debugString.AppendLine($"Radar Signature: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarModifiedSignature);
+            debugString.AppendLine($"Chaff multiplier: " + RadarUtils.GetVesselChaffFactor(FlightGlobals.ActiveVessel));
 
             var ecmjInfo = FlightGlobals.ActiveVessel.gameObject.GetComponent<VesselECMJInfo>();
-            debugString.Append($"ECM Jammer Strength: " + (ecmjInfo != null ? ecmjInfo.jammerStrength.ToString("0.00") : "N/A"));
-            debugString.Append(Environment.NewLine);
-
-            debugString.Append($"ECM Lockbreak Strength: " + (ecmjInfo != null ? ecmjInfo.lockBreakStrength.ToString("0.00") : "N/A"));
-            debugString.Append(Environment.NewLine);
-
-            debugString.Append($"Radar Lockbreak Factor: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarLockbreakFactor);
-            debugString.Append(Environment.NewLine);
+            debugString.AppendLine($"ECM Jammer Strength: " + (ecmjInfo != null ? ecmjInfo.jammerStrength.ToString("0.00") : "N/A"));
+            debugString.AppendLine($"ECM Lockbreak Strength: " + (ecmjInfo != null ? ecmjInfo.lockBreakStrength.ToString("0.00") : "N/A"));
+            debugString.AppendLine($"Radar Lockbreak Factor: " + RadarUtils.GetVesselRadarSignature(FlightGlobals.ActiveVessel).radarLockbreakFactor);
         }
 
         public void SaveGPSTargets(ConfigNode saveNode = null)

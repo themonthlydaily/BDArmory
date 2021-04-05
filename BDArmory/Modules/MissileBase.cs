@@ -908,10 +908,10 @@ namespace BDArmory.Modules
 
         protected void drawLabels()
         {
-            if (vessel == null || !vessel.isActiveVessel) return;
+            if (vessel == null || !HasFired || !vessel.isActiveVessel) return;
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                GUI.Label(new Rect(200, Screen.height - 200, 400, 400), this.shortName + ":" + debugString.ToString());
+                GUI.Label(new Rect(200, Screen.height - 300, 600, 300), this.shortName + "\n" + debugString.ToString());
             }
         }
 

@@ -111,6 +111,15 @@ namespace BDArmory.Control
             }
         }
 
+        public static float PredictClosestApproachSqrSeparation(this Vessel vessel, Vessel otherVessel, float maxTime)
+        {
+            var timeToCPA = vessel.ClosestTimeToCPA(otherVessel, maxTime);
+            if (timeToCPA > 0 && timeToCPA < maxTime)
+                return (vessel.PredictPosition(timeToCPA) - otherVessel.PredictPosition(timeToCPA)).sqrMagnitude;
+            else
+                return float.MaxValue;
+        }
+
         /// <summary>
         /// Get the altitude of terrain below/above a point.
         /// </summary>

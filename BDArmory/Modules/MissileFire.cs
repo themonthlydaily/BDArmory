@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using KSP.Localization;
 using BDArmory.Control;
 using BDArmory.Core;
@@ -240,7 +241,7 @@ namespace BDArmory.Modules
 
         //missile warning
         public bool missileIsIncoming;
-        public float lastIncomingMissileDetected = 0;
+        public float incomingMissileLastDetected = 0;
         public float incomingMissileDistance = float.MaxValue;
         public Vessel incomingMissileVessel;
 
@@ -330,15 +331,16 @@ namespace BDArmory.Modules
         }
 
         public bool underAttack;
+        float underAttackLastNotified = 0f;
         public bool underFire;
-        Coroutine ufRoutine;
+        float underFireLastNotified = 0f;
 
         public Vector3 incomingThreatPosition;
         public Vessel incomingThreatVessel;
-        public MissileFire incomingWeaponManager;
         public float incomingMissDistance;
         public float incomingMissTime;
-        public Vessel priorThreatVessel = null;
+        public Vessel priorGunThreatVessel = null;
+        private ViewScanResults results;
 
         public bool debilitated = false;
 
@@ -789,6 +791,7 @@ namespace BDArmory.Modules
         }
         #endregion KSPFields,events,actions
 
+        private StringBuilder debugString = new StringBuilder();
         #endregion Declarations
 
         #region KSP Events
@@ -1247,7 +1250,19 @@ namespace BDArmory.Modules
 
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    GUI.Label(new Rect(600, 900, 100, 100), "Missiles away: " + missilesAway);
+                    debugString.Length = 0;
+                    debugString.AppendLine("Missiles away: " + missilesAway);
+                    if (missileIsIncoming)
+                    {
+                        foreach (var incomingMissile in results.incomingMissiles)
+                            debugString.AppendLine("Incoming missile: " + (incomingMissile.vessel != null ? incomingMissile.vessel.vesselName + " @ " + incomingMissile.distance.ToString("0") + "m (" + ThreatClosingTime(incomingMissile.vessel).ToString("0.0") + "s)" : null));
+                    }
+                    if (underAttack) debugString.AppendLine("Under attack from " + (incomingThreatVessel != null ? incomingThreatVessel.vesselName : null));
+                    if (underFire) debugString.AppendLine("Under fire from " + (priorGunThreatVessel != null ? priorGunThreatVessel.vesselName : null));
+                    if (isChaffing) debugString.AppendLine("Chaffing");
+                    if (isFlaring) debugString.AppendLine("Flaring");
+                    if (isECMJamming) debugString.AppendLine("ECMJamming");
+                    GUI.Label(new Rect(200, Screen.height - 500, 600, 200), debugString.ToString());
                 }
             }
         }
@@ -1278,7 +1293,9 @@ namespace BDArmory.Modules
         {
             while (enabled)
             {
-                yield return new WaitUntil(() => missileIsIncoming && Time.time - lastIncomingMissileDetected > 1f); // Wait until 1s after no missiles are detected.
+                yield return new WaitUntil(() => missileIsIncoming); // Wait until missile is incoming.
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) { Debug.Log("[BDArmory.MissileFire]: Triggering missile warning on " + vessel.vesselName); }
+                yield return new WaitUntil(() => Time.time - incomingMissileLastDetected > 1f); // Wait until 1s after no missiles are detected.
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) { Debug.Log("[BDArmory.MissileFire]: Silencing missile warning on " + vessel.vesselName); }
                 missileIsIncoming = false;
             }
@@ -1286,15 +1303,24 @@ namespace BDArmory.Modules
 
         IEnumerator UnderFireRoutine()
         {
+            underFireLastNotified = Time.time; // Update the last notification.
+            if (underFire) yield break; // Already under fire, we only want 1 timer.
             underFire = true;
-            yield return new WaitForSeconds(3);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) { Debug.Log("[BDArmory.MissileFire]: Triggering under fire warning on " + vessel.vesselName + " by " + priorGunThreatVessel.vesselName); }
+            yield return new WaitUntil(() => Time.time - underFireLastNotified > 1f); // Wait until 1s after being under fire.
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) { Debug.Log("[BDArmory.MissileFire]: Silencing under fire warning on " + vessel.vesselName); }
             underFire = false;
+            priorGunThreatVessel = null;
         }
 
         IEnumerator UnderAttackRoutine()
         {
+            underAttackLastNotified = Time.time; // Update the last notification.
+            if (underAttack) yield break; // Already under attack, we only want 1 timer.
             underAttack = true;
-            yield return new WaitForSeconds(3);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) { Debug.Log("[BDArmory.MissileFire]: Triggering under attack warning on " + vessel.vesselName + " by " + incomingThreatVessel.vesselName); }
+            yield return new WaitUntil(() => Time.time - underAttackLastNotified > 1f); // Wait until 3s after being under attack.
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) { Debug.Log("[BDArmory.MissileFire]: Silencing under attack warning on " + vessel.vesselName); }
             underAttack = false;
         }
 
@@ -1937,8 +1963,7 @@ namespace BDArmory.Modules
 
         public void FireAllCountermeasures(int count)
         {
-            if (!isChaffing && !isFlaring
-                && ThreatClosingTime(incomingMissileVessel) > cmThreshold)
+            if (!isChaffing && !isFlaring && ThreatClosingTime(incomingMissileVessel) > cmThreshold)
             {
                 StartCoroutine(AllCMRoutine(count));
             }
@@ -1954,8 +1979,7 @@ namespace BDArmory.Modules
 
         public void FireChaff()
         {
-            if (!isChaffing
-                && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
+            if (!isChaffing && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
                 StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval));
             }
@@ -1963,8 +1987,7 @@ namespace BDArmory.Modules
 
         public void FireFlares()
         {
-            if (!isFlaring
-                && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
+            if (!isFlaring && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
                 StartCoroutine(FlareRoutine((int)cmRepetition, cmInterval));
                 StartCoroutine(ResetMissileThreatDistanceRoutine());
@@ -2102,7 +2125,7 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS && distance < 1000f) Debug.Log("[BDArmory.MissileFire]: Legacy missile warning for " + vessel.vesselName + " at distance " + distance.ToString("0.0") + "m from " + ml.shortName);
             missileIsIncoming = true;
-            lastIncomingMissileDetected = Time.time;
+            incomingMissileLastDetected = Time.time;
             incomingMissileDistance = distance;
         }
 
@@ -4479,107 +4502,84 @@ namespace BDArmory.Modules
 
         void UpdateGuardViewScan()
         {
-            ViewScanResults results = RadarUtils.GuardScanInDirection(this, transform, guardAngle, guardRange);
+            results = RadarUtils.GuardScanInDirection(this, transform, guardAngle, guardRange);
             incomingThreatVessel = null;
-            incomingWeaponManager = null;
 
             if (results.foundMissile)
             {
-                if (results.missileThreatDistance < float.MaxValue)
+                if (BDArmorySettings.DRAW_DEBUG_LABELS && (!missileIsIncoming || results.missileThreatDistance < 1000f))
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS && (!missileIsIncoming || results.missileThreatDistance < 1000f)) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " incoming missile (" + results.threatVessel.vesselName + " from " + (results.threatWeaponManager != null && results.threatWeaponManager.vessel != null ? results.threatWeaponManager.vessel.vesselName : "unknown") + ") found at distance " + results.missileThreatDistance + "m");
-                    missileIsIncoming = true;
-                    lastIncomingMissileDetected = Time.time;
+                    foreach (var incomingMissile in results.incomingMissiles)
+                        Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " incoming missile (" + incomingMissile.vessel.vesselName + " of type " + incomingMissile.guidanceType + " from " + (incomingMissile.weaponManager != null && incomingMissile.weaponManager.vessel != null ? incomingMissile.weaponManager.vessel.vesselName : "unknown") + ") found at distance " + incomingMissile.distance + "m");
                 }
+                missileIsIncoming = true;
+                incomingMissileLastDetected = Time.time;
+                // Assign the closest missile as the main threat. FIXME In the future, we could do something more complex to handle all the incoming missiles.
+                incomingMissileDistance = results.incomingMissiles[0].distance;
+                incomingThreatPosition = results.incomingMissiles[0].position;
+                incomingThreatVessel = results.incomingMissiles[0].vessel;
+                incomingMissileVessel = results.incomingMissiles[0].vessel;
                 if (rwr && !rwr.rwrEnabled) rwr.EnableRWR();
                 if (rwr && rwr.rwrEnabled && !rwr.displayRWR) rwr.displayRWR = true;
-            }
 
-            if (results.foundHeatMissile)
-            {
-                StartCoroutine(UnderAttackRoutine());
-
-                FireFlares();
-
-                incomingThreatPosition = results.threatPosition;
-                incomingThreatVessel = results.threatVessel;
-
-                if (results.threatVessel)
+                if (results.foundHeatMissile)
                 {
-                    if (!incomingMissileVessel ||
-                        (incomingMissileVessel.transform.position - vessel.transform.position).sqrMagnitude >
-                        (results.threatVessel.transform.position - vessel.transform.position).sqrMagnitude)
+                    StartCoroutine(UnderAttackRoutine());
+
+                    FireFlares();
+                }
+
+                if (results.foundRadarMissile)
+                {
+                    StartCoroutine(UnderAttackRoutine());
+
+                    FireChaff();
+                    FireECM();
+                }
+
+                if (results.foundAGM)
+                {
+                    StartCoroutine(UnderAttackRoutine());
+
+                    //do smoke CM here.
+                    if (targetMissiles && guardTarget == null)
                     {
-                        incomingMissileVessel = results.threatVessel;
+                        //targetScanTimer = Mathf.Min(targetScanInterval, Time.time - targetScanInterval + 0.5f);
+                        targetScanTimer -= targetScanInterval / 2;
                     }
                 }
             }
-
-            if (results.foundRadarMissile)
+            else
             {
-                StartCoroutine(UnderAttackRoutine());
-
-                FireChaff();
-                FireECM();
-
-                incomingThreatPosition = results.threatPosition;
-                incomingThreatVessel = results.threatVessel;
-
-                if (results.threatVessel)
-                {
-                    if (!incomingMissileVessel ||
-                        (incomingMissileVessel.transform.position - vessel.transform.position).sqrMagnitude >
-                        (results.threatVessel.transform.position - vessel.transform.position).sqrMagnitude)
-                    {
-                        incomingMissileVessel = results.threatVessel;
-                    }
-                }
+                // FIXME these shouldn't be necessary if all checks against them are guarded by missileIsIncoming.
+                incomingMissileDistance = float.MaxValue;
+                incomingMissileVessel = null;
             }
-
-            if (results.foundAGM)
-            {
-                StartCoroutine(UnderAttackRoutine());
-
-                //do smoke CM here.
-                if (targetMissiles && guardTarget == null)
-                {
-                    //targetScanTimer = Mathf.Min(targetScanInterval, Time.time - targetScanInterval + 0.5f);
-                    targetScanTimer -= targetScanInterval / 2;
-                }
-            }
-
-            incomingMissileDistance = Mathf.Min(results.missileThreatDistance, incomingMissileDistance);
 
             if (results.firingAtMe)
             {
-                StartCoroutine(UnderAttackRoutine());
-
-                incomingThreatPosition = results.threatPosition;
-                incomingThreatVessel = results.threatVessel;
-                if (ufRoutine != null)
+                if (!missileIsIncoming) // Don't override incoming missile threats. FIXME In the future, we could do something more complex to handle all incoming threats.
                 {
-                    StopCoroutine(ufRoutine);
-                    underFire = false;
+                    incomingThreatPosition = results.threatPosition;
+                    incomingThreatVessel = results.threatVessel;
                 }
-                if (priorThreatVessel == incomingThreatVessel)
+                if (priorGunThreatVessel == results.threatVessel)
                 {
                     incomingMissTime += Time.fixedDeltaTime;
                 }
                 else
                 {
-                    priorThreatVessel = incomingThreatVessel;
+                    priorGunThreatVessel = results.threatVessel;
                     incomingMissTime = 0f;
                 }
                 if (results.threatWeaponManager != null)
                 {
-                    incomingWeaponManager = results.threatWeaponManager;
                     incomingMissDistance = results.missDistance;
                     TargetInfo nearbyFriendly = BDATargetManager.GetClosestFriendly(this);
                     TargetInfo nearbyThreat = BDATargetManager.GetTargetFromWeaponManager(results.threatWeaponManager);
 
                     if (nearbyThreat != null && nearbyThreat.weaponManager != null && nearbyFriendly != null && nearbyFriendly.weaponManager != null)
-                        if (Team.IsEnemy(nearbyThreat.weaponManager.Team) &&
-                            nearbyFriendly.weaponManager.Team == Team)
+                        if (Team.IsEnemy(nearbyThreat.weaponManager.Team) && nearbyFriendly.weaponManager.Team == Team)
                         //turns out that there's no check for AI on the same team going after each other due to this.  Who knew?
                         {
                             if (nearbyThreat == currentTarget && nearbyFriendly.weaponManager.currentTarget != null)
@@ -4588,8 +4588,7 @@ namespace BDArmory.Modules
                                 SetOverrideTarget(nearbyFriendly.weaponManager.currentTarget);
                                 nearbyFriendly.weaponManager.SetOverrideTarget(nearbyThreat);
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " called for help from " +
-                                              nearbyFriendly.Vessel.vesselName + " and took its target in return");
+                                    Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " called for help from " + nearbyFriendly.Vessel.vesselName + " and took its target in return");
                                 //basically, swap targets to cover each other
                             }
                             else
@@ -4597,15 +4596,18 @@ namespace BDArmory.Modules
                                 //otherwise, continue engaging the current target for now
                                 nearbyFriendly.weaponManager.SetOverrideTarget(nearbyThreat);
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " called for help from " +
-                                              nearbyFriendly.Vessel.vesselName);
+                                    Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " called for help from " + nearbyFriendly.Vessel.vesselName);
                             }
                         }
                 }
-                ufRoutine = StartCoroutine(UnderFireRoutine());
+
+                StartCoroutine(UnderAttackRoutine());
+                StartCoroutine(UnderFireRoutine());
             }
             else
+            {
                 incomingMissTime = 0f; // Reset incoming fire time
+            }
         }
 
         public void ForceScan()
