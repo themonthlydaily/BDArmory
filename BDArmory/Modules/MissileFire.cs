@@ -3397,14 +3397,14 @@ namespace BDArmory.Modules
 
             float distance = Vector3.Distance(transform.position + vessel.Velocity(), target.position + target.velocity);
             IBDWeapon targetWeapon = null;
-            float targetWeaponRPM = 0;
+            float targetWeaponRPM = -1;
             float targetWeaponTDPS = 0;
-            float targetWeaponImpact = 0;
+            float targetWeaponImpact = -1;
             // float targetLaserDamage = 0;
             float targetYield = 0;
-            float targetRocketPower = 0;
-            float targetRocketAccel = 0;
-            int targetWeaponPriority = 0;
+            float targetRocketPower = -1;
+            float targetRocketAccel = -1;
+            int targetWeaponPriority = -1;
             if (target.isMissile)
             {
                 // iterate over weaponTypesMissile and pick suitable one based on engagementRange (and dynamic launch zone for missiles)
@@ -3509,7 +3509,7 @@ namespace BDArmory.Modules
                             bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
 
-                            if (targetWeaponPriority > candidatePriority)
+                            if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //dont replace a higher priority weapon with a lower priority one
 
                             if ((targetWeapon != null) && targetRocketAccel < candidateRocketAccel)
@@ -3520,7 +3520,7 @@ namespace BDArmory.Modules
                             {
                                 candidateRPM *= 1.5f; // weight selection towards flak ammo
                             }
-                            if (targetWeaponPriority < candidatePriority) //use priority gun
+                            if (targetWeapon != null && targetWeaponPriority < candidatePriority) //use priority gun
                             {
                                 targetWeapon = item.Current;
                                 targetWeaponRPM = candidateRPM;
@@ -3563,7 +3563,7 @@ namespace BDArmory.Modules
                             bool outsideFiringCosAngle = targetCosAngle < ((ModuleWeapon)item.Current).targetAdjustedMaxCosAngle;
                             bool compareRocketRPM = false;
 
-                            if (targetWeaponPriority > candidatePriority)
+                            if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
 
                             if (candidateRadius > 8) //most fighters are, what, at most 15m in their largest dimension? That said, maybe make this configurable in the weapon PAW...
@@ -3648,7 +3648,7 @@ namespace BDArmory.Modules
 
                             if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabled
 
-                            if (targetWeaponPriority > candidatePriority)
+                            if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
 
                             if (!pulseLaser) //if beamlaser, compare power instead
