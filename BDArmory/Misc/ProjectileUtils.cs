@@ -35,6 +35,10 @@ namespace BDArmory.Misc
             // Debug.Log("DEBUG Ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
 
             // Update scoring structures
+            ApplyScore(hitPart, sourceVessel, distanceTraveled, damage, name);
+        }
+        public static void ApplyScore(Part hitPart, Vessel sourceVessel, double distanceTraveled, float damage, string name)
+        {
             var aName = sourceVessel.GetName();
             var tName = hitPart.vessel.GetName();
 

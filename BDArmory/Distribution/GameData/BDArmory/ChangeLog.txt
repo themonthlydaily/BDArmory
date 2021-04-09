@@ -1,4 +1,11 @@
-﻿v1.4.3.0
+﻿v1.4.3.1
+FIXES
+	- Add missing values for Hydra70 and 8KOMS rockets.
+	- Fix smartpick not finding priority 0 lasers.
+IMPROVEMENTS
+	- Add gravity gun (RWP S3R4), F-86 launcher, generic rocket ammo and FFAR70 rocket definition.
+
+v1.4.3.0
 FIXES
 	- Fix rockets overriding the weapon name and breaking the editor.
 	- Maintain incoming missile warning while missiles are still incoming.

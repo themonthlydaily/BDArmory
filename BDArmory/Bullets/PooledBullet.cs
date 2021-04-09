@@ -434,6 +434,7 @@ namespace BDArmory.Bullets
                         if (impulse != 0)
                         {
                             hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
+                            ProjectileUtils.ApplyScore(hitPart, sourceVessel, distanceTraveled, 0, bullet.name);
                             break; //impulse rounds shouldn't penetrate/do damage
                         }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
