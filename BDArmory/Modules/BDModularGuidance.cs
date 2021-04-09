@@ -813,14 +813,13 @@ namespace BDArmory.Modules
 
             var currentAngle = Vector3.SignedAngle(rollVessel, gravityVector, Vector3.Cross(rollVessel, gravityVector)) - 90f;
 
-            debugString.Append($"Roll angle: {currentAngle}");
-            debugString.Append(Environment.NewLine);
+            debugString.AppendLine($"Roll angle: {currentAngle}");
             this.angularVelocity = currentAngle - this.lastRollAngle;
             //this.angularAcceleration = angularVelocity - this.lasAngularVelocity;
 
             var futureAngle = currentAngle + angularVelocity / Time.fixedDeltaTime * 1f;
 
-            debugString.Append($"future Roll angle: {futureAngle}");
+            debugString.AppendLine($"future Roll angle: {futureAngle}");
 
             if (futureAngle > 0.5f || currentAngle > 0.5f)
             {
@@ -830,7 +829,7 @@ namespace BDArmory.Modules
             {
                 this.Roll = Mathf.Clamp(Roll + 0.001f, 0, 1f);
             }
-            debugString.Append($"Roll value: {this.Roll}");
+            debugString.AppendLine($"Roll value: {this.Roll}");
 
             lastRollAngle = currentAngle;
             //lasAngularVelocity = angularVelocity;

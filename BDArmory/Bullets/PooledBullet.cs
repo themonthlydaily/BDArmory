@@ -421,8 +421,8 @@ namespace BDArmory.Bullets
 
                         //Standard Pipeline Hitpoints, Armor and Explosives
                         impactVelocity = impactVector.magnitude;
-                         if (massMod != 0)
-                         {
+                        if (massMod != 0)
+                        {
                             var ME = hitPart.FindModuleImplementing<ModuleMassAdjust>();
                             if (ME == null)
                             {

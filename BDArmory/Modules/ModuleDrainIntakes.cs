@@ -30,7 +30,7 @@ namespace BDArmory.Modules
             }
             if (!initialized)
             {
-                //Debug.Log("[CHOKER]: " + this.part.name + "choked!");
+                //Debug.Log("[BDArmory.ModuleDrainIntakes]: " + this.part.name + "choked!");
                 initialized = true;
                 using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
                 {

@@ -250,7 +250,7 @@ namespace BDArmory.Bullets
                             }
                             catch (NullReferenceException e)
                             {
-                                Debug.LogWarning("[BDArmory.BDArmory]:NullReferenceException for Kinetic Hit: "+e.Message);
+                                Debug.LogWarning("[BDArmory.BDArmory]:NullReferenceException for Kinetic Hit: " + e.Message);
                                 return;
                             }
 
@@ -523,7 +523,7 @@ namespace BDArmory.Bullets
                                     {
                                         ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
                                     }
-                                    ME.massMod += (massMod * (1- (distance/blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
+                                    ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
                                     ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
                                 }
                             }
