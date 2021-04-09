@@ -1,9 +1,25 @@
-﻿FIXES
+﻿v1.4.3.0
+FIXES
 	- Fix rockets overriding the weapon name and breaking the editor.
 	- Maintain incoming missile warning while missiles are still incoming.
+	- Limit 'firing at me' detection (from guns) to the range of the weapon being fired.
 
 IMPROVEMENTS
 	- Make altitude limits independent of RWP and change localisation.
+	- Make missile targeting check depend on blast radius of incoming missile instead of fixed at 60m and include check for passing in close proximity.
+	- Return a full list of incoming missiles sorted by distance in UpdateGuardViewScan instead of just the first found.
+	- Convert 'under attack' and 'under fire' routines to maintain their state until 1s after last notification instead of simply resetting after a fixed period.
+	- Adds Impulse/Gravitc functionality for ballistics/rockets/lasers
+		- Adds some new configuration fields
+			- impulseWeapon = foo //gun/laser will deal impulse instead of damage
+			- Impulse = n //magnitude of impulse delivered per bullet/rocket/pulse laser shot, and impulse/sec delivered by beam lasers. setting this negative will make attractor lasers instead of repulsor lasers
+			- graviticWeapon = foo //gun/laser will temporarily modify mass of hit part
+			- massAdjustment = n //mass, in tons, added per sec by beams or per hit by bullets/rockets/pulselasers
+		- Adds some new rocketdef config options
+			- gravitic = foo //rocket will temporarily modify weight of parts hit by rocket and its explosion
+			- impulse = foo //rocket applies non-damaging impulse to parts hit by rocket/explosion
+			- choker = foo //rocket will temporarily disable air intakes caught in its blast radius
+			- EMP = foo //rocket will apply EMP buildup to targets within blast radius
 
 v1.4.2.10
 FIXES
