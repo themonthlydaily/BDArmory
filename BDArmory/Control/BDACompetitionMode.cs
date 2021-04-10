@@ -374,6 +374,7 @@ namespace BDArmory.Control
             sequencedCompetitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
+            DisableCometSpawning();
             GameEvents.onCometSpawned.Add(RemoveCometVessel);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
@@ -1589,6 +1590,17 @@ namespace BDArmory.Control
                 Debug.Log("[BDArmory.BDACompetitionMode]: " + (vessel != null ? vessel.vesselName : null) + " removed.");
                 nonCompetitorsToRemove.Remove(vessel);
             }
+        }
+
+        void DisableCometSpawning()
+        {
+            var cometManager = CometManager.Instance;
+            if (!cometManager.isActiveAndEnabled) return;
+            cometManager.spawnChance = new FloatCurve(new Keyframe[] { new Keyframe(0f, 0f), new Keyframe(1f, 0f) }); // Set the spawn chance to 0.
+            foreach (var comet in cometManager.DiscoveredComets) // Clear known comets.
+                RemoveCometVessel(comet);
+            foreach (var comet in cometManager.Comets) // Clear all comets.
+                RemoveCometVessel(comet);
         }
         #endregion
 
