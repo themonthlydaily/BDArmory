@@ -387,6 +387,8 @@ namespace BDArmory.Bullets
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
                             distanceTraveled += hit.distance;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
+                            ExplosiveDetonation(hitPart, hit, bulletRay);
+                            KillBullet(); // Kerbals are too thick-headed for penetration...
                             return true;
                         }
 
