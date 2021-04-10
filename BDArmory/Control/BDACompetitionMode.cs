@@ -53,6 +53,7 @@ namespace BDArmory.Control
         public int shotsFired = 0;
         public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
         public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>();
+        public Dictionary<string, int> missileHitCounts = new Dictionary<string, int>();
         public GMKillReason gmKillReason = GMKillReason.None;
         public bool cleanDeath = false;
         public string team;
@@ -2146,6 +2147,16 @@ namespace BDArmory.Control
                     foreach (var vesselName in Scores[key].damageFromBullets.Keys)
                         whoDamagedMeWithBullets += ":" + Scores[key].damageFromBullets[vesselName].ToString("0.0") + ":" + vesselName;
                     logStrings.Add(whoDamagedMeWithBullets);
+                }
+
+            // Who hit who with missiles.
+            foreach (var key in Scores.Keys)
+                if (Scores[key].missileHitCounts.Count > 0)
+                {
+                    string whoHitMeWithMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOHITWHOWITHMISSILES:" + key;
+                    foreach (var vesselName in Scores[key].missileHitCounts.Keys)
+                        whoHitMeWithMissiles += ":" + Scores[key].missileHitCounts[vesselName] + ":" + vesselName;
+                    logStrings.Add(whoHitMeWithMissiles);
                 }
 
             // Who shot who with missiles.
