@@ -58,6 +58,11 @@ namespace BDArmory.Control
             Vector3 relPosition = targetPosition - vessel.transform.position;
             Vector3 relVelocity = targetVelocity - vessel.Velocity();
             Vector3 relAcceleration = targetAcceleration - vessel.acceleration;
+            return ClosestTimeToCPA(relPosition, relVelocity, relAcceleration, maxTime);
+        }
+
+        public static float ClosestTimeToCPA(Vector3 relPosition, Vector3 relVelocity, Vector3 relAcceleration, float maxTime)
+        {
             float A = Vector3.Dot(relAcceleration, relAcceleration) / 2f;
             float B = Vector3.Dot(relVelocity, relAcceleration) * 3f / 2f;
             float C = Vector3.Dot(relVelocity, relVelocity) + Vector3.Dot(relPosition, relAcceleration);
