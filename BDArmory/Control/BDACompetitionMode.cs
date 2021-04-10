@@ -2163,7 +2163,7 @@ namespace BDArmory.Control
             foreach (var key in Scores.Keys)
                 if (Scores[key].missilePartDamageCounts.Count > 0)
                 {
-                    string whoShotMeWithMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOSHOTWHOWITHMISSILES:" + key;
+                    string whoShotMeWithMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOPARTSHITWHOWITHMISSILES:" + key;
                     foreach (var vesselName in Scores[key].missilePartDamageCounts.Keys)
                         whoShotMeWithMissiles += ":" + Scores[key].missilePartDamageCounts[vesselName] + ":" + vesselName;
                     logStrings.Add(whoShotMeWithMissiles);
