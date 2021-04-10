@@ -2109,8 +2109,16 @@ namespace BDArmory.Modules
             if (!externalAmmo)
             {
                 PartResource rocketResource = GetRocketResource();
-                rocketQty = rocketResource.amount;
-                rocketsMax = rocketResource.maxAmount;
+                if (rocketResource != null)
+                {
+                    rocketQty = rocketResource.amount;
+                    rocketsMax = rocketResource.maxAmount;
+                }
+                else
+                {
+                    rocketQty = 0;
+                    rocketsMax = 0;
+                }
             }
             else
             {
@@ -3051,7 +3059,7 @@ namespace BDArmory.Modules
                 isReloading = false;
                 ReloadTimer = 0;
                 AnimTimer = 0;
-                if (rocketPod)
+                if (eWeaponType == WeaponTypes.Rocket && rocketPod)
                 {
                     UpdateRocketScales();
                 }

@@ -433,7 +433,7 @@ namespace BDArmory.Bullets
                             ME.massMod += massMod;
                             ME.duration += BDArmorySettings.WEAPON_FX_DURATION;
                         }
-                        if (impulse != 0)
+                        if (impulse != 0 && hitPart.rb != null)
                         {
                             hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
                             ProjectileUtils.ApplyScore(hitPart, sourceVessel, distanceTraveled, 0, bullet.name);
