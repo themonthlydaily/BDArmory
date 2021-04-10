@@ -1783,7 +1783,7 @@ namespace BDArmory.Modules
                                 else
                                 {
                                     p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
-                                }                                
+                                }
                             }
                         }
                         else
@@ -2783,22 +2783,22 @@ namespace BDArmory.Modules
                     fireTransform = rockets[0].parent; // support for legacy RLs
                 }
 
-                Vector3 targetRelPos = (finalAimTarget) - fireTransform.position;
+                Vector3 targetRelPos = finalAimTarget - fireTransform.position;
                 Vector3 aimDirection = fireTransform.forward;
                 float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
                 var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
 
                 if (eWeaponType != WeaponTypes.Rocket) //guns/lasers
                 {
-                    Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
-                    Vector3 projectedTargetPos = targetDiffVec;
+                    // Vector3 targetDiffVec = finalAimTarget - lastFinalAimTarget;
+                    // Vector3 projectedTargetPos = targetDiffVec;
                     //projectedTargetPos /= TimeWarp.fixedDeltaTime;
                     //projectedTargetPos *= TimeWarp.fixedDeltaTime;
-                    projectedTargetPos *= 2; //project where the target will be in 2 timesteps
-                    projectedTargetPos += finalAimTarget;
+                    // projectedTargetPos *= 2; //project where the target will be in 2 timesteps
+                    // projectedTargetPos += finalAimTarget;
 
-                    targetDiffVec.Normalize();
-                    Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
+                    // targetDiffVec.Normalize();
+                    // Vector3 lastTargetRelPos = (lastFinalAimTarget) - fireTransform.position;
 
                     if (BDATargetManager.CheckSafeToFireGuns(weaponManager, aimDirection, 1000, 0.999962f) //~0.5 degree of unsafe angle, was 0.999848f (1deg)
                         && targetCosAngle >= maxAutoFireCosAngle2) //check if directly on target
@@ -3693,7 +3693,7 @@ namespace BDArmory.Modules
                             {
                                 output.AppendLine($"Gravitic:");
                                 output.AppendLine($"- weight added per hit:{massAdjustment * 1000} kg");
-                            }                            
+                            }
                         }
                         output.AppendLine("");
                     }
@@ -3738,7 +3738,7 @@ namespace BDArmory.Modules
                             if (graviticWeapon)
                             {
                                 output.AppendLine($"Gravitic warhead:");
-                                output.AppendLine($"- weight added per part hit:{massAdjustment*1000} kg");
+                                output.AppendLine($"- weight added per part hit:{massAdjustment * 1000} kg");
                             }
                             if (electroLaser)
                             {
