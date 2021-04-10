@@ -556,23 +556,26 @@ namespace BDArmory.UI
                 return;
             }
 
-            drawCursor = false;
-            if (!MapView.MapIsEnabled && !Misc.Misc.CheckMouseIsOnGui() && !PauseMenu.isOpen)
+            if (HighLogic.LoadedSceneIsFlight)
             {
-                if (ActiveWeaponManager.selectedWeapon != null && ActiveWeaponManager.weaponIndex > 0 &&
-                    !ActiveWeaponManager.guardMode)
+                drawCursor = false;
+                if (!MapView.MapIsEnabled && !Misc.Misc.CheckMouseIsOnGui() && !PauseMenu.isOpen)
                 {
-                    if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
-                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket ||
-                        ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
+                    if (ActiveWeaponManager.selectedWeapon != null && ActiveWeaponManager.weaponIndex > 0 &&
+                        !ActiveWeaponManager.guardMode)
                     {
-                        ModuleWeapon mw = ActiveWeaponManager.selectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
-                        if (mw != null && mw.weaponState == ModuleWeapon.WeaponStates.Enabled && mw.maxPitch > 1 && !mw.slaved && !mw.aiControlled)
+                        if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun ||
+                            ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket ||
+                            ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                         {
-                            //Screen.showCursor = false;
-                            Cursor.visible = false;
-                            drawCursor = true;
-                            return;
+                            ModuleWeapon mw = ActiveWeaponManager.selectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
+                            if (mw != null && mw.weaponState == ModuleWeapon.WeaponStates.Enabled && mw.maxPitch > 1 && !mw.slaved && !mw.aiControlled)
+                            {
+                                //Screen.showCursor = false;
+                                Cursor.visible = false;
+                                drawCursor = true;
+                                return;
+                            }
                         }
                     }
                 }
