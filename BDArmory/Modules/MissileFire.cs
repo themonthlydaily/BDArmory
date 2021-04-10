@@ -4013,7 +4013,34 @@ namespace BDArmory.Modules
             switch (weaponCandidate.GetWeaponClass())
             {
                 case WeaponClasses.DefenseLaser:
-                // TODO: is laser treated like a gun?
+                    {
+                        ModuleWeapon laser = (ModuleWeapon)weaponCandidate;
+
+                        // check yaw range of turret
+                        ModuleTurret turret = laser.turret;
+                        float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
+                        if (turret != null)
+                            if (!TargetInTurretRange(turret, gimbalTolerance))
+                                return false;
+
+                        // check overheat
+                        if (laser.isOverheated)
+                            return false;
+
+                        if (laser.isReloading || !laser.hasGunner)
+                            return false;
+
+                        // check ammo
+                        if (CheckAmmo(laser))
+                        {
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
+                                Debug.Log("[BDArmory.MissileFire] : " + vessel.vesselName + " - Firing possible with " + weaponCandidate.GetShortName());
+                            }
+                            return true;
+                        }
+                        break;
+                    }
 
                 case WeaponClasses.Gun:
                     {
@@ -4029,7 +4056,8 @@ namespace BDArmory.Modules
                         // check overheat
                         if (gun.isOverheated)
                             return false;
-
+                        if (gun.isReloading || !gun.hasGunner)
+                            return false;
                         // check ammo
                         if (CheckAmmo(gun))
                         {
@@ -4084,6 +4112,8 @@ namespace BDArmory.Modules
                         if (turret != null)
                             if (!TargetInTurretRange(turret, gimbalTolerance))
                                 return false;
+                        if (rocket.isOverheated)
+                            return false;
                         //check reloading and crewed
                         if (rocket.isReloading || !rocket.hasGunner)
                             return false;

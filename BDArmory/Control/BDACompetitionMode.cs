@@ -53,6 +53,7 @@ namespace BDArmory.Control
         public int shotsFired = 0;
         public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
         public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>();
+        public Dictionary<string, int> missileHitCounts = new Dictionary<string, int>();
         public GMKillReason gmKillReason = GMKillReason.None;
         public bool cleanDeath = false;
         public string team;
@@ -374,6 +375,7 @@ namespace BDArmory.Control
             sequencedCompetitionStarting = false;
             GameEvents.onCollision.Add(AnalyseCollision); // Start collision detection
             GameEvents.onVesselCreate.Add(DebrisDelayedCleanUp);
+            DisableCometSpawning();
             GameEvents.onCometSpawned.Add(RemoveCometVessel);
             competitionStartTime = Planetarium.GetUniversalTime();
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
@@ -1590,6 +1592,17 @@ namespace BDArmory.Control
                 nonCompetitorsToRemove.Remove(vessel);
             }
         }
+
+        void DisableCometSpawning()
+        {
+            var cometManager = CometManager.Instance;
+            if (!cometManager.isActiveAndEnabled) return;
+            cometManager.spawnChance = new FloatCurve(new Keyframe[] { new Keyframe(0f, 0f), new Keyframe(1f, 0f) }); // Set the spawn chance to 0.
+            foreach (var comet in cometManager.DiscoveredComets) // Clear known comets.
+                RemoveCometVessel(comet);
+            foreach (var comet in cometManager.Comets) // Clear all comets.
+                RemoveCometVessel(comet);
+        }
         #endregion
 
         // This is called every Time.fixedDeltaTime.
@@ -2088,12 +2101,12 @@ namespace BDArmory.Control
             {
                 var winningTeam = survivingTeams.First();
                 var winningTeamMembers = Scores.Where(s => s.Value.team == winningTeam).Select(s => s.Key);
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Win:{\"team\": " + $"\"{winningTeam}\", \"members\": [" + string.Join(", ", winningTeamMembers.Select(m => $"\"{m}\"")) + "]}");
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Win:{\"team\": " + $"\"{winningTeam}\", \"members\": [" + string.Join(", ", winningTeamMembers.Select(m => $"\"{m.Replace("\"", "\\\"")}\"")) + "]}");
             }
             else
             {
                 var drawTeams = survivingTeams.ToDictionary(t => t, t => Scores.Where(s => s.Value.team == t).Select(s => s.Key));
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Draw:[" + string.Join(", ", drawTeams.Select(t => "{\"team\": " + $"\"{t.Key}\"" + ", \"members\": [" + string.Join(", ", t.Value.Select(m => $"\"{m}\"")) + "]}")) + "]");
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Draw:[" + string.Join(", ", drawTeams.Select(t => "{\"team\": " + $"\"{t.Key}\"" + ", \"members\": [" + string.Join(", ", t.Value.Select(m => $"\"{m.Replace("\"", "\\\"")}\"")) + "]}")) + "]");
             }
 
             // Record ALIVE/DEAD status of each craft.
@@ -2136,11 +2149,21 @@ namespace BDArmory.Control
                     logStrings.Add(whoDamagedMeWithBullets);
                 }
 
+            // Who hit who with missiles.
+            foreach (var key in Scores.Keys)
+                if (Scores[key].missileHitCounts.Count > 0)
+                {
+                    string whoHitMeWithMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOHITWHOWITHMISSILES:" + key;
+                    foreach (var vesselName in Scores[key].missileHitCounts.Keys)
+                        whoHitMeWithMissiles += ":" + Scores[key].missileHitCounts[vesselName] + ":" + vesselName;
+                    logStrings.Add(whoHitMeWithMissiles);
+                }
+
             // Who shot who with missiles.
             foreach (var key in Scores.Keys)
                 if (Scores[key].missilePartDamageCounts.Count > 0)
                 {
-                    string whoShotMeWithMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOSHOTWHOWITHMISSILES:" + key;
+                    string whoShotMeWithMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOPARTSHITWHOWITHMISSILES:" + key;
                     foreach (var vesselName in Scores[key].missilePartDamageCounts.Keys)
                         whoShotMeWithMissiles += ":" + Scores[key].missilePartDamageCounts[vesselName] + ":" + vesselName;
                     logStrings.Add(whoShotMeWithMissiles);
