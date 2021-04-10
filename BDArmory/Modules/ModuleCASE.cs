@@ -207,7 +207,7 @@ namespace BDArmory.Modules
                             }
                             catch (Exception e)
                             {
-                                Debug.LogError("[BDArmory.ModuleCASE]: Exception in AmmoExplosion Hit" + e.Message);
+                                Debug.LogError("[BDArmory.ModuleCASE]: Exception in AmmoExplosion Hit: " + e.Message + "\n" + e.StackTrace);
                             }
                         }
                     }
@@ -239,7 +239,7 @@ namespace BDArmory.Modules
                                     }
                                     catch (NullReferenceException e)
                                     {
-                                        Debug.LogWarning("[BDArmory.ModuleCASE]: NullReferenceException for AmmoExplosion Hit: " + e.Message);
+                                        Debug.LogError("[BDArmory.ModuleCASE]: NullReferenceException for AmmoExplosion Hit: " + e.Message + "\n" + e.StackTrace);
                                         continue;
                                     }
 
