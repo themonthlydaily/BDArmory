@@ -20,7 +20,8 @@ namespace BDArmory.Modules
         static public KerbalSafetyManager Instance; // static instance for dealing with global stuff.
 
         public Dictionary<ProtoCrewMember, KerbalSafety> kerbals; // The kerbals being managed.
-        private List<KerbalEVA> evaKerbalsToMonitor;
+        List<KerbalEVA> evaKerbalsToMonitor;
+        bool isEnabled = false;
         #endregion
 
         public void Awake()
@@ -34,10 +35,10 @@ namespace BDArmory.Modules
 
         public void Start()
         {
-            Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY ? " and enabled." : ", but currently disabled."));
+            Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and enabled." : ", but currently disabled."));
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
             evaKerbalsToMonitor = new List<KerbalEVA>();
-            if (BDArmorySettings.KERBAL_SAFETY)
+            if (BDArmorySettings.KERBAL_SAFETY > 0)
                 CheckAllVesselsForKerbals();
         }
 
@@ -58,6 +59,8 @@ namespace BDArmory.Modules
 
         public void EnableKerbalSafety()
         {
+            if (isEnabled) return;
+            isEnabled = true;
             Debug.Log("[BDArmory.KerbalSafety]: Enabling kerbal safety.");
             foreach (var ks in kerbals.Values)
                 ks.AddHandlers();
@@ -76,6 +79,8 @@ namespace BDArmory.Modules
 
         public void DisableKerbalSafety()
         {
+            if (!isEnabled) return;
+            isEnabled = false;
             Debug.Log("[BDArmory.KerbalSafety]: Disabling kerbal safety.");
             foreach (var ks in kerbals.Values)
                 ks.RemoveHandlers();
@@ -101,7 +106,7 @@ namespace BDArmory.Modules
 
         public void CheckVesselForKerbals(Vessel vessel, bool quiet = false)
         {
-            if (!BDArmorySettings.KERBAL_SAFETY) return;
+            if (BDArmorySettings.KERBAL_SAFETY == 0) return;
             if (vessel == null) return;
             foreach (var part in vessel.parts)
             {
@@ -379,7 +384,7 @@ namespace BDArmory.Modules
         public void OnDestroy()
         {
             StopAllCoroutines();
-            if (BDArmorySettings.KERBAL_SAFETY && !recovered)
+            if (BDArmorySettings.KERBAL_SAFETY > 0 && !recovered)
             {
                 Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is MIA. Ejected: " + ejected + ", deployed chute: " + deployingChute);
             }
@@ -461,6 +466,7 @@ namespace BDArmory.Modules
             }
             else if (crew != null && part.protoModuleCrew.Contains(crew) && !FlightEVA.hatchInsideFairing(part)) // Eject from a cockpit.
             {
+                if (BDArmorySettings.KERBAL_SAFETY < 2) return;
                 if (!ProcessEjection(part)) // All exits were blocked by something.
                 {
                     if (!EjectFromOtherPart()) // Look for other airlocks to spawn from.
