@@ -1,4 +1,13 @@
-﻿v1.4.3.2
+﻿v1.4.3.3
+FIXES
+ - Fix various NREs.
+ - Add stacktrace to exception warnings in ModuleCASE.
+ - Detonate bullets and rockets when they hit kerbals.
+IMPROVEMENTS
+ - Improve the gun aiming code.
+ - Include missile hits separately from count of parts hit by missiles in scoring logic and update tournament parser.
+
+v1.4.3.2
 FIXES
 	- Add missing Weapon condition checks.
 	- Yet another attempt at avoiding the CometVessel bug.
