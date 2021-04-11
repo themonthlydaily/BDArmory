@@ -263,7 +263,8 @@ namespace BDArmory.Bullets
                                 else
                                     impactVelocity = rb.velocity.magnitude;
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
-                                break;
+                                Detonate(hit.point, false);
+                                return;
                             }
 
                             if (hitPart != null && hitPart.vessel == sourceVessel) continue;  //avoid autohit;

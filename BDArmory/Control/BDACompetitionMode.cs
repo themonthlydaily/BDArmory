@@ -342,7 +342,7 @@ namespace BDArmory.Control
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
                 competitionRoutine = StartCoroutine(DogfightCompetitionModeRoutine(distance));
-                if (BDArmorySettings.KERBAL_SAFETY)
+                if (BDArmorySettings.KERBAL_SAFETY > 0)
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
             }
         }
@@ -822,7 +822,7 @@ namespace BDArmory.Control
                 GameEvents.onVesselCreate.Add(OnVesselModified);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
-                if (BDArmorySettings.KERBAL_SAFETY)
+                if (BDArmorySettings.KERBAL_SAFETY > 0)
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 List<string> commandSequence;
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)

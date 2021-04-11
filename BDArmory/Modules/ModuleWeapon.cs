@@ -2109,8 +2109,16 @@ namespace BDArmory.Modules
             if (!externalAmmo)
             {
                 PartResource rocketResource = GetRocketResource();
-                rocketQty = rocketResource.amount;
-                rocketsMax = rocketResource.maxAmount;
+                if (rocketResource != null)
+                {
+                    rocketQty = rocketResource.amount;
+                    rocketsMax = rocketResource.maxAmount;
+                }
+                else
+                {
+                    rocketQty = 0;
+                    rocketsMax = 0;
+                }
             }
             else
             {
@@ -2496,63 +2504,23 @@ namespace BDArmory.Modules
 
             if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
             {
-                float effectiveVelocity = bulletVelocity;
-                relativeVelocity = targetVelocity - part.rb.velocity;
-                Quaternion.FromToRotation(targetAccelerationPrevious, targetAcceleration).ToAngleAxis(out float accelDAngle, out Vector3 accelDAxis);
-                Vector3 leadTarget = targetPosition;
-
-                int iterations = 6;
-                while (--iterations >= 0)
-                {
-                    finalTarget = targetPosition;
-                    float time = (leadTarget - fireTransforms[0].position).magnitude / effectiveVelocity - (Time.fixedDeltaTime * 1.5f);
-
-                    if (targetAcquired)
-                    {
-                        finalTarget += relativeVelocity * time;
-#if DEBUG
-                        relVelAdj = relativeVelocity * time;
-                        var vc = finalTarget;
-#endif
-                        var accelDExtAngle = accelDAngle * time / 3;
-                        var extrapolatedAcceleration =
-                            Quaternion.AngleAxis(accelDExtAngle, accelDAxis)
-                            * targetAcceleration
-                            * Mathf.Cos(accelDExtAngle * Mathf.Deg2Rad * 2.222f);
-                        finalTarget += 0.5f * extrapolatedAcceleration * time * time;
-#if DEBUG
-                        accAdj = (finalTarget - vc);
-#endif
-                    }
-                    else if (Misc.Misc.GetRadarAltitudeAtPos(targetPosition) < 2000)
-                    {
-                        //this vessel velocity compensation against stationary
-                        finalTarget += (-(part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * time);
-                    }
-
-                    leadTarget = finalTarget;
-
-                    if (bulletDrop) //rocket gravity ajdustment already done in TrajectorySim
-                    {
-#if DEBUG
-                        var vc = finalTarget;
-#endif
-                        Vector3 up = (VectorUtils.GetUpDirection(finalTarget) + 2 * VectorUtils.GetUpDirection(fireTransforms[0].position)).normalized;
-                        float gAccel = ((float)FlightGlobals.getGeeForceAtPosition(finalTarget).magnitude
-                            + (float)FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position).magnitude * 2) / 3;
-                        Vector3 intermediateTarget = finalTarget + (0.5f * gAccel * time * time * up);
-
-                        var avGrav = (FlightGlobals.getGeeForceAtPosition(finalTarget) + 2 * FlightGlobals.getGeeForceAtPosition(fireTransforms[0].position)) / 3;
-                        effectiveVelocity = bulletVelocity
-                            * (float)Vector3d.Dot((intermediateTarget - fireTransforms[0].position).normalized, (finalTarget - fireTransforms[0].position).normalized)
-                            + Vector3.Project(avGrav, finalTarget - fireTransforms[0].position).magnitude * time / 2 * (Vector3.Dot(avGrav, finalTarget - fireTransforms[0].position) < 0 ? -1 : 1);
-                        finalTarget = intermediateTarget;
-#if DEBUG
-                        gravAdj = (finalTarget - vc);
-#endif
-                    }
-                }
+                var bulletEffectiveVelocity = part.rb.velocity + bulletVelocity * fireTransforms[0].forward;
+                var bulletAcceleration = bulletDrop ? (Vector3)FlightGlobals.getGeeForceAtPosition((fireTransforms[0].position + targetPosition) / 2f) : Vector3.zero; // Drag is ignored.
+                var bulletRelativePosition = targetPosition - fireTransforms[0].position;
+                var bulletRelativeVelocity = targetVelocity - bulletEffectiveVelocity;
+                var bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
+                var timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletVelocity);
+                var targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
+                var bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
+                finalTarget = targetPredictedPosition + bulletDropOffset;
                 targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
+#if DEBUG
+                relVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
+                accAdj = 0.5f * targetAcceleration * timeToCPA * timeToCPA;
+                gravAdj = bulletDropOffset;
+                var missDistance = AIUtils.PredictPosition(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, timeToCPA);
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG δt: " + timeToCPA + ", miss: " + missDistance + ", bullet drop: " + bulletDropOffset + ", final: " + finalTarget + ", target: " + targetPosition + ", " + targetVelocity + ", " + targetAcceleration + ", distance: " + targetDistance);
+#endif
             }
             if (aiControlled && eWeaponType == WeaponTypes.Rocket)//Rocket targeting
             {
@@ -2856,7 +2824,7 @@ namespace BDArmory.Modules
 
         IEnumerator AimAndFireAtEndOfFrame()
         {
-            if (eWeaponType != WeaponTypes.Laser) yield return new WaitForEndOfFrame();
+            // Note: waiting until EndOfFrame is a bad idea, as that is intended for rendering the frame buffer into a texture. This decouples the physics and Krakensbane shifts from the rendering, causing inaccuracies.
             if (this == null || FlightGlobals.currentMainBody == null) yield break;
 
             UpdateTargetVessel();
@@ -3092,7 +3060,7 @@ namespace BDArmory.Modules
                 isReloading = false;
                 ReloadTimer = 0;
                 AnimTimer = 0;
-                if (rocketPod)
+                if (eWeaponType == WeaponTypes.Rocket && rocketPod)
                 {
                     UpdateRocketScales();
                 }
