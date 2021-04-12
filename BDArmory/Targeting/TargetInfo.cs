@@ -454,31 +454,12 @@ namespace BDArmory.Targeting
         {
             if (mf == null || myMf == null) return 0;
             float firingAtMe = 0;
-            var pilotAI = myMf.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
             if (mf.vessel == myMf.incomingThreatVessel)
             {
-                if (myMf.missileIsIncoming)
+                if (myMf.missileIsIncoming || myMf.underFire || myMf.underAttack)
                     firingAtMe = 1f;
-                else if (myMf.underFire)
-                {
-                    if (pilotAI)
-                    {
-                        if (pilotAI.evasionThreshold > 0) // If there is an evasionThreshold, use it to calculate the threat, 0.5 is missDistance = evasionThreshold
-                        {
-                            float missDistance = Mathf.Clamp(myMf.incomingMissDistance, 0, pilotAI.evasionThreshold * 2f);
-                            firingAtMe = 1f - missDistance / (pilotAI.evasionThreshold * 2f); // Ranges from 0-1
-                        }
-                        else
-                            firingAtMe = 1f; // Otherwise threat is 1
-                    }
-                    else // SurfaceAI
-                    {
-                        firingAtMe = 1f;
-                    }
-                }
-
             }
-            return firingAtMe;
+            return firingAtMe; // Equals either 0 (not under attack) or 1 (under attack)
         }
 
         public float TargetPriAoD(MissileFire myMF)
