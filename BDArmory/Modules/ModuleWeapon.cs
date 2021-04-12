@@ -3082,7 +3082,7 @@ namespace BDArmory.Modules
                     targetPosition = visualTargetVessel.CoM;
                     if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM)
                     {                        
-                        if (visualTargetPart == null)
+                        if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                         {
                             TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
                             if (currentTarget == null)
