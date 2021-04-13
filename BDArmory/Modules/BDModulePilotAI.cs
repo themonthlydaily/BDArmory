@@ -1324,7 +1324,7 @@ namespace BDArmory.Modules
             steerMode = SteerModes.Aiming;
             Vector3 planarDirection = Vector3.ProjectOnPlane(direction, upDirection);
             float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
-            angle = Mathf.Clamp(angle, 0, 90) * Mathf.Deg2Rad;
+            angle = Mathf.Clamp(angle, 0, 55) * Mathf.Deg2Rad;
 
             Vector3 targetDirection = Vector3.RotateTowards(planarDirection, -upDirection, angle, 0);
             targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
@@ -1694,7 +1694,7 @@ namespace BDArmory.Modules
 
                 if (weaponManager.isChaffing || weaponManager.isFlaring) // Missile evasion
                 {
-                    if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5) // Missile is about to impact, pull a hard turn
+                    if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 0) // Missile is about to impact, pull a hard turn
                     {
                         debugString.AppendLine($"Missile about to impact! pull away!");
 
@@ -1712,14 +1712,25 @@ namespace BDArmory.Modules
                     {
                         debugString.AppendLine($"Breaking from missile threat!");
 
-                        Vector3 axis = -Vector3.Cross(vesselTransform.up, threatRelativePosition);
-                        Vector3 breakDirection = Quaternion.AngleAxis(90, axis) * threatRelativePosition;
-                        //Vector3 breakTarget = vesselTransform.position + breakDirection;
-                        
+                        // Break off at 90 deg to missile
+                        Vector3 threatDirection = weaponManager.incomingMissileVessel.transform.position - vesselTransform.position;
+                        threatDirection = Vector3.ProjectOnPlane(threatDirection, upDirection);
+                        float sign = Vector3.SignedAngle(threatDirection, Vector3.ProjectOnPlane(vessel.Velocity(), upDirection), upDirection);
+                        Vector3 breakDirection = Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection);
+
+                        // Dive to gain energy and hopefully lead missile into ground
+                        float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
+                        angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
+                        Vector3 targetDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
+
+                        steerMode = SteerModes.Aiming;
+
                         if ((!hasABEngines) && (weaponManager.isFlaring))
-                            RegainEnergy(s, breakDirection, 0.66f);
+                            AdjustThrottle(maxSpeed, false, useAB, 0.66f);
                         else
-                            RegainEnergy(s, breakDirection);
+                            AdjustThrottle(maxSpeed, false, useAB);
+
+                        FlyToPosition(s, vesselTransform.position + targetDirection, true);
                         return;
                     }              
                 }
@@ -1773,6 +1784,7 @@ namespace BDArmory.Modules
                             breakTarget += Mathf.Sin((float)vessel.missionTime * 2) * vesselTransform.right * 100;
 
                             steerMode = SteerModes.Aiming;
+                            debugString.AppendLine($" from near side; turning towards attacker");
                         }
                         else // More than 400m to the side.
                         { // This sets breakTarget to be 1500m ahead, then adds a 1000m offset at 90° to ahead.
@@ -1805,7 +1817,7 @@ namespace BDArmory.Modules
             target +=
                 (Quaternion.AngleAxis(angleOff, upDirection) * Vector3.ProjectOnPlane(vesselTransform.up * 500, upDirection));
             //+ (Mathf.Sin (Time.time/3) * upDirection * minAltitude/3);
-
+            debugString.AppendLine($"Evading unknown attacker");
             FlyToPosition(s, target);
         }
 

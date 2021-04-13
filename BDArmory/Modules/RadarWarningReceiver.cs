@@ -284,7 +284,7 @@ namespace BDArmory.Modules
                     pingsData[openIndex] = new TargetSignatureData(Vector3.zero,
                         RadarUtils.WorldToRadar(source, referenceTransform, RwrDisplayRect, rwrDisplayRange), Vector3.zero,
                         true, (float)type);    // HACK! Evil misuse of signalstrength for the threat type!
-                    pingWorldPositions[openIndex] = source;
+                    pingWorldPositions[openIndex] = source; //FIXME source is improperly defined
                     StartCoroutine(PingLifeRoutine(openIndex, persistTime));
 
                     PlayWarningSound(type, (source - vessel.transform.position).sqrMagnitude);
