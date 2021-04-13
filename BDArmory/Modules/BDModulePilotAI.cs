@@ -1692,9 +1692,9 @@ namespace BDArmory.Modules
                     AdjustThrottle(targetSpeed, false, useAB);
                 }
 
-                if (weaponManager.isChaffing || weaponManager.isFlaring)
+                if (weaponManager.isChaffing || weaponManager.isFlaring) // Missile evasion
                 {
-                    if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5)
+                    if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5) // Missile is about to impact, pull a hard turn
                     {
                         debugString.AppendLine($"Missile about to impact! pull away!");
 
@@ -1708,7 +1708,7 @@ namespace BDArmory.Modules
                         FlyToPosition(s, vesselTransform.position + (50 * vessel.Velocity() / vessel.srfSpeed) + (100 * cross));
                         return;
                     }
-                    else
+                    else // Fly at 90 deg to missile to put max distance between ourselves and dispensed flares/chaff
                     {
                         debugString.AppendLine($"Breaking from missile threat!");
 
