@@ -4659,6 +4659,7 @@ namespace BDArmory.Modules
             if (!guardTarget) return;
             if (selectedWeapon == null) return;
             int TurretID = 0;
+            int MissileID = 0;
             using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                 while (weapon.MoveNext())
                 {
@@ -4711,7 +4712,7 @@ namespace BDArmory.Modules
                                     {
                                         weapon.Current.visualTargetVessel = missilesAssigned[MissileID].Vessel; // if target within turret fire zone, assign
                                     }
-                                    else//assigned target outside turret arc, try the other targets on the list
+                                    else //assigned target outside turret arc, try the other targets on the list
                                     {
                                         using (List<TargetInfo>.Enumerator item = missilesAssigned.GetEnumerator())
                                             while (item.MoveNext())
