@@ -1725,10 +1725,16 @@ namespace BDArmory.Modules
 
                         steerMode = SteerModes.Aiming;
 
-                        if ((!hasABEngines) && (weaponManager.isFlaring))
-                            AdjustThrottle(maxSpeed, false, useAB, 0.66f);
+                        if (weaponManager.isFlaring)
+                            if ((!hasABEngines) && (weaponManager.isFlaring))
+                                AdjustThrottle(maxSpeed, false, useAB, 0.66f);
+                            else
+                                AdjustThrottle(maxSpeed, false, useAB);
                         else
+                        {
+                            useAB = true;
                             AdjustThrottle(maxSpeed, false, useAB);
+                        }
 
                         FlyToPosition(s, vesselTransform.position + targetDirection, true);
                         return;
