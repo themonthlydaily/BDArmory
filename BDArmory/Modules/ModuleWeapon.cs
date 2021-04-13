@@ -116,7 +116,7 @@ namespace BDArmory.Modules
         public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
-        private Part visualTargetPart;
+        public Part visualTargetPart;
         private int targetID = 0;
         bool targetAcquired;
 
@@ -3081,12 +3081,17 @@ namespace BDArmory.Modules
                 {
                     targetRadius = visualTargetVessel.GetRadius();
                     targetPosition = visualTargetVessel.CoM;
-                    if (!BDArmorySettings.TARGET_COM)
-                    {
-                        TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-                        if (visualTargetPart == null)
+                    if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM)
+                    {                        
+                        if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                         {
-                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
+                            if (currentTarget == null)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo");
+                                return;
+                            }
+                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, BDArmorySettings.MULTI_TARGET_NUM));
                             if (!turret) //make fixed guns all get the same target part
                             {
                                 targetID = 0;
