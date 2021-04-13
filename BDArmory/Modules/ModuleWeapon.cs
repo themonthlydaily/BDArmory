@@ -3082,13 +3082,13 @@ namespace BDArmory.Modules
                     targetRadius = visualTargetVessel.GetRadius();
                     targetPosition = visualTargetVessel.CoM;
                     if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM)
-                    {                        
+                    {
                         if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                         {
                             TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
                             if (currentTarget == null)
                             {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo");
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
                                 return;
                             }
                             targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, BDArmorySettings.MULTI_TARGET_NUM));
@@ -3096,10 +3096,16 @@ namespace BDArmory.Modules
                             {
                                 targetID = 0;
                             }
+                            if (currentTarget.targetPartList.Count == 0)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
+                                return;
+                            }
                             visualTargetPart = currentTarget.targetPartList[targetID];
                             //Debug.Log("[BDArmory.MTD] MW TargetID: " + targetID);
                         }
                         targetPosition = visualTargetPart.transform.position;
+                        // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + ": targeted part " + visualTargetPart + " on " + visualTargetVessel.vesselName + " (actually " + visualTargetPart.vessel.vesselName + ")" + " is " + (visualTargetVessel.CoM - targetPosition).magnitude + "m from CoM.");
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;

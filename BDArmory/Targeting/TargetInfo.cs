@@ -276,7 +276,6 @@ namespace BDArmory.Targeting
 
         public void UpdateTargetPartList()
         {
-            Debug.Log("DEBUG Updating part list for " + vessel.vesselName);
             targetPartList.Clear();
             int targetCount = 0;
             if (BDArmorySettings.TARGET_COMMAND || BDArmorySettings.TARGET_ENGINES || BDArmorySettings.TARGET_WEAPONS)
