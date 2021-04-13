@@ -1694,7 +1694,7 @@ namespace BDArmory.Modules
 
                 if (weaponManager.isChaffing || weaponManager.isFlaring) // Missile evasion
                 {
-                    if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 0) // Missile is about to impact, pull a hard turn
+                    if ((weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5f) && (!weaponManager.isChaffing)) // Missile is about to impact, pull a hard turn
                     {
                         debugString.AppendLine($"Missile about to impact! pull away!");
 
