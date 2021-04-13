@@ -94,6 +94,7 @@ namespace BDArmory.Modules
         public float autoFireLength = 0;
         public float autoFireTimer = 0;
         public float autofireShotCount = 0;
+        bool aimAndFireIfPossible = false;
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
@@ -612,8 +613,7 @@ namespace BDArmory.Modules
         public float initialFireDelay = 0; //used to ripple fire multiple weapons of this type
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Barrage")]//Barrage
-        public bool
-            useRippleFire = true;
+        public bool useRippleFire = true;
 
         [KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ToggleBarrage")]//Toggle Barrage
         public void ToggleRipple()
@@ -1058,6 +1058,8 @@ namespace BDArmory.Modules
             }
 
             BDArmorySetup.OnVolumeChange += UpdateVolume;
+            if (HighLogic.LoadedSceneIsFlight)
+            { TimingManager.FixedUpdateAdd(TimingManager.TimingStage.BetterLateThanNever, AimAndFire); }
         }
 
         void OnDestroy()
@@ -1070,6 +1072,7 @@ namespace BDArmory.Modules
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             WeaponNameWindow.OnActionGroupEditorOpened.Remove(OnActionGroupEditorOpened);
             WeaponNameWindow.OnActionGroupEditorClosed.Remove(OnActionGroupEditorClosed);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, AimAndFire);
         }
         public void PAWRefresh()
         {
@@ -1241,8 +1244,7 @@ namespace BDArmory.Modules
                 if (weaponState == WeaponStates.Enabled &&
                     (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
-                    //Aim();
-                    StartCoroutine(AimAndFireAtEndOfFrame());
+                    aimAndFireIfPossible = true; // Aim and fire in the last timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs after Krakensbane adjustments have been made.
 
                     if (eWeaponType == WeaponTypes.Laser)
                     {
@@ -2822,10 +2824,13 @@ namespace BDArmory.Modules
             }
         }
 
-        IEnumerator AimAndFireAtEndOfFrame()
+        void AimAndFire()
         {
-            // Note: waiting until EndOfFrame is a bad idea, as that is intended for rendering the frame buffer into a texture. This decouples the physics and Krakensbane shifts from the rendering, causing inaccuracies.
-            if (this == null || FlightGlobals.currentMainBody == null) yield break;
+            // This runs in the BetterLateThanNever timing phase of FixedUpdate after Krakensbane corrections have been applied.
+            if (!aimAndFireIfPossible) return;
+            aimAndFireIfPossible = false;
+            if (this == null || FlightGlobals.currentMainBody == null) return;
+            // floatingKrakenAdjustment = TimeWarp.WarpMode == TimeWarp.Modes.LOW ? (vessel.Velocity() - Krakensbane.GetFrameVelocity()) * TimeWarp.fixedDeltaTime - FloatingOrigin.Offset : -FloatingOrigin.Offset; // Corrections for Krakensbane adjustments (if needed).
 
             UpdateTargetVessel();
             updateAcceleration(targetVelocity, targetPosition);
@@ -2835,7 +2840,7 @@ namespace BDArmory.Modules
             Aim();
             CheckWeaponSafety();
             CheckAIAutofire();
-            // Debug.Log("DEBUG visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
+            // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
 
             if (finalFire)
             {
@@ -2896,8 +2901,6 @@ namespace BDArmory.Modules
                     finalFire = false;
                 }
             }
-
-            yield break;
         }
 
         void DrawAlignmentIndicator()
