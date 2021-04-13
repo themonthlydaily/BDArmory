@@ -1330,9 +1330,9 @@ namespace BDArmory.Modules
             targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
             if (throttleOverride >= 0)
-                AdjustThrottle(maxSpeed, false, true, throttleOverride);
+                AdjustThrottle(maxSpeed, false, useAB, throttleOverride);
             else
-                AdjustThrottle(maxSpeed, false, true);
+                AdjustThrottle(maxSpeed, false, useAB);
 
             FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
         }
@@ -1692,11 +1692,11 @@ namespace BDArmory.Modules
 
                 if (weaponManager.isChaffing || weaponManager.isFlaring)
                 {
-                    if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5) //900m
+                    if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= 1.5)
                     {
                         debugString.AppendLine($"Missile about to impact! pull away!");
 
-                        AdjustThrottle(maxSpeed, false, false);
+                        AdjustThrottle(maxSpeed, false, !weaponManager.isFlaring);
 
                         Vector3 cross = Vector3.Cross(weaponManager.incomingMissileVessel.transform.position - vesselTransform.position, vessel.Velocity()).normalized;
                         if (Vector3.Dot(cross, -vesselTransform.forward) < 0)
