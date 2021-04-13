@@ -1330,9 +1330,9 @@ namespace BDArmory.Modules
             targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
             if (throttleOverride >= 0)
-                AdjustThrottle(maxSpeed, false, useAB, throttleOverride);
+                AdjustThrottle(maxSpeed, false, true, throttleOverride);
             else
-                AdjustThrottle(maxSpeed, false, useAB);
+                AdjustThrottle(maxSpeed, false, true);
 
             FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
         }
