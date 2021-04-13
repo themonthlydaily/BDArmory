@@ -1479,7 +1479,7 @@ namespace BDArmory.Control
             }
             if (vessel != FlightGlobals.ActiveVessel && vessel.vesselType != VesselType.SpaceObject)
             {
-                if (BDArmorySettings.KERBAL_SAFETY)
+                if (BDArmorySettings.KERBAL_SAFETY > 0)
                     KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
                 else
                     ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);

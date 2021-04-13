@@ -2824,6 +2824,7 @@ namespace BDArmory.Modules
 
         IEnumerator AimAndFireAtEndOfFrame()
         {
+            // Note: waiting until EndOfFrame is a bad idea, as that is intended for rendering the frame buffer into a texture. This decouples the physics and Krakensbane shifts from the rendering, causing inaccuracies.
             if (this == null || FlightGlobals.currentMainBody == null) yield break;
 
             UpdateTargetVessel();
