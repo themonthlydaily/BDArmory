@@ -1722,6 +1722,7 @@ namespace BDArmory.Modules
                         float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
                         angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
                         Vector3 targetDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
+                        targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
                         steerMode = SteerModes.Aiming;
 
@@ -1736,7 +1737,7 @@ namespace BDArmory.Modules
                             AdjustThrottle(maxSpeed, false, useAB);
                         }
 
-                        FlyToPosition(s, vesselTransform.position + targetDirection, true);
+                        FlyToPosition(s, vesselTransform.position + (targetDirection * 100), true);
                         return;
                     }              
                 }
