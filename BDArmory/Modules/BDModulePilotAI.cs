@@ -1716,12 +1716,14 @@ namespace BDArmory.Modules
                         Vector3 threatDirection = weaponManager.incomingMissileVessel.transform.position - vesselTransform.position;
                         threatDirection = Vector3.ProjectOnPlane(threatDirection, upDirection);
                         float sign = Vector3.SignedAngle(threatDirection, Vector3.ProjectOnPlane(vessel.Velocity(), upDirection), upDirection);
-                        Vector3 breakDirection = Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection);
+                        Vector3 breakDirection = Vector3.ProjectOnPlane(Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection), upDirection);
 
                         // Dive to gain energy and hopefully lead missile into ground
                         float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
                         angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
                         Vector3 targetDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
+                        if (UpToEleven)
+                            targetDirection = Vector3.ProjectOnPlane(targetDirection, threatDirection);
                         targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
                         steerMode = SteerModes.Aiming;
