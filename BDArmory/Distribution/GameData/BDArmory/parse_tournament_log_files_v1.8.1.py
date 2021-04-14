@@ -251,10 +251,11 @@ if len(summary['craft']) > 0:
 			})
 			if args.score:
 				summary_strings[craft]['Score'] = f"{tmp['score']:.3f}"
+		columns_to_show = [header for header in headers if not all(craft[header] == "0" for craft in list(summary_strings.values())[1:])]
 		column_widths = {column: max(len(craft[column]) + 2 for craft in summary_strings.values()) for column in headers}
-		strings.append(''.join(f"{header:{column_widths[header]}s}" for header in headers))
+		strings.append(''.join(f"{header:{column_widths[header]}s}" for header in columns_to_show))
 		for craft in sorted(summary['craft'], key=None if not args.score else lambda craft: summary['craft'][craft]['score'], reverse=False if not args.score else True):
-			strings.append(''.join(f"{summary_strings[craft][header]:{column_widths[header]}s}" for header in headers))
+			strings.append(''.join(f"{summary_strings[craft][header]:{column_widths[header]}s}" for header in columns_to_show))
 
 		teamNames = sorted(list(set([team for result_type in summary['team results'].values() for team in result_type])))
 		default_team_names = [chr(k) for k in range(ord('A'), ord('A') + len(summary['craft']))]
