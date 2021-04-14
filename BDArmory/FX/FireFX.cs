@@ -1,9 +1,11 @@
-﻿using BDArmory.Competition;
+﻿using System;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using BDArmory.Misc;
+using BDArmory.Modules;
 using BDArmory.UI;
 using System.Linq;
 using UnityEngine;
@@ -36,6 +38,11 @@ namespace BDArmory.FX
         KSPParticleEmitter[] pEmitters;
         void OnEnable()
         {
+            if (parentPart == null)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
             hasFuel = true;
             startTime = Time.time;
             foreach (var existingLeakFX in parentPart.GetComponentsInChildren<FuelLeakFX>())
@@ -57,11 +64,22 @@ namespace BDArmory.FX
             {
                 burnTime = 10;
             }
-            if (parentPart.parent.protoModuleCrew.Count > 0)
+            if (parentPart.parent != null && parentPart.parent.protoModuleCrew.Count > 0)
             {
                 burnTime = 20; //though ajdacent parts will take longer to get to and extingusih
             }
+            if (parentPart.GetComponent<ModuleSelfSealingTank>() != null)
+            {
+                ModuleSelfSealingTank FBX;
+                FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
+                if (FBX.FireBottles > 0)
+                {
+                    FBX.FireBottles--;
+                    burnTime = 10;
+                }
+            }
         }
+
         void onDisable()
         {
             BDArmorySetup.numberOfParticleEmitters--;
@@ -72,6 +90,7 @@ namespace BDArmory.FX
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
         }
+
         void Update()
         {
             if (!gameObject.activeInHierarchy || !HighLogic.LoadedSceneIsFlight)
@@ -209,6 +228,7 @@ namespace BDArmory.FX
             }
             ////////////////////////////////////////////
         }
+
         void Detonate()
         {
             if (!parentPart.partName.Contains("exploding"))
@@ -278,17 +298,19 @@ namespace BDArmory.FX
                                     }
                                 }
                             }
-                            catch
+                            catch (Exception e)
                             {
+                                Debug.LogWarning("[BDArmory.FireFX]: Exception thrown in Detonate: " + e.Message + "\n" + e.StackTrace);
                             }
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null);
+                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
                 // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
                 gameObject.SetActive(false);
             }
         }
+
         public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset, string sourcevessel, float burnTime = -1)
         {
             parentPart = hitPart;
@@ -300,6 +322,7 @@ namespace BDArmory.FX
             SourceVessel = sourcevessel;
             gameObject.SetActive(true);
         }
+
         public void OnParentDestroy()
         {
             if (parentPart)
@@ -312,6 +335,7 @@ namespace BDArmory.FX
                 gameObject.SetActive(false);
             }
         }
+
         public void OnDestroy()
         {
             OnParentDestroy();

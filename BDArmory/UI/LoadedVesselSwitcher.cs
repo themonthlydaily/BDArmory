@@ -42,8 +42,19 @@ namespace BDArmory.UI
         //gui params
         private float _windowHeight; //auto adjusting
 
-        public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
+        private SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
         private Dictionary<string, float> cameraScores = new Dictionary<string, float>();
+
+        private bool upToDateWMs = false;
+        public SortedList<string, List<MissileFire>> WeaponManagers
+        {
+            get
+            {
+                if (!upToDateWMs)
+                    UpdateList();
+                return weaponManagers;
+            }
+        }
 
         // booleans to track state of buttons affecting everyone
         private bool _teamsAssigned = false;
@@ -102,7 +113,7 @@ namespace BDArmory.UI
             // TEST
             FloatingOrigin.fetch.threshold = 20000; //20km
             FloatingOrigin.fetch.thresholdSqr = 20000 * 20000; //20km
-            Debug.Log($"FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
+            Debug.Log($"[BDArmory.LoadedVesselSwitcher]: FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
 
             //BDArmorySetup.WindowRectVesselSwitcher = new Rect(10, Screen.height / 6f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, 10);
         }
@@ -119,7 +130,7 @@ namespace BDArmory.UI
             _ready = false;
 
             // TEST
-            Debug.Log($"FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
+            Debug.Log($"[BDArmory.LoadedVesselSwitcher]: FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -148,6 +159,7 @@ namespace BDArmory.UI
         {
             if (_ready)
             {
+                upToDateWMs = false;
                 if (BDArmorySetup.Instance.showVesselSwitcherGUI != _showGui)
                 {
                     updateTimer -= Time.fixedDeltaTime;
@@ -203,6 +215,7 @@ namespace BDArmory.UI
                                 break;
                             }
                 }
+            upToDateWMs = true;
         }
 
         private void ToggleGuardModes()
@@ -252,8 +265,7 @@ namespace BDArmory.UI
                     SetNewHeight(_windowHeight);
                     // this Rect initialization ensures any save issues with height or width of the window are resolved
                     BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, _windowHeight);
-                    BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle,//"BDA Vessel Switcher"
-                        BDArmorySetup.BDGuiSkin.window);
+                    BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
                     Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
                 }
                 else
@@ -274,7 +286,7 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            int numButtons = 9;
+            int numButtons = 10;
             GUI.DragWindow(new Rect(4f * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 3f * _margin, _titleHeight));
 
             if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button)) // Don't get so small that the buttons get hidden.
@@ -320,7 +332,7 @@ namespace BDArmory.UI
             {
                 // set/disable automatic camera switching
                 _autoCameraSwitch = !_autoCameraSwitch;
-                Debug.Log("[BDArmory]: Setting AutoCameraSwitch");
+                Debug.Log("[BDArmory.LoadedVesselSwitcher]: Setting AutoCameraSwitch");
             }
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 4 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "G", _guardModeEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
@@ -378,7 +390,7 @@ namespace BDArmory.UI
                         }
                         catch (Exception e)
                         {
-                            Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManagerPair.Item2.vessel.vesselName + " on team " + weaponManagerPair.Item1 + " to the list: " + e.Message);
+                            Debug.LogError("[BDArmory.LoadedVesselSwitcher]: AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManagerPair.Item2.vessel.vesselName + " on team " + weaponManagerPair.Item1 + " to the list: " + e.Message);
                         }
                         height += _buttonHeight + _buttonGap;
                     }
@@ -417,7 +429,7 @@ namespace BDArmory.UI
                             }
                             catch (Exception e)
                             {
-                                Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManager.vessel.vesselName + " on team " + teamManager.Item1 + " to the list: " + e.Message);
+                                Debug.LogError("[BDArmory.LoadedVesselSwitcher]: AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManager.vessel.vesselName + " on team " + teamManager.Item1 + " to the list: " + e.Message);
                             }
                             height += _buttonHeight + _buttonGap;
                         }
@@ -444,7 +456,7 @@ namespace BDArmory.UI
                         }
                         catch (Exception e)
                         {
-                            Debug.LogError("DEBUG AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManager.vessel.vesselName + " on team " + teamManagers.Key + " to the list: " + e.Message);
+                            Debug.LogError("[BDArmory.LoadedVesselSwitcher]: AddVesselSwitcherWindowEntry threw an exception trying to add " + weaponManager.vessel.vesselName + " on team " + teamManagers.Key + " to the list: " + e.Message);
                         }
                         height += _buttonHeight + _buttonGap;
                     }
@@ -618,7 +630,7 @@ namespace BDArmory.UI
             // selects current target
             if (targetName != "")
             {
-                Rect targettingButtonRect = new Rect(_margin + vesselButtonWidth + _offset, height, _buttonHeight, _buttonHeight);
+                Rect targetingButtonRect = new Rect(_margin + vesselButtonWidth + _offset, height, _buttonHeight, _buttonHeight);
                 GUIStyle targButton = BDArmorySetup.BDGuiSkin.button;
                 if (wm.currentGun != null && wm.currentGun.recentlyFiring)
                 {
@@ -635,7 +647,7 @@ namespace BDArmory.UI
                         targButton = blueLight;
                     }
                 }
-                if (GUI.Button(targettingButtonRect, incomingThreat ? "><" : "[]", targButton))
+                if (GUI.Button(targetingButtonRect, incomingThreat ? "><" : "[]", targButton))
                     ForceSwitchVessel(targetVessel);
             }
 
@@ -679,6 +691,10 @@ namespace BDArmory.UI
                 if (Event.current.button == 1)
                 {
                     BDTeamSelector.Instance.Open(wm, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+                }
+                else if (Event.current.button == 2)
+                {
+                    wm.SetTeam(BDTeam.Get("Neutral"));
                 }
                 else
                 {
@@ -778,7 +794,7 @@ namespace BDArmory.UI
                 {
                     if (VesselSpawner.Instance.originalTeams.ContainsKey(weaponManager.vessel.vesselName))
                     {
-                        Debug.Log("[BDArmory]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]);
+                        Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]);
                         weaponManager.SetTeam(BDTeam.Get(VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]));
                     }
                 }
@@ -795,14 +811,14 @@ namespace BDArmory.UI
                         if (weaponManagersByName.ContainsKey(craftName))
                             weaponManagersByName[craftName].SetTeam(BDTeam.Get(T.ToString()));
                         else
-                            Debug.Log("[LoadedVesselSwitcher]: Specified vessel (" + craftName + ") not found amongst active vessels.");
+                            Debug.Log("[BDArmory.LoadedVesselSwitcher]: Specified vessel (" + craftName + ") not found amongst active vessels.");
                         weaponManagersByName.Remove(craftName); // Remove the vessel from our dictionary once it's assigned.
                     }
                     ++T;
                 }
                 foreach (var craftName in weaponManagersByName.Keys)
                 {
-                    Debug.Log("[LoadedVesselSwitcher]: Vessel " + craftName + " was not specified to be part of a team, but is active. Assigning to team " + T.ToString() + ".");
+                    Debug.Log("[BDArmory.LoadedVesselSwitcher]: Vessel " + craftName + " was not specified to be part of a team, but is active. Assigning to team " + T.ToString() + ".");
                     weaponManagersByName[craftName].SetTeam(BDTeam.Get(T.ToString())); // Assign anyone who wasn't specified to a separate team.
                 }
                 return;
@@ -827,7 +843,7 @@ namespace BDArmory.UI
             // switch everyone to their own teams
             foreach (var weaponManager in weaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).ToList()) // Get a copy in case activating stages causes the weaponManager list to change.
             {
-                Debug.Log("[BDArmory]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + T.ToString());
+                Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + T.ToString());
                 weaponManager.SetTeam(BDTeam.Get(T.ToString()));
                 if (separateTeams) T++;
             }
@@ -870,7 +886,7 @@ namespace BDArmory.UI
             double timeSinceLastCheck = now - lastCameraCheck;
             if (currentVesselDied)
             {
-                if (now - currentVesselDiedAt < BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2) // Prevent camera changes for a bit.
+                if (now - currentVesselDiedAt < (BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD == 0 ? BDArmorySettings.CAMERA_SWITCH_FREQUENCY / 2f : BDArmorySettings.DEATH_CAMERA_SWITCH_INHIBIT_PERIOD)) // Prevent camera changes for a bit.
                     return;
                 else
                 {
@@ -1030,7 +1046,7 @@ namespace BDArmory.UI
                 {
                     if (bestVessel != null && bestVessel.loaded && !bestVessel.packed && !(bestVessel.isActiveVessel)) // if a vessel dies it'll use a default score for a few seconds
                     {
-                        Debug.Log("[BDArmory]: Switching vessel to " + bestVessel.GetDisplayName());
+                        Debug.Log("[BDArmory.LoadedVesselSwitcher]: Switching vessel to " + bestVessel.GetDisplayName());
                         ForceSwitchVessel(bestVessel);
                     }
                 }
@@ -1050,6 +1066,13 @@ namespace BDArmory.UI
             lastCameraSwitch = Planetarium.GetUniversalTime();
             FlightGlobals.ForceSetActiveVessel(v);
             FlightInputHandler.ResumeVesselCtrlState(v);
+        }
+
+        public void TriggerSwitchVessel(float delay)
+        {
+            lastCameraSwitch = delay > 0 ? Planetarium.GetUniversalTime() - (BDArmorySettings.CAMERA_SWITCH_FREQUENCY - delay) : 0f;
+            lastCameraCheck = 0f;
+            UpdateCamera();
         }
 
         /// <summary>
