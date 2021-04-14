@@ -3688,6 +3688,10 @@ namespace BDArmory.Modules
                                 targetWeaponRPM = candidateRPM;
                                 targetWeaponPriority = candidatePriority;
                             }
+                            if (candidateMinrange > distance)
+                            {
+                                candidateRPM *= .001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                            }
                             else //if equal priority, use standard weighting
                             {
                                 if ((targetWeapon != null) && targetWeapon.GetWeaponClass() == WeaponClasses.Rocket || targetWeapon.GetWeaponClass() == WeaponClasses.Gun)
