@@ -3671,6 +3671,7 @@ namespace BDArmory.Modules
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                             bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
                             float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
                             bool pulseLaser = ((ModuleWeapon)item.Current).pulseLaser;
