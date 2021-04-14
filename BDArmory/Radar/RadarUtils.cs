@@ -1251,13 +1251,16 @@ namespace BDArmory.Radar
                                         Vector3 vectorFromMissile = myWpnManager.vessel.CoM - missileBase.part.transform.position;
                                         Vector3 relV = missileBase.vessel.Velocity() - myWpnManager.vessel.Velocity();
                                         bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
+                                        bool withinRadarFOV = (missileBase.TargetingMode == MissileBase.TargetingModes.Radar || missileBase.TargetingModeTerminal == MissileBase.TargetingModes.Radar) ?
+                                            (Vector3.Angle(missileBase.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missileBase.lockedSensorFOV, 1f, 10f)/2f) : false;
                                         var missileBlastRadiusSqr = missileBase.GetBlastRadius();
                                         missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
                                         if (missileBase.HasFired && missileBase.TimeIndex > 1f && approaching &&
                                             (
                                                 (missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
-                                                myWpnManager.vessel.PredictClosestApproachSqrSeparation(missileBase.vessel, 2f) < missileBlastRadiusSqr // Closest approach is within blast radius of missile. 
+                                                myWpnManager.vessel.PredictClosestApproachSqrSeparation(missileBase.vessel, 2f) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                                withinRadarFOV // We are within radar FOV of missile boresight.
                                             ))
                                         {
                                             results.incomingMissiles.Add(new IncomingMissile

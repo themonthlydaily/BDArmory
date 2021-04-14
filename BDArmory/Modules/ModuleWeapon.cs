@@ -116,7 +116,7 @@ namespace BDArmory.Modules
         public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
-        private Part visualTargetPart;
+        public Part visualTargetPart;
         private int targetID = 0;
         bool targetAcquired;
 
@@ -2824,6 +2824,7 @@ namespace BDArmory.Modules
 
         IEnumerator AimAndFireAtEndOfFrame()
         {
+            // Note: waiting until EndOfFrame is a bad idea, as that is intended for rendering the frame buffer into a texture. This decouples the physics and Krakensbane shifts from the rendering, causing inaccuracies.
             if (this == null || FlightGlobals.currentMainBody == null) yield break;
 
             UpdateTargetVessel();
@@ -3080,20 +3081,31 @@ namespace BDArmory.Modules
                 {
                     targetRadius = visualTargetVessel.GetRadius();
                     targetPosition = visualTargetVessel.CoM;
-                    if (!BDArmorySettings.TARGET_COM)
+                    if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM)
                     {
-                        TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-                        if (visualTargetPart == null)
+                        if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                         {
-                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
+                            if (currentTarget == null)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
+                                return;
+                            }
+                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, BDArmorySettings.MULTI_TARGET_NUM));
                             if (!turret) //make fixed guns all get the same target part
                             {
                                 targetID = 0;
+                            }
+                            if (currentTarget.targetPartList.Count == 0)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
+                                return;
                             }
                             visualTargetPart = currentTarget.targetPartList[targetID];
                             //Debug.Log("[BDArmory.MTD] MW TargetID: " + targetID);
                         }
                         targetPosition = visualTargetPart.transform.position;
+                        // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + ": targeted part " + visualTargetPart + " on " + visualTargetVessel.vesselName + " (actually " + visualTargetPart.vessel.vesselName + ")" + " is " + (visualTargetVessel.CoM - targetPosition).magnitude + "m from CoM.");
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;

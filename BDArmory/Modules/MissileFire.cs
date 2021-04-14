@@ -495,6 +495,7 @@ namespace BDArmory.Modules
                     {
                         if (weapon.Current == null) continue;
                         weapon.Current.visualTargetVessel = null;
+                        weapon.Current.visualTargetPart = null;
                         weapon.Current.autoFire = false;
                         weapon.Current.aiControlled = false;
                     }
@@ -3251,7 +3252,14 @@ namespace BDArmory.Modules
             //Debug.Log("[BDArmory.MTD]: Finding 2nd targets");
             targetsAssigned.Clear();
             missilesAssigned.Clear();
-            targetsAssigned.Add(currentTarget);
+            if (!currentTarget.isMissile)
+            {
+                targetsAssigned.Add(currentTarget);
+            }
+            else
+            {
+                missilesAssigned.Add(currentTarget);
+            }
             List<TargetInfo> targetsTried = new List<TargetInfo>();
 
             //Secondary targeting priorities
@@ -4423,6 +4431,7 @@ namespace BDArmory.Modules
                         weapon.Current.autoFire = false;
                         weapon.Current.autofireShotCount = 0;
                         weapon.Current.visualTargetVessel = null;
+                        weapon.Current.visualTargetPart = null;
                     }
             }
 
@@ -4654,6 +4663,7 @@ namespace BDArmory.Modules
             if (!guardTarget) return;
             if (selectedWeapon == null) return;
             int TurretID = 0;
+            int MissileID = 0;
             using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                 while (weapon.MoveNext())
                 {
@@ -4664,14 +4674,12 @@ namespace BDArmory.Modules
                     {
                         if (weapon.Current.turret)
                         {
-                            //Debug.Log("[BDArmory.MTD]: Targets Assigned: " + targetsAssigned.Count);
                             if (TurretID > Mathf.Min((targetsAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
                             {
                                 TurretID = 0; //if more turrets than targets, loop target list
                             }
-                            if (targetsAssigned[TurretID].Vessel != null)
+                            if (targetsAssigned.Count > 0 && targetsAssigned[TurretID].Vessel != null)
                             {
-                                //Debug.Log("[BDArmory.MTD]: TurretID ["+TurretID +"] within index bounds");
                                 if ((weapon.Current.engageAir && targetsAssigned[TurretID].isFlying) ||
                                     (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
                                     (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
@@ -4679,7 +4687,6 @@ namespace BDArmory.Modules
                                     if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel))
                                     {
                                         weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
-                                                                                                              //Debug.Log("[BDArmory.MTD]: " + weapon.Current.GetShortName() + " assigned " + targetsAssigned[TurretID].Vessel.name);
                                     }
                                     else //else try remaining targets
                                     {
@@ -4690,40 +4697,40 @@ namespace BDArmory.Modules
                                                 if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
                                                 {
                                                     weapon.Current.visualTargetVessel = item.Current.Vessel;
-                                                    //Debug.Log("[BDArmory.MTD]: original target outside turret arc, new target " + item.Current.Vessel.name);
                                                     break;
                                                 }
                                             }
                                     }
                                 }
-                                if (weapon.Current.engageMissile && missilesAssigned.Count > 0) //if can engage missiles, override targeting to prioritize missiles
+                                TurretID++;
+                            }
+                            if (MissileID > Mathf.Min((missilesAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
+                            {
+                                MissileID = 0; //if more turrets than targets, loop target list
+                            }
+                            if (missilesAssigned.Count > 0 && missilesAssigned[MissileID].Vessel != null) //if missile, override non-missile target
+                            {
+                                if (weapon.Current.engageMissile)
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[TurretID].Vessel))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel))
                                     {
-                                        weapon.Current.visualTargetVessel = missilesAssigned[TurretID].Vessel; // if target within turret fire zone, assign
-                                                                                                               //Debug.Log("[BDArmory.MTD]: " + weapon.Current.GetShortName() + " assigned " + missilesAssigned[TurretID].Vessel.name);
+                                        weapon.Current.visualTargetVessel = missilesAssigned[MissileID].Vessel; // if target within turret fire zone, assign
                                     }
-                                    else//assigned target outside turret arc, try the other targets on the list
+                                    else //assigned target outside turret arc, try the other targets on the list
                                     {
-                                        TargetInfo targetableMissile = null;
                                         using (List<TargetInfo>.Enumerator item = missilesAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
                                                 if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
                                                 {
-                                                    targetableMissile = item.Current;
+                                                    weapon.Current.visualTargetVessel = item.Current.Vessel;
                                                     break;
                                                 }
                                             }
-                                        if (targetableMissile != null)
-                                        {
-                                            weapon.Current.visualTargetVessel = targetableMissile.Vessel;
-                                        }
                                     }
                                 }
-                                TurretID++;
-                                //Debug.Log("[BDArmory.MTD]: TurretID incremented");
+                                MissileID++;
                             }
                         }
                         else
@@ -4756,7 +4763,7 @@ namespace BDArmory.Modules
             rangeEditor.maxValue = BDArmorySettings.MAX_GUARD_VISUAL_RANGE;
         }
 
-        float ThreatClosingTime(Vessel threat)
+        public float ThreatClosingTime(Vessel threat)
         {
             float closureTime = 3600f; // Default closure time of one hour
             if (threat) // If we weren't passed a null
