@@ -398,17 +398,7 @@ namespace BDArmory.Modules
                         while (t.MoveNext())
                         {
                             if (t.Current == null) continue;
-                            GameObject exhaustPrefab = (GameObject)Instantiate(GameDatabase.Instance.GetModel(exhaustPrefabPath));
-                            exhaustPrefab.SetActive(true);
-                            using (var emitter = exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
-                                while (emitter.MoveNext())
-                                {
-                                    if (emitter.Current == null) continue;
-                                    emitter.Current.emit = false;
-                                }
-                            exhaustPrefab.transform.parent = t.Current;
-                            exhaustPrefab.transform.localPosition = Vector3.zero;
-                            exhaustPrefab.transform.localRotation = Quaternion.identity;
+                            AttachExhaustPrefab(exhaustPrefabPath, this, t.Current);
                         }
                 }
 
@@ -418,17 +408,7 @@ namespace BDArmory.Modules
                         while (t.MoveNext())
                         {
                             if (t.Current == null) continue;
-                            GameObject exhaustPrefab = (GameObject)Instantiate(GameDatabase.Instance.GetModel(boostExhaustPrefabPath));
-                            exhaustPrefab.SetActive(true);
-                            using (var emitter = exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
-                                while (emitter.MoveNext())
-                                {
-                                    if (emitter.Current == null) continue;
-                                    emitter.Current.emit = false;
-                                }
-                            exhaustPrefab.transform.parent = t.Current;
-                            exhaustPrefab.transform.localPosition = Vector3.zero;
-                            exhaustPrefab.transform.localRotation = Quaternion.identity;
+                            AttachExhaustPrefab(boostExhaustPrefabPath, this, t.Current);
                         }
                 }
 
@@ -2194,5 +2174,52 @@ namespace BDArmory.Modules
 
             return output.ToString();
         }
+
+        #region ExhaustPrefabPooling
+        static Dictionary<string, ObjectPool> exhaustPrefabPool = new Dictionary<string, ObjectPool>();
+        List<GameObject> exhaustPrefabs = new List<GameObject>();
+
+        static void AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
+        {
+            if (!exhaustPrefabPool.ContainsKey(prefabPath))
+            { CreateExhaustPool(prefabPath); }
+            var exhaustPrefab = exhaustPrefabPool[prefabPath].GetPooledObject();
+            exhaustPrefab.SetActive(true);
+            using (var emitter = exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
+                while (emitter.MoveNext())
+                {
+                    if (emitter.Current == null) continue;
+                    emitter.Current.emit = false;
+                }
+            exhaustPrefab.transform.parent = exhaustTransform;
+            exhaustPrefab.transform.localPosition = Vector3.zero;
+            exhaustPrefab.transform.localRotation = Quaternion.identity;
+            missileLauncher.exhaustPrefabs.Add(exhaustPrefab);
+            missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefab;
+        }
+
+        static void CreateExhaustPool(string prefabPath)
+        {
+            if (exhaustPrefabPool == null)
+            { exhaustPrefabPool = new Dictionary<string, ObjectPool>(); }
+            if (!exhaustPrefabPool.ContainsKey(prefabPath))
+            {
+                var prefabTemplate = GameDatabase.Instance.GetModel(prefabPath);
+                prefabTemplate.SetActive(false);
+                exhaustPrefabPool[prefabPath] = ObjectPool.CreateObjectPool(prefabTemplate, 1, true, true, 0f, false);
+            }
+        }
+
+        void DetachExhaustPrefab()
+        {
+            part.OnJustAboutToBeDestroyed -= DetachExhaustPrefab;
+            foreach (var exhaustPrefab in exhaustPrefabs)
+            {
+                exhaustPrefab.transform.parent = null;
+                exhaustPrefab.SetActive(false);
+            }
+            exhaustPrefabs.Clear();
+        }
+        #endregion
     }
 }
