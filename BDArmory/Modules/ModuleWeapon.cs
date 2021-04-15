@@ -1059,7 +1059,7 @@ namespace BDArmory.Modules
 
             BDArmorySetup.OnVolumeChange += UpdateVolume;
             if (HighLogic.LoadedSceneIsFlight)
-            { TimingManager.FixedUpdateAdd(TimingManager.TimingStage.BetterLateThanNever, AimAndFire); }
+            { TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FashionablyLate, AimAndFire); }
         }
 
         void OnDestroy()
@@ -1072,7 +1072,7 @@ namespace BDArmory.Modules
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             WeaponNameWindow.OnActionGroupEditorOpened.Remove(OnActionGroupEditorOpened);
             WeaponNameWindow.OnActionGroupEditorClosed.Remove(OnActionGroupEditorClosed);
-            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, AimAndFire);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.FashionablyLate, AimAndFire);
         }
         public void PAWRefresh()
         {
@@ -1244,7 +1244,7 @@ namespace BDArmory.Modules
                 if (weaponState == WeaponStates.Enabled &&
                     (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
-                    aimAndFireIfPossible = true; // Aim and fire in the last timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs after Krakensbane adjustments have been made.
+                    aimAndFireIfPossible = true; // Aim and fire in a later timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made (in the Late timing phase).
 
                     if (eWeaponType == WeaponTypes.Laser)
                     {
@@ -2826,11 +2826,10 @@ namespace BDArmory.Modules
 
         void AimAndFire()
         {
-            // This runs in the BetterLateThanNever timing phase of FixedUpdate after Krakensbane corrections have been applied.
+            // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
             if (!aimAndFireIfPossible) return;
             aimAndFireIfPossible = false;
             if (this == null || FlightGlobals.currentMainBody == null) return;
-            // floatingKrakenAdjustment = TimeWarp.WarpMode == TimeWarp.Modes.LOW ? (vessel.Velocity() - Krakensbane.GetFrameVelocity()) * TimeWarp.fixedDeltaTime - FloatingOrigin.Offset : -FloatingOrigin.Offset; // Corrections for Krakensbane adjustments (if needed).
 
             UpdateTargetVessel();
             updateAcceleration(targetVelocity, targetPosition);
