@@ -1722,14 +1722,12 @@ namespace BDArmory.Modules
                         float angle = (Mathf.Clamp((float)vessel.radarAltitude - minAltitude, 0, 1500) / 1500) * 90;
                         angle = Mathf.Clamp(angle, 0, 75) * Mathf.Deg2Rad;
                         Vector3 targetDirection = Vector3.RotateTowards(breakDirection, -upDirection, angle, 0);
-                        if (UpToEleven)
-                            targetDirection = Vector3.ProjectOnPlane(targetDirection, threatDirection);
                         targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
                         steerMode = SteerModes.Aiming;
 
                         if (weaponManager.isFlaring)
-                            if ((!hasABEngines) && (weaponManager.isFlaring))
+                            if (!hasABEngines)
                                 AdjustThrottle(maxSpeed, false, useAB, 0.66f);
                             else
                                 AdjustThrottle(maxSpeed, false, useAB);
