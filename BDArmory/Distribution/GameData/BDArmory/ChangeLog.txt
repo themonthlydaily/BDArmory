@@ -1,4 +1,9 @@
-﻿v1.4.4.1
+﻿v1.4.4.2
+FIXES
+	- Revert the improved gun aiming code as it's not working properly for non-stationary targets.
+	- Fix potential NRE in DetachExhaustPrefab.
+
+v1.4.4.1
 FIXES
 	- Fix AI trying to evade missiles after they were no longer threats or did not exist.
 	- Use object pooling for missile exhaust prefabs to avoid memory leakage.
