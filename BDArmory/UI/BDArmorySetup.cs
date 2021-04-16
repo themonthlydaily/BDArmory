@@ -1509,7 +1509,6 @@ namespace BDArmory.UI
             }
         }
         Dictionary<string, SpawnField> spawnFields;
-
         void WindowSettings(int windowID)
         {
             float line = 0.25f; // Top internal margin.

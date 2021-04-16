@@ -2212,9 +2212,11 @@ namespace BDArmory.Modules
 
         void DetachExhaustPrefab()
         {
-            part.OnJustAboutToBeDestroyed -= DetachExhaustPrefab;
+            if (part != null)
+                part.OnJustAboutToBeDestroyed -= DetachExhaustPrefab;
             foreach (var exhaustPrefab in exhaustPrefabs)
             {
+                if (exhaustPrefab == null) continue;
                 exhaustPrefab.transform.parent = null;
                 exhaustPrefab.SetActive(false);
             }

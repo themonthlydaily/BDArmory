@@ -2511,10 +2511,10 @@ namespace BDArmory.Modules
                 var bulletRelativePosition = targetPosition - fireTransforms[0].position;
                 var bulletRelativeVelocity = targetVelocity - bulletEffectiveVelocity;
                 var bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
-                var timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletVelocity);
+                var timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude);
                 var targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
                 var bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
-                finalTarget = targetPredictedPosition + bulletDropOffset;
+                finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA;
                 targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
 #if DEBUG
                 relVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
