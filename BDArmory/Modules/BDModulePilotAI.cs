@@ -697,7 +697,6 @@ namespace BDArmory.Modules
             customDynamicAxisField.guiActive = dynamicDamping;
             customDynamicAxisField.guiActiveEditor = dynamicDamping;
         }
-
         protected override void Start()
         {
             base.Start();
