@@ -774,12 +774,12 @@ namespace BDArmory.Modules
             }
             catch (Exception e)
             {
-                Debug.Log("DEBUG " + e.Message);
-                try { Debug.Log("DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.Log("DEBUG part: " + e2.Message); }
-                try { Debug.Log("DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.Log("DEBUG part.rb: " + e2.Message); }
-                try { Debug.Log("DEBUG null BDATargetManager.FiredMissiles?: " + (BDATargetManager.FiredMissiles == null)); } catch (Exception e2) { Debug.Log("DEBUG BDATargetManager.FiredMissiles: " + e2.Message); }
-                try { Debug.Log("DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.Log("DEBUG vessel: " + e2.Message); }
-                try { Debug.Log("DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.Log("DEBUG sfAudioSource: " + e2.Message); }
+                Debug.LogError("[BDArmory.MissileLauncher]: DEBUG " + e.Message);
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG part: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG part.rb: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null BDATargetManager.FiredMissiles?: " + (BDATargetManager.FiredMissiles == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG BDATargetManager.FiredMissiles: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG vessel: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG sfAudioSource: " + e2.Message); }
                 throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }
         }
@@ -899,15 +899,15 @@ namespace BDArmory.Modules
             }
             catch (Exception e)
             {
-                Debug.Log("DEBUG " + e.Message);
-                try { Debug.Log("DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.Log("DEBUG part: " + e2.Message); }
-                try { Debug.Log("DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.Log("DEBUG part.rb: " + e2.Message); }
-                try { Debug.Log("DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.Log("DEBUG vessel: " + e2.Message); }
-                try { Debug.Log("DEBUG null audioSource?: " + (audioSource == null)); } catch (Exception e2) { Debug.Log("DEBUG audioSource: " + e2.Message); }
-                try { Debug.Log("DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.Log("DEBUG sfAudioSource: " + e2.Message); }
-                try { Debug.Log("DEBUG null FlightGlobals.ActiveVessel?: " + (FlightGlobals.ActiveVessel == null)); } catch (Exception e2) { Debug.Log("DEBUG FlightGlobals.ActiveVessel: " + e2.Message); }
-                try { Debug.Log("DEBUG null FlightCamera.fetch?: " + (FlightCamera.fetch == null)); } catch (Exception e2) { Debug.Log("DEBUG FlightCamera.fetch: " + e2.Message); }
-                try { Debug.Log("DEBUG null FlightCamera.fetch.mainCamera?: " + (FlightCamera.fetch.mainCamera == null)); } catch (Exception e2) { Debug.Log("DEBUG FlightCamera.fetch.mainCamera: " + e2.Message); }
+                Debug.LogError("[BDArmory.MissileLauncher]: DEBUG " + e.Message);
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG part: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG part.rb: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG vessel: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null audioSource?: " + (audioSource == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG audioSource: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: sfAudioSource: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null FlightGlobals.ActiveVessel?: " + (FlightGlobals.ActiveVessel == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG FlightGlobals.ActiveVessel: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch?: " + (FlightCamera.fetch == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG FlightCamera.fetch: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch.mainCamera?: " + (FlightCamera.fetch.mainCamera == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG FlightCamera.fetch.mainCamera: " + e2.Message); }
                 throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }
         }
