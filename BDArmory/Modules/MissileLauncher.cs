@@ -708,67 +708,80 @@ namespace BDArmory.Modules
         {
             if (HasFired) return;
 
-            SetupExplosive(this.part);
-            HasFired = true;
-
-            Debug.Log("[BDArmory.MissileLauncher]: Missile Fired! " + vessel.vesselName);
-
-            GameEvents.onPartDie.Add(PartDie);
-            BDATargetManager.FiredMissiles.Add(this);
-
-            if (GetComponentInChildren<KSPParticleEmitter>())
+            try
             {
-                BDArmorySetup.numberOfParticleEmitters++;
-            }
+                SetupExplosive(this.part);
+                HasFired = true;
 
-            List<MissileFire>.Enumerator wpm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (wpm.MoveNext())
+                Debug.Log("[BDArmory.MissileLauncher]: Missile Fired! " + vessel.vesselName);
+
+                GameEvents.onPartDie.Add(PartDie);
+                BDATargetManager.FiredMissiles.Add(this);
+
+                if (GetComponentInChildren<KSPParticleEmitter>())
+                {
+                    BDArmorySetup.numberOfParticleEmitters++;
+                }
+
+                List<MissileFire>.Enumerator wpm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
+                while (wpm.MoveNext())
+                {
+                    if (wpm.Current == null) continue;
+                    Team = wpm.Current.Team;
+                    break;
+                }
+                wpm.Dispose();
+
+                sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/deployClick"));
+                SourceVessel = vessel;
+
+                //TARGETING
+                TargetPosition = transform.position + (transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
+                startDirection = transform.forward;
+
+                SetLaserTargeting();
+                SetAntiRadTargeting();
+
+                part.decouple(0);
+                part.force_activate();
+                part.Unpack();
+                vessel.situation = Vessel.Situations.FLYING;
+                part.rb.isKinematic = false;
+                part.bodyLiftMultiplier = 0;
+                part.dragModel = Part.DragModel.NONE;
+
+                //add target info to vessel
+                AddTargetInfoToVessel();
+                StartCoroutine(DecoupleRoutine());
+
+                vessel.vesselName = GetShortName();
+                vessel.vesselType = VesselType.Probe;
+
+                TimeFired = Time.time;
+
+                //setting ref transform for navball
+                GameObject refObject = new GameObject();
+                refObject.transform.rotation = Quaternion.LookRotation(-transform.up, transform.forward);
+                refObject.transform.parent = transform;
+                part.SetReferenceTransform(refObject.transform);
+                vessel.SetReferenceTransform(part);
+                vesselReferenceTransform = refObject.transform;
+                DetonationDistanceState = DetonationDistanceStates.NotSafe;
+                MissileState = MissileStates.Drop;
+                part.crashTolerance = 9999; //to combat stresses of launch, missle generate a lot of G Force
+
+                StartCoroutine(MissileRoutine());
+            }
+            catch (Exception e)
             {
-                if (wpm.Current == null) continue;
-                Team = wpm.Current.Team;
-                break;
+                Debug.Log("DEBUG " + e.Message);
+                try { Debug.Log("DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.Log("DEBUG part: " + e2.Message); }
+                try { Debug.Log("DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.Log("DEBUG part.rb: " + e2.Message); }
+                try { Debug.Log("DEBUG null BDATargetManager.FiredMissiles?: " + (BDATargetManager.FiredMissiles == null)); } catch (Exception e2) { Debug.Log("DEBUG BDATargetManager.FiredMissiles: " + e2.Message); }
+                try { Debug.Log("DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.Log("DEBUG vessel: " + e2.Message); }
+                try { Debug.Log("DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.Log("DEBUG sfAudioSource: " + e2.Message); }
+                throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }
-            wpm.Dispose();
-
-            sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/deployClick"));
-            SourceVessel = vessel;
-
-            //TARGETING
-            TargetPosition = transform.position + (transform.forward * 5000); //set initial target position so if no target update, missileBase will count a miss if it nears this point or is flying post-thrust
-            startDirection = transform.forward;
-
-            SetLaserTargeting();
-            SetAntiRadTargeting();
-
-            part.decouple(0);
-            part.force_activate();
-            part.Unpack();
-            vessel.situation = Vessel.Situations.FLYING;
-            part.rb.isKinematic = false;
-            part.bodyLiftMultiplier = 0;
-            part.dragModel = Part.DragModel.NONE;
-
-            //add target info to vessel
-            AddTargetInfoToVessel();
-            StartCoroutine(DecoupleRoutine());
-
-            vessel.vesselName = GetShortName();
-            vessel.vesselType = VesselType.Probe;
-
-            TimeFired = Time.time;
-
-            //setting ref transform for navball
-            GameObject refObject = new GameObject();
-            refObject.transform.rotation = Quaternion.LookRotation(-transform.up, transform.forward);
-            refObject.transform.parent = transform;
-            part.SetReferenceTransform(refObject.transform);
-            vessel.SetReferenceTransform(part);
-            vesselReferenceTransform = refObject.transform;
-            DetonationDistanceState = DetonationDistanceStates.NotSafe;
-            MissileState = MissileStates.Drop;
-            part.crashTolerance = 9999; //to combat stresses of launch, missle generate a lot of G Force
-
-            StartCoroutine(MissileRoutine());
         }
 
         IEnumerator DecoupleRoutine()
@@ -813,73 +826,89 @@ namespace BDArmory.Modules
 
         public override void OnFixedUpdate()
         {
-            debugString.Length = 0;
-
-            if (HasFired && !HasExploded && part != null)
+            try
             {
-                CheckDetonationState();
-                CheckDetonationDistance();
+                debugString.Length = 0;
 
-                part.rb.isKinematic = false;
-                AntiSpin();
+                if (HasFired && !HasExploded && part != null)
+                {
+                    CheckDetonationState();
+                    CheckDetonationDistance();
 
-                //simpleDrag
-                if (useSimpleDrag)
-                {
-                    SimpleDrag();
-                }
+                    part.rb.isKinematic = false;
+                    AntiSpin();
 
-                //flybyaudio
-                float mCamDistanceSqr = (FlightCamera.fetch.mainCamera.transform.position - transform.position).sqrMagnitude;
-                float mCamRelVSqr = (float)(FlightGlobals.ActiveVessel.Velocity() - vessel.Velocity()).sqrMagnitude;
-                if (!hasPlayedFlyby
-                   && FlightGlobals.ActiveVessel != vessel
-                   && FlightGlobals.ActiveVessel != SourceVessel
-                   && mCamDistanceSqr < 400 * 400 && mCamRelVSqr > 300 * 300
-                   && mCamRelVSqr < 800 * 800
-                   && Vector3.Angle(vessel.Velocity(), FlightGlobals.ActiveVessel.transform.position - transform.position) < 60)
-                {
-                    sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/missileFlyby"));
-                    hasPlayedFlyby = true;
-                }
-
-                if (vessel.isActiveVessel)
-                {
-                    audioSource.dopplerLevel = 0;
-                }
-                else
-                {
-                    audioSource.dopplerLevel = 1f;
-                }
-
-                if (TimeIndex > 0.5f)
-                {
-                    if (torpedo)
+                    //simpleDrag
+                    if (useSimpleDrag)
                     {
-                        if (vessel.altitude > 0)
+                        SimpleDrag();
+                    }
+
+                    //flybyaudio
+                    float mCamDistanceSqr = (FlightCamera.fetch.mainCamera.transform.position - transform.position).sqrMagnitude;
+                    float mCamRelVSqr = (float)(FlightGlobals.ActiveVessel.Velocity() - vessel.Velocity()).sqrMagnitude;
+                    if (!hasPlayedFlyby
+                       && FlightGlobals.ActiveVessel != vessel
+                       && FlightGlobals.ActiveVessel != SourceVessel
+                       && mCamDistanceSqr < 400 * 400 && mCamRelVSqr > 300 * 300
+                       && mCamRelVSqr < 800 * 800
+                       && Vector3.Angle(vessel.Velocity(), FlightGlobals.ActiveVessel.transform.position - transform.position) < 60)
+                    {
+                        sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/missileFlyby"));
+                        hasPlayedFlyby = true;
+                    }
+
+                    if (vessel.isActiveVessel)
+                    {
+                        audioSource.dopplerLevel = 0;
+                    }
+                    else
+                    {
+                        audioSource.dopplerLevel = 1f;
+                    }
+
+                    if (TimeIndex > 0.5f)
+                    {
+                        if (torpedo)
                         {
-                            part.crashTolerance = waterImpactTolerance;
+                            if (vessel.altitude > 0)
+                            {
+                                part.crashTolerance = waterImpactTolerance;
+                            }
+                            else
+                            {
+                                part.crashTolerance = 1;
+                            }
                         }
                         else
                         {
                             part.crashTolerance = 1;
                         }
                     }
-                    else
+
+                    UpdateThrustForces();
+                    UpdateGuidance();
+                    //RaycastCollisions();
+
+                    //Timed detonation
+                    if (isTimed && TimeIndex > detonationTime)
                     {
-                        part.crashTolerance = 1;
+                        Detonate();
                     }
                 }
-
-                UpdateThrustForces();
-                UpdateGuidance();
-                //RaycastCollisions();
-
-                //Timed detonation
-                if (isTimed && TimeIndex > detonationTime)
-                {
-                    Detonate();
-                }
+            }
+            catch (Exception e)
+            {
+                Debug.Log("DEBUG " + e.Message);
+                try { Debug.Log("DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.Log("DEBUG part: " + e2.Message); }
+                try { Debug.Log("DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.Log("DEBUG part.rb: " + e2.Message); }
+                try { Debug.Log("DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.Log("DEBUG vessel: " + e2.Message); }
+                try { Debug.Log("DEBUG null audioSource?: " + (audioSource == null)); } catch (Exception e2) { Debug.Log("DEBUG audioSource: " + e2.Message); }
+                try { Debug.Log("DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.Log("DEBUG sfAudioSource: " + e2.Message); }
+                try { Debug.Log("DEBUG null FlightGlobals.ActiveVessel?: " + (FlightGlobals.ActiveVessel == null)); } catch (Exception e2) { Debug.Log("DEBUG FlightGlobals.ActiveVessel: " + e2.Message); }
+                try { Debug.Log("DEBUG null FlightCamera.fetch?: " + (FlightCamera.fetch == null)); } catch (Exception e2) { Debug.Log("DEBUG FlightCamera.fetch: " + e2.Message); }
+                try { Debug.Log("DEBUG null FlightCamera.fetch.mainCamera?: " + (FlightCamera.fetch.mainCamera == null)); } catch (Exception e2) { Debug.Log("DEBUG FlightCamera.fetch.mainCamera: " + e2.Message); }
+                throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }
         }
 
