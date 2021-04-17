@@ -1509,7 +1509,6 @@ namespace BDArmory.UI
             }
         }
         Dictionary<string, SpawnField> spawnFields;
-        public bool ALTERNATE_AIMING = false;
         void WindowSettings(int windowID)
         {
             float line = 0.25f; // Top internal margin.
@@ -1592,7 +1591,6 @@ namespace BDArmory.UI
                         KSP.UI.Screens.PartCategorizer.Instance.editorPartList.Refresh();
                     }
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) ALTERNATE_AIMING = GUI.Toggle(SLeftRect(++line), ALTERNATE_AIMING, "Alternate Aiming");
                 ++line;
             }
             if (BDArmorySettings.BATTLEDAMAGE)
