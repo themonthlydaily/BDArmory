@@ -614,25 +614,31 @@ namespace BDArmory.Modules
 
         void SetupAudio()
         {
-            audioSource = gameObject.AddComponent<AudioSource>();
-            audioSource.minDistance = 1;
-            audioSource.maxDistance = 1000;
-            audioSource.loop = true;
-            audioSource.pitch = 1f;
-            audioSource.priority = 255;
-            audioSource.spatialBlend = 1;
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.minDistance = 1;
+                audioSource.maxDistance = 1000;
+                audioSource.loop = true;
+                audioSource.pitch = 1f;
+                audioSource.priority = 255;
+                audioSource.spatialBlend = 1;
+            }
 
             if (audioClipPath != string.Empty)
             {
                 audioSource.clip = GameDatabase.Instance.GetAudioClip(audioClipPath);
             }
 
-            sfAudioSource = gameObject.AddComponent<AudioSource>();
-            sfAudioSource.minDistance = 1;
-            sfAudioSource.maxDistance = 2000;
-            sfAudioSource.dopplerLevel = 0;
-            sfAudioSource.priority = 230;
-            sfAudioSource.spatialBlend = 1;
+            if (sfAudioSource == null)
+            {
+                sfAudioSource = gameObject.AddComponent<AudioSource>();
+                sfAudioSource.minDistance = 1;
+                sfAudioSource.maxDistance = 2000;
+                sfAudioSource.dopplerLevel = 0;
+                sfAudioSource.priority = 230;
+                sfAudioSource.spatialBlend = 1;
+            }
 
             if (audioClipPath != string.Empty)
             {
@@ -645,6 +651,7 @@ namespace BDArmory.Modules
             }
 
             UpdateVolume();
+            BDArmorySetup.OnVolumeChange -= UpdateVolume; // Remove it if it's already there. (Doesn't matter if it isn't.)
             BDArmorySetup.OnVolumeChange += UpdateVolume;
         }
 
@@ -723,15 +730,15 @@ namespace BDArmory.Modules
                     BDArmorySetup.numberOfParticleEmitters++;
                 }
 
-                List<MissileFire>.Enumerator wpm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (wpm.MoveNext())
-                {
-                    if (wpm.Current == null) continue;
-                    Team = wpm.Current.Team;
-                    break;
-                }
-                wpm.Dispose();
+                using (var wpm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    while (wpm.MoveNext())
+                    {
+                        if (wpm.Current == null) continue;
+                        Team = wpm.Current.Team;
+                        break;
+                    }
 
+                if (sfAudioSource == null) SetupAudio();
                 sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/deployClick"));
                 SourceVessel = vessel;
 
@@ -854,6 +861,7 @@ namespace BDArmory.Modules
                        && mCamRelVSqr < 800 * 800
                        && Vector3.Angle(vessel.Velocity(), FlightGlobals.ActiveVessel.transform.position - transform.position) < 60)
                     {
+                        if (sfAudioSource == null) SetupAudio();
                         sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/missileFlyby"));
                         hasPlayedFlyby = true;
                     }
@@ -1390,6 +1398,7 @@ namespace BDArmory.Modules
             }
 
             if (!(thrust > 0)) return;
+            if (sfAudioSource == null) SetupAudio();
             sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/launch"));
             RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward);
         }
@@ -1872,6 +1881,7 @@ namespace BDArmory.Modules
                     rcsAudioMinInterval = UnityEngine.Random.Range(0.15f, 0.25f);
                     if (Time.time - rcsFiredTimes[i] > rcsAudioMinInterval)
                     {
+                        if (sfAudioSource == null) SetupAudio();
                         sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/popThrust"));
                         rcsTransforms[i].emit = true;
                         rcsFiredTimes[i] = Time.time;
