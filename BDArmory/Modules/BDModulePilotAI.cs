@@ -1629,12 +1629,12 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory.BDModulePilotAI] PitchIntegral: " + pitchIntegral);
-                Debug.Log("[BDArmory.BDModulePilotAI] YawIntegral: " + yawIntegral);
-                Debug.Log("[BDArmory.BDModulePilotAI] RollIntegral: " + rollIntegral);
-                Debug.Log("[BDArmory.BDModulePilotAI] SteerPitch: " + steerPitch);
-                Debug.Log("[BDArmory.BDModulePilotAI] SteerYaw: " + steerYaw);
-                Debug.Log("[BDArmory.BDModulePilotAI] SteerRoll: " + steerRoll);
+                Debug.Log("[BDArmory.BDModulePilotAI]: PitchIntegral: " + pitchIntegral);
+                Debug.Log("[BDArmory.BDModulePilotAI]: YawIntegral: " + yawIntegral);
+                Debug.Log("[BDArmory.BDModulePilotAI]: RollIntegral: " + rollIntegral);
+                Debug.Log("[BDArmory.BDModulePilotAI]: SteerPitch: " + steerPitch);
+                Debug.Log("[BDArmory.BDModulePilotAI]: SteerYaw: " + steerYaw);
+                Debug.Log("[BDArmory.BDModulePilotAI]: SteerRoll: " + steerRoll);
             }
         }
 
