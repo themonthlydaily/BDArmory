@@ -82,6 +82,8 @@ namespace BDArmory.Core.Module
         [KSPField(isPersistant = true)]
         public float maxSupportedArmor = -1; //upper cap on armor per part, overridable in MM/.cfg
 
+        private float OldMaxArmor = 0;
+	
         AttachNode bottom;
         AttachNode top;
 
@@ -170,6 +172,7 @@ namespace BDArmory.Core.Module
                     else if (part.partName.Contains("Armor")) //BDA Armor panels, etc.
                     {
                         maxSupportedArmor = 500; //could always be higher if you really want that 1x1x0.1m armor panel be able to mount 1500mm of armor...
+			ArmorTypeNum = 2; //numtype 1 is armor type None, ensure armor panels start with armor
                     }
                     else
                     {
@@ -437,19 +440,32 @@ namespace BDArmory.Core.Module
             }
             armorVolume = ((Armor) *  // thickness * armor mass
             ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust)); //mass * surface area approximation of a cylinder, where H/W are unknown
-            armorMass = armorVolume * (Density / 1000000);																										   //part.mass = partmass;
+            if (guiArmorTypeString != "None")
+            {
+                armorMass = armorVolume * (Density / 1000000);
+                if (OldMaxArmor != maxSupportedArmor) maxSupportedArmor = OldMaxArmor; //if armor != None, reset max supported armor
+                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
+                armorFieldEditor.maxValue = maxSupportedArmor;
+            }
+            else
+            {
+                OldMaxArmor = maxSupportedArmor; //store max armor a part can ahve
+                maxSupportedArmor = 10; //then max none armor to 10 (simulate part skin of alimunium)
+                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
+                armorFieldEditor.maxValue = maxSupportedArmor;
+            }																											   //part.mass = partmass;
             armorCost = armorVolume * Cost;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             using (IEnumerator<UIPartActionWindow> window = FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator())
-				while (window.MoveNext())
-				{
-					if (window.Current == null) continue;
-					if (window.Current.part == part)
-					{
-						window.Current.displayDirty = true;
-					}
-				}
+		while (window.MoveNext())
+		    {
+		    if (window.Current == null) continue;
+			if (window.Current.part == part)
+			    {
+				window.Current.displayDirty = true;
+			    }
+		    }
         }
         private static Bounds CalcPartBounds(Part p, Transform t)
         {
