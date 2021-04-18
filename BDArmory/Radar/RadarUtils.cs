@@ -1202,7 +1202,8 @@ namespace BDArmory.Radar
                 missDistance = float.MaxValue,
                 missileThreatDistance = float.MaxValue,
                 threatVessel = null,
-                threatWeaponManager = null
+                threatWeaponManager = null,
+                incomingMissiles = new List<IncomingMissile>()
             };
 
             if (!myWpnManager || !referenceTransform)
@@ -1211,7 +1212,6 @@ namespace BDArmory.Radar
             }
 
             Vector3 position = referenceTransform.position;
-            //Vector3d geoPos = VectorUtils.WorldPositionToGeoCoords(position, FlightGlobals.currentMainBody);
             Vector3 forwardVector = referenceTransform.forward;
             Vector3 upVector = referenceTransform.up;
             Vector3 lookDirection = -forwardVector;
@@ -1229,57 +1229,65 @@ namespace BDArmory.Radar
                         Vector3 vesselDirection = loadedvessels.Current.transform.position - position;
 
                         float vesselDistance = (loadedvessels.Current.transform.position - position).sqrMagnitude;
-                        if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2 && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2)
+                        if (vesselDistance < maxDistance * maxDistance && Vector3.Angle(vesselProjectedDirection, lookDirection) < fov / 2f && Vector3.Angle(loadedvessels.Current.transform.position - position, -myWpnManager.transform.forward) < myWpnManager.guardAngle / 2f)
                         {
-                            //Debug.Log("[BDArmory.RadarUtils]: Found vessel: " + vessel.vesselName);
                             if (TerrainCheck(referenceTransform.position, loadedvessels.Current.transform.position))
+                            {
                                 continue; //blocked by terrain
+                            }
 
                             BDATargetManager.ReportVessel(loadedvessels.Current, myWpnManager);
-
-                            vesselDistance = Mathf.Sqrt(vesselDistance);
-                            Vector3 predictedRelativeDirection = loadedvessels.Current.transform.position - myWpnManager.vessel.PredictPosition(vesselDistance / (950 + Vector3.Dot(myWpnManager.vessel.Velocity(), vesselDirection.normalized)));
 
                             TargetInfo tInfo;
                             if ((tInfo = loadedvessels.Current.gameObject.GetComponent<TargetInfo>()))
                             {
                                 if (tInfo.isMissile)
                                 {
-                                    MissileBase missileBase;
-                                    if (missileBase = tInfo.MissileBaseModule)
+                                    MissileBase missileBase = tInfo.MissileBaseModule;
+                                    if (missileBase != null)
                                     {
                                         if (missileBase.SourceVessel == myWpnManager.vessel) continue; // ignore missiles we've fired
 
-                                        results.foundMissile = true;
-                                        results.threatVessel = missileBase.vessel;
-                                        if (missileBase.SourceVessel != null)
-                                            results.threatWeaponManager = missileBase.SourceVessel.FindPartModuleImplementing<MissileFire>();
                                         Vector3 vectorFromMissile = myWpnManager.vessel.CoM - missileBase.part.transform.position;
                                         Vector3 relV = missileBase.vessel.Velocity() - myWpnManager.vessel.Velocity();
                                         bool approaching = Vector3.Dot(relV, vectorFromMissile) > 0;
+                                        bool withinRadarFOV = (missileBase.TargetingMode == MissileBase.TargetingModes.Radar || missileBase.TargetingModeTerminal == MissileBase.TargetingModes.Radar) ?
+                                            (Vector3.Angle(missileBase.GetForwardTransform(), vectorFromMissile) <= Mathf.Clamp(missileBase.lockedSensorFOV, 1f, 90f)/2f) : false;
+                                        var missileBlastRadiusSqr = missileBase.GetBlastRadius();
+                                        missileBlastRadiusSqr *= missileBlastRadiusSqr;
 
-                                        if (missileBase.HasFired && missileBase.TimeIndex > 1 && approaching && (missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < 3600)
+                                        if (missileBase.HasFired && missileBase.TimeIndex > 1f && approaching &&
+                                            (
+                                                (missileBase.TargetPosition - (myWpnManager.vessel.CoM + (myWpnManager.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
+                                                myWpnManager.vessel.PredictClosestApproachSqrSeparation(missileBase.vessel, 2f) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                                withinRadarFOV // We are within radar FOV of missile boresight.
+                                            ))
                                         {
-                                            if (missileBase.TargetingMode == MissileBase.TargetingModes.Heat)
+                                            results.incomingMissiles.Add(new IncomingMissile
                                             {
-                                                results.foundHeatMissile = true;
-                                                results.missileThreatDistance = Mathf.Min(results.missileThreatDistance, Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position));
-                                                results.threatPosition = missileBase.transform.position;
-                                                break;
-                                            }
-                                            else if (missileBase.TargetingMode == MissileBase.TargetingModes.Radar)
+                                                guidanceType = missileBase.TargetingMode,
+                                                distance = Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position),
+                                                position = missileBase.transform.position,
+                                                vessel = missileBase.vessel,
+                                                weaponManager = missileBase.SourceVessel != null ? missileBase.SourceVessel.FindPartModuleImplementing<MissileFire>() : null,
+                                            });
+                                            switch (missileBase.TargetingMode)
                                             {
-                                                results.foundRadarMissile = true;
-                                                results.missileThreatDistance = Mathf.Min(results.missileThreatDistance, Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position));
-                                                results.threatPosition = missileBase.transform.position;
-                                            }
-                                            else if (missileBase.TargetingMode == MissileBase.TargetingModes.Laser)
-                                            {
-                                                results.foundAGM = true;
-                                                results.missileThreatDistance = Mathf.Min(results.missileThreatDistance, Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position));
-                                                break;
+                                                case MissileBase.TargetingModes.Heat:
+                                                    results.foundHeatMissile = true;
+                                                    break;
+                                                case MissileBase.TargetingModes.Radar:
+                                                    results.foundRadarMissile = true;
+                                                    break;
+                                                case MissileBase.TargetingModes.Laser:
+                                                    results.foundAGM = true;
+                                                    break;
                                             }
                                         }
+                                    }
+                                    else
+                                    {
+                                        Debug.LogWarning("[BDArmory.RadarUtils]: Supposed missile (" + loadedvessels.Current.vesselName + ") has no missileBase!");
                                     }
                                 }
                                 else
@@ -1289,14 +1297,17 @@ namespace BDArmory.Radar
                                         {
                                             if (weapon.Current == null || weapon.Current.weaponManager == null) continue;
                                             // If we're being targeted, calculate a miss distance
-                                            if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel
-                                                && MissDistance(weapon.Current, myWpnManager.vessel) < results.missDistance)
+                                            if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel)
                                             {
-                                                results.firingAtMe = true;
-                                                results.threatPosition = weapon.Current.fireTransforms[0].position; // Position of weapon that's attacking.
-                                                results.threatVessel = weapon.Current.vessel;
-                                                results.threatWeaponManager = weapon.Current.weaponManager;
-                                                results.missDistance = MissDistance(weapon.Current, myWpnManager.vessel);
+                                                var missDistance = MissDistance(weapon.Current, myWpnManager.vessel);
+                                                if (missDistance < results.missDistance)
+                                                {
+                                                    results.firingAtMe = true;
+                                                    results.threatPosition = weapon.Current.fireTransforms[0].position; // Position of weapon that's attacking.
+                                                    results.threatVessel = weapon.Current.vessel;
+                                                    results.threatWeaponManager = weapon.Current.weaponManager;
+                                                    results.missDistance = missDistance;
+                                                }
                                             }
                                         }
                                 }
@@ -1304,15 +1315,23 @@ namespace BDArmory.Radar
                         }
                     }
                 }
+            // Sort incoming missiles.
+            if (results.incomingMissiles.Count > 0)
+            {
+                results.foundMissile = true;
+                results.incomingMissiles.Sort(delegate (IncomingMissile m1, IncomingMissile m2) { return m1.distance.CompareTo(m2.distance); });
+                results.missileThreatDistance = results.incomingMissiles[0].distance;
+            }
 
             return results;
         }
 
         private static float MissDistance(ModuleWeapon threatWeapon, Vessel self) // Returns how far away bullets from enemy are from craft in meters
         {
-
-            // If we have a firing solution, use that, otherwise use relative vessel positions
             Transform fireTransform = threatWeapon.fireTransforms[0];
+            // If we're out of range, then it's not a threat.
+            if (threatWeapon.maxEffectiveDistance * threatWeapon.maxEffectiveDistance < (fireTransform.position - self.transform.position).sqrMagnitude) return float.MaxValue;
+            // If we have a firing solution, use that, otherwise use relative vessel positions
             Vector3 aimDirection = fireTransform.forward;
             float targetCosAngle = threatWeapon.FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)threatWeapon.FiringSolutionVector) : Vector3.Dot(aimDirection, (self.vesselTransform.position - fireTransform.position).normalized);
 
