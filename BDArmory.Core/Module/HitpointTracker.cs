@@ -433,7 +433,7 @@ namespace BDArmory.Core.Module
             }
             else //no bottom or top nodes, assume srf attached part; these are usually panels of some sort. Will need to determine method of ID'ing triangular panels/wings
             {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
-                sizeAdjust = 1.0f;
+                sizeAdjust = 0.5f; //simulate panels having armor on only one side
             }
             armorVolume = ((Armor) *  // thickness * armor mass
             ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust)); //mass * surface area approximation of a cylinder, where H/W are unknown
