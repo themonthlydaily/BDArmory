@@ -82,38 +82,124 @@ namespace BDArmory.Misc
                 }
             }
         }
-        public static float CalculateArmorPenetration(Part hitPart, float anglemultiplier, RaycastHit hit, float penetration, float thickness, float caliber)
+
+        public static float CalculateArmorPenetration(Part hitPart, float penetration)
         {
             ///////////////////////////////////////////////////////////////////////
             // Armor Penetration
             ///////////////////////////////////////////////////////////////////////
 
-            //TODO: Extract bdarmory settings from this values
-            if (thickness < 1) thickness = 1; //prevent divide by zero or other odd behavior
-
-            var penetrationFactor = penetration / thickness;
+            float thickness = (float)hitPart.GetArmorThickness();
+			
+            var penetrationFactor = penetration / thickness; 
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Armor penetration = " + penetration + " | Thickness = " + thickness);
             }
-
-            bool fullyPenetrated = penetration > thickness; //check whether bullet penetrates the plate
-
-            double massToReduce = Math.PI * Math.Pow((caliber * 0.001) / 2, 2) * (penetration);
-
-            if (!fullyPenetrated)
+            if (penetrationFactor < 1)
             {
-                massToReduce *= 0.125f;
-
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils]: Bullet Stopped by Armor");
                 }
             }
-            hitPart.ReduceArmor(massToReduce);
             return penetrationFactor;
         }
+        public static void CalculateArmorDamage(Part hitPart, float penetrationFactor, float caliber, float hardness, float ductility, float density, float impactVel, Vessel sourceVessel)
+        {
+            float thickness = (float)hitPart.GetArmorThickness();
+            double volumeToReduce = -1;
+            float caliberModifier = 1; //how many calibers wide is the armor loss/spall?       
+            float spallMass = 0;
+            float spallCaliber = 1;
+            //Spalling/Armor damage
+            if (ductility > 0.20f)
+            {
+                if (penetrationFactor > 2) //proj fast material can't stretch fast enough, necking/point embrittlelment/etc, material tears
+                {
+                    if (thickness < 2 * caliber)
+                    {
+                        caliberModifier = 4;                    // - bullet capped by necked material, add to caliber/bulletmass                        
+                    }
+                    else
+                    {
+                        caliberModifier = 2;
+                    }
+                    spallCaliber = caliber * (caliberModifier / 2);
+                    spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * thickness * (density/1000000);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    {
+                        Debug.Log("[BDArmory.ProjectileUtils]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass + "g");
+                    }
+                }
+                if (penetrationFactor > 0.75 && penetrationFactor < 2) //material deformed around impact point
+                {
+                    caliberModifier = 2;
+                }
+            }
+            else //ductility < 0.20
+            {
+                if (hardness > 500)
+                {
+                    if (penetrationFactor > 1)
+                    {
+                        if (ductility < 0.05f) //ceramics
+                        {
+                            volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 100), 2) * 100 * thickness);
+                            //total failue of 10x10cm armor tile(s)
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
+                                Debug.Log("[BDArmory.ProjectileUtils]: Armor failure!");
+                            }
+                        }
+                        else; //0.05-0.19 ductility - harder steels, etc
+                        {
+                            caliberModifier = 2 + (20 / ductility * 10) * penetrationFactor;
+                        }
+                    }
+                    if (penetrationFactor > 0.66 && penetrationFactor < 1)
+                    {
+                        spallCaliber = ((1 - penetrationFactor) + 1) * (Mathf.Pow(0.5f * caliber, 2) * Mathf.PI);
+                        volumeToReduce = spallCaliber;
+                        spallMass = spallCaliber * (density / 1000000000);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        {
+                            Debug.Log("[BDArmory.ProjectileUtils]: Armor failure!");
+                            Debug.Log("[BDArmory.ProjectileUtils]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass +"g");
+                        }
+                    }
+                }
+                //else //low hardness non ductile materials (i.e. kevlar/aramid) not going to spall
+            }
+
+            if (volumeToReduce < 0)
+            {
+                volumeToReduce = Mathf.Pow((0.5f * caliber * caliberModifier), 2) * Mathf.PI / 100 * thickness;
+            }
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils]: Armor volume lost: " + volumeToReduce + " cm3");
+            }
+            hitPart.ReduceArmor((double)volumeToReduce);
+            if (penetrationFactor < 1)
+            {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.ProjectileUtils]: Bullet Stopped by Armor");
+                }
+            }
+            if (spallMass > 0)
+            {
+                float damage = hitPart.AddBallisticDamage(spallMass, spallCaliber, 1, 1.1f, 1, (impactVel / 3));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.ProjectileUtils]: Spall damage: "+damage);
+                }
+                ApplyScore(hitPart, sourceVessel, 1, damage, "Spall Damage");
+            }
+        }
+        /*
         public static float CalculatePenetration(float caliber, float projMass, float impactVel, float apBulletMod = 1)
         {
             float penetration = 0;
@@ -127,6 +213,124 @@ namespace BDArmory.Misc
                 penetration = (float)(16f * impactVel * Math.Sqrt(projMass / 1000) / Math.Sqrt(caliber) * apBulletMod); //APBulletMod now actually implemented, serves as penetration multiplier, 1 being neutral, <1 for soft rounds, >1 for AP penetrators
             }
 
+            return penetration;
+        }
+        */
+        public static float CalculateProjectileEnergy(float projMass, float impactVel)
+        {
+            float bulletEnergy = (projMass * 1000) * impactVel; //(should this be 1/2(mv^2) instead? prolly at somepoint, but the abstracted calcs I have use mass x vel, and work, changing it would require refactoring calcs
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils]: Bullet Energy: " + bulletEnergy);
+            }
+            return bulletEnergy;
+        }
+
+        public static float CalculateArmorStrength(float caliber, float thickness, float Ductility, float Strength, float Density, float SafeTemp, Part hitpart)
+        {
+            /// <summary>
+            /// Armor Penetration calcs for new Armor system
+            /// return modified caliber, velocity for penetrating rounds
+            /// Math is very much game-ified abstract rather than real-world calcs, but returns numbers consistant with legacy armor system, assuming legacy armor is mild steel (UST ~950 MPa, BHN ~200)
+            /// so for now, Good Enough For Government Work^tm
+            /// </summary>
+            //initial impact calc
+            //determine yieldstrength of material
+            float yieldStrength;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils]: properties: Tensile:" + Strength + "; Ductility: " + Ductility + "; density: " + Density + "; thickness: " + thickness + "; caliber: " + caliber);
+            }
+            if (thickness < 1)
+            {
+                thickness = 1; //prevent divide by zero or other odd behavior
+            }
+            if (caliber < 1)
+            {
+                caliber = 20; //prevent divide by zero or other odd behavior
+            }
+            yieldStrength = Mathf.Pow(((0.5f * caliber) + ((0.5f * caliber) * (2 * (Ductility * Ductility)))), 2) * Mathf.PI / 100 * Strength * (Density / 7850) * thickness;
+            //assumes bullet is perfect cyl, modded by ductility spreading impact over larger area, times strength/cm2 for threshold energy required to penetrate armor material
+            // Ductility is a measure of brittleness, the lower the brittleness, the more the material is willing to bend before fracturing, allowing energy to be spread over more area
+            if (Ductility > 0.25f) //up to a point, anyway. Stretch too much... 
+            {
+                yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
+            }
+            if (hitpart.skinTemperature > SafeTemp) //has the armor started melting/denaturing/whatever?
+            {
+                yieldStrength *= 0.75f;
+            }
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils]: Armor yield Strength: " + yieldStrength);
+            }
+
+            return yieldStrength;
+        }
+
+        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float apBulletMod, float Density)
+        {
+            if (bulletEnergy < yieldStrength) return caliber; //armor stops the round, but calc armor damage
+            else //bullet penetrates. Calculate what happens to the bullet
+            {
+                //deform bullet from impact
+                if (yieldStrength < 1) yieldStrength = 1000;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.ProjectileUtils]: properties: yield:" + yieldStrength + "; Energy: " + bulletEnergy  + "; caliber: " + caliber + "; impactVel: " + impactVel);
+                    Debug.Log("[BDArmory.ProjectileUtils]: properties: hardness:" + hardness + "; apBulletMod: " + apBulletMod + "; density: " + Density);
+                }
+                float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness* Mathf.Sqrt(Density/1000))) / impactVel) / apBulletMod); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
+                newCaliber = Mathf.Clamp(newCaliber, 1f, 5f);
+                if (impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU hypervelocity penetrators
+                {
+                    newCaliber *= (impactVel / 1000);
+                }
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.ProjectileUtils]: Bullet Deformation modifier " + newCaliber);
+                }
+                newCaliber *= caliber;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.ProjectileUtils]: Bullet Deformation; bullet now " + newCaliber + " mm");
+                }
+                return newCaliber;
+            }
+        }
+        public static bool CalculateBulletStatus(float projMass, float newCaliber)
+        {
+            //does the bullet suvive its impact?
+            //calculate bullet lengh, in mm
+            float bulletLength = projMass / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * 11.34f) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+                                                                                                                                       //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
+            if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
+            {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.ProjectileUtils]: Bullet deformed past usable limit");
+                }
+                return false;
+            }
+            else return true;
+        }
+
+        public static float CalculatePenetration(float caliber, float newCaliber, float bulletEnergy, float Ductility, float Density, float Strength, float thickness)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils]: properties: Energy: " + bulletEnergy + "; caliber: " + caliber + "; newCaliber: " + newCaliber);
+                Debug.Log("[BDArmory.ProjectileUtils]: Ductility:" + Ductility + "; Density: " + Density + "; Strength: " + Strength + "; thickness: " + thickness);
+            }
+            //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
+            float penetration;
+             //bullet's deformed, penetration using larger crosssection  
+            penetration = bulletEnergy / (Mathf.Pow(((0.5f * caliber) + ((0.5f * newCaliber) * (2 * (Ductility * Ductility)))), 2) * Mathf.PI / 100 * Strength * (Density/7850) * thickness);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils]: Penetration: " + penetration + " cm");
+            }
+            penetration *= 10; //convert from cm to mm
             return penetration;
         }
         public static float CalculateThickness(Part hitPart, float anglemultiplier)

@@ -16,6 +16,7 @@ using KSP.UI.Screens;
 using KSP.Localization;
 using UniLinq;
 using UnityEngine;
+using BDArmory.Core.Module;
 
 namespace BDArmory.Modules
 {
@@ -1790,7 +1791,18 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-                            damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
+                            HitpointTracker armor = GetComponent<HitpointTracker>();
+
+                            damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
+                            if (pulseLaser)
+                            {
+                                damage *= TimeWarp.fixedDeltaTime;
+                            }
+                            if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
+                            {
+                                damage *= (1 - ((armor.Diffusivity * armor.ArmorThickness) / laserDamage)); //but this works for now
+                            }
+                            p.ReduceArmor(damage); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
                             p.AddDamage(damage);
                         }
                         if (HEpulses)
