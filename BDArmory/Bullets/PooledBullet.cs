@@ -387,6 +387,8 @@ namespace BDArmory.Bullets
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
                             distanceTraveled += hit.distance;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
+                            ExplosiveDetonation(hitPart, hit, bulletRay);
+                            KillBullet(); // Kerbals are too thick-headed for penetration...
                             return true;
                         }
 
@@ -421,8 +423,8 @@ namespace BDArmory.Bullets
 
                         //Standard Pipeline Hitpoints, Armor and Explosives
                         impactVelocity = impactVector.magnitude;
-                         if (massMod != 0)
-                         {
+                        if (massMod != 0)
+                        {
                             var ME = hitPart.FindModuleImplementing<ModuleMassAdjust>();
                             if (ME == null)
                             {
@@ -431,9 +433,10 @@ namespace BDArmory.Bullets
                             ME.massMod += massMod;
                             ME.duration += BDArmorySettings.WEAPON_FX_DURATION;
                         }
-                        if (impulse != 0)
+                        if (impulse != 0 && hitPart.rb != null)
                         {
                             hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
+                            ProjectileUtils.ApplyScore(hitPart, sourceVessel, distanceTraveled, 0, bullet.name);
                             break; //impulse rounds shouldn't penetrate/do damage
                         }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);

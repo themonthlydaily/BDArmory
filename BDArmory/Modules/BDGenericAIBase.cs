@@ -220,7 +220,7 @@ namespace BDArmory.Modules
             if (!pilotEnabled || !vessel.isActiveVessel) return;
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                GUI.Label(new Rect(200, Screen.height - 200, 400, 400), $"{vessel.name}: {debugString.ToString()}");
+                GUI.Label(new Rect(200, Screen.height - 300, 600, 300), $"{vessel.name}\n{debugString.ToString()}");
             }
         }
 
@@ -326,14 +326,13 @@ namespace BDArmory.Modules
         /// <param name="text">text to write</param>
         protected void DebugLine(string text)
         {
-            debugString.Append(text);
-            debugString.Append(Environment.NewLine);
+            debugString.AppendLine(text);
         }
 
         protected void SetStatus(string text)
         {
             currentStatus = text;
-            DebugLine(text);
+            // DebugLine(text);
         }
 
         #endregion utilities
