@@ -298,11 +298,16 @@ namespace BDArmory.Misc
                 return newCaliber;
             }
         }
-        public static bool CalculateBulletStatus(float projMass, float newCaliber)
+        public static bool CalculateBulletStatus(float projMass, float newCaliber, bool sabot = false)
         {
             //does the bullet suvive its impact?
             //calculate bullet lengh, in mm
-            float bulletLength = projMass / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * 11.34f) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+            float density = 11.34f;
+            if (sabot)
+            {
+                density = 19;
+            }
+            float bulletLength = (projMass*1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
                                                                                                                //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
@@ -315,24 +320,31 @@ namespace BDArmory.Misc
             else return true;
         }
 
-        public static float CalculatePenetration(float caliber, float newCaliber, float bulletEnergy, float Ductility, float Density, float Strength, float thickness)
+         public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-            {
-                Debug.Log("[BDArmory.ProjectileUtils]: properties: Energy: " + bulletEnergy + "; caliber: " + caliber + "; newCaliber: " + newCaliber);
-                Debug.Log("[BDArmory.ProjectileUtils]: Ductility:" + Ductility + "; Density: " + Density + "; Strength: " + Strength + "; thickness: " + thickness);
-            }
+            float Energy = CalculateProjectileEnergy(projMass, impactVel);
             //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
             float penetration;
             //bullet's deformed, penetration using larger crosssection  
-            penetration = bulletEnergy / (Mathf.Pow(((0.5f * caliber) + ((0.5f * newCaliber) * (2 * (Ductility * Ductility)))), 2) * Mathf.PI / 100 * Strength * (Density / 7850) * thickness);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (impactVel > 1500 && caliber < 30) //hypervelocity KE penetrators, for convenience, assume any round moving this fast is made of Tungsten/Depleted ranium
             {
-                Debug.Log("[BDArmory.ProjectileUtils]: Penetration: " + penetration + " cm");
+                float length = (projMass * 1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * 19) + 10;
+                penetration = length * Mathf.Sqrt(19000 / Density); //at hypervelocity, impacts are akin to fluid displacement 
+            }
+            else
+            {
+                penetration = Energy / (Mathf.Pow(((0.5f * caliber) + ((0.5f * newCaliber) * (2 * (Ductility * Ductility)))), 2) * Mathf.PI / 100 * Strength * (Density / 7850) * thickness);
             }
             penetration *= 10; //convert from cm to mm
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log("[BDArmory.ProjectileUtils]: Properties: Energy: " + Energy + "; caliber: " + caliber + "; newCaliber: " + newCaliber);
+                Debug.Log("[BDArmory.ProjectileUtils]: Ductility:" + Ductility + "; Density: " + Density + "; Strength: " + Strength + "; thickness: " + thickness);
+                Debug.Log("[BDArmory.ProjectileUtils]: Penetration: " + penetration + " cm");
+            }
             return penetration;
         }
+        
         public static float CalculateThickness(Part hitPart, float anglemultiplier)
         {
             float thickness = (float)hitPart.GetArmorThickness();
