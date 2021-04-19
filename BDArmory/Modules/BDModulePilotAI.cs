@@ -456,6 +456,10 @@ namespace BDArmory.Modules
         //Controller Integral
         float pitchIntegral;
         float yawIntegral;
+        float rollIntegral;
+        int lastPitchErrorSign;
+        int lastYawErrorSign;
+        int lastRollErrorSign;
 
         //instantaneous turn radius and possible acceleration from lift
         //properties can be used so that other AI modules can read this for future maneuverability comparisons between craft
@@ -1528,25 +1532,34 @@ namespace BDArmory.Modules
                 pitchError = pitchError * Mathf.Clamp01((21 - Mathf.Exp(Mathf.Abs(rollError) / 30)) / 20);
             }
 
-            float steerPitch = (0.015f * steerMult * pitchError) - (SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x * (1 + steerKiAdjust));
-            float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming ? (180f / 25f) : 4f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * 0.2f * -localAngVel.z * (1 + steerKiAdjust));
+            float steerPitch = (0.015f * steerMult * pitchError) - (SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x);
+            float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming ? (180f / 25f) : 4f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * 0.2f * -localAngVel.z);
 
-            pitchIntegral += pitchError;
-            yawIntegral += yawError;
+            pitchIntegral = Mathf.Clamp(0.995f * pitchIntegral + pitchError * Time.deltaTime / 90f, -1f, 1f);
+            yawIntegral = Mathf.Clamp(0.995f * yawIntegral + yawError * Time.deltaTime / 90f, -1f, 1f);
+            rollIntegral = Mathf.Clamp(0.995f * rollIntegral + rollError * Time.deltaTime / 90f, -1f, 1f);
+
+            pitchIntegral = lastPitchErrorSign != Math.Sign(pitchError) ? 0 : pitchIntegral;
+            yawIntegral = lastYawErrorSign != Math.Sign(yawError) ? 0 : yawIntegral;
+            rollIntegral = lastRollErrorSign != Math.Sign(rollError) ? 0 : rollIntegral;
+
+            lastPitchErrorSign = Math.Sign(pitchError);
+            lastYawErrorSign = Math.Sign(yawError);
+            lastRollErrorSign = Math.Sign(rollError);
 
             steerPitch *= dynamicAdjustment;
             steerYaw *= dynamicAdjustment;
 
-            float pitchKi = 0.1f * (steerKiAdjust / 5); //This is what should be allowed to be tweaked by the player, just like the steerMult, it is very low right now
-            pitchIntegral = Mathf.Clamp(pitchIntegral, -0.2f / (pitchKi * dynamicAdjustment), 0.2f / (pitchKi * dynamicAdjustment)); //0.2f is the limit of the integral variable, making it bigger increases overshoot
-            steerPitch += pitchIntegral * pitchKi * dynamicAdjustment; //Adds the integral component to the mix
+            float pitchKi = steerKiAdjust;
+            steerPitch += pitchIntegral * pitchKi; //Adds the integral component to the mix
 
-            float yawKi = 0.1f * (steerKiAdjust / 15);
-            yawIntegral = Mathf.Clamp(yawIntegral, -0.2f / (yawKi * dynamicAdjustment), 0.2f / (yawKi * dynamicAdjustment));
-            steerYaw += yawIntegral * yawKi * dynamicAdjustment;
+            float yawKi = steerKiAdjust;
+            steerYaw += yawIntegral * yawKi;
 
-            float roll = Mathf.Clamp(steerRoll, -maxSteer, maxSteer);
-            s.roll = roll;
+            float rollKi = steerKiAdjust;
+            steerRoll += rollIntegral * rollKi;
+
+            s.roll = Mathf.Clamp(steerRoll, -maxSteer, maxSteer);
             s.yaw = Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer);
             s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer);
         }
