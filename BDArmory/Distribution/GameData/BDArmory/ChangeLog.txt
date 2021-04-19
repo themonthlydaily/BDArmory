@@ -1,4 +1,9 @@
-﻿v1.4.4.2
+﻿v1.4.4.3
+FIXES
+	- The improved aiming code is now fixed (properly accounts for movement of the aiming vessel). Planet curvature is not yet taken into account.
+	- Re-initialise the missile audio sources if they're null (fixes failure-to-fire issue).
+
+v1.4.4.2
 FIXES
 	- Revert the improved gun aiming code as it's not working properly for non-stationary targets.
 	- Fix potential NRE in DetachExhaustPrefab.

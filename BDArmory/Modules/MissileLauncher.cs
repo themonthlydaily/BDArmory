@@ -715,7 +715,7 @@ namespace BDArmory.Modules
         {
             if (HasFired) return;
 
-            try
+            try // FIXME Remove this once the fix is sufficiently tested.
             {
                 SetupExplosive(this.part);
                 HasFired = true;
@@ -833,7 +833,7 @@ namespace BDArmory.Modules
 
         public override void OnFixedUpdate()
         {
-            try
+            try // FIXME Remove this once the fix is sufficiently tested.
             {
                 debugString.Length = 0;
 
