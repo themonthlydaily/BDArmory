@@ -42,7 +42,7 @@ namespace BDArmory.Modules
         Transform cameraTransform;
 
         float startTime;
-        int missilesAway;
+        public int missilesAway;
 
         public float totalHP;
 
