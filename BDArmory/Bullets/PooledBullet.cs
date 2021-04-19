@@ -494,7 +494,7 @@ namespace BDArmory.Bullets
                         {
                             if (RicochetOnPart(hitPart, hit, hitAngle, impactVelocity, hit.distance / dist, period))
                             {
-                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber);
+                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
                                 if (!viableBullet)
                                 {
                                     KillBullet();
@@ -511,7 +511,7 @@ namespace BDArmory.Bullets
                         if (penetrationFactor > 1 && !hasRicocheted) //fully penetrated continue ballistic damage
                         {
                             hasPenetrated = true;
-                            bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber);
+                            bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
                             penTicker += 1;
                             ProjectileUtils.CheckPartForExplosion(hitPart);
