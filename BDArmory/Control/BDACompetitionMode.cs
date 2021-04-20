@@ -2738,12 +2738,14 @@ namespace BDArmory.Control
                 partsCheck = new Dictionary<string, int>();
                 foreach (var vesselName in rammingInformation.Keys)
                 {
+                    if (rammingInformation[vesselName].vessel == null) continue;
                     partsCheck.Add(vesselName, rammingInformation[vesselName].vessel.parts.Count);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " started with " + partsCheck[vesselName] + " parts.");
                 }
             }
             foreach (var vesselName in rammingInformation.Keys)
             {
+                if (!partsCheck.ContainsKey(vesselName)) continue;
                 var vessel = rammingInformation[vesselName].vessel;
                 if (vessel != null)
                 {
