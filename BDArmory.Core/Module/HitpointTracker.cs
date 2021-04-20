@@ -440,7 +440,7 @@ namespace BDArmory.Core.Module
             }
             armorVolume = ((Armor) *  // thickness * armor mass
             ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust)); //mass * surface area approximation of a cylinder, where H/W are unknown
-            if (guiArmorTypeString != "None")
+	    if (guiArmorTypeString != "None" && ArmorThickness == 0) //don't grab armor panels
             {
                 armorMass = armorVolume * (Density / 1000000);
                 if (OldMaxArmor != maxSupportedArmor) maxSupportedArmor = OldMaxArmor; //if armor != None, reset max supported armor
@@ -451,9 +451,10 @@ namespace BDArmory.Core.Module
             {
                 OldMaxArmor = maxSupportedArmor; //store max armor a part can ahve
                 maxSupportedArmor = 10; //then max none armor to 10 (simulate part skin of alimunium)
+                Armor = 10;
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
                 armorFieldEditor.maxValue = maxSupportedArmor;
-            }																											   //part.mass = partmass;
+            }																										   //part.mass = partmass;
             armorCost = armorVolume * Cost;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
