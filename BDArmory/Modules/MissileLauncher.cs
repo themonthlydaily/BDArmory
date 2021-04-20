@@ -1283,17 +1283,21 @@ namespace BDArmory.Modules
         IEnumerator AnimRoutine()
         {
             yield return new WaitForSeconds(deployTime);
+            if (deployStates == null)
+            {
+                Debug.LogError("[BDArmory.MissileLauncher]: deployStates was null, aborting AnimRoutine.");
+                yield break;
+            }
 
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
                 deployed = true;
-                IEnumerator<AnimationState> anim = deployStates.AsEnumerable().GetEnumerator();
-                while (anim.MoveNext())
-                {
-                    if (anim.Current == null) continue;
-                    anim.Current.speed = 1;
-                }
-                anim.Dispose();
+                using (var anim = deployStates.AsEnumerable().GetEnumerator())
+                    while (anim.MoveNext())
+                    {
+                        if (anim.Current == null) continue;
+                        anim.Current.speed = 1;
+                    }
             }
         }
 
@@ -1358,6 +1362,7 @@ namespace BDArmory.Modules
         {
             MissileState = MissileStates.Boost;
 
+            if (audioSource == null || sfAudioSource == null) SetupAudio();
             if (boostAudio)
             {
                 audioSource.clip = boostAudio;
@@ -1398,7 +1403,6 @@ namespace BDArmory.Modules
             }
 
             if (!(thrust > 0)) return;
-            if (sfAudioSource == null) SetupAudio();
             sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/launch"));
             RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward);
         }
@@ -1506,6 +1510,7 @@ namespace BDArmory.Modules
         {
             MissileState = MissileStates.Cruise;
 
+            if (audioSource == null) SetupAudio();
             if (thrustAudio)
             {
                 audioSource.clip = thrustAudio;
