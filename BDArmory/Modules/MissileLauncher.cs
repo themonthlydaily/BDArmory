@@ -684,6 +684,7 @@ namespace BDArmory.Modules
 
         void OnDestroy()
         {
+            DetachExhaustPrefabs();
             KillRCS();
             if (upRCS) EffectBehaviour.RemoveParticleEmitter(upRCS);
             if (downRCS) EffectBehaviour.RemoveParticleEmitter(downRCS);
@@ -2259,7 +2260,8 @@ namespace BDArmory.Modules
             exhaustPrefab.transform.localPosition = Vector3.zero;
             exhaustPrefab.transform.localRotation = Quaternion.identity;
             missileLauncher.exhaustPrefabs.Add(exhaustPrefab);
-            missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefab;
+            missileLauncher.part.OnJustAboutToDie += missileLauncher.DetachExhaustPrefabs;
+            missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefabs;
         }
 
         static void CreateExhaustPool(string prefabPath)
@@ -2277,10 +2279,13 @@ namespace BDArmory.Modules
             }
         }
 
-        void DetachExhaustPrefab()
+        void DetachExhaustPrefabs()
         {
             if (part != null)
-                part.OnJustAboutToBeDestroyed -= DetachExhaustPrefab;
+            {
+                part.OnJustAboutToDie -= DetachExhaustPrefabs;
+                part.OnJustAboutToBeDestroyed -= DetachExhaustPrefabs;
+            }
             foreach (var exhaustPrefab in exhaustPrefabs)
             {
                 if (exhaustPrefab == null) continue;
