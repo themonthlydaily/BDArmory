@@ -307,8 +307,8 @@ namespace BDArmory.Misc
             {
                 density = 19;
             }
-            float bulletLength = (projMass*1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
-                                                                                                               //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
+            float bulletLength = (projMass * 1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+                                                                                                                         //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -320,7 +320,7 @@ namespace BDArmory.Misc
             else return true;
         }
 
-         public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness)
+        public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness)
         {
             float Energy = CalculateProjectileEnergy(projMass, impactVel);
             //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
@@ -344,7 +344,7 @@ namespace BDArmory.Misc
             }
             return penetration;
         }
-        
+
         public static float CalculateThickness(Part hitPart, float anglemultiplier)
         {
             float thickness = (float)hitPart.GetArmorThickness();
