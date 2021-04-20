@@ -2216,12 +2216,12 @@ namespace BDArmory.Modules
 
         #region ExhaustPrefabPooling
         static Dictionary<string, ObjectPool> exhaustPrefabPool = new Dictionary<string, ObjectPool>();
+        static Dictionary<string, GameObject> exhaustPrefabTemplates = new Dictionary<string, GameObject>();
         List<GameObject> exhaustPrefabs = new List<GameObject>();
 
         static void AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
         {
-            if (!exhaustPrefabPool.ContainsKey(prefabPath))
-            { CreateExhaustPool(prefabPath); }
+            CreateExhaustPool(prefabPath);
             var exhaustPrefab = exhaustPrefabPool[prefabPath].GetPooledObject();
             exhaustPrefab.SetActive(true);
             using (var emitter = exhaustPrefab.GetComponentsInChildren<KSPParticleEmitter>().AsEnumerable().GetEnumerator())
@@ -2241,11 +2241,14 @@ namespace BDArmory.Modules
         {
             if (exhaustPrefabPool == null)
             { exhaustPrefabPool = new Dictionary<string, ObjectPool>(); }
+            if (!exhaustPrefabTemplates.ContainsKey(prefabPath) || exhaustPrefabTemplates[prefabPath] == null)
+            {
+                exhaustPrefabTemplates[prefabPath] = GameDatabase.Instance.GetModel(prefabPath);
+                exhaustPrefabTemplates[prefabPath].SetActive(false);
+            }
             if (!exhaustPrefabPool.ContainsKey(prefabPath))
             {
-                var prefabTemplate = GameDatabase.Instance.GetModel(prefabPath);
-                prefabTemplate.SetActive(false);
-                exhaustPrefabPool[prefabPath] = ObjectPool.CreateObjectPool(prefabTemplate, 1, true, true, 0f, false);
+                exhaustPrefabPool[prefabPath] = ObjectPool.CreateObjectPool(exhaustPrefabTemplates[prefabPath], 1, true, true, 0f, false);
             }
         }
 
