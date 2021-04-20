@@ -2514,7 +2514,7 @@ namespace BDArmory.Modules
                 var timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude);
                 var targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
                 var bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
-                finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA;
+                finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA; // TODO Account for planet curvature via a coordinate transformation.
                 targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
 #if DEBUG
                 relVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
