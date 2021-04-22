@@ -73,7 +73,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int CAMERA_SWITCH_FREQUENCY = 3;                    // Controls the minimum time between automated camera switches
         [BDAPersistantSettingsField] public static int DEATH_CAMERA_SWITCH_INHIBIT_PERIOD = 0;         // Controls the delay before the next switch after the currently active vessel dies
         [BDAPersistantSettingsField] public static int KERBAL_SAFETY_INVENTORY = 2;                    // Controls how Kerbal Safety adjusts the inventory of kerbals.
-        [BDAPersistantSettingsField] public static float MAX_BULLET_RANGE = 8000f;                //TODO: remove all references to this so it can be deprecated! all ranges should be supplied in part config!
         [BDAPersistantSettingsField] public static float TRIGGER_HOLD_TIME = 0.2f;
         [BDAPersistantSettingsField] public static float BDARMORY_UI_VOLUME = 0.35f;
         [BDAPersistantSettingsField] public static float BDARMORY_WEAPONS_VOLUME = 0.45f;

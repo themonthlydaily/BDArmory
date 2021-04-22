@@ -961,8 +961,8 @@ namespace BDArmory.UI
                     ActiveWeaponManager.targetScanInterval =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.targetScanInterval, 1, 60);
-                    ActiveWeaponManager.targetScanInterval = Mathf.Round(ActiveWeaponManager.targetScanInterval);
+                            ActiveWeaponManager.targetScanInterval, 0.5f, 60f);
+                    ActiveWeaponManager.targetScanInterval = Mathf.Round(ActiveWeaponManager.targetScanInterval * 2f) / 2f;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.targetScanInterval.ToString(), leftLabel);
                     guardLines++;
@@ -973,8 +973,8 @@ namespace BDArmory.UI
                     ActiveWeaponManager.fireBurstLength =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.fireBurstLength, 0, 60);
-                    ActiveWeaponManager.fireBurstLength = Mathf.Round(ActiveWeaponManager.fireBurstLength * 2) / 2;
+                            ActiveWeaponManager.fireBurstLength, 0, 10);
+                    ActiveWeaponManager.fireBurstLength = Mathf.Round(ActiveWeaponManager.fireBurstLength * 20f) / 20f;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.fireBurstLength.ToString(), leftLabel);
                     guardLines++;
@@ -986,8 +986,8 @@ namespace BDArmory.UI
                     ActiveWeaponManager.AutoFireCosAngleAdjustment =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 3);
-                    ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20) / 20;
+                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 4);
+                    ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20f) / 20f;
                     if (ActiveWeaponManager.AutoFireCosAngleAdjustment != oldAutoFireCosAngleAdjustment)
                         ActiveWeaponManager.OnAFCAAUpdated(null, null);
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
@@ -1001,9 +1001,9 @@ namespace BDArmory.UI
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
                             guardAngle, 10, 360);
-                    guardAngle = guardAngle / 10;
+                    guardAngle = guardAngle / 10f;
                     guardAngle = Mathf.Round(guardAngle);
-                    ActiveWeaponManager.guardAngle = guardAngle * 10;
+                    ActiveWeaponManager.guardAngle = guardAngle * 10f;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.guardAngle.ToString(), leftLabel);
                     guardLines++;
@@ -1026,10 +1026,10 @@ namespace BDArmory.UI
                     gRange =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            gRange, 0, BDArmorySettings.MAX_BULLET_RANGE);
-                    gRange /= 100f;
+                            gRange, 0, ActiveWeaponManager.maxGunRange);
+                    gRange /= 10f;
                     gRange = Mathf.Round(gRange);
-                    gRange *= 100f;
+                    gRange *= 10f;
                     ActiveWeaponManager.gunRange = gRange;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.gunRange.ToString(), leftLabel);
