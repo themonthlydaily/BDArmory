@@ -33,7 +33,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DRAW_DEBUG_LINES = false;
         [BDAPersistantSettingsField] public static bool DRAW_DEBUG_LABELS = false;
         [BDAPersistantSettingsField] public static bool REMOTE_SHOOTING = false;
-        [BDAPersistantSettingsField] public static bool BOMB_CLEARANCE_CHECK = true;
+        [BDAPersistantSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;
         [BDAPersistantSettingsField] public static bool SHOW_AMMO_GAUGES = false;
         [BDAPersistantSettingsField] public static bool SHELL_COLLISIONS = true;
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
