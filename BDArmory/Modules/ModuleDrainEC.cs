@@ -120,11 +120,15 @@ namespace BDArmory.Modules
             if (EMPDamage > BrickThreshold && !bricked) //does the damage exceed the hard cap?
             {
                 bricked = true; //if so brick the craft
-                Debug.Log("[BDArmory.ModuleDrainEC]: " + vessel.vesselName + " is bricked!");
+                var message = vessel.vesselName + " is bricked!";
+                Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
             }
             if (EMPDamage <= 0 && disabled && !bricked) //reset craft
             {
-                Debug.Log("[BDArmory.ModuleDrainEC]: Rebooting " + vessel.vesselName);
+                var message = "Rebooting " + vessel.vesselName;
+                Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
                 EnableVessel();
             }
         }
