@@ -81,6 +81,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float MAX_ENGAGEMENT_RANGE = 200000f;          //NOTE: used ONLY for missile dlz parameters!
         [BDAPersistantSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistantSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
+        [BDAPersistantSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 256f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations.
 
         // Physics constants
         [BDAPersistantSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
