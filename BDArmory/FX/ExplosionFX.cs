@@ -136,7 +136,12 @@ namespace BDArmory.FX
                         break;
                 }
             }
-            using (var hitCollidersEnu = Physics.OverlapSphere(Position, (Range*2), 9076737).AsEnumerable().GetEnumerator())
+            float shrapnelrange = Range;
+            if (ProjMass > 0)
+            {
+                shrapnelrange = Range*2;
+            }
+            using (var hitCollidersEnu = Physics.OverlapSphere(Position, shrapnelrange, 9076737).AsEnumerable().GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())
                 {
@@ -247,7 +252,10 @@ namespace BDArmory.FX
                             IntermediateParts = intermediateParts
                         });
                     }
-                    ProjectileUtils.CalculateShrapnelDamage(part, hit, 120, Power, distance, sourceVesselName, ProjMass); //part hit by shrapnel, but not pressure wave
+                    if (ProjMass > 0)
+                    {
+                        ProjectileUtils.CalculateShrapnelDamage(part, hit, 120, Power, distance, sourceVesselName, ProjMass); //part hit by shrapnel, but not pressure wave
+                    }
                     partsAdded.Add(part);
                     return true;
                 }

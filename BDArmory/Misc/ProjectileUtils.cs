@@ -198,7 +198,7 @@ namespace BDArmory.Misc
                 //ApplyScore(hitPart, sourceVessel, 1, damage, "Spall Damage");
             }
         }
-        public static void CalculateShrapnelDamage(Part hitPart, RaycastHit hit, float caliber, float HEmass, float detonationDist, string sourceVesselName, float penetrationFactor = -1, float projmass = -1)
+        public static void CalculateShrapnelDamage(Part hitPart, RaycastHit hit, float caliber, float HEmass, float detonationDist, string sourceVesselName, float projmass = 0, float penetrationFactor = -1)
         {
             float thickness = (float)hitPart.GetArmorThickness();
             double volumeToReduce;
@@ -220,18 +220,18 @@ namespace BDArmory.Misc
                 //in calculating shrapnel, sim shrapnel in HE detonations? so change EplosionFX from grabbing everything within the balst pressure wave (which caps explosion size to 100m or so) to grabbing everything within the pressure wave + some multiplier?
                 //everything outside the blastwave can only take shrapnel damage, num of shrapnel hits decreases with range, have hits randomly assigned to LOS parts(should be less performance intensive than calculating a whole bunch of raycasts using gaussian distribution
                 float HERatio = 0.06f;
-				if (projmass > 0)
-				{
-					HERatio = HEmass / projmass;
-				}
+                if (projmass > 0)
+                {
+                    HERatio = HEmass / projmass;
+                }
                 float frangibility = 5000 * HERatio;
                 float shrapnelThickness = (Mathf.Pow(0.0075f * HERatio, 1.05f) + 0.06f) * caliber; //min thickness of material for HE to blow caliber size hole in steel
                 shrapnelThickness *= (950 / Strength) * (8000 / Density) * (Mathf.Sqrt(1100 / Density)); //adjusted min thickness after material hardness/strength/density
                 float shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * Mathf.Pow(detonationDist, 2))), 0, (frangibility*.4f)); //fragments/m2
                 shrapnelCount *= (float)(hitPart.radiativeArea / 3); //shrapnelhits/part
-                float shrapnelMass = (((projmass-HEmass) * (1 - HERatio)) / frangibility) * shrapnelCount;
+                float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
 
-                if (penetrationFactor < 0) //airburst/parts caught in AoE
+                if (penetrationFactor == -1) //airburst/parts caught in AoE
                 {
                     if (detonationDist > (5 * caliber)) //contact detonation
                     {
@@ -280,7 +280,7 @@ namespace BDArmory.Misc
                 }
                 else //detonates in armor
                 {
-                    if (penetrationFactor < 1)
+                    if (penetrationFactor < 1 && penetrationFactor > 0)
                     {
                         thickness *= (1 - penetrationFactor); //armor thickness reduced from projectile penetrating some distance, less distance from proj to back of plate
                         if (thickness < (shrapnelThickness * 1.41f))
@@ -299,7 +299,11 @@ namespace BDArmory.Misc
                     }
                     else //internal detonation
                     {
-                        hitPart.AddBallisticDamage(projmass, 0.1f, 1, 1.9f, 1, 7500); //internal det catches entire shrapnel mass
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        {
+                            Debug.Log("[BDArmory.ProjectileUtils]: Through-armor detonation");
+                        }
+                        hitPart.AddBallisticDamage((projmass-HEmass), 0.1f, 1, 1.9f, 1, 7500); //internal det catches entire shrapnel mass
                     }
                 }
             }

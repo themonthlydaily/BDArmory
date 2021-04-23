@@ -526,7 +526,11 @@ namespace BDArmory.Bullets
                                 transform.position += (currentVelocity * period) / 3;
 
                                 distanceTraveled += hit.distance;
-                                ExplosiveDetonation(hitPart, hit, bulletRay);
+                                if (explosive)
+                                {
+                                    ExplosiveDetonation(hitPart, hit, bulletRay);
+                                    ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, bulletMass, penetrationFactor); //calc daamge from bullet exploding
+                                }
                                 hasDetonated = true;
                                 KillBullet();
                                 return true;
@@ -551,6 +555,7 @@ namespace BDArmory.Bullets
                             distanceTraveled += hit.distance;
                             hasPenetrated = false;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
+                            ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, bulletMass, penetrationFactor); 
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             hasDetonated = true;
                             KillBullet();

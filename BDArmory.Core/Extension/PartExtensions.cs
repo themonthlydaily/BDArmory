@@ -143,7 +143,7 @@ namespace BDArmory.Core.Extension
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 Debug.Log("[BDArmory.PartExtensions]: mass: " + mass + " caliber: " + caliber + " multiplier: " + multiplier + " velocity: " + impactVelocity + " penetrationfactor: " + penetrationfactor);
-                Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied : " + damage_);
+                Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + p.name + ": " + damage_);
             }
         }
 
