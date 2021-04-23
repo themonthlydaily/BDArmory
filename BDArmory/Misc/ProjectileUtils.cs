@@ -559,6 +559,7 @@ namespace BDArmory.Misc
                 penetration = Energy / (Mathf.Pow(((0.5f * caliber) + ((0.5f * newCaliber) * (2 * (Ductility * Ductility)))), 2) * Mathf.PI / 100 * Strength * (Density / 7850) * thickness);
             }
             //apparently shattered projectiles add 30% to armor thickness; oblique impact beyond 55deg decreases effective thickness(splatted projectile digs in to plate instead of richochets)
+
             penetration *= 10; //convert from cm to mm
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {

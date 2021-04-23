@@ -173,6 +173,7 @@ namespace BDArmory.Core.Module
                     {
                         maxSupportedArmor = 500; //could always be higher if you really want that 1x1x0.1m armor panel be able to mount 1500mm of armor...
                         ArmorTypeNum = 2; //numtype 1 is armor type None, ensure armor panels start with armor
+
                     }
                     else
                     {
@@ -455,18 +456,19 @@ namespace BDArmory.Core.Module
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
                 armorFieldEditor.maxValue = maxSupportedArmor;
             }
+
             armorCost = armorVolume * Cost;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             using (IEnumerator<UIPartActionWindow> window = FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator())
-				while (window.MoveNext())
-				{
-					if (window.Current == null) continue;
-					if (window.Current.part == part)
-					{
-						window.Current.displayDirty = true;
-					}
-				}
+		while (window.MoveNext())
+		    {
+		    if (window.Current == null) continue;
+			if (window.Current.part == part)
+			    {
+				window.Current.displayDirty = true;
+			    }
+		    }
         }
         private static Bounds CalcPartBounds(Part p, Transform t)
         {
