@@ -257,10 +257,13 @@ namespace BDArmory.Control
                 message += "\n" + currentVesselStatus;
             }
 
-            GUI.Label(cShadowRect, message, cShadowStyle);
-            GUI.Label(cLabelRect, message, cStyle);
+            if (BDArmorySettings.DISPLAY_COMPETITION_STATUS)
+            {
+                GUI.Label(cShadowRect, message, cShadowStyle);
+                GUI.Label(cLabelRect, message, cStyle);
+            }
 
-            if (!BDArmorySetup.GAME_UI_ENABLED && competitionStartTime > 0)
+            if (!BDArmorySetup.GAME_UI_ENABLED && BDArmorySettings.DISPLAY_COMPETITION_STATUS && competitionStartTime > 0)
             {
                 Rect clockRect = new Rect(10, 6, Screen.width, 20);
                 GUIStyle clockStyle = new GUIStyle(cStyle);
@@ -1703,7 +1706,7 @@ namespace BDArmory.Control
                     pilotActions[vesselName] = "";
 
                     // try to create meaningful activity strings
-                    if (mf.AI != null && mf.AI.currentStatus != null)
+                    if (mf.AI != null && mf.AI.currentStatus != null && BDArmorySettings.DISPLAY_COMPETITION_STATUS)
                     {
                         pilotActions[vesselName] = "";
                         if (mf.vessel.LandedOrSplashed)
