@@ -2788,7 +2788,7 @@ namespace BDArmory.Modules
                     switch (stage)
                     {
                         case SimulationStage.Normal:
-                            if (trajectoryPoints.Count == 0 && BDArmorySettings.DRAW_DEBUG_LINES && BDArmorySettings.DRAW_AIMERS)
+                            if (BDArmorySettings.DRAW_DEBUG_LINES && BDArmorySettings.DRAW_AIMERS && trajectoryPoints.Count == 0)
                                 trajectoryPoints.Add(position);
                             goto case SimulationStage.Refining;
                         case SimulationStage.Refining: // Perform a more accurate final step for the collision.
