@@ -230,7 +230,7 @@ namespace BDArmory.Misc
                 float shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * Mathf.Pow(detonationDist, 2))), 0, (frangibility*.4f)); //fragments/m2
                 shrapnelCount *= (float)(hitPart.radiativeArea / 3); //shrapnelhits/part
                 float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
-
+		// go through and make sure all unit conversions correct
                 if (penetrationFactor == -1) //airburst/parts caught in AoE
                 {
                     if (detonationDist > (5 * caliber)) //contact detonation
@@ -316,15 +316,16 @@ namespace BDArmory.Misc
             float spallMass;
             float damage;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
-			if (Armor != null)
-			{
-				float ductility = Armor.Ductility;
-				float hardness = Armor.Hardness;
-				float Strength = Armor.Strength;
-				float Density = Armor.Density;
+	    if (Armor != null)
+	    {
+		float ductility = Armor.Ductility;
+		float hardness = Armor.Hardness;
+		float Strength = Armor.Strength;
+		float Density = Armor.Density;
 
                 float ArmorTolerance = Strength * (1+ductility) * thickness;
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;
+		//is BlastUtils maxpressure in MPa? confirm blast pressure from ExplosionUtils on same scale/magnitude as armorTolerance
                 if (ductility > 0.20f)
                 {
                     if (BlastPressure > ArmorTolerance) //material stress tolerance exceeded, armor rupture
