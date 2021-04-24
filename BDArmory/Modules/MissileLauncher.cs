@@ -684,6 +684,7 @@ namespace BDArmory.Modules
 
         void OnDestroy()
         {
+            DetachExhaustPrefabs();
             KillRCS();
             if (upRCS) EffectBehaviour.RemoveParticleEmitter(upRCS);
             if (downRCS) EffectBehaviour.RemoveParticleEmitter(downRCS);
@@ -1283,17 +1284,21 @@ namespace BDArmory.Modules
         IEnumerator AnimRoutine()
         {
             yield return new WaitForSeconds(deployTime);
+            if (deployStates == null)
+            {
+                Debug.LogError("[BDArmory.MissileLauncher]: deployStates was null, aborting AnimRoutine.");
+                yield break;
+            }
 
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
                 deployed = true;
-                IEnumerator<AnimationState> anim = deployStates.AsEnumerable().GetEnumerator();
-                while (anim.MoveNext())
-                {
-                    if (anim.Current == null) continue;
-                    anim.Current.speed = 1;
-                }
-                anim.Dispose();
+                using (var anim = deployStates.AsEnumerable().GetEnumerator())
+                    while (anim.MoveNext())
+                    {
+                        if (anim.Current == null) continue;
+                        anim.Current.speed = 1;
+                    }
             }
         }
 
@@ -1358,6 +1363,7 @@ namespace BDArmory.Modules
         {
             MissileState = MissileStates.Boost;
 
+            if (audioSource == null || sfAudioSource == null) SetupAudio();
             if (boostAudio)
             {
                 audioSource.clip = boostAudio;
@@ -1398,7 +1404,6 @@ namespace BDArmory.Modules
             }
 
             if (!(thrust > 0)) return;
-            if (sfAudioSource == null) SetupAudio();
             sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/launch"));
             RadarWarningReceiver.WarnMissileLaunch(transform.position, transform.forward);
         }
@@ -1506,6 +1511,7 @@ namespace BDArmory.Modules
         {
             MissileState = MissileStates.Cruise;
 
+            if (audioSource == null) SetupAudio();
             if (thrustAudio)
             {
                 audioSource.clip = thrustAudio;
@@ -1868,35 +1874,55 @@ namespace BDArmory.Modules
 
         void DoRCS()
         {
-            Vector3 relV = TargetVelocity - vessel.obt_velocity;
-
-            for (int i = 0; i < 4; i++)
+            try
             {
-                //float giveThrust = Mathf.Clamp(-localRelV.z, 0, rcsThrust);
-                float giveThrust = Mathf.Clamp(Vector3.Project(relV, rcsTransforms[i].transform.forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsTransforms[i].transform.forward, relV)), 0, rcsThrust);
-                part.rb.AddForce(-giveThrust * rcsTransforms[i].transform.forward);
+                Vector3 relV = TargetVelocity - vessel.obt_velocity;
 
-                if (giveThrust > rcsRVelThreshold)
+                for (int i = 0; i < 4; i++)
                 {
-                    rcsAudioMinInterval = UnityEngine.Random.Range(0.15f, 0.25f);
-                    if (Time.time - rcsFiredTimes[i] > rcsAudioMinInterval)
+                    //float giveThrust = Mathf.Clamp(-localRelV.z, 0, rcsThrust);
+                    float giveThrust = Mathf.Clamp(Vector3.Project(relV, rcsTransforms[i].transform.forward).magnitude * -Mathf.Sign(Vector3.Dot(rcsTransforms[i].transform.forward, relV)), 0, rcsThrust);
+                    part.rb.AddForce(-giveThrust * rcsTransforms[i].transform.forward);
+
+                    if (giveThrust > rcsRVelThreshold)
                     {
-                        if (sfAudioSource == null) SetupAudio();
-                        sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/popThrust"));
-                        rcsTransforms[i].emit = true;
-                        rcsFiredTimes[i] = Time.time;
+                        rcsAudioMinInterval = UnityEngine.Random.Range(0.15f, 0.25f);
+                        if (Time.time - rcsFiredTimes[i] > rcsAudioMinInterval)
+                        {
+                            if (sfAudioSource == null) SetupAudio();
+                            sfAudioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/popThrust"));
+                            rcsTransforms[i].emit = true;
+                            rcsFiredTimes[i] = Time.time;
+                        }
+                    }
+                    else
+                    {
+                        rcsTransforms[i].emit = false;
+                    }
+
+                    //turn off emit
+                    if (Time.time - rcsFiredTimes[i] > rcsAudioMinInterval * 0.75f)
+                    {
+                        rcsTransforms[i].emit = false;
                     }
                 }
-                else
-                {
-                    rcsTransforms[i].emit = false;
-                }
+            }
+            catch (Exception e)
+            {
 
-                //turn off emit
-                if (Time.time - rcsFiredTimes[i] > rcsAudioMinInterval * 0.75f)
+                Debug.LogError("[BDArmory.MissileLauncher]: DEBUG " + e.Message);
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null part?: " + (part == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG part: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null part.rb?: " + (part.rb == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG part.rb: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null vessel?: " + (vessel == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG vessel: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: " + (sfAudioSource == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: sfAudioSource: " + e2.Message); }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null rcsTransforms?: " + (rcsTransforms == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG rcsTransforms: " + e2.Message); }
+                if (rcsTransforms != null)
                 {
-                    rcsTransforms[i].emit = false;
+                    for (int i = 0; i < 4; ++i)
+                        try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null rcsTransforms[" + i + "]?: " + (rcsTransforms[i] == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG rcsTransforms[" + i + "]: " + e2.Message); }
                 }
+                try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null rcsFiredTimes?: " + (rcsFiredTimes == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG rcsFiredTimes: " + e2.Message); }
+                throw; // Re-throw the exception so behaviour is unchanged so we see it.
             }
         }
 
@@ -2216,7 +2242,6 @@ namespace BDArmory.Modules
 
         #region ExhaustPrefabPooling
         static Dictionary<string, ObjectPool> exhaustPrefabPool = new Dictionary<string, ObjectPool>();
-        static Dictionary<string, GameObject> exhaustPrefabTemplates = new Dictionary<string, GameObject>();
         List<GameObject> exhaustPrefabs = new List<GameObject>();
 
         static void AttachExhaustPrefab(string prefabPath, MissileLauncher missileLauncher, Transform exhaustTransform)
@@ -2234,28 +2259,29 @@ namespace BDArmory.Modules
             exhaustPrefab.transform.localPosition = Vector3.zero;
             exhaustPrefab.transform.localRotation = Quaternion.identity;
             missileLauncher.exhaustPrefabs.Add(exhaustPrefab);
-            missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefab;
+            missileLauncher.part.OnJustAboutToDie += missileLauncher.DetachExhaustPrefabs;
+            missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefabs;
         }
 
         static void CreateExhaustPool(string prefabPath)
         {
             if (exhaustPrefabPool == null)
             { exhaustPrefabPool = new Dictionary<string, ObjectPool>(); }
-            if (!exhaustPrefabTemplates.ContainsKey(prefabPath) || exhaustPrefabTemplates[prefabPath] == null)
+            if (!exhaustPrefabPool.ContainsKey(prefabPath) || exhaustPrefabPool[prefabPath] == null || exhaustPrefabPool[prefabPath].poolObject == null)
             {
-                exhaustPrefabTemplates[prefabPath] = GameDatabase.Instance.GetModel(prefabPath);
-                exhaustPrefabTemplates[prefabPath].SetActive(false);
-            }
-            if (!exhaustPrefabPool.ContainsKey(prefabPath))
-            {
-                exhaustPrefabPool[prefabPath] = ObjectPool.CreateObjectPool(exhaustPrefabTemplates[prefabPath], 1, true, true, 0f, false);
+                var exhaustPrefabTemplate = GameDatabase.Instance.GetModel(prefabPath);
+                exhaustPrefabTemplate.SetActive(false);
+                exhaustPrefabPool[prefabPath] = ObjectPool.CreateObjectPool(exhaustPrefabTemplate, 1, true, true);
             }
         }
 
-        void DetachExhaustPrefab()
+        void DetachExhaustPrefabs()
         {
             if (part != null)
-                part.OnJustAboutToBeDestroyed -= DetachExhaustPrefab;
+            {
+                part.OnJustAboutToDie -= DetachExhaustPrefabs;
+                part.OnJustAboutToBeDestroyed -= DetachExhaustPrefabs;
+            }
             foreach (var exhaustPrefab in exhaustPrefabs)
             {
                 if (exhaustPrefab == null) continue;
