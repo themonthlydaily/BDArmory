@@ -361,6 +361,8 @@ namespace BDArmory.Control
                 }
                 if (BDArmorySettings.KERBAL_SAFETY > 0)
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
+                if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
+                    LoadedVesselSwitcher.Instance.StartVesselTracing();
             }
         }
 
@@ -387,6 +389,8 @@ namespace BDArmory.Control
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             GameEvents.onCometSpawned.Remove(RemoveCometVessel);
             rammingInformation = null; // Reset the ramming information.
+            if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
+                LoadedVesselSwitcher.Instance.StopVesselTracing();
         }
 
         void CompetitionStarted()
@@ -1554,7 +1558,7 @@ namespace BDArmory.Control
             }
             catch (Exception e)
             {
-                Debug.Log("DEBUG debris " + debris.vesselName + " is a component? " + (debris is Component) + ", is a monobehaviour? " + (debris is MonoBehaviour) + ". Exception: " + e.Message);
+                Debug.LogError("[BDArmory.BDACompetitionMode]: Exception in DebrisDelayedCleanup: debris " + debris + " is a component? " + (debris is Component) + ", is a monobehaviour? " + (debris is MonoBehaviour) + ". Exception: " + e.GetType() + ": " + e.Message + "\n" + e.StackTrace);
             }
         }
 
@@ -2109,7 +2113,7 @@ namespace BDArmory.Control
                     alive.Add(vessel.vesselName);
             }
 
-            // General result. (Note: use hand-coded JSON to make parsing easier in python.)
+            // General result. (Note: uses hand-coded JSON to make parsing easier in python.)
             var survivingTeams = new HashSet<string>();
             foreach (var vesselName in alive)
             {
@@ -2119,15 +2123,20 @@ namespace BDArmory.Control
             if (survivingTeams.Count == 0)
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Mutual Annihilation");
             else if (survivingTeams.Count == 1)
-            {
+            { // Win
                 var winningTeam = survivingTeams.First();
                 var winningTeamMembers = Scores.Where(s => s.Value.team == winningTeam).Select(s => s.Key);
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Win:{\"team\": " + $"\"{winningTeam}\", \"members\": [" + string.Join(", ", winningTeamMembers.Select(m => $"\"{m.Replace("\"", "\\\"")}\"")) + "]}");
             }
             else
-            {
+            { // Draw
                 var drawTeams = survivingTeams.ToDictionary(t => t, t => Scores.Where(s => s.Value.team == t).Select(s => s.Key));
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Draw:[" + string.Join(", ", drawTeams.Select(t => "{\"team\": " + $"\"{t.Key}\"" + ", \"members\": [" + string.Join(", ", t.Value.Select(m => $"\"{m.Replace("\"", "\\\"")}\"")) + "]}")) + "]");
+            }
+            { // Dead teams.
+                var deadTeamNames = Scores.Where(s => !survivingTeams.Contains(s.Value.team)).Select(s => s.Value.team).ToHashSet();
+                var deadTeams = deadTeamNames.ToDictionary(t => t, t => Scores.Where(s => s.Value.team == t).Select(s => s.Key));
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: DEADTEAMS:[" + string.Join(", ", deadTeams.Select(t => "{\"team\": " + $"\"{t.Key}\"" + ", \"members\": [" + string.Join(", ", t.Value.Select(m => $"\"{m.Replace("\"", "\\\"")}\"")) + "]}")) + "]");
             }
 
             // Record ALIVE/DEAD status of each craft.
@@ -2427,14 +2436,14 @@ namespace BDArmory.Control
                                     if (Scores[rammingInformation[vesselName].vesselName].lastHitTime > rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollisionDetectionTime)
                                         if (rammingInformation[vesselName].partCount != vessel.parts.Count)
                                         {
-                                            if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " lost " + (rammingInformation[vesselName].partCount - vessel.parts.Count) + " parts from getting shot.");
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " lost " + (rammingInformation[vesselName].partCount - vessel.parts.Count) + " parts from getting shot.");
                                             rammingInformation[vesselName].partCount = vessel.parts.Count;
                                         }
                                     if (!Scores.ContainsKey(rammingInformation[otherVesselName].vesselName)) CheckVesselType(rammingInformation[otherVesselName].vessel); // It may have become a "vesselName Plane" if the WM is badly placed.
                                     if (Scores[rammingInformation[otherVesselName].vesselName].lastHitTime > rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollisionDetectionTime)
                                         if (rammingInformation[vesselName].partCount != vessel.parts.Count)
                                         {
-                                            if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + otherVesselName + " lost " + (rammingInformation[otherVesselName].partCount - otherVessel.parts.Count) + " parts from getting shot.");
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + otherVesselName + " lost " + (rammingInformation[otherVesselName].partCount - otherVessel.parts.Count) + " parts from getting shot.");
                                             rammingInformation[otherVesselName].partCount = otherVessel.parts.Count;
                                         }
                                 }
@@ -2478,7 +2487,7 @@ namespace BDArmory.Control
             var vessel = data.origin.vessel;
             if (vessel == null) // Can vessel be null here? It doesn't appear so.
             {
-                if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: in AnalyseCollision the colliding part belonged to a null vessel!");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: in AnalyseCollision the colliding part belonged to a null vessel!");
                 return;
             }
             bool hitVessel = false;
@@ -2508,7 +2517,7 @@ namespace BDArmory.Control
                                 rammingInformation[otherVesselName].targetInformation[vesselName].sqrDistance = rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance;
                                 rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
                                 rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
-                                if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Collision detected between " + vesselName + " and " + otherVesselName);
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Collision detected between " + vesselName + " and " + otherVesselName);
                             }
                             hitVessel = true;
                         }
@@ -2523,7 +2532,7 @@ namespace BDArmory.Control
                 }
                 if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
                 {
-                    if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " hit something else.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " hit something else.");
                     foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
                     {
                         rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
@@ -2589,7 +2598,7 @@ namespace BDArmory.Control
                 if (collidingVesselDistances.Count > 0)
                     collidingVesselsBySeparation.Add(vesselName, new KeyValuePair<float, IOrderedEnumerable<KeyValuePair<string, float>>>(collidingVessels.First().Value, collidingVessels));
 
-                if (BDArmorySettings.DEBUG_RAMMING_LOGGING && collidingVesselDistances.Count > 1) // DEBUG
+                if (BDArmorySettings.DRAW_DEBUG_LABELS && collidingVesselDistances.Count > 1) // DEBUG
                 {
                     foreach (var otherVesselName in collidingVesselDistances.Keys) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: colliding vessel distances^2 from " + vesselName + ": " + otherVesselName + " " + collidingVesselDistances[otherVesselName]);
                     foreach (var otherVesselName in collidingVessels) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: sorted order: " + otherVesselName.Key);
@@ -2734,24 +2743,26 @@ namespace BDArmory.Control
                 partsCheck = new Dictionary<string, int>();
                 foreach (var vesselName in rammingInformation.Keys)
                 {
+                    if (rammingInformation[vesselName].vessel == null) continue;
                     partsCheck.Add(vesselName, rammingInformation[vesselName].vessel.parts.Count);
-                    if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " started with " + partsCheck[vesselName] + " parts.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " started with " + partsCheck[vesselName] + " parts.");
                 }
             }
             foreach (var vesselName in rammingInformation.Keys)
             {
+                if (!partsCheck.ContainsKey(vesselName)) continue;
                 var vessel = rammingInformation[vesselName].vessel;
                 if (vessel != null)
                 {
                     if (partsCheck[vesselName] != vessel.parts.Count)
                     {
-                        if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Parts Check: " + vesselName + " has lost " + (partsCheck[vesselName] - vessel.parts.Count) + " parts." + (vessel.parts.Count > 0 ? "" : " and is no more."));
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Parts Check: " + vesselName + " has lost " + (partsCheck[vesselName] - vessel.parts.Count) + " parts." + (vessel.parts.Count > 0 ? "" : " and is no more."));
                         partsCheck[vesselName] = vessel.parts.Count;
                     }
                 }
                 else if (partsCheck[vesselName] > 0)
                 {
-                    if (BDArmorySettings.DEBUG_RAMMING_LOGGING) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Parts Check: " + vesselName + " has been destroyed, losing " + partsCheck[vesselName] + " parts.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Parts Check: " + vesselName + " has been destroyed, losing " + partsCheck[vesselName] + " parts.");
                     partsCheck[vesselName] = 0;
                 }
             }
@@ -2765,7 +2776,7 @@ namespace BDArmory.Control
             UpdateTimesToCPAs();
             CheckForPotentialCollisions();
             CheckForDamagedParts();
-            if (BDArmorySettings.DEBUG_RAMMING_LOGGING) CheckForMissingParts(); // DEBUG
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) CheckForMissingParts(); // DEBUG
         }
         #endregion
 

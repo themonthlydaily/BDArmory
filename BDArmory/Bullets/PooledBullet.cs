@@ -289,10 +289,13 @@ namespace BDArmory.Bullets
 
         /// <summary>
         /// Move the bullet for the period of time, tracking distance traveled and accounting for drag and gravity.
+        /// This is now done using the second order symplectic leapfrog method.
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
+            if (bulletDrop)
+                currentVelocity += 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position);
 
             //calculate flight time for drag purposes
             flightTimeElapsed += period;
@@ -316,16 +319,11 @@ namespace BDArmory.Bullets
                     break;
             }
 
-            if (bulletDrop)
-            {
-                // Gravity???
-                var gravity_ = FlightGlobals.getGeeForceAtPosition(transform.position);
-                //var gravity_ = Physics.gravity;
-                currentVelocity += gravity_ * period;
-            }
-
             //move bullet
             transform.position += currentVelocity * period;
+
+            if (bulletDrop)
+                currentVelocity += 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position);
         }
 
         /// <summary>
@@ -344,7 +342,7 @@ namespace BDArmory.Bullets
             currPosition = transform.position;
 
             float dist = currentVelocity.magnitude * period;
-            bulletRay = new Ray(currPosition, currentVelocity);
+            bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
             var hits = Physics.RaycastAll(bulletRay, dist, 9076737);
             if (reverse)
             {
