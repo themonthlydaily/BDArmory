@@ -305,7 +305,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
+                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null,default, false, parentPart.mass);
                 // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
                 gameObject.SetActive(false);
             }

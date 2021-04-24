@@ -143,7 +143,7 @@ namespace BDArmory.Core.Extension
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 Debug.Log("[BDArmory.PartExtensions]: mass: " + mass + " caliber: " + caliber + " multiplier: " + multiplier + " velocity: " + impactVelocity + " penetrationfactor: " + penetrationfactor);
-                Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied : " + damage_);
+                Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + p.name + ": " + damage_);
             }
         }
 
@@ -416,10 +416,9 @@ namespace BDArmory.Core.Extension
                     {
                         Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
                         Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000));
-                        Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage *= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
+                        Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
                     }
-                    damage *= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
-                    //still need to look into spalling implementation for explosions
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
                     break;
                 default:
                     if (!(penetrationfactor >= 1f))

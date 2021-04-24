@@ -326,7 +326,7 @@ namespace BDArmory.Bullets
                                 penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass*1000, impactVelocity, Ductility, Density, Strength, thickness);
                                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
-                                ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel);
+                                ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
 
                                 //calculate return bullet post-pen vel
 
@@ -347,6 +347,7 @@ namespace BDArmory.Bullets
                                 hasPenetrated = true;
                                 bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass*1000, caliber);
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass*1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass*1000), penetrationFactor);
                                 penTicker += 1;
                                 ProjectileUtils.CheckPartForExplosion(hitPart);
 
@@ -376,6 +377,7 @@ namespace BDArmory.Bullets
 
                                 hasPenetrated = false;
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, (rocketMass*1000), impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass*1000), penetrationFactor);
                                 Detonate(hit.point, false);
                                 hasDetonated = true;
                             }
@@ -535,7 +537,7 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction, false, (rocketMass * 1000));
                     }
                     if (gravitic)
                     {
