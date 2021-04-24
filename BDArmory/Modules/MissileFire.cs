@@ -1764,6 +1764,7 @@ namespace BDArmory.Modules
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
                         pilotAI.RequestExtend(guardTarget.CoM);
+                        pilotAI.extendingReason = "Too close to bomb";
                         break;
                     }
                     yield return null;
@@ -1793,6 +1794,7 @@ namespace BDArmory.Modules
                             if (pilotAI)
                             {
                                 pilotAI.RequestExtend(guardTarget.CoM);
+                                pilotAI.extendingReason = "Bombs away!";
                             }
                         }
                     }
