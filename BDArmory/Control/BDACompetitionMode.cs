@@ -215,70 +215,70 @@ namespace BDArmory.Control
 
         void OnGUI()
         {
-            GUIStyle cStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
-            cStyle.fontStyle = FontStyle.Bold;
-            cStyle.fontSize = 22;
-            cStyle.alignment = TextAnchor.UpperLeft;
-
-            var displayRow = 100;
-            if (!BDArmorySetup.GAME_UI_ENABLED)
-            {
-                displayRow = 30;
-            }
-
-            Rect cLabelRect = new Rect(30, displayRow, Screen.width, 100);
-
-            GUIStyle cShadowStyle = new GUIStyle(cStyle);
-            Rect cShadowRect = new Rect(cLabelRect);
-            cShadowRect.x += 2;
-            cShadowRect.y += 2;
-            cShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
-
-            string message = competitionStatus.ToString();
-            if (competitionStarting || competitionStartTime > 0)
-            {
-                string currentVesselStatus = "";
-                if (FlightGlobals.ActiveVessel != null)
-                {
-                    var vesselName = FlightGlobals.ActiveVessel.GetName();
-                    string postFix = "";
-                    if (pilotActions.ContainsKey(vesselName))
-                        postFix = pilotActions[vesselName];
-                    if (Scores.ContainsKey(vesselName))
-                    {
-                        ScoringData vData = Scores[vesselName];
-                        if (Planetarium.GetUniversalTime() - vData.lastHitTime < 2)
-                            postFix = " is taking damage from " + vData.lastPersonWhoHitMe;
-                    }
-                    if (postFix != "" || vesselName != competitionStatus.lastActiveVessel)
-                        currentVesselStatus = vesselName + postFix;
-                    competitionStatus.lastActiveVessel = vesselName;
-                }
-                message += "\n" + currentVesselStatus;
-            }
-
             if (BDArmorySettings.DISPLAY_COMPETITION_STATUS)
             {
+                GUIStyle cStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
+                cStyle.fontStyle = FontStyle.Bold;
+                cStyle.fontSize = 22;
+                cStyle.alignment = TextAnchor.UpperLeft;
+
+                var displayRow = 100;
+                if (!BDArmorySetup.GAME_UI_ENABLED)
+                {
+                    displayRow = 30;
+                }
+
+                Rect cLabelRect = new Rect(30, displayRow, Screen.width, 100);
+
+                GUIStyle cShadowStyle = new GUIStyle(cStyle);
+                Rect cShadowRect = new Rect(cLabelRect);
+                cShadowRect.x += 2;
+                cShadowRect.y += 2;
+                cShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
+
+                string message = competitionStatus.ToString();
+                if (competitionStarting || competitionStartTime > 0)
+                {
+                    string currentVesselStatus = "";
+                    if (FlightGlobals.ActiveVessel != null)
+                    {
+                        var vesselName = FlightGlobals.ActiveVessel.GetName();
+                        string postFix = "";
+                        if (pilotActions.ContainsKey(vesselName))
+                            postFix = pilotActions[vesselName];
+                        if (Scores.ContainsKey(vesselName))
+                        {
+                            ScoringData vData = Scores[vesselName];
+                            if (Planetarium.GetUniversalTime() - vData.lastHitTime < 2)
+                                postFix = " is taking damage from " + vData.lastPersonWhoHitMe;
+                        }
+                        if (postFix != "" || vesselName != competitionStatus.lastActiveVessel)
+                            currentVesselStatus = vesselName + postFix;
+                        competitionStatus.lastActiveVessel = vesselName;
+                    }
+                    message += "\n" + currentVesselStatus;
+                }
+
                 GUI.Label(cShadowRect, message, cShadowStyle);
                 GUI.Label(cLabelRect, message, cStyle);
-            }
 
-            if (!BDArmorySetup.GAME_UI_ENABLED && BDArmorySettings.DISPLAY_COMPETITION_STATUS && competitionStartTime > 0)
-            {
-                Rect clockRect = new Rect(10, 6, Screen.width, 20);
-                GUIStyle clockStyle = new GUIStyle(cStyle);
-                clockStyle.fontSize = 14;
-                GUIStyle clockShadowStyle = new GUIStyle(clockStyle);
-                clockShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
-                Rect clockShadowRect = new Rect(clockRect);
-                clockShadowRect.x += 2;
-                clockShadowRect.y += 2;
-                var gTime = Planetarium.GetUniversalTime() - competitionStartTime;
-                var minutes = (int)(Math.Floor(gTime / 60));
-                var seconds = (int)(gTime % 60);
-                string pTime = minutes.ToString("00") + ":" + seconds.ToString("00") + "     " + deadOrAlive;
-                GUI.Label(clockShadowRect, pTime, clockShadowStyle);
-                GUI.Label(clockRect, pTime, clockStyle);
+                if (!BDArmorySetup.GAME_UI_ENABLED && competitionStartTime > 0)
+                {
+                    Rect clockRect = new Rect(10, 6, Screen.width, 20);
+                    GUIStyle clockStyle = new GUIStyle(cStyle);
+                    clockStyle.fontSize = 14;
+                    GUIStyle clockShadowStyle = new GUIStyle(clockStyle);
+                    clockShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
+                    Rect clockShadowRect = new Rect(clockRect);
+                    clockShadowRect.x += 2;
+                    clockShadowRect.y += 2;
+                    var gTime = Planetarium.GetUniversalTime() - competitionStartTime;
+                    var minutes = (int)(Math.Floor(gTime / 60));
+                    var seconds = (int)(gTime % 60);
+                    string pTime = minutes.ToString("00") + ":" + seconds.ToString("00") + "     " + deadOrAlive;
+                    GUI.Label(clockShadowRect, pTime, clockShadowStyle);
+                    GUI.Label(clockRect, pTime, clockStyle);
+                }
             }
             if (KSP.UI.Dialogs.FlightResultsDialog.isDisplaying && KSP.UI.Dialogs.FlightResultsDialog.showExitControls) // Prevent the Flight Results window from interrupting things when a certain vessel dies.
             {
@@ -303,8 +303,8 @@ namespace BDArmory.Control
         public class CompetitionStatus
         {
             private List<Tuple<double, string>> status = new List<Tuple<double, string>>();
-            public void Add(string message) { status.Add(new Tuple<double, string>(Planetarium.GetUniversalTime(), message)); }
-            public void Set(string message) { status.Clear(); Add(message); }
+            public void Add(string message) { if (BDArmorySettings.DISPLAY_COMPETITION_STATUS) { status.Add(new Tuple<double, string>(Planetarium.GetUniversalTime(), message)); } }
+            public void Set(string message) { if (BDArmorySettings.DISPLAY_COMPETITION_STATUS) { status.Clear(); Add(message); } }
             public override string ToString()
             {
                 var now = Planetarium.GetUniversalTime();
