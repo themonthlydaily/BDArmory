@@ -1819,14 +1819,8 @@ namespace BDArmory.Modules
             else //TODO: Remove this backguard compatibility
             {
                 Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
-                if (isSeismicCharge)
-                {
-                    SeismicChargeFX.CreateSeismicExplosion(position, transform.rotation, explModelPath);
-                }
-                else
-                {
                     ExplosionFx.CreateExplosion(position, blastPower, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, SourceVessel.vesselName, part.FindModuleImplementing<EngageableWeapon>().GetShortName(), default, false, part.mass);
-                }
+
             }
 
             List<BDAGaplessParticleEmitter>.Enumerator e = gaplessEmitters.GetEnumerator();
