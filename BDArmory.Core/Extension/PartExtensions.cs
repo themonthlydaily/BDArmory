@@ -419,7 +419,7 @@ namespace BDArmory.Core.Extension
                         Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
                     }
                     damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
-                    //still need to look into spalling implementation for explosions
+
                     break;
                 default:
                     if (!(penetrationfactor >= 1f))
