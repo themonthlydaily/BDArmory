@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
+# Standard library imports
 import json
 from pathlib import Path
+
+# Third party imports
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def plot(paths, colours):
