@@ -85,6 +85,7 @@ namespace BDArmory.Bullets
         public float bulletVelocity; //muzzle velocity
         public bool explosive = false;
         public float apBulletMod = 0;
+        public bool sabot = false;
         public float ballisticCoefficient;
         public float flightTimeElapsed;
         public static Shader bulletShader;
@@ -113,6 +114,10 @@ namespace BDArmory.Bullets
         {
             startPosition = transform.position;
             initialSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
+            if (initialSpeed > 1500 && caliber < 30)
+            {
+                sabot = true; //assume anyround moving more that 1500m/s is a sabot round
+            }
             distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
 
             if (!wasInitiated)
@@ -275,7 +280,7 @@ namespace BDArmory.Bullets
             if (ProximityAirDetonation((float)distanceTraveled))
             {
                 //detonate
-                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity);
+                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity, false, bulletMass);
                 KillBullet();
 
                 return;
@@ -437,7 +442,7 @@ namespace BDArmory.Bullets
                         if (impulse != 0 && hitPart.rb != null)
                         {
                             hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
-                            ProjectileUtils.ApplyScore(hitPart, sourceVessel, distanceTraveled, 0, bullet.name);
+                            ProjectileUtils.ApplyScore(hitPart, sourceVesselName, distanceTraveled, 0, bullet.name);
                             break; //impulse rounds shouldn't penetrate/do damage
                         }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
@@ -461,10 +466,10 @@ namespace BDArmory.Bullets
                             //calculate bullet deformation
                             float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, apBulletMod, Density);
                             //calculate penetration
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletEnergy, Ductility, Density, Strength, thickness);
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, Ductility, Density, Strength, thickness, impactVelocity);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                             penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);                            
-                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel);
+                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
 
                             //calculate return bullet post-pen vel
 
@@ -489,7 +494,7 @@ namespace BDArmory.Bullets
                         {
                             if (RicochetOnPart(hitPart, hit, hitAngle, impactVelocity, hit.distance / dist, period))
                             {
-                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber);
+                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
                                 if (!viableBullet)
                                 {
                                     KillBullet();
@@ -506,7 +511,7 @@ namespace BDArmory.Bullets
                         if (penetrationFactor > 1 && !hasRicocheted) //fully penetrated continue ballistic damage
                         {
                             hasPenetrated = true;
-                            bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber);
+                            bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
                             penTicker += 1;
                             ProjectileUtils.CheckPartForExplosion(hitPart);
@@ -521,7 +526,11 @@ namespace BDArmory.Bullets
                                 transform.position += (currentVelocity * period) / 3;
 
                                 distanceTraveled += hit.distance;
-                                ExplosiveDetonation(hitPart, hit, bulletRay);
+                                if (explosive)
+                                {
+                                    ExplosiveDetonation(hitPart, hit, bulletRay);
+                                    ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, bulletMass, penetrationFactor); //calc daamge from bullet exploding
+                                }
                                 hasDetonated = true;
                                 KillBullet();
                                 return true;
@@ -546,6 +555,7 @@ namespace BDArmory.Bullets
                             distanceTraveled += hit.distance;
                             hasPenetrated = false;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
+                            ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, bulletMass, penetrationFactor); 
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             hasDetonated = true;
                             KillBullet();
@@ -670,11 +680,11 @@ namespace BDArmory.Bullets
 
                     if (airDetonation)
                     {
-                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName);
+                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass);
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName);
+                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass);
                     }
 
                     KillBullet();

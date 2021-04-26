@@ -83,7 +83,7 @@ namespace BDArmory.Core.Module
         public float maxSupportedArmor = -1; //upper cap on armor per part, overridable in MM/.cfg
 
         private float OldMaxArmor = 0;
-	
+
         AttachNode bottom;
         AttachNode top;
 
@@ -161,36 +161,6 @@ namespace BDArmory.Core.Module
                 damageFieldEditor.minValue = 0f;
 
                 Hitpoints = maxHitPoints_;
-
-                //Add Armor
-                if (maxSupportedArmor < 0)
-                {
-                    if (part.IsAero())
-                    {
-                        maxSupportedArmor = 20;
-                    }
-                    else if (part.partName.Contains("Armor")) //BDA Armor panels, etc.
-                    {
-                        maxSupportedArmor = 500; //could always be higher if you really want that 1x1x0.1m armor panel be able to mount 1500mm of armor...
-			ArmorTypeNum = 2; //numtype 1 is armor type None, ensure armor panels start with armor
-                    }
-                    else
-                    {
-                        maxSupportedArmor = ((partSize.x / 20) * 1000); //~62mm for Size1, 125mm for S2, 185mm for S3
-                    }
-                }
-                if (ArmorThickness != 0 && ArmorThickness > maxSupportedArmor)
-                {
-                    maxSupportedArmor = ArmorThickness;
-                }
-                UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                armorFieldFlight.minValue = 0f;
-                armorFieldFlight.maxValue = maxSupportedArmor;
-                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
-                armorFieldEditor.maxValue = maxSupportedArmor;
-                armorFieldEditor.minValue = 0f;
-                armorFieldEditor.onFieldChanged = ArmorSetup;
-                part.RefreshAssociatedWindows();
 
                 if (!ArmorSet) overrideArmorSetFromConfig();
 
@@ -277,7 +247,7 @@ namespace BDArmory.Core.Module
                 var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
                 var structuralVolume = sphereSurface * 0.1f;
 
-                var density = (part.mass * 1000f) / structuralVolume;
+                var density = ((part.mass - armorMass) * 1000f) / structuralVolume;
                 density = Mathf.Clamp(density, 1000, 10000);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
@@ -386,7 +356,7 @@ namespace BDArmory.Core.Module
 
         public void ReduceArmor(float massToReduce)
         {
-            armorMass -= (massToReduce * (Density / 1000));
+            armorMass -= (massToReduce * (Density / 1000000000)); //massToReduce is cm/3, armorMass is kg/m3
             if (armorMass < 0)
             {
                 armorMass = 0;
@@ -436,37 +406,75 @@ namespace BDArmory.Core.Module
             }
             else //no bottom or top nodes, assume srf attached part; these are usually panels of some sort. Will need to determine method of ID'ing triangular panels/wings
             {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
-                sizeAdjust = 0.5f; //simulate panels having armor on only one side
+                sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
             }
-            armorVolume = ((Armor) *  // thickness * armor mass
+            SetMaxArmor();
+            armorVolume = ((Armor/1000) *  // thickness * armor mass
             ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust)); //mass * surface area approximation of a cylinder, where H/W are unknown
-            if (guiArmorTypeString != "None")
+            if (guiArmorTypeString != "None") //don't grab armor panels
             {
-                armorMass = armorVolume * (Density / 1000000);
-                if (OldMaxArmor != maxSupportedArmor) maxSupportedArmor = OldMaxArmor; //if armor != None, reset max supported armor
-                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
-                armorFieldEditor.maxValue = maxSupportedArmor;
+                armorMass = armorVolume * Density/1000; //armor mass in tons
+                armorCost = armorVolume * Cost;
             }
-            else
-            {
-                OldMaxArmor = maxSupportedArmor; //store max armor a part can ahve
-                maxSupportedArmor = 10; //then max none armor to 10 (simulate part skin of alimunium)
-                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
-                armorFieldEditor.maxValue = maxSupportedArmor;
-            }																											   //part.mass = partmass;
-            armorCost = armorVolume * Cost;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             using (IEnumerator<UIPartActionWindow> window = FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator())
-		while (window.MoveNext())
-		    {
-		    if (window.Current == null) continue;
-			if (window.Current.part == part)
-			    {
-				window.Current.displayDirty = true;
-			    }
-		    }
+                while (window.MoveNext())
+                {
+                    if (window.Current == null) continue;
+                    if (window.Current.part == part)
+                    {
+                        window.Current.displayDirty = true;
+                    }
+                }
         }
+
+        void SetMaxArmor()
+        {
+            if (guiArmorTypeString != "None") 
+            {
+                if (maxSupportedArmor < 0)
+                {
+                    if (part.IsAero())
+                    {
+                        maxSupportedArmor = 20;
+                    }
+                    else if (part.partName.Contains("Armor") || ArmorThickness > 0) //BDA Armor panels, etc.
+                    {
+                        maxSupportedArmor = 500; //could always be higher if you really want that 1x1x0.1m armor panel be able to mount 1500mm of armor...
+                        ArmorTypeNum = 2; //numtype 1 is armor type None, ensure armor panels start with armor
+                    }
+                    else
+                    {
+                        maxSupportedArmor = ((partSize.x / 20) * 1000); //~62mm for Size1, 125mm for S2, 185mm for S3
+                    }
+                }
+                if (ArmorThickness != 0 && ArmorThickness > maxSupportedArmor)
+                {
+                    maxSupportedArmor = ArmorThickness;
+                }
+                UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
+                armorFieldFlight.minValue = 0f;
+                armorFieldFlight.maxValue = maxSupportedArmor;
+                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
+                armorFieldEditor.maxValue = maxSupportedArmor;
+                armorFieldEditor.minValue = 0f;
+                armorFieldEditor.onFieldChanged = ArmorSetup;
+                part.RefreshAssociatedWindows();
+            }
+            else
+            {
+                Armor = 10;
+                UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
+                armorFieldEditor.maxValue = 10; //max none armor to 10 (simulate part skin of alimunium)
+                armorFieldEditor.minValue = 10f;
+                UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
+                armorFieldFlight.minValue = 0f;
+                armorFieldFlight.maxValue = 10;
+            }
+
+        }
+
         private static Bounds CalcPartBounds(Part p, Transform t)
         {
             Bounds result = new Bounds(t.position, Vector3.zero);
