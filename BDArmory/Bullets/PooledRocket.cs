@@ -377,6 +377,7 @@ namespace BDArmory.Bullets
 
                                 hasPenetrated = false;
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, (rocketMass*1000), impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
                                 Detonate(hit.point, false);
                                 hasDetonated = true;
                             }
