@@ -94,6 +94,7 @@ namespace BDArmory.Modules
         public float autoFireLength = 0;
         public float autoFireTimer = 0;
         public float autofireShotCount = 0;
+        bool aimAndFireIfPossible = false;
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
@@ -116,7 +117,7 @@ namespace BDArmory.Modules
         public Vector3 finalAimTarget;
         Vector3 lastFinalAimTarget;
         public Vessel visualTargetVessel;
-        private Part visualTargetPart;
+        public Part visualTargetPart;
         private int targetID = 0;
         bool targetAcquired;
 
@@ -612,8 +613,7 @@ namespace BDArmory.Modules
         public float initialFireDelay = 0; //used to ripple fire multiple weapons of this type
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Barrage")]//Barrage
-        public bool
-            useRippleFire = true;
+        public bool useRippleFire = true;
 
         [KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ToggleBarrage")]//Toggle Barrage
         public void ToggleRipple()
@@ -1058,6 +1058,8 @@ namespace BDArmory.Modules
             }
 
             BDArmorySetup.OnVolumeChange += UpdateVolume;
+            if (HighLogic.LoadedSceneIsFlight)
+            { TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FashionablyLate, AimAndFire); }
         }
 
         void OnDestroy()
@@ -1070,6 +1072,7 @@ namespace BDArmory.Modules
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             WeaponNameWindow.OnActionGroupEditorOpened.Remove(OnActionGroupEditorOpened);
             WeaponNameWindow.OnActionGroupEditorClosed.Remove(OnActionGroupEditorClosed);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.FashionablyLate, AimAndFire);
         }
         public void PAWRefresh()
         {
@@ -1241,8 +1244,7 @@ namespace BDArmory.Modules
                 if (weaponState == WeaponStates.Enabled &&
                     (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
-                    //Aim();
-                    StartCoroutine(AimAndFireAtEndOfFrame());
+                    aimAndFireIfPossible = true; // Aim and fire in a later timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made (in the Late timing phase).
 
                     if (eWeaponType == WeaponTypes.Laser)
                     {
@@ -2509,10 +2511,10 @@ namespace BDArmory.Modules
                 var bulletRelativePosition = targetPosition - fireTransforms[0].position;
                 var bulletRelativeVelocity = targetVelocity - bulletEffectiveVelocity;
                 var bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
-                var timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletVelocity);
+                var timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude);
                 var targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
                 var bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
-                finalTarget = targetPredictedPosition + bulletDropOffset;
+                finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA; // TODO Account for planet curvature via a coordinate transformation.
                 targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
 #if DEBUG
                 relVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
@@ -2822,9 +2824,12 @@ namespace BDArmory.Modules
             }
         }
 
-        IEnumerator AimAndFireAtEndOfFrame()
+        void AimAndFire()
         {
-            if (this == null || FlightGlobals.currentMainBody == null) yield break;
+            // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
+            if (!aimAndFireIfPossible) return;
+            aimAndFireIfPossible = false;
+            if (this == null || FlightGlobals.currentMainBody == null) return;
 
             UpdateTargetVessel();
             updateAcceleration(targetVelocity, targetPosition);
@@ -2834,7 +2839,7 @@ namespace BDArmory.Modules
             Aim();
             CheckWeaponSafety();
             CheckAIAutofire();
-            // Debug.Log("DEBUG visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
+            // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
 
             if (finalFire)
             {
@@ -2895,8 +2900,6 @@ namespace BDArmory.Modules
                     finalFire = false;
                 }
             }
-
-            yield break;
         }
 
         void DrawAlignmentIndicator()
@@ -3080,20 +3083,31 @@ namespace BDArmory.Modules
                 {
                     targetRadius = visualTargetVessel.GetRadius();
                     targetPosition = visualTargetVessel.CoM;
-                    if (!BDArmorySettings.TARGET_COM)
+                    if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM)
                     {
-                        TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-                        if (visualTargetPart == null)
+                        if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                         {
-                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, 5));
+                            TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
+                            if (currentTarget == null)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
+                                return;
+                            }
+                            targetID = UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetPartList.Count, BDArmorySettings.MULTI_TARGET_NUM));
                             if (!turret) //make fixed guns all get the same target part
                             {
                                 targetID = 0;
+                            }
+                            if (currentTarget.targetPartList.Count == 0)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
+                                return;
                             }
                             visualTargetPart = currentTarget.targetPartList[targetID];
                             //Debug.Log("[BDArmory.MTD] MW TargetID: " + targetID);
                         }
                         targetPosition = visualTargetPart.transform.position;
+                        // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + ": targeted part " + visualTargetPart + " on " + visualTargetVessel.vesselName + " (actually " + visualTargetPart.vessel.vesselName + ")" + " is " + (visualTargetVessel.CoM - targetPosition).magnitude + "m from CoM.");
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;

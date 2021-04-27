@@ -42,7 +42,7 @@ namespace BDArmory.Modules
         Transform cameraTransform;
 
         float startTime;
-        int missilesAway;
+        public int missilesAway;
 
         public float totalHP;
 
@@ -495,6 +495,7 @@ namespace BDArmory.Modules
                     {
                         if (weapon.Current == null) continue;
                         weapon.Current.visualTargetVessel = null;
+                        weapon.Current.visualTargetPart = null;
                         weapon.Current.autoFire = false;
                         weapon.Current.aiControlled = false;
                     }
@@ -3251,7 +3252,14 @@ namespace BDArmory.Modules
             //Debug.Log("[BDArmory.MTD]: Finding 2nd targets");
             targetsAssigned.Clear();
             missilesAssigned.Clear();
-            targetsAssigned.Add(currentTarget);
+            if (!currentTarget.isMissile)
+            {
+                targetsAssigned.Add(currentTarget);
+            }
+            else
+            {
+                missilesAssigned.Add(currentTarget);
+            }
             List<TargetInfo> targetsTried = new List<TargetInfo>();
 
             //Secondary targeting priorities
@@ -3663,6 +3671,7 @@ namespace BDArmory.Modules
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                             bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
                             float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
                             bool pulseLaser = ((ModuleWeapon)item.Current).pulseLaser;
@@ -3687,6 +3696,10 @@ namespace BDArmory.Modules
                                 targetWeapon = item.Current;
                                 targetWeaponRPM = candidateRPM;
                                 targetWeaponPriority = candidatePriority;
+                            }
+                            if (candidateMinrange > distance)
+                            {
+                                candidateRPM *= .001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
                             else //if equal priority, use standard weighting
                             {
@@ -4050,7 +4063,7 @@ namespace BDArmory.Modules
                         ModuleTurret turret = gun.turret;
                         float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
                         if (turret != null)
-                            if (!TargetInTurretRange(turret, gimbalTolerance))
+                            if (!TargetInTurretRange(turret, gimbalTolerance, null, gun))
                                 return false;
 
                         // check overheat
@@ -4110,7 +4123,7 @@ namespace BDArmory.Modules
                         ModuleTurret turret = rocket.turret;
                         float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
                         if (turret != null)
-                            if (!TargetInTurretRange(turret, gimbalTolerance))
+                            if (!TargetInTurretRange(turret, gimbalTolerance, null, rocket))
                                 return false;
                         if (rocket.isOverheated)
                             return false;
@@ -4419,6 +4432,7 @@ namespace BDArmory.Modules
                         weapon.Current.autoFire = false;
                         weapon.Current.autofireShotCount = 0;
                         weapon.Current.visualTargetVessel = null;
+                        weapon.Current.visualTargetPart = null;
                     }
             }
 
@@ -4650,6 +4664,7 @@ namespace BDArmory.Modules
             if (!guardTarget) return;
             if (selectedWeapon == null) return;
             int TurretID = 0;
+            int MissileID = 0;
             using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                 while (weapon.MoveNext())
                 {
@@ -4660,22 +4675,19 @@ namespace BDArmory.Modules
                     {
                         if (weapon.Current.turret)
                         {
-                            //Debug.Log("[BDArmory.MTD]: Targets Assigned: " + targetsAssigned.Count);
                             if (TurretID > Mathf.Min((targetsAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
                             {
                                 TurretID = 0; //if more turrets than targets, loop target list
                             }
-                            if (targetsAssigned[TurretID].Vessel != null)
+                            if (targetsAssigned.Count > 0 && targetsAssigned[TurretID].Vessel != null)
                             {
-                                //Debug.Log("[BDArmory.MTD]: TurretID ["+TurretID +"] within index bounds");
                                 if ((weapon.Current.engageAir && targetsAssigned[TurretID].isFlying) ||
                                     (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
                                     (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel, weapon.Current))
                                     {
                                         weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
-                                                                                                              //Debug.Log("[BDArmory.MTD]: " + weapon.Current.GetShortName() + " assigned " + targetsAssigned[TurretID].Vessel.name);
                                     }
                                     else //else try remaining targets
                                     {
@@ -4683,43 +4695,43 @@ namespace BDArmory.Modules
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
-                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel, weapon.Current))
                                                 {
                                                     weapon.Current.visualTargetVessel = item.Current.Vessel;
-                                                    //Debug.Log("[BDArmory.MTD]: original target outside turret arc, new target " + item.Current.Vessel.name);
                                                     break;
                                                 }
                                             }
                                     }
                                 }
-                                if (weapon.Current.engageMissile && missilesAssigned.Count > 0) //if can engage missiles, override targeting to prioritize missiles
+                                TurretID++;
+                            }
+                            if (MissileID > Mathf.Min((missilesAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
+                            {
+                                MissileID = 0; //if more turrets than targets, loop target list
+                            }
+                            if (missilesAssigned.Count > 0 && missilesAssigned[MissileID].Vessel != null) //if missile, override non-missile target
+                            {
+                                if (weapon.Current.engageMissile)
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[TurretID].Vessel))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel, weapon.Current))
                                     {
-                                        weapon.Current.visualTargetVessel = missilesAssigned[TurretID].Vessel; // if target within turret fire zone, assign
-                                                                                                               //Debug.Log("[BDArmory.MTD]: " + weapon.Current.GetShortName() + " assigned " + missilesAssigned[TurretID].Vessel.name);
+                                        weapon.Current.visualTargetVessel = missilesAssigned[MissileID].Vessel; // if target within turret fire zone, assign
                                     }
-                                    else//assigned target outside turret arc, try the other targets on the list
+                                    else //assigned target outside turret arc, try the other targets on the list
                                     {
-                                        TargetInfo targetableMissile = null;
                                         using (List<TargetInfo>.Enumerator item = missilesAssigned.GetEnumerator())
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
-                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel, weapon.Current))
                                                 {
-                                                    targetableMissile = item.Current;
+                                                    weapon.Current.visualTargetVessel = item.Current.Vessel;
                                                     break;
                                                 }
                                             }
-                                        if (targetableMissile != null)
-                                        {
-                                            weapon.Current.visualTargetVessel = targetableMissile.Vessel;
-                                        }
                                     }
                                 }
-                                TurretID++;
-                                //Debug.Log("[BDArmory.MTD]: TurretID incremented");
+                                MissileID++;
                             }
                         }
                         else
@@ -4752,7 +4764,7 @@ namespace BDArmory.Modules
             rangeEditor.maxValue = BDArmorySettings.MAX_GUARD_VISUAL_RANGE;
         }
 
-        float ThreatClosingTime(Vessel threat)
+        public float ThreatClosingTime(Vessel threat)
         {
             float closureTime = 3600f; // Default closure time of one hour
             if (threat) // If we weren't passed a null
@@ -4834,7 +4846,7 @@ namespace BDArmory.Modules
                     if (weapon.Current == null) continue;
                     if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
                     float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
-                    if (((AI != null && AI.pilotEnabled && AI.CanEngage()) || (TargetInTurretRange(weapon.Current.turret, gimbalTolerance))) && weapon.Current.maxEffectiveDistance >= finalDistance)
+                    if (((AI != null && AI.pilotEnabled && AI.CanEngage()) || (TargetInTurretRange(weapon.Current.turret, gimbalTolerance, null, weapon.Current))) && weapon.Current.maxEffectiveDistance >= finalDistance)
                     {
                         if (weapon.Current.isOverheated)
                         {
@@ -4883,7 +4895,7 @@ namespace BDArmory.Modules
             return 2;
         }
 
-        bool TargetInTurretRange(ModuleTurret turret, float tolerance, Vessel gTarget = null)
+        bool TargetInTurretRange(ModuleTurret turret, float tolerance, Vessel gTarget = null, ModuleWeapon weapon = null)
         {
             if (!turret)
             {
@@ -4898,25 +4910,41 @@ namespace BDArmory.Modules
                 }
                 return false;
             }
+            if (gTarget == null) gTarget = guardTarget;
 
             Transform turretTransform = turret.yawTransform.parent;
-            Vector3 direction = guardTarget.transform.position - turretTransform.position;
-            if (gTarget != null)
+            Vector3 direction = gTarget.transform.position - turretTransform.position;
+            if (weapon != null && weapon.bulletDrop) // Account for bullet drop (rough approximation not accounting for target movement).
             {
-                direction = gTarget.transform.position - turretTransform.position;
+                switch (weapon.GetWeaponClass())
+                {
+                    case WeaponClasses.Gun:
+                        {
+                            var effectiveBulletSpeed = (turret.part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + weapon.bulletVelocity * direction.normalized).magnitude;
+                            var timeOfFlight = direction.magnitude / effectiveBulletSpeed;
+                            direction -= 0.5f * FlightGlobals.getGeeForceAtPosition(vessel.transform.position) * timeOfFlight * timeOfFlight;
+                            break;
+                        }
+                    case WeaponClasses.Rocket:
+                        {
+                            var effectiveRocketSpeed = (turret.part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (weapon.thrust * weapon.thrustTime / weapon.rocketMass) * direction.normalized).magnitude;
+                            var timeOfFlight = direction.magnitude / effectiveRocketSpeed;
+                            direction -= 0.5f * FlightGlobals.getGeeForceAtPosition(vessel.transform.position) * timeOfFlight * timeOfFlight;
+                            break;
+                        }
+                }
             }
             Vector3 directionYaw = Vector3.ProjectOnPlane(direction, turretTransform.up);
-            Vector3 directionPitch = Vector3.ProjectOnPlane(direction, turretTransform.right);
 
             float angleYaw = Vector3.Angle(turretTransform.forward, directionYaw);
-            float signedAnglePitch = 90 - Vector3.Angle(turretTransform.up, directionPitch);
+            float signedAnglePitch = 90 - Vector3.Angle(turretTransform.up, direction);
             bool withinPitchRange = (signedAnglePitch >= turret.minPitch - tolerance && signedAnglePitch <= turret.maxPitch + tolerance);
 
             if (angleYaw < (turret.yawRange / 2) + tolerance && withinPitchRange)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is INSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch);
+                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is INSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", tolerance: " + tolerance);
                 }
                 return true;
             }
@@ -4924,7 +4952,7 @@ namespace BDArmory.Modules
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is OUTSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", angleYaw: " + angleYaw);
+                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is OUTSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", angleYaw: " + angleYaw + ", tolerance: " + tolerance);
                 }
                 return false;
             }

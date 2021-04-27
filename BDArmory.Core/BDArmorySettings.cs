@@ -39,7 +39,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
         [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = true;                   // Prevent craft from going into ramming mode when out of ammo.
         [BDAPersistantSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour)
-        [BDAPersistantSettingsField] public static bool DEBUG_RAMMING_LOGGING = false;            // Controls whether ramming logging debug information is printed to the Debug.Log
         [BDAPersistantSettingsField] public static bool PERFORMANCE_LOGGING = false;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
         [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
@@ -47,7 +46,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistantSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
         [BDAPersistantSettingsField] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
-        [BDAPersistantSettingsField] public static bool KERBAL_SAFETY = true;                     // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
+        [BDAPersistantSettingsField] public static int KERBAL_SAFETY = 2;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
+        [BDAPersistantSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
         [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = true;
@@ -66,6 +66,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float COMPETITION_ALTITUDE_LIMIT_LOW = -1;          // Altitude (low) in km at which to kill off craft.
         [BDAPersistantSettingsField] public static float COMPETITION_NONCOMPETITOR_REMOVAL_DELAY = 30; // Competition non-competitor removal delay in seconds.
         [BDAPersistantSettingsField] public static float COMPETITION_DISTANCE = 1000;                  // Competition distance.
+        [BDAPersistantSettingsField] public static int COMPETITION_START_NOW_AFTER = 11;               // Competition auto-start now.
         [BDAPersistantSettingsField] public static float DEBRIS_CLEANUP_DELAY = 15f;                   // Clean up debris after 30s.
         [BDAPersistantSettingsField] public static int MAX_NUM_BULLET_DECALS = 200;
         [BDAPersistantSettingsField] public static int TERRAIN_ALERT_FREQUENCY = 1;                    // Controls how often terrain avoidance checks are made (gets scaled by 1+(radarAltitude/500)^2)
