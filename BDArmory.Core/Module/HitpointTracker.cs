@@ -429,7 +429,7 @@ namespace BDArmory.Core.Module
 
         void SetMaxArmor()
         {
-            if (guiArmorTypeString != "None")
+            if (guiArmorTypeString != "None") 
             {
                 if (maxSupportedArmor < 0)
                 {

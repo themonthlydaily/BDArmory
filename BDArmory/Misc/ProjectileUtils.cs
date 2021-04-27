@@ -227,10 +227,10 @@ namespace BDArmory.Misc
                 float frangibility = 5000 * HERatio;
                 float shrapnelThickness = (Mathf.Pow(0.0075f * HERatio, 1.05f) + 0.06f) * caliber; //min thickness of material for HE to blow caliber size hole in steel
                 shrapnelThickness *= (950 / Strength) * (8000 / Density) * (Mathf.Sqrt(1100 / Density)); //adjusted min thickness after material hardness/strength/density
-                float shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * Mathf.Pow(detonationDist, 2))), 0, (frangibility * .4f)); //fragments/m2
+                float shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * Mathf.Pow(detonationDist, 2))), 0, (frangibility*.4f)); //fragments/m2
                 shrapnelCount *= (float)(hitPart.radiativeArea / 3); //shrapnelhits/part
                 float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
-                // go through and make sure all unit conversions correct
+		// go through and make sure all unit conversions correct
                 if (penetrationFactor == -1) //airburst/parts caught in AoE
                 {
                     if (detonationDist > (5 * caliber)) //contact detonation
@@ -303,7 +303,7 @@ namespace BDArmory.Misc
                         {
                             Debug.Log("[BDArmory.ProjectileUtils]: Through-armor detonation");
                         }
-                        hitPart.AddBallisticDamage((projmass - HEmass), 0.1f, 1, 1.9f, 1, 7500); //internal det catches entire shrapnel mass
+                        hitPart.AddBallisticDamage((projmass-HEmass), 0.1f, 1, 1.9f, 1, 7500); //internal det catches entire shrapnel mass
                     }
                 }
             }
@@ -312,25 +312,25 @@ namespace BDArmory.Misc
         {
             //use blastTotalPressure to get MPa of shock on plate, compare to armor mat tolerances
             float thickness = (float)hitPart.GetArmorThickness();
-            float spallCaliber = ((float)hitPart.radiativeArea / 3) * 1000;  //using this as a hack for affected srf. area, convert m2 to mm2
+            float spallCaliber = ((float)hitPart.radiativeArea / 3)*1000;  //using this as a hack for affected srf. area, convert m2 to mm2
             float spallMass;
             float damage;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
-            if (Armor != null)
-            {
-                float ductility = Armor.Ductility;
-                float hardness = Armor.Hardness;
-                float Strength = Armor.Strength;
-                float Density = Armor.Density;
+	    if (Armor != null)
+	    {
+		float ductility = Armor.Ductility;
+		float hardness = Armor.Hardness;
+		float Strength = Armor.Strength;
+		float Density = Armor.Density;
 
-                float ArmorTolerance = Strength * (1 + ductility) * thickness;
+                float ArmorTolerance = Strength * (1+ductility) * thickness;
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;
-                //is BlastUtils maxpressure in MPa? confirm blast pressure from ExplosionUtils on same scale/magnitude as armorTolerance
+		//is BlastUtils maxpressure in MPa? confirm blast pressure from ExplosionUtils on same scale/magnitude as armorTolerance
                 if (ductility > 0.20f)
                 {
                     if (BlastPressure > ArmorTolerance) //material stress tolerance exceeded, armor rupture
                     {
-                        spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * thickness * (Density / 1000000);
+                        spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI/1000 * thickness * (Density / 1000000);
                         hitPart.ReduceArmor(spallCaliber * thickness);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
@@ -347,7 +347,7 @@ namespace BDArmory.Misc
                     if (blowthroughFactor > 0.66) //armor holds, spalling
                     {
                         spallCaliber *= ((1 - ductility) * blowthroughFactor);
-                        spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * (thickness / 10) * (Density / 1000000);
+                        spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI/1000 * (thickness/10) * (Density / 1000000);
                         hitPart.ReduceArmor(spallCaliber * (thickness / 10));
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
@@ -384,7 +384,7 @@ namespace BDArmory.Misc
                             else //0.05-0.19 ductility - harder steels, etc
                             {
                                 spallCaliber *= ((1.2f - ductility) * blowthroughFactor);
-                                spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * thickness * (Density / 1000000);
+                                spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI/1000 * thickness * (Density / 1000000);
                                 hitPart.ReduceArmor(spallCaliber * thickness);
                                 damage = hitPart.AddBallisticDamage(spallMass, spallCaliber, 1, blowthroughFactor, 1, 500);
                                 ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
@@ -405,7 +405,7 @@ namespace BDArmory.Misc
                             {
                                 spallCaliber *= ((1 - ductility) * blowthroughFactor);
                                 hitPart.ReduceArmor(spallCaliber * (thickness / 5));
-                                spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * (thickness / 5) * (Density / 1000000);
+                                spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * (thickness/5) * (Density / 1000000);
                                 damage = hitPart.AddBallisticDamage(spallMass, spallCaliber, 1, blowthroughFactor, 1, 500);
                                 ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -425,24 +425,24 @@ namespace BDArmory.Misc
             }
             return false;
         }
-        /*
-        public static float CalculatePenetration(float caliber, float projMass, float impactVel, float apBulletMod = 1)
+    /*
+    public static float CalculatePenetration(float caliber, float projMass, float impactVel, float apBulletMod = 1)
+    {
+        float penetration = 0;
+        if (apBulletMod <= 0) // sanity check/legacy compatibility
         {
-            float penetration = 0;
-            if (apBulletMod <= 0) // sanity check/legacy compatibility
-            {
-                apBulletMod = 1;
-            }
-
-            if (caliber > 5) //use the "krupp" penetration formula for anything larger than HMGs
-            {
-                penetration = (float)(16f * impactVel * Math.Sqrt(projMass / 1000) / Math.Sqrt(caliber) * apBulletMod); //APBulletMod now actually implemented, serves as penetration multiplier, 1 being neutral, <1 for soft rounds, >1 for AP penetrators
-            }
-
-            return penetration;
+            apBulletMod = 1;
         }
-        */
-        public static float CalculateProjectileEnergy(float projMass, float impactVel)
+
+        if (caliber > 5) //use the "krupp" penetration formula for anything larger than HMGs
+        {
+            penetration = (float)(16f * impactVel * Math.Sqrt(projMass / 1000) / Math.Sqrt(caliber) * apBulletMod); //APBulletMod now actually implemented, serves as penetration multiplier, 1 being neutral, <1 for soft rounds, >1 for AP penetrators
+        }
+
+        return penetration;
+    }
+    */
+    public static float CalculateProjectileEnergy(float projMass, float impactVel)
         {
             float bulletEnergy = (projMass * 1000) * impactVel; //(should this be 1/2(mv^2) instead? prolly at somepoint, but the abstracted calcs I have use mass x vel, and work, changing it would require refactoring calcs
             if (BDArmorySettings.DRAW_DEBUG_LABELS)

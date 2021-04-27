@@ -374,14 +374,15 @@ namespace BDArmory.Modules
             guardAngle = 360;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_VisualRange"),//Visual Range
-         UI_FloatRange(minValue = 100f, maxValue = 5000, stepIncrement = 100f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
         public float
-            guardRange = 10000;
+            guardRange = 10000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
          UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
             gunRange = 2500f;
+        public float maxGunRange = 0f;
 
         public const float maxAllowableMissilesOnTarget = 18f;
 
@@ -897,8 +898,10 @@ namespace BDArmory.Modules
                 GameEvents.onVesselCreate.Add(OnVesselCreate);
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
                 GameEvents.onPartDie.Add(OnPartDie);
+                GameEvents.onVesselPartCountChanged.Add(UpdateMaxGunRange);
 
                 GetTotalHP();
+                UpdateMaxGunRange(vessel);
 
                 using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
                     while (aipilot.MoveNext())
@@ -909,6 +912,12 @@ namespace BDArmory.Modules
                     }
 
                 RefreshModules();
+            }
+            else if (HighLogic.LoadedSceneIsEditor)
+            {
+                GameEvents.onEditorPartPlaced.Add(UpdateMaxGunRange);
+                GameEvents.onEditorPartDeleted.Add(UpdateMaxGunRange);
+                UpdateMaxGunRange(part);
             }
         }
 
@@ -1120,6 +1129,9 @@ namespace BDArmory.Modules
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
+            GameEvents.onVesselPartCountChanged.Remove(UpdateMaxGunRange);
+            GameEvents.onEditorPartPlaced.Remove(UpdateMaxGunRange);
+            GameEvents.onEditorPartDeleted.Remove(UpdateMaxGunRange);
         }
 
         void ClampVisualRange()
@@ -1752,6 +1764,7 @@ namespace BDArmory.Modules
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
                         pilotAI.RequestExtend(guardTarget.CoM);
+                        pilotAI.extendingReason = "Too close to bomb";
                         break;
                     }
                     yield return null;
@@ -1781,6 +1794,7 @@ namespace BDArmory.Modules
                             if (pilotAI)
                             {
                                 pilotAI.RequestExtend(guardTarget.CoM);
+                                pilotAI.extendingReason = "Bombs away!";
                             }
                         }
                     }
@@ -3551,7 +3565,7 @@ namespace BDArmory.Modules
                             {
                                 candidateRPM *= 1.5f; // weight selection towards flak ammo
                             }
-                            if (targetWeapon != null && targetWeaponPriority < candidatePriority) //use priority gun
+                            if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
                                 targetWeapon = item.Current;
                                 targetWeaponRPM = candidateRPM;
@@ -4762,6 +4776,45 @@ namespace BDArmory.Modules
         {
             UI_FloatRange rangeEditor = (UI_FloatRange)Fields["guardRange"].uiControlEditor;
             rangeEditor.maxValue = BDArmorySettings.MAX_GUARD_VISUAL_RANGE;
+        }
+
+        public void UpdateMaxGunRange(Vessel v)
+        {
+            if (v != vessel || vessel == null) return;
+            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            maxGunRange = 0f;
+            foreach (var weapon in vessel.FindPartModulesImplementing<ModuleWeapon>())
+            {
+                if (weapon == null) continue;
+                if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
+                    maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
+            }
+            UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
+            rangeEditor.maxValue = maxGunRange;
+            gunRange = Mathf.Min(gunRange, maxGunRange);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + v.vesselName + " to " + gunRange + " of " + maxGunRange);
+            Misc.Misc.RefreshAssociatedWindows(part);
+        }
+
+        public void UpdateMaxGunRange(Part eventPart)
+        {
+            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            maxGunRange = 0f;
+            foreach (var p in part.ship.parts)
+            {
+                foreach (var weapon in p.FindModulesImplementing<ModuleWeapon>())
+                {
+                    if (weapon == null) continue;
+                    if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
+                        maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
+                }
+            }
+            UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
+            if (gunRange == rangeEditor.maxValue) { gunRange = maxGunRange; }
+            rangeEditor.maxValue = maxGunRange;
+            gunRange = Mathf.Min(gunRange, maxGunRange);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + part.ship.shipName + " to " + gunRange + " of " + maxGunRange);
+            Misc.Misc.RefreshAssociatedWindows(part);
         }
 
         public float ThreatClosingTime(Vessel threat)

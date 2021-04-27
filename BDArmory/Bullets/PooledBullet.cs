@@ -466,7 +466,7 @@ namespace BDArmory.Bullets
                             //calculate penetration
                             penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, Ductility, Density, Strength, thickness, impactVelocity);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
-                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
+                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);                            
                             ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
 
                             //calculate return bullet post-pen vel
@@ -553,7 +553,6 @@ namespace BDArmory.Bullets
                             distanceTraveled += hit.distance;
                             hasPenetrated = false;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
-                            ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, bulletMass, penetrationFactor);
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             hasDetonated = true;
                             KillBullet();
