@@ -3565,7 +3565,7 @@ namespace BDArmory.Modules
                             {
                                 candidateRPM *= 1.5f; // weight selection towards flak ammo
                             }
-                            if (targetWeapon != null && targetWeaponPriority < candidatePriority) //use priority gun
+                            if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
                                 targetWeapon = item.Current;
                                 targetWeaponRPM = candidateRPM;

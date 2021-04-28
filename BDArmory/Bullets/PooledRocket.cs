@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
 using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -262,7 +263,8 @@ namespace BDArmory.Bullets
                                     impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
                                 else
                                     impactVelocity = rb.velocity.magnitude;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
                                 Detonate(hit.point, false);
                                 return;
                             }
@@ -279,7 +281,7 @@ namespace BDArmory.Bullets
 
                             if (ProjectileUtils.CheckGroundHit(hitPart, hit, caliber))
                             {
-                                ProjectileUtils.CheckBuildingHit(hit, rocketMass, rb.velocity, bulletDmgMult);
+                                ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
                                 Detonate(hit.point, false);
                                 return;
                             }
@@ -305,8 +307,35 @@ namespace BDArmory.Bullets
                             float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
 
                             float thickness = ProjectileUtils.CalculateThickness(hitPart, anglemultiplier);
-                            float penetration = ProjectileUtils.CalculatePenetration(caliber, rocketMass, impactVelocity);
-                            float penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, anglemultiplier, hit, penetration, thickness, caliber);
+                            float penetration = 0;
+                            float penetrationFactor = 0;
+                            var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
+                            if (Armor != null)
+                            {
+                                float Ductility = Armor.Ductility;
+                                float hardness = Armor.Hardness;
+                                float Strength = Armor.Strength;
+                                float safeTemp = Armor.SafeUseTemp;
+                                float Density = Armor.Density;
+                                Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                                float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass * 1000, impactVelocity);
+                                float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
+                                //calculate bullet deformation
+                                float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, 1, Density);
+                                //calculate penetration
+                                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness);
+                                caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
+                                penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
+                                ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
+
+                                //calculate return bullet post-pen vel
+
+                                //calculate armor damage
+                            }
+                            else
+                            {
+                                Debug.Log("[PooledBUllet].ArmorVars not found; hitPart null");
+                            }
                             if (penetration > thickness)
                             {
                                 rb.velocity = rb.velocity * (float)Math.Sqrt(thickness / penetration);
@@ -316,11 +345,13 @@ namespace BDArmory.Bullets
                             if (penetrationFactor > 1)
                             {
                                 hasPenetrated = true;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass*1000, caliber);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass*1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass*1000), penetrationFactor);
                                 penTicker += 1;
                                 ProjectileUtils.CheckPartForExplosion(hitPart);
 
-                                if (explosive)
+                                if (explosive || !viableBullet)
                                 {
                                     transform.position += (rb.velocity * Time.fixedDeltaTime) / 3;
 
@@ -333,7 +364,7 @@ namespace BDArmory.Bullets
                                 if (hitPart.rb != null && hitPart.rb.mass > 0)
                                 {
                                     float forceAverageMagnitude = impactVelocity * impactVelocity *
-                                                          (1f / hit.distance) * rocketMass;
+                                                          (1f / hit.distance) * (rocketMass * 1000);
 
                                     float accelerationMagnitude =
                                         forceAverageMagnitude / (hitPart.vessel.GetTotalMass() * 1000);
@@ -345,7 +376,8 @@ namespace BDArmory.Bullets
                                 }
 
                                 hasPenetrated = false;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, (rocketMass*1000), impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
                                 Detonate(hit.point, false);
                                 hasDetonated = true;
                             }
@@ -505,7 +537,7 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction, false, (rocketMass * 1000));
                     }
                     if (gravitic)
                     {
