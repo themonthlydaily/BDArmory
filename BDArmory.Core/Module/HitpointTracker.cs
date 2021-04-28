@@ -82,8 +82,6 @@ namespace BDArmory.Core.Module
         [KSPField(isPersistant = true)]
         public float maxSupportedArmor = -1; //upper cap on armor per part, overridable in MM/.cfg
 
-        private float OldMaxArmor = 0;
-
         AttachNode bottom;
         AttachNode top;
 

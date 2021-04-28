@@ -381,7 +381,7 @@ namespace BDArmory.Misc
                                     BattleDamageHandler.CheckDamageFX(hitPart, spallCaliber, blowthroughFactor, true, sourcevessel, hit);
                                 }
                             }
-                            else; //0.05-0.19 ductility - harder steels, etc
+                            else //0.05-0.19 ductility - harder steels, etc
                             {
                                 spallCaliber *= ((1.2f - ductility) * blowthroughFactor);
                                 spallMass = spallCaliber* thickness/10 * (Density / 1000);
@@ -529,14 +529,13 @@ namespace BDArmory.Misc
         {
             //does the bullet suvive its impact?
             //calculate bullet lengh, in mm
-
             float density = 11.34f;
             if (sabot)
             {
                 density = 19;
             }
-            float bulletLength = (projMass*1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
-
+            float bulletLength = (projMass * 1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+                                                                                                                         //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -550,12 +549,10 @@ namespace BDArmory.Misc
 
         public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness)
         {
-
             float Energy = CalculateProjectileEnergy(projMass, impactVel);
             //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
             float penetration;
             //bullet's deformed, penetration using larger crosssection  
-
             if (impactVel > 1500 && caliber < 30) //hypervelocity KE penetrators, for convenience, assume any round moving this fast is made of Tungsten/Depleted ranium
             {
                 float length = (projMass * 1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * 19) + 10;
@@ -568,7 +565,6 @@ namespace BDArmory.Misc
             //apparently shattered projectiles add 30% to armor thickness; oblique impact beyond 55deg decreases effective thickness(splatted projectile digs in to plate instead of richochets)
 
             penetration *= 10; //convert from cm to mm
-
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Properties: Energy: " + Energy + "; caliber: " + caliber + "; newCaliber: " + newCaliber);
@@ -577,6 +573,7 @@ namespace BDArmory.Misc
             }
             return penetration;
         }
+
         public static float CalculateThickness(Part hitPart, float anglemultiplier)
         {
             float thickness = (float)hitPart.GetArmorThickness();
