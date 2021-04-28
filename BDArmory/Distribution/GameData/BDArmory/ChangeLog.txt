@@ -1,5 +1,7 @@
-﻿FIXES
-	- Fix the floating origin corrections to the vessel traces and apply the corrective rotations to the coordinates such that the local coordinates are (east, up, north) and the identity rotation is a craft pointing nose up with the underside pointing north. Add a simple python script to plot the traces.
+﻿v1.4.5.0
+FIXES
+	- Fix the floating origin corrections to the vessel traces and apply the corrective rotations to the coordinates such that the local coordinates are (east, up, north) and the identity rotation is a craft pointing nose up with the underside pointing north. Include a simple python script to plot the traces.
+	- Re-enable the extending debugging (when debug labels are on).
 	- Fix the smoothing of the target acceleration and velocity for long-range targets to be applied dynamically so as to not affect short range targets and to reset when switching targets.
 IMPROVEMENTS
 	- Update the in-flight Guard Menu to match the settings in the weapon manager in the SPH.
@@ -7,6 +9,16 @@ IMPROVEMENTS
 	- Add log and competition status messages about disabling a vessel due to EMP damage.
 	- Upgrade the numerical integrator for bullets and ballistic trajectory simulations to use the 2nd order symplectic leapfrog method (this vastly improves the accuracy and speed of the trajectory simulations). Allows for ballistic aiming out to at least 50km.
 	- Include dead teams information in the results.
+	- Re-worked steer limiter. Steer limits are now based on two control points, defined by four variables
+		- Low Speed Control Point: Steer limit and Speed
+		- High Speed Control Point: Steer limit and Speed
+		- Below the low speed control point speed, the limit will be equal to the low speed steer limit.
+		- Above the high speed control point speed, the speed will be equal to the high speed control point limit.
+		- Between the two control points, the steer limit will vary linearly based on the craft's current speed.
+	- Add toggle for whether competition status messages are displayed.
+	- Change clearance check minimum drop time to greater than or equal to 0.1s instead of greater than 0.3s
+	- Add 1.5 safety factor to blast radius determination for missile evasion
+	- Clamp the minimum radar missile FOV used for missile evasion to 40 degrees, results in fewer instances of craft turning back towards a missile at inopportune times.
 
 v1.4.4.4
 FIXES
