@@ -1572,6 +1572,57 @@ namespace BDArmory.UI
                 }
                 ++line;
             }
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_GameModesSettingsToggle")))//Show/hide game modes settings.
+            {
+                BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE = !BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE;
+            }
+            if (BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE)
+            {
+                if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
+                { if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.lastTagUpdateTime = Planetarium.GetUniversalTime(); }
+                if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
+                { BulletHitFX.SetupShellPool(); }
+                if (BDArmorySettings.GRAVITY_HACKS != (BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, Localizer.Format("#LOC_BDArmory_Settings_GravityHacks"))))//"Gravity hacks"
+                {
+                    if (BDArmorySettings.GRAVITY_HACKS)
+                    {
+                        BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD = 10; // For gravity hacks, we need a shorter grace period.
+                        BDArmorySettings.COMPETITION_KILL_TIMER = 1; // and a shorter kill timer.
+                    }
+                    else
+                    {
+                        BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD = 60; // Reset grace period back to default of 60s.
+                        BDArmorySettings.COMPETITION_KILL_TIMER = 15; // Reset kill timer period back to default of 15s.
+                        PhysicsGlobals.GraviticForceMultiplier = 1;
+                        VehiclePhysics.Gravity.Refresh();
+                    }
+                }
+                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SRightRect(line), BDArmorySettings.BATTLEDAMAGE, Localizer.Format("#LOC_BDArmory_Settings_BattleDamage"));
+
+                // Heartbleed
+                BDArmorySettings.HEART_BLEED_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HEART_BLEED_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_HeartBleed"));//"Heart Bleed"
+                if (BDArmorySettings.HEART_BLEED_ENABLED)
+                {
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedRate")}:  ({BDArmorySettings.HEART_BLEED_RATE})", leftLabel);//Heart Bleed Rate
+                    BDArmorySettings.HEART_BLEED_RATE = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_RATE, 0.01f, 0.1f);
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedInterval")}:  ({BDArmorySettings.HEART_BLEED_INTERVAL})", leftLabel);//Heart Bleed Interval
+                    BDArmorySettings.HEART_BLEED_INTERVAL = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_INTERVAL, 1f, 60f);
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedThreshold")}:  ({BDArmorySettings.HEART_BLEED_THRESHOLD})", leftLabel);//Heart Bleed Threshold
+                    BDArmorySettings.HEART_BLEED_THRESHOLD = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f);
+                }
+
+                // Resource steal
+                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
+                if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
+                {
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_FuelStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_FUEL_RATION})", leftLabel);//Fuel Steal Ration
+                    BDArmorySettings.RESOURCE_STEAL_FUEL_RATION = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_FUEL_RATION, 0f, 1f);
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AmmoStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_AMMO_RATION})", leftLabel);//Ammo Steal Ration
+                    BDArmorySettings.RESOURCE_STEAL_AMMO_RATION = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_AMMO_RATION, 0f, 1f);
+                }
+                ++line;
+            }
+
             if (BDArmorySettings.BATTLEDAMAGE)
             {
                 if (GUI.Button(SLineRect(++line), (BDArmorySettings.BATTLEDAMAGE_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_BDSettingsToggle")))//Show/hide battle damage settings.
@@ -1891,56 +1942,6 @@ namespace BDArmory.UI
                 }
 
                 ++line;
-            }
-
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_GameModesSettingsToggle")))//Show/hide radar settings.
-            {
-                BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE = !BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE;
-            }
-            if (BDArmorySettings.GAME_MODES_SETTINGS_TOGGLE)
-            {
-                if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
-                { if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.lastTagUpdateTime = Planetarium.GetUniversalTime(); }
-                if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
-                { BulletHitFX.SetupShellPool(); }
-                if (BDArmorySettings.GRAVITY_HACKS != (BDArmorySettings.GRAVITY_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.GRAVITY_HACKS, Localizer.Format("#LOC_BDArmory_Settings_GravityHacks"))))//"Gravity hacks"
-                {
-                    if (BDArmorySettings.GRAVITY_HACKS)
-                    {
-                        BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD = 10; // For gravity hacks, we need a shorter grace period.
-                        BDArmorySettings.COMPETITION_KILL_TIMER = 1; // and a shorter kill timer.
-                    }
-                    else
-                    {
-                        BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD = 60; // Reset grace period back to default of 60s.
-                        BDArmorySettings.COMPETITION_KILL_TIMER = 15; // Reset kill timer period back to default of 15s.
-                        PhysicsGlobals.GraviticForceMultiplier = 1;
-                        VehiclePhysics.Gravity.Refresh();
-                    }
-                }
-                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SRightRect(line), BDArmorySettings.BATTLEDAMAGE, Localizer.Format("#LOC_BDArmory_Settings_BattleDamage"));
-
-                // Heartbleed
-                BDArmorySettings.HEART_BLEED_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HEART_BLEED_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_HeartBleedEnabled"));//"Heart Bleed Enabled"
-                if (BDArmorySettings.HEART_BLEED_ENABLED)
-                {
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedRate")}:  ({BDArmorySettings.HEART_BLEED_RATE})", leftLabel);//Heart Bleed Rate
-                    BDArmorySettings.HEART_BLEED_RATE = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_RATE, 0.01f, 0.1f);
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedInterval")}:  ({BDArmorySettings.HEART_BLEED_INTERVAL})", leftLabel);//Heart Bleed Interval
-                    BDArmorySettings.HEART_BLEED_INTERVAL = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_INTERVAL, 1f, 60f);
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedThreshold")}:  ({BDArmorySettings.HEART_BLEED_THRESHOLD})", leftLabel);//Heart Bleed Threshold
-                    BDArmorySettings.HEART_BLEED_THRESHOLD = (int)GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f);
-                }
-
-                // Resource steal
-                BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_ResourceStealEnabled"));//"Resource Steal Enabled"
-                if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
-                {
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_FuelStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_FUEL_RATION})", leftLabel);//Fuel Steal Ration
-                    BDArmorySettings.RESOURCE_STEAL_FUEL_RATION = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_FUEL_RATION, 0f, 1f);
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AmmoStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_AMMO_RATION})", leftLabel);//Ammo Steal Ration
-                    BDArmorySettings.RESOURCE_STEAL_AMMO_RATION = GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_AMMO_RATION, 0f, 1f);
-                }
             }
 
             //competition mode
