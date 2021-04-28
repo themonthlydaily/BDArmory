@@ -244,7 +244,7 @@ namespace BDArmory.Misc
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel count: "+ shrapnelCount + "; Armor damage: " + volumeToReduce + "cm3; part damage: ");
                             }
-                            hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 6500); //expansion rate of tnt/petn ~7500m/s
+                            hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430); //expansion rate of tnt/petn ~7500m/s
                             CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), Mathf.Sqrt((float)volumeToReduce/3.14159f), hardness, Ductility, Density, 6500, sourceVesselName);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), false, sourceVesselName, hit); //bypass score mechanic so HE rounds don't have inflated scores
                         }
@@ -260,8 +260,8 @@ namespace BDArmory.Misc
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration; Armor damage: " + volumeToReduce + "; part damage: ");
                             }
-                            hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 7500); //within 5 calibers shrapnel still getting pushed/accelerated by blast
-                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber*0.4f), hardness, Ductility, Density, 7500, sourceVesselName);
+                            hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430); //within 5 calibers shrapnel still getting pushed/accelerated by blast
+                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber*0.4f), hardness, Ductility, Density, 430, sourceVesselName);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), true, sourceVesselName, hit);
                         }
                         else
@@ -292,8 +292,8 @@ namespace BDArmory.Misc
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration; Armor damage: " + volumeToReduce + "; part damage: ");
                             }
-                            hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 7500); //within 5 calibers shrapnel still getting pushed/accelerated by blast
-                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber*1.4f), hardness, Ductility, Density, 7500, sourceVesselName);
+                            hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430); //within 5 calibers shrapnel still getting pushed/accelerated by blast
+                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber*1.4f), hardness, Ductility, Density, 430, sourceVesselName);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), true, sourceVesselName, hit);
                         }
                     }
@@ -303,7 +303,7 @@ namespace BDArmory.Misc
                         {
                             Debug.Log("[BDArmory.ProjectileUtils]: Through-armor detonation");
                         }
-                        hitPart.AddBallisticDamage((projmass-HEmass), 0.1f, 1, 1.9f, 1, 7500); //internal det catches entire shrapnel mass
+                        hitPart.AddBallisticDamage((projmass-HEmass), 0.1f, 1, 1.9f, 1, 430); //internal det catches entire shrapnel mass
                     }
                 }
             }

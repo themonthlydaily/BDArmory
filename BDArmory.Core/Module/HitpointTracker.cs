@@ -356,15 +356,20 @@ namespace BDArmory.Core.Module
 
         public void ReduceArmor(float massToReduce)
         {
-            armorMass -= (massToReduce * (Density / 1000000000)); //massToReduce is cm/3, armorMass is kg/m3
-            if (armorMass < 0)
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                armorMass = 0;
+                Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * (Density / 1000000000)));
             }
-            Armor -= ((armorMass - massToReduce) / armorMass);
+            float reduceMass = (massToReduce * (Density / 1000000000));
+            Armor -= ((1 - (reduceMass / armorMass)) * armorMass);
             if (Armor < 0)
             {
                 Armor = 0;
+            }
+            armorMass -= reduceMass; //massToReduce is cm/3, armorMass is kg/m3
+            if (armorMass < 0)
+            {
+                armorMass = 0;
             }
         }
 
