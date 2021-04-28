@@ -181,7 +181,6 @@
     <Compile Include="Misc\WMTurretGroup.cs" />
     <Compile Include="Modules\Animation\BDALookConstraintUp.cs" />
     <Compile Include="Modules\Animation\BDAScaleByDistance.cs" />
-    <Compile Include="Modules\BDAAdjustableArmor.cs" />
     <Compile Include="Modules\BDAdjustableRail.cs" />
     <Compile Include="Modules\BDExplosivePart.cs" />
     <Compile Include="Modules\BDGenericAIBase.cs" />

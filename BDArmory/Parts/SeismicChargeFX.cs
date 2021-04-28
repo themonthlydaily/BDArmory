@@ -6,33 +6,23 @@ namespace BDArmory.Parts
 {
     public class SeismicChargeFX : MonoBehaviour
     {
-        //orphaned, incredibly limited in scope, functionality and requiring a specific FX model that isn't present, but,
-        //if the proper collider setup can be recovered/reverse-engineered, this has potential...
         AudioSource audioSource;
 
         public static float originalShipVolume;
         public static float originalMusicVolume;
         public static float originalAmbienceVolume;
 
-        [KSPField]
-        public string FXName = "lightFlare";
-        [KSPField]
-        public string DetonationSound = "BDArmory/Sounds/seismicCharge";
-
-        static string DefaultExplosionPath = "BDArmory/Models/seismicCharge/seismicExplosion";
-
         float startTime;
 
         Transform lightFlare;
-        Rigidbody rb;
 
-        Vector3 explosionCoords;
-        Vector3 explosionUp;
+        Rigidbody rb;
 
         void Start()
         {
             transform.localScale = 2 * Vector3.one;
-            lightFlare = gameObject.transform.Find("FXName");
+            lightFlare = gameObject.transform.Find("lightFlare");
+
             startTime = Time.time;
 
             audioSource = gameObject.AddComponent<AudioSource>();
@@ -42,22 +32,18 @@ namespace BDArmory.Parts
             audioSource.pitch = UnityEngine.Random.Range(0.93f, 1f);
             audioSource.volume = Mathf.Sqrt(originalShipVolume);
 
-            audioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip(DetonationSound));
+            audioSource.PlayOneShot(GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/seismicCharge"));
 
             rb = gameObject.AddComponent<Rigidbody>();
             rb.useGravity = false;
             rb.velocity = Vector3.zero;
-            rb.isKinematic = true;
-
-            explosionCoords = transform.position;
-            explosionUp = transform.up;
-
         }
 
         void FixedUpdate()
         {
-            //lightFlare.LookAt(transform.position, transform.up);
-            lightFlare.LookAt(explosionCoords, explosionUp);
+            lightFlare.LookAt(FlightCamera.fetch.mainCamera.transform.position,
+                FlightCamera.fetch.mainCamera.transform.up);
+
             if (Time.time - startTime < 1.25f)
             {
                 //
@@ -85,22 +71,20 @@ namespace BDArmory.Parts
         void OnTriggerEnter(Collider other)
         {
             //hitting parts
-            Part explodePart = null;     
+            Part explodePart = null;
             try
             {
                 explodePart = other.gameObject.GetComponentUpwards<Part>();
-                //explodePart.Unpack();
+                explodePart.Unpack();
             }
             catch (NullReferenceException e)
             {
-                Debug.LogWarning("[BDArmory.SeismicChargeFX]: Exception thrown in OnTriggerEnter: Where part?" + e.Message + "\n" + e.StackTrace);
+                Debug.LogWarning("[BDArmory.SeismicChargeFX]: Exception thrown in OnTriggerEnter: " + e.Message + "\n" + e.StackTrace);
             }
 
             if (explodePart != null)
             {
                 explodePart.Destroy();
-                //make a variant that breaks all connedctions/attach nodes, make it a shatter weapon?
-                Debug.Log("[SeismicCharge] Hit a part");
             }
             else
             {
@@ -112,26 +96,19 @@ namespace BDArmory.Parts
                 }
                 catch (NullReferenceException e)
                 {
-                    Debug.LogWarning("[BDArmory.SeismicChargeFX]: Exception thrown in OnTriggerEnter: Where building? " + e.Message + "\n" + e.StackTrace);
+                    Debug.LogWarning("[BDArmory.SeismicChargeFX]: Exception thrown in OnTriggerEnter: " + e.Message + "\n" + e.StackTrace);
                 }
                 if (hitBuilding != null && hitBuilding.IsIntact)
                 {
                     hitBuilding.Demolish();
-                    Debug.Log("[SeismicCharge] Hit a building");
                 }
             }
-            ///Destroy(gameObject);
+            Destroy(gameObject);
         }
 
-        public static void CreateSeismicExplosion(Vector3 pos, Quaternion rot, string Modelpath = null)
+        public static void CreateSeismicExplosion(Vector3 pos, Quaternion rot)
         {
-            var FXTemplate = GameDatabase.Instance.GetModel(Modelpath);
-            if (FXTemplate == null)
-            {
-                Debug.LogError("[BDArmory.SeismicCharge]: " + Modelpath + " was not found, using the default explosion instead. Please fix your model.");
-                FXTemplate = GameDatabase.Instance.GetModel(DefaultExplosionPath);
-            }
-            GameObject explosionModel = FXTemplate;
+            GameObject explosionModel = GameDatabase.Instance.GetModel("BDArmory/Models/seismicCharge/seismicExplosion");
             GameObject explosionObject = (GameObject)Instantiate(explosionModel, pos, rot);
             explosionObject.SetActive(true);
             explosionObject.AddComponent<SeismicChargeFX>();
