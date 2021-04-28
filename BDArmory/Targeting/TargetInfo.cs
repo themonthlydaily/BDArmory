@@ -248,12 +248,12 @@ namespace BDArmory.Targeting
             if (radarMassAtUpdate > 0)
             {
                 float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
-                if (massPercentageDifference > 0.025f)
+                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway == 0) && !weaponManager.guardFiringMissile)
                 {
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
                     radarBaseSignatureNeedsUpdate = true;     // Update RCS if vessel mass changed by more than 2.5% after a part was lost
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
                 }
             }
         }
@@ -272,56 +272,56 @@ namespace BDArmory.Targeting
                     Team = null;
                 }
             }
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                if (BDArmorySetup.windowSettingsEnabled)
-                {
-                    UpdateTargetPartList();
-                }
-            }
         }
 
         public void UpdateTargetPartList()
         {
             targetPartList.Clear();
             int targetCount = 0;
-            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                while (part.MoveNext())
-                {
-                    if (part.Current == null) continue;
-                    if (BDArmorySettings.TARGET_WEAPONS)
+            if (BDArmorySettings.TARGET_COMMAND || BDArmorySettings.TARGET_ENGINES || BDArmorySettings.TARGET_WEAPONS)
+            {
+                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                    while (part.MoveNext())
                     {
-                        if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
+                        if (part.Current == null) continue;
+                        if (BDArmorySettings.TARGET_WEAPONS)
                         {
-                            targetPartList.Add(part.Current);
-                            targetCount++;
+                            if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
+                            {
+                                targetPartList.Add(part.Current);
+                                targetCount++;
+                            }
+                        }
+                        if (BDArmorySettings.TARGET_ENGINES)
+                        {
+                            if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
+                            {
+                                targetPartList.Add(part.Current);
+                                targetCount++;
+                            }
+                        }
+                        if (BDArmorySettings.TARGET_COMMAND)
+                        {
+                            if (part.Current.FindModuleImplementing<ModuleCommand>() || part.Current.FindModuleImplementing<KerbalSeat>())
+                            {
+                                targetPartList.Add(part.Current);
+                                targetCount++;
+                            }
                         }
                     }
-                    if (BDArmorySettings.TARGET_ENGINES)
-                    {
-                        if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
-                        {
-                            targetPartList.Add(part.Current);
-                            targetCount++;
-                        }
-                    }
-                    if (BDArmorySettings.TARGET_COMMAND)
-                    {
-                        if (part.Current.FindModuleImplementing<ModuleCommand>())
-                        {
-                            targetPartList.Add(part.Current);
-                            targetCount++;
-                        }
-                    }
-                    //else if nothing prioritized, or all priority targets destroyed
-                    if (!BDArmorySettings.TARGET_COMMAND && !BDArmorySettings.TARGET_ENGINES && !BDArmorySettings.TARGET_WEAPONS || (targetCount < 1))
+            }
+            //else if nothing prioritized, or all priority targets destroyed
+            if (targetCount < 1)
+            {
+                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                    while (part.MoveNext())
                     {
                         targetPartList.Add(part.Current);
                     }
-                }
+            }
             targetPartList = targetPartList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
             targetPartList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
-            //Debug.Log("[MTD]: Rebuilt target part list, count: " + targetPartList.Count);
+            //Debug.Log("[BDArmory.MTD]: Rebuilt target part list, count: " + targetPartList.Count);
         }
 
         public int NumFriendliesEngaging(BDTeam team)
@@ -454,31 +454,12 @@ namespace BDArmory.Targeting
         {
             if (mf == null || myMf == null) return 0;
             float firingAtMe = 0;
-            var pilotAI = myMf.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
             if (mf.vessel == myMf.incomingThreatVessel)
             {
-                if (myMf.missileIsIncoming)
+                if (myMf.missileIsIncoming || myMf.underFire || myMf.underAttack)
                     firingAtMe = 1f;
-                else if (myMf.underFire)
-                {
-                    if (pilotAI)
-                    {
-                        if (pilotAI.evasionThreshold > 0) // If there is an evasionThreshold, use it to calculate the threat, 0.5 is missDistance = evasionThreshold
-                        {
-                            float missDistance = Mathf.Clamp(myMf.incomingMissDistance, 0, pilotAI.evasionThreshold * 2f);
-                            firingAtMe = 1f - missDistance / (pilotAI.evasionThreshold * 2f); // Ranges from 0-1
-                        }
-                        else
-                            firingAtMe = 1f; // Otherwise threat is 1
-                    }
-                    else // SurfaceAI
-                    {
-                        firingAtMe = 1f;
-                    }
-                }
-
             }
-            return firingAtMe;
+            return firingAtMe; // Equals either 0 (not under attack) or 1 (under attack)
         }
 
         public float TargetPriAoD(MissileFire myMF)

@@ -1,4 +1,189 @@
-﻿v1.4.2.3
+﻿FIXES
+	- Fix the floating origin corrections to the vessel traces and apply the corrective rotations to the coordinates such that the local coordinates are (east, up, north) and the identity rotation is a craft pointing nose up with the underside pointing north. Add a simple python script to plot the traces.
+IMPROVEMENTS
+	- Update the in-flight Guard Menu to match the settings in the weapon manager in the SPH.
+	- Dynamically adjust (max) gun range based on the guns that are actually on a vessel.
+	- Add log and competition status messages about disabling a vessel due to EMP damage.
+	- Upgrade the numerical integrator for bullets and ballistic trajectory simulations to use the 2nd order symplectic leapfrog method (this vastly improves the accuracy and speed of the trajectory simulations). Allows for ballistic aiming out to at least 50km.
+	- Include dead teams information in the results.
+
+v1.4.4.4
+FIXES
+	- Fix missiles firing without exhaust and heat-seeking missiles firing without a target.
+		- Regenerate exhaust prefab object pools when they're detected to contain nulls due to scene changes or reloads.
+		- Trigger missile exhaust prefab detachment on part.OnJustAboutToDie and OnDestroy as well.
+	- Add KeyNotFound and NRE checks in CheckForMissingParts.
+	- Add in SetupAudio fix in some other places for audioSource. Add check for broken animations and give error instead of exception.
+	- Remove ramming debugging toggle and just use the regular debug labels toggle instead. Adjust the debug statements in DebrisDelayedCleanUp.
+	- Don't update RCS if we've just fired a missile or are trying to fire a missile.
+	- Correctly calculate turret gimbal limits check, taking into account bullet drop.
+	- Add generic rocket resource for rocket ammo boxes (fixes rocket launchers not being able to use rocket ammo boxes)
+IMPROVEMENTS
+	- Add option to trace vessel paths and orientations. Traces are logged in GameData/BDArmory/Logs/VesselTraces/<VesselName>-<StartTime>.json
+
+v1.4.4.3
+FIXES
+	- The improved aiming code is now fixed (properly accounts for movement of the aiming vessel). Planet curvature is not yet taken into account.
+	- Re-initialise the missile audio sources if they're null (fixes failure-to-fire issue).
+
+v1.4.4.2
+FIXES
+	- Revert the improved gun aiming code as it's not working properly for non-stationary targets.
+	- Fix potential NRE in DetachExhaustPrefab.
+
+v1.4.4.1
+FIXES
+	- Fix AI trying to evade missiles after they were no longer threats or did not exist.
+	- Use object pooling for missile exhaust prefabs to avoid memory leakage.
+
+v1.4.4.0
+FIXES
+	- Add safety check around parsing BDA settings values.
+	- Re-add laser min range check.
+	- Multitargeting:
+		- Multitarget now multitargets missiles.
+		- Fix part targeting not resetting properly.
+		- Update the target parts lists correctly. Only triger target part list updates when toggling options instead of every frame when the settings are open.
+		- Add check for the list of targetable parts being empty.
+	- Remove arc length term from DLZ calculation for ground launched missiles (this was breaking VLS parts).
+
+IMPROVEMENTS
+	- Missile evasion:
+		- Behavior changes to notch and dive against missiles, pull away before impact for heat seekers only (continuing to notch is more effective against radar missiles). Fix spinning in place behavior that had occurred occasionally.
+		- Simplify entry conditions for missile evasion behavior (only occurs within threshold of when your craft is set to dispense chaff/flares regardless of whether it has chaff or flares onboard).
+		- Proper throttle settings for chaffing vs flaring.
+		- Add check if radar missiles are still boresighted towards craft as a condition to treat missiles as a threat.
+	- Shift 'AimAndFireAtEndOfFrame' to occur during the FashionablyLate timing phase of FixedUpdate and rename it 'AimAndFire'. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made.
+	- Simplify target threat to either be 0 (not under attack) or 1 (under attack).
+	- Make Kerbal Safety a slider instead of a toggle to allow disabling ejection from cockpits, but still have existing kerbalEVAs deploy parachutes.
+	- Add 'Start Comp. NOW Delay' slider for automatically triggering 'Start Competition NOW' after a given delay.
+	- Tournament results parser:
+		- Add missile hits taken to the parser ('HitByMis' in console output, 'missileHitsTaken' in CSV file).
+		- Hide empty columns in the parser console output.
+
+v1.4.3.3
+FIXES
+	- Fix various NREs.
+	- Add stacktrace to exception warnings in ModuleCASE.
+	- Detonate bullets and rockets when they hit kerbals.
+IMPROVEMENTS
+	- Improve the gun aiming code.
+	- Include missile hits separately from count of parts hit by missiles in scoring logic and update tournament parser.
+
+v1.4.3.2
+FIXES
+	- Add missing Weapon condition checks.
+	- Yet another attempt at avoiding the CometVessel bug.
+	- Escape double quotes in vessel names when writing the logs to avoid breaking JSON parsing.
+
+v1.4.3.1
+FIXES
+	- Add missing values for Hydra70 and 8KOMS rockets.
+	- Fix smartpick not finding priority 0 lasers.
+IMPROVEMENTS
+	- Add gravity gun (RWP S3R4), F-86 launcher, generic rocket ammo and FFAR70 rocket definition.
+
+v1.4.3.0
+FIXES
+	- Fix rockets overriding the weapon name and breaking the editor.
+	- Maintain incoming missile warning while missiles are still incoming.
+	- Limit 'firing at me' detection (from guns) to the range of the weapon being fired.
+
+IMPROVEMENTS
+	- Make altitude limits independent of RWP and change localisation.
+	- Make missile targeting check depend on blast radius of incoming missile instead of fixed at 60m and include check for passing in close proximity.
+	- Return a full list of incoming missiles sorted by distance in UpdateGuardViewScan instead of just the first found.
+	- Convert 'under attack' and 'under fire' routines to maintain their state until 1s after last notification instead of simply resetting after a fixed period.
+	- Adds Impulse/Gravitc functionality for ballistics/rockets/lasers
+		- Adds some new configuration fields
+			- impulseWeapon = foo //gun/laser will deal impulse instead of damage
+			- Impulse = n //magnitude of impulse delivered per bullet/rocket/pulse laser shot, and impulse/sec delivered by beam lasers. setting this negative will make attractor lasers instead of repulsor lasers
+			- graviticWeapon = foo //gun/laser will temporarily modify mass of hit part
+			- massAdjustment = n //mass, in tons, added per sec by beams or per hit by bullets/rockets/pulselasers
+		- Adds some new rocketdef config options
+			- gravitic = foo //rocket will temporarily modify weight of parts hit by rocket and its explosion
+			- impulse = foo //rocket applies non-damaging impulse to parts hit by rocket/explosion
+			- choker = foo //rocket will temporarily disable air intakes caught in its blast radius
+			- EMP = foo //rocket will apply EMP buildup to targets within blast radius
+
+v1.4.2.10
+FIXES
+	- Prevent log spam from ModuleWeapon.CheckAIAutoFire.
+	- Fix width of drag window in Loaded Vessel Switcher.
+
+IMPROVEMENTS
+	- Add a min altitude limit for the killer GM (once a competition is active).
+	- Make the sequenced competition command sequence dependent on the BDA round.
+
+v1.4.2.9
+FIXES
+	- Fixes for Killer GM scoring attribution and ramming detection.
+	- Fix for if a rootpart is null during spawning.
+	- Set the kraken eating things active for the correct RWP rounds.
+	- Fix local tournament sequencing when using sequenced competition (S3R3).
+
+v1.4.2.8
+FIXES
+	- Make the Kraken eating things code specific to certain RWP rounds and only active during a competition.
+	- Fixes to sequenced competition for RWP S3R3 to work with the remote orchestration.
+	- Update vessel switcher teams list as necessary.
+	- Remove direction from explosions of impacting bullets as that makes no sense.
+	- Add debug log warnings for previously silently ignored exceptions and fix a couple of NREs.
+	- Fix exception in explosion handling when part.rb is null (but part.Rigidbody isn't).
+	- Reloading/MultiTarget fix/weaponPriority
+	- Multitarget fix
+	- Chernobyl bugfixes
+	- Various NRE fixes
+
+IMPROVEMENTS
+	- Separate bullet movement and collision detection into separate functions. Detect collisions in the initial frame of a bullet so point blank shots work.
+	- Detect exit collision with objects when the barrel of the gun is within the object's collider, i.e., sub-point-blank shots.
+	- Added a slider for configuration of specific RWP rounds.
+	- Adjust parsing scripts for updated logging tags format. Add slider for setting the length of time of the death camera.
+	- Standardise the format of debug log messages to '[BDArmory.ModuleName']: ...
+	- Reload anim support
+
+v1.4.2.7
+FIXES
+	- Add a "Kerbal Inventory" slider to configure how kerbals' inventories are adjusted when "Kerbal Safety" is enabled (default is "Parachute Only").
+
+v1.4.2.6
+FIXES
+	- Fix bug in loading spawn locations on fresh installs.
+	- Give vessel spawning more than 5 frames to wait for the reference transforms.
+	- Add checks in various parts of the code to avoid potentially applying forces to physicsless parts.
+
+IMPROVEMENTS
+	- Tweak explosions from the nuclear engine code to include triggering on detachment (i.e., no WM) and give a 0.5s delay after detachment or running out of fuel before exploding.
+
+v1.4.2.5
+FIXES
+	- Wait for reference transforms to be assigned during spawning to avoid NREs.
+	- Tweak auto number of vessels for FFA with only a few craft.
+	- Fix a variety of NREs in the nuclear engine code.
+	- Avoid applying forces to physicsless parts (no rigid body), which removes the need for try..catch block. Clean up code.
+	- Track last valid atmDensity of nuclear engine to ensure correct value while vessel being destroyed.
+	- Use the approximate GetArea function instead of the radiative area if the radiative area is not available.
+	- Clean up formulas for blast impulse. Only apply damage/impulse to each part once per explosion.
+
+v1.4.2.4
+FIXES
+	- Fix various NREs.
+	- Remove null-coalescing operators from Monobehaviours as they don't work in Unity.
+	- Multi-Target barrage fix: weapons targeting a target outside their fire arc will now be skipped instead of bringing the barrage to a halt until the offending weapon can be brought to bear.
+
+IMPROVEMENTS
+	- Added a few more interesting spawning points (currently requires removing the old spawn_locations.cfg file in order to update, this will be changed soon).
+	- Re-work rocket damage to do kinetic damage and penetrate armour and correctly report scoring info.
+	- Shared bullet/rocket code moved to Misc.ProjectileUtils.cs.
+	- Weapon priority adjustments:
+		- Guns targeting ground will now prioritize biggest impact (bullet mass * velocity) instead of tntmass.
+		- Guns targeting air will now prioritize RPM for fighter-sized targets, and prioritize larger caliber guns when targeting larger targets (bombers/zeppelins/Ace Combat superweapons).
+		- Add weapon priority slider allowing setting custom weapon selection order for guns/rockets.
+	- Added Chernobyl Nuke module for RWP S3R2.
+	- Update the list of maintainers and contributors in the README.
+
+v1.4.2.3
 FIXES
 	- Fix the issue of player names in the remote orchestration containing the separator character.
 
@@ -722,15 +907,15 @@ v1.2.3
 	* Recompiled for KSP 1.5.1  
 	* EC per shot for energy weapons like Rail guns. #486
 	* EMP Weapons logic.
-    * Modular Missiles: Min speed before guidance trigger, time between stages.
-    * New High Explosive resource for missiles.
+	* Modular Missiles: Min speed before guidance trigger, time between stages.
+	* New High Explosive resource for missiles.
 	* New smoke model.
 	* Autopilot: Orbiting direction can be set.
 
 * ENHANCEMENTS:
 	* Explosive blast forces increased.
 	* Hitpoints rounding reduced to 100. #432
-    * Missiles can be jettisoned using action group #539
+	* Missiles can be jettisoned using action group #539
 	* Max detonation range for air explosive bullets increased from 3500m to 8000m.
 	* Autopilot improvements: pitchKi has saner values, also steering added.
 	* Guard mode: Better calculation of missiles away.
@@ -750,7 +935,7 @@ v1.2.3
 	* Some exceptions controlled
 	* Heat missiles will not lock friendly vessels. #586
 	* Fixed issue where modular missiles were detecting themselves as enemy vessels and detonating.
-    * Modular Missiles: roll correction fixed.
+	* Modular Missiles: roll correction fixed.
 
 * BALANCE
 	* Bullet mass rebalance for lower calibers #515
@@ -770,10 +955,10 @@ v1.2.2.2
 * Recompiled for KSP 1.4.5
 
 * FIXES
-    *Error spam in Log when a radar is destroyed.  An orphaned index was not properly being updated. 
-     Reported in BDAc Forum post: https://forum.kerbalspaceprogram.com/index.php?/topic/155014-14x-bdarmory-continued-v1221-7102018-vessel-mover-camera-tools-bdmk22-destruction-effects-burn-together/&do=findComment&comment=3425233
-     Thanks to greydragon70 for his thoughtful evaluation of BDac and issue reporting.
-    * Corrected an error where high speed missiles would sometimes not detonate in the correct location.
+	*Error spam in Log when a radar is destroyed.  An orphaned index was not properly being updated. 
+	 Reported in BDAc Forum post: https://forum.kerbalspaceprogram.com/index.php?/topic/155014-14x-bdarmory-continued-v1221-7102018-vessel-mover-camera-tools-bdmk22-destruction-effects-burn-together/&do=findComment&comment=3425233
+	 Thanks to greydragon70 for his thoughtful evaluation of BDac and issue reporting.
+	* Corrected an error where high speed missiles would sometimes not detonate in the correct location.
 
 * ENHANCEMENTS:
   * Increased maximum allowable missles per target to 18, up from 6.
@@ -781,15 +966,15 @@ v1.2.2.2
   * Added 2 new EMP equipped missiles  HellFire EMP, and AIM-120 EMP.  Small pulse radius but demonstrates the feature.
   * Added 3 different sized EMP pulse FX, allows for additional sized pulse weapons.
   * Added Reloadable Missile Rail (ModuleMissileRearm.  Now missile launchers can be reloadable!  
-    This module can be added to missile launcher designs to allow reloading. (code used with permission courtesy of @flywyx).  
-    Requires unity based modifications,  normal rails will not function as reloadable unless additional transforms are added.
+	This module can be added to missile launcher designs to allow reloading. (code used with permission courtesy of @flywyx).  
+	Requires unity based modifications,  normal rails will not function as reloadable unless additional transforms are added.
   * Added new standard resource High Explosive.  Provides better matching of tntMass for balance.
   * Added an Ammo switcher feature (no more Firespitter required)
   * Added new Universal Ammo Box part that uses the new Ammo switcher feature.  Old part remains for backawards compatability.  
-    Use the new part going forward.  To remove the need for FireSpitter, replace existing Ammo Box parts with the new part on existing craft.
+	Use the new part going forward.  To remove the need for FireSpitter, replace existing Ammo Box parts with the new part on existing craft.
   * Improved sub categories for BDA parts.  This helps with the clutter in the Editor under the BDA category.
   * Removed BDACategoryModule as a result of the BDA categories refactor.  
-    Existing craft may see a module not found warnings in the log.  This will have no ill effects and can be safely ignored.
+	Existing craft may see a module not found warnings in the log.  This will have no ill effects and can be safely ignored.
   * Improved smoke effects for smoke canister launchers
   * Added new Jet engine based on the J-404.  Licensed from KTech. (Thanks @TheKurgan, @SpannerMonkey(SMCE) & @XOC2008!)
   * Added new BDAc Test Drone MKIII craft, utilizing the new engine.
@@ -831,7 +1016,7 @@ v1.2.1.4
   * Added mouse scrollwheel zooming in TargetCam window.  Now you can zoom in and zoom out using the mousewheel.
   * Added reactive armor part module. Modders can now take advantage of a new armor type in BDAc.
   * Added Wet Weapons Check module (ModuleWWC).  This module will pevent submerged weapons from firing (like when a ship sinks).  
-    The depth is user selectable.
+	The depth is user selectable.
 
 
 v1.2.1.3
@@ -854,12 +1039,12 @@ v1.2.1.2
   * Correct automatic resizing of WingCommander Window
   * Reintroduce BDAcUniversalAmmoBox Module Manager config file.  Somehow was dropped during a merge somewhere back.
   * Separate RWR operation from RWR display.  RWR should be enabled at all times when a Radar is installed on craft. 
-    - Opening and closing the RWR window now leaves RWR operation active.  Git Issues 410, #411, #461
+	- Opening and closing the RWR window now leaves RWR operation active.  Git Issues 410, #411, #461
   * removed part configs for the AGM86-cruise an the RBS-15  They have been broken, and are superceded by improved weapons.
 
 * ENHANCEMENTS:
   * Increase the limits of the Radar and RWR window scaling to allow for larger windows.  
-    - Add min and max settings to the settings.cfg to allow user defined limits. Git Issue #521
+	- Add min and max settings to the settings.cfg to allow user defined limits. Git Issue #521
   * Add mouse driven RWR and Radar windows resizing.  Now you can intuitivly resize by mouse.  Click an drag the lower right corner.
   * Redesigned Targeting Cam window to incorporate all features added to the Radar window - resizing, boundary checks, mouse resize, relocate buttons
   * Retune BDAc missiles to improve characteristics, performance, and balance.  Tuning performed by Kergan
@@ -942,25 +1127,25 @@ v1.0.0
 * NEW FEATURES:
 
   * Radar & Stealth, re-design of how the radar system works:
-    - New radar reflection shader (credit: original great idea by JR!), calculating cross section in m^2:
-       + allows building for stealth using angled surfaces (“scatter those pesky radar waves away!”)
-       + calculation is normalized so that a 1x1 structural plate directly frontally facing the radar yields a return of exactly 1 m^2
-    - Redesign of the radar system, radars all have different ranges & detection performance:
-       + radar part configs changed, new fields (floatcurves) to define detection and lock/track performance, new field to specify ground clutter effectiveness
-    - New in-editor analysis window to help evaluate a craft’s cross section and performance against selectable radars
-    - New options for configuration of radar guided missiles in the part config:
-       + can now explicitly specify active seeker performance (via a FloatCurve, similar to radars)
-       + can now explicitly specify the static radar cross section of a missile for detection purpose
-    - Adjustment of the Chaff countermeasure system: more gradual effect of decoying missiles away (instead of previous “all-or-nothing”)
-    - Adjustment of IR missiles and flare countermeasures: simulating now more of a “imaging infrared” seeker than an old dumb seeker – to be successfully decoyed, flares have to more closely match the thermal spectrum of the part the seeker has locked on to
+	- New radar reflection shader (credit: original great idea by JR!), calculating cross section in m^2:
+	   + allows building for stealth using angled surfaces (“scatter those pesky radar waves away!”)
+	   + calculation is normalized so that a 1x1 structural plate directly frontally facing the radar yields a return of exactly 1 m^2
+	- Redesign of the radar system, radars all have different ranges & detection performance:
+	   + radar part configs changed, new fields (floatcurves) to define detection and lock/track performance, new field to specify ground clutter effectiveness
+	- New in-editor analysis window to help evaluate a craft’s cross section and performance against selectable radars
+	- New options for configuration of radar guided missiles in the part config:
+	   + can now explicitly specify active seeker performance (via a FloatCurve, similar to radars)
+	   + can now explicitly specify the static radar cross section of a missile for detection purpose
+	- Adjustment of the Chaff countermeasure system: more gradual effect of decoying missiles away (instead of previous “all-or-nothing”)
+	- Adjustment of IR missiles and flare countermeasures: simulating now more of a “imaging infrared” seeker than an old dumb seeker – to be successfully decoyed, flares have to more closely match the thermal spectrum of the part the seeker has locked on to
 
   * Massive improvements to ballistic missile guidance and modular missiles, ability to simulate ICBM flight paths:
-    - Ballistic guidance has been enhanced to allow firing missiles accurately even at distances greater than 500 km
-    - A new field called BallisticOverShootFactor has been added to missiles, the greater the value the further the missile will go before the terminal maneuver begins
-    - By default all missiles now can steer in vacuum. New field called "vacuumSteerable" can be set to false to disable this behaviour    
-    - Auto SAS activation when the missile is fired. Before it was only activated if the parent vessel had it switched on.
-    - Improved the Cruise and Ballistic Guidance. Ballistic Guidance will switch to AGM guidance as soon as it reached the 50% of the distance
-    - Guard mode in space will consider orbiting vessels as "flying" (air targets), hence engagement of space targets is possible now
+	- Ballistic guidance has been enhanced to allow firing missiles accurately even at distances greater than 500 km
+	- A new field called BallisticOverShootFactor has been added to missiles, the greater the value the further the missile will go before the terminal maneuver begins
+	- By default all missiles now can steer in vacuum. New field called "vacuumSteerable" can be set to false to disable this behaviour    
+	- Auto SAS activation when the missile is fired. Before it was only activated if the parent vessel had it switched on.
+	- Improved the Cruise and Ballistic Guidance. Ballistic Guidance will switch to AGM guidance as soon as it reached the 50% of the distance
+	- Guard mode in space will consider orbiting vessels as "flying" (air targets), hence engagement of space targets is possible now
  
   * New dedicated sonar ping and torpedo ping sounds, courtesy of PapaJoe!
 
