@@ -169,15 +169,6 @@ namespace BDArmory.Core.Module
             }
         }
 
-        public void Update()
-        {
-            RefreshHitPoints();
-            if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
-            {
-                HeartBleed();
-            }
-        }
-
         private void RefreshHitPoints()
         {
             if (_updateHitpoints)
@@ -209,7 +200,7 @@ namespace BDArmory.Core.Module
         {
             float rate = BDArmorySettings.HEART_BLEED_RATE;
             float deduction = Hitpoints * rate;
-            if( Hitpoints - deduction < BDArmorySettings.HEART_BLEED_THRESHOLD )
+            if (Hitpoints - deduction < BDArmorySettings.HEART_BLEED_THRESHOLD)
             {
                 // can't die from heart bleed
                 return;
