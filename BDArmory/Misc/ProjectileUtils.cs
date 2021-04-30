@@ -391,9 +391,6 @@ namespace BDArmory.Misc
                 // transfer resource from src->dst parts, honoring their priorities
                 PriorityQueue sourceQueue = new PriorityQueue(srcParts[resourceName]);
                 PriorityQueue destinationQueue = new PriorityQueue(dstParts[resourceName]);
-                Debug.Log("DEBUG sources: " + string.Join(", ", srcParts[resourceName].Select(r => r.part.name + ":" + r.amount.ToString("F1"))) + "; recipients: " + string.Join(", ", dstParts[resourceName].Select(r => r.part.name + ":" + r.amount.ToString("F1") + "/" + r.maxAmount.ToString("F1"))));
-
-                List<ResourceAllocation> allocations = new List<ResourceAllocation>();
                 List<PartResource> sources = null, destinations = null;
                 double tolerance = 1e-3;
                 double amountTaken = 0;
@@ -419,7 +416,7 @@ namespace BDArmory.Misc
                     var totalTransfer = Math.Min(availability.Count() * minTransferAvailable, opportunity.Count() * minTransferOpportunity); // The lowest amount transferable between these groups of parts where a part gets completely emptied or completely filled.
                     totalTransfer = Math.Min(amount, totalTransfer); // Don't transfer more than the required amount.
                     var perPartAmount = totalTransfer / (availability.Count() * opportunity.Count());
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: Transferring " + perPartAmount.ToString("F1") + " of " + resourceName + " from each of " + string.Join(", ", availability.Select(a => a.part.name).ToList()) + " on " + src.vesselName + " to each of " + string.Join(", ", opportunity.Select(o => o.part.name).ToList()) + " on " + dst.vesselName);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: Transferring " + perPartAmount.ToString("F1") + " of " + resourceName + " from each of " + string.Join(", ", availability.Select(a => a.part.name + " (" + a.amount.ToString("F1") + "/" + a.maxAmount.ToString("F1") + ")").ToList()) + " on " + src.vesselName + " to each of " + string.Join(", ", opportunity.Select(o => o.part.name + " (" + o.amount.ToString("F1") + "/" + o.maxAmount.ToString("F1") + ")").ToList()) + " on " + dst.vesselName);
                     foreach (var sourceResource in availability)
                         foreach (var destinationResource in opportunity)
                         {
