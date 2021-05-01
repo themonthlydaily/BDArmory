@@ -2493,54 +2493,76 @@ namespace BDArmory.Control
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: in AnalyseCollision the colliding part belonged to a null vessel!");
                 return;
             }
-            bool hitVessel = false;
-            if (rammingInformation.ContainsKey(vessel.vesselName)) // If the part was attached to a vessel,
+            try
             {
-                var vesselName = vessel.vesselName; // For convenience.
-                var destroyedPotentialColliders = new List<string>();
-                foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys) // for each other vessel,
-                    if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision) // if it was potentially about to collide,
-                    {
-                        var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
-                        if (otherVessel == null) // Vessel that was potentially colliding has been destroyed. It's more likely that an alive potential collider is the real collider, so remember it in case there are no living potential colliders.
+                bool hitVessel = false;
+                if (rammingInformation.ContainsKey(vessel.vesselName)) // If the part was attached to a vessel,
+                {
+                    var vesselName = vessel.vesselName; // For convenience.
+                    var destroyedPotentialColliders = new List<string>();
+                    foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys) // for each other vessel,
+                        if (rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision) // if it was potentially about to collide,
                         {
-                            destroyedPotentialColliders.Add(otherVesselName);
-                            continue;
-                        }
-                        var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
-                        if (separation < collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius)) // and their separation is less than the sum of their radii,
-                        {
-                            if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) // Take the values when the collision is first detected.
+                            var otherVessel = rammingInformation[vesselName].targetInformation[otherVesselName].vessel;
+                            if (otherVessel == null) // Vessel that was potentially colliding has been destroyed. It's more likely that an alive potential collider is the real collider, so remember it in case there are no living potential colliders.
                             {
-                                rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
-                                rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
-                                rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
-                                rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
-                                rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = (otherVessel != null) ? Vector3.SqrMagnitude(vessel.CoM - otherVessel.CoM) : (Mathf.Pow(collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius), 2f) + 1f); // FIXME Should destroyed vessels have 0 sqrDistance instead?
-                                rammingInformation[otherVesselName].targetInformation[vesselName].sqrDistance = rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance;
-                                rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
-                                rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Collision detected between " + vesselName + " and " + otherVesselName);
+                                destroyedPotentialColliders.Add(otherVesselName);
+                                continue;
                             }
+                            var separation = Vector3.Magnitude(vessel.transform.position - otherVessel.transform.position);
+                            if (separation < collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius)) // and their separation is less than the sum of their radii,
+                            {
+                                if (!rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected) // Take the values when the collision is first detected.
+                                {
+                                    rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
+                                    rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
+                                    rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
+                                    rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
+                                    rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance = (otherVessel != null) ? Vector3.SqrMagnitude(vessel.CoM - otherVessel.CoM) : (Mathf.Pow(collisionMargin * (rammingInformation[vesselName].radius + rammingInformation[otherVesselName].radius), 2f) + 1f); // FIXME Should destroyed vessels have 0 sqrDistance instead?
+                                    rammingInformation[otherVesselName].targetInformation[vesselName].sqrDistance = rammingInformation[vesselName].targetInformation[otherVesselName].sqrDistance;
+                                    rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
+                                    rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: Collision detected between " + vesselName + " and " + otherVesselName);
+                                }
+                                hitVessel = true;
+                            }
+                        }
+                    if (!hitVessel) // No other living vessels were potential targets, add in the destroyed ones (if any).
+                    {
+                        foreach (var otherVesselName in destroyedPotentialColliders) // Note: if there are more than 1, then multiple craft could be credited with the kill, but this is unlikely.
+                        {
+                            rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
                             hitVessel = true;
                         }
                     }
-                if (!hitVessel) // No other living vessels were potential targets, add in the destroyed ones (if any).
-                {
-                    foreach (var otherVesselName in destroyedPotentialColliders) // Note: if there are more than 1, then multiple craft could be credited with the kill, but this is unlikely.
+                    if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
                     {
-                        rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetected = true; // register it as involved in the collision. We'll check for damaged parts in CheckForDamagedParts.
-                        hitVessel = true;
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " hit something else.");
+                        foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                        {
+                            rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
+                            rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false; // Set potential collisions to false.
+                        }
                     }
                 }
-                if (!hitVessel) // We didn't hit another vessel, maybe it crashed and died.
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[BDArmory.BDACompetitionMode]: Exception in AnalyseCollision: " + e.Message + "\n" + e.StackTrace);
+                try { Debug.Log("[BDArmory.DEBUG] rammingInformation is null? " + (rammingInformation == null)); } catch (Exception e2) { Debug.Log("[BDArmory.DEBUG]: rammingInformation: " + e2.Message); }
+                try { Debug.Log("[BDArmory.DEBUG] rammingInformation[vesselName] is null? " + (rammingInformation[vessel.vesselName] == null)); } catch (Exception e2) { Debug.Log("[BDArmory.DEBUG]: rammingInformation[vesselName]: " + e2.Message); }
+                try { Debug.Log("[BDArmory.DEBUG] rammingInformation[vesselName].targetInformation is null? " + (rammingInformation[vessel.vesselName].targetInformation == null)); } catch (Exception e2) { Debug.Log("[BDArmory.DEBUG]: rammingInformation[vesselName].targetInformation: " + e2.Message); }
+                try
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode]: Ram logging: " + vesselName + " hit something else.");
-                    foreach (var otherVesselName in rammingInformation[vesselName].targetInformation.Keys)
+                    foreach (var otherVesselName in rammingInformation[vessel.vesselName].targetInformation.Keys)
                     {
-                        rammingInformation[vesselName].targetInformation[otherVesselName].potentialCollision = false; // Set potential collisions to false.
-                        rammingInformation[otherVesselName].targetInformation[vesselName].potentialCollision = false; // Set potential collisions to false.
+                        try { Debug.Log("[BDArmory.DEBUG] rammingInformation[" + vessel.vesselName + "].targetInformation[" + otherVesselName + "] is null? " + (rammingInformation[vessel.vesselName].targetInformation[otherVesselName] == null)); } catch (Exception e2) { Debug.Log("[BDArmory.DEBUG]: rammingInformation[" + vessel.vesselName + "].targetInformation[" + otherVesselName + "]: " + e2.Message); }
+                        try { Debug.Log("[BDArmory.DEBUG] rammingInformation[" + otherVesselName + "].targetInformation[" + vessel.vesselName + "] is null? " + (rammingInformation[otherVesselName].targetInformation[vessel.vesselName] == null)); } catch (Exception e2) { Debug.Log("[BDArmory.DEBUG]: rammingInformation[" + otherVesselName + "].targetInformation[" + vessel.vesselName + "]: " + e2.Message); }
                     }
+                }
+                catch (Exception e3)
+                {
+                    Debug.Log("[BDArmory.DEBUG]: " + e3.Message);
                 }
             }
         }
