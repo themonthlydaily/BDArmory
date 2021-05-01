@@ -169,6 +169,14 @@ namespace BDArmory.Core.Module
             }
         }
 
+        void Update()
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                RefreshHitPoints();
+            }
+        }
+
         private void RefreshHitPoints()
         {
             if (_updateHitpoints)
