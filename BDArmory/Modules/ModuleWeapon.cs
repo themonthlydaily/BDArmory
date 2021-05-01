@@ -2899,7 +2899,7 @@ namespace BDArmory.Modules
             var gravity = FlightGlobals.getGeeForceAtPosition(position);
             velocity += 0.5f * timeStep * gravity;
             var simStartTime = Time.realtimeSinceStartup;
-            while (Time.realtimeSinceStartup - simStartTime < 1f) // Allow 1s of real-time for the simulation. This ought to be plenty.
+            while (Time.realtimeSinceStartup - simStartTime < 0.1f) // Allow 0.1s of real-time for the simulation. This ought to be plenty. FIXME Find a better way to detect when this loop will never exit.
             {
                 lastPosition = position;
                 lastPredictedTargetPosition = predictedTargetPosition;
