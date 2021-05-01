@@ -1,4 +1,7 @@
-﻿v1.4.5.0
+﻿FIXES
+	- Store the armed/IFF state in the craft files instead of just the GUI strings.
+
+v1.4.5.0
 FIXES
 	- Fix the floating origin corrections to the vessel traces and apply the corrective rotations to the coordinates such that the local coordinates are (east, up, north) and the identity rotation is a craft pointing nose up with the underside pointing north. Include a simple python script to plot the traces.
 	- Re-enable the extending debugging (when debug labels are on).

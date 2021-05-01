@@ -4782,7 +4782,7 @@ namespace BDArmory.Modules
         {
             if (v != vessel || vessel == null) return;
             List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
-            maxGunRange = 0f;
+            maxGunRange = 10f;
             foreach (var weapon in vessel.FindPartModulesImplementing<ModuleWeapon>())
             {
                 if (weapon == null) continue;
@@ -4793,13 +4793,12 @@ namespace BDArmory.Modules
             rangeEditor.maxValue = maxGunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + v.vesselName + " to " + gunRange + " of " + maxGunRange);
-            Misc.Misc.RefreshAssociatedWindows(part);
         }
 
         public void UpdateMaxGunRange(Part eventPart)
         {
             List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
-            maxGunRange = 0f;
+            maxGunRange = 10f;
             foreach (var p in part.ship.parts)
             {
                 foreach (var weapon in p.FindModulesImplementing<ModuleWeapon>())
@@ -4814,7 +4813,6 @@ namespace BDArmory.Modules
             rangeEditor.maxValue = maxGunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + part.ship.shipName + " to " + gunRange + " of " + maxGunRange);
-            Misc.Misc.RefreshAssociatedWindows(part);
         }
 
         public float ThreatClosingTime(Vessel threat)
