@@ -2898,7 +2898,8 @@ namespace BDArmory.Modules
             var lastPredictedTargetPosition = predictedTargetPosition;
             var gravity = FlightGlobals.getGeeForceAtPosition(position);
             velocity += 0.5f * timeStep * gravity;
-            while (true)
+            var simStartTime = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - simStartTime < 0.1f) // Allow 0.1s of real-time for the simulation. This ought to be plenty. FIXME Find a better way to detect when this loop will never exit.
             {
                 lastPosition = position;
                 lastPredictedTargetPosition = predictedTargetPosition;
@@ -2923,6 +2924,8 @@ namespace BDArmory.Modules
                 velocity += timeStep * gravity;
                 elapsedTime += timeStep;
             }
+            Debug.LogWarning("[BDArmory.ModuleWeapon]: Ballistic trajectory closest approach simulation timed out.");
+            return position;
         }
 
         //more organization, grouping like with like
