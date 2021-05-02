@@ -19,7 +19,8 @@ namespace BDArmory.Control
         public static VesselSpawner Instance;
 
         // Interesting spawn locations on Kerbin.
-        public static string spawnLocationsCfg = "GameData/BDArmory/spawn_locations.cfg";
+        public static string oldSpawnLocationsCfg = "GameData/BDArmory/spawn_locations.cfg";
+        public static string spawnLocationsCfg = "GameData/BDArmory/PluginData/spawn_locations.cfg";
         [VesselSpawnerField] public static bool UpdateSpawnLocations = true;
         [VesselSpawnerField] public static List<SpawnLocation> spawnLocations;
 

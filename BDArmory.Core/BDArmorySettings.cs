@@ -6,7 +6,8 @@ namespace BDArmory.Core
 {
     public class BDArmorySettings
     {
-        public static string settingsConfigURL = "GameData/BDArmory/settings.cfg";
+        public static string oldSettingsConfigURL = "GameData/BDArmory/settings.cfg"; // Migrate from the old settings file to the new one in PluginData so that we don't invalidate the ModuleManager cache.
+        public static string settingsConfigURL = "GameData/BDArmory/PluginData/settings.cfg";
 
         // Settings section toggles
         [BDAPersistantSettingsField] public static bool GENERAL_SETTINGS_TOGGLE = true;
@@ -97,7 +98,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistantSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistantSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
-        
+
         // FX
         [BDAPersistantSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
         [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed
