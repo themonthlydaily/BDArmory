@@ -767,7 +767,7 @@ namespace BDArmory.UI
             if (ActiveWeaponManager != null)
             {
                 //MINIMIZE BUTTON
-                toolMinimized = GUI.Toggle(new Rect(4, 4, 26, 26), toolMinimized, "_",
+                toolMinimized = GUI.Toggle(new Rect(_windowMargin, _windowMargin, _buttonSize, _buttonSize), toolMinimized, "_",
                     toolMinimized ? BDGuiSkin.box : BDGuiSkin.button);
 
                 GUIStyle armedLabelStyle;
@@ -801,10 +801,7 @@ namespace BDArmory.UI
                 GUIStyle teamButtonStyle = BDGuiSkin.box;
                 string teamText = $"{Localizer.Format("#LOC_BDArmory_WMWindow_TeamText")}: {ActiveWeaponManager.Team.Name}";//Team
 
-                if (
-                    GUI.Button(
-                        new Rect(leftIndent + (contentWidth / 2), contentTop + (line * entryHeight), contentWidth / 2,
-                            entryHeight), teamText, teamButtonStyle))
+                if (GUI.Button(new Rect(leftIndent + (contentWidth / 2), contentTop + (line * entryHeight), contentWidth / 2, entryHeight), teamText, teamButtonStyle))
                 {
                     if (Event.current.button == 1)
                     {
@@ -826,7 +823,10 @@ namespace BDArmory.UI
                 //if weapon can ripple, show option and slider.
                 if (ActiveWeaponManager.hasLoadedRippleData && ActiveWeaponManager.canRipple)
                 {
-                    if (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun)
+                    if (ActiveWeaponManager.selectedWeapon != null && ActiveWeaponManager.weaponIndex > 0 &&
+                        (ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Gun
+                        || ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket
+                        || ActiveWeaponManager.selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)) //remove rocket ripple slider - moved to editor
                     {
                         string rippleText = ActiveWeaponManager.rippleFire
                             ? Localizer.Format("#LOC_BDArmory_WMWindow_rippleText1", ActiveWeaponManager.gunRippleRpm.ToString("0"))//"Barrage: " +  + " RPM"
@@ -976,8 +976,8 @@ namespace BDArmory.UI
                     ActiveWeaponManager.targetScanInterval =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.targetScanInterval, 1, 60);
-                    ActiveWeaponManager.targetScanInterval = Mathf.Round(ActiveWeaponManager.targetScanInterval);
+                            ActiveWeaponManager.targetScanInterval, 0.5f, 60f);
+                    ActiveWeaponManager.targetScanInterval = Mathf.Round(ActiveWeaponManager.targetScanInterval * 2f) / 2f;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.targetScanInterval.ToString(), leftLabel);
                     guardLines++;
@@ -988,10 +988,25 @@ namespace BDArmory.UI
                     ActiveWeaponManager.fireBurstLength =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.fireBurstLength, 0, 60);
-                    ActiveWeaponManager.fireBurstLength = Mathf.Round(ActiveWeaponManager.fireBurstLength * 2) / 2;
+                            ActiveWeaponManager.fireBurstLength, 0, 10);
+                    ActiveWeaponManager.fireBurstLength = Mathf.Round(ActiveWeaponManager.fireBurstLength * 20f) / 20f;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.fireBurstLength.ToString(), leftLabel);
+                    guardLines++;
+                    
+                    // extension for feature_engagementenvelope: set the firing accuracy tolarance
+                    var oldAutoFireCosAngleAdjustment = ActiveWeaponManager.AutoFireCosAngleAdjustment;
+                    string accuracyLabel = Localizer.Format("#LOC_BDArmory_WMWindow_FiringTolerance");//"Firing Angle"
+                    GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), accuracyLabel, leftLabel);
+                    ActiveWeaponManager.AutoFireCosAngleAdjustment =
+                        GUI.HorizontalSlider(
+                            new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 4);
+                    ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20f) / 20f;
+                    if (ActiveWeaponManager.AutoFireCosAngleAdjustment != oldAutoFireCosAngleAdjustment)
+                        ActiveWeaponManager.OnAFCAAUpdated(null, null);
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.AutoFireCosAngleAdjustment.ToString(), leftLabel);
                     guardLines++;
 
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_FieldofView"),//"Field of View"
@@ -1001,9 +1016,9 @@ namespace BDArmory.UI
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
                             guardAngle, 10, 360);
-                    guardAngle = guardAngle / 10;
+                    guardAngle = guardAngle / 10f;
                     guardAngle = Mathf.Round(guardAngle);
-                    ActiveWeaponManager.guardAngle = guardAngle * 10;
+                    ActiveWeaponManager.guardAngle = guardAngle * 10f;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.guardAngle.ToString(), leftLabel);
                     guardLines++;
@@ -1027,9 +1042,9 @@ namespace BDArmory.UI
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
                             gRange, 0, ActiveWeaponManager.maxGunRange);
-                    gRange /= 100f;
+                    gRange /= 10f;
                     gRange = Mathf.Round(gRange);
-                    gRange *= 100f;
+                    gRange *= 10f;
                     ActiveWeaponManager.gunRange = gRange;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.gunRange.ToString(), leftLabel);
@@ -1056,7 +1071,8 @@ namespace BDArmory.UI
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
                     guardLines++;
-
+                    GUI.EndGroup();
+                    
                     float TargetLines = 0;
                     showTargetOptions =
 GUI.Toggle(new Rect(leftIndent, contentTop + ((guardLines + 0.1f) * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
@@ -1368,8 +1384,10 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
             }
 
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
+            var previousWindowHeight = WindowRectToolbar.height;
             WindowRectToolbar.height = toolWindowHeight;
-            // = new Rect(toolbarWindowRect.position.x, toolbarWindowRect.position.y, toolWindowWidth, toolWindowHeight);
+                        if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
+                WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
             BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
         }
 
