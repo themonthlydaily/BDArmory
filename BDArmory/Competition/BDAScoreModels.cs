@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -48,7 +47,7 @@ namespace BDArmory.Competition
             {
                 for (var k = 1; k < lines.Length; k++)
                 {
-                    //                    Debug.Log(string.Format("PlayerModel.FromCsv line {0}", lines[k]));
+                    //                    Debug.Log(string.Format("[BDArmory.BDAScoreModels]: PlayerModel.FromCsv line {0}", lines[k]));
                     if (!lines[k].Contains(","))
                     {
                         continue;
@@ -66,7 +65,7 @@ namespace BDArmory.Competition
                     }
                     catch (Exception e)
                     {
-                        Debug.Log("PlayerModel.FromCsv error: " + e);
+                        Debug.Log("[BDArmory.BDAScoreModels]: PlayerModel.FromCsv error: " + e);
                     }
                 }
             }
@@ -101,7 +100,7 @@ namespace BDArmory.Competition
             {
                 for (var k = 1; k < lines.Length; k++)
                 {
-                    //                    Debug.Log(string.Format("HeatModel.FromCsv line {0}", lines[k]));
+                    //                    Debug.Log(string.Format("[BDArmory.BDAScoreModels]: HeatModel.FromCsv line {0}", lines[k]));
                     if (!lines[k].Contains(","))
                     {
                         continue;
@@ -123,7 +122,7 @@ namespace BDArmory.Competition
                     }
                     catch (Exception e)
                     {
-                        Debug.Log("HeatModel.FromCsv error: " + e);
+                        Debug.Log("[BDArmory.BDAScoreModels]: HeatModel.FromCsv error: " + e);
                     }
                 }
             }
@@ -142,9 +141,9 @@ namespace BDArmory.Competition
     {
         public int id;
         public int player_id;
-        public int competition_id;
+        public string name;
         public string craft_url;
-        public override string ToString() { return "{id: " + id + ", competition_id: " + competition_id + ", player_id: " + player_id + ", craft_url: " + craft_url + "}"; }
+        public override string ToString() { return "{id: " + id + ", player_id: " + player_id + ", name: " + name + ", craft_url: " + craft_url + "}"; }
         public static List<VesselModel> FromCsv(string csv)
         {
             List<VesselModel> results = new List<VesselModel>();
@@ -153,7 +152,7 @@ namespace BDArmory.Competition
             {
                 for (var k = 1; k < lines.Length; k++)
                 {
-                    //                    Debug.Log(string.Format("VesselModel.FromCsv line {0}", lines[k]));
+                    //                    Debug.Log(string.Format("[BDArmory.BDAScoreModels]: VesselModel.FromCsv line {0}", lines[k]));
                     if (!lines[k].Contains(","))
                     {
                         continue;
@@ -167,12 +166,13 @@ namespace BDArmory.Competition
                             model.id = int.Parse(values[0]);
                             model.player_id = int.Parse(values[1]);
                             model.craft_url = values[2];
+                            model.name = values[3];
                             results.Add(model);
                         }
                     }
                     catch (Exception e)
                     {
-                        Debug.Log("VesselModel.FromCsv error: " + e);
+                        Debug.Log("[BDArmory.BDAScoreModels]: VesselModel.FromCsv error: " + e);
                     }
                 }
             }
@@ -208,7 +208,7 @@ namespace BDArmory.Competition
         public string ToJSON()
         {
             string result = JsonUtility.ToJson(this);
-            Debug.Log(string.Format("[RecordModel] json: {0}", result));
+            Debug.Log(string.Format("[BDArmory.BDAScoreModels]: [RecordModel] json: {0}", result));
             return result;
         }
     }

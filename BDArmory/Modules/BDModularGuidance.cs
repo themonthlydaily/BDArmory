@@ -396,13 +396,42 @@ namespace BDArmory.Modules
             lockedSensorFOV = 5;
             radarLOAL = true;
 
+            // fill lockedSensorFOVBias with default values if not set by part config:
+            if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorFOVBias.minTime == float.MaxValue)
+            {
+                float a = lockedSensorFOV / 2f;
+                float b = -1f * ((1f - 1f / 1.2f));
+                float[] x = new float[6] { 0f * a, 0.2f * a, 0.4f * a, 0.6f * a, 0.8f * a, 1f * a };
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default lockedSensorFOVBias curve to:");
+                for (int i = 0; i < 6; i++)
+                {
+                    lockedSensorFOVBias.Add(x[i], b / (a * a) * x[i] * x[i] + 1f, -1f / 3f * x[i] / (a * a), -1f / 3f * x[i] / (a * a));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        Debug.Log("key = " + x[i] + " " + (b / (a * a) * x[i] * x[i] + 1f) + " " + (-1f / 3f * x[i] / (a * a)) + " " + (-1f / 3f * x[i] / (a * a)));
+                }
+            }
+
+            // fill lockedSensorVelocityBias with default values if not set by part config:
+            if ((TargetingMode == TargetingModes.Heat || TargetingModeTerminal == TargetingModes.Heat) && heatThreshold > 0 && lockedSensorVelocityBias.minTime == float.MaxValue)
+            {
+                lockedSensorVelocityBias.Add(0f, 1f);
+                lockedSensorVelocityBias.Add(180f, 1f);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default lockedSensorVelocityBias curve to:");
+                    Debug.Log("key = 0 1");
+                    Debug.Log("key = 180 1");
+                }
+            }
+
             // fill activeRadarLockTrackCurve with default values if not set by part config:
             if ((TargetingMode == TargetingModes.Radar || TargetingModeTerminal == TargetingModes.Radar) && activeRadarRange > 0 && activeRadarLockTrackCurve.minTime == float.MaxValue)
             {
                 activeRadarLockTrackCurve.Add(0f, 0f);
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDModularGuidance]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
+                    Debug.Log("[BDArmory.BDModularGuidance]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
 
         }
@@ -567,7 +596,7 @@ namespace BDArmory.Modules
                 TimeToImpact = timeToImpact;
                 if (Vector3.Angle(aamTarget - vessel.CoM, vessel.transform.forward) > maxOffBoresight * 0.75f)
                 {
-                    Debug.LogFormat("[BDModularGuidance]: Missile with Name={0} has exceeded the max off boresight, checking missed target ", vessel.vesselName);
+                    Debug.LogFormat("[BDArmory.BDModularGuidance]: Missile with Name={0} has exceeded the max off boresight, checking missed target ", vessel.vesselName);
                     aamTarget = TargetPosition;
                 }
                 DrawDebugLine(vessel.CoM, aamTarget);
@@ -591,7 +620,7 @@ namespace BDArmory.Modules
 
                     if (targetViewAngle > maxOffBoresight)
                     {
-                        Debug.Log("[BDModularGuidance]: AGM Missile guidance failed - target out of view");
+                        Debug.Log("[BDArmory.BDModularGuidance]: AGM Missile guidance failed - target out of view");
                         guidanceActive = false;
                     }
                 }
@@ -604,7 +633,7 @@ namespace BDArmory.Modules
                     }
                 }
             }
-            Vector3 agmTarget = MissileGuidance.GetAirToGroundTarget(TargetPosition, vessel, 1.85f);
+            Vector3 agmTarget = MissileGuidance.GetAirToGroundTarget(TargetPosition, TargetVelocity, vessel, 1.85f);
             return agmTarget;
         }
 
@@ -615,7 +644,7 @@ namespace BDArmory.Modules
                 this._guidance = new CruiseGuidance(this);
             }
 
-            return this._guidance.GetDirection(this, TargetPosition);
+            return this._guidance.GetDirection(this, TargetPosition, TargetVelocity);
         }
 
         private void CheckMiss(Vector3 targetPosition)
@@ -629,7 +658,7 @@ namespace BDArmory.Modules
 
             if (MissileState != MissileStates.PostThrust) return;
 
-            Debug.Log("[BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName + " with target at " + (targetPosition - vessel.CoM).ToString("0.0"));
+            Debug.Log("[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName + " with target at " + (targetPosition - vessel.CoM).ToString("0.0"));
 
             var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
             if (pilotAI != null)
@@ -648,7 +677,7 @@ namespace BDArmory.Modules
 
         private void ResetMissile()
         {
-            Debug.Log("[BDModularGuidance]: Resetting missile " + vessel.vesselName);
+            Debug.Log("[BDArmory.BDModularGuidance]: Resetting missile " + vessel.vesselName);
             heatTarget = TargetSignatureData.noTarget;
             vrd = null;
             radarTarget = TargetSignatureData.noTarget;
@@ -668,7 +697,7 @@ namespace BDArmory.Modules
             MissileState = MissileStates.Idle;
             if (mfChecked && weaponManager != null)
             {
-                Debug.Log("[BDModularGuidance]: disabling target lock for " + vessel.vesselName);
+                Debug.Log("[BDArmory.BDModularGuidance]: disabling target lock for " + vessel.vesselName);
                 weaponManager.guardFiringMissile = false; // Disable target lock.
                 mfChecked = false;
             }
@@ -680,7 +709,7 @@ namespace BDArmory.Modules
 
             if (MissileState == MissileStates.PostThrust && (vessel.LandedOrSplashed || vessel.Velocity().magnitude < 10f))
             {
-                Debug.Log("[BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName);
+                Debug.Log("[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName);
 
                 var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
                 if (pilotAI != null)
@@ -711,7 +740,7 @@ namespace BDArmory.Modules
                 }
                 if (mfChecked && weaponManager != null && !weaponManager.guardFiringMissile)
                 {
-                    Debug.Log("[BDModularGuidance]: enabling target lock for " + vessel.vesselName);
+                    Debug.Log("[BDArmory.BDModularGuidance]: enabling target lock for " + vessel.vesselName);
                     weaponManager.guardFiringMissile = true; // Enable target lock.
                 }
 
@@ -784,14 +813,13 @@ namespace BDArmory.Modules
 
             var currentAngle = Vector3.SignedAngle(rollVessel, gravityVector, Vector3.Cross(rollVessel, gravityVector)) - 90f;
 
-            debugString.Append($"Roll angle: {currentAngle}");
-            debugString.Append(Environment.NewLine);
+            debugString.AppendLine($"Roll angle: {currentAngle}");
             this.angularVelocity = currentAngle - this.lastRollAngle;
             //this.angularAcceleration = angularVelocity - this.lasAngularVelocity;
 
             var futureAngle = currentAngle + angularVelocity / Time.fixedDeltaTime * 1f;
 
-            debugString.Append($"future Roll angle: {futureAngle}");
+            debugString.AppendLine($"future Roll angle: {futureAngle}");
 
             if (futureAngle > 0.5f || currentAngle > 0.5f)
             {
@@ -801,7 +829,7 @@ namespace BDArmory.Modules
             {
                 this.Roll = Mathf.Clamp(Roll + 0.001f, 0, 1f);
             }
-            debugString.Append($"Roll value: {this.Roll}");
+            debugString.AppendLine($"Roll value: {this.Roll}");
 
             lastRollAngle = currentAngle;
             //lasAngularVelocity = angularVelocity;
@@ -860,7 +888,7 @@ namespace BDArmory.Modules
         /// </summary>
         public void ExecuteNextStage()
         {
-            Debug.LogFormat("[BDModularGuidance]: Executing next stage {0} for {1}", _nextStage, vessel.vesselName);
+            Debug.LogFormat("[BDArmory.BDModularGuidance]: Executing next stage {0} for {1}", _nextStage, vessel.vesselName);
             vessel.ActionGroups.ToggleGroup(
                 (KSPActionGroup)Enum.Parse(typeof(KSPActionGroup), "Custom0" + (int)_nextStage));
 
@@ -1067,7 +1095,8 @@ namespace BDArmory.Modules
             var parts = this.vessel.Parts.ToArray();
             for (int i = parts.Length - 1; i >= 0; i--)
             {
-                parts[i]?.explode();
+                if (parts[i] != null)
+                    parts[i].explode();
             }
 
             parts = null;

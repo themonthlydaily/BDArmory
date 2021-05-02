@@ -139,10 +139,10 @@ namespace BDArmory.Modules
                 UpdateVolume();
                 BDArmorySetup.OnVolumeChange += UpdateVolume;
 
-                //float size = RwrDisplayRect.height + 20;
                 if (!WindowRectRWRInitialized)
                 {
-                    BDArmorySetup.WindowRectRwr = new Rect(40, Screen.height - RwrDisplayRect.height, RwrDisplayRect.height + BorderSize, RwrDisplayRect.height + BorderSize + HeaderSize);
+                    BDArmorySetup.WindowRectRwr = new Rect(BDArmorySetup.WindowRectRwr.x, BDArmorySetup.WindowRectRwr.y, RwrDisplayRect.height + BorderSize, RwrDisplayRect.height + BorderSize + HeaderSize);
+                    // BDArmorySetup.WindowRectRwr = new Rect(40, Screen.height - RwrDisplayRect.height, RwrDisplayRect.height + BorderSize, RwrDisplayRect.height + BorderSize + HeaderSize);
                     WindowRectRWRInitialized = true;
                 }
 
@@ -207,12 +207,11 @@ namespace BDArmory.Modules
         void ReceiveLaunchWarning(Vector3 source, Vector3 direction)
         {
             if (referenceTransform == null) return;
-            if (part == null) return;
+            if (part == null || !part.isActiveAndEnabled) return;
             if (weaponManager == null) return;
 
             float sqrDist = (part.transform.position - source).sqrMagnitude;
-            if (sqrDist < Mathf.Pow(BDArmorySettings.MAX_ENGAGEMENT_RANGE, 2) && sqrDist > Mathf.Pow(100, 2) &&
-                Vector3.Angle(direction, part.transform.position - source) < 15)
+            if (sqrDist < BDArmorySettings.MAX_ENGAGEMENT_RANGE * BDArmorySettings.MAX_ENGAGEMENT_RANGE && sqrDist > 10000f && Vector3.Angle(direction, part.transform.position - source) < 15f)
             {
                 StartCoroutine(
                     LaunchWarningRoutine(new TargetSignatureData(Vector3.zero,
@@ -285,7 +284,7 @@ namespace BDArmory.Modules
                     pingsData[openIndex] = new TargetSignatureData(Vector3.zero,
                         RadarUtils.WorldToRadar(source, referenceTransform, RwrDisplayRect, rwrDisplayRange), Vector3.zero,
                         true, (float)type);    // HACK! Evil misuse of signalstrength for the threat type!
-                    pingWorldPositions[openIndex] = source;
+                    pingWorldPositions[openIndex] = source; //FIXME source is improperly defined
                     StartCoroutine(PingLifeRoutine(openIndex, persistTime));
 
                     PlayWarningSound(type, (source - vessel.transform.position).sqrMagnitude);
@@ -357,8 +356,7 @@ namespace BDArmory.Modules
                 resizingWindow = false;
             }
 
-            BDArmorySetup.WindowRectRwr = GUI.Window(94353, BDArmorySetup.WindowRectRwr, WindowRwr,
-              "Radar Warning Receiver", GUI.skin.window);
+            BDArmorySetup.WindowRectRwr = GUI.Window(94353, BDArmorySetup.WindowRectRwr, WindowRwr, "Radar Warning Receiver", GUI.skin.window);
             BDGUIUtils.UseMouseEventInRect(RwrDisplayRect);
         }
 
@@ -368,6 +366,7 @@ namespace BDArmory.Modules
             if (GUI.Button(new Rect(BDArmorySetup.WindowRectRwr.width - 18, 2, 16, 16), "X", GUI.skin.button))
             {
                 displayRWR = false;
+                BDArmorySetup.SaveConfig();
             }
             GUI.BeginGroup(new Rect(BorderSize / 2, HeaderSize + (BorderSize / 2), RwrDisplayRect.width, RwrDisplayRect.height));
             //GUI.DragWindow(RwrDisplayRect);

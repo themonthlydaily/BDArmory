@@ -25,7 +25,7 @@ namespace BDArmory.Misc
 
         internal static IEnumerator ReloadModuleInfos()
         {
-            while (Bullets.BulletInfo.bullets == null) // Wait for the field to be non-null to avoid crashes on startup in ModuleWeapon.GetInfo().
+            while (Bullets.BulletInfo.bullets == null || Bullets.RocketInfo.rockets == null) // Wait for the field to be non-null to avoid crashes on startup in ModuleWeapon.GetInfo().
                 yield return null;
             yield return null;
 
@@ -44,8 +44,8 @@ namespace BDArmory.Misc
                         string info = partModules.Current.GetInfo();
                         for (int y = 0; y < loadedParts.Current.moduleInfos.Count; y++)
                         {
-                            Debug.Log($"moduleName:  {loadedParts.Current.moduleInfos[y].moduleName}");
-                            Debug.Log($"KeyValue:  {Modules[key]}");
+                            Debug.Log($"[BDArmory.BDAModuleInfos]: moduleName:  {loadedParts.Current.moduleInfos[y].moduleName}");
+                            Debug.Log($"[BDArmory.BDAModuleInfos]: KeyValue:  {Modules[key]}");
                             if (loadedParts.Current.moduleInfos[y].moduleName != Modules[key]) continue;
                             loadedParts.Current.moduleInfos[y].info = info;
                             break;
