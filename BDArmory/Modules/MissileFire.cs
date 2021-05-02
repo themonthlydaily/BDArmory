@@ -218,6 +218,72 @@ namespace BDArmory.Modules
 
         public bool hasSingleFired;
 
+        public bool engageAir = true;
+        public bool engageMissile = true;
+        public bool engageSrf = true;
+        public bool engageSLW = true;
+
+        public void ToggleEngageAir()
+        {
+            engageAir = !engageAir;
+            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    EngageableWeapon engageableWeapon = weapon.Current as EngageableWeapon;
+                    if (engageableWeapon != null)
+                    {
+                        engageableWeapon.engageAir = engageAir;
+                    }
+                }
+            UpdateList();
+        }
+        public void ToggleEngageMissile()
+        {
+            engageMissile = !engageMissile;
+            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    EngageableWeapon engageableWeapon = weapon.Current as EngageableWeapon;
+                    if (engageableWeapon != null)
+                    {
+                        engageableWeapon.engageMissile = engageMissile;
+                    }
+                }
+            UpdateList();
+        }
+        public void ToggleEngageSrf()
+        {
+            engageSrf = !engageSrf;
+            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    EngageableWeapon engageableWeapon = weapon.Current as EngageableWeapon;
+                    if (engageableWeapon != null)
+                    {
+                        engageableWeapon.engageGround = engageSrf;
+                    }
+                }
+            UpdateList();
+        }
+        public void ToggleEngageSLW()
+        {
+            engageSLW = !engageSLW;
+            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    EngageableWeapon engageableWeapon = weapon.Current as EngageableWeapon;
+                    if (engageableWeapon != null)
+                    {
+                        engageableWeapon.engageSLW = engageSLW;
+                    }
+                }
+            UpdateList();
+        }
+
         //bomb aimer
         Part bombPart;
         Vector3 bombAimerPosition = Vector3.zero;
@@ -384,6 +450,10 @@ namespace BDArmory.Modules
             gunRange = 2500f;
         public float maxGunRange = 0f;
 
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_MultitargetNum"),//Firing Tolerance
+         UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
+        public float multiTargetNum = 1; //tune Autofire angle in WM GUI
+
         public const float maxAllowableMissilesOnTarget = 18f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
@@ -483,7 +553,32 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IsVIP", advancedTweakable = true),// Is VIP, throwback to TF Classic (Hunted Game Mode)
             UI_Toggle(enabledText = "#LOC_BDArmory_IsVIP_enabledText", disabledText = "#LOC_BDArmory_IsVIP_disabledText", scene = UI_Scene.All),]//yes--no
         public bool isVIP = false;
+        
+        #region TargetSettings
+        [KSPField(isPersistant = true)]
+        public bool targetCoM = true;
 
+        [KSPField(isPersistant = true)]
+        public bool targetCommand = false;
+
+        [KSPField(isPersistant = true)]
+        public bool targetEngine = false;
+
+        [KSPField(isPersistant = true)]
+        public bool targetWeapon = false;
+
+        [KSPField(isPersistant = true)]
+        public bool targetMass = false;
+       
+        [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_targetSetting")]//Target Setting
+        public string targetingString = "CoM";
+        [KSPEvent(guiActive = false, guiActiveEditor = true, active = true, guiName = "#LOC_BDArmory_Selecttargeting")]//Select Targeting Option
+        public void SelectTargeting()
+        {
+            BDTargetSelector.Instance.Open(this, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+        }
+        #endregion
+        
         public void ToggleGuardMode()
         {
             guardMode = !guardMode;
@@ -3261,7 +3356,7 @@ namespace BDArmory.Modules
             //2. highest priority non-targeted target
             //3. closest non-targeted target
 
-            for (int i = 0; i < BDArmorySettings.MULTI_TARGET_NUM; i++)
+            for (int i = 0; i < multiTargetNum; i++)
             {
                 TargetInfo potentialMissileTarget = null;
                 //=========MISSILES=============
@@ -3290,7 +3385,7 @@ namespace BDArmory.Modules
                 }
             }
 
-            for (int i = 0; i < BDArmorySettings.MULTI_TARGET_NUM; i++)
+            for (int i = 0; i < multiTargetNum; i++)
             {
                 TargetInfo potentialTarget = null;
                 //============VESSEL THREATS============
@@ -4174,7 +4269,7 @@ namespace BDArmory.Modules
                     }
                 currentTarget = target;
                 guardTarget = target.Vessel;
-                if (BDArmorySettings.ADVANCED_TARGETING && BDArmorySettings.MULTI_TARGET_NUM > 1)
+                if (multiTargetNum > 1)
                 {
                     SmartFindSecondaryTargets();
                 }
@@ -4665,11 +4760,11 @@ namespace BDArmory.Modules
                     if (weapon.Current == null) continue;
                     if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
 
-                    if (BDArmorySettings.ADVANCED_TARGETING && BDArmorySettings.MULTI_TARGET_NUM > 1)
+                    if (multiTargetNum > 1)
                     {
                         if (weapon.Current.turret)
                         {
-                            if (TurretID > Mathf.Min((targetsAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
+                            if (TurretID > Mathf.Min((targetsAssigned.Count - 1), multiTargetNum))
                             {
                                 TurretID = 0; //if more turrets than targets, loop target list
                             }
@@ -4699,7 +4794,7 @@ namespace BDArmory.Modules
                                 }
                                 TurretID++;
                             }
-                            if (MissileID > Mathf.Min((missilesAssigned.Count - 1), BDArmorySettings.MULTI_TARGET_NUM))
+                            if (MissileID > Mathf.Min((missilesAssigned.Count - 1), multiTargetNum))
                             {
                                 MissileID = 0; //if more turrets than targets, loop target list
                             }
@@ -4740,6 +4835,16 @@ namespace BDArmory.Modules
                         weapon.Current.visualTargetVessel = guardTarget;
                         //Debug.Log("[BDArmory.MTD]: non-turret, assigned " + guardTarget.name);
                     }
+                    if (targetCoM)
+                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.CoM;
+                    if (targetCommand)
+                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Command;
+                    if (targetEngine)
+                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Engine;
+                    if (targetWeapon)
+                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Weapon;
+                    if (targetMass)
+                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Mass;
                     weapon.Current.autoFireTimer = Time.time;
                     //weapon.Current.autoFireLength = 3 * targetScanInterval / 4;
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;

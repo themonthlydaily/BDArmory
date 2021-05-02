@@ -891,7 +891,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (target.Current == null) continue;
-                    if (BDArmorySettings.MULTI_TARGET_NUM > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
+                    if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile)
                     {
                         if (finalTarget == null || (target.Current.IsCloser(finalTarget, mf)))
@@ -911,6 +911,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (target.Current == null) continue;
+                    if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !excluding.Contains(target.Current))
                     {
                         finalTargets.Add(target.Current);
@@ -948,7 +949,7 @@ namespace BDArmory.UI
             using (var target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
-                    if (BDArmorySettings.MULTI_TARGET_NUM > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
+                    if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
                     {
                         float theta = Vector3.Angle(mf.vessel.srf_vel_direction, target.Current.transform.position - mf.vessel.transform.position);
@@ -972,7 +973,7 @@ namespace BDArmory.UI
             using (var target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
-                    if (BDArmorySettings.MULTI_TARGET_NUM > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
+                    if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
                     {
                         float targetScore = (target.Current == mf.currentTarget ? mf.targetBias : 1f) * (
@@ -1011,7 +1012,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (target.Current == null) continue;
-                    if (BDArmorySettings.MULTI_TARGET_NUM > 1 && mf.missilesAssigned.Contains(target.Current)) continue;
+                    if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current && target.Current.Vessel && target.Current.isMissile && target.Current.isThreat && mf.CanSeeTarget(target.Current))
                     {
                         if (target.Current.MissileBaseModule)
@@ -1052,7 +1053,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (target.Current == null) continue;
-                    if (BDArmorySettings.MULTI_TARGET_NUM > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
+                    if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && target.Current.isMissile && RadarUtils.MissileIsThreat(target.Current.MissileBaseModule, mf, false))
                     {
                         if (target.Current.NumFriendliesEngaging(mf.Team) == 0)
@@ -1072,7 +1073,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (target.Current == null) continue;
-                    if (BDArmorySettings.MULTI_TARGET_NUM > 1 && mf.missilesAssigned.Contains(target.Current)) continue;
+                    if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
                     if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && target.Current.isMissile)
                     {
                         bool isHostile = false;
