@@ -2523,7 +2523,7 @@ namespace BDArmory.Modules
 
                         if (visualTargetVessel != null && visualTargetVessel.loaded)
                         {
-                            if (BDArmorySettings.ADVANCED_TARGETING && !BDArmorySettings.TARGET_COM && visualTargetPart != null)
+                            if (subsystemTargeting != TargetSetting.CoM && visualTargetPart != null)
                             {
                                 targetPosition = ray.direction *
                                                  Vector3.Distance(visualTargetPart.transform.position,
