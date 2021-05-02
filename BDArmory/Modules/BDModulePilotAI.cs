@@ -943,7 +943,6 @@ namespace BDArmory.Modules
             {
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
                 minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
-                StopExtending(); // Don't keep trying to extend if under fire from missiles
             }
             else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
             {
@@ -984,6 +983,8 @@ namespace BDArmory.Modules
                             if (missileThreatDetected)
                             {
                                 threatRelativePosition = missileThreat - vesselTransform.position;
+                                if (extending)
+                                    StopExtending(); // Don't keep trying to extend if under fire from missiles
                             }
                         }
 
