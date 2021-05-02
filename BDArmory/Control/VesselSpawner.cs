@@ -501,6 +501,15 @@ namespace BDArmory.Control
             foreach (var vesselName in spawnedVessels.Keys)
             {
                 var vessel = spawnedVessels[vesselName].Item1;
+                if (vessel == null)
+                {
+                    message = "A vessel disappeared during spawning!";
+                    Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    vesselsSpawning = false;
+                    spawnFailureReason = SpawnFailureReason.VesselLostParts;
+                    yield break;
+                }
                 craftSpawnPosition = spawnedVessels[vesselName].Item2;
                 var direction = spawnedVessels[vesselName].Item3;
                 var heightFromTerrain = spawnedVessels[vesselName].Item4;
