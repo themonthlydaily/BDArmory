@@ -185,10 +185,9 @@ namespace BDArmory.Bullets
             // Log shots fired.
             if (this.sourceVessel)
             {
-                var aName = this.sourceVessel.GetName();
-                if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                    ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
+                if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(sourceVesselName))
+                    ++BDACompetitionMode.Instance.Scores[sourceVesselName].shotsFired;
             }
             else
             {
@@ -467,7 +466,7 @@ namespace BDArmory.Bullets
                             penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, Ductility, Density, Strength, thickness, impactVelocity);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                             penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);                            
-                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
+                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVesselName);
 
                             //calculate return bullet post-pen vel
 

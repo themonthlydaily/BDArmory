@@ -1041,7 +1041,7 @@ namespace BDArmory.Control
                         // If a competition is active, update the scoring structure.
                         if ((BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.competitionIsActive) && !BDACompetitionMode.Instance.Scores.ContainsKey(vessel.vesselName))
                         {
-                            BDACompetitionMode.Instance.Scores[vessel.vesselName] = new ScoringData { vesselRef = vessel, lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count }; // Note: we can't assign the weaponManagerRef yet as it may not be updated.
+                            BDACompetitionMode.Instance.Scores[vessel.vesselName] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count }; // Note: we can't assign the weaponManagerRef yet as it may not be updated.
                             if (!BDACompetitionMode.Instance.DeathOrder.ContainsKey(vessel.vesselName)) // Temporarily add the vessel to the DeathOrder to prevent it from being detected as newly dead until it's finished spawning.
                                 BDACompetitionMode.Instance.DeathOrder.Add(vessel.vesselName, new Tuple<int, double>(BDACompetitionMode.Instance.DeathOrder.Count, 0));
                         }
@@ -1252,7 +1252,7 @@ namespace BDArmory.Control
                 scoreData[spawnCount] = BDACompetitionMode.Instance.Scores[vesselName]; // Save the Score instance for the vessel.
                 if (newSpawn)
                 {
-                    BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { vesselRef = vessel, weaponManagerRef = vessel.FindPartModuleImplementing<MissileFire>(), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
+                    BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { weaponManagerRef = vessel.FindPartModuleImplementing<MissileFire>(), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
                     continuousSpawningScores[vesselName].cumulativeTagTime = scoreData.Sum(kvp => kvp.Value.tagTotalTime);
                     continuousSpawningScores[vesselName].cumulativeHits = scoreData.Sum(kvp => kvp.Value.Score);
                     continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRamming = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToRamming);
