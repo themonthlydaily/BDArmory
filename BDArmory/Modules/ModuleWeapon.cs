@@ -17,7 +17,7 @@ using KSP.Localization;
 using UniLinq;
 using UnityEngine;
 
-namespace BDArmory.Modules
+namespace BDArmory.ModulestargetAcquisitionType = TargetAcquisitionType.Visual;
 {
     public class ModuleWeapon : EngageableWeapon, IBDWeapon
     {
@@ -3371,11 +3371,10 @@ namespace BDArmory.Modules
                         {
                             targetPosition = visualTargetVessel.CoM;
                         }
-                    }
-                    // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + ": targeted part " + visualTargetPart + " on " + visualTargetVessel.vesselName + " (actually " + visualTargetPart.vessel.vesselName + ")" + " is " + (visualTargetVessel.CoM - targetPosition).magnitude + "m from CoM.");
-
+                    }                   
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;
+                    targetAcquisitionType = TargetAcquisitionType.Visual;
                     return;
                 }
 
