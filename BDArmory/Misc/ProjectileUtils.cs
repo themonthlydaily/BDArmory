@@ -1,12 +1,12 @@
 ﻿using BDArmory.Competition;
 using BDArmory.Control;
-using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
+using BDArmory.Core;
 using BDArmory.FX;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using UnityEngine;
 
 namespace BDArmory.Misc
@@ -73,11 +73,22 @@ namespace BDArmory.Misc
             // Debug.Log("DEBUG Ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
 
             // Update scoring structures
-            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name);
+            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, true);
         }
-        public static void ApplyScore(Part hitPart, string aName, double distanceTraveled, float damage, string name, bool triggerHit = true)
+
+        // Apply damage from a local source due to bullets, e.g., fires.
+        public static void ApplyDamage(Part damagedPart, string sourceVesselName, string damageSource, float amount, bool triggerHitEffects = false)
         {
-            var tName = hitPart.vessel.GetName();
+            if (damagedPart == null) return;
+            if (damagedPart.partInfo.name.Contains("Strut")) return; // Apparently damaging them causes weird bugs (according to BahamutoD).
+
+            damagedPart.AddDamage(amount);
+            ApplyScore(damagedPart, sourceVesselName, 0, amount, damageSource, triggerHitEffects);
+        }
+
+        public static void ApplyScore(Part damagedPart, string aName, double distanceTraveled, float damage, string weaponName, bool triggerHitEffects = true)
+        {
+            var tName = damagedPart.vessel.GetName();
 
             if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
             {
@@ -85,18 +96,18 @@ namespace BDArmory.Misc
 
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 {
-                    if (triggerHit) BDAScoreService.Instance.TrackHit(aName, tName, name, distanceTraveled);
+                    if (triggerHitEffects) BDAScoreService.Instance.TrackHit(aName, tName, weaponName, distanceTraveled);
                     BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                 }
                 // update scoring structure on attacker
-                if (triggerHit)
+                if (triggerHitEffects)
                 {
                     var aData = BDACompetitionMode.Instance.Scores[aName];
                     aData.Score += 1;
                     // keep track of who shot who for point keeping
 
                     // competition logic for 'Pinata' mode - this means a pilot can't be named 'Pinata'
-                    if (hitPart.vessel.GetName() == "Pinata")
+                    if (damagedPart.vessel.GetName() == "Pinata")
                     {
                         aData.PinataHits++;
                     }
@@ -104,7 +115,7 @@ namespace BDArmory.Misc
                 // update scoring structure on the defender.
                 {
                     var tData = BDACompetitionMode.Instance.Scores[tName];
-                    if (triggerHit)
+                    if (triggerHitEffects)
                     {
                         tData.lastPersonWhoHitMe = aName;
                         tData.lastHitTime = Planetarium.GetUniversalTime();
@@ -123,11 +134,11 @@ namespace BDArmory.Misc
                 }
 
                 // steal resources if enabled
-                if (BDArmorySettings.RESOURCE_STEAL_ENABLED && triggerHit)
+                if (BDArmorySettings.RESOURCE_STEAL_ENABLED && triggerHitEffects)
                 {
                     var sourceVessel = BDACompetitionMode.Instance.Scores[aName].weaponManagerRef.vessel;
-                    StealResource(hitPart.vessel, sourceVessel, FuelResources, BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
-                    StealResource(hitPart.vessel, sourceVessel, AmmoResources, BDArmorySettings.RESOURCE_STEAL_AMMO_RATION);
+                    StealResource(damagedPart.vessel, sourceVessel, FuelResources, BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
+                    StealResource(damagedPart.vessel, sourceVessel, AmmoResources, BDArmorySettings.RESOURCE_STEAL_AMMO_RATION);
                 }
             }
         }
@@ -387,7 +398,7 @@ namespace BDArmory.Misc
                             Debug.Log("[BDArmory.ProjectileUtils]: Armor rupture! Size: " + spallCaliber + "; mass: " + spallMass + "kg");
                         }
                         damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
                             BattleDamageHandler.CheckDamageFX(hitPart, spallCaliber, blowthroughFactor, true, sourcevessel, hit);
@@ -404,7 +415,7 @@ namespace BDArmory.Misc
                             Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor spalling! Size: " + spallCaliber + "; mass: " + spallMass + "kg");
                         }
                         damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
                             BattleDamageHandler.CheckDamageFX(hitPart, spallCaliber, blowthroughFactor, false, sourcevessel, hit);
@@ -437,7 +448,7 @@ namespace BDArmory.Misc
                                 spallMass = spallCaliber * thickness / 10 * (Density / 1000);
                                 hitPart.ReduceArmor(spallCaliber * thickness);
                                 damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
                                     Debug.Log("[BDArmory.ProjectileUtils]: Armor sundered!");
@@ -457,7 +468,7 @@ namespace BDArmory.Misc
                                 hitPart.ReduceArmor(spallCaliber * (thickness / 5));
                                 spallMass = spallCaliber * (thickness / 5) * (Density / 1000);
                                 damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
                                     Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass + "kg");

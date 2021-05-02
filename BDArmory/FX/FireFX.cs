@@ -182,51 +182,17 @@ namespace BDArmory.FX
             }
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRE_DOT)
             {
-                parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
-                ////////////////////////////////////////////////
                 if (ScoreAccumulator >= 1)
                 {
                     ScoreAccumulator = 0;
-                    var aName = SourceVessel;
-                    var tName = parentPart.vessel.GetName();
-
-                    if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                    {
-                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                        {
-                            BDAScoreService.Instance.TrackDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
-                        }
-                        var aData = BDACompetitionMode.Instance.Scores[aName];
-                        aData.Score += 1;
-
-                        if (parentPart.vessel.GetName() == "Pinata")
-                        {
-                            aData.PinataHits++;
-                        }
-
-                        var tData = BDACompetitionMode.Instance.Scores[tName];
-                        tData.lastPersonWhoHitMe = aName;
-                        tData.lastHitTime = Planetarium.GetUniversalTime();
-                        tData.everyoneWhoHitMe.Add(aName);
-                        // Track hits
-                        if (tData.hitCounts.ContainsKey(aName))
-                            ++tData.hitCounts[aName];
-                        else
-                            tData.hitCounts.Add(aName, 1);
-                        // Track damage
-                        if (tData.damageFromBullets.ContainsKey(aName))
-                            tData.damageFromBullets[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
-                        else
-                            tData.damageFromBullets.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
-
-                    }
+                    ProjectileUtils.ApplyDamage(parentPart, SourceVessel, "Fire damage", BDArmorySettings.BD_FIRE_DAMAGE * TimeWarp.deltaTime, true);
                 }
                 else
                 {
-                    ScoreAccumulator += 1 * Time.deltaTime;
+                    ScoreAccumulator += 1f * TimeWarp.deltaTime;
+                    ProjectileUtils.ApplyDamage(parentPart, SourceVessel, "Fire damage", BDArmorySettings.BD_FIRE_DAMAGE * TimeWarp.deltaTime, false);
                 }
             }
-            ////////////////////////////////////////////
         }
 
         void Detonate()
@@ -305,7 +271,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null,default, false, parentPart.mass*1000);
+                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null, default, false, parentPart.mass * 1000);
                 // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
                 gameObject.SetActive(false);
             }
