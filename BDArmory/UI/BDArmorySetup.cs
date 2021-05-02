@@ -1057,22 +1057,6 @@ namespace BDArmory.UI
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
                     guardLines++;
 
-                    string targetType = Localizer.Format("#LOC_BDArmory_WMWindow_TargetType");//"Target Type: "
-                    if (ActiveWeaponManager.targetMissiles)
-                    {
-                        targetType += Localizer.Format("#LOC_BDArmory_WMWindow_TargetType_Missiles");//"Missiles"
-                    }
-                    else
-                    {
-                        targetType += Localizer.Format("#LOC_BDArmory_WMWindow_TargetType_All");//"All Targets"
-                    }
-
-                    if (GUI.Button(new Rect(leftIndent, (guardLines * entryHeight), contentWidth, entryHeight), targetType,
-                        BDGuiSkin.button))
-                    {
-                        ActiveWeaponManager.ToggleTargetType();
-                    }
-                    guardLines++;
                     GUI.EndGroup();
                     line += 0.1f;
                 }

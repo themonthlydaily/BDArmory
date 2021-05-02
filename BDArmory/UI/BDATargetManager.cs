@@ -1019,7 +1019,14 @@ namespace BDArmory.UI
                         {
                             if (targetingMeOnly)
                             {
-                                if (Vector3.SqrMagnitude(target.Current.MissileBaseModule.TargetPosition - mf.vessel.CoM) > 60 * 60)
+                                if (!RadarUtils.MissileIsThreat(target.Current.MissileBaseModule, mf))
+                                {
+                                    continue;
+                                }
+                            }
+                            else
+                            {
+                                if (!RadarUtils.MissileIsThreat(target.Current.MissileBaseModule, mf, false))
                                 {
                                     continue;
                                 }
@@ -1031,7 +1038,7 @@ namespace BDArmory.UI
                                 Debug.LogWarning("[BDArmory.BDATargetManager]: checking target missile -  doesn't have missile module");
                         }
 
-                        if (((finalTarget == null && target.Current.NumFriendliesEngaging(mf.Team) < 2) || (finalTarget != null && target.Current.NumFriendliesEngaging(mf.Team) < finalTarget.NumFriendliesEngaging(mf.Team))))
+                        if (((finalTarget == null && target.Current.NumFriendliesEngaging(mf.Team) < 2) || (finalTarget != null && target.Current.NumFriendliesEngaging(mf.Team) < finalTarget.NumFriendliesEngaging(mf.Team) && target.Current.IsCloser(finalTarget, mf))))
                         {
                             finalTarget = target.Current;
                         }
@@ -1047,7 +1054,7 @@ namespace BDArmory.UI
                 {
                     if (target.Current == null) continue;
                     if (BDArmorySettings.MULTI_TARGET_NUM > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
-                    if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && target.Current.isMissile && target.Current.isThreat)
+                    if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && target.Current.isMissile && RadarUtils.MissileIsThreat(target.Current.MissileBaseModule, mf, false))
                     {
                         if (target.Current.NumFriendliesEngaging(mf.Team) == 0)
                         {
