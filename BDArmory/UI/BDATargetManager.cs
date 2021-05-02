@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -30,6 +31,7 @@ namespace BDArmory.UI
         private float updateTimer = 0;
 
         public static bool hasAddedButton;
+        static string gpsTargetsCfg = "GameData/BDArmory/PluginData/gpsTargets.cfg";
 
         void Awake()
         {
@@ -524,12 +526,14 @@ namespace BDArmory.UI
         {
             string saveTitle = HighLogic.CurrentGame.Title;
             Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
-            ConfigNode fileNode = ConfigNode.Load("GameData/BDArmory/gpsTargets.cfg");
+            ConfigNode fileNode = ConfigNode.Load(gpsTargetsCfg);
             if (fileNode == null)
             {
                 fileNode = new ConfigNode();
                 fileNode.AddNode("BDARMORY");
-                fileNode.Save("GameData/BDArmory/gpsTargets.cfg");
+                if (!Directory.GetParent(gpsTargetsCfg).Exists)
+                { Directory.GetParent(gpsTargetsCfg).Create(); }
+                fileNode.Save(gpsTargetsCfg);
             }
 
             if (fileNode != null && fileNode.HasNode("BDARMORY"))
@@ -578,14 +582,14 @@ namespace BDArmory.UI
 
                 string targetString = GPSListToString();
                 gpsNode.SetValue("Targets", targetString, true);
-                fileNode.Save("GameData/BDArmory/gpsTargets.cfg");
+                fileNode.Save(gpsTargetsCfg);
                 Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
             }
         }
 
         void LoadGPSTargets(ConfigNode saveNode)
         {
-            ConfigNode fileNode = ConfigNode.Load("GameData/BDArmory/gpsTargets.cfg");
+            ConfigNode fileNode = ConfigNode.Load(gpsTargetsCfg);
             string saveTitle = HighLogic.CurrentGame.Title;
 
             if (fileNode != null && fileNode.HasNode("BDARMORY"))

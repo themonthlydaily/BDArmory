@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -304,12 +305,21 @@ namespace BDArmory.UI
         {
             Instance = this;
 
-            // Create settings file if not present.
-            if (ConfigNode.Load(BDArmorySettings.settingsConfigURL) == null)
+            // Create settings file if not present or migrate the old one to the PluginsData folder for compatibility with ModuleManager.
+            var fileNode = ConfigNode.Load(BDArmorySettings.settingsConfigURL);
+            if (fileNode == null)
             {
-                var node = new ConfigNode();
-                node.AddNode("BDASettings");
-                node.Save(BDArmorySettings.settingsConfigURL);
+                fileNode = ConfigNode.Load(BDArmorySettings.oldSettingsConfigURL); // Try the old location.
+                if (fileNode == null)
+                {
+                    fileNode = new ConfigNode();
+                    fileNode.AddNode("BDASettings");
+                }
+                if (!Directory.GetParent(BDArmorySettings.settingsConfigURL).Exists)
+                { Directory.GetParent(BDArmorySettings.settingsConfigURL).Create(); }
+                var success = fileNode.Save(BDArmorySettings.settingsConfigURL);
+                if (success && File.Exists(BDArmorySettings.oldSettingsConfigURL)) // Remove the old settings if it exists and the new settings were saved.
+                { File.Delete(BDArmorySettings.oldSettingsConfigURL); }
             }
 
             // window position settings
