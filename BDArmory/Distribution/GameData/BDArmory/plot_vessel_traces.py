@@ -29,6 +29,10 @@ def plot(paths, colours):
     plt.show()
 
 
-paths = [p for p in (Path(__file__).parent / 'Logs' / 'VesselTraces').iterdir() if p.suffix == '.json']
-colours = 'rgbcmyk' * (len(paths) // 8 + 1)  # Loop colours if there's too many paths.
-plot(paths, colours[:len(paths)])
+vesselTracesPath = Path(__file__).parent / 'Logs' / 'VesselTraces'
+if vesselTracesPath.exists():
+    paths = [p for p in vesselTracesPath.iterdir() if p.suffix == '.json']
+    colours = 'rgbcmyk' * (len(paths) // 8 + 1)  # Loop colours if there's too many paths.
+    plot(paths, colours[:len(paths)])
+else:
+    print("No vessel traces available.")

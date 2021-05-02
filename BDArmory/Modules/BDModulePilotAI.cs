@@ -42,12 +42,16 @@ namespace BDArmory.Modules
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " stopped extending due to request");
         }
 
-        public void RequestExtend(Vector3 tPosition)
+        public void RequestExtend(Vector3 tPosition, Vessel target = null)
         {
             requestedExtend = true;
             requestedExtendTpos = tPosition;
             extendingReason = "Request";
+            if (target != null)
+                extendTarget = target;
         }
+
+        public Vessel extendTarget = null;
 
         public override bool CanEngage()
         {
@@ -943,6 +947,7 @@ namespace BDArmory.Modules
             {
                 threatRating = 0f; // Allow entering evasion code if we're under missile fire
                 minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
+                StopExtending(); // Don't keep trying to extend if under fire from missiles
             }
             else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
             {
@@ -1015,6 +1020,7 @@ namespace BDArmory.Modules
                         extending = true;
                         extendingReason = "Too steeply below";
                         lastTargetPosition = targetVessel.vesselTransform.position;
+                        extendTarget = targetVessel;
                     }
 
                     if (Vector3.Angle(targetVessel.vesselTransform.position - vesselTransform.position, vesselTransform.up) > 35) // If target is outside of 35° cone ahead of us then keep flying straight.
@@ -1037,12 +1043,13 @@ namespace BDArmory.Modules
                         extending = true;
                         extendingReason = "Can't turn fast enough";
                         lastTargetPosition = targetVessel.vesselTransform.position - vessel.Velocity();       //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
+                        extendTarget = targetVessel;
                         weaponManager.ForceScan();
                     }
                     if (canExtend && turningTimer > 15)
                     {
                         //extend if turning circles for too long
-                        RequestExtend(targetVessel.vesselTransform.position);
+                        RequestExtend(targetVessel.vesselTransform.position, targetVessel);
                         extendingReason = "Turning too long";
                         turningTimer = 0;
                         weaponManager.ForceScan();
@@ -1063,6 +1070,7 @@ namespace BDArmory.Modules
                         extending = true;
                         extendingReason = "Surface target";
                         lastTargetPosition = targetVessel.transform.position;
+                        extendTarget = targetVessel;
                         weaponManager.ForceScan();
                     }
                 }
@@ -1073,7 +1081,7 @@ namespace BDArmory.Modules
                     {
                         ramming = false;
                         SetStatus("Engaging");
-                        debugString.AppendLine($"Flying to target");
+                        debugString.AppendLine($"Flying to target " + targetVessel.vesselName);
                         FlyToTargetVessel(s, targetVessel);
                     }
                 }
@@ -1309,7 +1317,7 @@ namespace BDArmory.Modules
                 && distanceToTarget < MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange
                 && vessel.srfSpeed > idleSpeed)
             {
-                RequestExtend(lastTargetPosition); // Get far enough away to use the missile.
+                RequestExtend(targetVessel.transform.position, targetVessel); // Get far enough away to use the missile.
                 extendingReason = "Too close for missile";
             }
 

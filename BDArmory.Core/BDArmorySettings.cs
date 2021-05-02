@@ -6,11 +6,13 @@ namespace BDArmory.Core
 {
     public class BDArmorySettings
     {
-        public static string settingsConfigURL = "GameData/BDArmory/settings.cfg";
+        public static string oldSettingsConfigURL = "GameData/BDArmory/settings.cfg"; // Migrate from the old settings file to the new one in PluginData so that we don't invalidate the ModuleManager cache.
+        public static string settingsConfigURL = "GameData/BDArmory/PluginData/settings.cfg";
 
         // Settings section toggles
         [BDAPersistantSettingsField] public static bool GENERAL_SETTINGS_TOGGLE = true;
         [BDAPersistantSettingsField] public static bool RADAR_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool GAME_MODES_SETTINGS_TOGGLE = true;
         [BDAPersistantSettingsField] public static bool SPAWN_SETTINGS_TOGGLE = true;
         [BDAPersistantSettingsField] public static bool SLIDER_SETTINGS_TOGGLE = true;
         [BDAPersistantSettingsField] public static bool OTHER_SETTINGS_TOGGLE = true;
@@ -96,7 +98,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistantSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistantSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
-        
+
         // FX
         [BDAPersistantSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
         [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed
@@ -121,6 +123,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool PAINTBALL_MODE = false;
         [BDAPersistantSettingsField] public static bool GRAVITY_HACKS = false;
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE = false;
+        [BDAPersistantSettingsField] public static bool HEART_BLEED_ENABLED = false;
+        [BDAPersistantSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
@@ -181,6 +185,15 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SHOW_SPAWN_LOCATIONS = false;              // Show the interesting spawn locations.
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_NUMBER_OF_TEAMS = 0;           // Number of Teams: 0 - FFA, 1 - Folders, 2-10 specified directly
         [BDAPersistantSettingsField] public static string VESSEL_SPAWN_FILES_LOCATION = "";        // Spawn files location (under AutoSpawn).
+
+        // Heartbleed
+        [BDAPersistantSettingsField] public static float HEART_BLEED_RATE = 0.01f;
+        [BDAPersistantSettingsField] public static float HEART_BLEED_INTERVAL = 10f;
+        [BDAPersistantSettingsField] public static float HEART_BLEED_THRESHOLD = 10f;
+
+        // Resource steal
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.

@@ -89,6 +89,10 @@ namespace BDArmory.Core.Module
 
         #endregion KSP Fields
 
+        #region Heart Bleed
+        private double nextHeartBleedTime = 0;
+        #endregion Heart Bleed
+
         private readonly float hitpointMultiplier = BDArmorySettings.HITPOINT_MULTIPLIER;
 
         private float previousHitpoints;
@@ -217,15 +221,22 @@ namespace BDArmory.Core.Module
         public override void OnUpdate()
         {
             RefreshHitPoints();
+            if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+            {
+                HeartBleed();
+            }
         }
 
-        public void Update()
+        void Update()
         {
-            RefreshHitPoints();
-            if (ArmorTypeNum != OldArmorType)
+            if (HighLogic.LoadedSceneIsEditor)
             {
-                OldArmorType = ArmorTypeNum;
-                ArmorSetup(null, null);
+                if (ArmorTypeNum != OldArmorType)
+                {
+                    OldArmorType = ArmorTypeNum;
+                    ArmorSetup(null, null);
+                }
+                RefreshHitPoints();
             }
         }
 
@@ -237,6 +248,37 @@ namespace BDArmory.Core.Module
                 _updateHitpoints = false;
                 _forceUpdateHitpointsUI = false;
             }
+        }
+
+        private bool ShouldHeartBleed()
+        {
+            // wait until "now" exceeds the "next tick" value
+            double dTime = Planetarium.GetUniversalTime();
+            if (dTime < nextHeartBleedTime)
+            {
+                //Debug.Log(string.Format("[HitpointTracker] TimeSkip ShouldHeartBleed for {0} on {1}", part.name, part.vessel.vesselName));
+                return false;
+            }
+
+            // assign next tick time
+            double interval = BDArmorySettings.HEART_BLEED_INTERVAL;
+            nextHeartBleedTime = dTime + interval;
+
+            return true;
+        }
+
+        private void HeartBleed()
+        {
+            float rate = BDArmorySettings.HEART_BLEED_RATE;
+            float deduction = Hitpoints * rate;
+            if (Hitpoints - deduction < BDArmorySettings.HEART_BLEED_THRESHOLD)
+            {
+                // can't die from heart bleed
+                return;
+            }
+            // deduct hp base on the rate
+            //Debug.Log(string.Format("[HitpointTracker] Heart bleed {0} on {1} by {2:#.##} ({3:#.##}%)", part.name, part.vessel.vesselName, deduction, rate*100.0));
+            AddDamage(deduction);
         }
 
         #region Hitpoints Functions
@@ -390,10 +432,10 @@ namespace BDArmory.Core.Module
         {
             float sizeAdjust; //getSize returns size of a rectangular prism; most parts are circular, some are conical; use sizeAdjust to compensate
             float armorVolume;
-			if ((ArmorTypeNum-1) > ArmorInfo.armorNames.Count) //in case of trying to load a craft using a mod armor type that isn't installed and having a armorTypeNum larger than the index size
-			{
-				ArmorTypeNum = 1; //reset to 'None'
-			}
+            if ((ArmorTypeNum - 1) > ArmorInfo.armorNames.Count) //in case of trying to load a craft using a mod armor type that isn't installed and having a armorTypeNum larger than the index size
+            {
+                ArmorTypeNum = 1; //reset to 'None'
+            }
             armorInfo = ArmorInfo.armors[ArmorInfo.armorNames[(int)ArmorTypeNum - 1]]; //what does this return if armorname cannot be found (mod armor removed/not present in install?)
 
             //if (SelectedArmorType != ArmorInfo.armorNames[(int)ArmorTypeNum - 1]) //armor selection overridden by Editor widget
@@ -426,11 +468,11 @@ namespace BDArmory.Core.Module
             SetMaxArmor();
             armorVolume = 0; //reset these to deal with part symmetry value duplication;
             armorMass = 0;
-            armorVolume = ((Armor/1000) *  // thickness * armor mass
+            armorVolume = ((Armor / 1000) *  // thickness * armor mass
             ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust)); //mass * surface area approximation of a cylinder, where H/W are unknown
             if (guiArmorTypeString != "None") //don't grab armor panels
             {
-                armorMass = armorVolume * Density/1000; //armor mass in tons
+                armorMass = armorVolume * Density / 1000; //armor mass in tons
                 armorCost = armorVolume * Cost;
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
@@ -455,7 +497,7 @@ namespace BDArmory.Core.Module
                     if (part.IsAero())
                     {
                         maxSupportedArmor = 20;
-                    }                    
+                    }
                     else
                     {
                         maxSupportedArmor = ((partSize.x / 20) * 1000); //~62mm for Size1, 125mm for S2, 185mm for S3
