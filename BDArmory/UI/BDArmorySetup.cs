@@ -97,9 +97,9 @@ namespace BDArmory.UI
         bool showWeaponList;
         bool showGuardMenu;
         bool showModules;
-        int numberOfModules;
         bool showTargetOptions;
         bool showEngageList;
+        int numberOfModules;
         bool showWindowGPS;
 
         //gps window
@@ -717,36 +717,50 @@ namespace BDArmory.UI
         float gpsHeight;
         bool toolMinimized;
 
-                void WindowBDAToolbar(int windowID)
+        void WindowBDAToolbar(int windowID)
         {
-            GUI.DragWindow(new Rect(30, 0, toolWindowWidth - 90, 30));
-
             float line = 0;
             float leftIndent = 10;
             float contentWidth = (toolWindowWidth) - (2 * leftIndent);
             float contentTop = 10;
             float entryHeight = 20;
+            float _buttonSize = 26;
+            float _windowMargin = 4;
+
+            GUI.DragWindow(new Rect(_windowMargin + _buttonSize, 0, toolWindowWidth - 2 * _windowMargin - 4 * _buttonSize, _windowMargin + _buttonSize));
 
             line += 1.25f;
             line += 0.25f;
 
             // Version.
-            GUI.Label(new Rect(toolWindowWidth - 30 - 28 - 70, 23, 70, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize - 57, 23, 57, 10), Version, waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
-                GUI.Button(new Rect(toolWindowWidth - 30, 4, 26, 26), settingsIconTexture, BDGuiSkin.button))
+                GUI.Button(new Rect(toolWindowWidth - _windowMargin - _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
             {
                 ToggleWindowSettings();
             }
 
             //vesselswitcher button
-            if (hasVS)
+            if (hasVesselSwitcher)
             {
-                GUIStyle vsStyle = showVSGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(toolWindowWidth - 30 - 28, 4, 26, 26), "VS", vsStyle))
+                GUIStyle vsStyle = showVesselSwitcherGUI ? BDGuiSkin.box : BDGuiSkin.button;
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 2 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
                 {
-                    showVSGUI = !showVSGUI;
+                    showVesselSwitcherGUI = !showVesselSwitcherGUI;
+                }
+            }
+
+            //VesselSpawner button
+            if (hasVesselSpawner)
+            {
+                GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
+                {
+                    showVesselSpawnerGUI = !showVesselSpawnerGUI;
+                    if (!showVesselSpawnerGUI)
+                        SaveConfig();
                 }
             }
 
@@ -1012,7 +1026,7 @@ namespace BDArmory.UI
                     gRange =
                         GUI.HorizontalSlider(
                             new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            gRange, 0, BDArmorySettings.MAX_BULLET_RANGE);
+                            gRange, 0, ActiveWeaponManager.maxGunRange);
                     gRange /= 100f;
                     gRange = Mathf.Round(gRange);
                     gRange *= 100f;
@@ -1690,9 +1704,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
             {
                 BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
                 BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
-                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, Localizer.Format("#LOC_BDArmory_Settings_BattleDamage"));
-                if (BDArmorySettings.ADVANCED_TARGETING != (BDArmorySettings.ADVANCED_TARGETING = GUI.Toggle(SRightRect(line), BDArmorySettings.ADVANCED_TARGETING, Localizer.Format("#LOC_BDArmory_Settings_AdvTargeting"))))
-                { updateTargetableParts = true; }
+                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, Localizer.Format("#LOC_BDArmory_Settings_BattleDamage"));                
                 if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
                 { if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.lastTagUpdateTime = Planetarium.GetUniversalTime(); }
                 if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
@@ -1791,47 +1803,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                     }
                     ++line;
                 }
-            }
-            if (BDArmorySettings.ADVANCED_TARGETING)
-            {
-                if (GUI.Button(SLineRect(++line), (BDArmorySettings.ADV_TARGET_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_AdvTargetToggle")))//Show/hide battle damage settings.
-                {
-                    BDArmorySettings.ADV_TARGET_TOGGLE = !BDArmorySettings.ADV_TARGET_TOGGLE;
-                }
-                if (BDArmorySettings.ADV_TARGET_TOGGLE)
-                {
-                    line += 0.2f;
-                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_NumTargets")}: ({BDArmorySettings.MULTI_TARGET_NUM})", leftLabel); //Max Targets
-                    BDArmorySettings.MULTI_TARGET_NUM = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MULTI_TARGET_NUM, 1f, 10));
-                    if (BDArmorySettings.TARGET_COM != (BDArmorySettings.TARGET_COM = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TARGET_COM, Localizer.Format("#LOC_BDArmory_Settings_AT_COM"))))//"Target CoM"
-                    { updateTargetableParts = true; }
-                    if (!BDArmorySettings.TARGET_COM)
-                    {
-                        if (BDArmorySettings.TARGET_WEAPONS != (BDArmorySettings.TARGET_WEAPONS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TARGET_WEAPONS, Localizer.Format("#LOC_BDArmory_Settings_AT_Weapons"))))//"Target Weapons"
-                        { updateTargetableParts = true; }
-                        if (BDArmorySettings.TARGET_ENGINES != (BDArmorySettings.TARGET_ENGINES = GUI.Toggle(SRightRect(line), BDArmorySettings.TARGET_ENGINES, Localizer.Format("#LOC_BDArmory_Settings_AT_Engines"))))//"Target Engines"
-                        { updateTargetableParts = true; }
-                        if (BDArmorySettings.TARGET_COMMAND != (BDArmorySettings.TARGET_COMMAND = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TARGET_COMMAND, Localizer.Format("#LOC_BDArmory_Settings_AT_Command"))))//"Target Command Parts"
-                        { updateTargetableParts = true; }
-                    }
-                    else
-                    {
-                        BDArmorySettings.TARGET_WEAPONS = false;
-                        BDArmorySettings.TARGET_ENGINES = false;
-                        BDArmorySettings.TARGET_COMMAND = false;
-                    }
-                    ++line;
-                }
-                if (updateTargetableParts && HighLogic.LoadedSceneIsFlight)
-                {
-                    foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value))
-                    {
-                        TargetInfo info = weaponManager.vessel.gameObject.GetComponent<TargetInfo>();
-                        if (info != null)
-                        { info.UpdateTargetPartList(); }
-                    }
-                }
-            }
+            }            
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.SLIDER_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SliderSettingsToggle")))//Show/hide slider settings.
             {
                 BDArmorySettings.SLIDER_SETTINGS_TOGGLE = !BDArmorySettings.SLIDER_SETTINGS_TOGGLE;
