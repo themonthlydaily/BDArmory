@@ -17,7 +17,7 @@ using KSP.Localization;
 using UniLinq;
 using UnityEngine;
 
-namespace BDArmory.ModulestargetAcquisitionType = TargetAcquisitionType.Visual;
+namespace BDArmory.Modules
 {
     public class ModuleWeapon : EngageableWeapon, IBDWeapon
     {
