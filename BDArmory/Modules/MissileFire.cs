@@ -42,7 +42,7 @@ namespace BDArmory.Modules
         Transform cameraTransform;
 
         float startTime;
-        int missilesAway;
+        public int missilesAway;
 
         public float totalHP;
 
@@ -374,14 +374,15 @@ namespace BDArmory.Modules
             guardAngle = 360;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_VisualRange"),//Visual Range
-         UI_FloatRange(minValue = 100f, maxValue = 5000, stepIncrement = 100f, scene = UI_Scene.All)]
+         UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
         public float
-            guardRange = 10000;
+            guardRange = 10000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
          UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
         public float
             gunRange = 2500f;
+        public float maxGunRange = 0f;
 
         public const float maxAllowableMissilesOnTarget = 18f;
 
@@ -897,8 +898,10 @@ namespace BDArmory.Modules
                 GameEvents.onVesselCreate.Add(OnVesselCreate);
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
                 GameEvents.onPartDie.Add(OnPartDie);
+                GameEvents.onVesselPartCountChanged.Add(UpdateMaxGunRange);
 
                 GetTotalHP();
+                UpdateMaxGunRange(vessel);
 
                 using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
                     while (aipilot.MoveNext())
@@ -909,6 +912,12 @@ namespace BDArmory.Modules
                     }
 
                 RefreshModules();
+            }
+            else if (HighLogic.LoadedSceneIsEditor)
+            {
+                GameEvents.onEditorPartPlaced.Add(UpdateMaxGunRange);
+                GameEvents.onEditorPartDeleted.Add(UpdateMaxGunRange);
+                UpdateMaxGunRange(part);
             }
         }
 
@@ -1120,6 +1129,9 @@ namespace BDArmory.Modules
             GameEvents.onVesselCreate.Remove(OnVesselCreate);
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
+            GameEvents.onVesselPartCountChanged.Remove(UpdateMaxGunRange);
+            GameEvents.onEditorPartPlaced.Remove(UpdateMaxGunRange);
+            GameEvents.onEditorPartDeleted.Remove(UpdateMaxGunRange);
         }
 
         void ClampVisualRange()
@@ -1752,6 +1764,7 @@ namespace BDArmory.Modules
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
                         pilotAI.RequestExtend(guardTarget.CoM);
+                        pilotAI.extendingReason = "Too close to bomb";
                         break;
                     }
                     yield return null;
@@ -1781,6 +1794,7 @@ namespace BDArmory.Modules
                             if (pilotAI)
                             {
                                 pilotAI.RequestExtend(guardTarget.CoM);
+                                pilotAI.extendingReason = "Bombs away!";
                             }
                         }
                     }
@@ -2853,7 +2867,7 @@ namespace BDArmory.Modules
                     return false;
                 }
 
-                if (ml.dropTime > 0.3f)
+                if (ml.dropTime >= 0.1f)
                 {
                     //debug lines
                     LineRenderer lr = null;
@@ -4063,7 +4077,7 @@ namespace BDArmory.Modules
                         ModuleTurret turret = gun.turret;
                         float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
                         if (turret != null)
-                            if (!TargetInTurretRange(turret, gimbalTolerance))
+                            if (!TargetInTurretRange(turret, gimbalTolerance, null, gun))
                                 return false;
 
                         // check overheat
@@ -4123,7 +4137,7 @@ namespace BDArmory.Modules
                         ModuleTurret turret = rocket.turret;
                         float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
                         if (turret != null)
-                            if (!TargetInTurretRange(turret, gimbalTolerance))
+                            if (!TargetInTurretRange(turret, gimbalTolerance, null, rocket))
                                 return false;
                         if (rocket.isOverheated)
                             return false;
@@ -4685,7 +4699,7 @@ namespace BDArmory.Modules
                                     (weapon.Current.engageGround && targetsAssigned[TurretID].isLandedOrSurfaceSplashed) ||
                                     (weapon.Current.engageSLW && targetsAssigned[TurretID].isUnderwater)) //check engagement envelope
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, targetsAssigned[TurretID].Vessel, weapon.Current))
                                     {
                                         weapon.Current.visualTargetVessel = targetsAssigned[TurretID].Vessel; // if target within turret fire zone, assign
                                     }
@@ -4695,7 +4709,7 @@ namespace BDArmory.Modules
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
-                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel, weapon.Current))
                                                 {
                                                     weapon.Current.visualTargetVessel = item.Current.Vessel;
                                                     break;
@@ -4713,7 +4727,7 @@ namespace BDArmory.Modules
                             {
                                 if (weapon.Current.engageMissile)
                                 {
-                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel))
+                                    if (TargetInTurretRange(weapon.Current.turret, 7, missilesAssigned[MissileID].Vessel, weapon.Current))
                                     {
                                         weapon.Current.visualTargetVessel = missilesAssigned[MissileID].Vessel; // if target within turret fire zone, assign
                                     }
@@ -4723,7 +4737,7 @@ namespace BDArmory.Modules
                                             while (item.MoveNext())
                                             {
                                                 if (item.Current.Vessel == null) continue;
-                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel))
+                                                if (TargetInTurretRange(weapon.Current.turret, 7, item.Current.Vessel, weapon.Current))
                                                 {
                                                     weapon.Current.visualTargetVessel = item.Current.Vessel;
                                                     break;
@@ -4762,6 +4776,45 @@ namespace BDArmory.Modules
         {
             UI_FloatRange rangeEditor = (UI_FloatRange)Fields["guardRange"].uiControlEditor;
             rangeEditor.maxValue = BDArmorySettings.MAX_GUARD_VISUAL_RANGE;
+        }
+
+        public void UpdateMaxGunRange(Vessel v)
+        {
+            if (v != vessel || vessel == null) return;
+            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            maxGunRange = 0f;
+            foreach (var weapon in vessel.FindPartModulesImplementing<ModuleWeapon>())
+            {
+                if (weapon == null) continue;
+                if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
+                    maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
+            }
+            UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
+            rangeEditor.maxValue = maxGunRange;
+            gunRange = Mathf.Min(gunRange, maxGunRange);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + v.vesselName + " to " + gunRange + " of " + maxGunRange);
+            Misc.Misc.RefreshAssociatedWindows(part);
+        }
+
+        public void UpdateMaxGunRange(Part eventPart)
+        {
+            List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
+            maxGunRange = 0f;
+            foreach (var p in part.ship.parts)
+            {
+                foreach (var weapon in p.FindModulesImplementing<ModuleWeapon>())
+                {
+                    if (weapon == null) continue;
+                    if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
+                        maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
+                }
+            }
+            UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
+            if (gunRange == rangeEditor.maxValue) { gunRange = maxGunRange; }
+            rangeEditor.maxValue = maxGunRange;
+            gunRange = Mathf.Min(gunRange, maxGunRange);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + part.ship.shipName + " to " + gunRange + " of " + maxGunRange);
+            Misc.Misc.RefreshAssociatedWindows(part);
         }
 
         public float ThreatClosingTime(Vessel threat)
@@ -4846,7 +4899,7 @@ namespace BDArmory.Modules
                     if (weapon.Current == null) continue;
                     if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
                     float gimbalTolerance = vessel.LandedOrSplashed ? 0 : 15;
-                    if (((AI != null && AI.pilotEnabled && AI.CanEngage()) || (TargetInTurretRange(weapon.Current.turret, gimbalTolerance))) && weapon.Current.maxEffectiveDistance >= finalDistance)
+                    if (((AI != null && AI.pilotEnabled && AI.CanEngage()) || (TargetInTurretRange(weapon.Current.turret, gimbalTolerance, null, weapon.Current))) && weapon.Current.maxEffectiveDistance >= finalDistance)
                     {
                         if (weapon.Current.isOverheated)
                         {
@@ -4895,7 +4948,7 @@ namespace BDArmory.Modules
             return 2;
         }
 
-        bool TargetInTurretRange(ModuleTurret turret, float tolerance, Vessel gTarget = null)
+        bool TargetInTurretRange(ModuleTurret turret, float tolerance, Vessel gTarget = null, ModuleWeapon weapon = null)
         {
             if (!turret)
             {
@@ -4910,25 +4963,41 @@ namespace BDArmory.Modules
                 }
                 return false;
             }
+            if (gTarget == null) gTarget = guardTarget;
 
             Transform turretTransform = turret.yawTransform.parent;
-            Vector3 direction = guardTarget.transform.position - turretTransform.position;
-            if (gTarget != null)
+            Vector3 direction = gTarget.transform.position - turretTransform.position;
+            if (weapon != null && weapon.bulletDrop) // Account for bullet drop (rough approximation not accounting for target movement).
             {
-                direction = gTarget.transform.position - turretTransform.position;
+                switch (weapon.GetWeaponClass())
+                {
+                    case WeaponClasses.Gun:
+                        {
+                            var effectiveBulletSpeed = (turret.part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + weapon.bulletVelocity * direction.normalized).magnitude;
+                            var timeOfFlight = direction.magnitude / effectiveBulletSpeed;
+                            direction -= 0.5f * FlightGlobals.getGeeForceAtPosition(vessel.transform.position) * timeOfFlight * timeOfFlight;
+                            break;
+                        }
+                    case WeaponClasses.Rocket:
+                        {
+                            var effectiveRocketSpeed = (turret.part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (weapon.thrust * weapon.thrustTime / weapon.rocketMass) * direction.normalized).magnitude;
+                            var timeOfFlight = direction.magnitude / effectiveRocketSpeed;
+                            direction -= 0.5f * FlightGlobals.getGeeForceAtPosition(vessel.transform.position) * timeOfFlight * timeOfFlight;
+                            break;
+                        }
+                }
             }
             Vector3 directionYaw = Vector3.ProjectOnPlane(direction, turretTransform.up);
-            Vector3 directionPitch = Vector3.ProjectOnPlane(direction, turretTransform.right);
 
             float angleYaw = Vector3.Angle(turretTransform.forward, directionYaw);
-            float signedAnglePitch = 90 - Vector3.Angle(turretTransform.up, directionPitch);
+            float signedAnglePitch = 90 - Vector3.Angle(turretTransform.up, direction);
             bool withinPitchRange = (signedAnglePitch >= turret.minPitch - tolerance && signedAnglePitch <= turret.maxPitch + tolerance);
 
             if (angleYaw < (turret.yawRange / 2) + tolerance && withinPitchRange)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is INSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch);
+                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is INSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", tolerance: " + tolerance);
                 }
                 return true;
             }
@@ -4936,7 +5005,7 @@ namespace BDArmory.Modules
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is OUTSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", angleYaw: " + angleYaw);
+                    Debug.Log("[BDArmory.MissileFire]: Checking turret range - target is OUTSIDE gimbal limits! signedAnglePitch: " + signedAnglePitch + ", minPitch: " + turret.minPitch + ", maxPitch: " + turret.maxPitch + ", angleYaw: " + angleYaw + ", tolerance: " + tolerance);
                 }
                 return false;
             }

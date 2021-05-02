@@ -1,4 +1,27 @@
-﻿v1.4.4.3
+﻿FIXES
+	- Fix the floating origin corrections to the vessel traces and apply the corrective rotations to the coordinates such that the local coordinates are (east, up, north) and the identity rotation is a craft pointing nose up with the underside pointing north. Add a simple python script to plot the traces.
+IMPROVEMENTS
+	- Update the in-flight Guard Menu to match the settings in the weapon manager in the SPH.
+	- Dynamically adjust (max) gun range based on the guns that are actually on a vessel.
+	- Add log and competition status messages about disabling a vessel due to EMP damage.
+	- Upgrade the numerical integrator for bullets and ballistic trajectory simulations to use the 2nd order symplectic leapfrog method (this vastly improves the accuracy and speed of the trajectory simulations). Allows for ballistic aiming out to at least 50km.
+	- Include dead teams information in the results.
+
+v1.4.4.4
+FIXES
+	- Fix missiles firing without exhaust and heat-seeking missiles firing without a target.
+		- Regenerate exhaust prefab object pools when they're detected to contain nulls due to scene changes or reloads.
+		- Trigger missile exhaust prefab detachment on part.OnJustAboutToDie and OnDestroy as well.
+	- Add KeyNotFound and NRE checks in CheckForMissingParts.
+	- Add in SetupAudio fix in some other places for audioSource. Add check for broken animations and give error instead of exception.
+	- Remove ramming debugging toggle and just use the regular debug labels toggle instead. Adjust the debug statements in DebrisDelayedCleanUp.
+	- Don't update RCS if we've just fired a missile or are trying to fire a missile.
+	- Correctly calculate turret gimbal limits check, taking into account bullet drop.
+	- Add generic rocket resource for rocket ammo boxes (fixes rocket launchers not being able to use rocket ammo boxes)
+IMPROVEMENTS
+	- Add option to trace vessel paths and orientations. Traces are logged in GameData/BDArmory/Logs/VesselTraces/<VesselName>-<StartTime>.json
+
+v1.4.4.3
 FIXES
 	- The improved aiming code is now fixed (properly accounts for movement of the aiming vessel). Planet curvature is not yet taken into account.
 	- Re-initialise the missile audio sources if they're null (fixes failure-to-fire issue).
