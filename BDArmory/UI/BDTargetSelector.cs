@@ -42,30 +42,30 @@ namespace BDArmory.UI
             Rect CoMRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
             GUIStyle CoMStyle = targetWeaponManager.targetCoM ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
-            if (GUI.Button(CoMRect, "#LOC_BDArmory_TargetCOM", CoMStyle))
+            if (GUI.Button(CoMRect, Localizer.Format("#LOC_BDArmory_TargetCOM"), CoMStyle))
             {
                 targetWeaponManager.targetWeapon = false;
                 targetWeaponManager.targetEngine = false;
                 targetWeaponManager.targetCommand = false;
                 targetWeaponManager.targetMass = false;
                 targetWeaponManager.targetCoM = true;
-                targetWeaponManager.targetingString = "#LOC_BDArmory_COM";
+                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
                 open = false;
             }
             height += buttonHeight;
 
             height += buttonGap;
             Rect MassRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
-            GUIStyle MassStyle = targetWeaponManager.targetCoM ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
+            GUIStyle MassStyle = targetWeaponManager.targetMass ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
-            if (GUI.Button(MassRect, "#LOC_BDArmory_Settings_AT_Mass", MassStyle))
+            if (GUI.Button(MassRect, Localizer.Format("#LOC_BDArmory_Mass"), MassStyle))
             {
                 targetWeaponManager.targetWeapon = false;
                 targetWeaponManager.targetEngine = false;
                 targetWeaponManager.targetCommand = false;
                 targetWeaponManager.targetMass = true;
                 targetWeaponManager.targetCoM = false;
-                targetWeaponManager.targetingString = "#LOC_BDArmory_Mass";
+                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Mass");
                 open = false;
             }
             height += buttonHeight;
@@ -74,14 +74,14 @@ namespace BDArmory.UI
             Rect CommandRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
             GUIStyle CommandStyle = targetWeaponManager.targetCommand ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
-            if (GUI.Button(CommandRect, "#LOC_BDArmory_Settings_AT_Command", CommandStyle))
+            if (GUI.Button(CommandRect, Localizer.Format("#LOC_BDArmory_Command"), CommandStyle))
             {
                 targetWeaponManager.targetWeapon = false;
                 targetWeaponManager.targetEngine = false;
                 targetWeaponManager.targetCommand = true;
                 targetWeaponManager.targetMass = false;
                 targetWeaponManager.targetCoM = false;
-                targetWeaponManager.targetingString = "#LOC_BDArmory_Command";
+                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Command");
                 open = false;
             }
             height += buttonHeight;
@@ -90,14 +90,14 @@ namespace BDArmory.UI
             Rect EngineRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
             GUIStyle EngineStyle = targetWeaponManager.targetEngine ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
-            if (GUI.Button(EngineRect, "#LOC_BDArmory_Settings_AT_Engines", EngineStyle))
+            if (GUI.Button(EngineRect, Localizer.Format("#LOC_BDArmory_Engines"), EngineStyle))
             {
                 targetWeaponManager.targetWeapon = false;
                 targetWeaponManager.targetEngine = true;
                 targetWeaponManager.targetCommand = false;
                 targetWeaponManager.targetMass = false;
                 targetWeaponManager.targetCoM = false;
-                targetWeaponManager.targetingString = "#LOC_BDArmory_Engines";
+                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Engines");
                 open = false;
             }
             height += buttonHeight;
@@ -106,14 +106,14 @@ namespace BDArmory.UI
             Rect weaponRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
             GUIStyle WepStyle = targetWeaponManager.targetWeapon ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
-            if (GUI.Button(weaponRect, "#LOC_BDArmory_Settings_AT_Weapons", WepStyle))
+            if (GUI.Button(weaponRect, Localizer.Format("#LOC_BDArmory_Weapons"), WepStyle))
             {
                 targetWeaponManager.targetWeapon = true;
                 targetWeaponManager.targetEngine = false;
                 targetWeaponManager.targetCommand = false;
                 targetWeaponManager.targetMass = false;
                 targetWeaponManager.targetCoM = false;
-                targetWeaponManager.targetingString = "#LOC_BDArmory_Weapons";
+                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Weapons");
                 open = false;
             }
             height += buttonHeight;
