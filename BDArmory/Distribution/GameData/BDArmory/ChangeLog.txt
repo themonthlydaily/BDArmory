@@ -19,7 +19,11 @@ IMPROVEMENTS
 	- Expose AI extending settings to be editable by user. The AI extends when all of the below conditions are true:
 		- The target is outside of an angle in front of the craft (default of 78 degrees, now selected using Extend Target Angle).
 		- The target's speed is less than the craft's speed (default of target's speed is less than 80% of craft speed, now selected using Extend Target Velocity Factor).
-		- The target is close (default of within 400 metersE, now selected using Extend Target Distance).
+		- The target is close (default of within 400 meters, now selected using Extend Target Distance).
+	- Advanced targeting setting deprecated - targeting options are now per vessel.
+	- Max turret target setting deprecated - is now set per vessel.
+	- Adds Max Turret Targets setting to Weapon manager.
+	- Adds Targeting Options to Weapon manager.
 
 v1.4.5.0
 FIXES
