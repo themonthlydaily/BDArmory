@@ -450,9 +450,9 @@ namespace BDArmory.Modules
             gunRange = 2500f;
         public float maxGunRange = 0f;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_MultitargetNum"),//Firing Tolerance
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiTargetNum"),//Max Turret Targets
          UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
-        public float multiTargetNum = 1; //tune Autofire angle in WM GUI
+        public float multiTargetNum = 1; 
 
         public const float maxAllowableMissilesOnTarget = 18f;
 
