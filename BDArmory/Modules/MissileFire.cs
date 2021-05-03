@@ -459,6 +459,31 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MissilesORTarget"), UI_FloatRange(minValue = 1f, maxValue = maxAllowableMissilesOnTarget, stepIncrement = 1f, scene = UI_Scene.All)]//Missiles/Target
         public float maxMissilesOnTarget = 1;
 
+        #region TargetSettings
+        [KSPField(isPersistant = true)]
+        public bool targetCoM = true;
+
+        [KSPField(isPersistant = true)]
+        public bool targetCommand = false;
+
+        [KSPField(isPersistant = true)]
+        public bool targetEngine = false;
+
+        [KSPField(isPersistant = true)]
+        public bool targetWeapon = false;
+
+        [KSPField(isPersistant = true)]
+        public bool targetMass = false;
+
+        [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_targetSetting")]//Target Setting
+        public string targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
+        [KSPEvent(guiActive = true, guiActiveEditor = true, active = true, guiName = "#LOC_BDArmory_Selecttargeting")]//Select Targeting Option
+        public void SelectTargeting()
+        {
+            BDTargetSelector.Instance.Open(this, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+        }
+        #endregion
+
         #region Target Priority
         // Target priority variables
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Priority Toggle
@@ -552,32 +577,8 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IsVIP", advancedTweakable = true),// Is VIP, throwback to TF Classic (Hunted Game Mode)
             UI_Toggle(enabledText = "#LOC_BDArmory_IsVIP_enabledText", disabledText = "#LOC_BDArmory_IsVIP_disabledText", scene = UI_Scene.All),]//yes--no
-        public bool isVIP = false;
-        
-        #region TargetSettings
-        [KSPField(isPersistant = true)]
-        public bool targetCoM = true;
+        public bool isVIP = false;       
 
-        [KSPField(isPersistant = true)]
-        public bool targetCommand = false;
-
-        [KSPField(isPersistant = true)]
-        public bool targetEngine = false;
-
-        [KSPField(isPersistant = true)]
-        public bool targetWeapon = false;
-
-        [KSPField(isPersistant = true)]
-        public bool targetMass = false;
-       
-        [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_targetSetting")]//Target Setting
-        public string targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
-        [KSPEvent(guiActive = true, guiActiveEditor = true, active = true, guiName = "#LOC_BDArmory_Selecttargeting")]//Select Targeting Option
-        public void SelectTargeting()
-        {
-            BDTargetSelector.Instance.Open(this, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
-        }
-        #endregion
         
         public void ToggleGuardMode()
         {
