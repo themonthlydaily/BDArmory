@@ -571,7 +571,7 @@ namespace BDArmory.Modules
         public bool targetMass = false;
        
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_targetSetting")]//Target Setting
-        public string targetingString = "CoM";
+        public string targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
         [KSPEvent(guiActive = true, guiActiveEditor = true, active = true, guiName = "#LOC_BDArmory_Selecttargeting")]//Select Targeting Option
         public void SelectTargeting()
         {
