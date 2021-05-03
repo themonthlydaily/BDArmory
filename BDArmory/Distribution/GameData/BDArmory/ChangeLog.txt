@@ -1,5 +1,25 @@
-﻿FIXES
+﻿v1.4.6.0
+FIXES
 	- Store the armed/IFF state in the craft files instead of just the GUI strings.
+	- Use the correct ShipConstruct in the editor for setting the max gun range and set a minimum of 10 for the max gun range to avoid breaking the part window sliders.
+	- Add another check for vessels disappearing during spawning.
+	- Add a 0.1s time-out to the ballistic trajectory closest approach simulation to prevent freezes.
+	- Pause fire effects when the game is paused.
+	- Store the armed and IFF states of explosive parts, not their GUI strings.
+	- Fix missiles not being targeted when Engage Missiles option was selected.
+	- Fix for the AI stopping extending prematurely.
+	- Fix extending to get enough distance to fire missiles not working.
+IMPROVEMENTS
+	- Migrate non-static configs to the PluginData folder to avoid invalidating the ModuleManager cache (should give slightly faster start-up times).
+	- Add a Game Modes section to the settings and rearrange the various toggles to match.
+	- Add Heart-Bleed and Resource-Steal game modes.
+		- Fuel resources that can be stolen are 'LiquidFuel', 'SolidFuel', 'Oxidizer', 'IntakeAir' and 'ElectricCharge'.
+		- Ammo resources that can be stolen are those ending in 'Ammo', 'Shells' and 'Rocket'.
+	- Remove Target Missiles toggle from the weapons manager, this is now automatically set based on if weapons onboard the craft have the engage missiles option enabled.
+	- Expose AI extending settings to be editable by user. The AI extends when all of the below conditions are true:
+		- The target is outside of an angle in front of the craft (default of 78 degrees, now selected using Extend Target Angle).
+		- The target's speed is less than the craft's speed (default of target's speed is less than 80% of craft speed, now selected using Extend Target Velocity Factor).
+		- The target is close (default of within 400 metersE, now selected using Extend Target Distance).
 
 v1.4.5.0
 FIXES
