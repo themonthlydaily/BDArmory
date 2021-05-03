@@ -1072,11 +1072,11 @@ namespace BDArmory.UI
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
                     guardLines++;
-
+                    
                     float TargetLines = 0;
                     showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
                         showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), showTargetOptions ? BDGuiSkin.box : BDGuiSkin.button);//"Advanced Targeting"
-                    guardLines++;
+                    guardLines ++;
 
                     if (showTargetOptions && showGuardMenu && !toolMinimized)
                     {
