@@ -1071,13 +1071,12 @@ namespace BDArmory.UI
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
                     guardLines++;
-                    GUI.EndGroup();
                     
                     float TargetLines = 0;
                     showTargetOptions =
-GUI.Toggle(new Rect(leftIndent, contentTop + ((guardLines + 0.1f) * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
+GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
 showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), showTargetOptions ? BDGuiSkin.box : BDGuiSkin.button);//"Advanced Targeting"
-                    guardLines += 1.25f;
+                    guardLines ++;
 
                     if (showTargetOptions && showGuardMenu && !toolMinimized)
                     {
@@ -1163,12 +1162,13 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                     }
                     TargetingHeight = Mathf.Lerp(TargetingHeight, TargetLines, 0.15f);
                     line += TargetingHeight;
+                    guardLines += 0.1f;
                     line += 0.1f;
 
                     showEngageList =
     GUI.Toggle(new Rect(leftIndent, contentTop + ((guardLines + TargetingHeight + 0.2f) * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
         showEngageList, showEngageList ? Localizer.Format("#LOC_BDArmory_DisableEngageOptions") : Localizer.Format("#LOC_BDArmory_EnableEngageOptions"), showEngageList ? BDGuiSkin.box : BDGuiSkin.button);//"Enable/Disable Engagement options"
-                    guardLines += 1.25f;
+                    guardLines += 1.15f;
 
                     float EngageLines = 0;
                     if (showEngageList && showGuardMenu && !toolMinimized)
@@ -1210,7 +1210,9 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                     }
                     EngageHeight = Mathf.Lerp(EngageHeight, EngageLines, 0.15f);
                     line += EngageHeight;
+                    guardLines += 0.1f;
                     line += 0.1f;
+                    GUI.EndGroup();
                 }
                 guardHeight = Mathf.Lerp(guardHeight, guardLines+.01f, 0.15f);
                 line += guardHeight;
