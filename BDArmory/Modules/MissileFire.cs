@@ -4882,22 +4882,25 @@ namespace BDArmory.Modules
 
         public void UpdateMaxGunRange(Part eventPart)
         {
+            if (EditorLogic.fetch.ship == null) return;
             List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
             maxGunRange = 10f;
-            foreach (var p in part.ship.parts)
+            foreach (var p in EditorLogic.fetch.ship.Parts)
             {
                 foreach (var weapon in p.FindModulesImplementing<ModuleWeapon>())
                 {
                     if (weapon == null) continue;
                     if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
+                    {
                         maxGunRange = Mathf.Max(maxGunRange, weapon.maxEffectiveDistance);
+                    }
                 }
             }
             UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
             if (gunRange == rangeEditor.maxValue) { gunRange = maxGunRange; }
             rangeEditor.maxValue = maxGunRange;
             gunRange = Mathf.Min(gunRange, maxGunRange);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + part.ship.shipName + " to " + gunRange + " of " + maxGunRange);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + EditorLogic.fetch.ship.shipName + " to " + gunRange + " of " + maxGunRange);
         }
 
         public float ThreatClosingTime(Vessel threat)
