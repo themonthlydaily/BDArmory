@@ -36,6 +36,8 @@ namespace BDArmory.UI
         private void TargetingSelectorWindow(int id)
         {
             height = margin;
+            GUIStyle labelStyle = BDArmorySetup.BDGuiSkin.label;
+            GUI.Label(new Rect(margin, height, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Selecttargeting"), labelStyle);
             height += buttonHeight;
             
             height += buttonGap;

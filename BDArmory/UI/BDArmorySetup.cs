@@ -1096,7 +1096,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = "#LOC_BDArmory_TargetCOM";
+                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
                             }
                         }
                         string Commandlabel = Localizer.Format("#LOC_BDArmory_Command", (ActiveWeaponManager.targetCommand ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Air; True, False
@@ -1110,7 +1110,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = "#LOC_BDArmory_Command";
+                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Command");
                             }
                         }
                         TargetLines += 1.1f;
@@ -1125,7 +1125,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                                 ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = "#LOC_BDArmory_Engines";
+                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Engines");
                             }
                         }
                         string Weaponslabel = Localizer.Format("#LOC_BDArmory_Weapons", (ActiveWeaponManager.targetWeapon ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Surface; True, False
@@ -1139,7 +1139,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                                 ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = "#LOC_BDArmory_Weapons";
+                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Weapons");
                             }
                         }
                         TargetLines += 1.1f;
@@ -1154,7 +1154,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                                 ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
-                                ActiveWeaponManager.targetingString = "#LOC_BDArmory_Mass";
+                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Mass");
                             }
                         }
                         TargetLines += 1.1f;
