@@ -479,7 +479,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                Debug.LogError("[BDArmory.KerbalSafety]: Ejection called without a kerbal present.");
+                Debug.LogWarning("[BDArmory.KerbalSafety]: Ejection called without a kerbal present.");
             }
             ejected = true;
         }
