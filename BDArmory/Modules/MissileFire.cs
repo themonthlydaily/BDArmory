@@ -4837,15 +4837,31 @@ namespace BDArmory.Modules
                         //Debug.Log("[BDArmory.MTD]: non-turret, assigned " + guardTarget.name);
                     }
                     if (targetCoM)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.CoM;
+                    {
+                        weapon.Current.targetCOM = true;
+                        weapon.Current.targetCockpits = false;
+                        weapon.Current.targetEngines = false;
+                        weapon.Current.targetWeapons = false;
+                        weapon.Current.targetMass = false;
+                    }
+                    else
+                        weapon.Current.targetCOM = false;
                     if (targetCommand)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Command;
+                        weapon.Current.targetCockpits = true;
+                    else
+                        weapon.Current.targetCockpits = false;
                     if (targetEngine)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Engine;
+                        weapon.Current.targetEngines = true;
+                    else
+                        weapon.Current.targetEngines = false;
                     if (targetWeapon)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Weapon;
+                        weapon.Current.targetWeapons = true;
+                    else
+                        weapon.Current.targetWeapons = false;
                     if (targetMass)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Mass;
+                        weapon.Current.targetMass = true;
+                    else
+                        weapon.Current.targetMass = false;
                     weapon.Current.autoFireTimer = Time.time;
                     //weapon.Current.autoFireLength = 3 * targetScanInterval / 4;
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;

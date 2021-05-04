@@ -60,16 +60,7 @@ namespace BDArmory.Modules
             AnalyticEstimate,
             NumericalIntegration
         }
-        
-        public enum TargetSetting
-        {
-            CoM,
-            Engine, 
-            Command,
-            Weapon,
-            Mass
-        }
-        
+                
         public WeaponStates weaponState = WeaponStates.Disabled;
 
         //animations
@@ -79,9 +70,7 @@ namespace BDArmory.Modules
         public float bulletBallisticCoefficient;
 
         public WeaponTypes eWeaponType;
-        
-        public TargetSetting subsystemTargeting;
-        
+                
         public float heat;
         public bool isOverheated;
 
@@ -133,6 +122,13 @@ namespace BDArmory.Modules
         public Part visualTargetPart;
         private int targetID = 0;
         bool targetAcquired;
+
+        public bool targetCOM = true;
+        public bool targetCockpits = false;
+        public bool targetEngines = false;
+        public bool targetWeapons = false;
+        public bool targetMass = false;
+
         enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
         TargetAcquisitionType lastTargetAcquisitionType = TargetAcquisitionType.None;
@@ -2523,7 +2519,7 @@ namespace BDArmory.Modules
 
                         if (visualTargetVessel != null && visualTargetVessel.loaded)
                         {
-                            if (subsystemTargeting != TargetSetting.CoM && visualTargetPart != null)
+                            if (!targetCOM && visualTargetPart != null)
                             {
                                 targetPosition = ray.direction *
                                                  Vector3.Distance(visualTargetPart.transform.position,
@@ -3304,71 +3300,66 @@ namespace BDArmory.Modules
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
                             return;
                         }
-                        switch (subsystemTargeting)
-                        {
-                            case TargetSetting.CoM:
-                                break;
-
-                            case TargetSetting.Command:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetCommandList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetCommandList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetCommandList[targetID];
-                                break;
-
-                            case TargetSetting.Engine:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetEngineList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetEngineList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetEngineList[targetID];
-                                break;
-                            case TargetSetting.Mass:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetMassList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetMassList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetMassList[targetID];
-                                break;
-                            case TargetSetting.Weapon:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetWeaponList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetWeaponList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetWeaponList[targetID];
-                                break;
-                        }
-                        if (subsystemTargeting != TargetSetting.CoM)
+                        List<Part> targetparts = new List<Part>();
+                        if (targetCOM)
                         {
                             targetPosition = visualTargetPart.transform.position;
                         }
                         else
                         {
+                            if (targetCockpits)
+                            {
+                                for (int i = 0; i < currentTarget.targetCommandList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetCommandList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetCommandList[i]);
+                                    }
+                                }
+                            }
+                            if (targetEngines)
+                            {
+                                for (int i = 0; i < currentTarget.targetEngineList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetEngineList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetEngineList[i]);
+                                    }
+                                }
+                            }
+                            if (targetWeapons)
+                            {
+                                for (int i = 0; i < currentTarget.targetWeaponList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetWeaponList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetWeaponList[i]);
+                                    }
+                                }
+                            }
+                            if (targetMass)
+                            {
+                                for (int i = 0; i < currentTarget.targetMassList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetMassList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetMassList[i]);
+                                    }
+                                }
+                            }
+                            targetparts = targetparts.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
+                            targetparts.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+                            targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(targetparts.Count, weaponManager.multiTargetNum));
+                            if (!turret) //make fixed guns all get the same target part
+                            {
+                                targetID = 0;
+                            }
+                            if (targetparts.Count == 0)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
+                                return;
+                            }
+                            visualTargetPart = targetparts[targetID];
                             targetPosition = visualTargetVessel.CoM;
                         }
                     }                   
