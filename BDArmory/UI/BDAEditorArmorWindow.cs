@@ -18,7 +18,7 @@ namespace BDArmory.UI
         private ApplicationLauncherButton toolbarButton = null;
 
         private bool showArmorWindow = false;
-        private string windowTitle = "BDArmory Craft Armor Tools";
+        private string windowTitle = "BDArmory Craft Armor Tools"; //localize these prior to release, future me!
         private Rect windowRect = new Rect(300, 150, 300, 350);
 
         private GUIContent[] armorGUI;
@@ -140,12 +140,6 @@ namespace BDArmory.UI
                 SetType = false;
                 CalculateArmorMass();
             }
-            if (armorThickness != oldThickness)
-            {
-                oldThickness = armorThickness;
-                SetThickness = true;
-                CalculateArmorMass();
-            }
 
             GUIStyle style = BDArmorySetup.BDGuiSkin.label;        
 
@@ -163,6 +157,13 @@ namespace BDArmory.UI
             armorThickness /= 5;
             armorThickness = Mathf.Round(armorThickness);
             armorThickness *= 5;
+
+            if (armorThickness != oldThickness)
+            {
+                oldThickness = armorThickness;
+                SetThickness = true;
+                CalculateArmorMass();
+            }
 
             if (!armorslist)
             {

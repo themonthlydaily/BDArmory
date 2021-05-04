@@ -79,11 +79,14 @@ namespace BDArmory.Core.Module
         [KSPField(isPersistant = true)]
         public float Cost;
 
+        private bool startsArmored = false;
+
         //Part vars
         public Vector3 partSize;
         [KSPField(isPersistant = true)]
         public float maxSupportedArmor = -1; //upper cap on armor per part, overridable in MM/.cfg
-
+        private float armorVolume;
+        private float sizeAdjust;
         AttachNode bottom;
         AttachNode top;
 
@@ -199,7 +202,24 @@ namespace BDArmory.Core.Module
             GameEvents.onEditorShipModified.Add(ShipModified);
             bottom = part.FindAttachNode("bottom");
             top = part.FindAttachNode("top");
+            //getSize returns size of a rectangular prism; most parts are circular, some are conical; use sizeAdjust to compensate
+            if (bottom != null && top != null) //cylinder
+            {
+                sizeAdjust = 0.783f;
+            }
+            else if ((bottom == null && top != null) || (bottom != null && top == null)) //cone
+            {
+                sizeAdjust = 0.422f;
+            }
+            else //no bottom or top nodes, assume srf attached part; these are usually panels of some sort. Will need to determine method of ID'ing triangular panels/wings
+            {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
+                sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
+            }
             partSize = CalcPartBounds(this.part, this.transform).size;
+            armorVolume = ((Armor / 1000) *  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
+((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));  //mass * surface area approximation of a cylinder, where H/W are unknown
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             SetupPrefab();
             ArmorSetup(null, null);
         }
@@ -247,11 +267,11 @@ namespace BDArmory.Core.Module
 
             if (!part.IsMissile())
             {
-                var averageSize = part.GetAverageBoundSize();
-                var sphereRadius = averageSize * 0.5f;
-                var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
-                var structuralVolume = sphereSurface * 0.1f;
-
+                //var averageSize = part.GetAverageBoundSize();
+                //var sphereRadius = averageSize * 0.5f;
+                //var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
+                //var structuralVolume = sphereSurface * 0.1f;
+                var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
                 var density = ((part.mass - armorMass) * 1000f) / structuralVolume;
                 density = Mathf.Clamp(density, 1000, 10000);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
@@ -262,10 +282,10 @@ namespace BDArmory.Core.Module
                 //3. final calculations
                 hitpoints = structuralMass * hitpointMultiplier * 0.333f;
 
-                if (hitpoints > 10 * part.mass * 1000f || hitpoints < 0.1f * part.mass * 1000f)
+                if (hitpoints > 10 * (part.mass - armorMass) * 1000f || hitpoints < 0.1f * (part.mass - armorMass) * 1000f)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
-                    hitpoints = hitpointMultiplier * part.mass * 333f;
+                    hitpoints = hitpointMultiplier * (part.mass - armorMass) * 333f;
                 }
 
                 // SuicidalInsanity B9 patch
@@ -273,11 +293,11 @@ namespace BDArmory.Core.Module
                 {
                     if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                     {
-                        hitpoints = (part.mass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
+                        hitpoints = ((part.mass - armorMass) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
                     }
                     else
                     {
-                        hitpoints = (part.mass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                        hitpoints = ((part.mass - armorMass) * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
                     } //breaks when pWings are made stupidly thick
                 }
 
@@ -302,7 +322,7 @@ namespace BDArmory.Core.Module
 
         public void DestroyPart()
         {
-            if (part.mass <= 2f) part.explosionPotential *= 0.85f;
+            if ((part.mass - armorMass) <= 2f) part.explosionPotential *= 0.85f;
 
             PartExploderSystem.AddPartToExplode(part);
         }
@@ -378,22 +398,59 @@ namespace BDArmory.Core.Module
             }
         }
 
-        public void overrideArmorSetFromConfig(float thickness = 0)
+        public void overrideArmorSetFromConfig()
         {
             ArmorSet = true;
             if (ArmorThickness != 0)
             {
                 Armor = ArmorThickness;
+                if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
+                {
+                    startsArmored = true;
+                    UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
+                    armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
+                }
             }
+            if (maxSupportedArmor < 0) //hasn't been sep in cfg
+            {
+                if (part.IsAero())
+                {
+                    maxSupportedArmor = 20;
+                }
+                else
+                {
+                    maxSupportedArmor = ((partSize.x / 20) * 1000); //~62mm for Size1, 125mm for S2, 185mm for S3
+                    maxSupportedArmor /= 5;
+                    maxSupportedArmor = Mathf.Round(maxSupportedArmor);
+                    maxSupportedArmor *= 5;
+                }
+                if (ArmorThickness > 10 && ArmorThickness > maxSupportedArmor)//part has custom armor value, use that
+                {
+                    maxSupportedArmor = ArmorThickness;
+                }
+            }
+            //if maxSupportedArmor > 0 && < armorThickness, that's entirely the fault of the MM patcher
+            UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
+            armorFieldFlight.minValue = 0f;
+            armorFieldFlight.maxValue = maxSupportedArmor;
+            UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
+            armorFieldEditor.maxValue = maxSupportedArmor;
+            armorFieldEditor.minValue = 0f;
+            armorFieldEditor.onFieldChanged = ArmorSetup;
         }
         public void ArmorSetup(BaseField field, object obj)
         {
-            float sizeAdjust; //getSize returns size of a rectangular prism; most parts are circular, some are conical; use sizeAdjust to compensate
-            float armorVolume;
-			if ((ArmorTypeNum-1) > ArmorInfo.armorNames.Count) //in case of trying to load a craft using a mod armor type that isn't installed and having a armorTypeNum larger than the index size
-			{
-				ArmorTypeNum = 1; //reset to 'None'
-			}
+            if ((ArmorTypeNum - 1) > ArmorInfo.armorNames.Count) //in case of trying to load a craft using a mod armor type that isn't installed and having a armorTypeNum larger than the index size
+            {
+                if (startsArmored)
+                {
+                    ArmorTypeNum = 2; //part starts with armor
+                }
+                else
+                {
+                    ArmorTypeNum = 1; //reset to 'None'
+                }
+            }
             armorInfo = ArmorInfo.armors[ArmorInfo.armorNames[(int)ArmorTypeNum - 1]]; //what does this return if armorname cannot be found (mod armor removed/not present in install?)
 
             //if (SelectedArmorType != ArmorInfo.armorNames[(int)ArmorTypeNum - 1]) //armor selection overridden by Editor widget
@@ -410,31 +467,13 @@ namespace BDArmory.Core.Module
             Strength = armorInfo.Strength;
             SafeUseTemp = armorInfo.SafeUseTemp;
             Cost = armorInfo.Cost;
-
-            if (bottom != null && top != null) //cylinder
-            {
-                sizeAdjust = 0.783f;
-            }
-            else if ((bottom == null && top != null) || (bottom != null && top == null)) //cone
-            {
-                sizeAdjust = 0.422f;
-            }
-            else //no bottom or top nodes, assume srf attached part; these are usually panels of some sort. Will need to determine method of ID'ing triangular panels/wings
-            {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
-                sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
-            }
-            SetMaxArmor();
-            armorVolume = 0; //reset these to deal with part symmetry value duplication;
+            SetArmor();
             armorMass = 0;
-            armorVolume = ((Armor/1000) *  // thickness * armor mass
-            ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust)); //mass * surface area approximation of a cylinder, where H/W are unknown
-            if (guiArmorTypeString != "None") //don't grab armor panels
+            if (guiArmorTypeString != "None") //don't apply cost/mass to None armor type
             {
-                armorMass = armorVolume * Density/1000; //armor mass in tons
+                armorMass = armorVolume * Density / 1000; //armor mass in tons
                 armorCost = armorVolume * Cost;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             using (IEnumerator<UIPartActionWindow> window = FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator())
                 while (window.MoveNext())
                 {
@@ -444,26 +483,13 @@ namespace BDArmory.Core.Module
                         window.Current.displayDirty = true;
                     }
                 }
+            part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
         }
 
-        void SetMaxArmor()
+        void SetArmor()
         {
             if (guiArmorTypeString != "None")
-            {
-                if (maxSupportedArmor < 0)
-                {
-                    if (part.IsAero())
-                    {
-                        maxSupportedArmor = 20;
-                    }                    
-                    else
-                    {
-                        maxSupportedArmor = ((partSize.x / 20) * 1000); //~62mm for Size1, 125mm for S2, 185mm for S3
-                        maxSupportedArmor /= 5;
-                        maxSupportedArmor = Mathf.Round(maxSupportedArmor);
-                        maxSupportedArmor *= 5;
-                    }
-                }
+            {                
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                 armorFieldFlight.minValue = 0f;
                 armorFieldFlight.maxValue = maxSupportedArmor;
@@ -471,7 +497,6 @@ namespace BDArmory.Core.Module
                 armorFieldEditor.maxValue = maxSupportedArmor;
                 armorFieldEditor.minValue = 0f;
                 armorFieldEditor.onFieldChanged = ArmorSetup;
-                part.RefreshAssociatedWindows();
             }
             else
             {
@@ -483,17 +508,7 @@ namespace BDArmory.Core.Module
                 armorFieldFlight.minValue = 0f;
                 armorFieldFlight.maxValue = 10;
             }
-            if (part.partName.ToLower().Contains("armor") || ArmorThickness > 0) //BDA Armor panels, etc.
-            {
-                maxSupportedArmor = 500; //could always be higher if you really want that 1x1x0.1m armor panel be able to mount 1500mm of armor...
-                ArmorTypeNum = 2; //numtype 1 is armor type None, ensure armor panels start with armor
-            }
-            if (ArmorThickness != 0 && ArmorThickness > maxSupportedArmor)
-            {
-                maxSupportedArmor = ArmorThickness;
-            }
         }
-
         private static Bounds CalcPartBounds(Part p, Transform t)
         {
             Bounds result = new Bounds(t.position, Vector3.zero);
