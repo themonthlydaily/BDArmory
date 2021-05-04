@@ -50,12 +50,18 @@ namespace BDArmory.UI
 
             if (GUI.Button(CoMRect, Localizer.Format("#LOC_BDArmory_TargetCOM"), CoMStyle))
             {
-                targetWeaponManager.targetWeapon = false;
-                targetWeaponManager.targetEngine = false;
-                targetWeaponManager.targetCommand = false;
-                targetWeaponManager.targetMass = false;
-                targetWeaponManager.targetCoM = true;
-                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
+                targetWeaponManager.targetCoM = !targetWeaponManager.targetCoM;
+                if (targetWeaponManager.targetCoM)
+                {
+                    targetWeaponManager.targetWeapon = false;
+                    targetWeaponManager.targetEngine = false;
+                    targetWeaponManager.targetCommand = false;
+                    targetWeaponManager.targetMass = false;
+                }
+                if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
+                {
+                    targetWeaponManager.targetMass = true;
+                }
             }
             height += buttonHeight;
 
@@ -66,7 +72,14 @@ namespace BDArmory.UI
             if (GUI.Button(MassRect, Localizer.Format("#LOC_BDArmory_Mass"), MassStyle))
             {
                 targetWeaponManager.targetMass = !targetWeaponManager.targetMass;
-                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Mass");
+                if (targetWeaponManager.targetMass)
+                {
+                    targetWeaponManager.targetCoM = false;
+                }
+                if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
+                {
+                    targetWeaponManager.targetCoM = true;
+                }
             }
             height += buttonHeight;
 
@@ -77,7 +90,10 @@ namespace BDArmory.UI
             if (GUI.Button(CommandRect, Localizer.Format("#LOC_BDArmory_Command"), CommandStyle))
             {
                 targetWeaponManager.targetCommand = !targetWeaponManager.targetCommand;
-                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Command");
+                if (targetWeaponManager.targetCommand)
+                {
+                    targetWeaponManager.targetCoM = false;
+                }
             }
             height += buttonHeight;
 
@@ -88,7 +104,10 @@ namespace BDArmory.UI
             if (GUI.Button(EngineRect, Localizer.Format("#LOC_BDArmory_Engines"), EngineStyle))
             {
                 targetWeaponManager.targetEngine = !targetWeaponManager.targetEngine;
-                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Engines");
+                if (targetWeaponManager.targetEngine)
+                {
+                    targetWeaponManager.targetCoM = false;
+                }
             }
             height += buttonHeight;
 
@@ -99,11 +118,19 @@ namespace BDArmory.UI
             if (GUI.Button(weaponRect, Localizer.Format("#LOC_BDArmory_Weapons"), WepStyle))
             {
                 targetWeaponManager.targetWeapon = !targetWeaponManager.targetWeapon;
-                targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Weapons");
+                if (targetWeaponManager.targetWeapon)
+                {
+                    targetWeaponManager.targetCoM = false;
+                }
             }
             height += buttonHeight;
 
             height += margin;
+            targetWeaponManager.targetingString = (targetWeaponManager.targetCoM ? "" : Localizer.Format("#LOC_BDArmory_TargetCOM") + "; ")
+                + (targetWeaponManager.targetMass ? "" : Localizer.Format("#LOC_BDArmory_Mass") + "; ")
+                + (targetWeaponManager.targetCommand ? "" : Localizer.Format("#LOC_BDArmory_Command") + "; ")
+                + (targetWeaponManager.targetEngine ? "" : Localizer.Format("#LOC_BDArmory_Engines") + "; ")
+                + (targetWeaponManager.targetWeapon ? "" : Localizer.Format("#LOC_BDArmory_Weapons") + "; ");
             BDGUIUtils.RepositionWindow(ref window);
             BDGUIUtils.UseMouseEventInRect(window);
         }
@@ -132,6 +159,11 @@ namespace BDArmory.UI
                 else
                 {
                     Misc.Misc.UpdateGUIRect(new Rect(), guiCheckIndex);
+                    if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
+                    {
+                        targetWeaponManager.targetMass = true;
+                        targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Mass");
+                    }
                 }
             }
         }

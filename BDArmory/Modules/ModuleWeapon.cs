@@ -3303,7 +3303,7 @@ namespace BDArmory.Modules
                         List<Part> targetparts = new List<Part>();
                         if (targetCOM)
                         {
-                            targetPosition = visualTargetPart.transform.position;
+                            targetPosition = visualTargetVessel.CoM;
                         }
                         else
                         {
@@ -3347,6 +3347,16 @@ namespace BDArmory.Modules
                                     }
                                 }
                             }
+                            if (!targetCOM && !targetCockpits && !targetEngines && !targetWeapons && !targetMass)
+                            {
+                                for (int i = 0; i < currentTarget.targetMassList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetMassList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetMassList[i]);
+                                    }
+                                }
+                            }
                             targetparts = targetparts.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
                             targetparts.Reverse(); //Order by mass is lightest to heaviest. We want H>L
                             targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(targetparts.Count, weaponManager.multiTargetNum));
@@ -3354,13 +3364,14 @@ namespace BDArmory.Modules
                             {
                                 targetID = 0;
                             }
+
                             if (targetparts.Count == 0)
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
                                 return;
                             }
                             visualTargetPart = targetparts[targetID];
-                            targetPosition = visualTargetVessel.CoM;
+                            targetPosition = visualTargetPart.transform.position;
                         }
                     }                   
                     targetVelocity = visualTargetVessel.rb_velocity;

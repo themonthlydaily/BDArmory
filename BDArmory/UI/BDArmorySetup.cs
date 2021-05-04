@@ -1070,7 +1070,7 @@ namespace BDArmory.UI
                     ActiveWeaponManager.maxMissilesOnTarget = mslCount;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
-                    guardLines += 0.25f;
+                    guardLines += 0.5f;
                     
                     float TargetLines = 0;
                     showTargetOptions =
@@ -1086,34 +1086,33 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                             GUIContent.none, BDGuiSkin.box);
                         TargetLines += 0.25f;
                         string CoMlabel = Localizer.Format("#LOC_BDArmory_TargetCOM", (ActiveWeaponManager.targetCoM ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Air; True, False
-                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
+                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), (contentWidth - (2 * leftIndent)), entryHeight),
                             CoMlabel, ActiveWeaponManager.targetCoM ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetCoM = !ActiveWeaponManager.targetCoM;
                             if (ActiveWeaponManager.targetCoM)
                             {
-                                ActiveWeaponManager.targetCommand = false;
+								ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_TargetCOM");
+                            }
+                            if (!ActiveWeaponManager.targetCoM && (!ActiveWeaponManager.targetWeapon && !ActiveWeaponManager.targetEngine && !ActiveWeaponManager.targetCommand && !ActiveWeaponManager.targetMass))
+                            {
+                                ActiveWeaponManager.targetMass = true;
                             }
                         }
+                        TargetLines += 1.1f;
                         string Commandlabel = Localizer.Format("#LOC_BDArmory_Command", (ActiveWeaponManager.targetCommand ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Air; True, False
-                        if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
+                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
                             Commandlabel, ActiveWeaponManager.targetCommand ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetCommand = !ActiveWeaponManager.targetCommand;
                             if (ActiveWeaponManager.targetCommand)
                             {
                                 ActiveWeaponManager.targetCoM = false;
-                                ActiveWeaponManager.targetEngine = false;
-                                ActiveWeaponManager.targetWeapon = false;
-                                ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Command");
                             }
                         }
-                        TargetLines += 1.1f;
                         string Engineslabel = Localizer.Format("#LOC_BDArmory_Engines", (ActiveWeaponManager.targetEngine ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Missile; True, False
                         if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
                             Engineslabel, ActiveWeaponManager.targetEngine ? BDGuiSkin.box : BDGuiSkin.button))
@@ -1122,12 +1121,9 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                             if (ActiveWeaponManager.targetEngine)
                             {
                                 ActiveWeaponManager.targetCoM = false;
-                                ActiveWeaponManager.targetCommand = false;
-                                ActiveWeaponManager.targetWeapon = false;
-                                ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Engines");
                             }
                         }
+                        TargetLines += 1.1f;
                         string Weaponslabel = Localizer.Format("#LOC_BDArmory_Weapons", (ActiveWeaponManager.targetWeapon ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Surface; True, False
                         if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
                             Weaponslabel, ActiveWeaponManager.targetWeapon ? BDGuiSkin.box : BDGuiSkin.button))
@@ -1136,28 +1132,29 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                             if (ActiveWeaponManager.targetWeapon)
                             {
                                 ActiveWeaponManager.targetCoM = false;
-                                ActiveWeaponManager.targetCommand = false;
-                                ActiveWeaponManager.targetEngine = false;
-                                ActiveWeaponManager.targetMass = false;
-                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Weapons");
                             }
                         }
-                        TargetLines += 1.1f;
                         string Masslabel = Localizer.Format("#LOC_BDArmory_Mass", (ActiveWeaponManager.targetMass ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage SLW; True, False
-                        if (GUI.Button(new Rect(leftIndent, (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
+                        if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
                             Masslabel, ActiveWeaponManager.targetMass ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetMass = !ActiveWeaponManager.targetMass;
                             if (ActiveWeaponManager.targetMass)
                             {
                                 ActiveWeaponManager.targetCoM = false;
-                                ActiveWeaponManager.targetCommand = false;
-                                ActiveWeaponManager.targetEngine = false;
-                                ActiveWeaponManager.targetWeapon = false;
-                                ActiveWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Mass");
+                            }
+                            if (!ActiveWeaponManager.targetCoM && (!ActiveWeaponManager.targetWeapon && !ActiveWeaponManager.targetEngine && !ActiveWeaponManager.targetCommand && !ActiveWeaponManager.targetMass))
+                            {
+                                ActiveWeaponManager.targetCoM = true;
                             }
                         }
                         TargetLines += 1.1f;
+
+                        ActiveWeaponManager.targetingString = (ActiveWeaponManager.targetCoM ? "" : Localizer.Format("#LOC_BDArmory_TargetCOM") + "; ")
+                            + (ActiveWeaponManager.targetMass ? "" : Localizer.Format("#LOC_BDArmory_Mass") + "; ")
+                            + (ActiveWeaponManager.targetCommand ? "" : Localizer.Format("#LOC_BDArmory_Command") + "; ")
+                            + (ActiveWeaponManager.targetEngine ? "" : Localizer.Format("#LOC_BDArmory_Engines") + "; ")
+                            + (ActiveWeaponManager.targetWeapon ? "" : Localizer.Format("#LOC_BDArmory_Weapons") + "; ");
                         GUI.EndGroup();
                     }
                     TargetingHeight = Mathf.Lerp(TargetingHeight, TargetLines, 0.15f);
