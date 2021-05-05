@@ -1,4 +1,9 @@
-﻿v1.4.6.0
+﻿FIXES
+	- Fix various occassional NREs.
+	- Fix bug in parser for 'dead teams'.
+IMPROVEMENTS
+
+v1.4.6.0
 FIXES
 	- Store the armed/IFF state in the craft files instead of just the GUI strings.
 	- Use the correct ShipConstruct in the editor for setting the max gun range and set a minimum of 10 for the max gun range to avoid breaking the part window sliders.
