@@ -2359,7 +2359,7 @@ namespace BDArmory.Modules
             lastPitchInput = s.pitch;
             lastCosAoA = curCosAoA;
 
-            debugString.AppendLine($"Final Pitch: {s.pitch.ToString("G4")}  (Limits: {negLim.ToString("G4")} — {posLim.ToString("G4")})");
+            debugString.AppendLine(String.Format("Final Pitch: {0,7:F4}  (Limits: {1,7:F4} — {2,6:F4})", s.pitch, negLim, posLim));
         }
 
         void CalculateAccelerationAndTurningCircle()
