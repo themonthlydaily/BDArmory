@@ -1630,7 +1630,7 @@ namespace BDArmory.Modules
                     extending = false;
                     extendingReason = "";
                     startedExtendingAt = 0;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: "+vessel.vesselName+" stopped extending due to gone far enough (" + srfDist + " of " + extendDistance + ")");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " stopped extending due to gone far enough (" + srfDist + " of " + extendDistance + ")");
                 }
             }
             else // No weapon manager.
@@ -1638,7 +1638,7 @@ namespace BDArmory.Modules
                 extending = false;
                 extendingReason = "";
                 startedExtendingAt = 0;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: "+vessel.vesselName+" stopped extending due to no weapon manager");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " stopped extending due to no weapon manager");
             }
         }
 
@@ -2359,8 +2359,7 @@ namespace BDArmory.Modules
             lastPitchInput = s.pitch;
             lastCosAoA = curCosAoA;
 
-            debugString.AppendLine($"Neg Pitch Lim: {negLim}");
-            debugString.AppendLine($"Pos Pitch Lim: {posLim}");
+            debugString.AppendLine($"Final Pitch: {s.pitch.ToString("G4")}  (Limits: {negLim.ToString("G4")} — {posLim.ToString("G4")})");
         }
 
         void CalculateAccelerationAndTurningCircle()
