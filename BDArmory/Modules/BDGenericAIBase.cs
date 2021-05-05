@@ -84,6 +84,7 @@ namespace BDArmory.Modules
         // A small wrapper to make sure the autopilot does not do anything when it shouldn't
         private void autoPilot(FlightCtrlState s)
         {
+            debugString.Length = 0;
             if (!weaponManager || !vessel || !vessel.transform || vessel.packed || !vessel.mainBody)
                 return;
             // nobody is controlling any more possibly due to G forces?
@@ -94,7 +95,6 @@ namespace BDArmory.Modules
                 vessel.Autopilot.Disable();
                 return;
             }
-            debugString.Length = 0;
 
             // generally other AI and guard mode expects this target to be engaged
             GetGuardTarget(); // get the guard target from weapon manager
