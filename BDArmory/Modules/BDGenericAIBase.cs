@@ -89,6 +89,7 @@ namespace BDArmory.Modules
             // nobody is controlling any more possibly due to G forces?
             if (!vessel.isCommandable)
             {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]: " + vessel.vesselName + " is not commandable, disabling autopilot.");
                 s.NeutralizeStick();
                 vessel.Autopilot.Disable();
                 return;
