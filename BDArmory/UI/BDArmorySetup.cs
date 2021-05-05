@@ -903,7 +903,7 @@ namespace BDArmory.UI
                         ((float)ActiveWeaponManager.weaponArray.Length + 0.1f) * entryHeight);
                     GUI.BeginGroup(weaponListGroupRect, GUIContent.none, BDGuiSkin.box); //darker box
                     weaponLines += 0.1f;
-                    
+
                     for (int i = 0; i < ActiveWeaponManager.weaponArray.Length; i++)
                     {
                         GUIStyle wpnListStyle;
@@ -952,8 +952,8 @@ namespace BDArmory.UI
                     GUI.EndGroup();
                 }
                 weaponsHeight = Mathf.Lerp(weaponsHeight, weaponLines, 0.15f);
-                line += weaponsHeight;   
-                
+                line += weaponsHeight;
+
                 float guardLines = 0;
                 if (showGuardMenu && !toolMinimized)
                 {
@@ -993,7 +993,7 @@ namespace BDArmory.UI
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.fireBurstLength.ToString(), leftLabel);
                     guardLines++;
-                    
+
                     // extension for feature_engagementenvelope: set the firing accuracy tolarance
                     var oldAutoFireCosAngleAdjustment = ActiveWeaponManager.AutoFireCosAngleAdjustment;
                     string accuracyLabel = Localizer.Format("#LOC_BDArmory_WMWindow_FiringTolerance");//"Firing Angle"
@@ -1070,12 +1070,12 @@ namespace BDArmory.UI
                     ActiveWeaponManager.maxMissilesOnTarget = mslCount;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
-                    guardLines += 0.5f;
-                    
+
+                    guardLines += 0.5f;                    
+
                     float TargetLines = 0;
-                    showTargetOptions =
-GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
-showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), showTargetOptions ? BDGuiSkin.box : BDGuiSkin.button);//"Advanced Targeting"
+                    showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
+                        showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), showTargetOptions ? BDGuiSkin.box : BDGuiSkin.button);//"Advanced Targeting"
                     guardLines += 1.15f;
 
                     if (showTargetOptions && showGuardMenu && !toolMinimized)
@@ -1092,7 +1092,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                             ActiveWeaponManager.targetCoM = !ActiveWeaponManager.targetCoM;
                             if (ActiveWeaponManager.targetCoM)
                             {
-								ActiveWeaponManager.targetCommand = false;
+								                ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;
@@ -1161,9 +1161,8 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                     guardLines += TargetingHeight;
                     guardLines += 0.1f;
 
-                    showEngageList =
-    GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
-        showEngageList, showEngageList ? Localizer.Format("#LOC_BDArmory_DisableEngageOptions") : Localizer.Format("#LOC_BDArmory_EnableEngageOptions"), showEngageList ? BDGuiSkin.box : BDGuiSkin.button);//"Enable/Disable Engagement options"
+                    showEngageList = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
+                        showEngageList, showEngageList ? Localizer.Format("#LOC_BDArmory_DisableEngageOptions") : Localizer.Format("#LOC_BDArmory_EnableEngageOptions"), showEngageList ? BDGuiSkin.box : BDGuiSkin.button);//"Enable/Disable Engagement options"
                     guardLines += 1.15f;
 
                     float EngageLines = 0;
@@ -1210,7 +1209,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                     GUI.EndGroup();
                 }
                 guardLines += 0.75f;
-                guardHeight = Mathf.Lerp(guardHeight, guardLines+.01f, 0.15f);
+                guardHeight = Mathf.Lerp(guardHeight, guardLines + .01f, 0.15f);
                 line += guardHeight;
 
                 float moduleLines = 0;
@@ -1384,7 +1383,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
             var previousWindowHeight = WindowRectToolbar.height;
             WindowRectToolbar.height = toolWindowHeight;
-                        if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
+            if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
             BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
         }
@@ -1667,7 +1666,6 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                 InputSettings();
                 return;
             }
-            bool updateTargetableParts = false;
 
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.GENERAL_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_GeneralSettingsToggle")))//Show/hide general settings.
             {
@@ -1720,7 +1718,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
             {
                 BDArmorySettings.RUNWAY_PROJECT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RUNWAY_PROJECT, Localizer.Format("#LOC_BDArmory_Settings_RunwayProject"));//Runway Project
                 BDArmorySettings.DISABLE_KILL_TIMER = GUI.Toggle(SRightRect(line), BDArmorySettings.DISABLE_KILL_TIMER, Localizer.Format("#LOC_BDArmory_Settings_DisableKillTimer"));//"Disable Kill Timer"
-                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, Localizer.Format("#LOC_BDArmory_Settings_BattleDamage"));                
+                BDArmorySettings.BATTLEDAMAGE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BATTLEDAMAGE, Localizer.Format("#LOC_BDArmory_Settings_BattleDamage"));
                 if (BDArmorySettings.TAG_MODE != (BDArmorySettings.TAG_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TAG_MODE, Localizer.Format("#LOC_BDArmory_Settings_TagMode"))))//"Tag Mode"
                 { if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.lastTagUpdateTime = Planetarium.GetUniversalTime(); }
                 if (BDArmorySettings.PAINTBALL_MODE != (BDArmorySettings.PAINTBALL_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.PAINTBALL_MODE, Localizer.Format("#LOC_BDArmory_Settings_PaintballMode"))))//"Paintball Mode"
@@ -1819,7 +1817,7 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                     }
                     ++line;
                 }
-            }            
+            }
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.SLIDER_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_SliderSettingsToggle")))//Show/hide slider settings.
             {
                 BDArmorySettings.SLIDER_SETTINGS_TOGGLE = !BDArmorySettings.SLIDER_SETTINGS_TOGGLE;
