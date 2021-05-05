@@ -3287,14 +3287,11 @@ namespace BDArmory.Modules
                 if (aiControlled && weaponManager && visualTargetVessel &&
                     (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
                 {
-                    targetPosition = visualTargetVessel.CoM;
-
                     targetRadius = visualTargetVessel.GetRadius();
 
                     if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                     {
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-
                         if (currentTarget == null)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
@@ -3357,21 +3354,24 @@ namespace BDArmory.Modules
                                     }
                                 }
                             }
-                            targetparts = targetparts.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
-                            targetparts.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+                            //targetparts = targetparts.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
+                            //targetparts.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+                            targetparts.Shuffle(); //alternitively, increase the random range from maxtargetnum to targetparts.count, otherwise edge cases where lots of one thing (targeting command/mass) will be pulled before lighter things (weapons, maybe engines) if both selected
                             targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(targetparts.Count, weaponManager.multiTargetNum));
                             if (!turret) //make fixed guns all get the same target part
                             {
                                 targetID = 0;
                             }
-
                             if (targetparts.Count == 0)
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                return;
+                                targetPosition = visualTargetVessel.CoM;
                             }
-                            visualTargetPart = targetparts[targetID];
-                            targetPosition = visualTargetPart.transform.position;
+                            else
+                            {
+                                visualTargetPart = targetparts[targetID];
+                                targetPosition = visualTargetPart.transform.position;
+                            }
                         }
                     }                   
                     targetVelocity = visualTargetVessel.rb_velocity;

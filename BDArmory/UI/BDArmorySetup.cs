@@ -1150,11 +1150,11 @@ showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), sho
                         }
                         TargetLines += 1.1f;
 
-                        ActiveWeaponManager.targetingString = (ActiveWeaponManager.targetCoM ? "" : Localizer.Format("#LOC_BDArmory_TargetCOM") + "; ")
-                            + (ActiveWeaponManager.targetMass ? "" : Localizer.Format("#LOC_BDArmory_Mass") + "; ")
-                            + (ActiveWeaponManager.targetCommand ? "" : Localizer.Format("#LOC_BDArmory_Command") + "; ")
-                            + (ActiveWeaponManager.targetEngine ? "" : Localizer.Format("#LOC_BDArmory_Engines") + "; ")
-                            + (ActiveWeaponManager.targetWeapon ? "" : Localizer.Format("#LOC_BDArmory_Weapons") + "; ");
+                        ActiveWeaponManager.targetingString = (ActiveWeaponManager.targetCoM ? Localizer.Format("#LOC_BDArmory_TargetCOM") + "; " : "")
+                            + (ActiveWeaponManager.targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
+                            + (ActiveWeaponManager.targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
+                            + (ActiveWeaponManager.targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
+                            + (ActiveWeaponManager.targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
                         GUI.EndGroup();
                     }
                     TargetingHeight = Mathf.Lerp(TargetingHeight, TargetLines, 0.15f);

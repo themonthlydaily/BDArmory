@@ -126,28 +126,22 @@ namespace BDArmory.UI
             height += buttonHeight;
 
             height += margin;
-            targetWeaponManager.targetingString = (targetWeaponManager.targetCoM ? "" : Localizer.Format("#LOC_BDArmory_TargetCOM") + "; ")
-                + (targetWeaponManager.targetMass ? "" : Localizer.Format("#LOC_BDArmory_Mass") + "; ")
-                + (targetWeaponManager.targetCommand ? "" : Localizer.Format("#LOC_BDArmory_Command") + "; ")
-                + (targetWeaponManager.targetEngine ? "" : Localizer.Format("#LOC_BDArmory_Engines") + "; ")
-                + (targetWeaponManager.targetWeapon ? "" : Localizer.Format("#LOC_BDArmory_Weapons") + "; ");
+            targetWeaponManager.targetingString = (targetWeaponManager.targetCoM ? Localizer.Format("#LOC_BDArmory_TargetCOM") + "; " : "")
+                + (targetWeaponManager.targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
+                + (targetWeaponManager.targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
+                + (targetWeaponManager.targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
+                + (targetWeaponManager.targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
             BDGUIUtils.RepositionWindow(ref window);
             BDGUIUtils.UseMouseEventInRect(window);
         }
 
         protected virtual void OnGUI()
         {
+            if (!BDArmorySetup.GAME_UI_ENABLED) return;
             if (ready)
             {
-                if (open && BDArmorySetup.GAME_UI_ENABLED
-                    && Event.current.type == EventType.MouseDown
-                    && !window.Contains(Event.current.mousePosition))
-                {
-                    open = false;
-                }
+                if (!open) return;
 
-                if (open && BDArmorySetup.GAME_UI_ENABLED)
-                {
                     var clientRect = new Rect(
                         Mathf.Min(windowLocation.x, Screen.width - width),
                         Mathf.Min(windowLocation.y, Screen.height - height),
@@ -155,16 +149,12 @@ namespace BDArmory.UI
                         height);
                     window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
                     Misc.Misc.UpdateGUIRect(window, guiCheckIndex);
-                }
-                else
-                {
-                    Misc.Misc.UpdateGUIRect(new Rect(), guiCheckIndex);
+
                     if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
                     {
                         targetWeaponManager.targetMass = true;
                         targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Mass");
                     }
-                }
             }
         }
 
