@@ -4836,16 +4836,22 @@ namespace BDArmory.Modules
                         weapon.Current.visualTargetVessel = guardTarget;
                         //Debug.Log("[BDArmory.MTD]: non-turret, assigned " + guardTarget.name);
                     }
+                    weapon.Current.targetCOM = targetCoM;
                     if (targetCoM)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.CoM;
-                    if (targetCommand)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Command;
-                    if (targetEngine)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Engine;
-                    if (targetWeapon)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Weapon;
-                    if (targetMass)
-                        weapon.Current.subsystemTargeting = ModuleWeapon.TargetSetting.Mass;
+                    {
+                        weapon.Current.targetCockpits = false;
+                        weapon.Current.targetEngines = false;
+                        weapon.Current.targetWeapons = false;
+                        weapon.Current.targetMass = false;
+                    }
+                    else
+                    {
+                        weapon.Current.targetCockpits = targetCommand;
+                        weapon.Current.targetEngines = targetEngine;
+                        weapon.Current.targetWeapons = targetWeapon;
+                        weapon.Current.targetMass = targetMass;
+                    }
+
                     weapon.Current.autoFireTimer = Time.time;
                     //weapon.Current.autoFireLength = 3 * targetScanInterval / 4;
                     weapon.Current.autoFireLength = (fireBurstLength < 0.01f) ? targetScanInterval / 2f : fireBurstLength;

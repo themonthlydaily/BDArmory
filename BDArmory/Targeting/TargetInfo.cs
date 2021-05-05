@@ -309,12 +309,16 @@ namespace BDArmory.Targeting
                 }
             targetMassList = targetMassList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
             targetMassList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+            targetMassList.RemoveRange(10, (targetMassList.Count - 10)); //trim to max turret targets
             targetCommandList = targetCommandList.OrderBy(w => w.mass).ToList();
             targetCommandList.Reverse();
+            targetCommandList.RemoveRange(10, (targetCommandList.Count - 10));
             targetEngineList = targetEngineList.OrderBy(w => w.mass).ToList();
             targetEngineList.Reverse();
+            targetEngineList.RemoveRange(10, (targetEngineList.Count - 10));
             targetWeaponList = targetWeaponList.OrderBy(w => w.mass).ToList();
             targetWeaponList.Reverse();
+            targetWeaponList.RemoveRange(10, (targetWeaponList.Count - 10));
         }
 
         public int NumFriendliesEngaging(BDTeam team)
