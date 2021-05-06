@@ -316,27 +316,27 @@ namespace BDArmory.Misc
             float spallMass;
             float damage;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
-	    if (Armor != null)
-	    {
-		float ductility = Armor.Ductility;
-		float hardness = Armor.Hardness;
-		float Strength = Armor.Strength;
-		float Density = Armor.Density;
+            if (Armor != null)
+            {
+                float ductility = Armor.Ductility;
+                float hardness = Armor.Hardness;
+                float Strength = Armor.Strength;
+                float Density = Armor.Density;
 
-                float ArmorTolerance = Strength * (1+ductility) * thickness;
+                float ArmorTolerance = Strength * (1 + ductility) * thickness;
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;
-		//is BlastUtils maxpressure in MPa? confirm blast pressure from ExplosionUtils on same scale/magnitude as armorTolerance
+                //is BlastUtils maxpressure in MPa? confirm blast pressure from ExplosionUtils on same scale/magnitude as armorTolerance
                 if (ductility > 0.20f)
                 {
                     if (BlastPressure > ArmorTolerance) //material stress tolerance exceeded, armor rupture
                     {
-                        spallMass = spallCaliber * (thickness/10) * (Density / 1000);
+                        spallMass = spallCaliber * (thickness / 10) * (Density / 1000);
                         hitPart.ReduceArmor(spallCaliber * thickness);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
                             Debug.Log("[BDArmory.ProjectileUtils]: Armor rupture! Size: " + spallCaliber + "; mass: " + spallMass + "kg");
                         }
-                        damage = hitPart.AddBallisticDamage(spallMass/1000, spallCaliber*10, 1, blowthroughFactor, 1, 500);
+                        damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
                         ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
@@ -347,13 +347,13 @@ namespace BDArmory.Misc
                     if (blowthroughFactor > 0.66) //armor holds, spalling
                     {
                         spallCaliber *= ((1 - ductility) * blowthroughFactor);
-                        spallMass = spallCaliber * (thickness/10) * (Density / 1000);
+                        spallMass = spallCaliber * (thickness / 10) * (Density / 1000);
                         hitPart.ReduceArmor(spallCaliber * (thickness / 10));
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         {
                             Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor spalling! Size: " + spallCaliber + "; mass: " + spallMass + "kg");
                         }
-                        damage = hitPart.AddBallisticDamage(spallMass/1000, spallCaliber*10, 1, blowthroughFactor, 1, 500);
+                        damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
                         ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
@@ -384,9 +384,9 @@ namespace BDArmory.Misc
                             else; //0.05-0.19 ductility - harder steels, etc
                             {
                                 spallCaliber *= ((1.2f - ductility) * blowthroughFactor);
-                                spallMass = spallCaliber* thickness/10 * (Density / 1000);
+                                spallMass = spallCaliber * thickness / 10 * (Density / 1000);
                                 hitPart.ReduceArmor(spallCaliber * thickness);
-                                damage = hitPart.AddBallisticDamage(spallMass/1000, spallCaliber*10, 1, blowthroughFactor, 1, 500);
+                                damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
                                 ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
@@ -405,8 +405,8 @@ namespace BDArmory.Misc
                             {
                                 spallCaliber *= ((1 - ductility) * blowthroughFactor);
                                 hitPart.ReduceArmor(spallCaliber * (thickness / 5));
-                                spallMass = spallCaliber * (thickness/5) * (Density / 1000);
-                                damage = hitPart.AddBallisticDamage(spallMass/1000, spallCaliber*10, 1, blowthroughFactor, 1, 500);
+                                spallMass = spallCaliber * (thickness / 5) * (Density / 1000);
+                                damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
                                 ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
