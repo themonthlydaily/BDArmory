@@ -1622,6 +1622,15 @@ namespace BDArmory.Modules
                 spinningDown = true;
             }
         }
+
+        public bool CanFireSoon()
+        {
+            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            if (timeGap <= weaponManager.targetScanInterval)
+                return true;
+            else
+                return (Time.time - timeFired >= timeGap - weaponManager.targetScanInterval);
+        }
         #endregion Guns
         //lasers
         #region LaserFire

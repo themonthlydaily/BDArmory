@@ -4171,10 +4171,12 @@ namespace BDArmory.Modules
                             if (!TargetInTurretRange(turret, gimbalTolerance, null, gun))
                                 return false;
 
-                        // check overheat
+                        // check overheat, reloading, ability to fire soon
                         if (gun.isOverheated)
                             return false;
                         if (gun.isReloading || !gun.hasGunner)
+                            return false;
+                        if (!gun.CanFireSoon())
                             return false;
                         // check ammo
                         if (CheckAmmo(gun))
