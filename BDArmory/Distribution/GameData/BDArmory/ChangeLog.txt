@@ -1,7 +1,9 @@
 ﻿FIXES
 	- Fix various occassional NREs.
 	- Fix bug in parser for 'dead teams'.
+	- When a missile has lost its MissileBase set its isMissile tag to false so it no longer counts as a missile.
 IMPROVEMENTS
+	- Updated HP patch for AoA Technologies.
 
 v1.4.6.0
 FIXES
