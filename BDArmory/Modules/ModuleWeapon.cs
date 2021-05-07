@@ -3187,7 +3187,6 @@ namespace BDArmory.Modules
         }
         void UpdateHeat()
         {
-            heat = Mathf.Clamp(heat - heatLoss * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
             if (heat > maxHeat && !isOverheated)
             {
                 isOverheated = true;
@@ -3197,6 +3196,7 @@ namespace BDArmory.Modules
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
             }
+            heat = Mathf.Clamp(heat - heatLoss * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
             if (heat < maxHeat / 3 && isOverheated) //reset on cooldown
             {
                 isOverheated = false;
