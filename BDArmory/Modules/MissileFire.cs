@@ -1358,11 +1358,14 @@ namespace BDArmory.Modules
                     if (isChaffing) debugString.AppendLine("Chaffing");
                     if (isFlaring) debugString.AppendLine("Flaring");
                     if (isECMJamming) debugString.AppendLine("ECMJamming");
+                    if (weaponArray != null) // Heat debugging
                     {
                         List<string> weaponHeatDebugStrings = new List<string>();
-                        foreach (ModuleWeapon weapon in weaponArray)
+                        HashSet<WeaponClasses> validClasses = new HashSet<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.Rocket, WeaponClasses.DefenseLaser };
+                        foreach (var weaponCandidate in weaponArray)
                         {
-                            if (weapon == null) continue;
+                            if (weaponCandidate == null || !validClasses.Contains(weaponCandidate.GetWeaponClass())) continue;
+                            var weapon = (ModuleWeapon)weaponCandidate;
                             weaponHeatDebugStrings.Add(String.Format(" - {0}: heat: {1,6:F1}, max: {2}, overheated: {3}", weapon.shortName, weapon.heat, weapon.maxHeat, weapon.isOverheated));
                         }
                         if (weaponHeatDebugStrings.Count > 0)
