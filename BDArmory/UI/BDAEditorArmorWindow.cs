@@ -32,12 +32,13 @@ namespace BDArmory.UI
         private bool SetThickness = false;
         private string selectedArmor = "None";
         private bool armorslist = false;
-        private float armorThickness = 10;
-        private float oldThickness = 10;
+        private float Thickness = 10;
+        private float oldThickness = -1;
         private float maxThickness = 60;
         private bool Visualizer = false;
         private bool oldVisualizer = false;
         private bool refreshVisualizer = false;
+        private float updateTimer = 0;
         void Awake()
         {
         }
@@ -117,6 +118,20 @@ namespace BDArmory.UI
         void Dummy()
         { }
 
+        private void Update()
+        {
+            if (showArmorWindow)
+            {
+                updateTimer -= Time.fixedDeltaTime;
+
+                if (updateTimer < 0)
+                {
+                    CalcArmor = true;
+                    updateTimer = 0.5f;    //next update in half a sec only
+                }
+            }
+        }
+
         void OnGUI()
         {
             if (showArmorWindow)
@@ -124,7 +139,11 @@ namespace BDArmory.UI
                 windowRect = GUI.Window(this.GetInstanceID(), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
 
             }
-
+            else
+            {
+                Visualizer = false;
+                VisualizeArmor();
+            }
             PreventClickThrough();
         }
 
@@ -152,15 +171,15 @@ namespace BDArmory.UI
                 VisualizeArmor();
             }
 
-            GUI.Label(new Rect(10, 80, 300, 20), "Armor Thickness: " + armorThickness + "mm", style);
-            armorThickness = GUI.HorizontalSlider(new Rect(20, 100, 260, 20), armorThickness, 0, maxThickness);
-            armorThickness /= 5;
-            armorThickness = Mathf.Round(armorThickness);
-            armorThickness *= 5;
+            GUI.Label(new Rect(10, 80, 300, 20), "Armor Thickness: " + Thickness + "mm", style);
+            Thickness = GUI.HorizontalSlider(new Rect(20, 100, 260, 20), Thickness, 0, maxThickness);
+            Thickness /= 5;
+            Thickness = Mathf.Round(Thickness);
+            Thickness *= 5;
 
-            if (armorThickness != oldThickness)
+            if (Thickness != oldThickness)
             {
-                oldThickness = armorThickness;
+                oldThickness = Thickness;
                 SetThickness = true;
                 CalculateArmorMass();
             }
@@ -183,6 +202,7 @@ namespace BDArmory.UI
                     selectedArmor = ArmorInfo.armors[selected_index].name;
                     SetType = true;
                     CalculateArmorMass();
+                    Thickness = 10;
                 }
             }
             previous_index = selected_index;
@@ -208,23 +228,38 @@ namespace BDArmory.UI
                     {
                         if (SetType || SetThickness)
                         {
+                            if (SetThickness)
+                            {
+                                if (armor.ArmorTypeNum > 1)
+                                {
+                                    armor.Armor = Mathf.Clamp(Thickness, 0, armor.maxSupportedArmor);
+                                    if (armor.maxSupportedArmor > maxThickness)
+                                    {
+                                        maxThickness = armor.maxSupportedArmor;
+                                    }
+                                }
+                                else
+                                {
+                                    maxThickness = 10;
+                                }
+                            }
                             if (SetType)
                             {
                                 armor.ArmorTypeNum = (ArmorInfo.armors.FindIndex(t => t.name == selectedArmor) + 1);
-                            }
-                            if (SetThickness)
-                            {
-                                if (armor.name != "None")
+                                if (armor.ArmorThickness > 10)
                                 {
-                                    armor.Armor = Mathf.Clamp(armorThickness, 0, armor.maxSupportedArmor);
+                                    if (armor.ArmorTypeNum < 2)
+                                    {
+                                        armor.ArmorTypeNum = 2; //don't set armor type "none" for armor panels
+                                    }
+                                    if (armor.maxSupportedArmor > maxThickness)
+                                    {
+                                        maxThickness = armor.maxSupportedArmor;
+                                    }
                                 }
                             }
                             armor.ArmorSetup(null, null);
-                        }
-                        if (armor.maxSupportedArmor > maxThickness)
-                        {
-                            maxThickness = armor.maxSupportedArmor;
-                        }
+                        } 
                         totalArmorMass += armor.armorMass;
                     }
                 }
@@ -254,7 +289,7 @@ namespace BDArmory.UI
                             //float h = armor.ArmorTypeNum / (ArmorInfo.armors.Count + 1);
                             //Color ArmorColor = Color.HSVToRGB((armor.ArmorTypeNum / (ArmorInfo.armors.Count + 1)) 1f, 1f);
                             //ArmorColor.a = ((armor.Armor / armor.maxSupportedArmor) * 255);
-                            parts.Current.SetHighlightColor(Color.HSVToRGB((a.ArmorTypeNum / (ArmorInfo.armors.Count + 1)), ((a.Armor / a.maxSupportedArmor)*5), 1f));
+                            parts.Current.SetHighlightColor(Color.HSVToRGB((a.ArmorTypeNum / (ArmorInfo.armors.Count + 1)), ((a.Armor / a.maxSupportedArmor)*2), 1f));
                             parts.Current.SetHighlight(true, false);
                             parts.Current.highlightType = Part.HighlightType.AlwaysOn;
                         }

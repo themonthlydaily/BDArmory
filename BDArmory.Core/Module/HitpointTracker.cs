@@ -116,6 +116,7 @@ namespace BDArmory.Core.Module
                 if (HighLogic.LoadedSceneIsEditor)
                 {
                     _updateHitpoints = true;
+                    ArmorSet = false;
                 }
                 else // Loading of the part from a craft in flight mode
                 {
@@ -216,8 +217,8 @@ namespace BDArmory.Core.Module
                 sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
             }
             partSize = CalcPartBounds(this.part, this.transform).size;
-            armorVolume = ((Armor / 1000) *  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
-((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));  //mass * surface area approximation of a cylinder, where H/W are unknown
+            armorVolume =  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
+((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust);  //mass * surface area approximation of a cylinder, where H/W are unknown
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             SetupPrefab();
@@ -278,6 +279,7 @@ namespace BDArmory.Core.Module
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
 
                 var structuralMass = density * structuralVolume;
+                Debug.Log("[HP] "+ part.name + " structural Volume: " + structuralVolume + "; density: " + density + " structural mass: " + structuralMass);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralMass : " + structuralMass);
                 //3. final calculations
                 hitpoints = structuralMass * hitpointMultiplier * 0.333f;
@@ -411,7 +413,7 @@ namespace BDArmory.Core.Module
                     armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
                 }
             }
-            if (maxSupportedArmor < 0) //hasn't been sep in cfg
+            if (maxSupportedArmor < 0) //hasn't been set in cfg
             {
                 if (part.IsAero())
                 {
@@ -429,6 +431,7 @@ namespace BDArmory.Core.Module
                     maxSupportedArmor = ArmorThickness;
                 }
             }
+            Debug.Log("[ARMOR] max supported armor for " + part.name + " is " + maxSupportedArmor);
             //if maxSupportedArmor > 0 && < armorThickness, that's entirely the fault of the MM patcher
             UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
             armorFieldFlight.minValue = 0f;
@@ -452,7 +455,10 @@ namespace BDArmory.Core.Module
                 }
             }
             armorInfo = ArmorInfo.armors[ArmorInfo.armorNames[(int)ArmorTypeNum - 1]]; //what does this return if armorname cannot be found (mod armor removed/not present in install?)
-
+            if (startsArmored && ArmorTypeNum < 2)
+            {
+                ArmorTypeNum = 2;
+            }
             //if (SelectedArmorType != ArmorInfo.armorNames[(int)ArmorTypeNum - 1]) //armor selection overridden by Editor widget
             //{
             //	armorInfo = ArmorInfo.armors[SelectedArmorType];
@@ -466,13 +472,13 @@ namespace BDArmory.Core.Module
             Hardness = armorInfo.Hardness;
             Strength = armorInfo.Strength;
             SafeUseTemp = armorInfo.SafeUseTemp;
-            Cost = armorInfo.Cost;
             SetArmor();
             armorMass = 0;
-            if (guiArmorTypeString != "None") //don't apply cost/mass to None armor type
+            armorCost = 0;
+            if (ArmorTypeNum > 1) //don't apply cost/mass to None armor type
             {
-                armorMass = armorVolume * Density / 1000; //armor mass in tons
-                armorCost = armorVolume * Cost;
+                armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
+                armorCost = armorVolume * armorInfo.Cost;
             }
             using (IEnumerator<UIPartActionWindow> window = FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator())
                 while (window.MoveNext())
@@ -483,12 +489,12 @@ namespace BDArmory.Core.Module
                         window.Current.displayDirty = true;
                     }
                 }
-            part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
+            //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
         }
 
-        void SetArmor()
+        public void SetArmor()
         {
-            if (guiArmorTypeString != "None")
+            if (ArmorTypeNum > 1)
             {                
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                 armorFieldFlight.minValue = 0f;
