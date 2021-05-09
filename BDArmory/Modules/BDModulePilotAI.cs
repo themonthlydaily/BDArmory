@@ -1443,26 +1443,26 @@ namespace BDArmory.Modules
                 localAngVel -= localTargetAngVel;
             }
 
-            Vector3 targetDirection;
-            Vector3 targetDirectionYaw;
+            // Vector3 targetDirection;
+            // Vector3 targetDirectionYaw;
             float yawError;
             float pitchError;
             //float postYawFactor;
             //float postPitchFactor;
-            if (steerMode == SteerModes.NormalFlight)
-            {
-                targetDirection = velocityTransform.InverseTransformDirection(targetPosition - velocityTransform.position).normalized;
-                targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 45 * Mathf.Deg2Rad, 0);
+            // if (steerMode == SteerModes.NormalFlight)
+            // {
+            //     targetDirection = velocityTransform.InverseTransformDirection(targetPosition - velocityTransform.position).normalized;
+            //     targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 45 * Mathf.Deg2Rad, 0);
 
-                targetDirectionYaw = vesselTransform.InverseTransformDirection(vessel.Velocity()).normalized;
-                targetDirectionYaw = Vector3.RotateTowards(Vector3.up, targetDirectionYaw, 45 * Mathf.Deg2Rad, 0);
-            }
-            else//(steerMode == SteerModes.Aiming)
-            {
-                targetDirection = vesselTransform.InverseTransformDirection(targetPosition - vesselTransform.position).normalized;
-                targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 25 * Mathf.Deg2Rad, 0);
-                targetDirectionYaw = targetDirection;
-            }
+            //     targetDirectionYaw = vesselTransform.InverseTransformDirection(vessel.Velocity()).normalized;
+            //     targetDirectionYaw = Vector3.RotateTowards(Vector3.up, targetDirectionYaw, 45 * Mathf.Deg2Rad, 0);
+            // }
+            // else//(steerMode == SteerModes.Aiming)
+            // {
+            //     targetDirection = vesselTransform.InverseTransformDirection(targetPosition - vesselTransform.position).normalized;
+            //     targetDirection = Vector3.RotateTowards(Vector3.up, targetDirection, 25 * Mathf.Deg2Rad, 0);
+            //     targetDirectionYaw = targetDirection;
+            // }
             debugPos = vessel.transform.position + (targetPosition - vesselTransform.position) * 5000;
 
             //// Adjust targetDirection based on ATTITUDE limits
@@ -1476,8 +1476,16 @@ namespace BDArmory.Modules
             //}
             //debugString.AppendLine($"Attitude: " + attitude);
 
-            pitchError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirection, Vector3.right), Vector3.back);
-            yawError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirectionYaw, Vector3.forward), Vector3.right);
+            // pitchError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirection, Vector3.right), Vector3.back);
+            // yawError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirectionYaw, Vector3.forward), Vector3.right);
+
+            var referenceVelocityUp = vessel.Velocity().IsZero() ? vesselTransform.up : (Vector3)vessel.Velocity().normalized;
+            var referenceVelocityRight = Vector3.Cross(-vesselTransform.forward, referenceVelocityUp).normalized;
+            var referenceVelocityBack = Vector3.Cross(referenceVelocityUp, referenceVelocityRight).normalized;
+            var steerLimits = steerMode == SteerModes.NormalFlight ? 45f : 25f;
+            pitchError = Mathf.Clamp(-Vector3.SignedAngle(referenceVelocityUp, Vector3.ProjectOnPlane(targetPosition - vesselTransform.position, referenceVelocityRight), referenceVelocityRight), -steerLimits, steerLimits);
+            yawError = Mathf.Clamp(Vector3.SignedAngle(referenceVelocityUp, Vector3.ProjectOnPlane(targetPosition - vesselTransform.position, referenceVelocityBack), referenceVelocityBack), -steerLimits, steerLimits);
+            debugString.AppendLine(String.Format("angle: {0:7,F4}, pitchError: {1,7:F4}, yawError: {2,7:F4}", Vector3.Angle(referenceVelocityUp, targetPosition - vesselTransform.position), pitchError, yawError));
 
             // User-set steer limits
             if (maxSteer > maxSteerAtMaxSpeed)
@@ -2720,6 +2728,7 @@ namespace BDArmory.Modules
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, debugPos, 5, Color.red);
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vesselTransform.up * 1000, 3, Color.white);
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + -vesselTransform.forward * 100, 3, Color.yellow);
+            BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vessel.Velocity().normalized * 100, 3, Color.magenta);
 
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget, 2, Color.blue);
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right) + angVelRollTarget, 2, Color.green);
