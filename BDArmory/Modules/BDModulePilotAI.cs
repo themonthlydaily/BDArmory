@@ -1478,7 +1478,7 @@ namespace BDArmory.Modules
 
             pitchError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirection, Vector3.right), Vector3.back);
             yawError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirectionYaw, Vector3.forward), Vector3.right);
-            debugString.AppendLine(String.Format("pitchError: {0,7:F4}, yawError: {1,7:F4}", pitchError, yawError));
+            debugString.AppendLine(String.Format("steerMode: {0}, pitchError: {1,7:F4}, yawError: {2,7:F4}", steerMode, pitchError, yawError));
 
             // User-set steer limits
             if (maxSteer > maxSteerAtMaxSpeed)
