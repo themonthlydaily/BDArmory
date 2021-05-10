@@ -1478,7 +1478,7 @@ namespace BDArmory.Modules
 
             pitchError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirection, Vector3.right), Vector3.back);
             yawError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirectionYaw, Vector3.forward), Vector3.right);
-            debugString.AppendLine(String.Format("pitchError: {0,7:F4}, yawError: {1,7:F4}", pitchError, yawError));
+            debugString.AppendLine(String.Format("steerMode: {0}, pitchError: {1,7:F4}, yawError: {2,7:F4}", steerMode, pitchError, yawError));
 
             // User-set steer limits
             if (maxSteer > maxSteerAtMaxSpeed)
@@ -1559,6 +1559,8 @@ namespace BDArmory.Modules
 
             float steerPitch = (0.015f * steerMult * pitchError) - (SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x * (1 + steerKiAdjust));
             float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming ? (180f / 25f) : 4f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * 0.2f * -localAngVel.z * (1 + steerKiAdjust));
+            var debugPitchK = 0.015f * steerMult * pitchError;
+            var debugPitchD = -SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x * (1 + steerKiAdjust);
 
             pitchIntegral += pitchError;
             yawIntegral += yawError;
@@ -1569,6 +1571,8 @@ namespace BDArmory.Modules
             float pitchKi = 0.1f * (steerKiAdjust / 5); //This is what should be allowed to be tweaked by the player, just like the steerMult, it is very low right now
             pitchIntegral = Mathf.Clamp(pitchIntegral, -0.2f / (pitchKi * dynamicAdjustment), 0.2f / (pitchKi * dynamicAdjustment)); //0.2f is the limit of the integral variable, making it bigger increases overshoot
             steerPitch += pitchIntegral * pitchKi * dynamicAdjustment; //Adds the integral component to the mix
+            var debugPitchI = pitchIntegral * pitchKi;
+            debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}, dynAdj: {3,7:F4}", debugPitchK, debugPitchI, debugPitchD, dynamicAdjustment));
 
             float yawKi = 0.1f * (steerKiAdjust / 15);
             yawIntegral = Mathf.Clamp(yawIntegral, -0.2f / (yawKi * dynamicAdjustment), 0.2f / (yawKi * dynamicAdjustment));
