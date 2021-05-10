@@ -1478,7 +1478,6 @@ namespace BDArmory.Modules
 
             pitchError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirection, Vector3.right), Vector3.back);
             yawError = VectorUtils.SignedAngle(Vector3.up, Vector3.ProjectOnPlane(targetDirectionYaw, Vector3.forward), Vector3.right);
-            debugString.AppendLine(String.Format("steerMode: {0}, pitchError: {1,7:F4}, yawError: {2,7:F4}", steerMode, pitchError, yawError));
 
             // User-set steer limits
             if (maxSteer > maxSteerAtMaxSpeed)
@@ -1486,7 +1485,6 @@ namespace BDArmory.Modules
             else
                 finalMaxSteer *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteer, maxSteerAtMaxSpeed); // Linearly varies between two limits, clamped at limit values
             finalMaxSteer = Mathf.Max(finalMaxSteer, 0.1f); // added just in case to ensure some input is retained no matter what happens
-            debugString.AppendLine($"finalMaxSteer: {finalMaxSteer}");
 
             //roll
             Vector3 currentRoll = -vesselTransform.forward;
@@ -1546,6 +1544,9 @@ namespace BDArmory.Modules
             float dynamicAdjustment = Mathf.Clamp(16 * (float)(vessel.srfSpeed / vessel.dynamicPressurekPa), 0, 1.2f);
 
             float rollError = Misc.Misc.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
+            debugString.AppendLine(String.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
+            debugString.AppendLine($"finalMaxSteer: {finalMaxSteer}");
+
             float steerRoll = (steerMult * 0.0015f * rollError);
             float rollDamping = (.10f * SteerDamping(Mathf.Abs(rollError), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 3) * -localAngVel.y);
             steerRoll -= rollDamping;
