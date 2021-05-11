@@ -1530,7 +1530,9 @@ namespace BDArmory.Control
                 {
                     nonCompetitorsToRemove.Add(vessel);
                     if (vessel.vesselType == VesselType.SpaceObject) // Deal with any new comets or asteroids that have appeared immediately.
-                        StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
+                    {
+                        RemoveSpaceObject(vessel);
+                    }
                     else
                         StartCoroutine(DelayedVesselRemovalCoroutine(vessel, now ? 0f : BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY));
                 }
@@ -1545,8 +1547,14 @@ namespace BDArmory.Control
                 if (vessel.vesselType == VesselType.Debris) // Clean up any old debris.
                     StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
                 if (vessel.vesselType == VesselType.SpaceObject) // Remove comets and asteroids to try to avoid null refs. (Still get null refs from comets, but it seems better with this than without it.)
-                    StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
+                    RemoveSpaceObject(vessel);
             }
+        }
+
+        public void RemoveSpaceObject(Vessel vessel)
+        {
+            if (!((BDArmorySettings.ASTEROID_RAIN || BDArmorySettings.ASTEROID_FIELD) && Asteroids.managedAsteroids.Contains(vessel))) // Don't remove managed asteroids.
+                StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
         }
 
         HashSet<VesselType> debrisTypes = new HashSet<VesselType> { VesselType.Debris, VesselType.SpaceObject }; // Consider space objects as debris.
@@ -1556,7 +1564,10 @@ namespace BDArmory.Control
             {
                 if (debris != null && debrisTypes.Contains(debris.vesselType))
                 {
-                    StartCoroutine(DelayedVesselRemovalCoroutine(debris, debris.vesselType == VesselType.SpaceObject ? 0 : BDArmorySettings.DEBRIS_CLEANUP_DELAY));
+                    if (debris.vesselType == VesselType.SpaceObject)
+                        RemoveSpaceObject(debris);
+                    else
+                        StartCoroutine(DelayedVesselRemovalCoroutine(debris, BDArmorySettings.DEBRIS_CLEANUP_DELAY));
                 }
             }
             catch (Exception e)
@@ -1570,7 +1581,7 @@ namespace BDArmory.Control
             if (vessel.vesselType == VesselType.SpaceObject)
             {
                 Debug.Log("[BDArmory.BDACompetitionMode]: Found a newly spawned " + (vessel.FindVesselModuleImplementing<CometVessel>() != null ? "comet" : "asteroid") + " vessel! Removing it.");
-                StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0f));
+                RemoveSpaceObject(vessel);
             }
         }
 

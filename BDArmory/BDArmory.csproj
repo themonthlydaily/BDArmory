@@ -135,6 +135,7 @@
     <Compile Include="Competition\BDAScoreService.cs" />
     <Compile Include="Competition\RemoteOrchestrationWindow.cs" />
     <Compile Include="Control\AIUtils.cs" />
+    <Compile Include="Control\Asteroids.cs" />
     <Compile Include="Control\BDACompetitionMode.cs" />
     <Compile Include="Control\BDATournament.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />

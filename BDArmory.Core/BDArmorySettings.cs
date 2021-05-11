@@ -125,6 +125,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE = false;
         [BDAPersistantSettingsField] public static bool HEART_BLEED_ENABLED = false;
         [BDAPersistantSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;
+        [BDAPersistantSettingsField] public static bool ASTEROID_FIELD = false;
+        [BDAPersistantSettingsField] public static bool ASTEROID_RAIN = false;
+        [BDAPersistantSettingsField] public static float ASTEROIDS_DENSITY = 0.5f; // Arbitrary density scale.
+        [BDAPersistantSettingsField] public static float ASTEROIDS_ALTITUDE = 5f; // Km.k
+        [BDAPersistantSettingsField] public static float ASTEROIDS_RADIUS = 4f; // Km.
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;

@@ -1071,7 +1071,7 @@ namespace BDArmory.UI
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
 
-                    guardLines += 0.5f;                    
+                    guardLines += 0.5f;
 
                     float TargetLines = 0;
                     showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
@@ -1092,7 +1092,7 @@ namespace BDArmory.UI
                             ActiveWeaponManager.targetCoM = !ActiveWeaponManager.targetCoM;
                             if (ActiveWeaponManager.targetCoM)
                             {
-								                ActiveWeaponManager.targetCommand = false;
+                                ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;
@@ -1760,7 +1760,25 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AmmoStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_AMMO_RATION})", leftLabel);//Ammo Steal Ration
                     BDArmorySettings.RESOURCE_STEAL_AMMO_RATION = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_AMMO_RATION, 0f, 1f) * 100f) / 100f;
                 }
-                ++line;
+
+                // Asteroids
+                BDArmorySettings.ASTEROID_FIELD = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidField")); // Asteroid Field
+                BDArmorySettings.ASTEROID_RAIN = GUI.Toggle(SRightRect(line), BDArmorySettings.ASTEROID_RAIN, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRain")); // Asteroid Rain
+                if (BDArmorySettings.ASTEROID_FIELD || BDArmorySettings.ASTEROID_RAIN)
+                {
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Density")}:  ({(BDArmorySettings.ASTEROIDS_DENSITY < 1f ? BDArmorySettings.ASTEROIDS_DENSITY : "Star Wars")})", leftLabel);
+                    BDArmorySettings.ASTEROIDS_DENSITY = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_DENSITY, 0f, 1f) * 100f) / 100f; // Spawn Density
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Altitude")}:  ({BDArmorySettings.ASTEROIDS_ALTITUDE}km)", leftLabel);
+                    BDArmorySettings.ASTEROIDS_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_ALTITUDE, 0f, 50f)); // Spawn Altitude
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Radius")}:  ({BDArmorySettings.ASTEROIDS_RADIUS}km)", leftLabel);
+                    BDArmorySettings.ASTEROIDS_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_RADIUS, 0f, 10f) * 5f) / 5f; // Spawn Radius
+                    if (GUI.Button(SLeftButtonRect(++line), "Spawn Field Now"))
+                    { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS); }
+                    if (GUI.Button(SRightButtonRect(line), "Spawn Rain Now"))
+                    { AsteroidRain.Instance.SpawnRain(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS); }
+
+                    ++line;
+                }
             }
 
             if (BDArmorySettings.BATTLEDAMAGE)
@@ -1962,7 +1980,7 @@ namespace BDArmory.UI
 
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionKillerGMFrequency")}: ({(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? "Off" : BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY + "s")}, {(BDACompetitionMode.Instance.killerGMenabled ? "on" : "off")})", leftLabel);
                     BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY / 10f, 1, 6)) * 10f; // For now, don't control the killerGMEnabled flag (it's controlled by right clicking M).
-                    // BDACompetitionMode.Instance.killerGMenabled = !(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60);
+                                                                                                                                                                                                      // BDACompetitionMode.Instance.killerGMenabled = !(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60);
 
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RunwayProjectRound")}: ({(BDArmorySettings.RUNWAY_PROJECT_ROUND > 10 ? $"S{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) / 10}R{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) % 10 + 1}" : "—")})", leftLabel); // RWP round
                     BDArmorySettings.RUNWAY_PROJECT_ROUND = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RUNWAY_PROJECT_ROUND, 10f, 40f));

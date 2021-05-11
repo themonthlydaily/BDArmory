@@ -1279,6 +1279,10 @@ namespace BDArmory.Modules
         {
             enabled = false;
             instance = this;
+        }
+
+        void Start()
+        {
             StartCoroutine(CheckActionGroupEditor());
         }
 

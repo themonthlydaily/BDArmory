@@ -1497,17 +1497,17 @@ namespace BDArmory.Control
             else
             {
                 if (vessel.vesselType == VesselType.SpaceObject)
+                { BDACompetitionMode.Instance.RemoveSpaceObject(vessel); }
+                else
                 {
-                    var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
-                    if (cometVessel) { Destroy(cometVessel); }
-                }
-                vessel.Die(); // Kill the vessel
-                yield return new WaitForFixedUpdate();
-                if (vessel != null)
-                {
-                    var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
-                    foreach (var part in partsToKill)
-                        part.Die();
+                    vessel.Die(); // Kill the vessel
+                    yield return new WaitForFixedUpdate();
+                    if (vessel != null)
+                    {
+                        var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
+                        foreach (var part in partsToKill)
+                            part.Die();
+                    }
                 }
                 yield return new WaitForFixedUpdate();
             }
