@@ -60,7 +60,7 @@ namespace BDArmory.Modules
             AnalyticEstimate,
             NumericalIntegration
         }
-                
+
         public WeaponStates weaponState = WeaponStates.Disabled;
 
         //animations
@@ -70,7 +70,7 @@ namespace BDArmory.Modules
         public float bulletBallisticCoefficient;
 
         public WeaponTypes eWeaponType;
-                
+
         public float heat;
         public bool isOverheated;
 
@@ -1622,6 +1622,15 @@ namespace BDArmory.Modules
                 spinningDown = true;
             }
         }
+
+        public bool CanFireSoon()
+        {
+            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            if (timeGap <= weaponManager.targetScanInterval)
+                return true;
+            else
+                return (Time.time - timeFired >= timeGap - weaponManager.targetScanInterval);
+        }
         #endregion Guns
         //lasers
         #region LaserFire
@@ -1853,17 +1862,26 @@ namespace BDArmory.Modules
                         }
                         if (BDArmorySettings.INSTAKILL) p.Destroy();
 
-                        if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime))
+                        var aName = vesselname;
+                        var tName = p.vessel.GetName();
+                        if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
                         {
-                            ScoreAccumulator = 0;
-                            var aName = vesselname;
-                            var tName = p.vessel.GetName();
-                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                            // Always score damage.
+                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                             {
+                                BDAScoreService.Instance.TrackDamage(aName, tName, damage);
+                            }
+                            var tData = BDACompetitionMode.Instance.Scores[tName];
+                            if (tData.damageFromBullets.ContainsKey(aName))
+                                tData.damageFromBullets[aName] += damage;
+                            else
+                                tData.damageFromBullets.Add(aName, damage);
+                            if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
+                            {
+                                ScoreAccumulator = 0;
                                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                 {
                                     BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
-                                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                                 }
                                 var aData = BDACompetitionMode.Instance.Scores[aName];
                                 aData.Score += 1;
@@ -1871,7 +1889,6 @@ namespace BDArmory.Modules
                                 {
                                     aData.PinataHits++;
                                 }
-                                var tData = BDACompetitionMode.Instance.Scores[tName];
                                 tData.lastPersonWhoHitMe = aName;
                                 tData.lastHitTime = Planetarium.GetUniversalTime();
                                 tData.everyoneWhoHitMe.Add(aName);
@@ -1879,15 +1896,11 @@ namespace BDArmory.Modules
                                     ++tData.hitCounts[aName];
                                 else
                                     tData.hitCounts.Add(aName, 1);
-                                if (tData.damageFromBullets.ContainsKey(aName))
-                                    tData.damageFromBullets[aName] += damage;
-                                else
-                                    tData.damageFromBullets.Add(aName, damage);
                             }
-                        }
-                        else
-                        {
-                            ScoreAccumulator += 0.02f;
+                            else
+                            {
+                                ScoreAccumulator += TimeWarp.fixedDeltaTime;
+                            }
                         }
                     }
 
@@ -3187,7 +3200,6 @@ namespace BDArmory.Modules
         }
         void UpdateHeat()
         {
-            heat = Mathf.Clamp(heat - heatLoss * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
             if (heat > maxHeat && !isOverheated)
             {
                 isOverheated = true;
@@ -3197,6 +3209,7 @@ namespace BDArmory.Modules
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
             }
+            heat = Mathf.Clamp(heat - heatLoss * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
             if (heat < maxHeat / 3 && isOverheated) //reset on cooldown
             {
                 isOverheated = false;
@@ -3373,7 +3386,7 @@ namespace BDArmory.Modules
                                 targetPosition = visualTargetPart.transform.position;
                             }
                         }
-                    }                   
+                    }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Visual;

@@ -1,4 +1,17 @@
-﻿v1.4.6.0
+﻿v1.4.6.1
+FIXES
+	- Fix various occassional NREs.
+	- Fix bug in parser for 'dead teams'.
+	- When a missile has lost its MissileBase set its isMissile tag to false so it no longer counts as a missile.
+	- Don't detonate CASE ammo when the vessel is null, packed or not loaded.
+	- Fixed overheated guns sometimes not being detected as overheated.
+	- Fix AI having issues avoiding terrain when in an inverted dive (would happen most frequently during missile evasion).
+IMPROVEMENTS
+	- Updated HP patch for AoA Technologies.
+	- Add check for whether guns with low RPM can fire soon, switch to a different weapon if the next time a low RPM gun can fire is greater than the Weapon Manager fire interval setting.
+	- Re-add multiple subsystem targeting to the advanced targeting.
+
+v1.4.6.0
 FIXES
 	- Store the armed/IFF state in the craft files instead of just the GUI strings.
 	- Use the correct ShipConstruct in the editor for setting the max gun range and set a minimum of 10 for the max gun range to avoid breaking the part window sliders.
