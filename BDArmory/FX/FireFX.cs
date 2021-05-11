@@ -35,6 +35,14 @@ namespace BDArmory.FX
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
 
+        PartResource fuel;
+        PartResource solid;
+        PartResource ox;
+        PartResource ec;
+        PartResource mp;
+
+        private KerbalSeat Seat;
+
         KSPParticleEmitter[] pEmitters;
         void OnEnable()
         {
@@ -49,24 +57,31 @@ namespace BDArmory.FX
             {
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
-            BDArmorySetup.numberOfParticleEmitters++;
-            pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
 
-            using (var pe = pEmitters.AsEnumerable().GetEnumerator())
-                while (pe.MoveNext())
-                {
-                    if (pe.Current == null) continue;
-                    pe.Current.emit = true;
-                    _highestEnergy = pe.Current.maxEnergy;
-                    EffectBehaviour.AddParticleEmitter(pe.Current);
-                }
+                BDArmorySetup.numberOfParticleEmitters++;
+                pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
+
+                using (var pe = pEmitters.AsEnumerable().GetEnumerator())
+                    while (pe.MoveNext())
+                    {
+                        if (pe.Current == null) continue;
+                        pe.Current.emit = true;
+                        _highestEnergy = pe.Current.maxEnergy;
+                        EffectBehaviour.AddParticleEmitter(pe.Current);
+                    }
+
+            var kerbalSeats = parentPart.parent.Modules.OfType<KerbalSeat>();
+            if (kerbalSeats.Count() > 0)
+                Seat = kerbalSeats.First();
+            else
+                Seat = null;
             if (parentPart.protoModuleCrew.Count > 0) //crew can extingusih fire
             {
                 burnTime = 10;
             }
-            if (parentPart.parent != null && parentPart.parent.protoModuleCrew.Count > 0)
+            if (parentPart.parent != null && parentPart.parent.protoModuleCrew.Count > 0 || Seat.Occupant != null)
             {
-                burnTime = 20; //though ajdacent parts will take longer to get to and extingusih
+                burnTime = 20; //though adjacent parts will take longer to get to and extingusih
             }
             if (parentPart.GetComponent<ModuleSelfSealingTank>() != null)
             {
@@ -74,7 +89,7 @@ namespace BDArmory.FX
                 FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
                 if (FBX.FireBottles > 0)
                 {
-                    FBX.FireBottles--;
+                    FBX.FireBottles -= 1;
                     burnTime = 10;
                 }
             }
@@ -98,13 +113,40 @@ namespace BDArmory.FX
                 return;
             }
             transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
-            PartResource fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
+            fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
             var engine = parentPart.FindModuleImplementing<ModuleEngines>();
             if (engine != null)
             {
-                if (engine.enabled)
+                if (engine.throttleLocked && !engine.allowShutdown) //likely a SRB
                 {
-                    if (parentPart.RequestResource("LiquidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
+                    if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
+                    {
+                        hasFuel = false;
+                    }
+                    solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
+                    if (solid != null)
+                    {
+                        if (solid.amount < solid.maxAmount * 0.66f)
+                        {
+                            engine.Activate(); //SRB lights from unintended ignition source
+                        }
+                        if (solid.amount < solid.maxAmount * 0.15f)
+                        {
+                            tntMassEquivilent += Mathf.Clamp((float)solid.amount, ((float)solid.maxAmount * 0.05f), ((float)solid.maxAmount * 0.2f));
+                            Detonate(); //casing's full of holes and SRB fuel's burnt to the point it can easily start venting through those holes
+                        }
+                    }
+                }
+                else
+                {
+                    if (engine.EngineIgnited)
+                    {
+                        if (parentPart.RequestResource("LiquidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
+                        {
+                            hasFuel = false;
+                        }
+                    }
+                    else
                     {
                         hasFuel = false;
                     }
@@ -127,7 +169,7 @@ namespace BDArmory.FX
                         hasFuel = false;
                     }
                 }
-                PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
+                ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 if (ox != null)
                 {
                     if (ox.amount > 0)
@@ -139,7 +181,7 @@ namespace BDArmory.FX
                         hasFuel = false;
                     }
                 }
-                PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
+                mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
                 if (mp != null)
                 {
                     if (mp.amount > (mp.maxAmount * 0.15f) || (mp.amount > 0 && mp.amount < (mp.maxAmount * 0.10f)))
@@ -155,7 +197,7 @@ namespace BDArmory.FX
                         hasFuel = false;
                     }
                 }
-                PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
+                ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                 if (ec != null)
                 {
                     if (ec.amount > 0)
@@ -184,18 +226,26 @@ namespace BDArmory.FX
             {
                 parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 ////////////////////////////////////////////////
-                if (ScoreAccumulator >= 1)
-                {
-                    ScoreAccumulator = 0;
-                    var aName = SourceVessel;
-                    var tName = parentPart.vessel.GetName();
 
-                    if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                ScoreAccumulator = 0;
+                var aName = SourceVessel;
+                var tName = parentPart.vessel.GetName();
+
+                if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                {
+                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                     {
-                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                        {
-                            BDAScoreService.Instance.TrackDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
-                        }
+                        BDAScoreService.Instance.TrackDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
+                    }
+                    // Track damage. Moving this here to properly track damage per tick
+                    var tData = BDACompetitionMode.Instance.Scores[tName];
+                    if (tData.damageFromBullets.ContainsKey(aName))
+                        tData.damageFromBullets[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
+                    else
+                        tData.damageFromBullets.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
+
+                    if (ScoreAccumulator >= 1) //could be reduced, gaining +1 hit per sec, per fire seems high
+                    {
                         var aData = BDACompetitionMode.Instance.Scores[aName];
                         aData.Score += 1;
 
@@ -203,8 +253,6 @@ namespace BDArmory.FX
                         {
                             aData.PinataHits++;
                         }
-
-                        var tData = BDACompetitionMode.Instance.Scores[tName];
                         tData.lastPersonWhoHitMe = aName;
                         tData.lastHitTime = Planetarium.GetUniversalTime();
                         tData.everyoneWhoHitMe.Add(aName);
@@ -213,12 +261,6 @@ namespace BDArmory.FX
                             ++tData.hitCounts[aName];
                         else
                             tData.hitCounts.Add(aName, 1);
-                        // Track damage
-                        if (tData.damageFromBullets.ContainsKey(aName))
-                            tData.damageFromBullets[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
-                        else
-                            tData.damageFromBullets.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
-
                     }
                 }
                 else

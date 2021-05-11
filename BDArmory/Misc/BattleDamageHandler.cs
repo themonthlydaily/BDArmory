@@ -81,6 +81,24 @@ namespace BDArmory.Misc
                 {
                     foreach (var engine in part.GetComponentsInChildren<ModuleEngines>())
                     {
+                        bool isSRB = false;
+                        bool SRBFuelled = false;
+                        if (!engine.allowShutdown && engine.throttleLocked)
+                        {
+                            isSRB = true;
+                            using (IEnumerator<PartResource> resources = part.Resources.GetEnumerator())
+                                while (resources.MoveNext())
+                                {
+                                    if (resources.Current == null) continue;
+                                    if (resources.Current.resourceName.Contains("SolidFuel"))
+                                    {
+                                        if (resources.Current.amount > 1d)
+                                        {
+                                            SRBFuelled = true;
+                                        }
+                                    }
+                                }
+                        }
                         if (engine.thrustPercentage > 20) //engines take thrust damage per hit
                         {
                             //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
@@ -88,6 +106,7 @@ namespace BDArmory.Misc
                             engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE); //AP does bonus damage
                             Mathf.Clamp(engine.thrustPercentage, 15f, 100); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
+                            engine.PlayFlameoutFX(true);
                             /*
                             float enginelevel = engine.thrustPercentage;
                             if (BDArmorySettings.BD_BALANCED_THRUST) //need to poke this more later, not working properly
@@ -111,7 +130,7 @@ namespace BDArmory.Misc
                         if (part.GetDamagePercentage() < 0.75f || (part.GetDamagePercentage() < 0.82f && penetrationFactor > 2))
                         {
                             var leak = part.GetComponentInChildren<FuelLeakFX>();
-                            if (leak == null)
+                            if (leak == null && !isSRB) //engine isn't a srb
                             {
                                 BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
                             }
@@ -119,18 +138,37 @@ namespace BDArmory.Misc
                         if (part.GetDamagePercentage() < 0.50f || (part.GetDamagePercentage() < 0.625f && penetrationFactor > 2))
                         {
                             var alreadyburning = part.GetComponentInChildren<FireFX>();
-                            if (alreadyburning == null)
+                            if (isSRB) //srbs are steel tubes full of explosives; treat differently
                             {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                                if (explosivedamage && SRBFuelled)
+                                {
+                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                                }
+                            }
+                            else
+                            {
+                                if (alreadyburning == null)
+                                {
+                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                                }
                             }
                         }
                         if (part.GetDamagePercentage() < 0.25f)
                         {
                             if (engine.EngineIgnited)
                             {
-                                engine.PlayFlameoutFX(true);
-                                engine.Shutdown(); //kill a badly damaged engine and don't allow restart
-                                engine.allowRestart = false;
+                                if (isSRB) //SRB is lit, and casing integrity fails due to damage; boom
+                                {
+                                    var Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
+                                    Rupture.CASELevel = 0;
+                                    Rupture.DetonateIfPossible();
+                                }
+                                else
+                                {
+                                    engine.PlayFlameoutFX(true);
+                                    engine.Shutdown(); //kill a badly damaged engine and don't allow restart
+                                    engine.allowRestart = false;
+                                }
                             }
                         }
                     }
@@ -145,11 +183,11 @@ namespace BDArmory.Misc
                         {
                             HEBonus = 1.4f;
                         }
-                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
+                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE/2))); //HE does bonus damage
                         Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
                         intake.area *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
-                        Mathf.Clamp((float)intake.area, 0.0002f, 99999); //even shredded intake ducting will still get some air to engines
+                        Mathf.Clamp((float)intake.area, 0.0005f, 99999); //even shredded intake ducting will still get some air to engines
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed);
                     }
                 }
