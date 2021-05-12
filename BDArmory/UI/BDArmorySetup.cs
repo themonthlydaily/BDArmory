@@ -1071,7 +1071,7 @@ namespace BDArmory.UI
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
 
-                    guardLines += 0.5f;                    
+                    guardLines += 0.5f;
 
                     float TargetLines = 0;
                     showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
@@ -1093,7 +1093,7 @@ namespace BDArmory.UI
                             ActiveWeaponManager.StartGuardTurretFiring(); //reset weapon targeting assignments
                             if (ActiveWeaponManager.targetCoM)
                             {
-								                ActiveWeaponManager.targetCommand = false;
+                                ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;

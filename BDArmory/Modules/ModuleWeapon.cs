@@ -3375,7 +3375,7 @@ namespace BDArmory.Modules
                             if (!turret) //make fixed guns all get the same target part
                             {
                                 targetID = 0;
-                            }                            
+                            }
                             if (targetparts.Count == 0)
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
@@ -3384,7 +3384,7 @@ namespace BDArmory.Modules
                             else
                             {
                                 visualTargetPart = targetparts[targetID];
-                                targetPosition = visualTargetPart.transform.position;                                
+                                targetPosition = visualTargetPart.transform.position;
                             }
                         }
                     }
