@@ -137,7 +137,7 @@ if not args.no_files:
 craftNames = sorted(list(set(craft for round in tournamentData.values() for heat in round.values() for craft in heat['craft'].keys())))
 teamWins = Counter([team for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Win" for team in heat['result']['teams']])
 teamDraws = Counter([team for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Draw" for team in heat['result']['teams']])
-teamDeaths = Counter([team for round in tournamentData.values() for heat in round.values() for team in heat['result']['dead teams']])
+teamDeaths = Counter([team for round in tournamentData.values() for heat in round.values() if 'dead teams' in heat['result'] for team in heat['result']['dead teams']])
 teams = {team: members for round in tournamentData.values() for heat in round.values() if 'teams' in heat['result'] for team, members in heat['result']['teams'].items()}
 summary = {
 	'craft': {

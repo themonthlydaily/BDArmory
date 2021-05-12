@@ -452,7 +452,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_WMWindow_MultiTargetNum"),//Max Turret Targets
          UI_FloatRange(minValue = 1, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All)]
-        public float multiTargetNum = 1; 
+        public float multiTargetNum = 1;
 
         public const float maxAllowableMissilesOnTarget = 18f;
 
@@ -577,9 +577,9 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IsVIP", advancedTweakable = true),// Is VIP, throwback to TF Classic (Hunted Game Mode)
             UI_Toggle(enabledText = "#LOC_BDArmory_IsVIP_enabledText", disabledText = "#LOC_BDArmory_IsVIP_disabledText", scene = UI_Scene.All),]//yes--no
-        public bool isVIP = false;       
+        public bool isVIP = false;
 
-        
+
         public void ToggleGuardMode()
         {
             guardMode = !guardMode;
@@ -1358,6 +1358,21 @@ namespace BDArmory.Modules
                     if (isChaffing) debugString.AppendLine("Chaffing");
                     if (isFlaring) debugString.AppendLine("Flaring");
                     if (isECMJamming) debugString.AppendLine("ECMJamming");
+                    if (weaponArray != null) // Heat debugging
+                    {
+                        List<string> weaponHeatDebugStrings = new List<string>();
+                        HashSet<WeaponClasses> validClasses = new HashSet<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.Rocket, WeaponClasses.DefenseLaser };
+                        foreach (var weaponCandidate in weaponArray)
+                        {
+                            if (weaponCandidate == null || !validClasses.Contains(weaponCandidate.GetWeaponClass())) continue;
+                            var weapon = (ModuleWeapon)weaponCandidate;
+                            weaponHeatDebugStrings.Add(String.Format(" - {0}: heat: {1,6:F1}, max: {2}, overheated: {3}", weapon.shortName, weapon.heat, weapon.maxHeat, weapon.isOverheated));
+                        }
+                        if (weaponHeatDebugStrings.Count > 0)
+                        {
+                            debugString.AppendLine("Weapon Heat:\n" + string.Join("\n", weaponHeatDebugStrings));
+                        }
+                    }
                     GUI.Label(new Rect(200, Screen.height - 500, 600, 200), debugString.ToString());
                 }
             }
@@ -4156,10 +4171,12 @@ namespace BDArmory.Modules
                             if (!TargetInTurretRange(turret, gimbalTolerance, null, gun))
                                 return false;
 
-                        // check overheat
+                        // check overheat, reloading, ability to fire soon
                         if (gun.isOverheated)
                             return false;
                         if (gun.isReloading || !gun.hasGunner)
+                            return false;
+                        if (!gun.CanFireSoon())
                             return false;
                         // check ammo
                         if (CheckAmmo(gun))
