@@ -2760,7 +2760,7 @@ namespace BDArmory.Modules
                                         simulating = false;
                                     }
                                 }
-                                else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level.
+                                else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. //not really an issue at present, since rockets will immediately detonate if fired underwater - SI
                                 {
                                     bulletPrediction = simCurrPos;
                                     simulating = false;
@@ -3314,6 +3314,7 @@ namespace BDArmory.Modules
                         if (targetCOM)
                         {
                             targetPosition = visualTargetVessel.CoM;
+                            visualTargetPart = null; //make sure this gets reset
                         }
                         else
                         {
@@ -3385,6 +3386,18 @@ namespace BDArmory.Modules
                                 visualTargetPart = targetparts[targetID];
                                 targetPosition = visualTargetPart.transform.position;
                             }
+                        }
+                    }
+                    else
+                    {
+                        if (targetCOM)
+                        {
+                            targetPosition = visualTargetVessel.CoM;
+                            visualTargetPart = null; //make sure these get reset
+                        }
+                        else
+                        {
+                            targetPosition = visualTargetPart.transform.position;
                         }
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
