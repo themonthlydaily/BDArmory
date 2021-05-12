@@ -1071,7 +1071,7 @@ namespace BDArmory.UI
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
 
-                    guardLines += 0.5f;                    
+                    guardLines += 0.5f;
 
                     float TargetLines = 0;
                     showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
@@ -1090,9 +1090,10 @@ namespace BDArmory.UI
                             CoMlabel, ActiveWeaponManager.targetCoM ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetCoM = !ActiveWeaponManager.targetCoM;
+                            ActiveWeaponManager.StartGuardTurretFiring(); //reset weapon targeting assignments
                             if (ActiveWeaponManager.targetCoM)
                             {
-								                ActiveWeaponManager.targetCommand = false;
+                                ActiveWeaponManager.targetCommand = false;
                                 ActiveWeaponManager.targetEngine = false;
                                 ActiveWeaponManager.targetWeapon = false;
                                 ActiveWeaponManager.targetMass = false;
@@ -1108,6 +1109,7 @@ namespace BDArmory.UI
                             Commandlabel, ActiveWeaponManager.targetCommand ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetCommand = !ActiveWeaponManager.targetCommand;
+                            ActiveWeaponManager.StartGuardTurretFiring();
                             if (ActiveWeaponManager.targetCommand)
                             {
                                 ActiveWeaponManager.targetCoM = false;
@@ -1118,6 +1120,7 @@ namespace BDArmory.UI
                             Engineslabel, ActiveWeaponManager.targetEngine ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetEngine = !ActiveWeaponManager.targetEngine;
+                            ActiveWeaponManager.StartGuardTurretFiring();
                             if (ActiveWeaponManager.targetEngine)
                             {
                                 ActiveWeaponManager.targetCoM = false;
@@ -1129,6 +1132,7 @@ namespace BDArmory.UI
                             Weaponslabel, ActiveWeaponManager.targetWeapon ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetWeapon = !ActiveWeaponManager.targetWeapon;
+                            ActiveWeaponManager.StartGuardTurretFiring();
                             if (ActiveWeaponManager.targetWeapon)
                             {
                                 ActiveWeaponManager.targetCoM = false;
@@ -1139,6 +1143,7 @@ namespace BDArmory.UI
                             Masslabel, ActiveWeaponManager.targetMass ? BDGuiSkin.box : BDGuiSkin.button))
                         {
                             ActiveWeaponManager.targetMass = !ActiveWeaponManager.targetMass;
+                            ActiveWeaponManager.StartGuardTurretFiring();
                             if (ActiveWeaponManager.targetMass)
                             {
                                 ActiveWeaponManager.targetCoM = false;
