@@ -4766,7 +4766,7 @@ namespace BDArmory.Modules
             targetScanTimer = -100;
         }
 
-        void StartGuardTurretFiring()
+        public void StartGuardTurretFiring()
         {
             if (!guardTarget) return;
             if (selectedWeapon == null) return;
