@@ -1771,16 +1771,32 @@ namespace BDArmory.UI
                 BDArmorySettings.ASTEROID_RAIN = GUI.Toggle(SRightRect(line), BDArmorySettings.ASTEROID_RAIN, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRain")); // Asteroid Rain
                 if (BDArmorySettings.ASTEROID_FIELD || BDArmorySettings.ASTEROID_RAIN)
                 {
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Density")}:  ({(BDArmorySettings.ASTEROIDS_DENSITY < 1f ? BDArmorySettings.ASTEROIDS_DENSITY : "Star Wars")})", leftLabel);
-                    BDArmorySettings.ASTEROIDS_DENSITY = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_DENSITY, 0f, 1f) * 100f) / 100f; // Spawn Density
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Altitude")}:  ({BDArmorySettings.ASTEROIDS_ALTITUDE}km)", leftLabel);
-                    BDArmorySettings.ASTEROIDS_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_ALTITUDE, 0f, 50f)); // Spawn Altitude
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Density")}:  ({BDArmorySettings.ASTEROIDS_DENSITY})", leftLabel);
+                    BDArmorySettings.ASTEROIDS_DENSITY = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_DENSITY, 0.01f, 1f) * 100f) / 100f; // Spawn Density
+                    var altitudeString = BDArmorySettings.ASTEROIDS_ALTITUDE < 10f ? $"{BDArmorySettings.ASTEROIDS_ALTITUDE * 100f}m" : $"{BDArmorySettings.ASTEROIDS_ALTITUDE - 9f}km";
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Altitude")}:  ({altitudeString})", leftLabel);
+                    BDArmorySettings.ASTEROIDS_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_ALTITUDE, 0f, 59f)); // Spawn Altitude
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Radius")}:  ({BDArmorySettings.ASTEROIDS_RADIUS}km)", leftLabel);
-                    BDArmorySettings.ASTEROIDS_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_RADIUS, 0f, 10f) * 5f) / 5f; // Spawn Radius
-                    if (GUI.Button(SLeftButtonRect(++line), "Spawn Field Now"))
-                    { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS); }
+                    BDArmorySettings.ASTEROIDS_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_RADIUS, 1f, 50f)); // Spawn Radius
+                    if (GUI.Button(SLeftButtonRect(++line), "Spawn Field Now"))//"Spawn Field Now"))
+                    {
+                        if (Event.current.button == 1)
+                        {
+                            AsteroidField.Instance.Reset();
+                        }
+                        else
+                        {
+                            AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
+                        }
+                        // AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS);
+                    }
                     if (GUI.Button(SRightButtonRect(line), "Spawn Rain Now"))
-                    { AsteroidRain.Instance.SpawnRain(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS); }
+                    {
+                        if (Event.current.button == 1)
+                            AsteroidRain.Instance.Reset();
+                        else
+                            AsteroidRain.Instance.SpawnRain(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
+                    }
 
                     ++line;
                 }
