@@ -61,10 +61,10 @@ namespace BDArmory.Control
             FlightGlobals.currentMainBody.GetLatLonAlt(position, out latitude, out longitude, out altitude);
             longitude = (longitude + FlightGlobals.currentMainBody.rotationAngle + 180d) % 360d; // Compensate coordinates for planet rotation then normalise to 0°—360°.
             var inclination = Math.Abs(latitude);
-            var apoapsis = FlightGlobals.currentMainBody.Radius + altitude;
+            var apoapsisAltitude = FlightGlobals.currentMainBody.Radius + altitude;
             var velocity = 2d * Math.PI * FlightGlobals.currentMainBody.Radius * Math.Cos(Mathf.Deg2Rad * latitude) / FlightGlobals.currentMainBody.rotationPeriod;
-            var semiMajorAxis = -FlightGlobals.currentMainBody.gravParameter / (velocity * velocity / 2d - FlightGlobals.currentMainBody.gravParameter / apoapsis) / 2d;
-            var eccentricity = apoapsis / semiMajorAxis - 1d;
+            var semiMajorAxis = -FlightGlobals.currentMainBody.gravParameter / (velocity * velocity / 2d - FlightGlobals.currentMainBody.gravParameter / apoapsisAltitude) / 2d;
+            var eccentricity = apoapsisAltitude / semiMajorAxis - 1d;
             var upDirection = (FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitude, longitude, altitude) - FlightGlobals.currentMainBody.transform.position).normalized;
             var longitudeOfAscendingNode = Mathf.Rad2Deg * Mathf.Acos(Vector3.Dot(Vector3.Cross(upDirection, Vector3.Cross(Vector3.up, upDirection)).normalized, Vector3.forward)) + longitude + (latitude > 0 ? 0d : 180d);
             var argumentOfPeriapsis = latitude < 0d ? 90d : 270d;

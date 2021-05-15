@@ -1,4 +1,7 @@
-﻿v1.4.6.2
+﻿FIXES
+IMPROVEMENTS
+
+v1.4.6.2
 FIXES
 	- Add in steer limiter localization text (is used on Modular Missile Guidance)
 	- Always score damage from lasers, but only score hits with pulse lasers or when the accumulator is sufficient.
@@ -7,7 +10,6 @@ FIXES
 IMPROVEMENTS
 	- Add SRB battle damage.
 	- Filled command seats can extinguish fires.
-
 
 v1.4.6.1
 FIXES
