@@ -58,28 +58,30 @@ namespace BDArmory.FX
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
 
-                BDArmorySetup.numberOfParticleEmitters++;
-                pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
+            BDArmorySetup.numberOfParticleEmitters++;
+            pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
 
-                using (var pe = pEmitters.AsEnumerable().GetEnumerator())
-                    while (pe.MoveNext())
-                    {
-                        if (pe.Current == null) continue;
-                        pe.Current.emit = true;
-                        _highestEnergy = pe.Current.maxEnergy;
-                        EffectBehaviour.AddParticleEmitter(pe.Current);
-                    }
+            using (var pe = pEmitters.AsEnumerable().GetEnumerator())
+                while (pe.MoveNext())
+                {
+                    if (pe.Current == null) continue;
+                    pe.Current.emit = true;
+                    _highestEnergy = pe.Current.maxEnergy;
+                    EffectBehaviour.AddParticleEmitter(pe.Current);
+                }
 
-            var kerbalSeats = parentPart.parent.Modules.OfType<KerbalSeat>();
-            if (kerbalSeats.Count() > 0)
-                Seat = kerbalSeats.First();
-            else
-                Seat = null;
+            Seat = null;
+            if (parentPart.parent != null)
+            {
+                var kerbalSeats = parentPart.parent.Modules.OfType<KerbalSeat>();
+                if (kerbalSeats.Count() > 0)
+                    Seat = kerbalSeats.First();
+            }
             if (parentPart.protoModuleCrew.Count > 0) //crew can extingusih fire
             {
                 burnTime = 10;
             }
-            if (parentPart.parent != null && parentPart.parent.protoModuleCrew.Count > 0 || Seat.Occupant != null)
+            if (parentPart.parent != null && parentPart.parent.protoModuleCrew.Count > 0 || (Seat != null && Seat.Occupant != null))
             {
                 burnTime = 20; //though adjacent parts will take longer to get to and extingusih
             }
