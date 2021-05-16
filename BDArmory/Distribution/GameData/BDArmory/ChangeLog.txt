@@ -1,4 +1,8 @@
-﻿v1.4.6.2
+﻿FIXES
+IMPROVEMENTS
+	- Add option for tournament parser to parse multiple tournaments.
+
+v1.4.6.2
 FIXES
 	- Add in steer limiter localization text (is used on Modular Missile Guidance)
 	- Always score damage from lasers, but only score hits with pulse lasers or when the accumulator is sufficient.
