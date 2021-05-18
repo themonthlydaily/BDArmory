@@ -4543,7 +4543,7 @@ namespace BDArmory.Modules
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
-                        // if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
+                        // if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue; 
                         weapon.Current.autoFire = false;
                         weapon.Current.autofireShotCount = 0;
                         weapon.Current.visualTargetVessel = null;
@@ -5140,23 +5140,29 @@ namespace BDArmory.Modules
         {
             string ammoName = weapon.ammoName;
             if (ammoName == "ElectricCharge") return true; // Electric charge is almost always rechargable, so weapons that use it always have ammo.
-            using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
-                while (p.MoveNext())
-                {
-                    if (p.Current == null) continue;
-                    using (IEnumerator<PartResource> resource = p.Current.Resources.GetEnumerator())
-                        while (resource.MoveNext())
-                        {
-                            if (resource.Current == null) continue;
-                            if (resource.Current.resourceName != ammoName) continue;
-                            if (resource.Current.amount > 0)
+            if (BDArmorySettings.INFINITE_AMMO) //check for infinite ammo
+            {
+                return true;
+            }
+            else
+            {
+                using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
+                    while (p.MoveNext())
+                    {
+                        if (p.Current == null) continue;
+                        using (IEnumerator<PartResource> resource = p.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
                             {
-                                return true;
+                                if (resource.Current == null) continue;
+                                if (resource.Current.resourceName != ammoName) continue;
+                                if (resource.Current.amount > 0)
+                                {  
+                                    return true;
+                                }
                             }
-                        }
-                }
-
+                    }
             return false;
+            }
         }
 
         public bool outOfAmmo = false; // Indicator for being out of ammo.
