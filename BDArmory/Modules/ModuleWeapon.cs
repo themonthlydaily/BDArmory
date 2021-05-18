@@ -30,6 +30,7 @@ namespace BDArmory.Modules
 
         Coroutine startupRoutine;
         Coroutine shutdownRoutine;
+        Coroutine standbyRoutine;
         Coroutine reloadRoutine;
 
         bool finalFire;
@@ -51,7 +52,8 @@ namespace BDArmory.Modules
             Disabled,
             PoweringUp,
             PoweringDown,
-            Locked
+            Locked,
+            Standby // Not currently firing, but can still track the current target.
         }
 
         public enum BulletDragTypes
@@ -95,6 +97,7 @@ namespace BDArmory.Modules
         public float autoFireTimer = 0;
         public float autofireShotCount = 0;
         bool aimAndFireIfPossible = false;
+        bool aimOnly = false;
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
@@ -1258,8 +1261,8 @@ namespace BDArmory.Modules
                 }
 
                 UpdateHeat();
-                if (weaponState == WeaponStates.Enabled &&
-                    (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
+                if (weaponState == WeaponStates.Standby && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1)) { aimOnly = true; }
+                if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
                     aimAndFireIfPossible = true; // Aim and fire in a later timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made (in the Late timing phase).
 
@@ -2351,28 +2354,44 @@ namespace BDArmory.Modules
             }
         }
 
+        HashSet<WeaponStates> enabledStates = new HashSet<WeaponStates> { WeaponStates.Enabled, WeaponStates.PoweringUp, WeaponStates.Locked };
         public void EnableWeapon()
         {
-            if (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.PoweringUp || weaponState == WeaponStates.Locked)
-            {
+            if (enabledStates.Contains(weaponState))
                 return;
-            }
 
             StopShutdownStartupRoutines();
 
             startupRoutine = StartCoroutine(StartupRoutine());
         }
 
+        HashSet<WeaponStates> disabledStates = new HashSet<WeaponStates> { WeaponStates.Disabled, WeaponStates.PoweringDown };
         public void DisableWeapon()
         {
-            if (weaponState == WeaponStates.Disabled || weaponState == WeaponStates.PoweringDown)
-            {
+            if (disabledStates.Contains(weaponState))
                 return;
-            }
 
             StopShutdownStartupRoutines();
 
             shutdownRoutine = StartCoroutine(ShutdownRoutine());
+        }
+
+        HashSet<WeaponStates> standbyStates = new HashSet<WeaponStates> { WeaponStates.Standby, WeaponStates.PoweringUp, WeaponStates.Locked };
+        public void StandbyWeapon()
+        {
+            if (standbyStates.Contains(weaponState))
+                return;
+            if (disabledStates.Contains(weaponState))
+            {
+                StopShutdownStartupRoutines();
+                standbyRoutine = StartCoroutine(StandbyRoutine());
+            }
+            else
+            {
+                weaponState = WeaponStates.Standby;
+                UpdateGUIWeaponState();
+                BDArmorySetup.Instance.UpdateCursorState();
+            }
         }
 
         void ParseWeaponType()
@@ -3038,8 +3057,7 @@ namespace BDArmory.Modules
         void AimAndFire()
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
-            if (!aimAndFireIfPossible) return;
-            aimAndFireIfPossible = false;
+            if (!(aimAndFireIfPossible || aimOnly)) return;
             if (this == null || FlightGlobals.currentMainBody == null) return;
 
             UpdateTargetVessel();
@@ -3050,69 +3068,75 @@ namespace BDArmory.Modules
 
             RunTrajectorySimulation();
             Aim();
-            CheckWeaponSafety();
-            CheckAIAutofire();
-            // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
-
-            if (finalFire)
+            if (aimAndFireIfPossible)
             {
-                if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+                CheckWeaponSafety();
+                CheckAIAutofire();
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
+
+                if (finalFire)
                 {
-                    finalFire = false;
-                }
-                else
-                {
-                    finalFire = true;
-                }
-                if (eWeaponType == WeaponTypes.Laser)
-                {
-                    if (finalFire)
+                    if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
                     {
-                        if (FireLaser())
+                        finalFire = false;
+                    }
+                    else
+                    {
+                        finalFire = true;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser)
+                    {
+                        if (finalFire)
                         {
-                            for (int i = 0; i < laserRenderers.Length; i++)
-                            {
-                                laserRenderers[i].enabled = true;
-                            }
-                        }
-                        else
-                        {
-                            if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                            if (FireLaser())
                             {
                                 for (int i = 0; i < laserRenderers.Length; i++)
                                 {
-                                    laserRenderers[i].enabled = false;
+                                    laserRenderers[i].enabled = true;
                                 }
                             }
-                            if (!pulseLaser || !oneShotSound)
+                            else
                             {
-                                audioSource.Stop();
+                                if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                                {
+                                    for (int i = 0; i < laserRenderers.Length; i++)
+                                    {
+                                        laserRenderers[i].enabled = false;
+                                    }
+                                }
+                                if (!pulseLaser || !oneShotSound)
+                                {
+                                    audioSource.Stop();
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    if (eWeaponType == WeaponTypes.Ballistic)
+                    else
                     {
-                        if (finalFire)
-                            Fire();
+                        if (eWeaponType == WeaponTypes.Ballistic)
+                        {
+                            if (finalFire)
+                                Fire();
+                        }
+                        if (eWeaponType == WeaponTypes.Rocket)
+                        {
+                            if (finalFire)
+                                FireRocket();
+                        }
                     }
-                    if (eWeaponType == WeaponTypes.Rocket)
+                    if (BurstFire && (RoundsRemaining < RoundsPerMag))
                     {
-                        if (finalFire)
-                            FireRocket();
+                        finalFire = true;
                     }
-                }
-                if (BurstFire && (RoundsRemaining < RoundsPerMag))
-                {
-                    finalFire = true;
-                }
-                else
-                {
-                    finalFire = false;
+                    else
+                    {
+                        finalFire = false;
+                    }
                 }
             }
+
+            aimAndFireIfPossible = false;
+            aimOnly = false;
         }
 
         void DrawAlignmentIndicator()
@@ -3528,7 +3552,7 @@ namespace BDArmory.Modules
 
         IEnumerator StartupRoutine(bool calledByReload = false)
         {
-            if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
+            if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
             {
                 while (reloadState.normalizedTime < 1)
                 {
@@ -3621,6 +3645,13 @@ namespace BDArmory.Modules
 
             UpdateGUIWeaponState();
         }
+        IEnumerator StandbyRoutine()
+        {
+            yield return StartupRoutine(true);
+            weaponState = WeaponStates.Standby;
+            UpdateGUIWeaponState();
+            BDArmorySetup.Instance.UpdateCursorState();
+        }
         void StopShutdownStartupRoutines()
         {
             if (shutdownRoutine != null)
@@ -3633,6 +3664,12 @@ namespace BDArmory.Modules
             {
                 StopCoroutine(startupRoutine);
                 startupRoutine = null;
+            }
+
+            if (standbyRoutine != null)
+            {
+                StopCoroutine(standbyRoutine);
+                standbyRoutine = null;
             }
         }
 
