@@ -788,6 +788,12 @@ namespace BDArmory.Modules
             customDynamicAxisField.guiActiveEditor = dynamicDamping;
         }
 
+        [KSPAction("Toggle Max Altitude")]
+        public void ToggleMaxAltitudeAG(KSPActionParam param)
+        {
+            maxAltitudeToggle = !maxAltitudeEnabled;
+            ToggleMaxAltitude();
+        }
         void ToggleMaxAltitude()
         {
             maxAltitudeEnabled = maxAltitudeToggle;
