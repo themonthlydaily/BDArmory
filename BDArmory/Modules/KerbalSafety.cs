@@ -19,7 +19,7 @@ namespace BDArmory.Modules
         #region Definitions
         static public KerbalSafetyManager Instance; // static instance for dealing with global stuff.
 
-        public Dictionary<ProtoCrewMember, KerbalSafety> kerbals; // The kerbals being managed.
+        public Dictionary<string, KerbalSafety> kerbals; // The kerbals being managed.
         List<KerbalEVA> evaKerbalsToMonitor;
         bool isEnabled = false;
         #endregion
@@ -30,7 +30,7 @@ namespace BDArmory.Modules
                 Destroy(Instance);
             Instance = this;
 
-            kerbals = new Dictionary<ProtoCrewMember, KerbalSafety>();
+            kerbals = new Dictionary<string, KerbalSafety>();
         }
 
         public void Start()
@@ -114,7 +114,7 @@ namespace BDArmory.Modules
                 foreach (var crew in part.protoModuleCrew)
                 {
                     if (crew == null) continue;
-                    if (kerbals.ContainsKey(crew)) continue; // Already managed.
+                    if (kerbals.ContainsKey(crew.displayName)) continue; // Already managed.
                     var ks = part.gameObject.AddComponent<KerbalSafety>();
                     StartCoroutine(ks.Configure(crew, part, quiet && false)); // FIXME remove false when working here
                 }
@@ -227,11 +227,11 @@ namespace BDArmory.Modules
             {
                 foreach (var crew in part.protoModuleCrew.ToList())
                 {
-                    if (kerbals.ContainsKey(crew))
+                    if (kerbals.ContainsKey(crew.displayName))
                     {
-                        kerbals[crew].recovered = true;
-                        Debug.Log("[BDArmory.KerbalSafety]: Recovering " + kerbals[crew].kerbalName + ".");
-                        kerbals[crew].RemoveHandlers();
+                        kerbals[crew.displayName].recovered = true;
+                        Debug.Log("[BDArmory.KerbalSafety]: Recovering " + kerbals[crew.displayName].kerbalName + ".");
+                        kerbals[crew.displayName].RemoveHandlers();
                     }
                 }
             }
@@ -351,7 +351,7 @@ namespace BDArmory.Modules
                 ConfigureKerbalEVA(kerbalEVA);
             }
             AddHandlers();
-            KerbalSafetyManager.Instance.kerbals.Add(crew, this);
+            KerbalSafetyManager.Instance.kerbals.Add(kerbalName, this);
             if (!quiet)
                 Debug.Log("[BDArmory.KerbalSafety]: Managing the safety of " + kerbalName + (ejected ? " on EVA" : " in " + part.vessel.vesselName) + ".");
             OnVesselModified(part.vessel); // Immediately check the vessel.
@@ -392,12 +392,9 @@ namespace BDArmory.Modules
             {
                 Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is MIA. Ejected: " + ejected + ", deployed chute: " + deployingChute);
             }
-            if (crew != null)
+            if (KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName))
             {
-                if (KerbalSafetyManager.Instance.kerbals.ContainsKey(crew))
-                {
-                    KerbalSafetyManager.Instance.kerbals.Remove(crew); // Stop managing this kerbal.
-                }
+                KerbalSafetyManager.Instance.kerbals.Remove(kerbalName); // Stop managing this kerbal.
             }
             RemoveHandlers();
         }
@@ -527,7 +524,7 @@ namespace BDArmory.Modules
                     crew.KerbalRef.state = Kerbal.States.BAILED_OUT;
                     fromPart.vessel.RemoveCrew(crew);
                 }
-                Debug.Log("[BDArmory.KerbalSafety]: " + crew.displayName + " ejected from " + fromPart.vessel.vesselName + " at " + fromPart.vessel.radarAltitude.ToString("0.00") + "m with velocity " + fromPart.vessel.Velocity().magnitude.ToString("0.00") + "m/s (vertical: " + fromPart.vessel.verticalSpeed + $")");
+                Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " ejected from " + fromPart.vessel.vesselName + " at " + fromPart.vessel.radarAltitude.ToString("0.00") + "m with velocity " + fromPart.vessel.Velocity().magnitude.ToString("0.00") + "m/s (vertical: " + fromPart.vessel.verticalSpeed + $")");
                 kerbalEVA.autoGrabLadderOnStart = false; // Don't grab the vessel.
                 kerbalEVA.StartNonCollidePeriod(5f, 1f, fromPart, fromPart.airlock);
                 KerbalSafetyManager.Instance.ManageNewlyEjectedKerbal(kerbalEVA, fromPart.vessel.Velocity());
@@ -647,8 +644,8 @@ namespace BDArmory.Modules
         {
             if (asap)
             {
-                if (KerbalSafetyManager.Instance.kerbals.ContainsKey(crew))
-                    KerbalSafetyManager.Instance.kerbals.Remove(crew); // Stop managing this kerbal.
+                if (KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName))
+                    KerbalSafetyManager.Instance.kerbals.Remove(kerbalName); // Stop managing this kerbal.
             }
             if (recovering)
             {

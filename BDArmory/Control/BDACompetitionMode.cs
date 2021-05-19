@@ -493,6 +493,7 @@ namespace BDArmory.Control
 
             //clear target database so pilots don't attack yet
             BDATargetManager.ClearDatabase();
+            CleanUpKSPsDeadReferences();
 
             foreach (var vname in Scores.Keys)
             {
@@ -2974,6 +2975,24 @@ namespace BDArmory.Control
             CheckMemoryUsage();
             CheckNumbersOfThings();
         }
-    }
 
+        void CleanUpKSPsDeadReferences()
+        {
+            var toRemove = new List<uint>();
+            foreach (var key in FlightGlobals.PersistentLoadedPartIds.Keys)
+                if (FlightGlobals.PersistentLoadedPartIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent loaded part references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentLoadedPartIds.Remove(key);
+            toRemove.Clear();
+            foreach (var key in FlightGlobals.PersistentUnloadedPartIds.Keys)
+                if (FlightGlobals.PersistentUnloadedPartIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent unloaded part references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
+            toRemove.Clear();
+            foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
+                if (FlightGlobals.PersistentVesselIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent vessel references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentVesselIds.Remove(key);
+        }
+    }
 }
