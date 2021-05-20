@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -375,6 +376,8 @@ namespace BDArmory.Bullets
                             return true;
                         }
 
+                        if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+
                         if (hitEVA != null)
                         {
                             hitPart = hitEVA.part;
@@ -563,7 +566,9 @@ namespace BDArmory.Bullets
                             try
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit != null && partHit.vessel == sourceVessel) continue;
+                                if (partHit == null) continue;
+                                if (partHit.vessel == sourceVessel) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                     Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
