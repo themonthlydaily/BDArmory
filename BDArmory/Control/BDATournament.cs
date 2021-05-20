@@ -311,6 +311,7 @@ namespace BDArmory.Control
 
         public bool SaveState(string stateFile)
         {
+            if (rounds == null) return true; // Nothing to save.
             try
             {
                 List<string> strings = new List<string>();
@@ -320,12 +321,14 @@ namespace BDArmory.Control
                     foreach (var heat in rounds[round].Keys)
                         strings.Add(JsonUtility.ToJson(new RoundConfig(round, heat, completed.ContainsKey(round) && completed[round].Contains(heat), rounds[round][heat])));
 
-                File.WriteAllLines(Path.Combine(Environment.CurrentDirectory, stateFile), strings);
+                if (!Directory.GetParent(stateFile).Exists)
+                { Directory.GetParent(stateFile).Create(); }
+                File.WriteAllLines(stateFile, strings);
                 return true;
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[BDArmory.BDATournament]: Exception thrown in SaveState: " + e.Message + "\n" + e.StackTrace);
+                Debug.LogError("[BDArmory.BDATournament]: Exception thrown in SaveState: " + e.Message + "\n" + e.StackTrace);
                 return false;
             }
         }
@@ -334,8 +337,8 @@ namespace BDArmory.Control
         {
             try
             {
-                if (!File.Exists(Path.Combine(Environment.CurrentDirectory, stateFile))) return false;
-                var strings = File.ReadAllLines(Path.Combine(Environment.CurrentDirectory, stateFile));
+                if (!File.Exists(stateFile)) return false;
+                var strings = File.ReadAllLines(stateFile);
                 var data = JsonUtility.FromJson<TournamentState>(strings[0]);
                 tournamentID = data.tournamentID;
                 vesselCount = data.vesselCount;
@@ -394,7 +397,7 @@ namespace BDArmory.Control
 
         #region Flags and Variables
         TournamentState tournamentState;
-        string stateFile = "GameData/BDArmory/tournament.state";
+        string stateFile = "GameData/BDArmory/PluginData/tournament.state";
         string message;
         private Coroutine runTournamentCoroutine;
         public TournamentStatus tournamentStatus = TournamentStatus.Stopped;

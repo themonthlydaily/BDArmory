@@ -627,7 +627,8 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            StartCoroutine(UpdateLocksAfterFrame());
+            if (gameObject != null) // Don't trigger if the gameObject was just destroyed.
+                StartCoroutine(UpdateLocksAfterFrame());
             return false;
         }
 
@@ -653,7 +654,7 @@ namespace BDArmory.Radar
 
         public bool TryLockTarget(Vessel v)
         {
-            if (!v) return false;
+            if (v == null) return false;
 
             using (List<RadarDisplayData>.Enumerator displayData = displayedTargets.GetEnumerator())
                 while (displayData.MoveNext())

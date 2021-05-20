@@ -1,17 +1,74 @@
 ﻿using BDArmory.Competition;
 using BDArmory.Control;
-using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
+using BDArmory.Core;
 using BDArmory.FX;
-using System;
 using System.Collections.Generic;
+using System.Linq;
+using System;
 using UnityEngine;
 
 namespace BDArmory.Misc
 {
     class ProjectileUtils
     {
+        static HashSet<string> FuelResources
+        {
+            get
+            {
+                if (_FuelResources == null)
+                {
+                    _FuelResources = new HashSet<string>();
+                    foreach (var resource in PartResourceLibrary.Instance.resourceDefinitions)
+                    {
+                        if (resource.name.EndsWith("Fuel") || resource.name.EndsWith("Oxidizer") || resource.name.EndsWith("Air") || resource.name.EndsWith("Charge") || resource.name.EndsWith("Gas") || resource.name.EndsWith("Propellant")) // FIXME These ought to be configurable
+                        { _FuelResources.Add(resource.name); }
+                    }
+                    Debug.Log("[BDArmory.ProjectileUtils]: Fuel resources: " + string.Join(", ", _FuelResources));
+                }
+                return _FuelResources;
+            }
+        }
+        static HashSet<string> _FuelResources;
+        static HashSet<string> AmmoResources
+        {
+            get
+            {
+                if (_AmmoResources == null)
+                {
+                    _AmmoResources = new HashSet<string>();
+                    foreach (var resource in PartResourceLibrary.Instance.resourceDefinitions)
+                    {
+                        if (resource.name.EndsWith("Ammo") || resource.name.EndsWith("Shell") || resource.name.EndsWith("Shells") || resource.name.EndsWith("Rocket") || resource.name.EndsWith("Rockets") || resource.name.EndsWith("Bolt") || resource.name.EndsWith("Mauser"))
+                        { _AmmoResources.Add(resource.name); }
+                    }
+                    Debug.Log("[BDArmory.ProjectileUtils]: Ammo resources: " + string.Join(", ", _AmmoResources));
+                }
+                return _AmmoResources;
+            }
+        }
+        static HashSet<string> _AmmoResources;
+        static HashSet<string> CMResources
+        {
+            get
+            {
+                if (_CMResources == null)
+                {
+                    _CMResources = new HashSet<string>();
+                    foreach (var resource in PartResourceLibrary.Instance.resourceDefinitions)
+                    {
+                        if (resource.name.EndsWith("Flare") || resource.name.EndsWith("Smoke") || resource.name.EndsWith("Chaff"))
+                        { _CMResources.Add(resource.name); }
+                    }
+                    Debug.Log("[BDArmory.ProjectileUtils]: Couter-measure resources: " + string.Join(", ", _CMResources));
+                }
+                return _CMResources;
+            }
+        }
+        static HashSet<string> _CMResources;
+
+
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool hasRichocheted, Vessel sourceVessel, string name)
         {
             //hitting a vessel Part
@@ -35,29 +92,41 @@ namespace BDArmory.Misc
             // Debug.Log("DEBUG Ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
 
             // Update scoring structures
-            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name);
+            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, true);
         }
-        public static void ApplyScore(Part hitPart, string aName, double distanceTraveled, float damage, string name)
+
+        // Apply damage from a local source due to bullets, e.g., fires.
+        public static void ApplyDamage(Part damagedPart, string sourceVesselName, string damageSource, float amount, bool triggerHitEffects = false)
         {
-            var tName = hitPart.vessel.GetName();
+            if (damagedPart == null) return;
+            if (damagedPart.partInfo.name.Contains("Strut")) return; // Apparently damaging them causes weird bugs (according to BahamutoD).
+
+            damagedPart.AddDamage(amount);
+            ApplyScore(damagedPart, sourceVesselName, 0, amount, damageSource, triggerHitEffects);
+        }
+
+        public static void ApplyScore(Part damagedPart, string aName, double distanceTraveled, float damage, string weaponName, bool triggerHitEffects = true)
+        {
+            var tName = damagedPart.vessel.GetName();
 
             if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
             {
-                //Debug.Log("[BDArmory.ProjectileUtils]: Weapon from " + aName + " damaged " + tName);
+                // Debug.Log("[BDArmory.ProjectileUtils]: Weapon from " + aName + " damaged " + tName);
 
                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 {
-                    BDAScoreService.Instance.TrackHit(aName, tName, name, distanceTraveled);
+                    if (triggerHitEffects) BDAScoreService.Instance.TrackHit(aName, tName, weaponName, distanceTraveled);
                     BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                 }
                 // update scoring structure on attacker
+                if (triggerHitEffects)
                 {
                     var aData = BDACompetitionMode.Instance.Scores[aName];
                     aData.Score += 1;
                     // keep track of who shot who for point keeping
 
                     // competition logic for 'Pinata' mode - this means a pilot can't be named 'Pinata'
-                    if (hitPart.vessel.GetName() == "Pinata")
+                    if (damagedPart.vessel.GetName() == "Pinata")
                     {
                         aData.PinataHits++;
                     }
@@ -65,19 +134,31 @@ namespace BDArmory.Misc
                 // update scoring structure on the defender.
                 {
                     var tData = BDACompetitionMode.Instance.Scores[tName];
-                    tData.lastPersonWhoHitMe = aName;
-                    tData.lastHitTime = Planetarium.GetUniversalTime();
-                    tData.everyoneWhoHitMe.Add(aName);
-                    // Track hits
-                    if (tData.hitCounts.ContainsKey(aName))
-                        ++tData.hitCounts[aName];
-                    else
-                        tData.hitCounts.Add(aName, 1);
+                    if (triggerHitEffects)
+                    {
+                        tData.lastPersonWhoHitMe = aName;
+                        tData.lastHitTime = Planetarium.GetUniversalTime();
+                        tData.everyoneWhoHitMe.Add(aName);
+                        // Track hits
+                        if (tData.hitCounts.ContainsKey(aName))
+                            ++tData.hitCounts[aName];
+                        else
+                            tData.hitCounts.Add(aName, 1);
+                    }
                     // Track damage
                     if (tData.damageFromBullets.ContainsKey(aName))
                         tData.damageFromBullets[aName] += damage;
                     else
                         tData.damageFromBullets.Add(aName, damage);
+                }
+
+                // steal resources if enabled
+                if (BDArmorySettings.RESOURCE_STEAL_ENABLED && triggerHitEffects)
+                {
+                    var sourceVessel = BDACompetitionMode.Instance.Scores[aName].weaponManagerRef.vessel;
+                    if (BDArmorySettings.RESOURCE_STEAL_FUEL_RATION > 0f) StealResource(damagedPart.vessel, sourceVessel, FuelResources, BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
+                    if (BDArmorySettings.RESOURCE_STEAL_AMMO_RATION > 0f) StealResource(damagedPart.vessel, sourceVessel, AmmoResources, BDArmorySettings.RESOURCE_STEAL_AMMO_RATION, true);
+                    if (BDArmorySettings.RESOURCE_STEAL_CM_RATION > 0f) StealResource(damagedPart.vessel, sourceVessel, CMResources, BDArmorySettings.RESOURCE_STEAL_CM_RATION, true);
                 }
             }
         }
@@ -152,14 +233,14 @@ namespace BDArmory.Misc
                                 Debug.Log("[BDArmory.ProjectileUtils]: Armor failure!");
                             }
                         }
-                        else; //0.05-0.19 ductility - harder steels, etc
+                        else //0.05-0.19 ductility - harder steels, etc
                         {
                             caliberModifier = 2 + (20 / ductility * 10) * penetrationFactor;
                         }
                     }
                     if (penetrationFactor > 0.66 && penetrationFactor < 1)
                     {
-                        spallCaliber = ((1 - penetrationFactor) + 1) * (Mathf.Pow(0.5f * caliber, 2) * Mathf.PI/100);
+                        spallCaliber = ((1 - penetrationFactor) + 1) * (Mathf.Pow(0.5f * caliber, 2) * Mathf.PI / 100);
                         volumeToReduce = spallCaliber;
                         spallMass = spallCaliber * (density / 10000);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -174,7 +255,7 @@ namespace BDArmory.Misc
 
             if (volumeToReduce < 0)
             {
-                volumeToReduce = Mathf.Pow((0.5f * caliber * caliberModifier), 2) * Mathf.PI / 100 * (thickness/10);
+                volumeToReduce = Mathf.Pow((0.5f * caliber * caliberModifier), 2) * Mathf.PI / 100 * (thickness / 10);
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
@@ -227,10 +308,10 @@ namespace BDArmory.Misc
                 float frangibility = 5000 * HERatio;
                 float shrapnelThickness = ((.0075f * Mathf.Pow((HERatio * 100), 1.05f)) + .06f) * caliber; //min thickness of material for HE to blow caliber size hole in steel
                 shrapnelThickness *= (950 / Strength) * (8000 / Density) * (Mathf.Sqrt(1100 / hardness)); //adjusted min thickness after material hardness/strength/density
-                float shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * Mathf.Pow(detonationDist, 2))), 0, (frangibility*.4f)); //fragments/m2
+                float shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * Mathf.Pow(detonationDist, 2))), 0, (frangibility * .4f)); //fragments/m2
                 shrapnelCount *= (float)(hitPart.radiativeArea / 3); //shrapnelhits/part
                 float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
-		// go through and make sure all unit conversions correct
+                // go through and make sure all unit conversions correct
                 if (penetrationFactor == -1) //airburst/parts caught in AoE
                 {
                     if (detonationDist > (5 * caliber)) //contact detonation
@@ -238,14 +319,14 @@ namespace BDArmory.Misc
                         if (thickness < shrapnelThickness && shrapnelCount > 0)
                         {
                             //armor penetration by subcaliber shrapnel; use dist to abstract # of fragments that hit to calculate damage, assuming 5k fragments for now
-                            volumeToReduce = (((caliber * caliber) * 1.5f) / shrapnelCount * thickness)/1000; //rough approximation of volume / # of fragments
+                            volumeToReduce = (((caliber * caliber) * 1.5f) / shrapnelCount * thickness) / 1000; //rough approximation of volume / # of fragments
                             hitPart.ReduceArmor(volumeToReduce);
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             {
-                                Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel count: "+ shrapnelCount + "; Armor damage: " + volumeToReduce + "cm3; part damage: ");
+                                Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel count: " + shrapnelCount + "; Armor damage: " + volumeToReduce + "cm3; part damage: ");
                             }
                             hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430); //expansion rate of tnt/petn ~7500m/s
-                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), Mathf.Sqrt((float)volumeToReduce/3.14159f), hardness, Ductility, Density, 6500, sourceVesselName);
+                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), Mathf.Sqrt((float)volumeToReduce / 3.14159f), hardness, Ductility, Density, 6500, sourceVesselName);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), false, sourceVesselName, hit); //bypass score mechanic so HE rounds don't have inflated scores
                         }
                     }
@@ -254,21 +335,21 @@ namespace BDArmory.Misc
                         if (thickness < (shrapnelThickness * 1.41f))
                         {
                             //armor breach
-                            volumeToReduce = ((caliber * thickness * (caliber * 4))/1000);
+                            volumeToReduce = ((caliber * thickness * (caliber * 4)) / 1000);
                             hitPart.ReduceArmor(volumeToReduce);
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration; Armor damage: " + volumeToReduce + "; part damage: ");
                             }
                             hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430); //within 5 calibers shrapnel still getting pushed/accelerated by blast
-                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber*0.4f), hardness, Ductility, Density, 430, sourceVesselName);
+                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber * 0.4f), hardness, Ductility, Density, 430, sourceVesselName);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), true, sourceVesselName, hit);
                         }
                         else
                         {
                             if (thickness < (shrapnelThickness * 1.7))//armor cracks; 
                             {
-                                volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 100), 2) * 100 * (thickness/10));
+                                volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 100), 2) * 100 * (thickness / 10));
                                 hitPart.ReduceArmor(volumeToReduce);
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
@@ -286,14 +367,14 @@ namespace BDArmory.Misc
                         if (thickness < (shrapnelThickness * 1.41f))
                         {
                             //armor breach
-                            volumeToReduce = ((caliber * thickness * (caliber * 4)) * 2)/1000;
+                            volumeToReduce = ((caliber * thickness * (caliber * 4)) * 2) / 1000;
                             hitPart.ReduceArmor(volumeToReduce);
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration; Armor damage: " + volumeToReduce + "; part damage: ");
                             }
                             hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430); //within 5 calibers shrapnel still getting pushed/accelerated by blast
-                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber*1.4f), hardness, Ductility, Density, 430, sourceVesselName);
+                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber * 1.4f), hardness, Ductility, Density, 430, sourceVesselName);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), true, sourceVesselName, hit);
                         }
                     }
@@ -303,7 +384,7 @@ namespace BDArmory.Misc
                         {
                             Debug.Log("[BDArmory.ProjectileUtils]: Through-armor detonation");
                         }
-                        hitPart.AddBallisticDamage((projmass-HEmass), 0.1f, 1, 1.9f, 1, 430); //internal det catches entire shrapnel mass
+                        hitPart.AddBallisticDamage((projmass - HEmass), 0.1f, 1, 1.9f, 1, 430); //internal det catches entire shrapnel mass
                     }
                 }
             }
@@ -312,7 +393,7 @@ namespace BDArmory.Misc
         {
             //use blastTotalPressure to get MPa of shock on plate, compare to armor mat tolerances
             float thickness = (float)hitPart.GetArmorThickness();
-            float spallCaliber = ((float)hitPart.radiativeArea / 3)*10000;  //using this as a hack for affected srf. area, convert m2 to cm2
+            float spallCaliber = ((float)hitPart.radiativeArea / 3) * 10000;  //using this as a hack for affected srf. area, convert m2 to cm2
             float spallMass;
             float damage;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
@@ -337,7 +418,9 @@ namespace BDArmory.Misc
                             Debug.Log("[BDArmory.ProjectileUtils]: Armor rupture! Size: " + spallCaliber + "; mass: " + spallMass + "kg");
                         }
                         damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+                      
+                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
+
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
                             BattleDamageHandler.CheckDamageFX(hitPart, spallCaliber, blowthroughFactor, true, sourcevessel, hit);
@@ -354,7 +437,9 @@ namespace BDArmory.Misc
                             Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor spalling! Size: " + spallCaliber + "; mass: " + spallMass + "kg");
                         }
                         damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+
+                        ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
+
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
                             BattleDamageHandler.CheckDamageFX(hitPart, spallCaliber, blowthroughFactor, false, sourcevessel, hit);
@@ -381,13 +466,15 @@ namespace BDArmory.Misc
                                     BattleDamageHandler.CheckDamageFX(hitPart, spallCaliber, blowthroughFactor, true, sourcevessel, hit);
                                 }
                             }
-                            else; //0.05-0.19 ductility - harder steels, etc
+                            else //0.05-0.19 ductility - harder steels, etc
                             {
                                 spallCaliber *= ((1.2f - ductility) * blowthroughFactor);
                                 spallMass = spallCaliber * thickness / 10 * (Density / 1000);
                                 hitPart.ReduceArmor(spallCaliber * thickness);
                                 damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+
+                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
+
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
                                     Debug.Log("[BDArmory.ProjectileUtils]: Armor sundered!");
@@ -407,7 +494,9 @@ namespace BDArmory.Misc
                                 hitPart.ReduceArmor(spallCaliber * (thickness / 5));
                                 spallMass = spallCaliber * (thickness / 5) * (Density / 1000);
                                 damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
+
+                                ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
+
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
                                     Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass + "kg");
@@ -425,24 +514,24 @@ namespace BDArmory.Misc
             }
             return false;
         }
-    /*
-    public static float CalculatePenetration(float caliber, float projMass, float impactVel, float apBulletMod = 1)
-    {
-        float penetration = 0;
-        if (apBulletMod <= 0) // sanity check/legacy compatibility
+        /*
+        public static float CalculatePenetration(float caliber, float projMass, float impactVel, float apBulletMod = 1)
         {
-            apBulletMod = 1;
-        }
+            float penetration = 0;
+            if (apBulletMod <= 0) // sanity check/legacy compatibility
+            {
+                apBulletMod = 1;
+            }
 
-        if (caliber > 5) //use the "krupp" penetration formula for anything larger than HMGs
-        {
-            penetration = (float)(16f * impactVel * Math.Sqrt(projMass / 1000) / Math.Sqrt(caliber) * apBulletMod); //APBulletMod now actually implemented, serves as penetration multiplier, 1 being neutral, <1 for soft rounds, >1 for AP penetrators
-        }
+            if (caliber > 5) //use the "krupp" penetration formula for anything larger than HMGs
+            {
+                penetration = (float)(16f * impactVel * Math.Sqrt(projMass / 1000) / Math.Sqrt(caliber) * apBulletMod); //APBulletMod now actually implemented, serves as penetration multiplier, 1 being neutral, <1 for soft rounds, >1 for AP penetrators
+            }
 
-        return penetration;
-    }
-    */
-    public static float CalculateProjectileEnergy(float projMass, float impactVel)
+            return penetration;
+        }
+        */
+        public static float CalculateProjectileEnergy(float projMass, float impactVel)
         {
             float bulletEnergy = (projMass * 1000) * impactVel; //(should this be 1/2(mv^2) instead? prolly at somepoint, but the abstracted calcs I have use mass x vel, and work, changing it would require refactoring calcs
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -503,10 +592,10 @@ namespace BDArmory.Misc
                 if (yieldStrength < 1) yieldStrength = 1000;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory.ProjectileUtils]: properties: yield:" + yieldStrength + "; Energy: " + bulletEnergy  + "; caliber: " + caliber + "; impactVel: " + impactVel);
+                    Debug.Log("[BDArmory.ProjectileUtils]: properties: yield:" + yieldStrength + "; Energy: " + bulletEnergy + "; caliber: " + caliber + "; impactVel: " + impactVel);
                     Debug.Log("[BDArmory.ProjectileUtils]: properties: hardness:" + hardness + "; apBulletMod: " + apBulletMod + "; density: " + Density);
                 }
-                float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness* Mathf.Sqrt(Density/1000))) / impactVel) / apBulletMod); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
+                float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * Mathf.Sqrt(Density / 1000))) / impactVel) / apBulletMod); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
                 newCaliber = Mathf.Clamp(newCaliber, 1f, 5f);
                 if (impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU hypervelocity penetrators
                 {
@@ -534,8 +623,8 @@ namespace BDArmory.Misc
             {
                 density = 19;
             }
-            float bulletLength = (projMass*1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
-                                                                                                                                       //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
+            float bulletLength = (projMass * 1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+                                                                                                                         //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -549,7 +638,6 @@ namespace BDArmory.Misc
 
         public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness)
         {
-
             float Energy = CalculateProjectileEnergy(projMass, impactVel);
             //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
             float penetration;
@@ -574,6 +662,7 @@ namespace BDArmory.Misc
             }
             return penetration;
         }
+
         public static float CalculateThickness(Part hitPart, float anglemultiplier)
         {
             float thickness = (float)hitPart.GetArmorThickness();
@@ -717,6 +806,173 @@ namespace BDArmory.Misc
             part.explosionPotential = explodeScale;
 
             PartExploderSystem.AddPartToExplode(part);
+        }
+
+        private class PriorityQueue
+        {
+            private Dictionary<int, List<PartResource>> partResources = new Dictionary<int, List<PartResource>>();
+
+            public PriorityQueue(HashSet<PartResource> elements)
+            {
+                foreach (PartResource r in elements)
+                {
+                    Add(r);
+                }
+            }
+
+            public void Add(PartResource r)
+            {
+                int key = r.part.resourcePriorityOffset;
+                if (partResources.ContainsKey(key))
+                {
+                    List<PartResource> existing = partResources[key];
+                    existing.Add(r);
+                    partResources[key] = existing;
+                }
+                else
+                {
+                    List<PartResource> newList = new List<PartResource>();
+                    newList.Add(r);
+                    partResources.Add(key, newList);
+                }
+            }
+
+            public List<PartResource> Pop()
+            {
+                if (partResources.Count == 0)
+                {
+                    return new List<PartResource>();
+                }
+                int key = partResources.Keys.Max();
+                List<PartResource> result = partResources[key];
+                partResources.Remove(key);
+                return result;
+            }
+
+            public bool HasNext()
+            {
+                return partResources.Count != 0;
+            }
+        }
+
+        private static void StealResource(Vessel src, Vessel dst, HashSet<string> resourceNames, double ration, bool integerAmounts = false)
+        {
+            // identify all parts on source vessel with resource
+            Dictionary<string, HashSet<PartResource>> srcParts = new Dictionary<string, HashSet<PartResource>>();
+            DeepFind(src.rootPart, resourceNames, srcParts);
+
+            // identify all parts on destination vessel with resource
+            Dictionary<string, HashSet<PartResource>> dstParts = new Dictionary<string, HashSet<PartResource>>();
+            DeepFind(dst.rootPart, resourceNames, dstParts);
+
+            foreach (var resourceName in resourceNames)
+            {
+                if (!srcParts.ContainsKey(resourceName) || !dstParts.ContainsKey(resourceName))
+                {
+                    // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log(string.Format("[BDArmory.ProjectileUtils]: Steal resource {0} failed; no parts.", resourceName));
+                    continue;
+                }
+
+                double remainingAmount = srcParts[resourceName].Sum(p => p.amount);
+                if (integerAmounts)
+                {
+                    remainingAmount = Math.Floor(remainingAmount);
+                    if (remainingAmount == 0) continue; // Nothing left to steal.
+                }
+                double amount = remainingAmount * ration;
+                if (integerAmounts) { amount = Math.Ceiling(amount); } // Round up steal amount so that something is always stolen if there's something to steal.
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: " + dst.vesselName + " is trying to steal " + amount.ToString("F1") + " of " + resourceName + " from " + src.vesselName);
+
+                // transfer resource from src->dst parts, honoring their priorities
+                PriorityQueue sourceQueue = new PriorityQueue(srcParts[resourceName]);
+                PriorityQueue destinationQueue = new PriorityQueue(dstParts[resourceName]);
+                List<PartResource> sources = null, destinations = null;
+                double tolerance = 1e-3;
+                double amountTaken = 0;
+                while (amount - amountTaken >= (integerAmounts ? 1d : tolerance))
+                {
+                    if (sources == null)
+                    {
+                        sources = sourceQueue.Pop();
+                        if (sources.Count() == 0) break;
+                    }
+                    if (destinations == null)
+                    {
+                        destinations = destinationQueue.Pop();
+                        if (destinations.Count() == 0) break;
+                    }
+                    var availability = sources.Where(e => e.amount >= tolerance / sources.Count()); // All source parts with something in.
+                    var opportunity = destinations.Where(e => e.maxAmount - e.amount >= tolerance / destinations.Count()); // All destination parts with room to spare.
+                    if (availability.Count() == 0) { sources = null; }
+                    if (opportunity.Count() == 0) { destinations = null; }
+                    if (sources == null || destinations == null) continue;
+                    if (integerAmounts)
+                    {
+                        if (availability.Sum(e => e.amount) < 1d) { sources = null; }
+                        if (opportunity.Sum(e => e.maxAmount - e.amount) < 1d) { destinations = null; }
+                        if (sources == null || destinations == null) continue;
+                    }
+                    var minFractionAvailable = availability.Min(r => r.amount / r.maxAmount); // Minimum fraction of container size available for transfer.
+                    var minFractionOpportunity = opportunity.Min(r => (r.maxAmount - r.amount) / r.maxAmount); // Minimum fraction of container size available to fill a part.
+                    var totalTransferAvailable = availability.Sum(r => r.maxAmount * minFractionAvailable);
+                    var totalTransferOpportunity = opportunity.Sum(r => r.maxAmount * minFractionOpportunity);
+                    var totalTransfer = Math.Min(amount, Math.Min(totalTransferAvailable, totalTransferOpportunity)); // Total amount to transfer that either transfers the amount required, empties a container or fills a container.
+                    if (integerAmounts) { totalTransfer = Math.Floor(totalTransfer); }
+                    var totalContainerSizeAvailable = availability.Sum(r => r.maxAmount);
+                    var totalContainerSizeOpportunity = opportunity.Sum(r => r.maxAmount);
+                    var transferFractionAvailable = totalTransfer / totalContainerSizeAvailable;
+                    var transferFractionOpportunity = totalTransfer / totalContainerSizeOpportunity;
+
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Transferring {totalTransfer:F1} of {resourceName} from {string.Join(", ", availability.Select(a => $"{a.part.name} ({a.amount:F1}/{a.maxAmount:F1})").ToList())} on {src.vesselName} to {string.Join(", ", opportunity.Select(o => $"{o.part.name} ({o.amount:F1}/{o.maxAmount:F1})").ToList())} on {dst.vesselName}");
+                    // Transfer directly between parts doesn't seem to be working properly (it leaves the source, but doesn't arrive at the destination).
+                    var measuredOut = 0d;
+                    var measuredIn = 0d;
+                    foreach (var sourceResource in availability)
+                    { measuredOut += sourceResource.part.TransferResource(sourceResource.info.id, -transferFractionAvailable * sourceResource.maxAmount); }
+                    foreach (var destinationResource in opportunity)
+                    { measuredIn += -destinationResource.part.TransferResource(destinationResource.info.id, transferFractionOpportunity * destinationResource.maxAmount); }
+                    if (Math.Abs(measuredIn - measuredOut) > tolerance)
+                    { Debug.LogWarning($"[BDArmory.ProjectileUtils]: Discrepancy in the amount of {resourceName} transferred from {string.Join(", ", availability.Select(r => r.part.name))} ({measuredOut:F3}) to {string.Join(", ", opportunity.Select(r => r.part.name))} ({measuredIn:F3})"); }
+
+                    amountTaken += totalTransfer;
+                    if (totalTransfer < tolerance)
+                    {
+                        Debug.LogWarning($"[BDArmory.ProjectileUtils]: totalTransfer was {totalTransfer} for resource {resourceName}, amount: {amount}, availability: {string.Join(", ", availability.Select(r => r.amount))}, opportunity: {string.Join(", ", opportunity.Select(r => r.maxAmount - r.amount))}");
+                        if (availability.Sum(r => r.amount) < opportunity.Sum(r => r.maxAmount - r.amount)) { sources = null; } else { destinations = null; }
+                    }
+                }
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Final amount of {resourceName} stolen: {amountTaken:F1}");
+            }
+        }
+
+        private class ResourceAllocation
+        {
+            public PartResource sourceResource;
+            public Part destPart;
+            public double amount;
+            public ResourceAllocation(PartResource r, Part p, double a)
+            {
+                this.sourceResource = r;
+                this.destPart = p;
+                this.amount = a;
+            }
+        }
+
+        private static void DeepFind(Part p, HashSet<string> resourceNames, Dictionary<string, HashSet<PartResource>> accumulator)
+        {
+            foreach (PartResource r in p.Resources)
+            {
+                if (resourceNames.Contains(r.resourceName))
+                {
+                    if (!accumulator.ContainsKey(r.resourceName))
+                        accumulator[r.resourceName] = new HashSet<PartResource>();
+                    accumulator[r.resourceName].Add(r);
+                }
+            }
+            foreach (Part child in p.children)
+            {
+                DeepFind(child, resourceNames, accumulator);
+            }
         }
     }
 }
