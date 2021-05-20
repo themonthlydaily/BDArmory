@@ -418,7 +418,7 @@ namespace BDArmory.Misc
                             Debug.Log("[BDArmory.ProjectileUtils]: Armor rupture! Size: " + spallCaliber + "; mass: " + spallMass + "kg");
                         }
                         damage = hitPart.AddBallisticDamage(spallMass / 1000, spallCaliber * 10, 1, blowthroughFactor, 1, 500);
-                      
+
                         ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage", true);
 
                         if (BDArmorySettings.BATTLEDAMAGE)

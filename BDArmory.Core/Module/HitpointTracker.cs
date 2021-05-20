@@ -321,7 +321,7 @@ namespace BDArmory.Core.Module
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
 
                 var structuralMass = density * structuralVolume;
-                Debug.Log("[HP] "+ part.name + " structural Volume: " + structuralVolume + "; density: " + density + " structural mass: " + structuralMass);
+                Debug.Log("[HP] " + part.name + " structural Volume: " + structuralVolume + "; density: " + density + " structural mass: " + structuralMass);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralMass : " + structuralMass);
                 //3. final calculations
                 hitpoints = structuralMass * hitpointMultiplier * 0.333f;
@@ -537,7 +537,7 @@ namespace BDArmory.Core.Module
         public void SetArmor()
         {
             if (ArmorTypeNum > 1)
-            {                
+            {
 
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                 armorFieldFlight.minValue = 0f;

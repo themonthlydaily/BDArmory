@@ -160,7 +160,7 @@ namespace BDArmory.UI
                 CalculateArmorMass();
             }
 
-            GUIStyle style = BDArmorySetup.BDGuiSkin.label;        
+            GUIStyle style = BDArmorySetup.BDGuiSkin.label;
 
             style.fontStyle = FontStyle.Normal;
             GUI.Label(new Rect(10, 50, 300, 20), "Total Armor mass for Vessel: " + totalArmorMass, style);
@@ -259,7 +259,7 @@ namespace BDArmory.UI
                                 }
                             }
                             armor.ArmorSetup(null, null);
-                        } 
+                        }
                         totalArmorMass += armor.armorMass;
                     }
                 }
@@ -289,7 +289,7 @@ namespace BDArmory.UI
                             //float h = armor.ArmorTypeNum / (ArmorInfo.armors.Count + 1);
                             //Color ArmorColor = Color.HSVToRGB((armor.ArmorTypeNum / (ArmorInfo.armors.Count + 1)) 1f, 1f);
                             //ArmorColor.a = ((armor.Armor / armor.maxSupportedArmor) * 255);
-                            parts.Current.SetHighlightColor(Color.HSVToRGB((a.ArmorTypeNum / (ArmorInfo.armors.Count + 1)), ((a.Armor / a.maxSupportedArmor)*2), 1f));
+                            parts.Current.SetHighlightColor(Color.HSVToRGB((a.ArmorTypeNum / (ArmorInfo.armors.Count + 1)), ((a.Armor / a.maxSupportedArmor) * 2), 1f));
                             parts.Current.SetHighlight(true, false);
                             parts.Current.highlightType = Part.HighlightType.AlwaysOn;
                         }
@@ -312,11 +312,11 @@ namespace BDArmory.UI
             oldVisualizer = Visualizer;
             refreshVisualizer = false;
         }
-/// <summary>
-/// Lock the model if our own window is shown and has cursor focus to prevent click-through.
-/// Code adapted from FAR Editor GUI
-/// </summary>
-private void PreventClickThrough()
+        /// <summary>
+        /// Lock the model if our own window is shown and has cursor focus to prevent click-through.
+        /// Code adapted from FAR Editor GUI
+        /// </summary>
+        private void PreventClickThrough()
         {
             bool cursorInGUI = false;
             EditorLogic EdLogInstance = EditorLogic.fetch;
