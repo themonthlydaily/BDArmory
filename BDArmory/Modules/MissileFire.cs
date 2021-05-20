@@ -4511,7 +4511,15 @@ namespace BDArmory.Modules
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
-                        if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue; //want to find all weapons in WeaponGroup, rather than all weapons of parttype
+                        if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) //want to find all weapons in WeaponGroup, rather than all weapons of parttype
+                        {
+                            if (weapon.Current.turret != null && (weapon.Current.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) // Put other turrets into standby instead of disabling them if they have ammo.
+                            {
+                                weapon.Current.StandbyWeapon();
+                                weapon.Current.aiControlled = true;
+                            }
+                            continue;
+                        }
                         weapon.Current.EnableWeapon();
                         weapon.Current.aiControlled = true;
                         if (weapon.Current.yawRange >= 5 && (weapon.Current.maxPitch - weapon.Current.minPitch) >= 5)
@@ -4535,7 +4543,7 @@ namespace BDArmory.Modules
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
-                        if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
+                        // if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue; 
                         weapon.Current.autoFire = false;
                         weapon.Current.autofireShotCount = 0;
                         weapon.Current.visualTargetVessel = null;
@@ -4776,7 +4784,14 @@ namespace BDArmory.Modules
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
-                    if (weapon.Current.GetShortName() != selectedWeapon.GetShortName()) continue;
+                    if (weapon.Current.GetShortName() != selectedWeapon.GetShortName())
+                    {
+                        if (weapon.Current.turret != null && (weapon.Current.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) // Other turrets can just generally aim at the currently targeted vessel.
+                        {
+                            weapon.Current.visualTargetVessel = guardTarget;
+                        }
+                        continue;
+                    }
 
                     if (multiTargetNum > 1)
                     {
@@ -5125,23 +5140,29 @@ namespace BDArmory.Modules
         {
             string ammoName = weapon.ammoName;
             if (ammoName == "ElectricCharge") return true; // Electric charge is almost always rechargable, so weapons that use it always have ammo.
-            using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
-                while (p.MoveNext())
-                {
-                    if (p.Current == null) continue;
-                    using (IEnumerator<PartResource> resource = p.Current.Resources.GetEnumerator())
-                        while (resource.MoveNext())
-                        {
-                            if (resource.Current == null) continue;
-                            if (resource.Current.resourceName != ammoName) continue;
-                            if (resource.Current.amount > 0)
+            if (BDArmorySettings.INFINITE_AMMO) //check for infinite ammo
+            {
+                return true;
+            }
+            else
+            {
+                using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
+                    while (p.MoveNext())
+                    {
+                        if (p.Current == null) continue;
+                        using (IEnumerator<PartResource> resource = p.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
                             {
-                                return true;
+                                if (resource.Current == null) continue;
+                                if (resource.Current.resourceName != ammoName) continue;
+                                if (resource.Current.amount > 0)
+                                {  
+                                    return true;
+                                }
                             }
-                        }
-                }
-
+                    }
             return false;
+            }
         }
 
         public bool outOfAmmo = false; // Indicator for being out of ammo.
@@ -5187,9 +5208,18 @@ namespace BDArmory.Modules
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
-                    if (selectedWeapon == null || weapon.Current.GetShortName() != selectedWeapon.GetShortName())
+                    if (selectedWeapon == null)
                     {
                         weapon.Current.DisableWeapon();
+                    }
+                    else if (weapon.Current.GetShortName() != selectedWeapon.GetShortName())
+                    {
+                        if (weapon.Current.turret != null && (weapon.Current.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) // Put turrets in standby (tracking only) mode instead of disabling them if they have ammo.
+                        {
+                            weapon.Current.StandbyWeapon();
+                        }
+                        else
+                            weapon.Current.DisableWeapon();
                     }
                     else
                     {

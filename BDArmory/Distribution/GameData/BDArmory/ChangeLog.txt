@@ -1,5 +1,16 @@
 ﻿FIXES
+	- Fix check for ammo ignoring the infinite ammo setting in CheckEngagementEnvelope.
+	- Adjust Krakensbane adjustments in Kerbal Safety to hopefully reduce amount of Krakenation.
+	- Fix NRE in FireFX.
+	- Make the default value for kerbal safety be 'partial' instead of 'full' due to stability issues with 'full'.
 IMPROVEMENTS
+	- Add option for tournament parser to parse multiple tournaments.
+	- Allow turrets other than the current one to track the main target.
+	- Resource stealing:
+		- Change resource steal to drain and fill containers evenly w.r.t. fraction of the containers, still respecting priority settings.
+		- Add option for counter-measure stealing.
+		- Add a few fuel and ammo resources that were missed.
+		- Steal integer amounts of ammo and counter-measures.
 
 v1.4.6.2
 FIXES
