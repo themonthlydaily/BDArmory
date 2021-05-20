@@ -185,6 +185,7 @@ namespace BDArmory.Core
         // Resource steal
         [BDAPersistantSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
         [BDAPersistantSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_CM_RATION = 0f;
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
