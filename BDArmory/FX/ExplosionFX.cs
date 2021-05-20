@@ -139,7 +139,7 @@ namespace BDArmory.FX
             float shrapnelrange = Range;
             if (ProjMass > 0)
             {
-                shrapnelrange = Range*2;
+                shrapnelrange = Range * 2;
             }
             using (var hitCollidersEnu = Physics.OverlapSphere(Position, shrapnelrange, 9076737).AsEnumerable().GetEnumerator())
             {
