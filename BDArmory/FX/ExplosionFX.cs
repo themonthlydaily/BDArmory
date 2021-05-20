@@ -158,6 +158,11 @@ namespace BDArmory.FX
                 overlapSphereColliders = Physics.OverlapSphere(Position, Range, 9076737);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
+			float shrapnelrange = Range;
+            if (ProjMass > 0)
+            {
+                shrapnelrange = Range * 2;
+            }
             using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())

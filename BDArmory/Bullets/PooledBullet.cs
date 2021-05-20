@@ -463,14 +463,40 @@ namespace BDArmory.Bullets
                             break; //impulse rounds shouldn't penetrate/do damage
                         }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
-
+                        //calculate armor thickness
                         float thickness = ProjectileUtils.CalculateThickness(hitPart, anglemultiplier);
-                        float penetration = ProjectileUtils.CalculatePenetration(caliber, bulletMass, impactVelocity, apBulletMod);
-                        float penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, anglemultiplier, hit, penetration, thickness, caliber);
-                        if (penetration > thickness)
+                        //calculate armor strength
+                        float penetration = 0;
+                        float penetrationFactor = 0;
+                        var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
+                        if (Armor != null)
+                        {
+                            float Ductility = Armor.Ductility;
+                            float hardness = Armor.Hardness;
+                            float Strength = Armor.Strength;
+                            float safeTemp = Armor.SafeUseTemp;
+                            float Density = Armor.Density;
+                            Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                            float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactVelocity);
+                            float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
+                            //calculate bullet deformation
+                            float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, apBulletMod, Density);
+                            //calculate penetration
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactVelocity, Ductility, Density, Strength, thickness);
+                            caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
+                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
+                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVesselName);
+                            //calculate return bullet post-pen vel
+                            //calculate armor damage
+                        }
+                        else
+                        {
+                            Debug.Log("[PooledBUllet].ArmorVars not found; hitPart null");
+                        }
+                        if (penetrationFactor > 1)
                         {
                             currentVelocity = currentVelocity * (float)Math.Sqrt(thickness / penetration);
-                            if (penTicker > 0) currentVelocity *= 0.55f;
+                            if (penTicker > 0) currentVelocity *= 0.55f; //implement armor density modifying this ar some point?
                             flightTimeElapsed -= period;
                         }
                         if (penetrationFactor >= 2)
