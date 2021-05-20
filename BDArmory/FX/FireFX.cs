@@ -323,6 +323,8 @@ namespace BDArmory.FX
                             try
                             {
                                 Part partHit = blastHits.Current.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (partHit != null && partHit.mass > 0)
                                 {
                                     Rigidbody rb = partHit.Rigidbody;

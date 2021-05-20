@@ -255,6 +255,8 @@ namespace BDArmory.Bullets
                                 return;
                             }
 
+                            if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+
                             if (hitEVA != null)
                             {
                                 hitPart = hitEVA.part;
@@ -438,12 +440,12 @@ namespace BDArmory.Bullets
                         try
                         {
                             Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                            if (partHit != null && partHit.vessel != sourceVessel)
-                            {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
-                                return detonate = true;
-                            }
+                            if (partHit == null) continue;
+                            if (partHit.vessel == sourceVessel) continue;
+                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
+                            return detonate = true;
                         }
                         catch (Exception e)
                         {
@@ -501,6 +503,8 @@ namespace BDArmory.Bullets
                                 if (hitsEnu.Current == null) continue;
                                 if (hitsEnu.Current.gameObject == FlightGlobals.currentMainBody.gameObject) continue; // Ignore terrain hits.
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (craftHit.Contains(partHit.vessel)) continue; // Don't hit the same craft multiple times.
                                 craftHit.Add(partHit.vessel);
 
@@ -548,7 +552,9 @@ namespace BDArmory.Bullets
                                 if (hitsEnu.Current == null) continue;
 
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit != null && partHit.mass > 0)
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                if (partHit.mass > 0)
                                 {
                                     float distance = Vector3.Distance(transform.position, partHit.transform.position);
                                     var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
