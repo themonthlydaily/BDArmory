@@ -22,7 +22,6 @@ IMPROVEMENTS
 	- Add SRB battle damage.
 	- Filled command seats can extinguish fires.
 
-
 v1.4.6.1
 FIXES
 	- Fix various occassional NREs.
