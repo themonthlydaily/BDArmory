@@ -465,7 +465,7 @@ namespace BDArmory.Bullets
                             //calculate penetration
                             penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, Ductility, Density, Strength, thickness, impactVelocity);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
-                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);                            
+                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
                             ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVesselName);
 
                             //calculate return bullet post-pen vel
