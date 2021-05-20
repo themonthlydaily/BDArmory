@@ -2261,6 +2261,7 @@ namespace BDArmory.Modules
             missileLauncher.exhaustPrefabs.Add(exhaustPrefab);
             missileLauncher.part.OnJustAboutToDie += missileLauncher.DetachExhaustPrefabs;
             missileLauncher.part.OnJustAboutToBeDestroyed += missileLauncher.DetachExhaustPrefabs;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Exhaust prefab " + exhaustPrefab.name + " added to " + missileLauncher.shortName + " on " + (missileLauncher.vessel != null ? missileLauncher.vessel.vesselName : "unknown"));
         }
 
         static void CreateExhaustPool(string prefabPath)
@@ -2287,6 +2288,7 @@ namespace BDArmory.Modules
                 if (exhaustPrefab == null) continue;
                 exhaustPrefab.transform.parent = null;
                 exhaustPrefab.SetActive(false);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: Exhaust prefab " + exhaustPrefab.name + " removed from " + shortName + " on " + (vessel != null ? vessel.vesselName : "unknown"));
             }
             exhaustPrefabs.Clear();
         }

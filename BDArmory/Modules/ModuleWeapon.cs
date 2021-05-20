@@ -31,6 +31,7 @@ namespace BDArmory.Modules
 
         Coroutine startupRoutine;
         Coroutine shutdownRoutine;
+        Coroutine standbyRoutine;
         Coroutine reloadRoutine;
 
         bool finalFire;
@@ -52,7 +53,8 @@ namespace BDArmory.Modules
             Disabled,
             PoweringUp,
             PoweringDown,
-            Locked
+            Locked,
+            Standby // Not currently firing, but can still track the current target.
         }
 
         public enum BulletDragTypes
@@ -61,16 +63,7 @@ namespace BDArmory.Modules
             AnalyticEstimate,
             NumericalIntegration
         }
-        
-        public enum TargetSetting
-        {
-            CoM,
-            Engine, 
-            Command,
-            Weapon,
-            Mass
-        }
-        
+
         public WeaponStates weaponState = WeaponStates.Disabled;
 
         //animations
@@ -80,9 +73,7 @@ namespace BDArmory.Modules
         public float bulletBallisticCoefficient;
 
         public WeaponTypes eWeaponType;
-        
-        public TargetSetting subsystemTargeting;
-        
+
         public float heat;
         public bool isOverheated;
 
@@ -107,6 +98,7 @@ namespace BDArmory.Modules
         public float autoFireTimer = 0;
         public float autofireShotCount = 0;
         bool aimAndFireIfPossible = false;
+        bool aimOnly = false;
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
@@ -134,6 +126,13 @@ namespace BDArmory.Modules
         public Part visualTargetPart;
         private int targetID = 0;
         bool targetAcquired;
+
+        public bool targetCOM = true;
+        public bool targetCockpits = false;
+        public bool targetEngines = false;
+        public bool targetWeapons = false;
+        public bool targetMass = false;
+
         enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
         TargetAcquisitionType lastTargetAcquisitionType = TargetAcquisitionType.None;
@@ -1263,8 +1262,8 @@ namespace BDArmory.Modules
                 }
 
                 UpdateHeat();
-                if (weaponState == WeaponStates.Enabled &&
-                    (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
+                if (weaponState == WeaponStates.Standby && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1)) { aimOnly = true; }
+                if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
                     aimAndFireIfPossible = true; // Aim and fire in a later timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made (in the Late timing phase).
 
@@ -1627,6 +1626,15 @@ namespace BDArmory.Modules
                 spinningDown = true;
             }
         }
+
+        public bool CanFireSoon()
+        {
+            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            if (timeGap <= weaponManager.targetScanInterval)
+                return true;
+            else
+                return (Time.time - timeFired >= timeGap - weaponManager.targetScanInterval);
+        }
         #endregion Guns
         //lasers
         #region LaserFire
@@ -1869,17 +1877,26 @@ namespace BDArmory.Modules
                         }
                         if (BDArmorySettings.INSTAKILL) p.Destroy();
 
-                        if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime))
+                        var aName = vesselname;
+                        var tName = p.vessel.GetName();
+                        if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
                         {
-                            ScoreAccumulator = 0;
-                            var aName = vesselname;
-                            var tName = p.vessel.GetName();
-                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                            // Always score damage.
+                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                             {
+                                BDAScoreService.Instance.TrackDamage(aName, tName, damage);
+                            }
+                            var tData = BDACompetitionMode.Instance.Scores[tName];
+                            if (tData.damageFromBullets.ContainsKey(aName))
+                                tData.damageFromBullets[aName] += damage;
+                            else
+                                tData.damageFromBullets.Add(aName, damage);
+                            if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
+                            {
+                                ScoreAccumulator = 0;
                                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                 {
                                     BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
-                                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                                 }
                                 var aData = BDACompetitionMode.Instance.Scores[aName];
                                 aData.Score += 1;
@@ -1887,7 +1904,6 @@ namespace BDArmory.Modules
                                 {
                                     aData.PinataHits++;
                                 }
-                                var tData = BDACompetitionMode.Instance.Scores[tName];
                                 tData.lastPersonWhoHitMe = aName;
                                 tData.lastHitTime = Planetarium.GetUniversalTime();
                                 tData.everyoneWhoHitMe.Add(aName);
@@ -1895,15 +1911,11 @@ namespace BDArmory.Modules
                                     ++tData.hitCounts[aName];
                                 else
                                     tData.hitCounts.Add(aName, 1);
-                                if (tData.damageFromBullets.ContainsKey(aName))
-                                    tData.damageFromBullets[aName] += damage;
-                                else
-                                    tData.damageFromBullets.Add(aName, damage);
                             }
-                        }
-                        else
-                        {
-                            ScoreAccumulator += 0.02f;
+                            else
+                            {
+                                ScoreAccumulator += TimeWarp.fixedDeltaTime;
+                            }
                         }
                     }
 
@@ -2354,28 +2366,44 @@ namespace BDArmory.Modules
             }
         }
 
+        HashSet<WeaponStates> enabledStates = new HashSet<WeaponStates> { WeaponStates.Enabled, WeaponStates.PoweringUp, WeaponStates.Locked };
         public void EnableWeapon()
         {
-            if (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.PoweringUp || weaponState == WeaponStates.Locked)
-            {
+            if (enabledStates.Contains(weaponState))
                 return;
-            }
 
             StopShutdownStartupRoutines();
 
             startupRoutine = StartCoroutine(StartupRoutine());
         }
 
+        HashSet<WeaponStates> disabledStates = new HashSet<WeaponStates> { WeaponStates.Disabled, WeaponStates.PoweringDown };
         public void DisableWeapon()
         {
-            if (weaponState == WeaponStates.Disabled || weaponState == WeaponStates.PoweringDown)
-            {
+            if (disabledStates.Contains(weaponState))
                 return;
-            }
 
             StopShutdownStartupRoutines();
 
             shutdownRoutine = StartCoroutine(ShutdownRoutine());
+        }
+
+        HashSet<WeaponStates> standbyStates = new HashSet<WeaponStates> { WeaponStates.Standby, WeaponStates.PoweringUp, WeaponStates.Locked };
+        public void StandbyWeapon()
+        {
+            if (standbyStates.Contains(weaponState))
+                return;
+            if (disabledStates.Contains(weaponState))
+            {
+                StopShutdownStartupRoutines();
+                standbyRoutine = StartCoroutine(StandbyRoutine());
+            }
+            else
+            {
+                weaponState = WeaponStates.Standby;
+                UpdateGUIWeaponState();
+                BDArmorySetup.Instance.UpdateCursorState();
+            }
         }
 
         void ParseWeaponType()
@@ -2535,7 +2563,7 @@ namespace BDArmory.Modules
 
                         if (visualTargetVessel != null && visualTargetVessel.loaded)
                         {
-                            if (subsystemTargeting != TargetSetting.CoM && visualTargetPart != null)
+                            if (!targetCOM && visualTargetPart != null)
                             {
                                 targetPosition = ray.direction *
                                                  Vector3.Distance(visualTargetPart.transform.position,
@@ -2763,7 +2791,7 @@ namespace BDArmory.Modules
                                         simulating = false;
                                     }
                                 }
-                                else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level.
+                                else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. //not really an issue at present, since rockets will immediately detonate if fired underwater - SI
                                 {
                                     bulletPrediction = simCurrPos;
                                     simulating = false;
@@ -3041,8 +3069,7 @@ namespace BDArmory.Modules
         void AimAndFire()
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
-            if (!aimAndFireIfPossible) return;
-            aimAndFireIfPossible = false;
+            if (!(aimAndFireIfPossible || aimOnly)) return;
             if (this == null || FlightGlobals.currentMainBody == null) return;
 
             UpdateTargetVessel();
@@ -3053,69 +3080,75 @@ namespace BDArmory.Modules
 
             RunTrajectorySimulation();
             Aim();
-            CheckWeaponSafety();
-            CheckAIAutofire();
-            // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
-
-            if (finalFire)
+            if (aimAndFireIfPossible)
             {
-                if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+                CheckWeaponSafety();
+                CheckAIAutofire();
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
+
+                if (finalFire)
                 {
-                    finalFire = false;
-                }
-                else
-                {
-                    finalFire = true;
-                }
-                if (eWeaponType == WeaponTypes.Laser)
-                {
-                    if (finalFire)
+                    if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
                     {
-                        if (FireLaser())
+                        finalFire = false;
+                    }
+                    else
+                    {
+                        finalFire = true;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser)
+                    {
+                        if (finalFire)
                         {
-                            for (int i = 0; i < laserRenderers.Length; i++)
-                            {
-                                laserRenderers[i].enabled = true;
-                            }
-                        }
-                        else
-                        {
-                            if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                            if (FireLaser())
                             {
                                 for (int i = 0; i < laserRenderers.Length; i++)
                                 {
-                                    laserRenderers[i].enabled = false;
+                                    laserRenderers[i].enabled = true;
                                 }
                             }
-                            if (!pulseLaser || !oneShotSound)
+                            else
                             {
-                                audioSource.Stop();
+                                if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                                {
+                                    for (int i = 0; i < laserRenderers.Length; i++)
+                                    {
+                                        laserRenderers[i].enabled = false;
+                                    }
+                                }
+                                if (!pulseLaser || !oneShotSound)
+                                {
+                                    audioSource.Stop();
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    if (eWeaponType == WeaponTypes.Ballistic)
+                    else
                     {
-                        if (finalFire)
-                            Fire();
+                        if (eWeaponType == WeaponTypes.Ballistic)
+                        {
+                            if (finalFire)
+                                Fire();
+                        }
+                        if (eWeaponType == WeaponTypes.Rocket)
+                        {
+                            if (finalFire)
+                                FireRocket();
+                        }
                     }
-                    if (eWeaponType == WeaponTypes.Rocket)
+                    if (BurstFire && (RoundsRemaining < RoundsPerMag))
                     {
-                        if (finalFire)
-                            FireRocket();
+                        finalFire = true;
                     }
-                }
-                if (BurstFire && (RoundsRemaining < RoundsPerMag))
-                {
-                    finalFire = true;
-                }
-                else
-                {
-                    finalFire = false;
+                    else
+                    {
+                        finalFire = false;
+                    }
                 }
             }
+
+            aimAndFireIfPossible = false;
+            aimOnly = false;
         }
 
         void DrawAlignmentIndicator()
@@ -3203,7 +3236,6 @@ namespace BDArmory.Modules
         }
         void UpdateHeat()
         {
-            heat = Mathf.Clamp(heat - heatLoss * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
             if (heat > maxHeat && !isOverheated)
             {
                 isOverheated = true;
@@ -3213,6 +3245,7 @@ namespace BDArmory.Modules
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
             }
+            heat = Mathf.Clamp(heat - heatLoss * TimeWarp.fixedDeltaTime, 0, Mathf.Infinity);
             if (heat < maxHeat / 3 && isOverheated) //reset on cooldown
             {
                 isOverheated = false;
@@ -3303,87 +3336,109 @@ namespace BDArmory.Modules
                 if (aiControlled && weaponManager && visualTargetVessel &&
                     (visualTargetVessel.transform.position - transform.position).sqrMagnitude < weaponManager.guardRange * weaponManager.guardRange)
                 {
-                    targetPosition = visualTargetVessel.CoM;
-
                     targetRadius = visualTargetVessel.GetRadius();
 
                     if (visualTargetPart == null || visualTargetPart.vessel != visualTargetVessel)
                     {
                         TargetInfo currentTarget = visualTargetVessel.gameObject.GetComponent<TargetInfo>();
-
                         if (currentTarget == null)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + (visualTargetVessel != null ? visualTargetVessel.vesselName : "'unknown'") + " has no TargetInfo.");
                             return;
                         }
-                        switch (subsystemTargeting)
+                        List<Part> targetparts = new List<Part>();
+                        if (targetCOM)
                         {
-                            case TargetSetting.CoM:
-                                break;
-
-                            case TargetSetting.Command:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetCommandList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetCommandList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetCommandList[targetID];
-                                break;
-
-                            case TargetSetting.Engine:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetEngineList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetEngineList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetEngineList[targetID];
-                                break;
-                            case TargetSetting.Mass:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetMassList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetMassList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetMassList[targetID];
-                                break;
-                            case TargetSetting.Weapon:
-                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(currentTarget.targetWeaponList.Count, weaponManager.multiTargetNum));
-                                if (!turret) //make fixed guns all get the same target part
-                                {
-                                    targetID = 0;
-                                }
-                                if (currentTarget.targetWeaponList.Count == 0)
-                                {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
-                                    return;
-                                }
-                                visualTargetPart = currentTarget.targetWeaponList[targetID];
-                                break;
-                        }
-                        if (subsystemTargeting != TargetSetting.CoM)
-                        {
-                            targetPosition = visualTargetPart.transform.position;
+                            targetPosition = visualTargetVessel.CoM;
+                            visualTargetPart = null; //make sure this gets reset
                         }
                         else
                         {
-                            targetPosition = visualTargetVessel.CoM;
+                            if (targetCockpits)
+                            {
+                                for (int i = 0; i < currentTarget.targetCommandList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetCommandList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetCommandList[i]);
+                                    }
+                                }
+                            }
+                            if (targetEngines)
+                            {
+                                for (int i = 0; i < currentTarget.targetEngineList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetEngineList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetEngineList[i]);
+                                    }
+                                }
+                            }
+                            if (targetWeapons)
+                            {
+                                for (int i = 0; i < currentTarget.targetWeaponList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetWeaponList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetWeaponList[i]);
+                                    }
+                                }
+                            }
+                            if (targetMass)
+                            {
+                                for (int i = 0; i < currentTarget.targetMassList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetMassList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetMassList[i]);
+                                    }
+                                }
+                            }
+                            if (!targetCOM && !targetCockpits && !targetEngines && !targetWeapons && !targetMass)
+                            {
+                                for (int i = 0; i < currentTarget.targetMassList.Count; i++)
+                                {
+                                    if (!targetparts.Contains(currentTarget.targetMassList[i]))
+                                    {
+                                        targetparts.Add(currentTarget.targetMassList[i]);
+                                    }
+                                }
+                            }
+                            targetparts = targetparts.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
+                            targetparts.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+                            //targetparts.Shuffle(); //alternitively, increase the random range from maxtargetnum to targetparts.count, otherwise edge cases where lots of one thing (targeting command/mass) will be pulled before lighter things (weapons, maybe engines) if both selected
+                            if (turret)
+                            {
+                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(targetparts.Count, weaponManager.multiTargetNum));
+                            }
+                            else //make fixed guns all get the same target part
+                            {
+                                targetID = 0;
+                            }
+                            if (targetparts.Count == 0)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: Targeted vessel " + visualTargetVessel.vesselName + " has no targetable parts.");
+                                targetPosition = visualTargetVessel.CoM;
+                            }
+                            else
+                            {
+                                visualTargetPart = targetparts[targetID];
+                                targetPosition = visualTargetPart.transform.position;
+                            }
                         }
-                    }                   
+                    }
+                    else
+                    {
+                        if (targetCOM)
+                        {
+                            targetPosition = visualTargetVessel.CoM;
+                            visualTargetPart = null; //make sure these get reset
+                        }
+                        else
+                        {
+                            targetPosition = visualTargetPart.transform.position;
+                        }
+                    }
                     targetVelocity = visualTargetVessel.rb_velocity;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Visual;
@@ -3509,7 +3564,7 @@ namespace BDArmory.Modules
 
         IEnumerator StartupRoutine(bool calledByReload = false)
         {
-            if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
+            if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
             {
                 while (reloadState.normalizedTime < 1)
                 {
@@ -3602,6 +3657,13 @@ namespace BDArmory.Modules
 
             UpdateGUIWeaponState();
         }
+        IEnumerator StandbyRoutine()
+        {
+            yield return StartupRoutine(true);
+            weaponState = WeaponStates.Standby;
+            UpdateGUIWeaponState();
+            BDArmorySetup.Instance.UpdateCursorState();
+        }
         void StopShutdownStartupRoutines()
         {
             if (shutdownRoutine != null)
@@ -3614,6 +3676,12 @@ namespace BDArmory.Modules
             {
                 StopCoroutine(startupRoutine);
                 startupRoutine = null;
+            }
+
+            if (standbyRoutine != null)
+            {
+                StopCoroutine(standbyRoutine);
+                standbyRoutine = null;
             }
         }
 

@@ -1,4 +1,41 @@
-﻿v1.4.6.0
+﻿FIXES
+	- Fix check for ammo ignoring the infinite ammo setting in CheckEngagementEnvelope.
+	- Adjust Krakensbane adjustments in Kerbal Safety to hopefully reduce amount of Krakenation.
+	- Fix NRE in FireFX.
+	- Make the default value for kerbal safety be 'partial' instead of 'full' due to stability issues with 'full'.
+IMPROVEMENTS
+	- Add option for tournament parser to parse multiple tournaments.
+	- Allow turrets other than the current one to track the main target.
+	- Resource stealing:
+		- Change resource steal to drain and fill containers evenly w.r.t. fraction of the containers, still respecting priority settings.
+		- Add option for counter-measure stealing.
+		- Add a few fuel and ammo resources that were missed.
+		- Steal integer amounts of ammo and counter-measures.
+
+v1.4.6.2
+FIXES
+	- Add in steer limiter localization text (is used on Modular Missile Guidance)
+	- Always score damage from lasers, but only score hits with pulse lasers or when the accumulator is sufficient.
+	- Fix bug in advanced targeting for fixed guns.
+	- Adjust intake damage amounts.
+IMPROVEMENTS
+	- Add SRB battle damage.
+	- Filled command seats can extinguish fires.
+
+v1.4.6.1
+FIXES
+	- Fix various occassional NREs.
+	- Fix bug in parser for 'dead teams'.
+	- When a missile has lost its MissileBase set its isMissile tag to false so it no longer counts as a missile.
+	- Don't detonate CASE ammo when the vessel is null, packed or not loaded.
+	- Fixed overheated guns sometimes not being detected as overheated.
+	- Fix AI having issues avoiding terrain when in an inverted dive (would happen most frequently during missile evasion).
+IMPROVEMENTS
+	- Updated HP patch for AoA Technologies.
+	- Add check for whether guns with low RPM can fire soon, switch to a different weapon if the next time a low RPM gun can fire is greater than the Weapon Manager fire interval setting.
+	- Re-add multiple subsystem targeting to the advanced targeting.
+
+v1.4.6.0
 FIXES
 	- Store the armed/IFF state in the craft files instead of just the GUI strings.
 	- Use the correct ShipConstruct in the editor for setting the max gun range and set a minimum of 10 for the max gun range to avoid breaking the part window sliders.
@@ -6,24 +43,24 @@ FIXES
 	- Add a 0.1s time-out to the ballistic trajectory closest approach simulation to prevent freezes.
 	- Pause fire effects when the game is paused.
 	- Store the armed and IFF states of explosive parts, not their GUI strings.
+	- Fix missiles not being targeted when Engage Missiles option was selected.
+	- Fix for the AI stopping extending prematurely.
+	- Fix extending to get enough distance to fire missiles not working.
 IMPROVEMENTS
 	- Migrate non-static configs to the PluginData folder to avoid invalidating the ModuleManager cache (should give slightly faster start-up times).
 	- Add a Game Modes section to the settings and rearrange the various toggles to match.
 	- Add Heart-Bleed and Resource-Steal game modes.
 		- Fuel resources that can be stolen are 'LiquidFuel', 'SolidFuel', 'Oxidizer', 'IntakeAir' and 'ElectricCharge'.
 		- Ammo resources that can be stolen are those ending in 'Ammo', 'Shells' and 'Rocket'.
-
-	- Expose AI extending settings to be editable by user.
-	- Move missile check for stopping extending routine
-	- Re-order target finding logic in SmartFindTarget.
-	- Change targetMissiles value based on whether craft has weapons that can engage missiles.
-	- Fully depreciate toggling targetMissiles.
-	- Re-work targeting so that missiles are handled first if a craft has weapons that can target missiles.
-	- Move missile threat check to its own method so it can be called from targeting method.
-	- Remove forcing target selection if target priority or FFA targeting was enabled.
-	- Re-work extending checks to prevent the above from stopping extending.
-	- Fix extending to get enough distance to fire missiles not working.
-	- Clarify some targeting debug statements
+	- Remove Target Missiles toggle from the weapons manager, this is now automatically set based on if weapons onboard the craft have the engage missiles option enabled.
+	- Expose AI extending settings to be editable by user. The AI extends when all of the below conditions are true:
+		- The target is outside of an angle in front of the craft (default of 78 degrees, now selected using Extend Target Angle).
+		- The target's speed is less than the craft's speed (default of target's speed is less than 80% of craft speed, now selected using Extend Target Velocity Factor).
+		- The target is close (default of within 400 meters, now selected using Extend Target Distance).
+	- Advanced targeting setting deprecated - targeting options are now per vessel.
+	- Max turret target setting deprecated - is now set per vessel.
+	- Adds Max Turret Targets setting to Weapon manager.
+	- Adds Targeting Options to Weapon manager.
 
 v1.4.5.0
 FIXES

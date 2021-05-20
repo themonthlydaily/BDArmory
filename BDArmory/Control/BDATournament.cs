@@ -311,6 +311,7 @@ namespace BDArmory.Control
 
         public bool SaveState(string stateFile)
         {
+            if (rounds == null) return true; // Nothing to save.
             try
             {
                 List<string> strings = new List<string>();

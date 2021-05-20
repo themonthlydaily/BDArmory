@@ -286,6 +286,7 @@ namespace BDArmory.Targeting
             //anything else? fueltanks? - could be useful if incindiary ammo gets implemented
             //power generation? - radiators/generators - if doing CoaDE style fights/need reactors to power weapons
 
+            if (vessel == null) return;
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {
@@ -309,12 +310,20 @@ namespace BDArmory.Targeting
                 }
             targetMassList = targetMassList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
             targetMassList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+            if (targetMassList.Count > 10)
+                targetMassList.RemoveRange(10, (targetMassList.Count - 10)); //trim to max turret targets
             targetCommandList = targetCommandList.OrderBy(w => w.mass).ToList();
             targetCommandList.Reverse();
+            if (targetCommandList.Count > 10)
+                targetCommandList.RemoveRange(10, (targetCommandList.Count - 10));
             targetEngineList = targetEngineList.OrderBy(w => w.mass).ToList();
             targetEngineList.Reverse();
+            if (targetEngineList.Count > 10)
+                targetEngineList.RemoveRange(10, (targetEngineList.Count - 10));
             targetWeaponList = targetWeaponList.OrderBy(w => w.mass).ToList();
             targetWeaponList.Reverse();
+            if (targetWeaponList.Count > 10)
+                targetWeaponList.RemoveRange(10, (targetWeaponList.Count - 10));
         }
 
         public int NumFriendliesEngaging(BDTeam team)

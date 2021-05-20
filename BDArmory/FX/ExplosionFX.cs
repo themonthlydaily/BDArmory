@@ -75,7 +75,7 @@ namespace BDArmory.FX
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory.ExplosionFX]:Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
+                Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
         }
 
@@ -365,7 +365,7 @@ namespace BDArmory.FX
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory.ExplosionFX]:Explosion Finished");
+                    Debug.Log("[BDArmory.ExplosionFX]: Explosion Finished");
                 }
 
                 gameObject.SetActive(false);

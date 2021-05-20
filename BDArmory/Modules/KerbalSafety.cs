@@ -177,7 +177,7 @@ namespace BDArmory.Modules
             verticalSpeed = Vector3.Dot(-gee.normalized, velocity);
             kerbal.vessel.SetRotation(UnityEngine.Random.rotation);
             kerbal.vessel.rootPart.AddTorque(UnityEngine.Random.onUnitSphere * UnityEngine.Random.Range(1, 2));
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Setting " + kerbal.vessel.vesselName + "'s position to " + position.ToString("0.00") + " (" + kerbal.vessel.GetWorldPos3D().ToString("0.00") + ", altitude: " + kerbal.vessel.radarAltitude.ToString("0.00") + ") and velocity to " + velocity.magnitude.ToString("0.00") + " (" + verticalSpeed.ToString("0.00") + "m/s vertically, adjusted by " + verticalSpeedAdjustment.ToString("0.00") + "m/s)");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.KerbalSafety]: Setting {kerbal.vessel.vesselName}'s position to {position:F2} ({kerbal.vessel.GetWorldPos3D():F2}, altitude: {kerbal.vessel.radarAltitude:F2}, {kerbal.vessel.altitude:F2}) and velocity to {velocity.magnitude:F2} ({verticalSpeed:F2}m/s vertically, adjusted by {verticalSpeedAdjustment:F2}m/s)");
             var startTime = Time.realtimeSinceStartup;
             kerbal.vessel.rootPart.SetDetectCollisions(false);
             while (kerbal != null && kerbal.isActiveAndEnabled && kerbal.vessel != null && kerbal.vessel.isActiveAndEnabled && Time.realtimeSinceStartup - startTime < realTime)
@@ -194,11 +194,15 @@ namespace BDArmory.Modules
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) verticalSpeedAdjustment = Vector3.Dot(-gee.normalized, gee * Time.fixedDeltaTime);
                 }
                 verticalSpeed = Vector3.Dot(-gee.normalized, velocity);
-                position += velocity * Time.fixedDeltaTime - FloatingOrigin.Offset;
+                position += velocity * Time.fixedDeltaTime;
+                if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+                {
+                    position -= FloatingOrigin.OffsetNonKrakensbane;
+                }
                 kerbal.vessel.IgnoreGForces(1);
                 kerbal.vessel.IgnoreSpeed(1);
                 kerbal.vessel.SetPosition(position);
-                kerbal.vessel.SetWorldVelocity(velocity + Krakensbane.GetLastCorrection());
+                kerbal.vessel.SetWorldVelocity(velocity);
                 yield return new WaitForFixedUpdate();
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Setting " + kerbal.vessel.vesselName + "'s position to " + position.ToString("0.00") + " (" + kerbal.vessel.GetWorldPos3D().ToString("0.00") + ", altitude: " + kerbal.vessel.radarAltitude.ToString("0.00") + ") and velocity to " + velocity.magnitude.ToString("0.00") + " (" + kerbal.vessel.Velocity().magnitude.ToString("0.00") + ", " + verticalSpeed.ToString("0.00") + "m/s vertically, adjusted by " + verticalSpeedAdjustment.ToString("0.00") + "m/s)." + " (offset: " + !FloatingOrigin.Offset.IsZero() + ", frameVel: " + !Krakensbane.GetFrameVelocity().IsZero() + ")" + " " + Krakensbane.GetFrameVelocityV3f().ToString("0.0") + ", corr: " + Krakensbane.GetLastCorrection().ToString("0.0"));
             }
@@ -479,7 +483,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                Debug.LogError("[BDArmory.KerbalSafety]: Ejection called without a kerbal present.");
+                Debug.LogWarning("[BDArmory.KerbalSafety]: Ejection called without a kerbal present.");
             }
             ejected = true;
         }
@@ -523,10 +527,10 @@ namespace BDArmory.Modules
                     crew.KerbalRef.state = Kerbal.States.BAILED_OUT;
                     fromPart.vessel.RemoveCrew(crew);
                 }
-                Debug.Log("[BDArmory.KerbalSafety]: " + crew.displayName + " ejected from " + fromPart.vessel.vesselName + " at " + fromPart.vessel.radarAltitude.ToString("0.00") + "m with velocity " + fromPart.vessel.srf_velocity.magnitude.ToString("0.00") + "m/s (vertical: " + fromPart.vessel.verticalSpeed + ")");
+                Debug.Log("[BDArmory.KerbalSafety]: " + crew.displayName + " ejected from " + fromPart.vessel.vesselName + " at " + fromPart.vessel.radarAltitude.ToString("0.00") + "m with velocity " + fromPart.vessel.Velocity().magnitude.ToString("0.00") + "m/s (vertical: " + fromPart.vessel.verticalSpeed + $")");
                 kerbalEVA.autoGrabLadderOnStart = false; // Don't grab the vessel.
                 kerbalEVA.StartNonCollidePeriod(5f, 1f, fromPart, fromPart.airlock);
-                KerbalSafetyManager.Instance.ManageNewlyEjectedKerbal(kerbalEVA, fromPart.vessel.GetSrfVelocity());
+                KerbalSafetyManager.Instance.ManageNewlyEjectedKerbal(kerbalEVA, fromPart.vessel.Velocity());
                 recovered = true;
                 OnDestroy();
                 return true;
