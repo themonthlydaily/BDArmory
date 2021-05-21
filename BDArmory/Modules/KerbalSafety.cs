@@ -476,7 +476,7 @@ namespace BDArmory.Modules
                     if (!EjectFromOtherPart()) // Look for other airlocks to spawn from.
                     {
                         message = kerbalName + " failed to eject from " + part.vessel.vesselName + ", all exits were blocked. R.I.P.";
-                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        // BDACompetitionMode.Instance.competitionStatus.Add(message);
                         Debug.Log("[BDArmory.KerbalSafety]: " + message);
                     }
                 }

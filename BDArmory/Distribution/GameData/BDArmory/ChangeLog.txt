@@ -16,6 +16,7 @@ IMPROVEMENTS
 		- Add action group options for 'Toggle Max Altitude', 'Enable Max Altitude' and 'Disable Max Altitude'.
 		- Change killer GM altitude limits to AGL.
 	- Make the WM, MMG, pilot AI and surface AI modules get ignored by explosions, bullets, rockets, lasers and missiles so that they can be placed externally without being easily destroyed.
+	- Disable Kerbal Safety "R.I.P." in-game messages as they were too spammy.
 
 v1.4.6.2
 FIXES
