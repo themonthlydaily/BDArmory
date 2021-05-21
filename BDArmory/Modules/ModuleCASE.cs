@@ -6,6 +6,7 @@ using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
+using BDArmory.Misc;
 using System;
 using System.Text;
 using System.Collections.Generic;
@@ -183,6 +184,7 @@ namespace BDArmory.Modules
                             {
                                 Part partHit = blastHits.Current.GetComponentInParent<Part>();
                                 if (partHit == null || partHit == part) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (partHit.mass > 0)
                                 {
                                     Rigidbody rb = partHit.Rigidbody;
@@ -244,6 +246,7 @@ namespace BDArmory.Modules
                                     }
 
                                     if (hitPart == null || hitPart == part) continue;
+                                    if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
 
                                     if (hitEVA != null)
                                     {
