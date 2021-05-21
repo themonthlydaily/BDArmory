@@ -4,6 +4,7 @@ using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.FX;
+using BDArmory.Misc;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -162,6 +163,8 @@ namespace BDArmory.Modules
                     if (blastHits.Current == null) continue;
                     if (blastHits.Current.gameObject == FlightGlobals.currentMainBody.gameObject) continue; // Ignore terrain hits.
                     Part partHit = blastHits.Current.GetComponentInParent<Part>();
+                    if (partHit == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                     if (partsHit.Contains(partHit)) continue; // Don't hit the same part multiple times.
                     partsHit.Add(partHit);
                     if (partHit != null && partHit.mass > 0)
