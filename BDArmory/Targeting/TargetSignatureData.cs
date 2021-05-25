@@ -65,13 +65,12 @@ namespace BDArmory.Targeting
             }
             else
             {
-                List<MissileFire>.Enumerator mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    Team = mf.Current.Team;
-                    break;
-                }
-                mf.Dispose();
+                using (var mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    while (mf.MoveNext())
+                    {
+                        Team = mf.Current.Team;
+                        break;
+                    }
             }
 
             vesselJammer = v.gameObject.GetComponent<VesselECMJInfo>();

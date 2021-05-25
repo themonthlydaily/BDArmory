@@ -494,6 +494,7 @@ namespace BDArmory.Control
             //clear target database so pilots don't attack yet
             BDATargetManager.ClearDatabase();
             CleanUpKSPsDeadReferences();
+            RunDebugChecks();
 
             foreach (var vname in Scores.Keys)
             {
@@ -2961,12 +2962,13 @@ namespace BDArmory.Control
                         emitterNames.Add(pe.gameObject.name, 1);
                 }
             }
-            Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.Select(pe => pe.Key + ":" + pe.Value)));
+            Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.OrderByDescending(kvp => kvp.Value).Select(pe => pe.Key + ":" + pe.Value)));
 
             strings.Clear();
             strings.Add("Parts: " + FindObjectsOfType<Part>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Part)).Length);
             strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Vessel)).Length);
-            strings.Add("CometVessels: " + FindObjectsOfType<CometVessel>().Length);
+            strings.Add("GameObjects: " + FindObjectsOfType<GameObject>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(GameObject)).Length);
+            strings.Add($"ProtoVessels: {HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).Count()} active of {HighLogic.CurrentGame.flightState.protoVessels.Count}");
             Debug.Log("DEBUG " + string.Join(", ", strings));
         }
 
@@ -2979,20 +2981,37 @@ namespace BDArmory.Control
         void CleanUpKSPsDeadReferences()
         {
             var toRemove = new List<uint>();
+            foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
+                if (FlightGlobals.PersistentVesselIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent vessel references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentVesselIds.Remove(key);
+
+            toRemove.Clear();
             foreach (var key in FlightGlobals.PersistentLoadedPartIds.Keys)
                 if (FlightGlobals.PersistentLoadedPartIds[key] == null) toRemove.Add(key);
             Debug.Log($"DEBUG Found {toRemove.Count} null persistent loaded part references.");
             foreach (var key in toRemove) FlightGlobals.PersistentLoadedPartIds.Remove(key);
+
+            // Usually doesn't find any.
             toRemove.Clear();
             foreach (var key in FlightGlobals.PersistentUnloadedPartIds.Keys)
                 if (FlightGlobals.PersistentUnloadedPartIds[key] == null) toRemove.Add(key);
             Debug.Log($"DEBUG Found {toRemove.Count} null persistent unloaded part references.");
             foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
-            toRemove.Clear();
-            foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
-                if (FlightGlobals.PersistentVesselIds[key] == null) toRemove.Add(key);
-            Debug.Log($"DEBUG Found {toRemove.Count} null persistent vessel references.");
-            foreach (var key in toRemove) FlightGlobals.PersistentVesselIds.Remove(key);
+
+            var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).ToList();
+            foreach (var protoVessel in protoVessels)
+            {
+                if (protoVessel.protoPartSnapshots != null)
+                {
+                    foreach (var protoPart in protoVessel.protoPartSnapshots)
+                    {
+                        protoPart.modules.Clear();
+                    }
+                    protoVessel.protoPartSnapshots.Clear();
+                }
+                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState);
+            }
         }
     }
 }

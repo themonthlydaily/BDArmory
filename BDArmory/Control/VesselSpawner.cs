@@ -1858,6 +1858,7 @@ namespace BDArmory.Control
                 }
             }
 
+            protoVessel.persistent = false; // Don't hold on to the protovessel.
             return protoVessel.vesselRef;
         }
 

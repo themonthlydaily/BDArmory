@@ -52,8 +52,6 @@ namespace BDArmory.Modules
             if (fromTo.from == GameScenes.FLIGHT)
             {
                 DisableKerbalSafety();
-                foreach (var ks in kerbals.Values)
-                    ks.recovered = true;
             }
         }
 
@@ -83,7 +81,11 @@ namespace BDArmory.Modules
             isEnabled = false;
             Debug.Log("[BDArmory.KerbalSafety]: Disabling kerbal safety.");
             foreach (var ks in kerbals.Values)
+            {
+                ks.recovered = true;
                 ks.RemoveHandlers();
+            }
+            kerbals.Clear();
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
@@ -104,7 +106,7 @@ namespace BDArmory.Modules
                 CheckVesselForKerbals(vessel);
         }
 
-        public void CheckVesselForKerbals(Vessel vessel, bool quiet = false)
+        public void CheckVesselForKerbals(Vessel vessel)
         {
             if (BDArmorySettings.KERBAL_SAFETY == 0) return;
             if (vessel == null) return;
@@ -115,8 +117,9 @@ namespace BDArmory.Modules
                 {
                     if (crew == null) continue;
                     if (kerbals.ContainsKey(crew.displayName)) continue; // Already managed.
-                    var ks = part.gameObject.AddComponent<KerbalSafety>();
-                    StartCoroutine(ks.Configure(crew, part, quiet && false)); // FIXME remove false when working here
+                    var ks = part.gameObject.GetComponent<KerbalSafety>();
+                    if (ks == null) { ks = part.gameObject.AddComponent<KerbalSafety>(); }
+                    StartCoroutine(ks.Configure(crew, part));
                 }
             }
         }
@@ -139,7 +142,7 @@ namespace BDArmory.Modules
             }
             if (kerbal != null && kerbal.vessel != null)
             {
-                CheckVesselForKerbals(kerbal.vessel, true);
+                CheckVesselForKerbals(kerbal.vessel);
                 newKerbalsAwaitingCheck.Remove(kerbal);
             }
             else
@@ -293,7 +296,7 @@ namespace BDArmory.Modules
         /// </summary>
         /// <param name="crew">The proto crew member.</param>
         /// <param name="part">The part.</param>
-        public IEnumerator Configure(ProtoCrewMember crew, Part part, bool quiet = false)
+        public IEnumerator Configure(ProtoCrewMember crew, Part part)
         {
             if (crew == null)
             {
@@ -352,8 +355,7 @@ namespace BDArmory.Modules
             }
             AddHandlers();
             KerbalSafetyManager.Instance.kerbals.Add(kerbalName, this);
-            if (!quiet)
-                Debug.Log("[BDArmory.KerbalSafety]: Managing the safety of " + kerbalName + (ejected ? " on EVA" : " in " + part.vessel.vesselName) + ".");
+            Debug.Log("[BDArmory.KerbalSafety]: Managing the safety of " + kerbalName + (ejected ? " on EVA" : " in " + part.vessel.vesselName) + ".");
             OnVesselModified(part.vessel); // Immediately check the vessel.
         }
 

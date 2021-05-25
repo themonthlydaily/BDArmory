@@ -157,13 +157,12 @@ namespace BDArmory.Modules
 
             //TEMPORARY
             wingmen = new List<IBDAIControl>();
-            List<IBDAIControl>.Enumerator fs = friendlies.GetEnumerator();
-            while (fs.MoveNext())
-            {
-                if (fs.Current == null) continue;
-                wingmen.Add(fs.Current);
-            }
-            fs.Dispose();
+            using (var fs = friendlies.GetEnumerator())
+                while (fs.MoveNext())
+                {
+                    if (fs.Current == null) continue;
+                    wingmen.Add(fs.Current);
+                }
         }
 
         void RefreshWingmen()

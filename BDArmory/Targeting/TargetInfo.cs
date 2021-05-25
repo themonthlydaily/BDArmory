@@ -195,27 +195,25 @@ namespace BDArmory.Targeting
 
             Team = null;
             bool foundMf = false;
-            List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (mf.MoveNext())
-            {
-                foundMf = true;
-                Team = mf.Current.Team;
-                weaponManager = mf.Current;
-                break;
-            }
-            mf.Dispose();
+            using (var mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                while (mf.MoveNext())
+                {
+                    foundMf = true;
+                    Team = mf.Current.Team;
+                    weaponManager = mf.Current;
+                    break;
+                }
 
             if (!foundMf)
             {
-                List<MissileBase>.Enumerator ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator();
-                while (ml.MoveNext())
-                {
-                    isMissile = true;
-                    MissileBaseModule = ml.Current;
-                    Team = ml.Current.Team;
-                    break;
-                }
-                ml.Dispose();
+                using (var ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                    while (ml.MoveNext())
+                    {
+                        isMissile = true;
+                        MissileBaseModule = ml.Current;
+                        Team = ml.Current.Team;
+                        break;
+                    }
             }
 
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
@@ -231,6 +229,7 @@ namespace BDArmory.Targeting
                 //massRoutine = StartCoroutine(MassRoutine());              // TODO: CHECK BEHAVIOUR AND SIDE EFFECTS!
             }
             UpdateTargetPartList();
+            GameEvents.onVesselDestroy.Add(CleanFriendliesEngaging);
         }
 
         void OnPeaceEnabled()
@@ -244,6 +243,8 @@ namespace BDArmory.Targeting
             BDArmorySetup.OnPeaceEnabled -= OnPeaceEnabled;
             vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselPartCountChanged.Remove(VesselModified);
+            GameEvents.onVesselDestroy.Remove(CleanFriendliesEngaging);
+            BDATargetManager.RemoveTarget(this);
         }
 
         IEnumerator UpdateRCSDelayed()
@@ -263,7 +264,7 @@ namespace BDArmory.Targeting
 
         void Update()
         {
-            if (!vessel)
+            if (vessel == null)
             {
                 AboutToBeDestroyed();
             }
@@ -326,6 +327,12 @@ namespace BDArmory.Targeting
                 targetWeaponList.RemoveRange(10, (targetWeaponList.Count - 10));
         }
 
+        void CleanFriendliesEngaging(Vessel v)
+        {
+            var toRemove = friendliesEngaging.Where(kvp => kvp.Value == null).Select(kvp => kvp.Key).ToList();
+            foreach (var key in toRemove)
+            { friendliesEngaging.Remove(key); }
+        }
         public int NumFriendliesEngaging(BDTeam team)
         {
             if (friendliesEngaging.TryGetValue(team, out var friendlies))
