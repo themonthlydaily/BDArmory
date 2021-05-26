@@ -1770,38 +1770,42 @@ namespace BDArmory.UI
 
                 // Asteroids
                 BDArmorySettings.ASTEROID_FIELD = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidField")); // Asteroid Field
-                BDArmorySettings.ASTEROID_RAIN = GUI.Toggle(SRightRect(line), BDArmorySettings.ASTEROID_RAIN, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRain")); // Asteroid Rain
-                if (BDArmorySettings.ASTEROID_FIELD || BDArmorySettings.ASTEROID_RAIN)
+                if (BDArmorySettings.ASTEROID_FIELD)
                 {
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Density")}:  ({BDArmorySettings.ASTEROIDS_DENSITY})", leftLabel);
-                    BDArmorySettings.ASTEROIDS_DENSITY = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_DENSITY, 0.01f, 1f) * 100f) / 100f; // Spawn Density
-                    var altitudeString = BDArmorySettings.ASTEROIDS_ALTITUDE < 10f ? $"{BDArmorySettings.ASTEROIDS_ALTITUDE * 100f}m" : $"{BDArmorySettings.ASTEROIDS_ALTITUDE - 9f}km";
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Altitude")}:  ({altitudeString})", leftLabel);
-                    BDArmorySettings.ASTEROIDS_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_ALTITUDE, 0f, 59f)); // Spawn Altitude
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Asteroids_Radius")}:  ({BDArmorySettings.ASTEROIDS_RADIUS}km)", leftLabel);
-                    BDArmorySettings.ASTEROIDS_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROIDS_RADIUS, 1f, 50f)); // Spawn Radius
-                    if (GUI.Button(SLeftButtonRect(++line), "Spawn Field Now"))//"Spawn Field Now"))
+                    if (GUI.Button(SRightButtonRect(line), "Spawn Field Now"))//"Spawn Field Now"))
                     {
                         if (Event.current.button == 1)
-                        {
                             AsteroidField.Instance.Reset();
-                        }
                         else
-                        {
-                            AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
-                        }
-                        // AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS);
+                            AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
                     }
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldDensity")}:  ({BDArmorySettings.ASTEROID_FIELD_NUMBER})", leftLabel);
+                    BDArmorySettings.ASTEROID_FIELD_NUMBER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), Mathf.Round(BDArmorySettings.ASTEROID_FIELD_NUMBER / 10f), 0f, 100f) * 10f); // Asteroid Field Density
+                    var altitudeString = BDArmorySettings.ASTEROID_FIELD_ALTITUDE < 10f ? $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE * 100f}m" : $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE - 9f}km";
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldAltitude")}:  ({altitudeString})", leftLabel);
+                    BDArmorySettings.ASTEROID_FIELD_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_ALTITUDE, 0f, 59f)); // Asteroid Field Altitude
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldRadius")}:  ({BDArmorySettings.ASTEROID_FIELD_RADIUS}km)", leftLabel);
+                    BDArmorySettings.ASTEROID_FIELD_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_RADIUS, 1f, 50f)); // Asteroid Field Radius
+                }
+                BDArmorySettings.ASTEROID_RAIN = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_RAIN, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRain")); // Asteroid Rain
+                if (BDArmorySettings.ASTEROID_RAIN)
+                {
                     if (GUI.Button(SRightButtonRect(line), "Spawn Rain Now"))
                     {
                         if (Event.current.button == 1)
                             AsteroidRain.Instance.Reset();
                         else
-                            AsteroidRain.Instance.SpawnRain(BDArmorySettings.ASTEROIDS_DENSITY, BDArmorySettings.ASTEROIDS_ALTITUDE, BDArmorySettings.ASTEROIDS_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
+                            AsteroidRain.Instance.SpawnRain(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
                     }
-
-                    ++line;
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainDensity")}:  ({BDArmorySettings.ASTEROID_RAIN_DENSITY})", leftLabel);
+                    BDArmorySettings.ASTEROID_RAIN_DENSITY = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_DENSITY, 0f, 1f) * 100f) / 100f; // Asteroid Rain Density
+                    var altitudeString = BDArmorySettings.ASTEROID_RAIN_ALTITUDE < 10f ? $"{BDArmorySettings.ASTEROID_RAIN_ALTITUDE * 100f}m" : $"{BDArmorySettings.ASTEROID_RAIN_ALTITUDE - 9f}km";
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainAltitude")}:  ({altitudeString})", leftLabel);
+                    BDArmorySettings.ASTEROID_RAIN_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_ALTITUDE, 0f, 59f)); // Asteroid Rain Altitude
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainRadius")}:  ({BDArmorySettings.ASTEROID_RAIN_RADIUS}km)", leftLabel);
+                    BDArmorySettings.ASTEROID_RAIN_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_RADIUS, 1f, 50f)); // Asteroid Rain Radius
                 }
+                ++line;
             }
 
             if (BDArmorySettings.BATTLEDAMAGE)

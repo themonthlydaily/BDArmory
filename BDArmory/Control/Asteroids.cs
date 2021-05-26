@@ -14,7 +14,6 @@ namespace BDArmory.Control
         public static HashSet<Vessel> managedAsteroids;
         protected static UntrackedObjectClass[] UntrackedObjectClasses = (UntrackedObjectClass[])Enum.GetValues(typeof(UntrackedObjectClass)); // Get the UntrackedObjectClasses as an array of enum values.
 
-        protected float density;
         protected float altitude;
         protected float radius;
         protected Vector2d geoCoords;
@@ -32,12 +31,21 @@ namespace BDArmory.Control
             }
         }
 
-        protected void SetupAsteroids(float _density, float _altitude, float _radius, Vector2d _geoCoords)
+        void OnDestroy()
         {
-            density = _density;
+            foreach (var asteroid in managedAsteroids)
+            {
+                Destroy(asteroid);
+            }
+            managedAsteroids.Clear();
+        }
+
+        protected void SetupAsteroids(float _altitude, float _radius, Vector2d _geoCoords)
+        {
             altitude = _altitude < 10f ? _altitude * 100f : (_altitude - 9f) * 1000f;
             radius = _radius * 1000f;
             geoCoords = _geoCoords;
+            //  = new FloatCurve(new Keyframe[] { new Keyframe(0f, 0f), new Keyframe(1f, 0f) }); // Set the asteroid spawn chance to 0.
         }
 
         protected Vessel SpawnAsteroid(Vector3d position, int untrackedObjectClassIndex = -1)
@@ -46,7 +54,7 @@ namespace BDArmory.Control
             {
                 untrackedObjectClassIndex = RNG.Next(UntrackedObjectClasses.Length);
             }
-            var asteroid = DiscoverableObjectsUtil.SpawnAsteroid(DiscoverableObjectsUtil.GenerateAsteroidName(), GetOrbitForApoapsis(position), (uint)RNG.Next(), UntrackedObjectClasses[untrackedObjectClassIndex], 0, double.MaxValue);
+            var asteroid = DiscoverableObjectsUtil.SpawnAsteroid(DiscoverableObjectsUtil.GenerateAsteroidName(), GetOrbitForApoapsis(position), (uint)RNG.Next(), UntrackedObjectClasses[untrackedObjectClassIndex], 0, BDArmorySettings.COMPETITION_DURATION);
             if (asteroid != null && asteroid.vesselRef != null)
                 return asteroid.vesselRef;
             else
@@ -78,6 +86,7 @@ namespace BDArmory.Control
     {
         public static AsteroidRain Instance;
         bool raining = true;
+        float density;
         Coroutine rainCoroutine;
         Coroutine cleanUpCoroutine;
         HashSet<Vessel> beingRemoved = new HashSet<Vessel>();
@@ -115,7 +124,8 @@ namespace BDArmory.Control
 
         public void SpawnRain(float _density, float _altitude, float _radius, Vector2d _geoCoords)
         {
-            SetupAsteroids(_density, _altitude, _radius, _geoCoords);
+            density = _density;
+            SetupAsteroids(_altitude, _radius, _geoCoords);
             Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid rain with density {density}, altitude {altitude / 1000f}km and radius {radius / 1000f}km at coordinates ({geoCoords.x:F4}, {geoCoords.y:F4}).");
 
             var timeToFall = Mathf.Sqrt(altitude * 2f / (float)FlightGlobals.getGeeForceAtPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude)).magnitude) + 5f; // Plus a bit for clean-up.
@@ -322,16 +332,17 @@ namespace BDArmory.Control
             floating = false;
             if (floatingCoroutine != null)
             { StopCoroutine(floatingCoroutine); }
+            managedAsteroids.Clear();
         }
 
-        public void SpawnField(float _density, float _altitude, float _radius, Vector2d _geoCoords)
+        public void SpawnField(int _numberOfAsteroids, float _altitude, float _radius, Vector2d _geoCoords)
         {
-            SetupAsteroids(_density, _altitude, _radius, _geoCoords);
-            Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid field with density {density}, altitude {altitude}km and radius {radius}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4}).");
+            var numberOfAsteroids = _numberOfAsteroids;
+            SetupAsteroids(_altitude, _radius, _geoCoords);
+            Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid field with {numberOfAsteroids} asteroids with height {altitude}km and radius {radius}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4}).");
 
             var upDirection = (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            var numberOfAsteroids = Mathf.RoundToInt(2e-8f * density * altitude * Mathf.PI * radius * radius);
             Debug.Log($"[BDArmory.Asteroids]: Number of asteroids: {numberOfAsteroids}");  // FIXME Add in-game warning about the number of asteroids being spawned
             asteroids = new Vessel[numberOfAsteroids];
             for (int i = 0; i < asteroids.Length; ++i)
@@ -339,7 +350,7 @@ namespace BDArmory.Control
                 var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis((float)RNG.NextDouble() * 360f, upDirection) * refDirection, upDirection).normalized;
                 var x = (float)RNG.NextDouble();
                 var distance = Mathf.Sqrt(1f - x) * radius;
-                var height = RNG.NextDouble() * altitude;
+                var height = RNG.NextDouble() * (altitude - 50f) + 50f;
                 var position = height * upDirection + direction * distance;
                 var asteroid = SpawnAsteroid(position);
                 if (asteroid != null)
@@ -348,6 +359,7 @@ namespace BDArmory.Control
                     managedAsteroids.Add(asteroid);
                 }
             }
+
             floatingCoroutine = StartCoroutine(Float());
         }
 
@@ -357,10 +369,11 @@ namespace BDArmory.Control
             floating = true;
             while (floating)
             {
+                var gee = FlightGlobals.getGeeForceAtPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude));
                 for (int i = 0; i < asteroids.Length; ++i)
                 {
                     if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
-                    asteroids[i].rootPart.Rigidbody.AddForceAtPosition(-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position), asteroids[i].CoM, ForceMode.Acceleration);
+                    asteroids[i].rootPart.Rigidbody.AddForce(-gee - asteroids[i].srf_velocity, ForceMode.Acceleration);
                 }
                 yield return wait;
             }
