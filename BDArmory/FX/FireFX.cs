@@ -375,7 +375,8 @@ namespace BDArmory.FX
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                Detonate();
+                if(gameObject.activeInHierarchy)
+                    Detonate();
                 parentPart = null;
                 transform.parent = null;
                 gameObject.SetActive(false);

@@ -67,7 +67,7 @@ namespace BDArmory.FX
         public static ObjectPool penetrationFXPool;
         public static ObjectPool leakFXPool;
         public static ObjectPool FireFXPool;
-        public static Dictionary<Vessel, List<float>> PartsOnFire = new Dictionary<Vessel, List<float>>();
+        public static Dictionary<string, List<float>> PartsOnFire = new Dictionary<string, List<float>>(); // Key by vessel name to avoid holding null keys when vessels get destroyed.
 
         public static int MaxFiresPerVessel = 3;
         public static float FireLifeTimeInSeconds = 5f;
@@ -196,26 +196,35 @@ namespace BDArmory.FX
                 FireLifeTimeInSeconds = BDArmorySettings.FIRELIFETIME_IN_SECONDS;
             }
 
-            if (PartsOnFire.ContainsKey(hitPart.vessel) && PartsOnFire[hitPart.vessel].Count >= MaxFiresPerVessel)
+            if (PartsOnFire.ContainsKey(hitPart.vessel.vesselName) && PartsOnFire[hitPart.vessel.vesselName].Count >= MaxFiresPerVessel)
             {
-                var firesOnVessel = PartsOnFire[hitPart.vessel];
+                var firesOnVessel = PartsOnFire[hitPart.vessel.vesselName];
 
                 firesOnVessel.Where(x => (Time.time - x) > FireLifeTimeInSeconds).Select(x => firesOnVessel.Remove(x));
                 return false;
             }
 
-            if (!PartsOnFire.ContainsKey(hitPart.vessel))
+            if (!PartsOnFire.ContainsKey(hitPart.vessel.vesselName))
             {
                 List<float> firesList = new List<float> { Time.time };
 
-                PartsOnFire.Add(hitPart.vessel, firesList);
+                PartsOnFire.Add(hitPart.vessel.vesselName, firesList);
             }
             else
             {
-                PartsOnFire[hitPart.vessel].Add(Time.time);
+                PartsOnFire[hitPart.vessel.vesselName].Add(Time.time);
             }
 
             return true;
+        }
+
+        public static void CleanPartsOnFireInfo()
+        {
+            foreach (var key in PartsOnFire.Keys)
+            {
+                PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList();
+                if (PartsOnFire[key].Count == 0) { PartsOnFire.Remove(key); }
+            }
         }
 
         void OnEnable()

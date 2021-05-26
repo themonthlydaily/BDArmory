@@ -431,6 +431,7 @@ namespace BDArmory.Control
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
+            FX.BulletHitFX.CleanPartsOnFireInfo();
             // now find all vessels with weapons managers
             foreach (var pilot in getAllPilots())
             {
@@ -2094,7 +2095,8 @@ namespace BDArmory.Control
                 Debug.Log("[BDArmory.BDACompetitionMode]: No active competition, not dumping results.");
                 return;
             }
-            CheckMemoryUsage();
+            RunDebugChecks();
+            // CheckMemoryUsage();
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
                 VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
