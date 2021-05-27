@@ -2095,7 +2095,7 @@ namespace BDArmory.Control
                 Debug.Log("[BDArmory.BDACompetitionMode]: No active competition, not dumping results.");
                 return;
             }
-            RunDebugChecks();
+            // RunDebugChecks();
             // CheckMemoryUsage();
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
@@ -3001,18 +3001,22 @@ namespace BDArmory.Control
             Debug.Log($"DEBUG Found {toRemove.Count} null persistent unloaded part references.");
             foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
 
-            var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).ToList();
+            var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef == null).ToList();
             foreach (var protoVessel in protoVessels)
             {
+                if (protoVessel == null) continue;
+                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState);
+                if (protoVessel == null) continue;
                 if (protoVessel.protoPartSnapshots != null)
                 {
                     foreach (var protoPart in protoVessel.protoPartSnapshots)
                     {
                         protoPart.modules.Clear();
+                        protoPart.pVesselRef = null;
+                        protoPart.partRef = null;
                     }
                     protoVessel.protoPartSnapshots.Clear();
                 }
-                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState);
             }
         }
     }

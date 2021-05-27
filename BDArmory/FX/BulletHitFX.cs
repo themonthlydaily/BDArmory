@@ -67,6 +67,7 @@ namespace BDArmory.FX
         public static ObjectPool penetrationFXPool;
         public static ObjectPool leakFXPool;
         public static ObjectPool FireFXPool;
+        public static ObjectPool flameFXPool;
         public static Dictionary<string, List<float>> PartsOnFire = new Dictionary<string, List<float>>(); // Key by vessel name to avoid holding null keys when vessels get destroyed.
 
         public static int MaxFiresPerVessel = 3;
@@ -130,6 +131,21 @@ namespace BDArmory.FX
                 bFX.audioSource.spatialBlend = 1;
                 penetrationFXTemplate.SetActive(false);
                 penetrationFXPool = ObjectPool.CreateObjectPool(penetrationFXTemplate, 10, true, true, 10f * Time.deltaTime, false);
+            }
+            if (flameFXPool == null)
+            {
+                var flameTemplate = GameDatabase.Instance.GetModel("BDArmory/FX/FlameEffect2/model");
+                flameTemplate.AddComponent<DecalEmitterScript>();
+                DecalEmitterScript.shrinkRateFlame = 0.125f;
+                DecalEmitterScript.shrinkRateSmoke = 0.125f;
+                foreach (var pe in flameTemplate.GetComponentsInChildren<KSPParticleEmitter>())
+                {
+                    if (!pe.useWorldSpace) continue;
+                    var gpe = pe.gameObject.AddComponent<DecalGaplessParticleEmitter>();
+                    gpe.Emit = false;
+                }
+                flameTemplate.SetActive(false);
+                flameFXPool = ObjectPool.CreateObjectPool(flameTemplate, 10, true, true);
             }
         }
 
@@ -303,7 +319,7 @@ namespace BDArmory.FX
                 SetupShellPool();
             if (BDArmorySettings.PAINTBALL_MODE && decalPool_paint1 == null)
                 SetupShellPool();
-            if (bulletHitFXPool == null || penetrationFXPool == null)
+            if (bulletHitFXPool == null || penetrationFXPool == null || flameFXPool == null)
                 SetupBulletHitFXPool();
 
             if ((hitPart != null) && caliber != 0 && !hitPart.IgnoreDecal())
@@ -426,23 +442,24 @@ namespace BDArmory.FX
         {
             if (!CanFlamesBeAttached(hitPart)) return;
 
-            var modelUrl = "BDArmory/FX/FlameEffect2/model";
+            // var modelUrl = "BDArmory/FX/FlameEffect2/model";
 
-            var flameObject = (GameObject)Instantiate(GameDatabase.Instance.GetModel(modelUrl), contactPoint, Quaternion.identity);
+            // var flameObject = (GameObject)Instantiate(GameDatabase.Instance.GetModel(modelUrl), contactPoint, Quaternion.identity); // FIXME This should use an object pool
 
-            flameObject.SetActive(true);
+            var flameObject = flameFXPool.GetPooledObject();
             flameObject.transform.SetParent(hitPart.transform);
-            flameObject.AddComponent<DecalEmitterScript>();
+            flameObject.SetActive(true);
+            // flameObject.AddComponent<DecalEmitterScript>();
 
-            DecalEmitterScript.shrinkRateFlame = 0.125f;
-            DecalEmitterScript.shrinkRateSmoke = 0.125f;
+            // DecalEmitterScript.shrinkRateFlame = 0.125f;
+            // DecalEmitterScript.shrinkRateSmoke = 0.125f;
 
-            foreach (var pe in flameObject.GetComponentsInChildren<KSPParticleEmitter>())
-            {
-                if (!pe.useWorldSpace) continue;
-                var gpe = pe.gameObject.AddComponent<DecalGaplessParticleEmitter>();
-                gpe.Emit = true;
-            }
+            // foreach (var pe in flameObject.GetComponentsInChildren<KSPParticleEmitter>())
+            // {
+            //     if (!pe.useWorldSpace) continue;
+            //     var gpe = pe.gameObject.GetComponent<DecalGaplessParticleEmitter>();
+            //     gpe.Emit = true;
+            // }
         }
     }
 }

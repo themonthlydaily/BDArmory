@@ -698,6 +698,10 @@ namespace BDArmory.Modules
                     if (pe) EffectBehaviour.RemoveParticleEmitter(pe);
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             GameEvents.onPartDie.Remove(PartDie);
+            if (vesselReferenceTransform != null && vesselReferenceTransform.gameObject != null)
+            {
+                Destroy(vesselReferenceTransform.gameObject);
+            }
         }
 
         public override float GetBlastRadius()
