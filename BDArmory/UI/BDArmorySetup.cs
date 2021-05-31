@@ -2058,6 +2058,7 @@ namespace BDArmory.UI
                 {
                     if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
                     {
+                        BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
                         BDACompetitionMode.Instance.RunDebugChecks();
                     }
                 }

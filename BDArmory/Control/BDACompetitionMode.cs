@@ -2970,7 +2970,8 @@ namespace BDArmory.Control
             strings.Add("Parts: " + FindObjectsOfType<Part>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Part)).Length);
             strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Vessel)).Length);
             strings.Add("GameObjects: " + FindObjectsOfType<GameObject>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(GameObject)).Length);
-            strings.Add($"ProtoVessels: {HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).Count()} active of {HighLogic.CurrentGame.flightState.protoVessels.Count}");
+            strings.Add($"FlightState ProtoVessels: {HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).Count()} active of {HighLogic.CurrentGame.flightState.protoVessels.Count}");
+            strings.Add($"Spawned ProtoVessels: {VesselSpawner.spawnedProtoVessels.Where(pv => pv.vesselRef != null).Count()} active of {VesselSpawner.spawnedProtoVessels.Count}");
             Debug.Log("DEBUG " + string.Join(", ", strings));
         }
 
@@ -2980,7 +2981,7 @@ namespace BDArmory.Control
             CheckNumbersOfThings();
         }
 
-        void CleanUpKSPsDeadReferences()
+        public void CleanUpKSPsDeadReferences()
         {
             var toRemove = new List<uint>();
             foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
@@ -3002,10 +3003,11 @@ namespace BDArmory.Control
             foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
 
             var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef == null).ToList();
+            if (protoVessels.Count > 0) { Debug.Log($"DEBUG Found {protoVessels.Count} inactive ProtoVessels in flightState."); }
             foreach (var protoVessel in protoVessels)
             {
                 if (protoVessel == null) continue;
-                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState);
+                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
                 if (protoVessel == null) continue;
                 if (protoVessel.protoPartSnapshots != null)
                 {
@@ -3018,6 +3020,26 @@ namespace BDArmory.Control
                     protoVessel.protoPartSnapshots.Clear();
                 }
             }
+
+            protoVessels = VesselSpawner.spawnedProtoVessels.Where(pv => pv != null && pv.vesselRef == null).ToList();
+            if (protoVessels.Count > 0) { Debug.Log($"DEBUG Found {protoVessels.Count} inactive ProtoVessels in VesselSpawner."); }
+            foreach (var protoVessel in protoVessels)
+            {
+                if (protoVessel == null) continue;
+                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
+                if (protoVessel == null) continue;
+                if (protoVessel.protoPartSnapshots != null)
+                {
+                    foreach (var protoPart in protoVessel.protoPartSnapshots)
+                    {
+                        protoPart.modules.Clear();
+                        protoPart.pVesselRef = null;
+                        protoPart.partRef = null;
+                    }
+                    protoVessel.protoPartSnapshots.Clear();
+                }
+            }
+            VesselSpawner.spawnedProtoVessels = VesselSpawner.spawnedProtoVessels.Where(pv => pv != null && pv.vesselRef != null).ToList();
         }
     }
 }

@@ -23,6 +23,7 @@ namespace BDArmory.Control
         public static string spawnLocationsCfg = "GameData/BDArmory/PluginData/spawn_locations.cfg";
         [VesselSpawnerField] public static bool UpdateSpawnLocations = true;
         [VesselSpawnerField] public static List<SpawnLocation> spawnLocations;
+        public static List<ProtoVessel> spawnedProtoVessels;
 
         private string message;
         void Awake()
@@ -30,6 +31,7 @@ namespace BDArmory.Control
             if (Instance)
                 Destroy(Instance);
             Instance = this;
+            if (spawnedProtoVessels == null) { spawnedProtoVessels = new List<ProtoVessel>(); }
         }
 
         void Start()
@@ -1858,7 +1860,8 @@ namespace BDArmory.Control
                 }
             }
 
-            protoVessel.persistent = false; // Don't hold on to the protovessel.
+            // protoVessel.persistent = false; // Don't hold on to the protovessel.
+            spawnedProtoVessels.Add(protoVessel);
             return protoVessel.vesselRef;
         }
 
