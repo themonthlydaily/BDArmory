@@ -70,7 +70,7 @@ namespace BDArmory.Control
             longitude = (longitude + FlightGlobals.currentMainBody.rotationAngle + 180d) % 360d; // Compensate coordinates for planet rotation then normalise to 0°—360°.
             var inclination = Math.Abs(latitude);
             var apoapsisAltitude = FlightGlobals.currentMainBody.Radius + altitude;
-            var velocity = 2d * Math.PI * FlightGlobals.currentMainBody.Radius * Math.Cos(Mathf.Deg2Rad * latitude) / FlightGlobals.currentMainBody.rotationPeriod;
+            var velocity = 2d * Math.PI * (FlightGlobals.currentMainBody.Radius + altitude) * Math.Cos(Mathf.Deg2Rad * latitude) / FlightGlobals.currentMainBody.rotationPeriod;
             var semiMajorAxis = -FlightGlobals.currentMainBody.gravParameter / (velocity * velocity / 2d - FlightGlobals.currentMainBody.gravParameter / apoapsisAltitude) / 2d;
             var eccentricity = apoapsisAltitude / semiMajorAxis - 1d;
             var upDirection = (FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitude, longitude, altitude) - FlightGlobals.currentMainBody.transform.position).normalized;
@@ -78,6 +78,19 @@ namespace BDArmory.Control
             var argumentOfPeriapsis = latitude < 0d ? 90d : 270d;
             var meanAnomalyAtEpoch = Math.PI;
             return new Orbit(inclination, eccentricity, semiMajorAxis, longitudeOfAscendingNode, argumentOfPeriapsis, meanAnomalyAtEpoch, Planetarium.GetUniversalTime(), FlightGlobals.currentMainBody);
+        }
+
+        Orbit GetOrbitForApoapsis2(Vector3d position)
+        {
+            double latitude, longitude, altitude;
+            FlightGlobals.currentMainBody.GetLatLonAlt(position, out latitude, out longitude, out altitude);
+            longitude = (longitude + FlightGlobals.currentMainBody.rotationAngle + 180d) % 360d; // Compensate coordinates for planet rotation then normalise to 0°—360°.
+            // var velocity = 2d * Math.PI * (FlightGlobals.currentMainBody.Radius + altitude) * Math.Cos(Mathf.Deg2Rad * latitude) / FlightGlobals.currentMainBody.rotationPeriod;
+            Debug.Log($"DEBUG lat: {latitude}, lon: {longitude}, alt: {altitude}, |ω|: {FlightGlobals.currentMainBody.angularV}, ω: {FlightGlobals.currentMainBody.angularVelocity}, zω: {FlightGlobals.currentMainBody.zUpAngularVelocity}");
+            var velocity = FlightGlobals.currentMainBody.angularV * Math.Cos(Mathf.Deg2Rad * latitude) * FlightGlobals.currentMainBody.zUpAngularVelocity;
+            var orbit = new Orbit();
+            orbit.UpdateFromStateVectors(position, velocity, FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
+            return orbit;
         }
     }
 
