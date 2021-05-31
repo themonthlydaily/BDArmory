@@ -1776,6 +1776,8 @@ namespace BDArmory.UI
                     {
                         if (Event.current.button == 1)
                             AsteroidField.Instance.Reset();
+                        else if (Event.current.button == 2)
+                            AsteroidField.Instance.CheckOrbit();
                         else
                             AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
                     }

@@ -54,7 +54,7 @@ namespace BDArmory.Control
             {
                 untrackedObjectClassIndex = RNG.Next(UntrackedObjectClasses.Length);
             }
-            var asteroid = DiscoverableObjectsUtil.SpawnAsteroid(DiscoverableObjectsUtil.GenerateAsteroidName(), GetOrbitForApoapsis(position), (uint)RNG.Next(), UntrackedObjectClasses[untrackedObjectClassIndex], 0, BDArmorySettings.COMPETITION_DURATION);
+            var asteroid = DiscoverableObjectsUtil.SpawnAsteroid(DiscoverableObjectsUtil.GenerateAsteroidName(), GetOrbitForApoapsis2(position), (uint)RNG.Next(), UntrackedObjectClasses[untrackedObjectClassIndex], 0, BDArmorySettings.COMPETITION_DURATION);
             if (asteroid != null && asteroid.vesselRef != null)
                 return asteroid.vesselRef;
             else
@@ -74,7 +74,7 @@ namespace BDArmory.Control
             var semiMajorAxis = -FlightGlobals.currentMainBody.gravParameter / (velocity * velocity / 2d - FlightGlobals.currentMainBody.gravParameter / apoapsisAltitude) / 2d;
             var eccentricity = apoapsisAltitude / semiMajorAxis - 1d;
             var upDirection = (FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitude, longitude, altitude) - FlightGlobals.currentMainBody.transform.position).normalized;
-            var longitudeOfAscendingNode = Mathf.Rad2Deg * Mathf.Acos(Vector3.Dot(Vector3.Cross(upDirection, Vector3.Cross(Vector3.up, upDirection)).normalized, Vector3.forward)) + longitude + (latitude > 0 ? 0d : 180d);
+            var longitudeOfAscendingNode = (Mathf.Rad2Deg * Mathf.Acos(Vector3.Dot(Vector3.Cross(upDirection, Vector3d.Cross(Vector3d.up, upDirection)).normalized, Vector3.forward)) + longitude + (latitude > 0 ? 0d : 180d)) % 360d;
             var argumentOfPeriapsis = latitude < 0d ? 90d : 270d;
             var meanAnomalyAtEpoch = Math.PI;
             return new Orbit(inclination, eccentricity, semiMajorAxis, longitudeOfAscendingNode, argumentOfPeriapsis, meanAnomalyAtEpoch, Planetarium.GetUniversalTime(), FlightGlobals.currentMainBody);
@@ -85,12 +85,25 @@ namespace BDArmory.Control
             double latitude, longitude, altitude;
             FlightGlobals.currentMainBody.GetLatLonAlt(position, out latitude, out longitude, out altitude);
             longitude = (longitude + FlightGlobals.currentMainBody.rotationAngle + 180d) % 360d; // Compensate coordinates for planet rotation then normalise to 0°—360°.
-            // var velocity = 2d * Math.PI * (FlightGlobals.currentMainBody.Radius + altitude) * Math.Cos(Mathf.Deg2Rad * latitude) / FlightGlobals.currentMainBody.rotationPeriod;
-            Debug.Log($"DEBUG lat: {latitude}, lon: {longitude}, alt: {altitude}, |ω|: {FlightGlobals.currentMainBody.angularV}, ω: {FlightGlobals.currentMainBody.angularVelocity}, zω: {FlightGlobals.currentMainBody.zUpAngularVelocity}");
-            var velocity = FlightGlobals.currentMainBody.angularV * Math.Cos(Mathf.Deg2Rad * latitude) * FlightGlobals.currentMainBody.zUpAngularVelocity;
+            var orbitVelocity = FlightGlobals.currentMainBody.getRFrmVel(position);
+            var orbitPosition = position - FlightGlobals.currentMainBody.transform.position;
+            // Debug.Log($"DEBUG lat: {latitude}, lon: {longitude}, alt: {altitude}, pos: {orbitPosition}, vel: {orbitVelocity}");
             var orbit = new Orbit();
-            orbit.UpdateFromStateVectors(position, velocity, FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
+            orbit.UpdateFromStateVectors(orbitPosition.xzy, orbitVelocity.xzy, FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
             return orbit;
+        }
+
+        public void CheckOrbit()
+        {
+            if (FlightGlobals.ActiveVessel == null) { return; }
+            var orbit = FlightGlobals.ActiveVessel.orbit;
+            Debug.Log($"DEBUG Current vessel's orbit: inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}");
+            orbit = GetOrbitForApoapsis(FlightGlobals.ActiveVessel.transform.position);
+            Debug.Log($"DEBUG Predicted orbit:        inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}");
+            orbit = GetOrbitForApoapsis2(FlightGlobals.ActiveVessel.transform.position);
+            Debug.Log($"DEBUG Predicted orbit 3:      inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}");
+            orbit.UpdateFromStateVectors(FlightGlobals.ActiveVessel.orbit.pos, FlightGlobals.ActiveVessel.orbit.vel, FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
+            Debug.Log($"DEBUG Reconstructed 4:        inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}, pos: {FlightGlobals.ActiveVessel.orbit.pos}, vel: {FlightGlobals.ActiveVessel.orbit.vel}");
         }
     }
 
