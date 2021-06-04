@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using BDArmory.Core;
 using BDArmory.Misc;
@@ -14,10 +15,12 @@ namespace BDArmory.Control
         public static HashSet<Vessel> managedAsteroids;
         protected static UntrackedObjectClass[] UntrackedObjectClasses = (UntrackedObjectClass[])Enum.GetValues(typeof(UntrackedObjectClass)); // Get the UntrackedObjectClasses as an array of enum values.
 
+        #region Fields
         protected float altitude;
         protected float radius;
         protected Vector2d geoCoords;
         protected System.Random RNG;
+        #endregion
 
         protected virtual void Awake()
         {
@@ -33,6 +36,7 @@ namespace BDArmory.Control
 
         void OnDestroy()
         {
+            StopAllCoroutines();
             foreach (var asteroid in managedAsteroids)
             {
                 Destroy(asteroid);
@@ -40,14 +44,26 @@ namespace BDArmory.Control
             managedAsteroids.Clear();
         }
 
+        /// <summary>
+        /// Set up common parameters for derived classes.
+        /// </summary>
+        /// <param name="_altitude"></param>
+        /// <param name="_radius"></param>
+        /// <param name="_geoCoords"></param>
         protected void SetupAsteroids(float _altitude, float _radius, Vector2d _geoCoords)
         {
             altitude = _altitude < 10f ? _altitude * 100f : (_altitude - 9f) * 1000f;
             radius = _radius * 1000f;
             geoCoords = _geoCoords;
-            //  = new FloatCurve(new Keyframe[] { new Keyframe(0f, 0f), new Keyframe(1f, 0f) }); // Set the asteroid spawn chance to 0.
+            //  = new FloatCurve(new Keyframe[] { new Keyframe(0f, 0f), new Keyframe(1f, 0f) }); // Set the asteroid spawn chance to 0. FIXME we need to somehow stop the regular asteroids from spawning as they trigger the CollisionManager to pause the game for a while.
         }
 
+        /// <summary>
+        /// Spawn an asteroid of the given class at the given position.
+        /// </summary>
+        /// <param name="position">The position to spawn the asteroid.</param>
+        /// <param name="untrackedObjectClassIndex">The class of the asteroid. -1 picks one at random.</param>
+        /// <returns>The asteroid vessel.</returns>
         protected Vessel SpawnAsteroid(Vector3d position, int untrackedObjectClassIndex = -1)
         {
             if (untrackedObjectClassIndex < 0)
@@ -56,11 +72,17 @@ namespace BDArmory.Control
             }
             var asteroid = DiscoverableObjectsUtil.SpawnAsteroid(DiscoverableObjectsUtil.GenerateAsteroidName(), GetOrbitForApoapsis2(position), (uint)RNG.Next(), UntrackedObjectClasses[untrackedObjectClassIndex], 0, BDArmorySettings.COMPETITION_DURATION);
             if (asteroid != null && asteroid.vesselRef != null)
-                return asteroid.vesselRef;
+            { return asteroid.vesselRef; }
             else
-                return null;
+            { return null; }
         }
 
+        /// <summary>
+        /// Calculate an orbit that has the specified position as the apoapsis and orbital velocity that matches that of the ground below.
+        /// This doesn't quite give the correct orbits for some reason, use GetOrbitForApoapsis2 instead.
+        /// </summary>
+        /// <param name="position">The position of the apoapsis.</param>
+        /// <returns>The orbit.</returns>
         Orbit GetOrbitForApoapsis(Vector3d position)
         {
             // FIXME this is still giving orbits that are slightly off, e.g., an asteroid field at the KSC is coming out oval instead of round.
@@ -80,6 +102,12 @@ namespace BDArmory.Control
             return new Orbit(inclination, eccentricity, semiMajorAxis, longitudeOfAscendingNode, argumentOfPeriapsis, meanAnomalyAtEpoch, Planetarium.GetUniversalTime(), FlightGlobals.currentMainBody);
         }
 
+        /// <summary>
+        /// Calculate an orbit that has the specified position as the apoapsis and orbital velocity that matches that of the ground below.
+        /// This one gives the correct orbit to within around float precision.
+        /// </summary>
+        /// <param name="position">The position of the apoapsis.</param>
+        /// <returns>The orbit.</returns>
         Orbit GetOrbitForApoapsis2(Vector3d position)
         {
             double latitude, longitude, altitude;
@@ -87,23 +115,27 @@ namespace BDArmory.Control
             longitude = (longitude + FlightGlobals.currentMainBody.rotationAngle + 180d) % 360d; // Compensate coordinates for planet rotation then normalise to 0°—360°.
             var orbitVelocity = FlightGlobals.currentMainBody.getRFrmVel(position);
             var orbitPosition = position - FlightGlobals.currentMainBody.transform.position;
-            // Debug.Log($"DEBUG lat: {latitude}, lon: {longitude}, alt: {altitude}, pos: {orbitPosition}, vel: {orbitVelocity}");
             var orbit = new Orbit();
             orbit.UpdateFromStateVectors(orbitPosition.xzy, orbitVelocity.xzy, FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
             return orbit;
         }
 
+        /// <summary>
+        /// Debugging: Compare orbit of current vessel with that of the generated ones.
+        /// </summary>
         public void CheckOrbit()
         {
             if (FlightGlobals.ActiveVessel == null) { return; }
+            var v = FlightGlobals.ActiveVessel;
             var orbit = FlightGlobals.ActiveVessel.orbit;
+            Debug.Log($"DEBUG orbit.pos: {orbit.pos}, orbit.vel: {orbit.vel}");
+            Debug.Log($"DEBUG       pos: {(v.CoM - (Vector3d)v.mainBody.transform.position).xzy},       vel: {v.mainBody.getRFrmVel(v.CoM).xzy}");
+            Debug.Log($"DEBUG Δpos: {orbit.pos - ((Vector3d)v.CoM - (Vector3d)v.mainBody.transform.position).xzy}, Δvel: {orbit.vel - v.mainBody.getRFrmVel(v.CoM).xzy}");
             Debug.Log($"DEBUG Current vessel's orbit: inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}");
-            orbit = GetOrbitForApoapsis(FlightGlobals.ActiveVessel.transform.position);
+            orbit = GetOrbitForApoapsis(v.CoM);
             Debug.Log($"DEBUG Predicted orbit:        inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}");
-            orbit = GetOrbitForApoapsis2(FlightGlobals.ActiveVessel.transform.position);
-            Debug.Log($"DEBUG Predicted orbit 3:      inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}");
-            orbit.UpdateFromStateVectors(FlightGlobals.ActiveVessel.orbit.pos, FlightGlobals.ActiveVessel.orbit.vel, FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
-            Debug.Log($"DEBUG Reconstructed 4:        inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}, pos: {FlightGlobals.ActiveVessel.orbit.pos}, vel: {FlightGlobals.ActiveVessel.orbit.vel}");
+            orbit = GetOrbitForApoapsis2(v.CoM);
+            Debug.Log($"DEBUG Predicted orbit 2:      inc: {orbit.inclination}, e: {orbit.eccentricity}, sma: {orbit.semiMajorAxis}, lan: {orbit.LAN}, argPe: {orbit.argumentOfPeriapsis}, mEp: {orbit.meanAnomalyAtEpoch}");
         }
     }
 
@@ -353,6 +385,9 @@ namespace BDArmory.Control
             base.Awake();
         }
 
+        /// <summary>
+        /// Reset the asteroid field. 
+        /// </summary>
         public void Reset()
         {
             floating = false;
@@ -361,15 +396,22 @@ namespace BDArmory.Control
             managedAsteroids.Clear();
         }
 
+        /// <summary>
+        /// Spawn an asteroid field.
+        /// </summary>
+        /// <param name="_numberOfAsteroids">The number of asteroids in the field.</param>
+        /// <param name="_altitude">The maximum altitude AGL of the field, minimum altitude AGL is 50m.</param>
+        /// <param name="_radius">The radius of the field from the spawn point.</param>
+        /// <param name="_geoCoords">The spawn point (centre) of the field.</param>
         public void SpawnField(int _numberOfAsteroids, float _altitude, float _radius, Vector2d _geoCoords)
         {
             var numberOfAsteroids = _numberOfAsteroids;
             SetupAsteroids(_altitude, _radius, _geoCoords);
-            Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid field with {numberOfAsteroids} asteroids with height {altitude}km and radius {radius}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4}).");
+            Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid field with {numberOfAsteroids} asteroids with height {altitude}m and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4}).");
 
-            var upDirection = (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized;
+            var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
+            var upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            Debug.Log($"[BDArmory.Asteroids]: Number of asteroids: {numberOfAsteroids}");  // FIXME Add in-game warning about the number of asteroids being spawned
             asteroids = new Vessel[numberOfAsteroids];
             for (int i = 0; i < asteroids.Length; ++i)
             {
@@ -377,7 +419,8 @@ namespace BDArmory.Control
                 var x = (float)RNG.NextDouble();
                 var distance = Mathf.Sqrt(1f - x) * radius;
                 var height = RNG.NextDouble() * (altitude - 50f) + 50f;
-                var position = height * upDirection + direction * distance;
+                var position = spawnPoint + direction * distance;
+                position += (height - Misc.Misc.GetRadarAltitudeAtPos(position, false)) * upDirection;
                 var asteroid = SpawnAsteroid(position);
                 if (asteroid != null)
                 {
@@ -387,22 +430,78 @@ namespace BDArmory.Control
             }
 
             floatingCoroutine = StartCoroutine(Float());
+            StartCoroutine(CleanOutAsteroids());
         }
 
+        /// <summary>
+        /// Apply forces to counteract gravity, decay overall motion and add Brownian noise.
+        /// </summary>
         IEnumerator Float()
         {
             var wait = new WaitForFixedUpdate();
             floating = true;
             while (floating)
             {
-                var gee = FlightGlobals.getGeeForceAtPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude));
                 for (int i = 0; i < asteroids.Length; ++i)
                 {
                     if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
-                    asteroids[i].rootPart.Rigidbody.AddForce(-gee - asteroids[i].srf_velocity, ForceMode.Acceleration);
+                    var nudge = new Vector3d(RNG.NextDouble() - 0.5d, RNG.NextDouble() - 0.5d, RNG.NextDouble() - 0.5d) * 240d;
+                    asteroids[i].rootPart.Rigidbody.AddForce(-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity + nudge, ForceMode.Acceleration); // Float and reduce motion.
                 }
                 yield return wait;
             }
+        }
+
+        /// <summary>
+        /// Apply random torques to the asteroids to spin them up a bit. 
+        /// </summary>
+        IEnumerator InitialRotation()
+        {
+            var wait = new WaitForFixedUpdate();
+            var startTime = Time.time;
+            while (Time.time - startTime < 10f) // Apply small random torques for 10s.
+            {
+                for (int i = 0; i < asteroids.Length; ++i)
+                {
+                    if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
+                    asteroids[i].rootPart.Rigidbody.AddTorque(new Vector3d(RNG.NextDouble() - 0.5d, RNG.NextDouble() - 0.5d, RNG.NextDouble() - 0.5d) * 5f, ForceMode.Acceleration);
+                }
+                yield return wait;
+            }
+        }
+
+        /// <summary>
+        /// Strip out various modules from the asteroids as they make excessive amounts of GC allocations. 
+        /// Then set up the initial asteroid rotations.
+        /// </summary>
+        IEnumerator CleanOutAsteroids()
+        {
+            var wait = new WaitForFixedUpdate();
+            while (asteroids.Any(a => a != null && (a.packed || !a.loaded))) yield return wait;
+            for (int i = 0; i < asteroids.Length; ++i)
+            {
+                if (asteroids[i] == null) continue;
+                using (var info = asteroids[i].FindPartModulesImplementing<ModuleAsteroid>().GetEnumerator())
+                    while (info.MoveNext())
+                    {
+                        if (info.Current == null) continue;
+                        Destroy(info.Current);
+                    }
+                using (var info = asteroids[i].FindPartModulesImplementing<ModuleAsteroidInfo>().GetEnumerator())
+                    while (info.MoveNext())
+                    {
+                        if (info.Current == null) continue;
+                        Destroy(info.Current);
+                    }
+                using (var info = asteroids[i].FindPartModulesImplementing<ModuleAsteroidResource>().GetEnumerator())
+                    while (info.MoveNext())
+                    {
+                        if (info.Current == null) continue;
+                        Destroy(info.Current);
+                    }
+            }
+
+            yield return InitialRotation();
         }
     }
 }

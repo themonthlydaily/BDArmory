@@ -1239,13 +1239,22 @@ namespace BDArmory.Modules
                 return false;
             }
 
+            // Adjust some values for asteroids.
+            var threshold = collisionAvoidanceThreshold;
+            if (v.vesselType == VesselType.SpaceObject) // Give asteroids some extra room.
+            {
+                var radius = v.GetRadius();
+                threshold += radius;
+                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2f;
+            }
+
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
             float timeToCPA = vessel.ClosestTimeToCPA(v, maxTime); // This uses the same kinematics as AIUtils.PredictPosition.
             if (timeToCPA > 0 && timeToCPA < maxTime)
             {
                 Vector3 tPos = AIUtils.PredictPosition(v, timeToCPA);
                 Vector3 myPos = AIUtils.PredictPosition(vessel, timeToCPA);
-                if (Vector3.SqrMagnitude(tPos - myPos) < collisionAvoidanceThreshold * collisionAvoidanceThreshold) // Within collisionAvoidanceThreshold of each other. Danger Will Robinson!
+                if (Vector3.SqrMagnitude(tPos - myPos) < threshold * threshold) // Within collisionAvoidanceThreshold of each other. Danger Will Robinson!
                 {
                     badDirection = tPos - vesselTransform.position;
                     return true;
@@ -2218,6 +2227,7 @@ namespace BDArmory.Modules
 
                 // Check for collisions with other vessels.
                 bool vesselCollision = false;
+                VesselType collisionVesselType = VesselType.Plane;
                 collisionAvoidDirection = vessel.srf_vel_direction;
                 using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (vs.MoveNext())
@@ -2228,12 +2238,23 @@ namespace BDArmory.Modules
                         var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
                         if (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel) continue;
                         vesselCollision = true;
+                        collisionVesselType = vs.Current.vesselType;
                         break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
                     }
                 if (vesselCollision)
                 {
                     Vector3 axis = -Vector3.Cross(vesselTransform.up, collisionAvoidDirection);
-                    collisionAvoidDirection = Quaternion.AngleAxis(25, axis) * collisionAvoidDirection;        //don't need to change the angle that much to avoid, and it should prevent stupid suicidal manuevers as well
+                    float angle;
+                    switch (collisionVesselType)
+                    {
+                        case VesselType.SpaceObject:
+                            angle = 45f;
+                            break;
+                        default:
+                            angle = 25f;
+                            break;
+                    }
+                    collisionAvoidDirection = Quaternion.AngleAxis(angle, axis) * collisionAvoidDirection;        //don't need to change the angle that much to avoid, and it should prevent stupid suicidal manuevers as well
                     collisionDetectionTimer += Time.fixedDeltaTime;
                     return FlyAvoidOthers(s); // Call ourself again to trigger the actual avoidance.
                 }
