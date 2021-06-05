@@ -148,6 +148,8 @@ namespace BDArmory.FX
                     if (hitCollidersEnu.Current == null) continue;
 
                     Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
+                    if (partHit == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
                     if (partHit != null && partHit.mass > 0 && !partsAdded.Contains(partHit))
                     {
@@ -291,6 +293,7 @@ namespace BDArmory.FX
                 {
                     Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
                     if (partHit == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                     hit = hitsEnu.Current;
                     distance = hit.distance;
                     if (partHit == part)

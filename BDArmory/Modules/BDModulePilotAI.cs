@@ -79,6 +79,7 @@ namespace BDArmory.Modules
 
         #region Pilot AI Settings GUI
 
+        #region PID
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SteerFactor", //Steer Factor
             groupName = "pilotAI_PID", groupDisplayName = "#LOC_BDArmory_PilotAI_PID", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0.1f, maxValue = 20f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -200,10 +201,12 @@ namespace BDArmory.Modules
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
         public bool CustomDynamicAxisFields = false;
         #endregion
+        #endregion
 
+        #region Altitudes
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude", //Default Alt.
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 150f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 100f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
         public float defaultAltitude = 1500;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude", //Min Altitude
@@ -211,6 +214,18 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 25f, maxValue = 6000, stepIncrement = 25f, scene = UI_Scene.All)]
         public float minAltitude = 500f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxAltitude", //Max Altitude
+            groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 100f, maxValue = 15000, stepIncrement = 25f, scene = UI_Scene.All)]
+        public float maxAltitude = 15000f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxAltitude", advancedTweakable = true,
+            groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All)]
+        public bool maxAltitudeToggle = false;
+        #endregion
+
+        #region Speeds
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed", //Max Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
             UI_FloatRange(minValue = 20f, maxValue = 800f, stepIncrement = 1.0f, scene = UI_Scene.All)]
@@ -235,7 +250,9 @@ namespace BDArmory.Modules
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
             UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
         public float idleSpeed = 120f;
+        #endregion
 
+        #region Control Limits
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_LowSpeedSteerLimiter", advancedTweakable = true, // Low-Speed Steer Limiter
             groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
             UI_FloatRange(minValue = .1f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
@@ -275,7 +292,9 @@ namespace BDArmory.Modules
             groupName = "pilotAI_ControlLimits", groupDisplayName = "#LOC_BDArmory_PilotAI_ControlLimits", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 85f, stepIncrement = 2.5f, scene = UI_Scene.All)]
         public float maxAllowedAoA = 35;
+        #endregion
 
+        #region EvadeExtend
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinEvasionTime", advancedTweakable = true, // Minimum Evasion Time
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
@@ -325,7 +344,9 @@ namespace BDArmory.Modules
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
         public bool canExtend = true;
+        #endregion
 
+        #region Terrain
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, category = "DoubleSlider", guiName = "#LOC_BDArmory_TurnRadiusTwiddleFactorMin", advancedTweakable = true,//Turn radius twiddle factors (category seems to have no effect)
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
             UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -334,7 +355,9 @@ namespace BDArmory.Modules
             groupName = "pilotAI_Terrain", groupDisplayName = "#LOC_BDArmory_PilotAI_Terrain", groupStartCollapsed = true),
             UI_FloatRange(minValue = 1f, maxValue = 5f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float turnRadiusTwiddleFactorMax = 4.0f; // Minimum and maximum twiddle factors for the turn radius. Depends on roll rate and how the vessel behaves under fire.
+        #endregion
 
+        #region Ramming
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_AllowRamming", advancedTweakable = true, //Toggle Allow Ramming
             groupName = "pilotAI_Ramming", groupDisplayName = "#LOC_BDArmory_PilotAI_Ramming", groupStartCollapsed = true),
             UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
@@ -344,6 +367,7 @@ namespace BDArmory.Modules
             groupName = "pilotAI_Ramming", groupDisplayName = "#LOC_BDArmory_PilotAI_Ramming", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 0.2f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
+        #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
@@ -357,6 +381,7 @@ namespace BDArmory.Modules
         {
             { nameof(defaultAltitude), 100000f },
             { nameof(minAltitude), 60000f },
+            { nameof(maxAltitude), 100000f },
             { nameof(steerMult), 200f },
             { nameof(steerKiAdjust), 20f },
             { nameof(steerDamping), 100f },
@@ -446,6 +471,7 @@ namespace BDArmory.Modules
 
         #region AI Internal Parameters
         bool toEleven = false;
+        bool maxAltitudeEnabled = false;
 
         //manueuverability and g loading data
         // float maxDynPresGRecorded;
@@ -621,6 +647,7 @@ namespace BDArmory.Modules
             field = (UI_FloatRange)Fields[fieldNameMax].uiControlFlight;
             field.onFieldChanged = OnMaxUpdated;
         }
+
         public void OnMinUpdated(BaseField field, object obj)
         {
             if (turnRadiusTwiddleFactorMax < turnRadiusTwiddleFactorMin) { turnRadiusTwiddleFactorMax = turnRadiusTwiddleFactorMin; } // Enforce min < max for turn radius twiddle factor.
@@ -637,6 +664,44 @@ namespace BDArmory.Modules
             // if (DynamicDampingPitchMin > DynamicDampingPitchMax) { DynamicDampingPitchMin = DynamicDampingPitchMax; }
             // if (DynamicDampingYawMin > DynamicDampingYawMax) { DynamicDampingYawMin = DynamicDampingYawMax; }
             // if (DynamicDampingRollMin > DynamicDampingRollMax) { DynamicDampingRollMin = DynamicDampingRollMax; } // reversed roll dynamic damp behavior
+        }
+
+        void SetAltitudeClamps()
+        {
+            var minAltField = (UI_FloatRange)Fields["minAltitude"].uiControlEditor;
+            minAltField.onFieldChanged = ClampAltitudes;
+            minAltField = (UI_FloatRange)Fields["minAltitude"].uiControlFlight;
+            minAltField.onFieldChanged = ClampAltitudes;
+            var defaultAltField = (UI_FloatRange)Fields["defaultAltitude"].uiControlEditor;
+            defaultAltField.onFieldChanged = ClampAltitudes;
+            defaultAltField = (UI_FloatRange)Fields["defaultAltitude"].uiControlFlight;
+            defaultAltField.onFieldChanged = ClampAltitudes;
+            var maxAltField = (UI_FloatRange)Fields["maxAltitude"].uiControlEditor;
+            maxAltField.onFieldChanged = ClampAltitudes;
+            maxAltField = (UI_FloatRange)Fields["maxAltitude"].uiControlFlight;
+            maxAltField.onFieldChanged = ClampAltitudes;
+        }
+
+        void ClampAltitudes(BaseField field, object obj)
+        {
+            switch (field.name)
+            {
+                case "minAltitude":
+                    if (defaultAltitude < minAltitude) { defaultAltitude = minAltitude; }
+                    if (maxAltitude < minAltitude) { maxAltitude = minAltitude; }
+                    break;
+                case "defaultAltitude":
+                    if (maxAltitude < defaultAltitude) { maxAltitude = defaultAltitude; }
+                    if (minAltitude > defaultAltitude) { minAltitude = defaultAltitude; }
+                    break;
+                case "maxAltitude":
+                    if (minAltitude > maxAltitude) { minAltitude = maxAltitude; }
+                    if (defaultAltitude > maxAltitude) { defaultAltitude = maxAltitude; }
+                    break;
+                default:
+                    Debug.LogError($"[BDArmory.BDModulePilotAI]: Invalid altitude {field.name} in ClampAltitudes.");
+                    break;
+            }
         }
 
         public void ToggleDynamicDampingFields()
@@ -726,6 +791,45 @@ namespace BDArmory.Modules
             customDynamicAxisField.guiActive = dynamicDamping;
             customDynamicAxisField.guiActiveEditor = dynamicDamping;
         }
+
+        [KSPAction("Toggle Max Altitude (AGL)")]
+        public void ToggleMaxAltitudeAG(KSPActionParam param)
+        {
+            maxAltitudeToggle = !maxAltitudeEnabled;
+            ToggleMaxAltitude();
+        }
+        [KSPAction("Enable Max Altitude (AGL)")]
+        public void EnableMaxAltitudeAG(KSPActionParam param)
+        {
+            maxAltitudeToggle = true;
+            ToggleMaxAltitude();
+        }
+        [KSPAction("Disable Max Altitude (AGL)")]
+        public void DisableMaxAltitudeAG(KSPActionParam param)
+        {
+            maxAltitudeToggle = false;
+            ToggleMaxAltitude();
+        }
+        void ToggleMaxAltitude()
+        {
+            maxAltitudeEnabled = maxAltitudeToggle;
+            var maxAltitudeField = Fields["maxAltitude"];
+            maxAltitudeField.guiActive = maxAltitudeToggle;
+            maxAltitudeField.guiActiveEditor = maxAltitudeToggle;
+            if (!maxAltitudeToggle)
+                StartCoroutine(FixAltitudesSectionLayout());
+        }
+
+        IEnumerator FixAltitudesSectionLayout() // Fix the layout of the Altitudes section by briefly disabling the fields underneath the one that was removed.
+        {
+            var maxAltitudeToggleField = Fields["maxAltitudeToggle"];
+            maxAltitudeToggleField.guiActive = false;
+            maxAltitudeToggleField.guiActiveEditor = false;
+            yield return null;
+            maxAltitudeToggleField.guiActive = true;
+            maxAltitudeToggleField.guiActiveEditor = true;
+        }
+
         protected override void Start()
         {
             base.Start();
@@ -744,9 +848,11 @@ namespace BDArmory.Modules
             // SetSliderClamps("DynamicDampingPitchMin", "DynamicDampingPitchMax");
             // SetSliderClamps("DynamicDampingYawMin", "DynamicDampingYawMax");
             // SetSliderClamps("DynamicDampingRollMin", "DynamicDampingRollMax");
+            SetAltitudeClamps();
             dynamicDamping = dynamicSteerDamping;
             CustomDynamicAxisField = CustomDynamicAxisFields;
             ToggleDynamicDampingFields();
+            ToggleMaxAltitude();
             // InitSteerDamping();
             if ((HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor) && storedSettings != null && storedSettings.ContainsKey(HighLogic.LoadedSceneIsFlight ? vessel.GetDisplayName() : EditorLogic.fetch.ship.shipName))
             {
@@ -831,6 +937,12 @@ namespace BDArmory.Modules
             {
                 CustomDynamicAxisField = CustomDynamicAxisFields;
                 ToggleDynamicDampingFields();
+            }
+
+            // Enable Max Altitude slider when toggled.
+            if (maxAltitudeEnabled != maxAltitudeToggle)
+            {
+                ToggleMaxAltitude();
             }
         }
 
@@ -2446,6 +2558,14 @@ namespace BDArmory.Modules
                     distance = Math.Min(distance, Math.Abs((alt - minAlt) / vertFactor));
 
                 targetPosition += upDirection * Math.Min(distance, 1000) * vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection)));
+                if (maxAltitudeEnabled)
+                {
+                    var targetRadarAlt = Misc.Misc.GetRadarAltitudeAtPos(targetPosition);
+                    if (targetRadarAlt > maxAltitude)
+                    {
+                        targetPosition -= (targetRadarAlt - maxAltitude) * upDirection;
+                    }
+                }
             }
 
             if ((float)vessel.radarAltitude > minAlt * 1.1f)

@@ -68,6 +68,8 @@ namespace BDArmory.Misc
         }
         static HashSet<string> _CMResources;
 
+        public static HashSet<string> IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
+        public static bool IsIgnoredPart(Part part) { return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name); }
 
         public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool hasRichocheted, Vessel sourceVessel, string name)
         {
@@ -75,6 +77,7 @@ namespace BDArmory.Misc
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
+            if (IsIgnoredPart(hitPart)) return; // Ignore ignored parts.
 
             // Add decals
             if (BDArmorySettings.BULLET_HITS)
