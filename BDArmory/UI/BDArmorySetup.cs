@@ -474,7 +474,6 @@ namespace BDArmory.UI
 
             BulletInfo.Load();
             RocketInfo.Load();
-            ArmorInfo.Load();
 
             // Spawn fields
             spawnFields = new Dictionary<string, SpawnField> {

@@ -267,10 +267,10 @@ namespace BDArmory.FX
                 }
                 else
                 {
-                    ScoreAccumulator += 1f * TimeWarp.deltaTime;
-                    ProjectileUtils.ApplyDamage(parentPart, SourceVessel, "Fire damage", BDArmorySettings.BD_FIRE_DAMAGE * TimeWarp.deltaTime, false);
+                    ScoreAccumulator += 1 * Time.deltaTime;
                 }
             }
+            ////////////////////////////////////////////
         }
 
         void Detonate()
@@ -351,7 +351,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null, default, false, parentPart.mass * 1000);
+                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
                 // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
                 gameObject.SetActive(false);
             }

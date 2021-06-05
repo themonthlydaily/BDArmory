@@ -17,6 +17,7 @@ namespace BDArmory.Control
     // trivial score keeping structure
     public class ScoringData
     {
+        public Vessel vesselRef; // TODO Reuse these fields instead of looking for them each time.
         public MissileFire weaponManagerRef;
         public int Score;
         public int PinataHits;
@@ -436,6 +437,7 @@ namespace BDArmory.Control
                 // put these in the scoring dictionary - these are the active participants
                 Scores[pilot.vessel.GetName()] = new ScoringData
                 {
+                    vesselRef = pilot.vessel,
                     weaponManagerRef = pilot.weaponManager,
                     lastFiredTime = Planetarium.GetUniversalTime(),
                     previousPartCount = pilot.vessel.parts.Count,

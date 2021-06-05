@@ -507,10 +507,6 @@ namespace BDArmory.Modules
         //Controller Integral
         float pitchIntegral;
         float yawIntegral;
-        float rollIntegral;
-        int lastPitchErrorSign;
-        int lastYawErrorSign;
-        int lastRollErrorSign;
 
         //instantaneous turn radius and possible acceleration from lift
         //properties can be used so that other AI modules can read this for future maneuverability comparisons between craft
@@ -1679,17 +1675,8 @@ namespace BDArmory.Modules
             var debugPitchK = 0.015f * steerMult * pitchError;
             var debugPitchD = -SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x * (1 + steerKiAdjust);
 
-            pitchIntegral = Mathf.Clamp(0.995f * pitchIntegral + pitchError * Time.deltaTime / 90f, -1f, 1f);
-            yawIntegral = Mathf.Clamp(0.995f * yawIntegral + yawError * Time.deltaTime / 90f, -1f, 1f);
-            rollIntegral = Mathf.Clamp(0.995f * rollIntegral + rollError * Time.deltaTime / 90f, -1f, 1f);
-
-            pitchIntegral = lastPitchErrorSign != Math.Sign(pitchError) ? 0 : pitchIntegral;
-            yawIntegral = lastYawErrorSign != Math.Sign(yawError) ? 0 : yawIntegral;
-            rollIntegral = lastRollErrorSign != Math.Sign(rollError) ? 0 : rollIntegral;
-
-            lastPitchErrorSign = Math.Sign(pitchError);
-            lastYawErrorSign = Math.Sign(yawError);
-            lastRollErrorSign = Math.Sign(rollError);
+            pitchIntegral += pitchError;
+            yawIntegral += yawError;
 
             steerPitch *= dynamicAdjustment;
             steerYaw *= dynamicAdjustment;
@@ -1700,10 +1687,12 @@ namespace BDArmory.Modules
             var debugPitchI = pitchIntegral * pitchKi;
             debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}, dynAdj: {3,7:F4}", debugPitchK, debugPitchI, debugPitchD, dynamicAdjustment));
 
-            float rollKi = steerKiAdjust;
-            steerRoll += rollIntegral * rollKi;
+            float yawKi = 0.1f * (steerKiAdjust / 15);
+            yawIntegral = Mathf.Clamp(yawIntegral, -0.2f / (yawKi * dynamicAdjustment), 0.2f / (yawKi * dynamicAdjustment));
+            steerYaw += yawIntegral * yawKi * dynamicAdjustment;
 
-            s.roll = Mathf.Clamp(steerRoll, -maxSteer, maxSteer);
+            float roll = Mathf.Clamp(steerRoll, -maxSteer, maxSteer);
+            s.roll = roll;
             s.yaw = Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer);
             s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer);
         }
