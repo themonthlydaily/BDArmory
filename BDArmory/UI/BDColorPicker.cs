@@ -84,7 +84,7 @@ namespace BDArmory.UI
 			hueSlider = GUI.VerticalSlider(new Rect(HorizPos + displayTextureWidth + 3, VertPos, 10, displayTextureHeight), hueSlider, 1, 0);
 			GUI.Box(new Rect(HorizPos + displayTextureWidth + 20, VertPos, 20, displayTextureHeight), hueTexture);
 
-			if (GUI.Button(new Rect(HorizPos + displayTextureWidth - 60, VertPos + displayTextureHeight + 10, 60, 25), Localizer.Format("LOC_BDArmory_Icon_colorget")))
+			if (GUI.Button(new Rect(HorizPos + displayTextureWidth - 60, VertPos + displayTextureHeight + 10, 60, 25), Localizer.Format("#LOC_BDArmory_Icon_colorget")))
 			{
 				selectedColor = selectedColorPreview.GetPixel(0, 0);
 				BDATISetup.Instance.showColorSelect = false;
