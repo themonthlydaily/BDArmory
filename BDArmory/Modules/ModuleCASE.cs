@@ -1,14 +1,15 @@
-﻿using BDArmory.Competition;
+﻿
+using BDArmory.Competition;
 using BDArmory.Control;
+using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
-using BDArmory.Core;
 using BDArmory.FX;
 using BDArmory.Misc;
-using System.Collections.Generic;
-using System.Text;
 using System;
+using System.Text;
+using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
 
@@ -167,7 +168,7 @@ namespace BDArmory.Modules
                 GetBlastRadius();
                 if (CASELevel == 0) //a considerable quantity of explosives and propellants just detonated inside your ship
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction, false, part.mass * 1000);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else if (CASELevel == 1) // the blast is reduced. Damage is severe, but (potentially) survivable
@@ -183,6 +184,7 @@ namespace BDArmory.Modules
                             {
                                 Part partHit = blastHits.Current.GetComponentInParent<Part>();
                                 if (partHit == null || partHit == part) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (partHit.mass > 0)
                                 {
                                     Rigidbody rb = partHit.Rigidbody;
@@ -244,6 +246,7 @@ namespace BDArmory.Modules
                                     }
 
                                     if (hitPart == null || hitPart == part) continue;
+                                    if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
 
                                     if (hitEVA != null)
                                     {
@@ -285,7 +288,6 @@ namespace BDArmory.Modules
             {
                 explDamage = (hitPart.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f);
                 explDamage = Mathf.Clamp(explDamage, 0, 600);
-
                 hitPart.AddDamage(explDamage);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + "damaged for " + (hitPart.MaxDamage() * 0.9f));
                 if (BDArmorySettings.BATTLEDAMAGE)
@@ -293,7 +295,41 @@ namespace BDArmory.Modules
                     Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, SourceVessel, hit);
                 }
             }
-            ProjectileUtils.ApplyScore(part, SourceVessel, 0, explDamage, "CASE Explosion", false); // FIXME Should this trigger hit effects or not?
+            {
+                var aName = SourceVessel;
+                var tName = part.vessel.GetName();
+
+                if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                {
+                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                    {
+                        BDAScoreService.Instance.TrackDamage(aName, tName, explDamage);
+                    }
+                    var aData = BDACompetitionMode.Instance.Scores[aName];
+                    aData.Score += 1;
+
+                    if (part.vessel.GetName() == "Pinata")
+                    {
+                        aData.PinataHits++;
+                    }
+
+                    var tData = BDACompetitionMode.Instance.Scores[tName];
+                    tData.lastPersonWhoHitMe = aName;
+                    tData.lastHitTime = Planetarium.GetUniversalTime();
+                    tData.everyoneWhoHitMe.Add(aName);
+                    // Track hits
+                    if (tData.hitCounts.ContainsKey(aName))
+                        ++tData.hitCounts[aName];
+                    else
+                        tData.hitCounts.Add(aName, 1);
+                    // Track damage
+                    if (tData.damageFromBullets.ContainsKey(aName))
+                        tData.damageFromBullets[aName] += explDamage;
+                    else
+                        tData.damageFromBullets.Add(aName, explDamage);
+
+                }
+            }
         }
         void OnDestroy()
         {
