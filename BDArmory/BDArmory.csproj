@@ -237,6 +237,7 @@
     <Compile Include="UI\BDATargetManager.cs" />
     <Compile Include="UI\BDAWindowSettingsField.cs" />
     <Compile Include="UI\BDArmorySetup.cs" />
+    <Compile Include="UI\BDColorPicker.cs" />
     <Compile Include="UI\BDGUIComboBox.cs" />
     <Compile Include="UI\BDGUIUtils.cs" />
     <Compile Include="UI\BDInputInfo.cs" />
@@ -245,7 +246,11 @@
     <Compile Include="UI\BDKeyBinder.cs" />
     <Compile Include="UI\BDStagingAreaGauge.cs" />
     <Compile Include="UI\BDTargetSelector.cs" />
+    <Compile Include="UI\BDATeamIcons.cs" />
+    <Compile Include="UI\BDTISetup.cs" />
     <Compile Include="UI\BDTeamSelector.cs" />
+    <Compile Include="UI\BDTISettings.cs" />
+    <Compile Include="UI\BDTISettingsFields.cs" />
     <Compile Include="UI\IBDWMModule.cs" />
     <Compile Include="UI\KrakensbaneDebug.cs" />
     <Compile Include="UI\LoadedVesselSwitcher.cs" />
