@@ -16,7 +16,6 @@ using KSP.UI.Screens;
 using KSP.Localization;
 using UniLinq;
 using UnityEngine;
-using BDArmory.Core.Module;
 
 namespace BDArmory.Modules
 {
@@ -1766,162 +1765,164 @@ namespace BDArmory.Modules
                 Ray ray = new Ray(tf.position, rayDirection);
                 lr.useWorldSpace = false;
                 lr.SetPosition(0, Vector3.zero);
-                RaycastHit hit;
-
-                if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
+                var hits = Physics.RaycastAll(ray, maxTargetingRange, 9076737);
+                if (hits.Length > 0) // Find the first valid hit.
                 {
-                    lr.useWorldSpace = true;
-                    laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
-
-                    lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
-                    lr.SetPosition(1, laserPoint);
-
-                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                    Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-
-                    if (p && p.vessel && p.vessel != vessel)
+                    var orderedHits = hits.OrderBy(x => x.distance);
+                    using (var hitsEnu = orderedHits.GetEnumerator())
                     {
-                        float distance = hit.distance;
-                        //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                        if (electroLaser)
+                        while (hitsEnu.MoveNext())
                         {
-                            var mdEC = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                            if (mdEC == null)
-                            {
-                                p.vessel.rootPart.AddModule("ModuleDrainEC");
-                            }
-                            var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                            if (!pulseLaser)
-                            {
-                                emp.incomingDamage += (ECPerShot / 1000);
-                            }
-                            else
-                            {
-                                emp.incomingDamage += (ECPerShot / 20);
-                            }
-                            emp.softEMP = true;
+                            var hitPart = hitsEnu.Current.collider.gameObject.GetComponentInParent<Part>();
+                            if (hitPart == null) continue;
+                            if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+                            break;
                         }
-                        else if (impulseWeapon)
+                        var hit = hitsEnu.Current;
+                        lr.useWorldSpace = true;
+                        laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
+
+                        lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
+                        lr.SetPosition(1, laserPoint);
+
+                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                        Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+
+                        if (p && p.vessel && p.vessel != vessel)
                         {
-                            if (!pulseLaser)
+                            float distance = hit.distance;
+                            //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                            if (electroLaser)
                             {
-                                damage = Impulse * TimeWarp.fixedDeltaTime;
-                            }
-                            if (p.rb != null && p.rb.mass > 0)
-                            {
-                                if (Impulse > 0)
+                                var mdEC = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                if (mdEC == null)
                                 {
-                                    p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                    p.vessel.rootPart.AddModule("ModuleDrainEC");
+                                }
+                                var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                if (!pulseLaser)
+                                {
+                                    emp.incomingDamage += (ECPerShot / 1000);
                                 }
                                 else
                                 {
-                                    p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                    emp.incomingDamage += (ECPerShot / 20);
                                 }
+                                emp.softEMP = true;
                             }
-                        }
-                        else
-                        {
-                            HitpointTracker armor = GetComponent<HitpointTracker>();
-
-                            damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
-                            if (pulseLaser)
+                            else if (impulseWeapon)
                             {
-                                damage *= TimeWarp.fixedDeltaTime;
-                            }
-                            if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
-                            {
-                                damage *= (1 - ((armor.Diffusivity * armor.ArmorThickness) / laserDamage)); //but this works for now
-                            }
-                            p.ReduceArmor(damage); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
-                            p.AddDamage(damage);
-                        }
-                        if (HEpulses)
-                        {
-                            ExplosionFx.CreateExplosion(hit.point,
-                                           (laserDamage / 30000),
-                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
-                        }
-                        if (HeatRay)
-                        {
-                            using (var hitsEnu = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
-                            {
-                                while (hitsEnu.MoveNext())
+                                if (!pulseLaser)
                                 {
-                                    KerbalEVA kerb = hitsEnu.Current.gameObject.GetComponentUpwards<KerbalEVA>();
-                                    Part hitP = kerb ? kerb.part : hitsEnu.Current.GetComponentInParent<Part>();
-                                    if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
+                                    damage = Impulse * TimeWarp.fixedDeltaTime;
+                                }
+                                if (p.rb != null && p.rb.mass > 0)
+                                {
+                                    if (Impulse > 0)
                                     {
-                                        //p.AddDamage(damage);
-                                        p.AddSkinThermalFlux(damage);
+                                        p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                    }
+                                    else
+                                    {
+                                        p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
                                     }
                                 }
                             }
-                        }
-                        if (graviticWeapon)
-                        {
-                            if (p.rb != null && p.rb.mass > 0)
-                            {
-                                float duration = BDArmorySettings.WEAPON_FX_DURATION;
-                                if (!pulseLaser)
-                                {
-                                    duration = BDArmorySettings.WEAPON_FX_DURATION * TimeWarp.fixedDeltaTime;
-                                }
-                                var ME = p.FindModuleImplementing<ModuleMassAdjust>();
-                                if (ME == null)
-                                {
-                                    ME = (ModuleMassAdjust)p.AddModule("ModuleMassAdjust");
-                                }
-                                ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
-                                ME.duration += duration;
-                            }
-                        }
-                        if (BDArmorySettings.INSTAKILL) p.Destroy();
-
-                        var aName = vesselname;
-                        var tName = p.vessel.GetName();
-                        if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                        {
-                            // Always score damage.
-                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                            {
-                                BDAScoreService.Instance.TrackDamage(aName, tName, damage);
-                            }
-                            var tData = BDACompetitionMode.Instance.Scores[tName];
-                            if (tData.damageFromBullets.ContainsKey(aName))
-                                tData.damageFromBullets[aName] += damage;
                             else
-                                tData.damageFromBullets.Add(aName, damage);
-                            if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
                             {
-                                ScoreAccumulator = 0;
+                                damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
+                                p.AddDamage(damage);
+                            }
+                            if (HEpulses)
+                            {
+                                ExplosionFx.CreateExplosion(hit.point,
+                                               (laserDamage / 30000),
+                                               explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+                            }
+                            if (HeatRay)
+                            {
+                                using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+                                {
+                                    while (hitsEnu2.MoveNext())
+                                    {
+                                        KerbalEVA kerb = hitsEnu2.Current.gameObject.GetComponentUpwards<KerbalEVA>();
+                                        Part hitP = kerb ? kerb.part : hitsEnu2.Current.GetComponentInParent<Part>();
+                                        if (hitP == null) continue;
+                                        if (ProjectileUtils.IsIgnoredPart(hitP)) continue;
+                                        if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
+                                        {
+                                            //p.AddDamage(damage);
+                                            p.AddSkinThermalFlux(damage);
+                                        }
+                                    }
+                                }
+                            }
+                            if (graviticWeapon)
+                            {
+                                if (p.rb != null && p.rb.mass > 0)
+                                {
+                                    float duration = BDArmorySettings.WEAPON_FX_DURATION;
+                                    if (!pulseLaser)
+                                    {
+                                        duration = BDArmorySettings.WEAPON_FX_DURATION * TimeWarp.fixedDeltaTime;
+                                    }
+                                    var ME = p.FindModuleImplementing<ModuleMassAdjust>();
+                                    if (ME == null)
+                                    {
+                                        ME = (ModuleMassAdjust)p.AddModule("ModuleMassAdjust");
+                                    }
+                                    ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
+                                    ME.duration += duration;
+                                }
+                            }
+                            if (BDArmorySettings.INSTAKILL) p.Destroy();
+
+                            var aName = vesselname;
+                            var tName = p.vessel.GetName();
+                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                            {
+                                // Always score damage.
                                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                 {
-                                    BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
+                                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                                 }
-                                var aData = BDACompetitionMode.Instance.Scores[aName];
-                                aData.Score += 1;
-                                if (p.vessel.GetName() == "Pinata")
-                                {
-                                    aData.PinataHits++;
-                                }
-                                tData.lastPersonWhoHitMe = aName;
-                                tData.lastHitTime = Planetarium.GetUniversalTime();
-                                tData.everyoneWhoHitMe.Add(aName);
-                                if (tData.hitCounts.ContainsKey(aName))
-                                    ++tData.hitCounts[aName];
+                                var tData = BDACompetitionMode.Instance.Scores[tName];
+                                if (tData.damageFromBullets.ContainsKey(aName))
+                                    tData.damageFromBullets[aName] += damage;
                                 else
-                                    tData.hitCounts.Add(aName, 1);
-                            }
-                            else
-                            {
-                                ScoreAccumulator += TimeWarp.fixedDeltaTime;
+                                    tData.damageFromBullets.Add(aName, damage);
+                                if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
+                                {
+                                    ScoreAccumulator = 0;
+                                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                    {
+                                        BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
+                                    }
+                                    var aData = BDACompetitionMode.Instance.Scores[aName];
+                                    aData.Score += 1;
+                                    if (p.vessel.GetName() == "Pinata")
+                                    {
+                                        aData.PinataHits++;
+                                    }
+                                    tData.lastPersonWhoHitMe = aName;
+                                    tData.lastHitTime = Planetarium.GetUniversalTime();
+                                    tData.everyoneWhoHitMe.Add(aName);
+                                    if (tData.hitCounts.ContainsKey(aName))
+                                        ++tData.hitCounts[aName];
+                                    else
+                                        tData.hitCounts.Add(aName, 1);
+                                }
+                                else
+                                {
+                                    ScoreAccumulator += TimeWarp.fixedDeltaTime;
+                                }
                             }
                         }
-                    }
 
-                    if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
-                    {
-                        BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0);
+                        if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
+                        {
+                            BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0);
+                        }
                     }
                 }
                 else
