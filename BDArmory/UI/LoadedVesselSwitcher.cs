@@ -442,6 +442,10 @@ namespace BDArmory.UI
                             if (weaponManager == null) continue;
                             if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE && !teamNameShowing)
                             {
+                                if (BDATISetup.Instance.ColorAssignments.ContainsKey(teamManager.Item1))
+                                {
+                                    BDArmorySetup.BDGuiSkin.label.normal.textColor = BDATISetup.Instance.ColorAssignments[teamManager.Item1];
+                                }
                                 GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDArmorySetup.BDGuiSkin.label);
                                 teamNameShowing = true;
                                 height += _buttonHeight + _buttonGap;
@@ -549,6 +553,10 @@ namespace BDArmory.UI
             float _offset = 0;
             if (!BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE || BDArmorySettings.TAG_MODE)
             {
+                if (BDATISetup.Instance.ColorAssignments.ContainsKey(team))
+                {
+                    BDArmorySetup.BDGuiSkin.label.normal.textColor = BDATISetup.Instance.ColorAssignments[team];
+                }
                 GUI.Label(new Rect(_margin, height, _buttonHeight, _buttonHeight), $"{(team.Length > 2 ? team.Remove(2) : team)}", BDArmorySetup.BDGuiSkin.label);
                 _offset = _buttonHeight;
             }
