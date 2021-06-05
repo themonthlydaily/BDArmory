@@ -63,7 +63,7 @@ namespace BDArmory.UI
 
 		protected void OnGUI()
 		{
-			if (!BDATISetup.Instance.showColorSelect) return;
+			if (!BDTISetup.Instance.showColorSelect) return;
 
 			GUI.Box(new Rect(HorizPos - 3, VertPos - 3, displayTextureWidth + 60, displayTextureHeight + 60), "");
 
@@ -87,8 +87,8 @@ namespace BDArmory.UI
 			if (GUI.Button(new Rect(HorizPos + displayTextureWidth - 60, VertPos + displayTextureHeight + 10, 60, 25), Localizer.Format("#LOC_BDArmory_Icon_colorget")))
 			{
 				selectedColor = selectedColorPreview.GetPixel(0, 0);
-				BDATISetup.Instance.showColorSelect = false;
-				BDATISetup.Instance.UpdateTeamColor = true;
+				BDTISetup.Instance.showColorSelect = false;
+				BDTISetup.Instance.UpdateTeamColor = true;
 			}
 
 			// box for chosen color
@@ -106,23 +106,23 @@ namespace BDArmory.UI
 			{
 				return;
 			}
-			if (BDATISetup.Instance.UpdateTeamColor)
+			if (BDTISetup.Instance.UpdateTeamColor)
 			{
 				updateTimer -= Time.fixedDeltaTime;
 				{
-					if (BDATISetup.Instance.UpdateTeamColor && updateTimer < 0)
+					if (BDTISetup.Instance.UpdateTeamColor && updateTimer < 0)
 					{
 						updateTimer = 0.5f;    //next update in half a sec only
 
-						if (BDATISetup.Instance.ColorAssignments.ContainsKey(BDATISetup.Instance.selectedTeam))
+						if (BDTISetup.Instance.ColorAssignments.ContainsKey(BDTISetup.Instance.selectedTeam))
 						{
-							BDATISetup.Instance.ColorAssignments[BDATISetup.Instance.selectedTeam] = selectedColor;
+							BDTISetup.Instance.ColorAssignments[BDTISetup.Instance.selectedTeam] = selectedColor;
 						}
 						else
 						{
 							Debug.Log("[TEAMICONS] Selected team is null.");
 						}
-						BDATISetup.Instance.UpdateTeamColor = !BDATISetup.Instance.UpdateTeamColor;
+						BDTISetup.Instance.UpdateTeamColor = !BDTISetup.Instance.UpdateTeamColor;
 					}
 				}
 			}

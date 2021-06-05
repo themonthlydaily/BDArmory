@@ -219,7 +219,7 @@ namespace BDArmory.UI
 												UoM = "m";
 												UIdist = Dist.magnitude.ToString("0.0");
 											}
-											BDGUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDATISetup.Instance.TextureIconMissile, new Vector2(20, 20), 0);
+											BDGUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconMissile, new Vector2(20, 20), 0);
 											if (BDGUIUtils.WorldToGUIPos(ml.Current.vessel.CoM, out guiPos))
 											{
 												Rect distRect = new Rect((guiPos.x - 12), (guiPos.y + 10), 100, 32);
@@ -240,13 +240,13 @@ namespace BDArmory.UI
 								Vector3 Dist = (tPos - sPos);
 								if (Dist.magnitude > 100)
 								{
-									BDGUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDATISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
+									BDGUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
 								}
 							}
 						}
 					}
 				int Teamcount = 0;
-				using (var teamManagers = BDATISetup.Instance.weaponManagers.GetEnumerator())
+				using (var teamManagers = BDTISetup.Instance.weaponManagers.GetEnumerator())
 					while (teamManagers.MoveNext())
 					{
 						Teamcount++;
@@ -254,7 +254,7 @@ namespace BDArmory.UI
 							while (wm.MoveNext())
 							{
 								if (wm.Current == null) continue;
-								Teamcolor = BDATISetup.Instance.ColorAssignments[wm.Current.Team.Name];
+								Teamcolor = BDTISetup.Instance.ColorAssignments[wm.Current.Team.Name];
 								IconUIStyle.normal.textColor = Teamcolor;
 								if (wm.Current.vessel.isActiveVessel)
 								{
@@ -296,38 +296,38 @@ namespace BDArmory.UI
 										}
 										if ((wm.Current.vessel.vesselType == VesselType.Ship && !wm.Current.vessel.Splashed) || wm.Current.vessel.vesselType == VesselType.Plane)
 										{
-											icon = BDATISetup.Instance.TextureIconPlane;
+											icon = BDTISetup.Instance.TextureIconPlane;
 										}
 										else if (wm.Current.vessel.vesselType == VesselType.Base || wm.Current.vessel.vesselType == VesselType.Lander)
 										{
-											icon = BDATISetup.Instance.TextureIconBase;
+											icon = BDTISetup.Instance.TextureIconBase;
 										}
 										else if (wm.Current.vessel.vesselType == VesselType.Rover)
 										{
-											icon = BDATISetup.Instance.TextureIconRover;
+											icon = BDTISetup.Instance.TextureIconRover;
 										}
 										else if (wm.Current.vessel.vesselType == VesselType.Probe)
 										{
-											icon = BDATISetup.Instance.TextureIconProbe;
+											icon = BDTISetup.Instance.TextureIconProbe;
 										}
 										else if (wm.Current.vessel.vesselType == VesselType.Ship && wm.Current.vessel.Splashed)
 										{
-											icon = BDATISetup.Instance.TextureIconShip;
+											icon = BDTISetup.Instance.TextureIconShip;
 											if (wm.Current.vessel.vesselType == VesselType.Ship && wm.Current.vessel.altitude < -10)
 											{
-												icon = BDATISetup.Instance.TextureIconSub;
+												icon = BDTISetup.Instance.TextureIconSub;
 											}
 										}
 										else if (wm.Current.vessel.vesselType == VesselType.Debris)
 										{
-											icon = BDATISetup.Instance.TextureIconDebris;
+											icon = BDTISetup.Instance.TextureIconDebris;
 											size = 20;
 											IconUIStyle.normal.textColor = XKCDColors.Grey;
 											Teamcolor = XKCDColors.Grey;
 										}
 										else
 										{
-											icon = BDATISetup.Instance.TextureIconGeneric;
+											icon = BDTISetup.Instance.TextureIconGeneric;
 										}
 										DrawOnScreenIcon(wm.Current.vessel.CoM, icon, new Vector2((size * BDTISettings.ICONSCALE), (size * BDTISettings.ICONSCALE)), Teamcolor, true);
 										if (BDTISettings.THREATICON)

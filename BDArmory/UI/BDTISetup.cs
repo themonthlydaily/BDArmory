@@ -14,13 +14,13 @@ using KSP.Localization;
 namespace BDArmory.UI
 {
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
-	class BDATISetup : MonoBehaviour
+	class BDTISetup : MonoBehaviour
 	{
 		private ApplicationLauncherButton toolbarButton = null;
 		public static Rect WindowRectGUI;
 
 		private string windowTitle = Localizer.Format("#LOC_BDArmory_Icons_title");
-		public static BDATISetup Instance = null;
+		public static BDTISetup Instance = null;
 		public static GUIStyle TILabel;
 		private bool showTeamIconGUI = false;
 		float toolWindowWidth = 250;

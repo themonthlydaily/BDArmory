@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
+using BDArmory.UI;
 using BDArmory.Modules;
 using UniLinq;
 using UnityEngine;
@@ -16,6 +17,7 @@ namespace BDArmory.FX
         {
             var template = GameDatabase.Instance.GetModel(modelPath);
             var decal = template.AddComponent<Decal>();
+            template.AddOrGetComponent<Renderer>();
             template.SetActive(false);
             return ObjectPool.CreateObjectPool(template, BDArmorySettings.MAX_NUM_BULLET_DECALS, false, true, 0, true);
         }
@@ -30,7 +32,21 @@ namespace BDArmory.FX
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
             gameObject.SetActive(true);
         }
+        public void SetColor(Color color)
+        {
+            var r = gameObject.GetComponentInChildren<Renderer>();
+            if (r != null)
+            {
+                r.material.shader = Shader.Find("KSP/Particles/Alpha Blended");
+                r.material.SetColor("_TintColor", color);
+                r.material.color = color;
+            }
+            else
+            {
+                Debug.Log("[PAINTBALL] no renderer found in decal");
+            }
 
+        }
         public void OnParentDestroy()
         {
             if (parentPart)
@@ -88,12 +104,13 @@ namespace BDArmory.FX
             {
                 if (decalPool_paint1 == null)
                     decalPool_paint1 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal3");
-
+                
                 if (decalPool_paint2 == null)
                     decalPool_paint2 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal4");
 
                 if (decalPool_paint3 == null)
                     decalPool_paint3 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal5");
+                
             }
         }
 
@@ -133,7 +150,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void SpawnDecal(RaycastHit hit, Part hitPart, float caliber, float penetrationfactor)
+        public static void SpawnDecal(RaycastHit hit, Part hitPart, float caliber, float penetrationfactor, string team)
         {
             if (!BDArmorySettings.BULLET_DECALS) return;
             ObjectPool decalPool_;
@@ -172,9 +189,17 @@ namespace BDArmory.FX
             {
                 var decal = decalFront.GetComponentInChildren<Decal>();
                 decal.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
+
+                if (BDArmorySettings.PAINTBALL_MODE)
+                {
+                    if (BDTISetup.Instance.ColorAssignments.ContainsKey(team))
+                    {
+                        decal.SetColor(BDTISetup.Instance.ColorAssignments[team]);
+                    }
+                }
             }
             //back hole if fully penetrated
-            if (penetrationfactor >= 1)
+            if (penetrationfactor >= 1 && !BDArmorySettings.PAINTBALL_MODE)
             {
                 var decalBack = decalPool_.GetPooledObject();
                 if (decalBack != null && hitPart != null)
@@ -288,7 +313,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateBulletHit(Part hitPart, Vector3 position, RaycastHit hit, Vector3 normalDirection, bool ricochet, float caliber, float penetrationfactor)
+        public static void CreateBulletHit(Part hitPart, Vector3 position, RaycastHit hit, Vector3 normalDirection, bool ricochet, float caliber, float penetrationfactor, string team)
         {
             if (decalPool_large == null || decalPool_small == null)
                 SetupShellPool();
@@ -299,7 +324,7 @@ namespace BDArmory.FX
 
             if ((hitPart != null) && caliber != 0 && !hitPart.IgnoreDecal())
             {
-                SpawnDecal(hit, hitPart, caliber, penetrationfactor); //No bullet decals for laser or ricochet                
+                SpawnDecal(hit, hitPart, caliber, penetrationfactor, team); //No bullet decals for laser or ricochet                
             }
 
             GameObject newExplosion = (caliber <= 30 || BDArmorySettings.PAINTBALL_MODE) ? bulletHitFXPool.GetPooledObject() : penetrationFXPool.GetPooledObject();
