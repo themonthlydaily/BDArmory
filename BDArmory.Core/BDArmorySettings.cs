@@ -126,9 +126,9 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool HEART_BLEED_ENABLED = false;
         [BDAPersistantSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;
         [BDAPersistantSettingsField] public static bool ASTEROID_FIELD = false;
-        [BDAPersistantSettingsField] public static int ASTEROID_FIELD_NUMBER = 300; // Number of asteroids
-        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 1f; // Km.
-        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_RADIUS = 3f; // Km.
+        [BDAPersistantSettingsField] public static int ASTEROID_FIELD_NUMBER = 100; // Number of asteroids
+        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
+        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN = false;
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_ALTITUDE = 2f; // Km.k

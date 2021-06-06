@@ -349,6 +349,8 @@ namespace BDArmory.Control
                     VehiclePhysics.Gravity.Refresh();
                 }
                 RemoveDebrisNow();
+                if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
+                if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.ASTEROID_RAIN_DENSITY, BDArmorySettings.ASTEROID_RAIN_ALTITUDE, BDArmorySettings.ASTEROID_RAIN_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
                 GameEvents.onVesselCreate.Add(OnVesselModified);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
@@ -427,6 +429,8 @@ namespace BDArmory.Control
             nonCompetitorsToRemove.Clear();
             pilotActions.Clear(); // Clear the pilotActions, so we don't get "<pilot> is Dead" on the next round of the competition.
             rammingInformation = null; // Reset the ramming information.
+            if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); RemoveDebrisNow(); }
+            if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
             finalGracePeriodStart = -1;
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
@@ -1553,7 +1557,7 @@ namespace BDArmory.Control
 
         public void RemoveSpaceObject(Vessel vessel)
         {
-            if (!((BDArmorySettings.ASTEROID_RAIN || BDArmorySettings.ASTEROID_FIELD) && Asteroids.managedAsteroids.Contains(vessel))) // Don't remove managed asteroids.
+            if (!((BDArmorySettings.ASTEROID_RAIN && AsteroidRain.Instance.asteroidNames.Contains(vessel.vesselName)) || (BDArmorySettings.ASTEROID_FIELD && AsteroidField.Instance.asteroidNames.Contains(vessel.vesselName)))) // Don't remove managed asteroids.
                 StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
         }
 
