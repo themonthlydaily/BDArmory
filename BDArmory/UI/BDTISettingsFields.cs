@@ -38,7 +38,7 @@ namespace BDArmory.UI
 
 			ConfigNode colors = fileNode.GetNode("TeamColors");
 
-			foreach (var keyValuePair in BDATISetup.Instance.ColorAssignments)
+			foreach (var keyValuePair in BDTISetup.Instance.ColorAssignments)
 			{
 				Debug.Log(keyValuePair.ToString());
 				string color = $"{Mathf.RoundToInt(keyValuePair.Value.r * 255)},{Mathf.RoundToInt(keyValuePair.Value.g * 255)},{Mathf.RoundToInt(keyValuePair.Value.b * 255)},{Mathf.RoundToInt(keyValuePair.Value.a * 255)}";
@@ -72,13 +72,13 @@ namespace BDArmory.UI
 			for (int i = 0; i < colors.CountValues; i++)
 			{
 				Debug.Log("[TEAMICONS] loading team " + colors.values[i].name + "; color: " + Misc.Misc.ParseColor255(colors.values[i].value));
-				if (BDATISetup.Instance.ColorAssignments.ContainsKey(colors.values[i].name))
+				if (BDTISetup.Instance.ColorAssignments.ContainsKey(colors.values[i].name))
 				{
-					BDATISetup.Instance.ColorAssignments[colors.values[i].name] = Misc.Misc.ParseColor255(colors.values[i].value);
+					BDTISetup.Instance.ColorAssignments[colors.values[i].name] = Misc.Misc.ParseColor255(colors.values[i].value);
 				}
 				else
 				{
-					BDATISetup.Instance.ColorAssignments.Add(colors.values[i].name, Misc.Misc.ParseColor255(colors.values[i].value));
+					BDTISetup.Instance.ColorAssignments.Add(colors.values[i].name, Misc.Misc.ParseColor255(colors.values[i].value));
 				}
 			}
 		}

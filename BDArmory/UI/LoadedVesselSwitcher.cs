@@ -442,11 +442,11 @@ namespace BDArmory.UI
                             if (weaponManager == null) continue;
                             if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE && !teamNameShowing)
                             {
-                                if (BDATISetup.Instance.ColorAssignments.ContainsKey(teamManager.Item1))
+                                if (BDTISetup.Instance.ColorAssignments.ContainsKey(teamManager.Item1))
                                 {
-                                    BDArmorySetup.BDGuiSkin.label.normal.textColor = BDATISetup.Instance.ColorAssignments[teamManager.Item1];
+                                    BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManager.Item1];
                                 }
-                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDArmorySetup.BDGuiSkin.label);
+                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDTISetup.TILabel);                               
                                 teamNameShowing = true;
                                 height += _buttonHeight + _buttonGap;
                             }
@@ -553,11 +553,11 @@ namespace BDArmory.UI
             float _offset = 0;
             if (!BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE || BDArmorySettings.TAG_MODE)
             {
-                if (BDATISetup.Instance.ColorAssignments.ContainsKey(team))
+                if (BDTISetup.Instance.ColorAssignments.ContainsKey(team))
                 {
-                    BDArmorySetup.BDGuiSkin.label.normal.textColor = BDATISetup.Instance.ColorAssignments[team];
+                    BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[team];
                 }
-                GUI.Label(new Rect(_margin, height, _buttonHeight, _buttonHeight), $"{(team.Length > 2 ? team.Remove(2) : team)}", BDArmorySetup.BDGuiSkin.label);
+                GUI.Label(new Rect(_margin, height, _buttonHeight, _buttonHeight), $"{(team.Length > 2 ? team.Remove(2) : team)}", BDTISetup.TILabel);
                 _offset = _buttonHeight;
             }
             Rect buttonRect = new Rect(_margin + _offset, height, vesselButtonWidth, _buttonHeight);

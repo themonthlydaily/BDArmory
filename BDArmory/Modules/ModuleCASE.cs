@@ -274,7 +274,7 @@ namespace BDArmory.Modules
             float explDamage = 0;
             if (BDArmorySettings.BULLET_HITS)
             {
-                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, false, 200, 3);
+                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, false, 200, 3, null);
             }
             if (CASELevel == 2)
             {

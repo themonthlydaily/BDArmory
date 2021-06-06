@@ -1513,6 +1513,7 @@ namespace BDArmory.Modules
                                 pBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime; // Initially, put the bullet at the fireTransform position at the start of the next physics frame
 
                                 pBullet.sourceVessel = vessel;
+                                pBullet.team = mf.Team.Name;
                                 pBullet.bulletTexturePath = bulletTexturePath;
                                 pBullet.projectileColor = projectileColorC;
                                 pBullet.startColor = startColorC;
@@ -1921,7 +1922,7 @@ namespace BDArmory.Modules
 
                         if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
                         {
-                            BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0);
+                            BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0, mf.Team.Name);
                         }
                     }
                 }
@@ -2032,6 +2033,7 @@ namespace BDArmory.Modules
                                 rocket.sourceVessel = vessel;
                                 rocketObj.transform.SetParent(currentRocketTfm.parent);
                                 rocket.rocketName = GetShortName() + " rocket";
+                                rocket.team = mf.Team.Name;
                                 rocket.parentRB = part.rb;
                                 rocket.rocket = RocketInfo.rockets[currentType];
                                 rocketObj.SetActive(true);
@@ -2097,6 +2099,7 @@ namespace BDArmory.Modules
                                         rocket.parentRB = part.rb;
                                         rocket.rocket = RocketInfo.rockets[currentType];
                                         rocket.rocketName = GetShortName() + " rocket";
+                                        rocket.team = mf.Team.Name;
                                         rocketObj.SetActive(true);
                                     }
                                     if (!BDArmorySettings.INFINITE_AMMO)
