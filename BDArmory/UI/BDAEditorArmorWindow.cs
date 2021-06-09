@@ -202,7 +202,7 @@ namespace BDArmory.UI
                     selectedArmor = ArmorInfo.armors[selected_index].name;
                     SetType = true;
                     CalculateArmorMass();
-                    Thickness = 10;
+                    //Thickness = 10;
                 }
             }
             previous_index = selected_index;
