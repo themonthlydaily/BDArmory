@@ -3,6 +3,7 @@ using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using BDArmory.Control;
 using BDArmory.FX;
+using BDArmory.Misc;
 using KSP.Localization;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +29,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonateAtMinimumDistance"), UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)] // Detonate At Minumum Distance
         public bool detonateAtMinimumDistance = false;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Status")]//Status
+        [KSPField(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Status")]//Status
         public string guiStatusString = "ARMED";
 
         //PartWindow buttons
@@ -48,7 +49,7 @@ namespace BDArmory.Modules
             }
         }
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Targeting Logic")]//Status
+        [KSPField(guiActive = false, guiActiveEditor = false, guiName = "Targeting Logic")]//Status
         public string guiIFFString = "Ignore Allies";
 
         //PartWindow buttons
@@ -113,7 +114,8 @@ namespace BDArmory.Modules
             Detonate();
         }
 
-        public bool Armed { get; set; } = true;
+        [KSPField(isPersistant = true)]
+        public bool Armed = true;
         public bool Shaped { get; set; } = false;
         public bool isMissile = true;
 
@@ -176,6 +178,26 @@ namespace BDArmory.Modules
                 Fields["guiStatusString"].guiActive = true;
                 Fields["guiIFFString"].guiActiveEditor = true;
                 Fields["guiIFFString"].guiActive = true;
+                if (Armed)
+                {
+                    guiStatusString = "ARMED";
+                    Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");
+                }
+                else
+                {
+                    guiStatusString = "Safe";
+                    Events["Toggle"].guiName = Localizer.Format("Arm Warhead");
+                }
+                if (IFF_On)
+                {
+                    guiIFFString = "Ignore Allies";
+                    Events["ToggleIFF"].guiName = Localizer.Format("Disable IFF");
+                }
+                else
+                {
+                    guiIFFString = "Indescriminate";
+                    Events["ToggleIFF"].guiName = Localizer.Format("Enable IFF");
+                }
                 if (manualOverride)
                 {
                     Fields["detonationRange"].guiActiveEditor = true;
@@ -292,7 +314,7 @@ namespace BDArmory.Modules
                     direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
                 }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, false, part.mass);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, false, part.mass*1000);
                 hasDetonated = true;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
             }
@@ -304,7 +326,7 @@ namespace BDArmory.Modules
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, default, false, part.mass);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, default, false, part.mass*1000);
                 hasDetonated = true;
                 part.Destroy();
             }
@@ -342,6 +364,7 @@ namespace BDArmory.Modules
 
                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
                     if (partHit == null || partHit.vessel == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                     if (partHit.vessel == vessel || partHit.vessel == sourcevessel) continue;
                     if (partHit.vessel.vesselType == VesselType.Debris) continue;
                     if (sourcevessel != null && partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;

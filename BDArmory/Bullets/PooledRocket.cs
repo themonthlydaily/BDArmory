@@ -255,6 +255,8 @@ namespace BDArmory.Bullets
                                 return;
                             }
 
+                            if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+
                             if (hitEVA != null)
                             {
                                 hitPart = hitEVA.part;
@@ -281,7 +283,7 @@ namespace BDArmory.Bullets
 
                             if (ProjectileUtils.CheckGroundHit(hitPart, hit, caliber))
                             {
-                                ProjectileUtils.CheckBuildingHit(hit, rocketMass*1000, rb.velocity, bulletDmgMult);
+                                ProjectileUtils.CheckBuildingHit(hit, rocketMass * 1000, rb.velocity, bulletDmgMult);
                                 Detonate(hit.point, false);
                                 return;
                             }
@@ -318,12 +320,12 @@ namespace BDArmory.Bullets
                                 float safeTemp = Armor.SafeUseTemp;
                                 float Density = Armor.Density;
                                 Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
-                                float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass*1000, impactVelocity);
+                                float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass * 1000, impactVelocity);
                                 float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                                 //calculate bullet deformation
                                 float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, 1, Density);
                                 //calculate penetration
-                                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass*1000, impactVelocity, Ductility, Density, Strength, thickness);
+                                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness);
                                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
                                 ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
@@ -345,9 +347,9 @@ namespace BDArmory.Bullets
                             if (penetrationFactor > 1)
                             {
                                 hasPenetrated = true;
-                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass*1000, caliber);
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass*1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
-                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass*1000), penetrationFactor);
+                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass * 1000, caliber);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
                                 penTicker += 1;
                                 ProjectileUtils.CheckPartForExplosion(hitPart);
 
@@ -364,7 +366,7 @@ namespace BDArmory.Bullets
                                 if (hitPart.rb != null && hitPart.rb.mass > 0)
                                 {
                                     float forceAverageMagnitude = impactVelocity * impactVelocity *
-                                                          (1f / hit.distance) * (rocketMass*1000);
+                                                          (1f / hit.distance) * (rocketMass * 1000);
 
                                     float accelerationMagnitude =
                                         forceAverageMagnitude / (hitPart.vessel.GetTotalMass() * 1000);
@@ -376,8 +378,8 @@ namespace BDArmory.Bullets
                                 }
 
                                 hasPenetrated = false;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, (rocketMass*1000), impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
-                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass*1000), penetrationFactor);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, (rocketMass * 1000), impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
                                 Detonate(hit.point, false);
                                 hasDetonated = true;
                             }
@@ -438,12 +440,12 @@ namespace BDArmory.Bullets
                         try
                         {
                             Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                            if (partHit != null && partHit.vessel != sourceVessel)
-                            {
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
-                                return detonate = true;
-                            }
+                            if (partHit == null) continue;
+                            if (partHit.vessel == sourceVessel) continue;
+                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
+                            return detonate = true;
                         }
                         catch (Exception e)
                         {
@@ -501,6 +503,8 @@ namespace BDArmory.Bullets
                                 if (hitsEnu.Current == null) continue;
                                 if (hitsEnu.Current.gameObject == FlightGlobals.currentMainBody.gameObject) continue; // Ignore terrain hits.
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (craftHit.Contains(partHit.vessel)) continue; // Don't hit the same craft multiple times.
                                 craftHit.Add(partHit.vessel);
 
@@ -548,7 +552,9 @@ namespace BDArmory.Bullets
                                 if (hitsEnu.Current == null) continue;
 
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit != null && partHit.mass > 0)
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                if (partHit.mass > 0)
                                 {
                                     float distance = Vector3.Distance(transform.position, partHit.transform.position);
                                     var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();

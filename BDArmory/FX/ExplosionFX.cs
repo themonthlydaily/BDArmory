@@ -75,7 +75,7 @@ namespace BDArmory.FX
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory.ExplosionFX]:Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
+                Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
         }
 
@@ -139,7 +139,7 @@ namespace BDArmory.FX
             float shrapnelrange = Range;
             if (ProjMass > 0)
             {
-                shrapnelrange = Range*2;
+                shrapnelrange = Range * 2;
             }
             using (var hitCollidersEnu = Physics.OverlapSphere(Position, shrapnelrange, 9076737).AsEnumerable().GetEnumerator())
             {
@@ -148,6 +148,8 @@ namespace BDArmory.FX
                     if (hitCollidersEnu.Current == null) continue;
 
                     Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
+                    if (partHit == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
                     if (partHit != null && partHit.mass > 0 && !partsAdded.Contains(partHit))
                     {
@@ -291,6 +293,7 @@ namespace BDArmory.FX
                 {
                     Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
                     if (partHit == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                     hit = hitsEnu.Current;
                     distance = hit.distance;
                     if (partHit == part)
@@ -365,7 +368,7 @@ namespace BDArmory.FX
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    Debug.Log("[BDArmory.ExplosionFX]:Explosion Finished");
+                    Debug.Log("[BDArmory.ExplosionFX]: Explosion Finished");
                 }
 
                 gameObject.SetActive(false);

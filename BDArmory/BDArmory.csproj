@@ -233,6 +233,7 @@
     <Compile Include="Targeting\TargetInfo.cs" />
     <Compile Include="Targeting\TargetSignatureData.cs" />
     <Compile Include="UI\BDAEditorAnalysisWindow.cs" />
+    <Compile Include="UI\BDAEditorArmorWindow.cs" />
     <Compile Include="UI\BDAEditorCategory.cs" />
     <Compile Include="UI\BDATargetManager.cs" />
     <Compile Include="UI\BDAWindowSettingsField.cs" />
@@ -244,6 +245,7 @@
     <Compile Include="UI\BDInputUtils.cs" />
     <Compile Include="UI\BDKeyBinder.cs" />
     <Compile Include="UI\BDStagingAreaGauge.cs" />
+    <Compile Include="UI\BDTargetSelector.cs" />
     <Compile Include="UI\BDTeamSelector.cs" />
     <Compile Include="UI\IBDWMModule.cs" />
     <Compile Include="UI\KrakensbaneDebug.cs" />

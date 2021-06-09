@@ -27,7 +27,10 @@ namespace BDArmory.Targeting
         public bool alreadyScheduledRCSUpdate = false;
         public float radarMassAtUpdate = 0f;
 
-        public List<Part> targetPartList = new List<Part>();
+        public List<Part> targetWeaponList = new List<Part>();
+        public List<Part> targetEngineList = new List<Part>();
+        public List<Part> targetCommandList = new List<Part>();
+        public List<Part> targetMassList = new List<Part>();
 
         public bool isLandedOrSurfaceSplashed
         {
@@ -248,7 +251,7 @@ namespace BDArmory.Targeting
             if (radarMassAtUpdate > 0)
             {
                 float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
-                if (massPercentageDifference > 0.025f)
+                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway == 0) && !weaponManager.guardFiringMissile)
                 {
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
@@ -276,52 +279,51 @@ namespace BDArmory.Targeting
 
         public void UpdateTargetPartList()
         {
-            targetPartList.Clear();
-            int targetCount = 0;
-            if (BDArmorySettings.TARGET_COMMAND || BDArmorySettings.TARGET_ENGINES || BDArmorySettings.TARGET_WEAPONS)
-            {
-                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                    while (part.MoveNext())
+            targetCommandList.Clear();
+            targetWeaponList.Clear();
+            targetMassList.Clear();
+            targetEngineList.Clear();
+            //anything else? fueltanks? - could be useful if incindiary ammo gets implemented
+            //power generation? - radiators/generators - if doing CoaDE style fights/need reactors to power weapons
+
+            if (vessel == null) return;
+            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                while (part.MoveNext())
+                {
+                    if (part.Current == null) continue;
+
+                    if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
                     {
-                        if (part.Current == null) continue;
-                        if (BDArmorySettings.TARGET_WEAPONS)
-                        {
-                            if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
-                            {
-                                targetPartList.Add(part.Current);
-                                targetCount++;
-                            }
-                        }
-                        if (BDArmorySettings.TARGET_ENGINES)
-                        {
-                            if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
-                            {
-                                targetPartList.Add(part.Current);
-                                targetCount++;
-                            }
-                        }
-                        if (BDArmorySettings.TARGET_COMMAND)
-                        {
-                            if (part.Current.FindModuleImplementing<ModuleCommand>() || part.Current.FindModuleImplementing<KerbalSeat>())
-                            {
-                                targetPartList.Add(part.Current);
-                                targetCount++;
-                            }
-                        }
+                        targetWeaponList.Add(part.Current);
                     }
-            }
-            //else if nothing prioritized, or all priority targets destroyed
-            if (targetCount < 1)
-            {
-                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                    while (part.MoveNext())
+
+                    if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
                     {
-                        targetPartList.Add(part.Current);
+                        targetEngineList.Add(part.Current);
                     }
-            }
-            targetPartList = targetPartList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
-            targetPartList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
-            //Debug.Log("[BDArmory.MTD]: Rebuilt target part list, count: " + targetPartList.Count);
+
+                    if (part.Current.FindModuleImplementing<ModuleCommand>() || part.Current.FindModuleImplementing<KerbalSeat>())
+                    {
+                        targetCommandList.Add(part.Current);
+                    }
+                    targetMassList.Add(part.Current);
+                }
+            targetMassList = targetMassList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
+            targetMassList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+            if (targetMassList.Count > 10)
+                targetMassList.RemoveRange(10, (targetMassList.Count - 10)); //trim to max turret targets
+            targetCommandList = targetCommandList.OrderBy(w => w.mass).ToList();
+            targetCommandList.Reverse();
+            if (targetCommandList.Count > 10)
+                targetCommandList.RemoveRange(10, (targetCommandList.Count - 10));
+            targetEngineList = targetEngineList.OrderBy(w => w.mass).ToList();
+            targetEngineList.Reverse();
+            if (targetEngineList.Count > 10)
+                targetEngineList.RemoveRange(10, (targetEngineList.Count - 10));
+            targetWeaponList = targetWeaponList.OrderBy(w => w.mass).ToList();
+            targetWeaponList.Reverse();
+            if (targetWeaponList.Count > 10)
+                targetWeaponList.RemoveRange(10, (targetWeaponList.Count - 10));
         }
 
         public int NumFriendliesEngaging(BDTeam team)

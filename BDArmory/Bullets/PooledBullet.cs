@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -185,10 +186,9 @@ namespace BDArmory.Bullets
             // Log shots fired.
             if (this.sourceVessel)
             {
-                var aName = this.sourceVessel.GetName();
-                if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                    ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
+                if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(sourceVesselName))
+                    ++BDACompetitionMode.Instance.Scores[sourceVesselName].shotsFired;
             }
             else
             {
@@ -289,10 +289,13 @@ namespace BDArmory.Bullets
 
         /// <summary>
         /// Move the bullet for the period of time, tracking distance traveled and accounting for drag and gravity.
+        /// This is now done using the second order symplectic leapfrog method.
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
+            if (bulletDrop)
+                currentVelocity += 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position);
 
             //calculate flight time for drag purposes
             flightTimeElapsed += period;
@@ -316,16 +319,11 @@ namespace BDArmory.Bullets
                     break;
             }
 
-            if (bulletDrop)
-            {
-                // Gravity???
-                var gravity_ = FlightGlobals.getGeeForceAtPosition(transform.position);
-                //var gravity_ = Physics.gravity;
-                currentVelocity += gravity_ * period;
-            }
-
             //move bullet
             transform.position += currentVelocity * period;
+
+            if (bulletDrop)
+                currentVelocity += 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position);
         }
 
         /// <summary>
@@ -344,7 +342,7 @@ namespace BDArmory.Bullets
             currPosition = transform.position;
 
             float dist = currentVelocity.magnitude * period;
-            bulletRay = new Ray(currPosition, currentVelocity);
+            bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
             var hits = Physics.RaycastAll(bulletRay, dist, 9076737);
             if (reverse)
             {
@@ -382,6 +380,8 @@ namespace BDArmory.Bullets
                             Debug.Log("[BDArmory.PooledBullet]:NullReferenceException for Ballistic Hit: " + e.Message);
                             return true;
                         }
+
+                        if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
 
                         if (hitEVA != null)
                         {
@@ -442,7 +442,7 @@ namespace BDArmory.Bullets
                         if (impulse != 0 && hitPart.rb != null)
                         {
                             hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
-                            ProjectileUtils.ApplyScore(hitPart, sourceVesselName, distanceTraveled, 0, bullet.name);
+                            ProjectileUtils.ApplyScore(hitPart, sourceVesselName, distanceTraveled, 0, bullet.name, true);
                             break; //impulse rounds shouldn't penetrate/do damage
                         }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
@@ -460,7 +460,7 @@ namespace BDArmory.Bullets
                             float Strength = Armor.Strength;
                             float safeTemp = Armor.SafeUseTemp;
                             float Density = Armor.Density;
-                            Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: "+ Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                            Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
                             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactVelocity);
                             float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                             //calculate bullet deformation
@@ -468,8 +468,8 @@ namespace BDArmory.Bullets
                             //calculate penetration
                             penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, Ductility, Density, Strength, thickness, impactVelocity);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
-                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);                            
-                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
+                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
+                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVesselName);
 
                             //calculate return bullet post-pen vel
 
@@ -555,7 +555,6 @@ namespace BDArmory.Bullets
                             distanceTraveled += hit.distance;
                             hasPenetrated = false;
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
-                            ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, bulletMass, penetrationFactor); 
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             hasDetonated = true;
                             KillBullet();
@@ -618,7 +617,9 @@ namespace BDArmory.Bullets
                             try
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit != null && partHit.vessel == sourceVessel) continue;
+                                if (partHit == null) continue;
+                                if (partHit.vessel == sourceVessel) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                     Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
