@@ -569,6 +569,9 @@ namespace BDArmory.Modules
         [KSPField]
         public string chargeSoundPath = "BDArmory/Parts/laserTest/sounds/charge";
 
+        [KSPField]
+        public string rocketSoundPath = "BDArmory/Sounds/rocketLoop";
+
         //audio
         [KSPField]
         public bool oneShotSound = true;
@@ -2036,6 +2039,7 @@ namespace BDArmory.Modules
                                 rocket.team = mf.Team.Name;
                                 rocket.parentRB = part.rb;
                                 rocket.rocket = RocketInfo.rockets[currentType];
+                                rocket.rocketSoundPath = rocketSoundPath;
                                 rocketObj.SetActive(true);
                             }
                             if (!BDArmorySettings.INFINITE_AMMO)
@@ -2100,6 +2104,7 @@ namespace BDArmory.Modules
                                         rocket.rocket = RocketInfo.rockets[currentType];
                                         rocket.rocketName = GetShortName() + " rocket";
                                         rocket.team = mf.Team.Name;
+                                        rocket.rocketSoundPath = rocketSoundPath;
                                         rocketObj.SetActive(true);
                                     }
                                     if (!BDArmorySettings.INFINITE_AMMO)
