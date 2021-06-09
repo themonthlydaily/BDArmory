@@ -17,6 +17,8 @@ namespace BDArmory.Core.Module
         public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => armorCost;
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
 
+        private float partMass = 1f;
+
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Hitpoints"),//Hitpoints
         UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.All, maxValue = 100000, minValue = 0, requireFullControl = false)]
         public float Hitpoints;
@@ -44,6 +46,8 @@ namespace BDArmory.Core.Module
         public string guiArmorTypeString = "def";
 
         private ArmorInfo armorInfo;
+
+        private bool armorReset = false;
 
         [KSPField(isPersistant = true)]
         public float maxHitPoints = 0f;
@@ -220,6 +224,8 @@ namespace BDArmory.Core.Module
             {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
                 sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
             }
+            armorMass = 0;
+            partMass = part.mass;
             partSize = CalcPartBounds(this.part, this.transform).size;
             armorVolume =  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
 ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust);  //mass * surface area approximation of a cylinder, where H/W are unknown
@@ -315,21 +321,21 @@ namespace BDArmory.Core.Module
                 //var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
                 //var structuralVolume = sphereSurface * 0.1f;
                 var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
-                var density = ((part.mass - armorMass) * 1000f) / structuralVolume;
+                var density = (partMass * 1000f) / structuralVolume;
                 density = Mathf.Clamp(density, 1000, 10000);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
 
                 var structuralMass = density * structuralVolume;
-                Debug.Log("[HP] " + part.name + " structural Volume: " + structuralVolume + "; density: " + density + " structural mass: " + structuralMass);
+                //Debug.Log("[HP] " + part.name + " structural Volume: " + structuralVolume + "; density: " + density + " structural mass: " + structuralMass);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralMass : " + structuralMass);
                 //3. final calculations
                 hitpoints = structuralMass * hitpointMultiplier * 0.333f;
 
-                if (hitpoints > 10 * (part.mass - armorMass) * 1000f || hitpoints < 0.1f * (part.mass - armorMass) * 1000f)
+                if (hitpoints > 10 * partMass * 1000f || hitpoints < 0.1f * partMass * 1000f)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
-                    hitpoints = hitpointMultiplier * (part.mass - armorMass) * 333f;
+                    hitpoints = hitpointMultiplier * partMass * 333f;
                 }
 
                 // SuicidalInsanity B9 patch
@@ -337,11 +343,11 @@ namespace BDArmory.Core.Module
                 {
                     if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                     {
-                        hitpoints = ((part.mass - armorMass) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
+                        hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
                     }
                     else
                     {
-                        hitpoints = ((part.mass - armorMass) * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                        hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
                     } //breaks when pWings are made stupidly thick
                 }
 
@@ -366,7 +372,7 @@ namespace BDArmory.Core.Module
 
         public void DestroyPart()
         {
-            if ((part.mass - armorMass) <= 2f) part.explosionPotential *= 0.85f;
+            if (partMass <= 2f) part.explosionPotential *= 0.85f;
 
             PartExploderSystem.AddPartToExplode(part);
         }
@@ -422,7 +428,9 @@ namespace BDArmory.Core.Module
                 PartExploderSystem.AddPartToExplode(kerbal.part);
             }
         }
+        #endregion Hitpoints Functions
 
+        #region Armour
         public void ReduceArmor(float massToReduce)
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -482,6 +490,7 @@ namespace BDArmory.Core.Module
             armorFieldEditor.maxValue = maxSupportedArmor;
             armorFieldEditor.minValue = 0f;
             armorFieldEditor.onFieldChanged = ArmorSetup;
+            part.RefreshAssociatedWindows();
         }
         public void ArmorSetup(BaseField field, object obj)
         {
@@ -522,15 +531,6 @@ namespace BDArmory.Core.Module
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = armorVolume * armorInfo.Cost;
             }
-            using (IEnumerator<UIPartActionWindow> window = FindObjectsOfType(typeof(UIPartActionWindow)).Cast<UIPartActionWindow>().GetEnumerator())
-                while (window.MoveNext())
-                {
-                    if (window.Current == null) continue;
-                    if (window.Current.part == part)
-                    {
-                        window.Current.displayDirty = true;
-                    }
-                }
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
         }
 
@@ -538,24 +538,37 @@ namespace BDArmory.Core.Module
         {
             if (ArmorTypeNum > 1)
             {
-
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                armorFieldFlight.minValue = 0f;
-                armorFieldFlight.maxValue = maxSupportedArmor;
+                if (armorFieldFlight.maxValue != maxSupportedArmor)
+                {
+                    armorReset = false;
+                    armorFieldFlight.minValue = 0f;
+                    armorFieldFlight.maxValue = maxSupportedArmor;
+                }
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
-                armorFieldEditor.maxValue = maxSupportedArmor;
-                armorFieldEditor.minValue = 0f;
+                if (armorFieldEditor.maxValue != maxSupportedArmor)
+                {
+                    armorReset = false;
+                    armorFieldEditor.maxValue = maxSupportedArmor;
+                    armorFieldEditor.minValue = 0f;
+                }
                 armorFieldEditor.onFieldChanged = ArmorSetup;
+                if (!armorReset)
+                {
+                    part.RefreshAssociatedWindows();
+                }
+                armorReset = true;
             }
             else
             {
                 Armor = 10;
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
                 armorFieldEditor.maxValue = 10; //max none armor to 10 (simulate part skin of alimunium)
-                armorFieldEditor.minValue = 10f;
+                armorFieldEditor.minValue = 0;
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                 armorFieldFlight.minValue = 0f;
                 armorFieldFlight.maxValue = 10;
+                part.RefreshAssociatedWindows();
             }
         }
         private static Bounds CalcPartBounds(Part p, Transform t)
@@ -570,6 +583,6 @@ namespace BDArmory.Core.Module
             return result;
         }
 
-        #endregion Hitpoints Functions
-    }
+		#endregion Armour
+	}
 }
