@@ -47,7 +47,7 @@ namespace BDArmory.UI
 			{
 				bool offscreen = false;
 				Vector3 screenPos = BDGUIUtils.GetMainCamera().WorldToViewportPoint(worldPos);
-				if (screenPos.z < 0) //pointless, screenpos.z is the camera distance from vessel
+				if (screenPos.z < 0)
 				{
 					offscreen = true;
 					screenPos.x *= -1;
