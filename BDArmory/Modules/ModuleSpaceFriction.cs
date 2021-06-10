@@ -23,8 +23,6 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true)]
         public float frictMult;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Drift multiplier"),
-UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 0.25f, scene = UI_Scene.All)]
         public float driftMult = 2;
 
         private bool BDAcraft = false;
@@ -79,6 +77,7 @@ UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 0.25f, scene = UI_Sce
                     BDAcraft = true;
                 }
             }
+            //driftmult = BDArmorySettings.SF_DragMult;
         }
 
         public void FixedUpdate()
