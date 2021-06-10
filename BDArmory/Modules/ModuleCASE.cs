@@ -12,6 +12,7 @@ using System.Text;
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
+using System.Collections;
 
 namespace BDArmory.Modules
 {
@@ -75,7 +76,9 @@ namespace BDArmory.Modules
                     CASESetup(null, null);
                 }
             }
+            SourceVessel = part.vessel.GetName(); //set default to vesselname for cases where no attacker, i.e. Ammo exploding on destruction cooking off adjacent boxes
         }
+
         void CASESetup(BaseField field, object obj)
         {
             CASEmass = ((origMass / 2) * CASELevel);
@@ -168,7 +171,7 @@ namespace BDArmory.Modules
                 GetBlastRadius();
                 if (CASELevel == 0) //a considerable quantity of explosives and propellants just detonated inside your ship
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield * BDArmorySettings.BD_AMMO_DMG_MULT, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, vesselName, null, direction);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else if (CASELevel == 1) // the blast is reduced. Damage is severe, but (potentially) survivable
@@ -278,7 +281,7 @@ namespace BDArmory.Modules
             }
             if (CASELevel == 2)
             {
-                explDamage = 100;
+                explDamage = 100 * BDArmorySettings.BD_AMMO_DMG_MULT; ;
                 hitPart.AddDamage(explDamage);
                 float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
                 hitPart.ReduceArmor(armorToReduce);
@@ -286,8 +289,9 @@ namespace BDArmory.Modules
             }
             else //CASE I
             {
-                explDamage = (hitPart.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f);
-                explDamage = Mathf.Clamp(explDamage, 0, 600);
+                explDamage = Mathf.Min((hitPart.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f), 600); //clamp damage to 90% part HP or 600 HP, whchever is lower
+                explDamage *= BDArmorySettings.BD_AMMO_DMG_MULT;
+                explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield*10)); //reduce damage done based on ammo remaining. almost empty ammo box should do much less damage than full one
                 hitPart.AddDamage(explDamage);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + "damaged for " + (hitPart.MaxDamage() * 0.9f));
                 if (BDArmorySettings.BATTLEDAMAGE)

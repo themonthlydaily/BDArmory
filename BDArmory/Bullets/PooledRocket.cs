@@ -619,5 +619,15 @@ namespace BDArmory.Bullets
                 audioSource.volume = BDArmorySettings.BDARMORY_WEAPONS_VOLUME;
             }
         }
+        void OnGUI()
+        {
+            if (((HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.TEAMICONS) || HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.TEAMICONS && BDTISettings.PERSISTANT) && BDTISettings.MISSILES)
+            {
+                if (distanceFromStart > 100)
+                {
+                    BDGUIUtils.DrawTextureOnWorldPos(transform.position, BDTISetup.Instance.TextureIconRocket, new Vector2(20, 20), 0);
+                }
+            }
+        }
     }
 }
