@@ -281,7 +281,8 @@ namespace BDArmory.Modules
             }
             if (CASELevel == 2)
             {
-                explDamage = 100 * BDArmorySettings.BD_AMMO_DMG_MULT; ;
+                explDamage = 100 * BDArmorySettings.BD_AMMO_DMG_MULT;
+                explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield * 10));
                 hitPart.AddDamage(explDamage);
                 float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
                 hitPart.ReduceArmor(armorToReduce);
