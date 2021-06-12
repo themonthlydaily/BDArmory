@@ -54,7 +54,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 		print("")
 	tournamentData = {}
 	for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()) if not args.current_dir else (tournamentDir,):
-		if len(round.name) == 0:
+		if not args.current_dir and len(round.name) == 0:
 			continue
 		tournamentData[round.name] = {}
 		for heat in sorted(round.glob("[0-9]*.log")):
