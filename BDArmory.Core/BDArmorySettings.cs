@@ -143,7 +143,10 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
         [BDAPersistantSettingsField] public static bool BD_AMMOBINS = false;   //can ammo bins explode?
         [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
+        [BDAPersistantSettingsField] public static float BD_AMMO_DMG_MULT = 1; //ammosplosion damage
         [BDAPersistantSettingsField] public static bool BD_PROPULSION = false; //engine thrust reduction, fires
+        [BDAPersistantSettingsField] public static float BD_PROP_FLOOR = 20; //minimum thrust% damaged engines produce
+        [BDAPersistantSettingsField] public static float BD_PROP_FLAMEOUT = 25; //remaiing HP% engines flameout
         [BDAPersistantSettingsField] public static bool BD_BALANCED_THRUST = true;
         [BDAPersistantSettingsField] public static float BD_PROP_DAM_RATE = 1; //rate multiplier, 0.1-2
         [BDAPersistantSettingsField] public static bool BD_INTAKES = false; //Can intakes be damaged?

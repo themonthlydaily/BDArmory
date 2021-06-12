@@ -103,30 +103,28 @@ namespace BDArmory.UI
 			if (Event.current.type.Equals(EventType.Repaint))
 			{
 				Vector3 screenPos = BDGUIUtils.GetMainCamera().WorldToViewportPoint(vesselPos);
-				if (screenPos.z < 0 || screenPos.y != Mathf.Clamp01(screenPos.y) || screenPos.x != Mathf.Clamp01(screenPos.x))
-				{
-					//offscreen
-					Debug.Log("[ICONS] target offscreen");
-				}
-				float xPos = (screenPos.x * Screen.width);
-				float yPos = ((1 - screenPos.y) * Screen.height);
 				Vector3 screenTPos = BDGUIUtils.GetMainCamera().WorldToViewportPoint(targetPos);
-				float xtPos = (screenTPos.x * Screen.width);
-				float ytPos = ((1 - screenTPos.y) * Screen.height);
-
-				Vector2 head;
-				Vector2 tail;
-
-				head.x = xPos;
-				head.y = yPos;
-				tail.x = xtPos;
-				tail.y = ytPos;
-				float angle = Vector2.Angle(Vector3.up, tail - head);
-				if (tail.x < head.x)
+				if (screenTPos.z > 0)
 				{
-					angle = -angle;
+					float xPos = (screenPos.x * Screen.width);
+					float yPos = ((1 - screenPos.y) * Screen.height);
+					float xtPos = (screenTPos.x * Screen.width);
+					float ytPos = ((1 - screenTPos.y) * Screen.height);
+
+					Vector2 head;
+					Vector2 tail;
+
+					head.x = xPos;
+					head.y = yPos;
+					tail.x = xtPos;
+					tail.y = ytPos;
+					float angle = Vector2.Angle(Vector3.up, tail - head);
+					if (tail.x < head.x)
+					{
+						angle = -angle;
+					}
+					DrawPointer(tail, (angle - 180), 2, Teamcolor);
 				}
-				DrawPointer(tail, (angle - 180), 2, Teamcolor);
 			}
 		}
 		public Vector2 calculateRadialCoords(Vector2 RadialCoord, Vector2 Tail, float angle, float edgeDistance)

@@ -50,7 +50,11 @@ namespace BDArmory.UI
 		{
 			get { return mit ? mit : mit = GameDatabase.Instance.GetTexture(textureDir + "missileIcon", false); }
 		}
-
+		private Texture2D rit;
+		public Texture2D TextureIconRocket
+		{
+			get { return rit ? rit : rit = GameDatabase.Instance.GetTexture(textureDir + "rocketIcon", false); }
+		}
 		private Texture2D ti7;
 		public Texture2D TextureIconGeneric
 		{
