@@ -991,7 +991,7 @@ namespace BDArmory.Control
                     craftToSpawn.Enqueue(spawnQueue.Dequeue());
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => v.FindPartModuleImplementing<MissileFire>() != null).Select(v => v.GetName()).ToList().Contains(craftURLToVesselName[craftURL])).ToList();
+                    var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !BDACompetitionMode.ignoredVesselTypes.Contains(v.vesselType) && v.FindPartModuleImplementing<MissileFire>() != null).Select(v => v.GetName()).ToList().Contains(craftURLToVesselName[craftURL])).ToList();
                     if (missing.Count > 0)
                     {
                         Debug.Log("[BDArmory.VesselSpawner]: MISSING vessels: " + string.Join(", ", craftURLToVesselName.Where(c => missing.Contains(c.Key)).Select(c => c.Value)));
@@ -1495,6 +1495,8 @@ namespace BDArmory.Control
         public void RemoveVessel(Vessel vessel)
         {
             if (vessel == null) return;
+            if (BDArmorySettings.ASTEROID_RAIN && vessel.vesselType == VesselType.SpaceObject && AsteroidRain.Instance.asteroidNames.Contains(vessel.vesselName)) return; // Don't remove managed asteroids.
+            if (BDArmorySettings.ASTEROID_FIELD && vessel.vesselType == VesselType.SpaceObject && AsteroidField.Instance.asteroidNames.Contains(vessel.vesselName)) return; // Don't remove managed asteroids.
             ++removeVesselsPending;
             StartCoroutine(RemoveVesselCoroutine(vessel));
         }

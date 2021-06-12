@@ -220,8 +220,8 @@ namespace BDArmory.UI
             using (var v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
-                    if (v.Current == null || !v.Current.loaded || v.Current.packed)
-                        continue;
+                    if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
+                    if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                     using (var wms = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
                         while (wms.MoveNext())
                             if (wms.Current != null)
@@ -446,7 +446,7 @@ namespace BDArmory.UI
                                 {
                                     BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManager.Item1];
                                 }
-                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDTISetup.TILabel);                               
+                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDTISetup.TILabel);
                                 teamNameShowing = true;
                                 height += _buttonHeight + _buttonGap;
                             }
@@ -950,8 +950,8 @@ namespace BDArmory.UI
                     // check all the planes
                     while (v.MoveNext())
                     {
-                        if (v.Current == null || !v.Current.loaded || v.Current.packed)
-                            continue;
+                        if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
+                        if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                         using (var wms = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
                             while (wms.MoveNext())
                                 if (wms.Current != null && wms.Current.vessel != null)

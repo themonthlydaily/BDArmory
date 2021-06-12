@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -126,8 +127,10 @@ namespace BDArmory.Radar
         /// </summary>
         public static void ForceUpdateRadarCrossSections(List<Vessel> vessels = null)
         {
-            foreach (var vessel in (vessels == null ? FlightGlobals.Vessels : vessels))
+            foreach (var vessel in (vessels == null ? FlightGlobals.Vessels.Where(v => !BDACompetitionMode.ignoredVesselTypes.Contains(v.vesselType)) : vessels))
+            {
                 GetVesselRadarCrossSection(vessel, true);
+            }
         }
 
         /// <summary>
@@ -1340,6 +1343,7 @@ namespace BDArmory.Radar
                     {
                         if (friendly.Current == null)
                             continue;
+                        if (BDACompetitionMode.ignoredVesselTypes.Contains(friendly.Current.vesselType)) continue;
                         var wms = friendly.Current.FindPartModuleImplementing<MissileFire>();
                         if (wms == null || wms.Team != mf.Team)
                             continue;

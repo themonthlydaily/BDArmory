@@ -1369,6 +1369,7 @@ namespace BDArmory.Radar
                 while (v.MoveNext())
                 {
                     if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
+                    if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
 
                     BDTeam team = null;
                     List<MissileFire>.Enumerator mf = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();

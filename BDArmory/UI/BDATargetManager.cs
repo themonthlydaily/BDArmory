@@ -1100,15 +1100,13 @@ namespace BDArmory.UI
             using (var friendlyTarget = FlightGlobals.Vessels.GetEnumerator())
                 while (friendlyTarget.MoveNext())
                 {
-                    if (friendlyTarget.Current == null || friendlyTarget.Current == weaponManager.vessel)
-                        continue;
+                    if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(friendlyTarget.Current.vesselType)) continue;
+                    if (friendlyTarget.Current == null || friendlyTarget.Current == weaponManager.vessel) continue;
                     var wms = friendlyTarget.Current.FindPartModuleImplementing<MissileFire>();
-                    if (wms == null || wms.Team != weaponManager.Team)
-                        continue;
+                    if (wms == null || wms.Team != weaponManager.Team) continue;
                     Vector3 targetDistance = friendlyTarget.Current.CoM - weaponManager.vessel.CoM;
                     float friendlyPosDot = Vector3.Dot(targetDistance, aimDirection);
-                    if (friendlyPosDot <= 0)
-                        continue;
+                    if (friendlyPosDot <= 0) continue;
                     float friendlyDistance = targetDistance.magnitude;
                     float friendlyPosDotNorm = friendlyPosDot / friendlyDistance;       //scale down the dot to be a 0-1 so we can check it againts cosUnsafeAngle
 

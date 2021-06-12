@@ -130,6 +130,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN = false;
+        [BDAPersistantSettingsField] public static int ASTEROID_RAIN_NUMBER = 100; // Number of asteroids
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_ALTITUDE = 2f; // Km.k
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.

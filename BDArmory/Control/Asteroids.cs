@@ -103,6 +103,7 @@ namespace BDArmory.Control
         /// </summary>
         public static void CleanOutAsteroid(Vessel asteroid)
         {
+            if (asteroid == null) return;
             var mod = asteroid.GetComponent<ModuleAsteroid>();
             if (mod != null)
             {
@@ -127,15 +128,18 @@ namespace BDArmory.Control
         #region Fields
         public static AsteroidRain Instance;
 
-        bool raining = true;
-        float density;
+        bool raining = false;
+        int numberOfAsteroids;
         float altitude;
         float radius;
+        float initialSpeed = -100f;
+        double spawnRate;
         Vector2d geoCoords;
         Vector3d spawnPoint;
         Vector3d upDirection;
+        Vector3d refDirection;
+        int cleaningInProgress;
         System.Random RNG;
-        static float alpha = 5e5f;
 
         Coroutine rainCoroutine;
         Coroutine cleanUpCoroutine;
@@ -147,6 +151,9 @@ namespace BDArmory.Control
         public HashSet<string> asteroidNames;
         #endregion
 
+        /// <summary>
+        /// Initialisation.
+        /// </summary>
         void Awake()
         {
             if (Instance)
@@ -162,22 +169,21 @@ namespace BDArmory.Control
                 RNG = new System.Random();
             }
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
-            GameEvents.onGameAboutToQuicksave.Add(Reset);
         }
 
+        /// <summary>
+        /// Destructor.
+        /// </summary>
         void OnDestroy()
         {
-            Reset();
-            if (asteroidPool != null)
-            {
-                foreach (var asteroid in asteroidPool)
-                { if (asteroid != null) Destroy(asteroid); }
-            }
+            Reset(true);
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
-            GameEvents.onGameAboutToQuicksave.Remove(Reset);
         }
 
-        public void Reset()
+        /// <summary>
+        /// Reset the asteroid rain, deactivating all the asteroids.
+        /// </summary>
+        public void Reset(bool destroyAsteroids = false)
         {
             raining = false;
             if (rainCoroutine != null)
@@ -189,12 +195,18 @@ namespace BDArmory.Control
             {
                 foreach (var asteroid in asteroidPool)
                 {
-                    if (asteroid != null && asteroid.gameObject.activeInHierarchy)
-                    { asteroid.gameObject.SetActive(false); }
+                    if (asteroid == null) continue;
+                    if (asteroid.gameObject.activeInHierarchy) { asteroid.gameObject.SetActive(false); }
+                    if (destroyAsteroids) { Destroy(asteroid); }
                 }
+                if (destroyAsteroids) { asteroidPool.Clear(); }
             }
         }
 
+        /// <summary>
+        /// Handle scene changes.
+        /// </summary>
+        /// <param name="fromTo">The scenes changed from and to.</param>
         public void HandleSceneChange(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
         {
             if (fromTo.from == GameScenes.FLIGHT)
@@ -212,67 +224,110 @@ namespace BDArmory.Control
             }
         }
 
-        public static int approxNumberOfAsteroids(float density, float altitude, float radius, Vector2d geoCoords)
+        /// <summary>
+        /// Update the asteroid rain settings.
+        /// </summary>
+        public void UpdateSettings()
         {
-            if (FlightGlobals.currentMainBody == null) return 0;
-            var timeToFall = Mathf.Sqrt(altitude * 2f / (float)FlightGlobals.getGeeForceAtPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude)).magnitude);
-            var spawnInterval = alpha / (radius * radius * density); // α / (area * density)
-            return Mathf.RoundToInt(timeToFall / spawnInterval);
+            altitude = BDArmorySettings.ASTEROID_RAIN_ALTITUDE * 100f; // Convert to m.
+            radius = BDArmorySettings.ASTEROID_RAIN_RADIUS * 1000f; // Convert to m.
+            numberOfAsteroids = BDArmorySettings.ASTEROID_RAIN_NUMBER;
+            geoCoords = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS;
+            spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
+            if (spawnPoint.magnitude > 10f * radius)
+            {
+                BDACompetitionMode.Instance.competitionStatus.Add($"Asteroid Rain spawning point is {spawnPoint.magnitude / 1000:F1}km away, which is more than 10 times the radius away. Spawning here instead.");
+                geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(Vector3d.zero);
+                spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
+            }
+            upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
+            spawnPoint += (altitude - Misc.Misc.GetRadarAltitudeAtPos(spawnPoint, false)) * upDirection; // Adjust for terrain height.
+            refDirection = Math.Abs(Vector3d.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3d.up : Vector3d.forward; // Avoid that the reference direction is colinear with the local surface normal.
+
+            var a = -(float)FlightGlobals.getGeeForceAtPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude)).magnitude / 2f;
+            var b = initialSpeed;
+            var c = altitude;
+            var timeToFall = (-b - Math.Sqrt(b * b - 4f * a * c)) / 2f / a;
+            spawnRate = numberOfAsteroids / timeToFall * Time.fixedDeltaTime;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: SpawnRate: {spawnRate} asteroids / frame");
+            if (raining) SetupAsteroidPool(Mathf.RoundToInt(numberOfAsteroids * 1.1f)); // Give ourselves a 10% buffer.
         }
 
-        public void SpawnRain(float _density, float _altitude, float _radius, Vector2d _geoCoords)
+        /// <summary>
+        /// Spawn asteroid rain.
+        /// </summary>
+        public void SpawnRain()
         {
-            altitude = _altitude < 10f ? _altitude * 100f : (_altitude - 9f) * 1000f; // Convert to m.
-            radius = _radius * 1000f; // Convert to m.
-            density = _density;
-            geoCoords = _geoCoords;
-            Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid rain with density {density}, altitude {altitude / 1000f}km and radius {radius / 1000f}km at coordinates ({geoCoords.x:F4}, {geoCoords.y:F4}).");
+            UpdateSettings();
+            StartCoroutine(StartRain());
+        }
 
-            BDACompetitionMode.Instance.competitionStatus.Add("Setting up Asteroid Rain, please be patient.");
+        /// <summary>
+        /// Start raining asteroids.
+        /// </summary>
+        IEnumerator StartRain()
+        {
+            Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid rain with {numberOfAsteroids} asteroids, altitude {altitude / 1000f}km and radius {radius / 1000f}km at coordinates ({geoCoords.x:F4}, {geoCoords.y:F4}).");
+
+            BDACompetitionMode.Instance.competitionStatus.Add($"Spawning Asteroid Rain with ~{numberOfAsteroids} asteroids from an altitude of {altitude}m, please be patient.");
             Reset();
-            SetupAsteroidPool(approxNumberOfAsteroids(density, altitude, radius, geoCoords));
+            yield return new WaitForEndOfFrame(); // Wait for the message to display.
+            yield return new WaitForFixedUpdate();
+            SetupAsteroidPool(Mathf.RoundToInt(numberOfAsteroids * 1.1f)); // Give ourselves a 10% buffer.
 
             if (rainCoroutine != null)
             { StopCoroutine(rainCoroutine); }
             rainCoroutine = StartCoroutine(Rain());
             if (cleanUpCoroutine != null)
             { StopCoroutine(cleanUpCoroutine); }
-            cleanUpCoroutine = StartCoroutine(CleanUp(0.1f));
+            cleanUpCoroutine = StartCoroutine(CleanUp(1f));
         }
 
+        /// <summary>
+        /// Rain asteroids.
+        /// </summary>
         IEnumerator Rain()
         {
             raining = true;
-            spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
-            upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
-            spawnPoint += (altitude - Misc.Misc.GetRadarAltitudeAtPos(spawnPoint, false)) * upDirection; // Adjust for terrain height.
-            var refDirection = Math.Abs(Vector3d.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3d.up : Vector3d.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            yield return PreCleanAsteroids();
-            var densityWaitTime = alpha / (radius * radius * density); // α / (area * density)
-            var densityWait = new WaitForSeconds(densityWaitTime);
+            var spawnRateTracker = 0d;
             var waitForFixedUpdate = new WaitForFixedUpdate();
             while (raining)
             {
-                upDirection = (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized;
-                var asteroid = GetAsteroid();
-                if (asteroid != null)
+                if (cleaningInProgress > 0) // Don't spawn anything if asteroids are getting added to the pool.
                 {
-                    AsteroidUtils.CleanOutAsteroid(asteroid);
-                    asteroid.Landed = false;
-                    asteroid.Splashed = false;
-                    var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis((float)RNG.NextDouble() * 360f, upDirection) * refDirection, upDirection).normalized;
-                    var x = (float)RNG.NextDouble();
-                    var distance = Mathf.Sqrt(1f - x) * radius;
-                    StartCoroutine(RepositionWhenReady(asteroid, direction * distance));
-                }
-
-                if (asteroid != null && densityWaitTime > TimeWarp.fixedDeltaTime)
-                    yield return densityWait;
-                else
                     yield return waitForFixedUpdate;
+                    continue;
+                }
+                while (spawnRateTracker > 1d)
+                {
+                    if (Vector3d.Dot(upDirection, (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized) < 0.99)
+                    {
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Asteroids]: Planet has rotated significantly, updating settings.");
+                        UpdateSettings();
+                    } // Planet rotation has moved the spawn point and direction significantly.
+                    var asteroid = GetAsteroid();
+                    if (asteroid != null)
+                    {
+                        asteroid.Landed = false;
+                        asteroid.Splashed = false;
+                        var direction = Vector3.ProjectOnPlane(Quaternion.AngleAxis((float)RNG.NextDouble() * 360f, upDirection) * refDirection, upDirection).normalized;
+                        var x = (float)RNG.NextDouble();
+                        var distance = Mathf.Sqrt(1f - x) * radius;
+                        StartCoroutine(RepositionWhenReady(asteroid, direction * distance));
+                    }
+                    --spawnRateTracker;
+                }
+                spawnRateTracker += spawnRate;
+                yield return waitForFixedUpdate;
             }
         }
 
+        /// <summary>
+        /// Reposition the asteroid to the desired position once it's properly spawned.
+        /// </summary>
+        /// <param name="asteroid">The asteroid.</param>
+        /// <param name="offset">The offset from the central spawn point.</param>
+        /// <returns></returns>
         IEnumerator RepositionWhenReady(Vessel asteroid, Vector3 offset)
         {
             var wait = new WaitForFixedUpdate();
@@ -280,24 +335,22 @@ namespace BDArmory.Control
             while (asteroid != null && (asteroid.packed || !asteroid.loaded || asteroid.rootPart.Rigidbody == null)) yield return wait;
             if (asteroid != null)
             {
-                AsteroidUtils.CleanOutAsteroid(asteroid); // Make sure KSP hasn't added them back in!
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
                 var position = spawnPoint + offset;
                 position += (altitude - Misc.Misc.GetRadarAltitudeAtPos(position, false)) * upDirection;
                 asteroid.transform.position = position;
-                asteroid.SetWorldVelocity(-upDirection * 100f);
+                asteroid.SetWorldVelocity(initialSpeed * upDirection);
+                // Apply a gaussian random torque to the asteroid.
                 asteroid.rootPart.Rigidbody.angularVelocity = Vector3.zero;
-                var torque = Vector3d.zero;
-                for (int i = 0; i < 100; ++i)
-                {
-                    torque.x += RNG.NextDouble() - 0.5d;
-                    torque.y += RNG.NextDouble() - 0.5d;
-                    torque.z += RNG.NextDouble() - 0.5d;
-                }
-                asteroid.rootPart.Rigidbody.AddTorque(torque * 100f, ForceMode.Acceleration);
+                asteroid.rootPart.Rigidbody.AddTorque(Misc.VectorUtils.GaussianVector3d(Vector3d.zero, 300 * Vector3d.one), ForceMode.Acceleration);
             }
         }
 
+        /// <summary>
+        /// Clean-up routine.
+        /// Checks every interval for asteroids that are going to impact soon and schedules them for removal.
+        /// </summary>
+        /// <param name="interval">The interval to check. Keep low for accuracy, but not too low for performance.</param>
         IEnumerator CleanUp(float interval)
         {
             var wait = new WaitForSeconds(interval); // Don't bother checking too often.
@@ -305,25 +358,35 @@ namespace BDArmory.Control
             {
                 foreach (var asteroid in asteroidPool)
                 {
-                    if (asteroid == null) continue;
-                    var timeToImpact = (float)((asteroid.radarAltitude - asteroid.GetRadius()) / asteroid.srfSpeed) - Time.fixedDeltaTime;
-                    if (asteroid.gameObject.activeInHierarchy && (timeToImpact < interval || asteroid.LandedOrSplashed) && !beingRemoved.Contains(asteroid))
+                    if (asteroid == null || !asteroid.gameObject.activeInHierarchy || asteroid.packed || !asteroid.loaded || asteroid.rootPart.Rigidbody == null) continue;
+                    var timeToImpact = (float)((asteroid.radarAltitude - asteroid.GetRadius()) / asteroid.srfSpeed); // Simple estimate.
+                    if (!beingRemoved.Contains(asteroid) && (timeToImpact < 2f * interval || asteroid.LandedOrSplashed))
                     {
-                        StartCoroutine(RemoveAfterDelay(asteroid, timeToImpact));
+                        StartCoroutine(RemoveAfterDelay(asteroid, timeToImpact - 2f * TimeWarp.fixedDeltaTime)); // 2 frames to hopefully avoid too many asteroids getting destroyed,
                     }
                 }
                 yield return wait;
             }
         }
 
+        /// <summary>
+        /// Remove the asteroid after the delay, generating an explosion at the point it disappears from.
+        /// </summary>
+        /// <param name="asteroid">The asteroid to remove.</param>
+        /// <param name="delay">The delay to wait before removing the asteroid.</param>
         IEnumerator RemoveAfterDelay(Vessel asteroid, float delay)
         {
             beingRemoved.Add(asteroid);
             yield return new WaitForSeconds(delay);
             if (asteroid != null)
             {
+                // Make an explosion where the impact is going to be and remove the asteroid before it actually impacts, so that KSP doesn't destroy it (regenerating the asteroid is expensive).
+                var impactPosition = asteroid.transform.position + asteroid.srf_velocity * TimeWarp.fixedDeltaTime;
+                FXMonger.ExplodeWithDebris(impactPosition, Math.Pow(asteroid.GetTotalMass(), 0.3d) / 12d, null);
                 asteroid.transform.position += 10000f * upDirection; // Put the asteroid where it won't immediately die on re-activating, since we apparently can't reposition it immediately upon activation.
                 asteroid.SetWorldVelocity(Vector3.zero); // Also, reset its velocity.
+                asteroid.Landed = false;
+                asteroid.Splashed = false;
                 asteroid.gameObject.SetActive(false);
                 beingRemoved.Remove(asteroid);
             }
@@ -331,64 +394,60 @@ namespace BDArmory.Control
             { if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Asteroid {asteroid.vesselName} is null, unable to remove."); }
         }
 
-        int cleaningInProgress;
-        IEnumerator PreCleanAsteroids()
+        /// <summary>
+        /// Wait until the collider bounds have been generated, then remove various modules from the asteroid for performance reasons.
+        /// </summary>
+        /// <param name="asteroid">The asteroid to clean.</param>
+        IEnumerator CleanAsteroid(Vessel asteroid)
         {
-            var wait = new WaitForFixedUpdate();
-            cleaningInProgress = 0;
-            foreach (var asteroid in asteroidPool)
-            {
-                if (asteroid == null) continue;
-                ++cleaningInProgress;
-                StartCoroutine(PreCleanAsteroid(asteroid));
-            }
-            while (cleaningInProgress > 0)
-            {
-                yield return wait;
-            }
-            foreach (var asteroid in asteroidPool)
-            {
-                if (asteroid == null) continue;
-                asteroid.gameObject.SetActive(false);
-            }
-        }
-
-        IEnumerator PreCleanAsteroid(Vessel asteroid)
-        {
+            ++cleaningInProgress;
             var wait = new WaitForFixedUpdate();
             asteroid.gameObject.SetActive(true);
-            while (asteroid != null && (asteroid.packed || !asteroid.loaded)) yield return wait;
-            AsteroidUtils.CleanOutAsteroid(asteroid);
+            var startTime = Time.time;
+            while (asteroid != null && (asteroid.packed || !asteroid.loaded || asteroid.rootPart.GetColliderBounds().Length < 2 || Time.time - startTime > 10)) yield return wait;
+            if (asteroid != null)
+            {
+                if (Time.time - startTime > 10) Debug.LogWarning($"[BDArmory.Asteroids]: Timed out waiting for colliders on {asteroid.vesselName} to be generated.");
+                AsteroidUtils.CleanOutAsteroid(asteroid);
+                asteroid.gameObject.SetActive(false);
+            }
             --cleaningInProgress;
         }
 
+        /// <summary>
+        /// Set up the asteroid pool to contain at least count asteroids.
+        /// </summary>
+        /// <param name="count">The minimum number of asteroids in the pool.</param>
         void SetupAsteroidPool(int count)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Setting up asteroid pool with {count} asteroids.");
-            if (asteroidPool == null)
-            { asteroidPool = new List<Vessel>(); }
+            if (asteroidPool == null) { asteroidPool = new List<Vessel>(); }
+            else { asteroidPool = asteroidPool.Where(a => a != null).ToList(); }
             if (count > asteroidPool.Count)
-            { AddAsteroidsToPool(count - asteroidPool.Count); }
-            else
             {
-                for (int i = count; i < asteroidPool.Count; ++i)
-                { Destroy(asteroidPool[i]); }
-                asteroidPool.RemoveRange(count, asteroidPool.Count - count);
+                AddAsteroidsToPool(count - asteroidPool.Count);
             }
         }
 
+        /// <summary>
+        /// Replace an asteroid at position i in the pool.
+        /// </summary>
+        /// <param name="i"></param>
         void ReplacePooledAsteroid(int i)
         {
-            Debug.Log($"[BDArmory.Asteroids]: Replacing asteroid at position {i}.");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Replacing asteroid at position {i}.");
             var asteroid = AsteroidUtils.SpawnAsteroid(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude + 10000));
             if (asteroid != null)
             {
-                asteroid.gameObject.SetActive(false);
+                StartCoroutine(CleanAsteroid(asteroid));
                 asteroidPool[i] = asteroid;
                 asteroidNames.Add(asteroid.vesselName);
             }
         }
 
+        /// <summary>
+        /// Add a number of asteroids to the pool.
+        /// </summary>
+        /// <param name="count"></param>
         void AddAsteroidsToPool(int count)
         {
             Debug.Log($"[BDArmory.Asteroids]: Increasing asteroid pool size to {asteroidPool.Count + count}.");
@@ -402,14 +461,17 @@ namespace BDArmory.Control
                 var asteroid = AsteroidUtils.SpawnAsteroid(position);
                 if (asteroid != null)
                 {
-                    AsteroidUtils.CleanOutAsteroid(asteroid);
-                    asteroid.gameObject.SetActive(false);
+                    StartCoroutine(CleanAsteroid(asteroid));
                     asteroidPool.Add(asteroid);
                     asteroidNames.Add(asteroid.vesselName);
                 }
             }
         }
 
+        /// <summary>
+        /// Get an asteroid from the pool.
+        /// </summary>
+        /// <returns>An asteroid vessel.</returns>
         Vessel GetAsteroid()
         {
             // Start at the last index returned and cycle round for efficiency. This makes this a typically O(1) seek operation.
@@ -417,7 +479,7 @@ namespace BDArmory.Control
             {
                 if (asteroidPool[i] == null)
                 {
-                    ReplacePooledAsteroid(i);
+                    ReplaceNullPooledAsteroids();
                 }
                 if (!asteroidPool[i].gameObject.activeInHierarchy)
                 {
@@ -429,7 +491,7 @@ namespace BDArmory.Control
             {
                 if (asteroidPool[i] == null)
                 {
-                    ReplacePooledAsteroid(i);
+                    ReplaceNullPooledAsteroids();
                 }
                 if (!asteroidPool[i].gameObject.activeInHierarchy)
                 {
@@ -438,20 +500,51 @@ namespace BDArmory.Control
                 }
             }
 
-            var size = (int)(asteroidPool.Count * 1.2) + 1; // Grow by 20% + 1
+            var size = (int)(asteroidPool.Count * 1.1) + 1; // Grow by 10% + 1
             AddAsteroidsToPool(size - asteroidPool.Count);
 
             return asteroidPool[asteroidPool.Count - 1]; // Return the last entry in the pool
         }
 
+        /// <summary>
+        /// Scan for and replace null asteroids in one go to reduce delays due to the CollisionManager.
+        /// </summary>
+        void ReplaceNullPooledAsteroids()
+        {
+            for (int i = 0; i < asteroidPool.Count; ++i)
+            {
+                if (asteroidPool[i] == null)
+                { ReplacePooledAsteroid(i); }
+            }
+            asteroidNames = asteroidPool.Select(a => a.vesselName).ToHashSet();
+        }
+
+        /// <summary>
+        /// Run some debugging checks on the pooled asteroids.
+        /// </summary>
         public void CheckPooledAsteroids()
         {
             if (asteroidPool == null) { Debug.Log("DEBUG Asteroid pool is not set up yet."); return; }
+            int activeCount = 0;
+            int withModulesCount = 0;
+            int withCollidersCount = 0;
+            double minMass = double.MaxValue;
+            double maxMass = 0d;
             for (int i = 0; i < asteroidPool.Count; ++i)
             {
                 if (asteroidPool[i] == null) { Debug.Log($"DEBUG asteroid at position {i} is null"); continue; }
-                Debug.Log($"DEBUG Asteroid[{i}] modules removed? {asteroidPool[i].GetComponent<ModuleAsteroid>() == null && asteroidPool[i].GetComponent<ModuleAsteroidInfo>() == null && asteroidPool[i].GetComponent<ModuleAsteroidResource>() == null}");
+                Debug.Log($"{asteroidPool[i].vesselName} has mass {asteroidPool[i].GetTotalMass()}");
+                if (asteroidPool[i].gameObject != null)
+                {
+                    if (asteroidPool[i].gameObject.activeInHierarchy)
+                        ++activeCount;
+                    maxMass = Math.Max(maxMass, asteroidPool[i].GetTotalMass());
+                    minMass = Math.Min(minMass, asteroidPool[i].GetTotalMass());
+                    if (asteroidPool[i].FindPartModuleImplementing<ModuleAsteroid>() != null || asteroidPool[i].FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroidPool[i].FindPartModuleImplementing<ModuleAsteroidResource>() != null) ++withModulesCount;
+                    if (asteroidPool[i].rootPart != null && asteroidPool[i].rootPart.GetColliderBounds().Length > 1) ++withCollidersCount;
+                }
             }
+            Debug.Log($"DEBUG {activeCount} asteroids active of {asteroidPool.Count}, mass range: {minMass}t — {maxMass}t, #withModules: {withModulesCount}, #withCollidersCount: {withCollidersCount}");
         }
     }
 
@@ -513,7 +606,7 @@ namespace BDArmory.Control
         /// <param name="_geoCoords">The spawn point (centre) of the field.</param>
         public void SpawnField(int numberOfAsteroids, float altitude, float radius, Vector2d geoCoords)
         {
-            altitude = altitude < 10f ? altitude * 100f : (altitude - 9f) * 1000f; // Convert to m.
+            altitude *= 100f; // Convert to m.
             radius *= 1000f; // Convert to m.
             Debug.Log($"[BDArmory.Asteroids]: Spawning asteroid field with {numberOfAsteroids} asteroids with height {altitude}m and radius {radius / 1000f}km at coordinate ({geoCoords.x:F4}, {geoCoords.y:F4}).");
             BDACompetitionMode.Instance.competitionStatus.Add("Spawning Asteroid Field, please be patient.");
@@ -555,7 +648,7 @@ namespace BDArmory.Control
                 {
                     if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
                     var nudge = new Vector3d(RNG.NextDouble() - 0.5d, RNG.NextDouble() - 0.5d, RNG.NextDouble() - 0.5d) * 240d;
-                    asteroids[i].rootPart.Rigidbody.AddForce(-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity + nudge, ForceMode.Acceleration); // Float and reduce motion.
+                    asteroids[i].rootPart.Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity + nudge) * TimeWarp.CurrentRate, ForceMode.Acceleration); // Float and reduce motion.
                 }
                 yield return wait;
             }
@@ -598,6 +691,14 @@ namespace BDArmory.Control
             }
 
             yield return InitialRotation();
+        }
+
+        public void CheckAsteroids()
+        {
+            foreach (var asteroid in asteroids)
+            {
+                Debug.Log($"DEBUG {asteroid.vesselName} collider active? {asteroid.rootPart.collider.enabled}, #bounds: {asteroid.rootPart.GetColliderBounds().Length}");
+            }
         }
     }
 }

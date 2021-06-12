@@ -101,7 +101,10 @@ namespace BDArmory.Modules
             newKerbalsAwaitingCheck.Clear();
             evaKerbalsToMonitor.Clear();
             foreach (var vessel in FlightGlobals.Vessels)
+            {
+                if (BDACompetitionMode.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
                 CheckVesselForKerbals(vessel);
+            }
         }
 
         public void CheckVesselForKerbals(Vessel vessel, bool quiet = false)

@@ -457,6 +457,7 @@ namespace BDArmory.Modules
                 while (vessel.MoveNext())
                 {
                     if (vessel.Current == null || !vessel.Current.loaded) continue;
+                    if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(vessel.Current.vesselType)) continue;
                     Vector3 dirToVessel = vessel.Current.transform.position - ray.origin;
                     if (Vector3.Angle(ray.direction, dirToVessel) < fov / 2)
                     {

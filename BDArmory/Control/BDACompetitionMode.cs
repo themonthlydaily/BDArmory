@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BDArmory.Core;
+using BDArmory.Core.Module;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -201,6 +202,8 @@ namespace BDArmory.Control
 
         // pilot actions
         private Dictionary<string, string> pilotActions = new Dictionary<string, string>();
+
+        public static HashSet<VesselType> ignoredVesselTypes = new HashSet<VesselType> { VesselType.Debris, VesselType.SpaceObject };
         #endregion
 
         void Awake()
@@ -349,8 +352,6 @@ namespace BDArmory.Control
                     VehiclePhysics.Gravity.Refresh();
                 }
                 RemoveDebrisNow();
-                if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
-                if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.ASTEROID_RAIN_DENSITY, BDArmorySettings.ASTEROID_RAIN_ALTITUDE, BDArmorySettings.ASTEROID_RAIN_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
                 GameEvents.onVesselCreate.Add(OnVesselModified);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
@@ -564,7 +565,10 @@ namespace BDArmory.Control
                         yield break;
                     }
 
-            competitionStatus.Set("Competition: Sending pilots to start position.");
+            if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
+            if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(); }
+
+            competitionStatus.Add("Competition: Sending pilots to start position.");
             Vector3 center = Vector3.zero;
             using (var leader = leaders.GetEnumerator())
                 while (leader.MoveNext())
@@ -583,7 +587,7 @@ namespace BDArmory.Control
             Vector3 centerGPS = VectorUtils.WorldPositionToGeoCoords(center, FlightGlobals.currentMainBody);
 
             //wait till everyone is in position
-            competitionStatus.Set("Competition: Waiting for teams to get in position.");
+            competitionStatus.Add("Competition: Waiting for teams to get in position.");
             bool waiting = true;
             var sqrDistance = distance * distance;
             while (waiting && !startCompetitionNow)
@@ -1689,7 +1693,7 @@ namespace BDArmory.Control
             // check all the planes
             foreach (var vessel in FlightGlobals.Vessels)
             {
-                if (vessel == null || !vessel.loaded) // || vessel.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
+                if (vessel == null || !vessel.loaded || ignoredVesselTypes.Contains(vessel.vesselType)) // || vessel.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
                     continue;
 
                 var mf = vessel.FindPartModuleImplementing<MissileFire>();
@@ -2125,7 +2129,7 @@ namespace BDArmory.Control
             // Find out who's still alive
             foreach (var vessel in FlightGlobals.Vessels)
             {
-                if (vessel == null || !vessel.loaded || vessel.packed)
+                if (vessel == null || !vessel.loaded || vessel.packed || ignoredVesselTypes.Contains(vessel.vesselType))
                     continue;
                 if (vessel.FindPartModuleImplementing<MissileFire>() != null)
                     alive.Add(vessel.vesselName);
@@ -2989,6 +2993,378 @@ namespace BDArmory.Control
             CheckMemoryUsage();
             CheckNumbersOfThings();
         }
-    }
 
+        public IEnumerator CheckGCPerformance()
+        {
+            var wait = new WaitForFixedUpdate();
+            var wait2 = new WaitForSeconds(0.5f);
+            var startRealTime = Time.realtimeSinceStartup;
+            var startTime = Time.time;
+            int countFrames = 0;
+            int countVessels = 0;
+            int countParts = 0;
+            while (Time.time - startTime < 1d)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    var moduleList = vessel.FindPartModulesImplementing<HitpointTracker>();
+                    foreach (var module in moduleList)
+                        if (module != null) ++countParts;
+                    ++countVessels;
+                }
+                ++countFrames;
+                yield return wait;
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {countFrames} frames: {countParts} on {countVessels} vessels have HP (using FindPartModulesImplementing)");
+
+            startRealTime = Time.realtimeSinceStartup;
+            startTime = Time.time;
+            countFrames = 0;
+            countVessels = 0;
+            countParts = 0;
+            while (Time.time - startTime < 1d)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var part in vessel.Parts)
+                        foreach (var module in part.Modules)
+                            if (module != null && module is HitpointTracker)
+                                ++countParts;
+                    ++countVessels;
+                }
+                ++countFrames;
+                yield return wait;
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {countFrames} frames: {countParts} on {countVessels} vessels have HP (using FindModuleImplementing inline)");
+
+            startRealTime = Time.realtimeSinceStartup;
+            startTime = Time.time;
+            countFrames = 0;
+            countVessels = 0;
+            countParts = 0;
+            while (Time.time - startTime < 1d)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var module in vessel.FindPartModulesImplementing2<HitpointTracker>()) if (module != null) ++countParts;
+                    ++countVessels;
+                }
+                ++countFrames;
+                yield return wait;
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {countFrames} frames: {countParts} engines on {countVessels} vessels (using custom Find 2)");
+
+            startRealTime = Time.realtimeSinceStartup;
+            startTime = Time.time;
+            countFrames = 0;
+            countVessels = 0;
+            countParts = 0;
+            while (Time.time - startTime < 1d)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    var moduleList = vessel.FindPartModulesImplementing<ModuleEngines>();
+                    foreach (var module in moduleList)
+                        if (module != null) ++countParts;
+                    ++countVessels;
+                }
+                ++countFrames;
+                yield return wait;
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {countFrames} frames: {countParts} engines on {countVessels} vessels (using FindPartModulesImplementing)");
+
+            startRealTime = Time.realtimeSinceStartup;
+            startTime = Time.time;
+            countFrames = 0;
+            countVessels = 0;
+            countParts = 0;
+            while (Time.time - startTime < 1d)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var part in vessel.Parts)
+                        foreach (var module in part.Modules)
+                            if (module != null && module is ModuleEngines)
+                                ++countParts;
+                    ++countVessels;
+                }
+                ++countFrames;
+                yield return wait;
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {countFrames} frames: {countParts} engines on {countVessels} vessels (using FindModuleImplementing inline)");
+
+            startRealTime = Time.realtimeSinceStartup;
+            startTime = Time.time;
+            countFrames = 0;
+            countVessels = 0;
+            countParts = 0;
+            while (Time.time - startTime < 1d)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var module in vessel.FindPartModulesImplementing2<ModuleEngines>()) if (module != null) ++countParts;
+                    ++countVessels;
+                }
+                ++countFrames;
+                yield return wait;
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {countFrames} frames: {countParts} engines on {countVessels} vessels (using custom Find 2)");
+
+            startRealTime = Time.realtimeSinceStartup;
+            startTime = Time.time;
+            countFrames = 0;
+            countVessels = 0;
+            countParts = 0;
+            while (Time.time - startTime < 1d)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    var module = vessel.FindPartModuleImplementing<MissileFire>();
+                    if (module != null) ++countParts;
+                    ++countVessels;
+                }
+                ++countFrames;
+                yield return wait;
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {countFrames} frames: {countParts} of {countVessels} vessels have MF (using FindPartModuleImplementing)");
+
+
+            // Single frame performance
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    var moduleList = vessel.FindPartModulesImplementing<HitpointTracker>();
+                    foreach (var module in moduleList)
+                        if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} on {countVessels} vessels have HP (using FindPartModulesImplementing)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var part in vessel.Parts)
+                        foreach (var module in part.Modules)
+                            if (module != null && module is HitpointTracker)
+                                ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} on {countVessels} vessels have HP (using FindModuleImplementing inline)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var module in vessel.FindPartModulesImplementing2<HitpointTracker>()) if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} on {countVessels} vessels have HP (using custom Find 2)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    using (var module = vessel.FindPartModulesImplementing2<HitpointTracker>().GetEnumerator())
+                        while (module.MoveNext()) if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} on {countVessels} vessels have HP (using custom Find 2 and using)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    var moduleList = vessel.FindPartModulesImplementing<ModuleEngines>();
+                    foreach (var module in moduleList)
+                        if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} engines on {countVessels} vessels (using FindPartModulesImplementing)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var part in vessel.Parts)
+                        foreach (var module in part.Modules)
+                            if (module != null && module is ModuleEngines)
+                                ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} engines on {countVessels} vessels (using FindModuleImplementing inline)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var module in vessel.FindPartModulesImplementing2<ModuleEngines>()) if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} engines on {countVessels} vessels (using custom Find 2)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    using (var module = vessel.FindPartModulesImplementing2<ModuleEngines>().GetEnumerator())
+                        while (module.MoveNext()) if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} engines on {countVessels} vessels (using custom Find 2 and using)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    var moduleList = vessel.FindPartModulesImplementing<MissileFire>();
+                    foreach (var module in moduleList)
+                        if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} WMs on {countVessels} vessels (using FindPartModulesImplementing)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var part in vessel.Parts)
+                        foreach (var module in part.Modules)
+                            if (module != null && module is MissileFire)
+                                ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} WMs on {countVessels} vessels (using FindModuleImplementing inline)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    foreach (var module in vessel.FindPartModulesImplementing2<MissileFire>()) if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} WMs on {countVessels} vessels (using custom Find 2)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    using (var module = vessel.FindPartModulesImplementing2<MissileFire>().GetEnumerator())
+                        while (module.MoveNext()) if (module.Current != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} WMs on {countVessels} vessels (using custom Find 2 and using)");
+
+            yield return wait2;
+
+            startRealTime = Time.realtimeSinceStartup;
+            countVessels = 0;
+            countParts = 0;
+            for (int i = 0; i < 500; ++i)
+            {
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || vessel.packed || !vessel.loaded) continue;
+                    var module = vessel.FindPartModuleImplementing<MissileFire>();
+                    if (module != null) ++countParts;
+                    ++countVessels;
+                }
+            }
+            Debug.Log($"DEBUG {Time.realtimeSinceStartup - startRealTime}s {500} iters: {countParts} WMs on {countVessels} vessels (using Find single)");
+
+            competitionStatus.Add("Done.");
+        }
+    }
 }
