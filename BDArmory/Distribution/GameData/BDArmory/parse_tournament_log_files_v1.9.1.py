@@ -13,7 +13,7 @@ parser.add_argument('-q', '--quiet', action='store_true', help="Don't print resu
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="1,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0.5,0.01,1e-7,0,5e-2", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
+parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0.5,0.01,1e-7,0,5e-2,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
@@ -41,13 +41,13 @@ if args.score:
 		weights = list(float(w) for w in args.weights.split(','))
 	except:
 		weights = []
-	if len(weights) != 14:
+	if len(weights) != 16:
 		print('Invalid set of weights.')
 		sys.exit()
 
 
 def CalculateAccuracy(hits, shots): return 100 * hits / shots if shots > 0 else 0
-
+def CalculateAvgHP(hp, heats): return hp / heats if heats > 0 else 0
 
 for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 	if tournamentNumber > 0 and not args.quiet:
@@ -112,6 +112,9 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 					elif field.startswith('OTHERKILL'):
 						_, craft, reason = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'otherKillReason': reason})
+					elif field.startswith('HPLEFT:'):
+						_, craft, hp = field.split(':', 2)
+						tournamentData[round.name][heat.name]['craft'][craft].update({'HPremaining': float (hp)})
 					elif field.startswith('ACCURACY:'):
 						_, craft, accuracy = field.split(':', 2)
 						hits, shots = accuracy.split('/')
@@ -148,6 +151,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 			craft: {
 				'wins': len([1 for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Win" and craft in next(iter(heat['result']['teams'].values())).split(", ")]),
 				'survivedCount': len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE']),
+                                'miaCount': len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'MIA']),
 				'deathCount': (
 					len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'DEAD']),  # Total
 					len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'DEAD' and 'cleanKillBy' in heat['craft'][craft]]),  # Bullets
@@ -171,8 +175,9 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 				'missileHitsTaken': sum([sum(heat['craft'][craft]['missileHitsBy'].values()) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'missileHitsBy' in heat['craft'][craft]]),
 				'missilePartsHit': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat['craft'].values() for field in ('missilePartsHitBy',) if field in data and craft in data[field]]),
 				'missileDamage': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat['craft'].values() for field in ('missileDamageBy',) if field in data and craft in data[field]]),
-				'ramScore': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat['craft'].values() for field in ('rammedPartsLostBy',) if field in data and craft in data[field]]),
-				'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
+				'ramScore': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat['craft'].values() for field in ('rammedPartsLostBy',) if field in data and craft in data[field]]),                                
+                                'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),                                
+                                'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
 			}
 			for craft in craftNames
 		},
@@ -198,18 +203,20 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 				'score':
 				weights[0] * craft['wins'] +
 				weights[1] * craft['survivedCount'] +
-				weights[2] * craft['deathCount'][0] +
-				weights[3] * craft['deathOrder'] +
-				weights[4] * craft['deathTime'] +
-				weights[5] * craft['cleanKills'][0] +
-				weights[6] * craft['assists'] +
-				weights[7] * craft['hits'] +
-				weights[8] * craft['bulletDamage'] +
-				weights[9] * craft['missileHits'] +
-				weights[10] * craft['missilePartsHit'] +
-				weights[11] * craft['missileDamage'] +
-				weights[12] * craft['missileHitsTaken'] +
-				weights[13] * craft['ramScore']
+                                weights[2] * craft['miaCount'] +
+				weights[3] * craft['deathCount'][0] +
+				weights[4] * craft['deathOrder'] +
+				weights[5] * craft['deathTime'] +
+				weights[6] * craft['cleanKills'][0] +
+				weights[7] * craft['assists'] +
+				weights[8] * craft['hits'] +
+				weights[9] * craft['bulletDamage'] +
+				weights[10] * craft['missileHits'] +
+				weights[11] * craft['missilePartsHit'] +
+				weights[12] * craft['missileDamage'] +
+				weights[13] * craft['missileHitsTaken'] +
+				weights[14] * craft['ramScore']+
+                                weights[15] * craft['HPremaining']
 			})
 
 	if not args.no_files and len(summary['craft']) > 0:
@@ -229,7 +236,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 		if not args.quiet:
 			# Write results to console
 			strings = []
-			headers = ['Name', 'Wins', 'Survive', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'Acc%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
+			headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BMRAS)', 'D.Order', 'D.Time', 'Kills (BMR)', 'Assists', 'Hits', 'Damage', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'Acc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
 			if args.score:
 				headers.insert(1, 'Score')
 			summary_strings = {'header': {field: field for field in headers}}
@@ -241,6 +248,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 						'Name': craft,
 						'Wins': f"{tmp['wins']}",
 						'Survive': f"{tmp['survivedCount']}",
+                                                'MIA': f"{tmp['miaCount']}",
 						'Deaths (BMRAS)': f"{tmp['deathCount'][0]} ({' '.join(str(s) for s in tmp['deathCount'][1:])})",
 						'D.Order': f"{tmp['deathOrder']:.3f}",
 						'D.Time': f"{tmp['deathTime']:.1f}",
@@ -254,6 +262,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 						'HitByMis': f"{tmp['missileHitsTaken']}",
 						'Ram': f"{tmp['ramScore']}",
 						'Acc%': f"{tmp['accuracy']:.2f}",
+                                                'HP%': f"{tmp['HPremaining']:.2f}",
 						'Dmg/Hit': f"{tmp['damage/hit']:.1f}",
 						'Hits/Sp': f"{tmp['hits/spawn']:.1f}",
 						'Dmg/Sp': f"{tmp['damage/spawn']:.1f}"
