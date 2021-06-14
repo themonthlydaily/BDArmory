@@ -1430,9 +1430,9 @@ namespace BDArmory.Control
 
         private void CheckAltitudeLimits()
         {
-            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 46f) // Kill off those flying too high.
+            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 55f) // Kill off those flying too high.
             {
-                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 20f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 39f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 18f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 38f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude > limit)
@@ -1453,7 +1453,7 @@ namespace BDArmory.Control
             }
             if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -1) // Kill off those flying too low.
             {
-                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude < limit)
