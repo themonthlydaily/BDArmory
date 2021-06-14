@@ -27,7 +27,6 @@ namespace BDArmory.FX
                 if (!(pe.maxEnergy > _highestEnergy)) continue;
                 _destroyer = pe.gameObject;
                 _highestEnergy = pe.maxEnergy;
-                // EffectBehaviour.AddParticleEmitter(pe);
             }
         }
 
@@ -72,7 +71,6 @@ namespace BDArmory.FX
                 if (pe == null) continue;
                 EffectBehaviour.AddParticleEmitter(pe);
                 if (!pe.useWorldSpace) continue;
-                // var gpe = pe.gameObject.AddComponent<DecalGaplessParticleEmitter>();
                 var gpe = pe.gameObject.GetComponent<DecalGaplessParticleEmitter>();
                 if (gpe != null)
                     gpe.Emit = true;

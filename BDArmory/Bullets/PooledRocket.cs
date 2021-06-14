@@ -253,8 +253,7 @@ namespace BDArmory.Bullets
 
                 currPosition = transform.position;
                 float dist = (currPosition - prevPosition).magnitude;
-                RocketRay.origin = prevPosition;
-                RocketRay.direction = currPosition - prevPosition;
+                RocketRay = new Ray(prevPosition, currPosition - prevPosition);
                 var hits = Physics.RaycastAll(RocketRay, dist, 9076737);
                 if (hits.Length > 0)
                 {

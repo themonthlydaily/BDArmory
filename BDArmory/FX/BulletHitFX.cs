@@ -84,7 +84,7 @@ namespace BDArmory.FX
         public static ObjectPool leakFXPool;
         public static ObjectPool FireFXPool;
         public static ObjectPool flameFXPool;
-        public static Dictionary<string, List<float>> PartsOnFire = new Dictionary<string, List<float>>(); // Key by vessel name to avoid holding null keys when vessels get destroyed.
+        public static Dictionary<Vessel, List<float>> PartsOnFire = new Dictionary<Vessel, List<float>>();
 
         public static int MaxFiresPerVessel = 3;
         public static float FireLifeTimeInSeconds = 5f;
@@ -105,13 +105,13 @@ namespace BDArmory.FX
             {
                 if (decalPool_paint1 == null)
                     decalPool_paint1 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal3");
-                
+
                 if (decalPool_paint2 == null)
                     decalPool_paint2 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal4");
 
                 if (decalPool_paint3 == null)
                     decalPool_paint3 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal5");
-                
+
             }
         }
 
@@ -237,23 +237,23 @@ namespace BDArmory.FX
                 FireLifeTimeInSeconds = BDArmorySettings.FIRELIFETIME_IN_SECONDS;
             }
 
-            if (PartsOnFire.ContainsKey(hitPart.vessel.vesselName) && PartsOnFire[hitPart.vessel.vesselName].Count >= MaxFiresPerVessel)
+            if (PartsOnFire.ContainsKey(hitPart.vessel) && PartsOnFire[hitPart.vessel].Count >= MaxFiresPerVessel)
             {
-                var firesOnVessel = PartsOnFire[hitPart.vessel.vesselName];
+                var firesOnVessel = PartsOnFire[hitPart.vessel];
 
                 firesOnVessel.Where(x => (Time.time - x) > FireLifeTimeInSeconds).Select(x => firesOnVessel.Remove(x));
                 return false;
             }
 
-            if (!PartsOnFire.ContainsKey(hitPart.vessel.vesselName))
+            if (!PartsOnFire.ContainsKey(hitPart.vessel))
             {
                 List<float> firesList = new List<float> { Time.time };
 
-                PartsOnFire.Add(hitPart.vessel.vesselName, firesList);
+                PartsOnFire.Add(hitPart.vessel, firesList);
             }
             else
             {
-                PartsOnFire[hitPart.vessel.vesselName].Add(Time.time);
+                PartsOnFire[hitPart.vessel].Add(Time.time);
             }
 
             return true;
@@ -263,9 +263,10 @@ namespace BDArmory.FX
         {
             foreach (var key in PartsOnFire.Keys)
             {
-                PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList();
-                if (PartsOnFire[key].Count == 0) { PartsOnFire.Remove(key); }
+                PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList(); // Remove expired fires.
+                if (PartsOnFire[key].Count == 0) { PartsOnFire.Remove(key); } // Remove parts no longer on fire.
             }
+            PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys.
         }
 
         void OnEnable()
@@ -375,8 +376,6 @@ namespace BDArmory.FX
             }
         }
 
-        // FIXME Use an object pool for flames?          
-
         public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, string sourcevessel)
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS)
@@ -467,24 +466,9 @@ namespace BDArmory.FX
         {
             if (!CanFlamesBeAttached(hitPart)) return;
 
-            // var modelUrl = "BDArmory/FX/FlameEffect2/model";
-
-            // var flameObject = (GameObject)Instantiate(GameDatabase.Instance.GetModel(modelUrl), contactPoint, Quaternion.identity); // FIXME This should use an object pool
-
             var flameObject = flameFXPool.GetPooledObject();
             flameObject.transform.SetParent(hitPart.transform);
             flameObject.SetActive(true);
-            // flameObject.AddComponent<DecalEmitterScript>();
-
-            // DecalEmitterScript.shrinkRateFlame = 0.125f;
-            // DecalEmitterScript.shrinkRateSmoke = 0.125f;
-
-            // foreach (var pe in flameObject.GetComponentsInChildren<KSPParticleEmitter>())
-            // {
-            //     if (!pe.useWorldSpace) continue;
-            //     var gpe = pe.gameObject.GetComponent<DecalGaplessParticleEmitter>();
-            //     gpe.Emit = true;
-            // }
         }
     }
 }

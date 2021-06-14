@@ -782,14 +782,6 @@ namespace BDArmory.UI
 
         public static void ClearDatabase()
         {
-            // using (var teamDB = TargetDatabase.GetEnumerator())
-            //     while (teamDB.MoveNext())
-            //     {
-            //         using (var targetList = teamDB.Current.Value.GetEnumerator())
-            //             while (targetList.MoveNext())
-            //                 targetList.Current.detectedTime.Clear();
-            //         teamDB.Current.Value.Clear();
-            //     }
             TargetDatabase.Clear();
         }
 
