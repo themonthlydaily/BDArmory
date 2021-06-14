@@ -88,7 +88,7 @@ namespace BDArmory.Misc
             {
                 foreach (var moduleType in registry[vessel].Keys)
                 {
-                    UpdateVesselModulesInRegistryHelper(vessel, (dynamic)moduleType);
+                    UpdateVesselModulesInRegistryHelper(vessel, moduleType);
                 }
             }
         }
