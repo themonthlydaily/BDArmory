@@ -72,6 +72,10 @@ namespace BDArmory.Control
         public double tagScore = 0; // Abstract score for tag mode.
         #endregion
 
+        #region Misc
+        public double remainingHP; // HP of vessel
+        #endregion
+
         /// <summary>
         /// Time that this vessel last took damage.
         /// </summary>
@@ -2135,21 +2139,27 @@ namespace BDArmory.Control
             logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s (of " + (BDArmorySettings.COMPETITION_DURATION * 60d) + "s) at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
             // Find out who's still alive
+            var survivingTeams = new HashSet<string>();
             foreach (var vessel in FlightGlobals.Vessels)
             {
                 if (vessel == null || !vessel.loaded || vessel.packed)
                     continue;
-                if (vessel.FindPartModuleImplementing<MissileFire>() != null)
-                    alive.Add(vessel.vesselName);
+                var mf = vessel.FindPartModuleImplementing<MissileFire>();
+                double HP;
+                if (mf != null)
+                {
+                    HP = Mathf.Clamp((1 - ((mf.totalHP - mf.vessel.parts.Count) / mf.totalHP)), 0, 1) * 100;
+                    if (Scores.ContainsKey(vessel.vesselName))
+                    {
+                        Scores[vessel.vesselName].remainingHP = HP;
+                        survivingTeams.Add(Scores[vessel.vesselName].team); //move this here so last man standing can claim the win, even if they later don't meet the 'survive' criteria
+                    }
+                    if (HP > 25 && vessel.verticalSpeed < 30) //if all that's left of a plane is a cockpit or a wreck uncontrollably falling out of the sky, can it really count as 'survived'?
+                        alive.Add(vessel.vesselName);
+                }
             }
 
-            // General result. (Note: uses hand-coded JSON to make parsing easier in python.)
-            var survivingTeams = new HashSet<string>();
-            foreach (var vesselName in alive)
-            {
-                if (Scores.ContainsKey(vesselName))
-                    survivingTeams.Add(Scores[vesselName].team);
-            }
+            // General result. (Note: uses hand-coded JSON to make parsing easier in python.)     
             if (survivingTeams.Count == 0)
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Mutual Annihilation");
             else if (survivingTeams.Count == 1)
@@ -2261,6 +2271,10 @@ namespace BDArmory.Control
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: CLEANMISSILEKILL:" + key + ":" + whoCleanShotWhoWithMissiles[key]);
             foreach (var key in whoCleanRammedWho.Keys)
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: CLEANRAM:" + key + ":" + whoCleanRammedWho[key]);
+
+            // remaining health
+            foreach (var key in Scores.Keys)
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: HPLEFT:" + key + ":" + Scores[key].remainingHP);
 
             // Accuracy
             foreach (var key in Scores.Keys)
