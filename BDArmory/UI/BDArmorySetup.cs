@@ -1876,7 +1876,7 @@ namespace BDArmory.UI
                     {
                         BDArmorySettings.BD_VOLATILE_AMMO = GUI.Toggle(SLineRect(++line, 1f), BDArmorySettings.BD_VOLATILE_AMMO, Localizer.Format("#LOC_BDArmory_Settings_BD_Volatile_Ammo"));//"Ammo Bins Explode When Destroyed"
                         GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Ammo_Mult")}:  ({BDArmorySettings.BD_AMMO_DMG_MULT}x)", leftLabel); //ammosplosion damage multiplier
-						BDArmorySettings.BD_AMMO_DMG_MULT = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_AMMO_DMG_MULT, 1), 0, 2));
+                        BDArmorySettings.BD_AMMO_DMG_MULT = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_AMMO_DMG_MULT, 1), 0, 2));
 
                     }
                     BDArmorySettings.BD_FIRES_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_FIRES_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_BD_Fires"));//"Fires"
@@ -2115,6 +2115,23 @@ namespace BDArmory.UI
                                 break;
                             default:
                                 BDACompetitionMode.Instance.RunDebugChecks();
+                                break;
+                        }
+                    }
+                    if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
+                    {
+                        switch (Event.current.button)
+                        {
+                            case 1: // right click
+                                VesselModuleRegistry.DumpRegistry();
+                                break;
+                            default:
+                                foreach (var vessel in FlightGlobals.Vessels)
+                                {
+                                    if (BDACompetitionMode.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
+                                    foreach (var wm in VesselModuleRegistry.Instance.GetModules<MissileFire>(vessel)) { Debug.Log($"DEBUG {vessel.vesselName} has a WM"); }
+                                    Debug.Log($"{vessel.vesselName} has {VesselModuleRegistry.Instance.GetModules<ModuleEngines>(vessel).ToList().Count} engines");
+                                }
                                 break;
                         }
                     }
