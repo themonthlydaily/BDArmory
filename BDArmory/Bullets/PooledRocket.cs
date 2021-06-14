@@ -77,8 +77,6 @@ namespace BDArmory.Bullets
 
         public AudioSource audioSource;
 
-        HashSet<Vessel> craftHit = new HashSet<Vessel>();
-
         void OnEnable()
         {
             BDArmorySetup.numberOfParticleEmitters++;
@@ -162,7 +160,9 @@ namespace BDArmory.Bullets
                     pe.emit = false;
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
+            sourceVessel = null;
             sourceVesselName = null;
+            spawnTransform = null;
         }
 
         void FixedUpdate()
@@ -519,7 +519,7 @@ namespace BDArmory.Bullets
                     {
                         using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, 557057).AsEnumerable().GetEnumerator())
                         {
-                            craftHit.Clear();
+                            var craftHit = new HashSet<Vessel>();
                             while (hitsEnu.MoveNext())
                             {
                                 if (hitsEnu.Current == null) continue;
@@ -597,7 +597,8 @@ namespace BDArmory.Bullets
 
         void SetupAudio()
         {
-            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource = gameObject.GetComponent<AudioSource>();
+            if (audioSource == null) { audioSource = gameObject.AddComponent<AudioSource>(); }
             audioSource.loop = true;
             audioSource.minDistance = 1;
             audioSource.maxDistance = 2000;

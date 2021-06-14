@@ -87,6 +87,7 @@ namespace BDArmory.FX
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
             ExplosivePart = null; // Clear the Part reference.
+            ExplosionEvents.Clear(); // Make sure we don't have any left over events leaking memory.
         }
 
         private void CalculateBlastEvents()
