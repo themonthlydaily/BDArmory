@@ -19,46 +19,66 @@ namespace BDArmory.Control
     {
         public Vessel vesselRef; // TODO Reuse these fields instead of looking for them each time.
         public MissileFire weaponManagerRef;
-        public int Score;
-        public int PinataHits;
-        public int totalDamagedPartsDueToRamming = 0;
-        public int totalDamagedPartsDueToMissiles = 0;
-        public string lastPersonWhoHitMe = "";
-        public string lastPersonWhoHitMeWithAMissile = "";
-        public string lastPersonWhoRammedMe = "";
-        public double lastHitTime; // Bullets
-        public bool tagIsIt = false; // For tag mode
-        public int tagKillsWhileIt = 0; // For tag mode
-        public int tagTimesIt = 0; // For tag mode
-        public double tagTotalTime = 0; // For tag mode
-        public double tagScore = 0; // For tag mode
-        public double lastMissileHitTime; // Missiles
-        public double lastFiredTime;
-        public double lastRammedTime; // Rams
-        public bool landedState;
-        public double lastLandedTime;
-        public double landedKillTimer;
-        public double AverageSpeed;
-        public double AverageAltitude;
-        public double AverageHP;
-        public int averageCount;
-        public int previousPartCount;
-        public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
-        public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
-        public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
-        public HashSet<string> everyoneWhoHitMeWithMissiles = new HashSet<string>();
-        public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
-        public Dictionary<string, int> hitCounts = new Dictionary<string, int>();
-        public Dictionary<string, float> damageFromBullets = new Dictionary<string, float>();
-        public Dictionary<string, float> damageFromMissiles = new Dictionary<string, float>();
-        public int shotsFired = 0;
-        public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
-        public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>();
-        public Dictionary<string, int> missileHitCounts = new Dictionary<string, int>();
-        public GMKillReason gmKillReason = GMKillReason.None;
-        public bool cleanDeath = false;
-        public string team;
+        public bool cleanDeath = false; // Whether the kill was a "head-shot".
+        public string team; // The vessel's team.
 
+        #region Guns
+        public int Score; // Number of hits this vessel landed.
+        public int PinataHits; // Number of hits this vessel landed on the piñata.
+        public int shotsFired = 0; // Number of shots fired by this vessel.
+        public double lastHitTime; // Time of the last bullet hit on this vessel.
+        public string lastPersonWhoHitMe = ""; // The last vessel that shot this vessel.
+        public HashSet<string> everyoneWhoHitMe = new HashSet<string>(); // Every other vessel that landed a shot on this vessel.
+        public Dictionary<string, int> hitCounts = new Dictionary<string, int>(); // Hits taken from guns fired by other vessels.
+        public Dictionary<string, float> damageFromBullets = new Dictionary<string, float>(); // Damage taken from guns fired by other vessels.
+        #endregion
+
+        #region Ramming
+        public int totalDamagedPartsDueToRamming = 0; // Number of other vessels' parts destroyed by this vessel due to ramming.
+        public int previousPartCount; // Number of parts this vessel had last time we checked (for ramming tracking).
+        public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
+        public double lastRammedTime; // Time of the last ram against this vessel.
+        public string lastPersonWhoRammedMe = ""; // The last vessel that rammed this vessel.
+        public HashSet<string> everyoneWhoRammedMe = new HashSet<string>(); // Every other vessel that rammed this vessel.
+        public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>(); // Number of parts lost due to ramming by other vessels.
+        #endregion
+
+        #region Missiles
+        public int totalDamagedPartsDueToMissiles = 0; // Number of other vessels' parts damaged by this vessel due to missile strikes.
+        public double lastMissileHitTime; // Time of the last missile strike hitting this vessel.
+        public string lastPersonWhoHitMeWithAMissile = ""; // The last vessel that hit this vessel with a missile.
+        public HashSet<string> everyoneWhoHitMeWithMissiles = new HashSet<string>(); // Every other vessel that landed a missile strike against this vessel.
+        public Dictionary<string, float> damageFromMissiles = new Dictionary<string, float>(); // Damage taken from missile strikes from other vessels.
+        public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>(); // Number of parts damaged by missile strikes from other vessels.
+        public Dictionary<string, int> missileHitCounts = new Dictionary<string, int>(); // Number of missile strikes from other vessels.
+        #endregion
+
+        #region GM
+        public double lastFiredTime; // Time that this vessel last fired a gun.
+        public bool landedState; // Whether the vessel is landed or not.
+        public double lastLandedTime; // Time that this vessel was landed last.
+        public double landedKillTimer; // Counter tracking time this vessel is landed (for the kill timer).
+        public double AverageSpeed; // Average speed of this vessel recently (for the killer GM).
+        public double AverageAltitude; // Average altitude of this vessel recently (for the killer GM).
+        public int averageCount; // Count for the averaging stats.
+        public GMKillReason gmKillReason = GMKillReason.None; // Reason the GM killed this vessel.
+        #endregion
+
+        #region Tag
+        public bool tagIsIt = false; // Whether this vessel is IT or not.
+        public int tagKillsWhileIt = 0; // The number of kills gained while being IT.
+        public int tagTimesIt = 0; // The number of times this vessel was IT.
+        public double tagTotalTime = 0; // The total this vessel spent being IT.
+        public double tagScore = 0; // Abstract score for tag mode.
+        #endregion
+
+        #region Misc
+        public double remainingHP; // HP of vessel
+        #endregion
+
+        /// <summary>
+        /// Time that this vessel last took damage.
+        /// </summary>
         public double LastDamageTime()
         {
             var lastDamageWasFrom = LastDamageWasFrom();
@@ -74,6 +94,9 @@ namespace BDArmory.Control
                     return 0;
             }
         }
+        /// <summary>
+        /// What type of damage the last damage taken was.
+        /// </summary>
         public DamageFrom LastDamageWasFrom()
         {
             double lastTime = 0;
@@ -95,6 +118,9 @@ namespace BDArmory.Control
             }
             return damageFrom;
         }
+        /// <summary>
+        /// The name of the last vessel to damage this one.
+        /// </summary>
         public string LastPersonWhoDamagedMe()
         {
             var lastDamageWasFrom = LastDamageWasFrom();
@@ -111,6 +137,10 @@ namespace BDArmory.Control
             }
         }
 
+        HashSet<string> everyoneWhoDamagedMe = new HashSet<string>(); // Every other vessel that damaged this vessel (backing store variable).
+        /// <summary>
+        /// Every other vessel that damaged this one.
+        /// </summary>
         public HashSet<string> EveryOneWhoDamagedMe()
         {
             foreach (var hit in everyoneWhoHitMe)
@@ -1921,7 +1951,7 @@ namespace BDArmory.Control
 
                         DeathCount++;
 
-                        if (Scores[key].gmKillReason == GMKillReason.None && now - Scores[key].LastDamageTime() < 5) // Recent kills that weren't instigated by the GM (or similar).
+                        if (Scores[key].gmKillReason == GMKillReason.None && now - Scores[key].LastDamageTime() < 10) // Recent kills that weren't instigated by the GM (or similar).
                         {
                             // if last hit was recent that person gets the kill
                             whoKilledMe = Scores[key].LastPersonWhoDamagedMe();
@@ -2121,7 +2151,7 @@ namespace BDArmory.Control
                     HP = Mathf.Clamp((1 - ((mf.totalHP - mf.vessel.parts.Count) / mf.totalHP)), 0, 1) * 100;
                     if (Scores.ContainsKey(vessel.vesselName))
                     {
-                        Scores[vessel.vesselName].AverageHP = HP;
+                        Scores[vessel.vesselName].remainingHP = HP;
                         survivingTeams.Add(Scores[vessel.vesselName].team); //move this here so last man standing can claim the win, even if they later don't meet the 'survive' criteria
                     }
                     if (HP > 25 && vessel.verticalSpeed < 30) //if all that's left of a plane is a cockpit or a wreck uncontrollably falling out of the sky, can it really count as 'survived'?
@@ -2129,7 +2159,7 @@ namespace BDArmory.Control
                 }
             }
 
-            // General result. (Note: uses hand-coded JSON to make parsing easier in python.)           
+            // General result. (Note: uses hand-coded JSON to make parsing easier in python.)     
             if (survivingTeams.Count == 0)
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Mutual Annihilation");
             else if (survivingTeams.Count == 1)
@@ -2244,7 +2274,7 @@ namespace BDArmory.Control
 
             // remaining health
             foreach (var key in Scores.Keys)
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: HPLEFT:" + key + ":" + Scores[key].AverageHP);
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: HPLEFT:" + key + ":" + Scores[key].remainingHP);
 
             // Accuracy
             foreach (var key in Scores.Keys)
@@ -2761,7 +2791,6 @@ namespace BDArmory.Control
             tData.lastRammedTime = timeOfCollision;
             tData.lastPersonWhoRammedMe = rammingVesselName;
             tData.everyoneWhoRammedMe.Add(rammingVesselName);
-            tData.everyoneWhoDamagedMe.Add(rammingVesselName);
             if (tData.rammingPartLossCounts.ContainsKey(rammingVesselName))
                 tData.rammingPartLossCounts[rammingVesselName] += partsLost;
             else
