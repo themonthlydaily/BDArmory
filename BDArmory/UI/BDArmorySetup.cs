@@ -1801,6 +1801,11 @@ namespace BDArmory.UI
                     {
                         GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Prop_Dmg_Mult")}:  ({BDArmorySettings.BD_PROP_DAM_RATE}x)", leftLabel); //Propulsion Damage Multiplier
                         BDArmorySettings.BD_PROP_DAM_RATE = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_PROP_DAM_RATE, 1), 0, 2));
+                        GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Prop_floor")}:  ({BDArmorySettings.BD_PROP_FLOOR}%)", leftLabel); //Min Engine Thrust
+                        BDArmorySettings.BD_PROP_FLOOR = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_PROP_FLOOR, 1), 0, 100));
+
+                        GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Prop_flameout")}:  ({BDArmorySettings.BD_PROP_FLAMEOUT}% HP)", leftLabel); //Engine Flameout
+                        BDArmorySettings.BD_PROP_FLAMEOUT = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_PROP_FLAMEOUT, 0), 0, 95));
                         BDArmorySettings.BD_INTAKES = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.BD_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_BD_Intakes"));//"Intake Damage"
                         BDArmorySettings.BD_GIMBALS = GUI.Toggle(SRightRect(line, 1f), BDArmorySettings.BD_GIMBALS, Localizer.Format("#LOC_BDArmory_Settings_BD_Gimbals"));//"Gimbal Damage"
                     }
@@ -1828,6 +1833,9 @@ namespace BDArmory.UI
                     if (BDArmorySettings.BD_AMMOBINS)
                     {
                         BDArmorySettings.BD_VOLATILE_AMMO = GUI.Toggle(SLineRect(++line, 1f), BDArmorySettings.BD_VOLATILE_AMMO, Localizer.Format("#LOC_BDArmory_Settings_BD_Volatile_Ammo"));//"Ammo Bins Explode When Destroyed"
+                        GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_BD_Ammo_Mult")}:  ({BDArmorySettings.BD_AMMO_DMG_MULT}x)", leftLabel); //ammosplosion damage multiplier
+						BDArmorySettings.BD_AMMO_DMG_MULT = (GUI.HorizontalSlider(SRightSliderRect(line), (float)Math.Round(BDArmorySettings.BD_AMMO_DMG_MULT, 1), 0, 2));
+
                     }
                     BDArmorySettings.BD_FIRES_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BD_FIRES_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_BD_Fires"));//"Fires"
                     if (BDArmorySettings.BD_FIRES_ENABLED)
@@ -1959,21 +1967,21 @@ namespace BDArmory.UI
 
                 { // Killer GM Max Altitude
                     string killerGMMaxAltitudeText;
-                    if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH > 45f) killerGMMaxAltitudeText = "Never";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 10f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH * 100f) + "m";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 30f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 9f) + "km";
-                    else killerGMMaxAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 29f) * 5f + 20f) + "km";
+                    if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH > 54f) killerGMMaxAltitudeText = "Never";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 20f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH * 100f) + "m";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 39f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 18f) + "km";
+                    else killerGMMaxAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 38f) * 5f + 20f) + "km";
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionAltitudeLimitHigh")}: ({killerGMMaxAltitudeText})", leftLabel);
-                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH, 1f, 46f));
+                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH, 1f, 55f));
                 }
                 { // Killer GM Min Altitude
                     string killerGMMinAltitudeText;
                     if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 0f) killerGMMinAltitudeText = "Never";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 10f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 100f) + "m";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 30f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 9f) + "km";
-                    else killerGMMinAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 29f) * 5f + 20f) + "km";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 100f) + "m";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f) + "km";
+                    else killerGMMinAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) + "km";
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionAltitudeLimitLow")}: ({killerGMMinAltitudeText})", leftLabel);
-                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW, -1f, 35f));
+                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW, -1f, 44f));
                 }
 
                 if (BDArmorySettings.RUNWAY_PROJECT)

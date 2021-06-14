@@ -283,10 +283,10 @@ namespace BDArmory.FX
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 if (fuel != null)
                 {
-                    tntMassEquivilent += Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f));
+                    tntMassEquivilent += (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f))/2);
                     if (fuel != null && ox != null)
                     {
-                        tntMassEquivilent += Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f));
+                        tntMassEquivilent += (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f))/2);
                         tntMassEquivilent *= 1.3f;
                     }
                     if (fuel.amount > fuel.maxAmount * 0.3f)
@@ -297,7 +297,7 @@ namespace BDArmory.FX
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
                 if (mp != null)
                 {
-                    tntMassEquivilent += Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f));
+                    tntMassEquivilent += (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f))/3);
                     if (mp.amount > mp.maxAmount * 0.3f)
                     {
                         excessFuel = true;
@@ -311,6 +311,11 @@ namespace BDArmory.FX
                     ec.isVisible = false;
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
+                }
+                tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.FireFX] Fuel Explosion in " + this.parentPart.name + ", TNT mass equivilent " + tntMassEquivilent);
                 }
                 if (excessFuel)
                 {
@@ -340,6 +345,10 @@ namespace BDArmory.FX
                                         {
                                             if (rb == null) return;
                                             BulletHitFX.AttachFire(hit, p, 1, SourceVessel, 20);
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                            {
+                                                Debug.Log("[BDArmory.FireFX] " +  this.parentPart.name + " hit by burning fuel");
+                                            }
                                         }
                                     }
                                 }
