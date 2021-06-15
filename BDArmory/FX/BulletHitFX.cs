@@ -208,7 +208,7 @@ namespace BDArmory.FX
 
                 if (BDArmorySettings.PAINTBALL_MODE)
                 {
-                    if (BDTISetup.Instance.ColorAssignments.ContainsKey(team))
+                    if (team != null && BDTISetup.Instance.ColorAssignments.ContainsKey(team))
                     {
                         decal.SetColor(BDTISetup.Instance.ColorAssignments[team]);
                     }
