@@ -2144,8 +2144,9 @@ namespace BDArmory.UI
                                 foreach (var vessel in FlightGlobals.Vessels)
                                 {
                                     if (BDACompetitionMode.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
-                                    foreach (var wm in VesselModuleRegistry.Instance.GetModules<MissileFire>(vessel)) { Debug.Log($"DEBUG {vessel.vesselName} has a WM"); }
+                                    Debug.Log($"{vessel.vesselName} {(VesselModuleRegistry.Instance.GetModule<MissileFire>(vessel) == null ? "doesn't have" : "has")} a WM");
                                     Debug.Log($"{vessel.vesselName} has {VesselModuleRegistry.Instance.GetModules<ModuleEngines>(vessel).ToList().Count} engines");
+                                    Debug.Log($"{vessel.vesselName} has {VesselModuleRegistry.Instance.GetModules<Core.Module.HitpointTracker>(vessel).ToList().Count} HP modules");
                                 }
                                 break;
                         }
