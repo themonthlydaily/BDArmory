@@ -174,14 +174,14 @@ namespace BDArmory.Modules
             get
             {
                 if (mf) return mf;
-                List<MissileFire>.Enumerator wm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (wm.MoveNext())
-                {
-                    if (wm.Current == null) continue;
-                    mf = wm.Current;
-                    break;
-                }
-                wm.Dispose();
+                // using (List<MissileFire>.Enumerator wm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                using (var wm = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
+                    while (wm.MoveNext())
+                    {
+                        if (wm.Current == null) continue;
+                        mf = wm.Current;
+                        break;
+                    }
                 return mf;
             }
         }
@@ -253,7 +253,8 @@ namespace BDArmory.Modules
             {
                 ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
                 int lastAmmoID = this.AmmoID;
-                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                // using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;

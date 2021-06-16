@@ -18,7 +18,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "CounterGrav"), UI_Toggle(disabledText = "Disabled", enabledText = "Enabled", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public bool AntiGravEnabled = true;
 
-        public float maxVelocity = 300; 
+        public float maxVelocity = 300;
 
         [KSPField(isPersistant = true)]
         public float frictMult;
@@ -36,7 +36,8 @@ namespace BDArmory.Modules
             get
             {
                 if (AI) return AI;
-                using (List<BDModulePilotAI>.Enumerator pai = vessel.FindPartModulesImplementing<BDModulePilotAI>().GetEnumerator())
+                // using (List<BDModulePilotAI>.Enumerator pai = vessel.FindPartModulesImplementing<BDModulePilotAI>().GetEnumerator())
+                using (var pai = VesselModuleRegistry.GetModules<BDModulePilotAI>(vessel).GetEnumerator()) // FIXME should this be IBDAIControl?
                     while (pai.MoveNext())
                     {
                         if (pai.Current == null) continue;
@@ -95,9 +96,9 @@ namespace BDArmory.Modules
                                 maxVelocity = pilot.maxSpeed;
                             }
                             frictionCoeff = Mathf.Pow(((float)part.vessel.speed / maxVelocity), 3) * frictMult; //at maxSpeed, have friction be 100% of vessel's engines thrust
-                            //if (Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) > 90)
-                            //{
-                                frictionCoeff += (Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) / 180)*driftMult; //greater AoA, greater drag
+                                                                                                                //if (Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) > 90)
+                                                                                                                //{
+                            frictionCoeff += (Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) / 180) * driftMult; //greater AoA, greater drag
                             //}
                             part.vessel.rootPart.rb.AddForceAtPosition((-part.vessel.srf_vel_direction * frictionCoeff), part.vessel.CoM, ForceMode.Acceleration);
                         }

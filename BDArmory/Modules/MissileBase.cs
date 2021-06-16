@@ -917,7 +917,8 @@ namespace BDArmory.Modules
 
         public float GetTntMass()
         {
-            return vessel.FindPartModulesImplementing<BDExplosivePart>().Max(x => x.tntMass);
+            // return vessel.FindPartModulesImplementing<BDExplosivePart>().Max(x => x.tntMass);
+            return VesselModuleRegistry.GetModules<BDExplosivePart>(vessel).Max(x => x.tntMass);
         }
 
         public void CheckDetonationState()

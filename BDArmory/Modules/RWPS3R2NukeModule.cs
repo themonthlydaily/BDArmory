@@ -119,14 +119,14 @@ namespace BDArmory.Modules
 
         void CheckAttached(Vessel v)
         {
-            if (v == vessel && !hasDetonated && !goingCritical)
+            if (v != vessel || hasDetonated || goingCritical) return;
+            VesselModuleRegistry.OnVesselModified(v);
+            // if (v.FindPartModuleImplementing<MissileFire>() == null)
+            if (VesselModuleRegistry.GetModuleCount<MissileFire>(v) == 0)
             {
-                if (v.FindPartModuleImplementing<MissileFire>() == null)
-                {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Nuclear engine on " + Sourcevessel + " has become detached.");
-                    goingCritical = true;
-                    StartCoroutine(DelayedDetonation(0.5f));
-                }
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Nuclear engine on " + Sourcevessel + " has become detached.");
+                goingCritical = true;
+                StartCoroutine(DelayedDetonation(0.5f));
             }
         }
 

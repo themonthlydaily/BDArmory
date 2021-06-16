@@ -259,13 +259,13 @@ namespace BDArmory.Modules
             {
                 if (wpmr != null && wpmr.vessel == vessel) return wpmr;
                 wpmr = null;
-                List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    wpmr = mf.Current;
-                }
-                mf.Dispose();
+                // using (List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
+                    while (mf.MoveNext())
+                    {
+                        if (mf.Current == null) continue;
+                        wpmr = mf.Current;
+                    }
                 return wpmr;
             }
             set { wpmr = value; }
@@ -307,18 +307,18 @@ namespace BDArmory.Modules
             EnsureVesselRadarData();
             radarEnabled = true;
 
-            List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (mf.MoveNext())
-            {
-                if (mf.Current == null) continue;
-                weaponManager = mf.Current;
-                if (vesselRadarData)
+            // using (List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+            using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
+                while (mf.MoveNext())
                 {
-                    vesselRadarData.weaponManager = mf.Current;
+                    if (mf.Current == null) continue;
+                    weaponManager = mf.Current;
+                    if (vesselRadarData)
+                    {
+                        vesselRadarData.weaponManager = mf.Current;
+                    }
+                    break;
                 }
-                break;
-            }
-            mf.Dispose();
 
             UpdateToggleGuiName();
             vesselRadarData.AddRadar(this);
@@ -923,35 +923,37 @@ namespace BDArmory.Modules
 
         void SlaveTurrets()
         {
-            List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                if (mtc.Current == null) continue;
-                mtc.Current.slaveTurrets = false;
-            }
-            mtc.Dispose();
-
-            List<ModuleRadar>.Enumerator rad = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator();
-            while (rad.MoveNext())
-            {
-                if (rad.Current == null) continue;
-                rad.Current.slaveTurrets = false;
-            }
-            rad.Dispose();
-
-            slaveTurrets = true;
-        }
-
-        void UnslaveTurrets()
-        {
-            using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
+            // using(List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {
                     if (mtc.Current == null) continue;
                     mtc.Current.slaveTurrets = false;
                 }
 
-            using (List<ModuleRadar>.Enumerator rad = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator())
+            // using (List<ModuleRadar>.Enumerator rad = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator())
+            using (var rad = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
+                while (rad.MoveNext())
+                {
+                    if (rad.Current == null) continue;
+                    rad.Current.slaveTurrets = false;
+                }
+
+            slaveTurrets = true;
+        }
+
+        void UnslaveTurrets()
+        {
+            // using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    if (mtc.Current == null) continue;
+                    mtc.Current.slaveTurrets = false;
+                }
+
+            // using (List<ModuleRadar>.Enumerator rad = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator())
+            using (var rad = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
                 while (rad.MoveNext())
                 {
                     if (rad.Current == null) continue;

@@ -65,7 +65,8 @@ namespace BDArmory.Targeting
             }
             else
             {
-                using (var mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                // using (var mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                using (var mf = VesselModuleRegistry.GetModules<MissileFire>(v).GetEnumerator())
                     while (mf.MoveNext())
                     {
                         Team = mf.Current.Team;

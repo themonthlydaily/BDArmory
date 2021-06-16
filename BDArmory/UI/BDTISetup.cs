@@ -163,8 +163,9 @@ namespace BDArmory.UI
                 while (v.MoveNext())
                 {
                     if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
-                    if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
-                    using (var wms = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                    // using (var wms = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    using (var wms = VesselModuleRegistry.GetModules<MissileFire>(v.Current).GetEnumerator())
                         while (wms.MoveNext())
                             if (wms.Current != null)
                             {

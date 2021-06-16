@@ -16,15 +16,13 @@ namespace BDArmory.Modules
                 drainDuration -= Time.deltaTime;
                 if (drainDuration <= 0)
                 {
-                    using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
-                    {
-                        using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
-                            while (intake.MoveNext())
-                            {
-                                if (intake.Current == null) continue;
-                                intake.Current.intakeEnabled = true;
-                            }
-                    }
+                    // using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
+                    using (var intake = VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel).GetEnumerator())
+                        while (intake.MoveNext())
+                        {
+                            if (intake.Current == null) continue;
+                            intake.Current.intakeEnabled = true;
+                        }
                     part.RemoveModule(this);
                 }
             }
@@ -32,16 +30,13 @@ namespace BDArmory.Modules
             {
                 //Debug.Log("[BDArmory.ModuleDrainIntakes]: " + this.part.name + "choked!");
                 initialized = true;
-                using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
-                {
-                    using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
-                        while (intake.MoveNext())
-                        {
-                            if (intake.Current == null) continue;
-                            intake.Current.intakeEnabled = false;
-                        }
-                }
-
+                // using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
+                using (var intake = VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel).GetEnumerator())
+                    while (intake.MoveNext())
+                    {
+                        if (intake.Current == null) continue;
+                        intake.Current.intakeEnabled = false;
+                    }
             }
         }
     }

@@ -300,11 +300,14 @@ namespace BDArmory.Modules
                 using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (vs.MoveNext())
                     {
-                        if (vs.Current == null || vs.Current == vessel) continue;
-                        var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
-                        if (!vs.Current.LandedOrSplashed || (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel)
-                            || vs.Current.GetTotalMass() < AvoidMass)
-                            continue;
+                        if (vs.Current == null || vs.Current == vessel || vs.Current.GetTotalMass() < AvoidMass) continue;
+                        if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
+                        {
+                            // var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
+                            var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
+                            if (!vs.Current.LandedOrSplashed || (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel))
+                                continue;
+                        }
                         dodgeVector = PredictCollisionWithVessel(vs.Current, 5f * predictMult, 0.5f);
                         if (dodgeVector != null) break;
                     }

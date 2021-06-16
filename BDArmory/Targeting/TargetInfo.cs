@@ -195,7 +195,8 @@ namespace BDArmory.Targeting
 
             Team = null;
             bool foundMf = false;
-            using (var mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+            // using (var mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+            using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
                 while (mf.MoveNext())
                 {
                     foundMf = true;
@@ -206,7 +207,8 @@ namespace BDArmory.Targeting
 
             if (!foundMf)
             {
-                using (var ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                // using (var ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                using (var ml = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                     while (ml.MoveNext())
                     {
                         isMissile = true;
@@ -348,7 +350,8 @@ namespace BDArmory.Targeting
             float maxThrust = 0;
             float finalThrust = 0;
 
-            using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+            // using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
                 while (engines.MoveNext())
                 {
                     if (engines.Current == null) continue;
@@ -393,7 +396,8 @@ namespace BDArmory.Targeting
             if (myMf == null) return 0;
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
-            using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            // using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;

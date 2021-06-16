@@ -190,11 +190,12 @@ namespace BDArmory.UI
                     {
                         if (v.Current == null) continue;
                         if (!v.Current.loaded || v.Current.packed || v.Current.isActiveVessel) continue;
-                        if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                        if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
 
                         if (BDTISettings.MISSILES)
                         {
-                            using (List<MissileBase>.Enumerator ml = v.Current.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                            // using (List<MissileBase>.Enumerator ml = v.Current.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                            using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v.Current).GetEnumerator())
                                 while (ml.MoveNext())
                                 {
                                     if (ml.Current == null) continue;

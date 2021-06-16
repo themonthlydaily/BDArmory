@@ -10,6 +10,7 @@ using UnityEngine;
 
 namespace BDArmory.FX
 {
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
     class Decal : MonoBehaviour
     {
         Part parentPart;
@@ -69,6 +70,8 @@ namespace BDArmory.FX
     {
         KSPParticleEmitter[] pEmitters;
         AudioSource audioSource;
+        enum AudioClipType { Ricochet1, Ricochet2, Ricochet3, BulletHit1, BulletHit2, BulletHit3, Artillery_Shot };
+        static Dictionary<AudioClipType, AudioClip> audioClips;
         AudioClip hitSound;
         float startTime;
         public bool ricochet;
@@ -269,6 +272,22 @@ namespace BDArmory.FX
             PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys.
         }
 
+        void Awake()
+        {
+            if (audioClips == null)
+            {
+                audioClips = new Dictionary<AudioClipType, AudioClip>{
+                    {AudioClipType.Ricochet1, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet1")},
+                    {AudioClipType.Ricochet2, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet1")},
+                    {AudioClipType.Ricochet3, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet3")},
+                    {AudioClipType.BulletHit1, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit1")},
+                    {AudioClipType.BulletHit2, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit2")},
+                    {AudioClipType.BulletHit3, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit3")},
+                    {AudioClipType.Artillery_Shot, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/Artillery_Shot")},
+                };
+            }
+        }
+
         void OnEnable()
         {
             startTime = Time.time;
@@ -289,26 +308,44 @@ namespace BDArmory.FX
             {
                 if (caliber <= 30)
                 {
-                    string path = "BDArmory/Sounds/ricochet" + random;
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    switch (random)
+                    {
+                        case 1:
+                            hitSound = audioClips[AudioClipType.Ricochet1];
+                            break;
+                        case 2:
+                            hitSound = audioClips[AudioClipType.Ricochet2];
+                            break;
+                        case 3:
+                            hitSound = audioClips[AudioClipType.Ricochet3];
+                            break;
+                    }
                 }
                 else
                 {
-                    string path = "BDArmory/Sounds/Artillery_Shot";
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    hitSound = audioClips[AudioClipType.Artillery_Shot];
                 }
             }
             else
             {
                 if (caliber <= 30)
                 {
-                    string path = "BDArmory/Sounds/bulletHit" + random;
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    switch (random)
+                    {
+                        case 1:
+                            hitSound = audioClips[AudioClipType.BulletHit1];
+                            break;
+                        case 2:
+                            hitSound = audioClips[AudioClipType.BulletHit2];
+                            break;
+                        case 3:
+                            hitSound = audioClips[AudioClipType.BulletHit3];
+                            break;
+                    }
                 }
                 else
                 {
-                    string path = "BDArmory/Sounds/Artillery_Shot";
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    hitSound = audioClips[AudioClipType.Artillery_Shot];
                 }
             }
 

@@ -104,7 +104,7 @@ namespace BDArmory.Modules
             evaKerbalsToMonitor.Clear();
             foreach (var vessel in FlightGlobals.Vessels)
             {
-                if (BDACompetitionMode.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
+                if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
                 CheckVesselForKerbals(vessel);
             }
         }
@@ -331,9 +331,10 @@ namespace BDArmory.Modules
                 this.kerbalEVA = part.GetComponent<KerbalEVA>();
                 if (kerbalEVA.IsSeated())
                 {
-                    var seats = part.vessel.FindPartModulesImplementing<KerbalSeat>();
+                    // var seats = part.vessel.FindPartModulesImplementing<KerbalSeat>();
                     bool found = false;
-                    foreach (var s in seats)
+                    // foreach (var s in seats)
+                    foreach (var s in VesselModuleRegistry.GetModules<KerbalSeat>(part.vessel))
                     {
                         if (s.Occupant == part)
                         {
@@ -364,7 +365,8 @@ namespace BDArmory.Modules
 
         private void ConfigureKerbalEVA(KerbalEVA kerbalEVA)
         {
-            chute = kerbalEVA.vessel.FindPartModuleImplementing<ModuleEvaChute>();
+            // chute = kerbalEVA.vessel.FindPartModuleImplementing<ModuleEvaChute>();
+            chute = VesselModuleRegistry.GetModule<ModuleEvaChute>(kerbalEVA.vessel);
             if (chute != null)
                 chute.deploymentState = ModuleEvaChute.deploymentStates.STOWED; // Make sure the chute is stowed.
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11

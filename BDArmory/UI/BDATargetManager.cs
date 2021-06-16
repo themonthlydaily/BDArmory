@@ -724,34 +724,34 @@ namespace BDArmory.UI
             TargetInfo info = v.gameObject.GetComponent<TargetInfo>();
             if (!info)
             {
-                List<MissileFire>.Enumerator mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    if (reporter.Team.IsEnemy(mf.Current.Team))
+                // using (List<MissileFire>.Enumerator mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                using (var mf = VesselModuleRegistry.GetModules<MissileFire>(v).GetEnumerator())
+                    while (mf.MoveNext())
                     {
-                        info = v.gameObject.AddComponent<TargetInfo>();
-                        info.detectedTime[reporter.Team] = Time.time;
-                        break;
-                    }
-                }
-                mf.Dispose();
-
-                List<MissileBase>.Enumerator ml = v.FindPartModulesImplementing<MissileBase>().GetEnumerator();
-                while (ml.MoveNext())
-                {
-                    if (ml.Current == null) continue;
-                    if (ml.Current.HasFired)
-                    {
-                        if (reporter.Team.IsEnemy(ml.Current.Team))
+                        if (mf.Current == null) continue;
+                        if (reporter.Team.IsEnemy(mf.Current.Team))
                         {
                             info = v.gameObject.AddComponent<TargetInfo>();
                             info.detectedTime[reporter.Team] = Time.time;
                             break;
                         }
                     }
-                }
-                ml.Dispose();
+
+                // using (List<MissileBase>.Enumerator ml = v.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v).GetEnumerator())
+                    while (ml.MoveNext())
+                    {
+                        if (ml.Current == null) continue;
+                        if (ml.Current.HasFired)
+                        {
+                            if (reporter.Team.IsEnemy(ml.Current.Team))
+                            {
+                                info = v.gameObject.AddComponent<TargetInfo>();
+                                info.detectedTime[reporter.Team] = Time.time;
+                                break;
+                            }
+                        }
+                    }
             }
 
             // add target to database
@@ -1093,9 +1093,10 @@ namespace BDArmory.UI
             using (var friendlyTarget = FlightGlobals.Vessels.GetEnumerator())
                 while (friendlyTarget.MoveNext())
                 {
-                    if (BDArmory.Control.BDACompetitionMode.ignoredVesselTypes.Contains(friendlyTarget.Current.vesselType)) continue;
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(friendlyTarget.Current.vesselType)) continue;
                     if (friendlyTarget.Current == null || friendlyTarget.Current == weaponManager.vessel) continue;
-                    var wms = friendlyTarget.Current.FindPartModuleImplementing<MissileFire>();
+                    // var wms = friendlyTarget.Current.FindPartModuleImplementing<MissileFire>();
+                    var wms = VesselModuleRegistry.GetModule<MissileFire>(friendlyTarget.Current);
                     if (wms == null || wms.Team != weaponManager.Team) continue;
                     Vector3 targetDistance = friendlyTarget.Current.CoM - weaponManager.vessel.CoM;
                     float friendlyPosDot = Vector3.Dot(targetDistance, aimDirection);

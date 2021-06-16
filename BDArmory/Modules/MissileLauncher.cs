@@ -735,7 +735,8 @@ namespace BDArmory.Modules
                     BDArmorySetup.numberOfParticleEmitters++;
                 }
 
-                using (var wpm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                // using (var wpm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                using (var wpm = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
                     while (wpm.MoveNext())
                     {
                         if (wpm.Current == null) continue;
@@ -1157,7 +1158,8 @@ namespace BDArmory.Modules
                 {
                     case TargetingModes.Heat:
                         // gets ground heat targets and after locking one, disallows the lock to break to another target
-                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, terminalGuidanceDistance, heatThreshold, true, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
+                        // heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, terminalGuidanceDistance, heatThreshold, true, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? SourceVessel.FindPartModuleImplementing<MissileFire>() : null, true);
+                        heatTarget = BDATargetManager.GetHeatTarget(SourceVessel, vessel, new Ray(transform.position + (50 * GetForwardTransform()), GetForwardTransform()), heatTarget, terminalGuidanceDistance, heatThreshold, true, lockedSensorFOVBias, lockedSensorVelocityBias, SourceVessel ? VesselModuleRegistry.GetModule<MissileFire>(SourceVessel) : null, true);
                         if (heatTarget.exists)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -1797,7 +1799,8 @@ namespace BDArmory.Modules
 
             if (legacyTargetVessel != null)
             {
-                using (var wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                // using (var wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                using (var wpm = VesselModuleRegistry.GetModules<MissileFire>(legacyTargetVessel).GetEnumerator())
                     while (wpm.MoveNext())
                     {
                         if (wpm.Current == null) continue;
@@ -1861,7 +1864,8 @@ namespace BDArmory.Modules
         void WarnTarget()
         {
             if (legacyTargetVessel == null) return;
-            using (var wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+            // using (var wpm = legacyTargetVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+            using (var wpm = VesselModuleRegistry.GetModules<MissileFire>(legacyTargetVessel).GetEnumerator())
                 while (wpm.MoveNext())
                 {
                     if (wpm.Current == null) continue;

@@ -129,27 +129,27 @@ namespace BDArmory.Modules
                 while (vs.MoveNext())
                 {
                     if (vs.Current == null) continue;
-                    if (!vs.Current.loaded || vs.Current == vessel) continue;
+                    if (!vs.Current.loaded || vs.Current == vessel || VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType)) continue;
 
                     IBDAIControl pilot = null;
                     MissileFire wm = null;
-                    List<IBDAIControl>.Enumerator ps = vs.Current.FindPartModulesImplementing<IBDAIControl>().GetEnumerator();
-                    while (ps.MoveNext())
-                    {
-                        if (ps.Current == null) continue;
-                        pilot = ps.Current;
-                        break;
-                    }
-                    ps.Dispose();
+                    // using (List<IBDAIControl>.Enumerator ps = vs.Current.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
+                    using (var ps = VesselModuleRegistry.GetModules<IBDAIControl>(vs.Current).GetEnumerator())
+                        while (ps.MoveNext())
+                        {
+                            if (ps.Current == null) continue;
+                            pilot = ps.Current;
+                            break;
+                        }
 
                     if (pilot == null) continue;
-                    List<MissileFire>.Enumerator ws = vs.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                    while (ws.MoveNext())
-                    {
-                        // TODO:  JDK:  note that this assigns the last module found.  Is that what we want?
-                        wm = ws.Current;
-                    }
-                    ws.Dispose();
+                    // using (List<MissileFire>.Enumerator ws = vs.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                    using (var ws = VesselModuleRegistry.GetModules<MissileFire>(vs.Current).GetEnumerator())
+                        while (ws.MoveNext())
+                        {
+                            // TODO:  JDK:  note that this assigns the last module found.  Is that what we want?
+                            wm = ws.Current;
+                        }
 
                     if (!wm || wm.Team != weaponManager.Team) continue;
                     friendlies.Add(pilot);
@@ -218,18 +218,17 @@ namespace BDArmory.Modules
                 using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (vs.MoveNext())
                     {
-                        if (vs.Current == null) continue;
-                        if (!vs.Current.loaded) continue;
+                        if (vs.Current == null || !vs.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType)) continue;
 
                         if (vs.Current.id.ToString() != wingIDs.Current) continue;
-                        List<IBDAIControl>.Enumerator pilots = vs.Current.FindPartModulesImplementing<IBDAIControl>().GetEnumerator();
-                        while (pilots.MoveNext())
-                        {
-                            if (pilots.Current == null) continue;
-                            wingmen.Add(pilots.Current);
-                            break;
-                        }
-                        pilots.Dispose();
+                        // using (List<IBDAIControl>.Enumerator pilots = vs.Current.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
+                        using (var pilots = VesselModuleRegistry.GetModules<IBDAIControl>(vs.Current).GetEnumerator())
+                            while (pilots.MoveNext())
+                            {
+                                if (pilots.Current == null) continue;
+                                wingmen.Add(pilots.Current);
+                                break;
+                            }
                     }
             }
             wingIDs.Dispose();
@@ -427,12 +426,12 @@ namespace BDArmory.Modules
 
                     if (commandSelf)
                     {
-                        List<IBDAIControl>.Enumerator ai = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator();
-                        while (ai.MoveNext())
-                        {
-                            func(ai.Current, -1, data);
-                        }
-                        ai.Dispose();
+                        // using (List<IBDAIControl>.Enumerator ai = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
+                        using (var ai = VesselModuleRegistry.GetModules<IBDAIControl>(vessel).GetEnumerator())
+                            while (ai.MoveNext())
+                            {
+                                func(ai.Current, -1, data);
+                            }
                     }
                 }
                 else

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using BDArmory.Modules;
 
 namespace BDArmory.Control
 {
@@ -117,7 +118,8 @@ namespace BDArmory.Control
             float finalThrust = 0;
             multiModeEngines.Clear();
 
-            using (List<ModuleEngines>.Enumerator engines = vessel.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+            // using (List<ModuleEngines>.Enumerator engines = vessel.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(vessel).GetEnumerator())
                 while (engines.MoveNext())
                 {
                     if (engines.Current == null) continue;

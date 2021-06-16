@@ -2229,14 +2229,18 @@ namespace BDArmory.Modules
                 bool vesselCollision = false;
                 VesselType collisionVesselType = VesselType.Plane;
                 collisionAvoidDirection = vessel.srf_vel_direction;
-                using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
+                using (var vs = BDATargetManager.LoadedVessels.GetEnumerator()) // Note: we can't ignore some vessel types here as we also need to avoid debris, etc.
                     while (vs.MoveNext())
                     {
                         if (vs.Current == null) continue;
                         if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
                         if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime, out collisionAvoidDirection)) continue;
-                        var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
-                        if (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel) continue;
+                        if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
+                        {
+                            // var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
+                            var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
+                            if (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel) continue;
+                        }
                         vesselCollision = true;
                         collisionVesselType = vs.Current.vesselType;
                         break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
