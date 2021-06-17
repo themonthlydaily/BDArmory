@@ -1053,6 +1053,7 @@ namespace BDArmory.Modules
 
         void OnVesselCreate(Vessel v)
         {
+            if (v == null) return;
             RefreshModules();
         }
 
@@ -1061,6 +1062,11 @@ namespace BDArmory.Modules
             if (!part)
             {
                 GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
+            }
+            if (vessel == null)
+            {
+                Destroy(this);
+                return;
             }
 
             if ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel))
@@ -2394,6 +2400,7 @@ namespace BDArmory.Modules
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
+            if (vessel == null) return;
 
             // using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
             using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())

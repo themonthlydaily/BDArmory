@@ -212,6 +212,7 @@ namespace BDArmory.Modules
         /// <param name="force">Update the registry even if the part count hasn't changed.</param>
         public static void OnVesselModified(Vessel vessel, bool force = false)
         {
+            if (vessel == null) return;
             if (force) { vesselPartCounts[vessel] = -1; }
             Instance.OnVesselModifiedHandler(vessel);
         }
