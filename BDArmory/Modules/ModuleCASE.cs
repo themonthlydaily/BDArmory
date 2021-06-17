@@ -76,7 +76,10 @@ namespace BDArmory.Modules
                     CASESetup(null, null);
                 }
             }
-            SourceVessel = part.vessel.GetName(); //set default to vesselname for cases where no attacker, i.e. Ammo exploding on destruction cooking off adjacent boxes
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                SourceVessel = part.vessel.GetName(); //set default to vesselname for cases where no attacker, i.e. Ammo exploding on destruction cooking off adjacent boxes
+            }
         }
 
         void CASESetup(BaseField field, object obj)
@@ -204,7 +207,7 @@ namespace BDArmory.Modules
                                             Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
                                             if (p == partHit)
                                             {
-                                                ApplyDamage(p, hit, (1-Mathf.Sqrt(distToG0.magnitude/(blastRadius/2))));
+                                                ApplyDamage(p, hit, (1 - Mathf.Sqrt(distToG0.magnitude / (blastRadius / 2))));
                                             }
                                         }
                                     }
@@ -292,7 +295,7 @@ namespace BDArmory.Modules
             {
                 explDamage = Mathf.Min((hitPart.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f), 600); //clamp damage to 90% part HP or 600 HP, whchever is lower
                 explDamage *= BDArmorySettings.BD_AMMO_DMG_MULT;
-                explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield*10)); //reduce damage done based on ammo remaining. almost empty ammo box should do much less damage than full one
+                explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield * 10)); //reduce damage done based on ammo remaining. almost empty ammo box should do much less damage than full one
                 explDamage *= Mathf.Clamp(distance, 0, 1);
                 hitPart.AddDamage(explDamage);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged for " + (hitPart.MaxDamage() * 0.9f));
