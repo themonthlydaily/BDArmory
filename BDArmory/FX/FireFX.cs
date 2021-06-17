@@ -24,6 +24,7 @@ namespace BDArmory.FX
         }
 
         private float disableTime = -1;
+        private float enginerestartTime;
         private float _highestEnergy = 1;
         public float burnTime = -1;
         private float startTime;
@@ -31,7 +32,7 @@ namespace BDArmory.FX
         public float burnRate = 1;
         private float tntMassEquivilent = 0;
         float ScoreAccumulator = 0;
-        private string SourceVessel;
+        public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
 
@@ -42,6 +43,7 @@ namespace BDArmory.FX
         PartResource mp;
 
         private KerbalSeat Seat;
+        private ModuleEngines engine;
 
         KSPParticleEmitter[] pEmitters;
         void OnEnable()
@@ -89,9 +91,15 @@ namespace BDArmory.FX
             {
                 ModuleSelfSealingTank FBX;
                 FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
+                engine = parentPart.GetComponent<ModuleEngines>();
                 if (FBX.FireBottles > 0)
                 {
                     FBX.FireBottles -= 1;
+                    if (engine != null && engine.EngineIgnited && engine.allowRestart)
+                    {
+                        engine.Shutdown();
+                        enginerestartTime = Time.time;
+                    }
                     burnTime = 10;
                 }
             }
@@ -160,7 +168,7 @@ namespace BDArmory.FX
                 {
                     if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
                     {
-                        fuel.amount -= (burnRate * TimeWarp.deltaTime);
+                        fuel.amount -= (burnRate * ((1-(fuel.amount / fuel.maxAmount)) * 2) * TimeWarp.deltaTime);
                     }
                     else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
                     {
@@ -176,7 +184,7 @@ namespace BDArmory.FX
                 {
                     if (ox.amount > 0)
                     {
-                        ox.amount -= (burnRate * TimeWarp.deltaTime);
+                        ox.amount -= (burnRate * ((1 - (ox.amount / ox.maxAmount)) * 2) * TimeWarp.deltaTime);
                     }
                     else
                     {
@@ -188,7 +196,7 @@ namespace BDArmory.FX
                 {
                     if (mp.amount > (mp.maxAmount * 0.15f) || (mp.amount > 0 && mp.amount < (mp.maxAmount * 0.10f)))
                     {
-                        mp.amount -= (burnRate * TimeWarp.deltaTime);
+                        mp.amount -= (burnRate * ((1 - (mp.amount / mp.maxAmount)) * 2) * TimeWarp.deltaTime);
                     }
                     else if (mp.amount < (mp.maxAmount * 0.15f) && mp.amount > (mp.maxAmount * 0.10f))
                     {
@@ -224,6 +232,11 @@ namespace BDArmory.FX
             {
                 gameObject.SetActive(false);
             }
+            if (Time.time - 10 > enginerestartTime)
+            {
+                engine.Activate();
+            }
+            this.parentPart.temperature += 1;
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRE_DOT)
             {
                 parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
@@ -283,10 +296,10 @@ namespace BDArmory.FX
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 if (fuel != null)
                 {
-                    tntMassEquivilent += Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f));
+                    tntMassEquivilent += (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f))/2);
                     if (fuel != null && ox != null)
                     {
-                        tntMassEquivilent += Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f));
+                        tntMassEquivilent += (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f))/2);
                         tntMassEquivilent *= 1.3f;
                     }
                     if (fuel.amount > fuel.maxAmount * 0.3f)
@@ -297,7 +310,7 @@ namespace BDArmory.FX
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
                 if (mp != null)
                 {
-                    tntMassEquivilent += Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f));
+                    tntMassEquivilent += (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f))/3);
                     if (mp.amount > mp.maxAmount * 0.3f)
                     {
                         excessFuel = true;
@@ -311,6 +324,11 @@ namespace BDArmory.FX
                     ec.isVisible = false;
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
+                }
+                tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.FireFX] Fuel Explosion in " + this.parentPart.name + ", TNT mass equivilent " + tntMassEquivilent);
                 }
                 if (excessFuel)
                 {
@@ -340,6 +358,10 @@ namespace BDArmory.FX
                                         {
                                             if (rb == null) return;
                                             BulletHitFX.AttachFire(hit, p, 1, SourceVessel, 20);
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                            {
+                                                Debug.Log("[BDArmory.FireFX] " +  this.parentPart.name + " hit by burning fuel");
+                                            }
                                         }
                                     }
                                 }

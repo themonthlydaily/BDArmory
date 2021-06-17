@@ -453,7 +453,7 @@ namespace BDArmory.FX
                     var damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
                     if (BDArmorySettings.BATTLEDAMAGE)
                     {
-                        Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, SourceVesselName, eventToExecute.Hit);
+                        Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
                     }
 
                     // Update scoring structures

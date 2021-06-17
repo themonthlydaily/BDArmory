@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using BDArmory.Core.Utils;
+using BDArmory.FX;
 
 namespace BDArmory.Modules
 {
@@ -144,6 +145,32 @@ namespace BDArmory.Modules
             output.AppendLine("");
 
             return output.ToString();
+        }
+        void Update()
+        {
+            if(HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
+            {
+                if (this.part.temperature > 493) //autoignition temp of kerosene is 220 c
+                {
+                    string fireStarter;
+                    var doesFireExist = part.vessel.GetComponentInChildren<FireFX>();
+                    if (doesFireExist != null)
+                    {
+                        fireStarter = doesFireExist.SourceVessel;
+                    }
+                    else
+                    {
+                        fireStarter = part.vessel.GetName();
+                    }
+                    Vector3 firePosition = part.transform.up * 10;
+                    Ray LoSRay = new Ray(transform.position, (transform.position + firePosition) - transform.position);
+                    RaycastHit hit;
+                    if (Physics.Raycast(LoSRay, out hit, 10, 9076737)) // only add fires to parts in LoS of blast
+                    {
+                        BulletHitFX.AttachFire(hit, part, 50, fireStarter);
+                    }
+                }
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ namespace BDArmory.Bullets
         public float bulletMass { get; private set; }
         public float bulletVelocity { get; private set; }
         public bool explosive { get; private set; }
+        public bool incendiary { get; private set; }
         public float tntMass { get; private set; }
         public string fuzeType { get; private set; }
         public int subProjectileCount { get; private set; }
@@ -26,7 +27,7 @@ namespace BDArmory.Bullets
         public static BulletInfo defaultBullet;
 
         public BulletInfo(string name, float caliber, float bulletVelocity, float bulletMass,
-                          bool explosive, float tntMass, string fuzeType, float apBulletDmg,
+                          bool explosive, bool incendiary, float tntMass, string fuzeType, float apBulletDmg,
                           int subProjectileCount, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
         {
             this.name = name;
@@ -34,6 +35,7 @@ namespace BDArmory.Bullets
             this.bulletVelocity = bulletVelocity;
             this.bulletMass = bulletMass;
             this.explosive = explosive;
+            this.incendiary = incendiary;
             this.tntMass = tntMass;
             this.fuzeType = fuzeType;
             this.apBulletMod = apBulletDmg;
@@ -66,6 +68,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "bulletVelocity", typeof(float)),
                         (float)ParseField(node, "bulletMass", typeof(float)),
                         (bool)ParseField(node, "explosive", typeof(bool)),
+                        (bool)ParseField(node, "incendiary ", typeof(bool)),
                         (float)ParseField(node, "tntMass", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
                         (float)ParseField(node, "apBulletMod", typeof(float)),
@@ -103,6 +106,7 @@ namespace BDArmory.Bullets
                             (float)ParseField(node, "bulletVelocity", typeof(float)),
                             (float)ParseField(node, "bulletMass", typeof(float)),
                             (bool)ParseField(node, "explosive", typeof(bool)),
+                            (bool)ParseField(node, "incendiary ", typeof(bool)),
                             (float)ParseField(node, "tntMass", typeof(float)),
                             (string)ParseField(node, "fuzeType", typeof(string)),
                             (float)ParseField(node, "apBulletMod", typeof(float)),

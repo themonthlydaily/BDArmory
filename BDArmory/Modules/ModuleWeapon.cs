@@ -471,6 +471,8 @@ namespace BDArmory.Modules
 
         public float tntMass = 0;
 
+        public bool incendiary;
+
         [KSPField]
         public bool impulseWeapon = false;
 
@@ -482,6 +484,7 @@ namespace BDArmory.Modules
 
         [KSPField]
         public float massAdjustment = 0; //tons
+
 
         //deprectated
         //[KSPField] public float cannonShellRadius = 30; //max radius of explosion forces/damage
@@ -1491,6 +1494,7 @@ namespace BDArmory.Modules
                                 pBullet.bulletVelocity = bulletInfo.bulletVelocity;
                                 pBullet.bulletMass = bulletInfo.bulletMass;
                                 pBullet.explosive = bulletInfo.explosive;
+                                pBullet.incendiary = bulletInfo.incendiary;
                                 pBullet.apBulletMod = bulletInfo.apBulletMod;
                                 pBullet.bulletDmgMult = bulletDmgMult;
 
@@ -2031,6 +2035,7 @@ namespace BDArmory.Modules
                                 rocket.choker = choker;
                                 rocket.impulse = Impulse;
                                 rocket.massMod = massAdjustment;
+                                rocket.incendiary = incendiary;
                                 rocket.randomThrustDeviation = thrustDeviation;
                                 rocket.bulletDmgMult = bulletDmgMult;
                                 rocket.sourceVessel = vessel;
@@ -2096,6 +2101,7 @@ namespace BDArmory.Modules
                                         rocket.choker = choker;
                                         rocket.impulse = Impulse;
                                         rocket.massMod = massAdjustment;
+                                        rocket.incendiary = incendiary;
                                         rocket.randomThrustDeviation = thrustDeviation;
                                         rocket.bulletDmgMult = bulletDmgMult;
                                         rocket.sourceVessel = vessel;
@@ -3900,6 +3906,7 @@ namespace BDArmory.Modules
                 impulseWeapon = rocketInfo.impulse;
                 electroLaser = rocketInfo.EMP; //borrowing electrolaser bool, should really rename it empWeapon
                 choker = rocketInfo.choker;
+                incendiary = rocketInfo.incendiary;
                 PAWRefresh();
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 if (HighLogic.LoadedSceneIsFlight)
