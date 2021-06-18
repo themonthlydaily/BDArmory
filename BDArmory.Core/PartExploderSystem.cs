@@ -29,7 +29,7 @@ namespace BDArmory.Core
             {
                 Part part = ExplodingPartsQueue.Dequeue();
 
-                if (part != null && part.vessel != null)
+                if (part != null)
                 {
                     part.explode();
                 }
