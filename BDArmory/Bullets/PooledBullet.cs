@@ -550,42 +550,44 @@ namespace BDArmory.Bullets
 
             if (distanceFromStart <= 500f) return false;
 
-            if (explosive && airDetonation)
+            if (explosive) return false;
+
+            if (airDetonation)
             {
                 if (distanceFromStart > maxAirDetonationRange || distanceFromStart > defaultDetonationRange)
                 {
                     return detonate = true;
                 }
-
-                if (proximityDetonation)
+            }
+            if (proximityDetonation)
+            {
+                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
                 {
-                    using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
+                    while (hitsEnu.MoveNext())
                     {
-                        while (hitsEnu.MoveNext())
+                        if (hitsEnu.Current == null) continue;
+
+                        try
                         {
-                            if (hitsEnu.Current == null) continue;
+                            Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                            if (partHit == null) continue;
+                            if (partHit.vessel == sourceVessel) continue;
+                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
-                            try
-                            {
-                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit == null) continue;
-                                if (partHit.vessel == sourceVessel) continue;
-                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
 
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
-
-                                return detonate = true;
-                            }
-                            catch (Exception e)
-                            {
-                                // ignored
-                                Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
-                            }
+                            return detonate = true;
+                        }
+                        catch (Exception e)
+                        {
+                            // ignored
+                            Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                         }
                     }
                 }
             }
+            
             return detonate;
         }
 

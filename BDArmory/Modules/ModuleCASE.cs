@@ -23,8 +23,8 @@ namespace BDArmory.Modules
         public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => CASEcost;
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
 
-        private double ammoMass;
-        private double ammoQuantity;
+        private double ammoMass = 0;
+        private double ammoQuantity = 0;
         private double ammoExplosionYield = 0;
 
         private string explModelPath = "BDArmory/Models/explosion/explosion";
@@ -33,9 +33,9 @@ namespace BDArmory.Modules
         private string limitEdexploModelPath = "BDArmory/Models/explosion/30mmExplosion";
         private string shuntExploModelPath = "BDArmory/Models/explosion/CASEexplosion";
 
-        public string SourceVessel;
-        public bool hasDetonated;
-        private float blastRadius;
+        public string SourceVessel = "";
+        public bool hasDetonated = false;
+        private float blastRadius = 0;
 
         public override void OnStart(StartState state)
         {

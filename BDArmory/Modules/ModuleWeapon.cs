@@ -621,13 +621,38 @@ namespace BDArmory.Modules
         UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
         public float AmmoTypeNum = 1;
 
-        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#Use Custom Ammoloadout")]//Barrage
+        [KSPField(isPersistant = true)]
+        public bool advancedAmmoOption = false;
+
+        [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_simple", active = true)]//Disable Engage Options
+        public void ToggleAmmoConfig()
+        {
+            advancedAmmoOption = !advancedAmmoOption;
+
+            if (advancedAmmoOption == true)
+            {
+                Events["ToggleAmmoConfig"].guiName = Localizer.Format("#LOC_BDArmory_advanced");//"Enable Engage Options"
+                Events["ConfigAmmo"].guiActive = true;
+                Events["ConfigAmmo"].guiActiveEditor = true;
+                Fields["AmmoTypeNum"].guiActive = false;
+                Fields["AmmoTypeNum"].guiActiveEditor = false;
+            }
+            else
+            {
+                Events["ToggleAmmoConfig"].guiName = Localizer.Format("#LOC_BDArmory_simple");//"Disable Engage Options"
+                Events["ConfigAmmo"].guiActive = false;
+                Events["ConfigAmmo"].guiActiveEditor = false;
+                Fields["AmmoTypeNum"].guiActive = true;
+                Fields["AmmoTypeNum"].guiActiveEditor = true;
+            }
+            Misc.Misc.RefreshAssociatedWindows(part);
+        }
         public bool useCustomBelt = false;
 
-        [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#Configure Ammo Loadout")]//Toggle Barrage
+        [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Ammo_Setup")]//Configure Ammo Loadout
         public void ConfigAmmo()
         {
-            BDAmmoSelector.Instance.Open(this, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y), bulletType);
+            BDAmmoSelector.Instance.Open(this, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
         }
 
         [KSPField(isPersistant = true)]
@@ -831,9 +856,7 @@ namespace BDArmory.Modules
             {
                 Fields["AmmoTypeNum"].guiActive = false;
                 Fields["AmmoTypeNum"].guiActiveEditor = false;
-                Fields["useCustomBelt"].guiActive = false;
-                Fields["useCustomBelt"].guiActiveEditor = false;
-                Events["ConfigAmmo"].guiActiveEditor = false;
+                Events["ToggleAmmoConfig"].guiActiveEditor = false;
             }
             UI_FloatRange FAOEditor = (UI_FloatRange)Fields["FiringTolerance"].uiControlEditor;
             FAOEditor.onFieldChanged = FAOCos;
@@ -880,9 +903,7 @@ namespace BDArmory.Modules
                 {
                     externalAmmo = true;
                 }
-                Fields["useCustomBelt"].guiActive = false;
-                Fields["useCustomBelt"].guiActiveEditor = false;
-                Events["ConfigAmmo"].guiActiveEditor = false;
+                Events["ToggleAmmoConfig"].guiActiveEditor = false;
             }
             if (eWeaponType == WeaponTypes.Laser)
             {
@@ -909,9 +930,7 @@ namespace BDArmory.Modules
                 Fields["detonationRange"].guiActiveEditor = false;
                 Fields["guiAmmoTypeString"].guiActiveEditor = false; //ammoswap
                 Fields["guiAmmoTypeString"].guiActive = false;
-                Fields["useCustomBelt"].guiActive = false;
-                Fields["useCustomBelt"].guiActiveEditor = false;
-                Events["ConfigAmmo"].guiActiveEditor = false;
+                Events["ToggleAmmoConfig"].guiActiveEditor = false;
 
             }
             muzzleFlashEmitters = new List<KSPParticleEmitter>();
@@ -2375,8 +2394,6 @@ namespace BDArmory.Modules
         {
             if (!useCustomBelt) return;
             if (customAmmoBelt.Count < 1) return;
-            Debug.Log("[ammobelt] count: " + customAmmoBelt.Count);
-            Debug.Log("[ammobelt] ammo counter: " + AmmoIntervalCounter);
             if (AmmoIntervalCounter == 0 || (AmmoIntervalCounter > 1 && customAmmoBelt[AmmoIntervalCounter].ToString() != customAmmoBelt[AmmoIntervalCounter - 1].ToString()))
             {
                 SetupAmmo(null, null);
@@ -3842,18 +3859,16 @@ namespace BDArmory.Modules
             if (useCustomBelt && customAmmoBelt.Count > 0)
             {
                 currentType = customAmmoBelt[AmmoIntervalCounter].ToString();
-
             }
             else
             {
                 ammoList = BDAcTools.ParseNames(bulletType);
                 currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
             }
-
             if (eWeaponType == WeaponTypes.Ballistic)
             {
                 bulletInfo = BulletInfo.bullets[currentType];
-                guiAmmoTypeString = " "; //reset name
+                guiAmmoTypeString = ""; //reset name
                 maxDeviation = baseDeviation; //reset modified deviation
                 caliber = bulletInfo.caliber;
                 bulletVelocity = bulletInfo.bulletVelocity;
@@ -3887,22 +3902,19 @@ namespace BDArmory.Modules
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_SAP") + " ";
                     }
-                    if (bulletInfo.tntMass > 0)
+                    if (bulletInfo.explosive)
                     {
                         if (airDetonation || proximityDetonation)
                         {
                             guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
                         }
-                        else
-                        {
-                            guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Explosive") + " ";
-                        }
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Explosive") + " ";
                     }
                     if (bulletInfo.incendiary)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Incendiary") + " ";
                     }
-                    else
+                    if (!bulletInfo.explosive && bulletInfo.apBulletMod <= 0.8)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Slug");
                     }
@@ -3922,7 +3934,7 @@ namespace BDArmory.Modules
                 ammoList = BDAcTools.ParseNames(bulletType);
                 currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
                 rocketInfo = RocketInfo.rockets[currentType];
-                guiAmmoTypeString = " "; //reset name
+                guiAmmoTypeString = ""; //reset name
                 rocketMass = rocketInfo.rocketMass;
                 caliber = rocketInfo.caliber;
                 thrust = rocketInfo.thrust;
@@ -3993,7 +4005,6 @@ namespace BDArmory.Modules
                 incendiary = rocketInfo.incendiary;
                 PAWRefresh();
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
-
                 SetInitialDetonationDistance();
                 SetupRocketPool(SelectedAmmoType, rocketModelPath);
             }
