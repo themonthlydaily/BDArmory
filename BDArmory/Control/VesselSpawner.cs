@@ -327,7 +327,7 @@ namespace BDArmory.Control
                     var distanceToCoMainBody = (testPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                     ray = new Ray(testPosition, -radialUnitVector);
                     message = "Waiting up to 10s for terrain to settle.";
-                    Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     var startTime = Planetarium.GetUniversalTime();
                     double lastStableTimeStart = startTime;
@@ -615,7 +615,6 @@ namespace BDArmory.Control
                         var weaponManagers = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList();
                         foreach (var vessel in vesselsToCheck.ToList())
                         {
-                            // var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                             var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                             if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
                             {
@@ -712,7 +711,6 @@ namespace BDArmory.Control
                     {
                         foreach (var vessel in spawnedVessels.Select(v => v.Value.Item1))
                         {
-                            // var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                             var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                             if (!weaponManager) continue; // Safety check in case the vessel got destroyed.
 
@@ -720,11 +718,9 @@ namespace BDArmory.Control
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
-                            // if (!vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
-                                Debug.Log("[BDArmory.VesselSpawner]: " + vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
-                                // foreach (var engine in vessel.FindPartModulesImplementing<ModuleEngines>())
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
                                 foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                                     engine.Activate();
                             }
@@ -931,7 +927,7 @@ namespace BDArmory.Control
                     var distanceToCoMainBody = (testPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                     ray = new Ray(testPosition, -radialUnitVector);
                     message = "Waiting up to 10s for terrain to settle.";
-                    Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     var startTime = Planetarium.GetUniversalTime();
                     double lastStableTimeStart = startTime;
@@ -997,7 +993,6 @@ namespace BDArmory.Control
                     craftToSpawn.Enqueue(spawnQueue.Dequeue());
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    // var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && v.FindPartModuleImplementing<MissileFire>() != null).Select(v => v.GetName()).Contains(craftURLToVesselName[craftURL])).ToList();
                     var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && VesselModuleRegistry.GetModuleCount<MissileFire>(v) > 0).Select(v => v.GetName()).Contains(craftURLToVesselName[craftURL])).ToList();
                     if (missing.Count > 0)
                     {
@@ -1134,7 +1129,6 @@ namespace BDArmory.Control
                         }
 
                         // Check if the weapon manager has been added to the weapon managers list.
-                        // var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                         var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                         if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
                         {
@@ -1142,11 +1136,9 @@ namespace BDArmory.Control
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
-                            // if (!vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 Debug.Log("[BDArmory.VesselSpawner]: " + vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
-                                // foreach (var engine in vessel.FindPartModulesImplementing<ModuleEngines>())
                                 foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                                     engine.Activate();
                             }
@@ -1262,7 +1254,6 @@ namespace BDArmory.Control
                 scoreData[spawnCount] = BDACompetitionMode.Instance.Scores[vesselName]; // Save the Score instance for the vessel.
                 if (newSpawn)
                 {
-                    // BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { vesselRef = vessel, weaponManagerRef = vessel.FindPartModuleImplementing<MissileFire>(), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
                     BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { vesselRef = vessel, weaponManagerRef = VesselModuleRegistry.GetModule<MissileFire>(vessel), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
                     continuousSpawningScores[vesselName].cumulativeTagTime = scoreData.Sum(kvp => kvp.Value.tagTotalTime);
                     continuousSpawningScores[vesselName].cumulativeHits = scoreData.Sum(kvp => kvp.Value.Score);
@@ -1557,7 +1548,6 @@ namespace BDArmory.Control
                 score = continuousSpawningScores[vesselName];
                 vessel = score.vessel;
                 if (vessel == null) continue; // Vessel hasn't been respawned yet.
-                // weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
                 weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 if (weaponManager == null) continue; // Weapon manager hasn't registered yet.
                 if (score.outOfAmmoTime == 0 && !weaponManager.HasWeaponsAndAmmo())

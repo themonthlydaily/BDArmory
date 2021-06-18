@@ -96,7 +96,6 @@ namespace BDArmory.Parts
             }
 
             bool moduleFound = false;
-            // using (List<ModuleTargetingCamera>.Enumerator mtc = v.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
             using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(v).GetEnumerator())
                 while (mtc.MoveNext())
                 {

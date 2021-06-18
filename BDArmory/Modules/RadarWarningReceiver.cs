@@ -146,15 +146,14 @@ namespace BDArmory.Modules
                     WindowRectRWRInitialized = true;
                 }
 
-                // using (List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
                 using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
                     while (mf.MoveNext())
                     {
                         if (mf.Current == null) continue;
-                        mf.Current.rwr = this;
+                        mf.Current.rwr = this; // Set the rwr on all weapon managers to this.
                         if (!weaponManager)
                         {
-                            weaponManager = mf.Current;
+                            weaponManager = mf.Current; // Set the first found weapon manager as the one in control.
                         }
                     }
                 //if (rwrEnabled) EnableRWR();

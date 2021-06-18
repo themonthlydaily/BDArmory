@@ -16,7 +16,6 @@ namespace BDArmory.Modules
                 drainDuration -= Time.deltaTime;
                 if (drainDuration <= 0)
                 {
-                    // using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
                     using (var intake = VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel).GetEnumerator())
                         while (intake.MoveNext())
                         {
@@ -30,7 +29,6 @@ namespace BDArmory.Modules
             {
                 //Debug.Log("[BDArmory.ModuleDrainIntakes]: " + this.part.name + "choked!");
                 initialized = true;
-                // using (List<ModuleResourceIntake>.Enumerator intake = vessel.FindPartModulesImplementing<ModuleResourceIntake>().GetEnumerator())
                 using (var intake = VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel).GetEnumerator())
                     while (intake.MoveNext())
                     {

@@ -194,7 +194,6 @@ namespace BDArmory.UI
 
                         if (BDTISettings.MISSILES)
                         {
-                            // using (List<MissileBase>.Enumerator ml = v.Current.FindPartModulesImplementing<MissileBase>().GetEnumerator())
                             using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v.Current).GetEnumerator())
                                 while (ml.MoveNext())
                                 {

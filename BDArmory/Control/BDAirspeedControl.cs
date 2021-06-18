@@ -118,7 +118,6 @@ namespace BDArmory.Control
             float finalThrust = 0;
             multiModeEngines.Clear();
 
-            // using (List<ModuleEngines>.Enumerator engines = vessel.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
             using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(vessel).GetEnumerator())
                 while (engines.MoveNext())
                 {

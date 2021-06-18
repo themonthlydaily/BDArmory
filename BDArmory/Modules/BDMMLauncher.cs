@@ -17,13 +17,12 @@ namespace BDArmory.Modules
 
             part.decouple(0);
 
-            // foreach (BDModularGuidance bdmm in vessel.FindPartModulesImplementing<BDModularGuidance>())
             foreach (BDModularGuidance bdmm in VesselModuleRegistry.GetModules<BDModularGuidance>(vessel))
             {
                 bdmm.HasFired = true;
                 //bdmm.target = target;
             }
-            // foreach (BDExplosivePart bde in vessel.FindPartModulesImplementing<BDExplosivePart>())
+            // foreach (BDExplosivePart bde in VesselModuleRegistry.GetModules<BDExplosivePart>(vessel))
             // {
             //     //bde.target = target;
             // }

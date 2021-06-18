@@ -164,22 +164,19 @@ namespace BDArmory.UI
                 {
                     if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
                     if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
-                    // using (var wms = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                    using (var wms = VesselModuleRegistry.GetModules<MissileFire>(v.Current).GetEnumerator())
-                        while (wms.MoveNext())
-                            if (wms.Current != null)
-                            {
-                                if (!ColorAssignments.ContainsKey(wms.Current.teamString))
-                                {
-                                    float rnd = UnityEngine.Random.Range(0f, 100f);
-                                    ColorAssignments.Add(wms.Current.Team.Name, Color.HSVToRGB((rnd / 100f), 1f, 1f));
-                                }
-                                if (weaponManagers.TryGetValue(wms.Current.Team.Name, out var teamManagers))
-                                    teamManagers.Add(wms.Current);
-                                else
-                                    weaponManagers.Add(wms.Current.Team.Name, new List<MissileFire> { wms.Current });
-                                break;
-                            }
+                    var wms = VesselModuleRegistry.GetMissileFire(v.Current, true);
+                    if (wms != null)
+                    {
+                        if (!ColorAssignments.ContainsKey(wms.teamString))
+                        {
+                            float rnd = UnityEngine.Random.Range(0f, 100f);
+                            ColorAssignments.Add(wms.Team.Name, Color.HSVToRGB((rnd / 100f), 1f, 1f));
+                        }
+                        if (weaponManagers.TryGetValue(wms.Team.Name, out var teamManagers))
+                            teamManagers.Add(wms);
+                        else
+                            weaponManagers.Add(wms.Team.Name, new List<MissileFire> { wms });
+                    }
                 }
         }
 

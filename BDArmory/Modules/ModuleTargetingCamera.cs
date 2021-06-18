@@ -136,9 +136,7 @@ namespace BDArmory.Modules
             get
             {
                 if (!riTex)
-                {
-                    riTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollIndicator", false);
-                }
+                { riTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollIndicator", false); }
                 return riTex;
             }
         }
@@ -150,9 +148,7 @@ namespace BDArmory.Modules
             get
             {
                 if (!rrTex)
-                {
-                    rrTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollReference", false);
-                }
+                { rrTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollReference", false); }
                 return rrTex;
             }
         }
@@ -164,17 +160,7 @@ namespace BDArmory.Modules
             get
             {
                 if (wpmr == null || wpmr.vessel != vessel)
-                {
-                    wpmr = null;
-                    // using (List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                    using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
-                        while (mf.MoveNext())
-                        {
-                            if (mf.Current)
-                                wpmr = mf.Current;
-                        }
-                }
-
+                { wpmr = VesselModuleRegistry.GetMissileFire(vessel, true); }
                 return wpmr;
             }
         }
@@ -273,7 +259,6 @@ namespace BDArmory.Modules
 
         ModuleTargetingCamera FindNextActiveCamera()
         {
-            // using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
             using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {
@@ -1131,7 +1116,6 @@ namespace BDArmory.Modules
 
         void SlaveTurrets()
         {
-            // using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
             using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {
@@ -1148,7 +1132,6 @@ namespace BDArmory.Modules
 
         void UnslaveTurrets()
         {
-            // using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
             using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {

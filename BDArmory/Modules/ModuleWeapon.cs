@@ -174,14 +174,7 @@ namespace BDArmory.Modules
             get
             {
                 if (mf) return mf;
-                // using (List<MissileFire>.Enumerator wm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                using (var wm = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
-                    while (wm.MoveNext())
-                    {
-                        if (wm.Current == null) continue;
-                        mf = wm.Current;
-                        break;
-                    }
+                mf = VesselModuleRegistry.GetMissileFire(vessel, true);
                 return mf;
             }
         }
@@ -253,7 +246,6 @@ namespace BDArmory.Modules
             {
                 ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
                 int lastAmmoID = this.AmmoID;
-                // using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
@@ -664,6 +656,7 @@ namespace BDArmory.Modules
             {
                 yield return new WaitForSeconds(delay);
             }
+            if (weaponManager == null) yield break;
             weaponManager.gunRippleIndex = weaponManager.gunRippleIndex + 1;
 
             //Debug.Log([BDArmory.ModuleWeapon]: incrementing ripple index to: " + weaponManager.gunRippleIndex);
@@ -1201,7 +1194,7 @@ namespace BDArmory.Modules
                     }
                     else
                     {
-                        if (weaponManager.gunRippleIndex == rippleIndex)
+                        if (weaponManager != null && weaponManager.gunRippleIndex == rippleIndex)
                         {
                             StartCoroutine(IncrementRippleIndex(0));
                             finalFire = false;
@@ -3080,7 +3073,7 @@ namespace BDArmory.Modules
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
             if (!(aimAndFireIfPossible || aimOnly)) return;
-            if (this == null || FlightGlobals.currentMainBody == null) return;
+            if (this == null || weaponManager == null || FlightGlobals.currentMainBody == null) return;
 
             UpdateTargetVessel();
             if (targetAcquired)

@@ -36,14 +36,7 @@ namespace BDArmory.Modules
             get
             {
                 if (AI) return AI;
-                // using (List<BDModulePilotAI>.Enumerator pai = vessel.FindPartModulesImplementing<BDModulePilotAI>().GetEnumerator())
-                using (var pai = VesselModuleRegistry.GetModules<BDModulePilotAI>(vessel).GetEnumerator()) // FIXME should this be IBDAIControl?
-                    while (pai.MoveNext())
-                    {
-                        if (pai.Current == null) continue;
-                        AI = pai.Current;
-                        break;
-                    }
+                AI = VesselModuleRegistry.GetBDModulePilotAI(vessel, true); // FIXME should this be IBDAIControl?
                 return AI;
             }
         }

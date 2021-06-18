@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -253,11 +254,16 @@ namespace BDArmory.Modules
         /// </summary>
         /// <typeparam name="T">The module type.</typeparam>
         /// <param name="vessel">The vessel.</param>
+        /// <param name="firstNonNull">The first module or the first non-null module (may still be null if none are found).</param>
         /// <returns>The first module if it exists, else null.</returns>
-        public static T GetModule<T>(Vessel vessel) where T : class
+        public static T GetModule<T>(Vessel vessel, bool firstNonNull = false) where T : class
         {
             var modules = GetModules<T>(vessel);
-            return modules == null ? null : modules.FirstOrDefault();
+            if (modules == null) return null;
+            if (!firstNonNull) return modules.FirstOrDefault();
+            foreach (var module in modules)
+            { if (module != null) return module; }
+            return null;
         }
 
         /// <summary>
@@ -320,9 +326,15 @@ namespace BDArmory.Modules
             }
             return registryMissileFire[vessel];
         }
-        public static MissileFire GetMissileFire(Vessel vessel)
+        public static MissileFire GetMissileFire(Vessel vessel, bool firstNonNull = false)
         {
             if (vessel == null) return null;
+            if (firstNonNull)
+            {
+                foreach (var module in GetMissileFires(vessel))
+                { if (module != null) return module; }
+                return null;
+            }
             if (!registryMissileFire.ContainsKey(vessel)) { return GetMissileFires(vessel).FirstOrDefault(); }
             return registryMissileFire[vessel].FirstOrDefault();
         }
@@ -338,9 +350,15 @@ namespace BDArmory.Modules
             }
             return registryMissileBase[vessel];
         }
-        public static MissileBase GetMissileBase(Vessel vessel)
+        public static MissileBase GetMissileBase(Vessel vessel, bool firstNonNull = false)
         {
             if (vessel == null) return null;
+            if (firstNonNull)
+            {
+                foreach (var module in GetMissileBases(vessel))
+                { if (module != null) return module; }
+                return null;
+            }
             if (!registryMissileBase.ContainsKey(vessel)) { return GetMissileBases(vessel).FirstOrDefault(); }
             return registryMissileBase[vessel].FirstOrDefault();
         }
@@ -356,9 +374,15 @@ namespace BDArmory.Modules
             }
             return registryBDModulePilotAI[vessel];
         }
-        public static BDModulePilotAI GetBDModulePilotAI(Vessel vessel)
+        public static BDModulePilotAI GetBDModulePilotAI(Vessel vessel, bool firstNonNull = false)
         {
             if (vessel == null) return null;
+            if (firstNonNull)
+            {
+                foreach (var module in GetBDModulePilotAIs(vessel))
+                { if (module != null) return module; }
+                return null;
+            }
             if (!registryBDModulePilotAI.ContainsKey(vessel)) { return GetBDModulePilotAIs(vessel).FirstOrDefault(); }
             return registryBDModulePilotAI[vessel].FirstOrDefault();
         }
@@ -374,9 +398,15 @@ namespace BDArmory.Modules
             }
             return registryIBDAIControl[vessel];
         }
-        public static IBDAIControl GetIBDAIControl(Vessel vessel)
+        public static IBDAIControl GetIBDAIControl(Vessel vessel, bool firstNonNull = false)
         {
             if (vessel == null) return null;
+            if (firstNonNull)
+            {
+                foreach (var module in GetIBDAIControls(vessel))
+                { if (module != null) return module; }
+                return null;
+            }
             if (!registryIBDAIControl.ContainsKey(vessel)) { return GetIBDAIControls(vessel).FirstOrDefault(); }
             return registryIBDAIControl[vessel].FirstOrDefault();
         }
@@ -428,9 +458,15 @@ namespace BDArmory.Modules
             }
             return registryModuleCommand[vessel];
         }
-        public static ModuleCommand GetModuleCommand(Vessel vessel)
+        public static ModuleCommand GetModuleCommand(Vessel vessel, bool firstNonNull = false)
         {
             if (vessel == null) return null;
+            if (firstNonNull)
+            {
+                foreach (var module in GetModuleCommands(vessel))
+                { if (module != null) return module; }
+                return null;
+            }
             if (!registryModuleCommand.ContainsKey(vessel)) { return GetModuleCommands(vessel).FirstOrDefault(); }
             return registryModuleCommand[vessel].FirstOrDefault();
         }
@@ -446,9 +482,15 @@ namespace BDArmory.Modules
             }
             return registryKerbalSeat[vessel];
         }
-        public static KerbalSeat GetKerbalSeat(Vessel vessel)
+        public static KerbalSeat GetKerbalSeat(Vessel vessel, bool firstNonNull = false)
         {
             if (vessel == null) return null;
+            if (firstNonNull)
+            {
+                foreach (var module in GetKerbalSeats(vessel))
+                { if (module != null) return module; }
+                return null;
+            }
             if (!registryKerbalSeat.ContainsKey(vessel)) { return GetKerbalSeats(vessel).FirstOrDefault(); }
             return registryKerbalSeat[vessel].FirstOrDefault();
         }
@@ -464,13 +506,89 @@ namespace BDArmory.Modules
             }
             return registryKerbalEVA[vessel];
         }
-        public static KerbalEVA GetKerbalEVA(Vessel vessel)
+        public static KerbalEVA GetKerbalEVA(Vessel vessel, bool firstNonNull = false)
         {
             if (vessel == null) return null;
+            if (firstNonNull)
+            {
+                foreach (var module in GetKerbalEVAs(vessel))
+                { if (module != null) return module; }
+                return null;
+            }
             if (!registryKerbalEVA.ContainsKey(vessel)) { return GetKerbalEVAs(vessel).FirstOrDefault(); }
             return registryKerbalEVA[vessel].FirstOrDefault();
         }
         #endregion
+
+        public IEnumerator PerformanceTest()
+        {
+            var wait = new WaitForSeconds(0.1f);
+            {
+                // Note: this test has significant GC allocations due to the allocation of an intermediate list.
+                int count = 0;
+                int iters = 100000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { foreach (var mf in FlightGlobals.ActiveVessel.FindPartModulesImplementing<MissileFire>()) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via vessel.FindPartModulesImplementing<MissileFire>()");
+            }
+            yield return wait;
+            {
+                int count = 0;
+                int iters = 100000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { if (FlightGlobals.ActiveVessel.FindPartModuleImplementing<MissileFire>() != null) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via vessel.FindPartModuleImplementing<MissileFire>()");
+            }
+            yield return wait;
+            {
+                int count = 0;
+                int iters = 10000000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { foreach (var mf in VesselModuleRegistry.GetModules<MissileFire>(FlightGlobals.ActiveVessel)) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry.GetModules<MissileFire>(vessel)");
+            }
+            yield return wait;
+            {
+                int count = 0;
+                int iters = 10000000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { foreach (var mf in VesselModuleRegistry.GetMissileFires(FlightGlobals.ActiveVessel)) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry.GetMissileFires(vessel)");
+            }
+            yield return wait;
+            {
+                int count = 0;
+                int iters = 10000000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { if (VesselModuleRegistry.GetModule<MissileFire>(FlightGlobals.ActiveVessel) != null) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry.GetModule<MissileFire>(vessel)");
+            }
+            yield return wait;
+            {
+                int count = 0;
+                int iters = 10000000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { if (VesselModuleRegistry.GetModule<MissileFire>(FlightGlobals.ActiveVessel, true) != null) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry.GetModule<MissileFire>(vessel, true)");
+            }
+            yield return wait;
+            {
+                int count = 0;
+                int iters = 10000000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { if (VesselModuleRegistry.GetMissileFire(FlightGlobals.ActiveVessel) != null) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry.GetMissileFire(vessel)");
+            }
+            yield return wait;
+            {
+                int count = 0;
+                int iters = 10000000;
+                var startTime = Time.realtimeSinceStartup;
+                for (int i = 0; i < iters; ++i) { if (VesselModuleRegistry.GetMissileFire(FlightGlobals.ActiveVessel, true) != null) ++count; }
+                Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry.GetMissileFire(vessel, true)");
+            }
+            BDACompetitionMode.Instance.competitionStatus.Add("VesselModuleRegistry performance test complete.");
+        }
         #endregion
     }
 }

@@ -295,7 +295,6 @@ namespace BDArmory.Radar
                 t = v.transform;
 
                 //move AB thrust transforms (fix for AirplanePlus .dds engine afterburner FX not using DXT5 standard and showing up in RCS render)
-                // using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
                 using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
                     while (engines.MoveNext())
                     {
@@ -430,7 +429,6 @@ namespace BDArmory.Radar
                 if (HighLogic.LoadedSceneIsFlight)
                 {
                     //move AB thrust transforms (fix for AirplanePlus .dds engine afterburner FX not using DXT5 standard and showing up in RCS render)
-                    // using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
                     using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
                         while (engines.MoveNext())
                         {
@@ -902,7 +900,6 @@ namespace BDArmory.Radar
                     if (!loadedvessels.Current.loaded) continue;
 
                     // IFF code check to prevent friendly lock-on (neutral vessel without a weaponmanager WILL be lockable!)
-                    // MissileFire wm = loadedvessels.Current.FindPartModuleImplementing<MissileFire>();
                     MissileFire wm = VesselModuleRegistry.GetModule<MissileFire>(loadedvessels.Current);
                     if (wm != null)
                     {
@@ -1258,7 +1255,6 @@ namespace BDArmory.Radar
                                             distance = Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position),
                                             position = missileBase.transform.position,
                                             vessel = missileBase.vessel,
-                                            // weaponManager = missileBase.SourceVessel != null ? missileBase.SourceVessel.FindPartModuleImplementing<MissileFire>() : null,
                                             weaponManager = missileBase.SourceVessel != null ? VesselModuleRegistry.GetModule<MissileFire>(missileBase.SourceVessel) : null,
                                         });
                                         switch (missileBase.TargetingMode)
@@ -1283,7 +1279,6 @@ namespace BDArmory.Radar
                             }
                             else
                             {
-                                // using (List<ModuleWeapon>.Enumerator weapon = loadedvessels.Current.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
                                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(loadedvessels.Current).GetEnumerator())
                                     while (weapon.MoveNext())
                                     {
@@ -1344,7 +1339,6 @@ namespace BDArmory.Radar
                         if (friendly.Current == null)
                             continue;
                         if (VesselModuleRegistry.ignoredVesselTypes.Contains(friendly.Current.vesselType)) continue;
-                        // var wms = friendly.Current.FindPartModuleImplementing<MissileFire>();
                         var wms = VesselModuleRegistry.GetModule<MissileFire>(friendly.Current);
                         if (wms == null || wms.Team != mf.Team)
                             continue;

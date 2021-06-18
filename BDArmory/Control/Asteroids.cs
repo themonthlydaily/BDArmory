@@ -410,7 +410,7 @@ namespace BDArmory.Control
             else { asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < 10f * radius).ToList(); }
             foreach (var asteroid in asteroidPool)
             {
-                if (asteroid.FindPartModuleImplementing<ModuleAsteroid>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidResource>() != null)
+                if (asteroid.FindPartModuleImplementing<ModuleAsteroid>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidResource>() != null) // We don't use the VesselModuleRegistry here as we'd need to force update it for each asteroid anyway.
                 { StartCoroutine(CleanAsteroid(asteroid)); }
             }
             if (count > asteroidPool.Count) { AddAsteroidsToPool(count - asteroidPool.Count); }

@@ -234,7 +234,6 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            // using (List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
             using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
                 while (mf.MoveNext())
                 {
@@ -249,14 +248,7 @@ namespace BDArmory.Radar
 
             if (!weaponManager)
             {
-                // using (List<MissileFire>.Enumerator mfa = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                using (var mfa = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
-                    while (mfa.MoveNext())
-                    {
-                        if (mfa.Current == null) continue;
-                        weaponManager = mfa.Current;
-                        break;
-                    }
+                weaponManager = VesselModuleRegistry.GetMissileFire(vessel, true);
             }
 
             StartCoroutine(StartupRoutine());
@@ -589,7 +581,6 @@ namespace BDArmory.Radar
         /// </summary>
         private void UpdateRWRRange()
         {
-            // using (List<RadarWarningReceiver>.Enumerator rwr = vessel.FindPartModulesImplementing<RadarWarningReceiver>().GetEnumerator())
             using (var rwr = VesselModuleRegistry.GetModules<RadarWarningReceiver>(vessel).GetEnumerator())
                 while (rwr.MoveNext())
                 {
@@ -698,7 +689,6 @@ namespace BDArmory.Radar
             //rCount = 0;
             UnlinkAllExternalRadars();
 
-            // using (List<ModuleRadar>.Enumerator radar = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator())
             using (var radar = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
                 while (radar.MoveNext())
                 {
@@ -709,7 +699,6 @@ namespace BDArmory.Radar
 
         public void SlaveTurrets()
         {
-            // using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
             using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {
@@ -721,7 +710,6 @@ namespace BDArmory.Radar
 
         public void UnslaveTurrets()
         {
-            // using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
             using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {
@@ -1372,15 +1360,8 @@ namespace BDArmory.Radar
                     if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
 
                     BDTeam team = null;
-                    // using (List<MissileFire>.Enumerator mf = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                    using (var mf = VesselModuleRegistry.GetModules<MissileFire>(v.Current).GetEnumerator())
-                        while (mf.MoveNext())
-                        {
-                            if (mf.Current == null) continue;
-                            team = mf.Current.Team;
-                            break;
-                        }
-
+                    var mf = VesselModuleRegistry.GetMissileFire(v.Current, true);
+                    if (mf != null) team = mf.Team;
                     if (team != weaponManager.Team) continue;
                     VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
                     if (vrd && vrd.radarCount > 0)

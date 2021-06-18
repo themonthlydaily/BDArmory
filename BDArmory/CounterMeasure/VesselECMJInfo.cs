@@ -179,7 +179,6 @@ namespace BDArmory.CounterMeasure
             jammers.RemoveAll(j => j == null);
             jammers.RemoveAll(j => j.vessel != vessel);
 
-            // using (var jam = vessel.FindPartModulesImplementing<ModuleECMJammer>().GetEnumerator())
             using (var jam = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
                 while (jam.MoveNext())
                 {

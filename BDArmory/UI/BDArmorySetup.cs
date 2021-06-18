@@ -609,16 +609,7 @@ namespace BDArmory.UI
 
         void GetWeaponManager()
         {
-            // using (List<MissileFire>.Enumerator mf = FlightGlobals.ActiveVessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-            using (var mf = VesselModuleRegistry.GetModules<MissileFire>(FlightGlobals.ActiveVessel).GetEnumerator())
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    ActiveWeaponManager = mf.Current;
-                    return;
-                }
-            ActiveWeaponManager = null;
-            return;
+            ActiveWeaponManager = VesselModuleRegistry.GetMissileFire(FlightGlobals.ActiveVessel, true);
         }
 
         public static void LoadConfig()
@@ -2120,7 +2111,7 @@ namespace BDArmory.UI
                 }
                 BDArmorySettings.BDARMORY_WEAPONS_VOLUME = weaponVol;
 
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
                     {
@@ -2137,43 +2128,7 @@ namespace BDArmory.UI
                     }
                     if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
                     {
-                        switch (Event.current.button)
-                        {
-                            case 1:
-                                {
-                                    int count = 0;
-                                    int iters = 1000000;
-                                    var startTime = Time.realtimeSinceStartup;
-                                    for (int i = 0; i < iters; ++i) { foreach (var mf in VesselModuleRegistry.GetModules<MissileFire>(FlightGlobals.ActiveVessel)) ++count; }
-                                    Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry");
-                                }
-                                break;
-                            case 2:
-                                {
-                                    int count = 0;
-                                    int iters = 1000000;
-                                    var startTime = Time.realtimeSinceStartup;
-                                    for (int i = 0; i < iters; ++i) { if (VesselModuleRegistry.GetMissileFire(FlightGlobals.ActiveVessel) != null) ++count; }
-                                    Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via GetMissileFire");
-                                }
-                                break;
-                            default:
-                                {
-                                    int count = 0;
-                                    int iters = 1000000;
-                                    var startTime = Time.realtimeSinceStartup;
-                                    for (int i = 0; i < iters; ++i) { foreach (var mf in VesselModuleRegistry.GetMissileFires(FlightGlobals.ActiveVessel)) ++count; }
-                                    Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via GetMissileFires");
-                                }
-                                // foreach (var vessel in FlightGlobals.Vessels)
-                                // {
-                                //     if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
-                                //     Debug.Log($"{vessel.vesselName} {(VesselModuleRegistry.GetModule<MissileFire>(vessel) == null ? "doesn't have" : "has")} a WM");
-                                //     Debug.Log($"{vessel.vesselName} has {VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Count} engines");
-                                //     Debug.Log($"{vessel.vesselName} has {VesselModuleRegistry.GetModules<Core.Module.HitpointTracker>(vessel).Count} HP modules");
-                                // }
-                                break;
-                        }
+                        StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
                     }
                 }
 

@@ -121,7 +121,6 @@ namespace BDArmory.Modules
         {
             if (v != vessel || hasDetonated || goingCritical) return;
             VesselModuleRegistry.OnVesselModified(v);
-            // if (v.FindPartModuleImplementing<MissileFire>() == null)
             if (VesselModuleRegistry.GetModuleCount<MissileFire>(v) == 0)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Nuclear engine on " + Sourcevessel + " has become detached.");

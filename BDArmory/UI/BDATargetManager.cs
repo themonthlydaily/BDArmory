@@ -525,7 +525,7 @@ namespace BDArmory.UI
         public void SaveGPSTargets(ConfigNode saveNode = null)
         {
             string saveTitle = HighLogic.CurrentGame.Title;
-            Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
             ConfigNode fileNode = ConfigNode.Load(gpsTargetsCfg);
             if (fileNode == null)
             {
@@ -583,7 +583,7 @@ namespace BDArmory.UI
                 string targetString = GPSListToString();
                 gpsNode.SetValue("Targets", targetString, true);
                 fileNode.Save(gpsTargetsCfg);
-                Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
             }
         }
 
@@ -724,7 +724,6 @@ namespace BDArmory.UI
             TargetInfo info = v.gameObject.GetComponent<TargetInfo>();
             if (!info)
             {
-                // using (List<MissileFire>.Enumerator mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator())
                 using (var mf = VesselModuleRegistry.GetModules<MissileFire>(v).GetEnumerator())
                     while (mf.MoveNext())
                     {
@@ -737,7 +736,6 @@ namespace BDArmory.UI
                         }
                     }
 
-                // using (List<MissileBase>.Enumerator ml = v.FindPartModulesImplementing<MissileBase>().GetEnumerator())
                 using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v).GetEnumerator())
                     while (ml.MoveNext())
                     {
@@ -1095,7 +1093,6 @@ namespace BDArmory.UI
                 {
                     if (VesselModuleRegistry.ignoredVesselTypes.Contains(friendlyTarget.Current.vesselType)) continue;
                     if (friendlyTarget.Current == null || friendlyTarget.Current == weaponManager.vessel) continue;
-                    // var wms = friendlyTarget.Current.FindPartModuleImplementing<MissileFire>();
                     var wms = VesselModuleRegistry.GetModule<MissileFire>(friendlyTarget.Current);
                     if (wms == null || wms.Team != weaponManager.Team) continue;
                     Vector3 targetDistance = friendlyTarget.Current.CoM - weaponManager.vessel.CoM;

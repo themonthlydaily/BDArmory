@@ -348,7 +348,6 @@ namespace BDArmory.Misc
                     {
                         using (List<Part>.Enumerator craftPart = part.vessel.parts.GetEnumerator())
                         {
-                            // using (List<BDModulePilotAI>.Enumerator control = part.vessel.FindPartModulesImplementing<BDModulePilotAI>().GetEnumerator())
                             using (var control = VesselModuleRegistry.GetModules<BDModulePilotAI>(part.vessel).GetEnumerator()) // FIXME should this be IBDAIControl?
                                 while (control.MoveNext())
                                 {

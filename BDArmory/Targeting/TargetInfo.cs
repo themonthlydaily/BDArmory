@@ -183,39 +183,23 @@ namespace BDArmory.Targeting
                     return;
                 }
             }
-            // IEnumerator otherInfo = vessel.gameObject.GetComponents<TargetInfo>().GetEnumerator();
-            // while (otherInfo.MoveNext())
-            // {
-            //     if ((object)otherInfo.Current != this)
-            //     {
-            //         Destroy(this);
-            //         return;
-            //     }
-            // }
 
             Team = null;
-            bool foundMf = false;
-            // using (var mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-            using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
-                while (mf.MoveNext())
-                {
-                    foundMf = true;
-                    Team = mf.Current.Team;
-                    weaponManager = mf.Current;
-                    break;
-                }
-
-            if (!foundMf)
+            var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null)
             {
-                // using (var ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
-                using (var ml = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
-                    while (ml.MoveNext())
-                    {
-                        isMissile = true;
-                        MissileBaseModule = ml.Current;
-                        Team = ml.Current.Team;
-                        break;
-                    }
+                Team = mf.Team;
+                weaponManager = mf;
+            }
+            else
+            {
+                var ml = VesselModuleRegistry.GetMissileBase(vessel, true);
+                if (ml != null)
+                {
+                    isMissile = true;
+                    MissileBaseModule = ml;
+                    Team = ml.Team;
+                }
             }
 
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
@@ -350,7 +334,6 @@ namespace BDArmory.Targeting
             float maxThrust = 0;
             float finalThrust = 0;
 
-            // using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
             using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
                 while (engines.MoveNext())
                 {
@@ -396,7 +379,6 @@ namespace BDArmory.Targeting
             if (myMf == null) return 0;
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
-            // using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
