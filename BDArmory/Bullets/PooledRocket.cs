@@ -425,6 +425,8 @@ namespace BDArmory.Bullets
 
             if (distanceFromStart <= blastRadius) return false;
 
+            if (!explosive || tntMass <= 0) return false;
+
             if (flak)
             {
                 using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
@@ -558,9 +560,12 @@ namespace BDArmory.Bullets
                                 if (p != null)
                                 {
                                     BulletHitFX.AttachFire(hit, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, false, true); //else apply fire to occluding part
-                                    Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                        Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
                                 }
                             }
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                Debug.Log("[Rocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
                         }
                     }
                     if (concussion || EMP || choker)
