@@ -516,6 +516,53 @@ namespace BDArmory.Bullets
                     {
                         direction = (pos + rb.velocity * Time.deltaTime).normalized;
                     }
+                    if (gravitic)
+                    {
+                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
+                        {
+                            while (hitsEnu.MoveNext())
+                            {
+                                if (hitsEnu.Current == null) continue;
+
+                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                float distance = Vector3.Distance(transform.position, partHit.transform.position);
+                                if (gravitic)
+                                {
+                                    if (partHit.mass > 0)
+                                    {
+                                        var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
+                                        if (ME == null)
+                                        {
+                                            ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
+                                        }
+                                        ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
+                                        ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
+                                    }
+                                }                                
+                            }
+                        }
+                    }
+                    if (incendiary)
+                    {
+                        for (int f = 0; f < 20; f++) //throw 20 random raytraces out in a sphere and see what gets tagged
+                        {
+                            Ray LoSRay = new Ray(transform.position, VectorUtils.GaussianDirectionDeviation(transform.forward, 170));
+                            RaycastHit hit;
+                            if (Physics.Raycast(LoSRay, out hit, blastRadius * 1.2f, 9076737)) // only add fires to parts in LoS of blast
+                            {
+                                KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                                float distance = Vector3.Distance(transform.position, hit.point);
+                                if (p != null)
+                                {
+                                    BulletHitFX.AttachFire(hit, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, false, true); //else apply fire to occluding part
+                                    Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
+                                }
+                            }
+                        }
+                    }
                     if (concussion || EMP || choker)
                     {
                         using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, 557057).AsEnumerable().GetEnumerator())
@@ -565,61 +612,7 @@ namespace BDArmory.Bullets
                     else
                     {
                         ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
-                    }
-                    if (gravitic || incendiary)
-                    {
-                        if (incendiary)
-                        {
-                            blastRadius *= 1.5f;
-                        }
-                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
-                        {
-                            while (hitsEnu.MoveNext())
-                            {
-                                if (hitsEnu.Current == null) continue;
-
-                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit == null) continue;
-                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                                float distance = Vector3.Distance(transform.position, partHit.transform.position);
-                                if (gravitic)
-                                {
-                                    if (partHit.mass > 0)
-                                    {                                        
-                                        var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
-                                        if (ME == null)
-                                        {
-                                            ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
-                                        }
-                                        ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
-                                        ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
-                                    }
-                                }
-                                if (incendiary)
-                                {
-                                    Ray LoSRay = new Ray(transform.position, partHit.transform.position - transform.position);
-                                    RaycastHit hit;
-                                    if (Physics.Raycast(LoSRay, out hit, distance, 9076737)) // only add fires to parts in LoS of blast
-                                    {
-                                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                                        Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-                                        if (p == partHit)
-                                        {
-
-                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m");
-                                            BulletHitFX.AttachFire(hit, partHit, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //apply fire if in los to blast
-                                        }
-                                        if (p != partHit)
-                                        {
-
-                                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m");
-                                            BulletHitFX.AttachFire(hit, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //else apply fire to occluding part
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }                    
+                    }                                        
                 }
             } // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
             gameObject.SetActive(false);

@@ -61,7 +61,7 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireBottles"),//Fire Bottles
 
-        UI_FloatRange(minValue = 0, maxValue = 3, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        UI_FloatRange(minValue = 0, maxValue = 5, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float FireBottles = 0;
 
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_FB_Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
@@ -152,22 +152,27 @@ namespace BDArmory.Modules
             {
                 if (this.part.temperature > 493) //autoignition temp of kerosene is 220 c
                 {
-                    string fireStarter;
-                    var doesFireExist = part.vessel.GetComponentInChildren<FireFX>();
-                    if (doesFireExist != null)
+                    var isOnFire = part.GetComponentInChildren<FireFX>();
+                    if (isOnFire == null)
                     {
-                        fireStarter = doesFireExist.SourceVessel;
-                    }
-                    else
-                    {
-                        fireStarter = part.vessel.GetName();
-                    }
-                    Vector3 firePosition = part.transform.up * 10;
-                    Ray LoSRay = new Ray(transform.position, (transform.position + firePosition) - transform.position);
-                    RaycastHit hit;
-                    if (Physics.Raycast(LoSRay, out hit, 10, 9076737)) // only add fires to parts in LoS of blast
-                    {
-                        BulletHitFX.AttachFire(hit, part, 50, fireStarter);
+                        string fireStarter;
+                        var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
+                        if (vesselFire != null)
+                        {
+                            fireStarter = vesselFire.SourceVessel;
+                        }
+                        else
+                        {
+                            fireStarter = part.vessel.GetName();
+                        }
+                        Vector3 firePosition = part.transform.up * 10;
+                        Ray LoSRay = new Ray(transform.position, (transform.position + firePosition) - transform.position);
+                        RaycastHit hit;
+                        if (Physics.Raycast(LoSRay, out hit, 10, 9076737)) // only add fires to parts in LoS of blast
+                        {
+                            BulletHitFX.AttachFire(hit, part, 50, fireStarter);
+                        }
+                        Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire!");
                     }
                 }
             }

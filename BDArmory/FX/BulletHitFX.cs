@@ -423,7 +423,7 @@ namespace BDArmory.FX
                 fuelLeak.SetActive(true);
             }
         }
-        public static void AttachFire(RaycastHit hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false)
+        public static void AttachFire(RaycastHit hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false, bool surfaceFire = false)
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED)
             {
@@ -433,20 +433,10 @@ namespace BDArmory.FX
                 var fireFX = fire.GetComponentInChildren<FireFX>();
                 fireFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f), sourcevessel);
                 fireFX.burnRate = (((caliber / 50) * BDArmorySettings.BD_TANK_LEAK_RATE) * ignitedLeaks);
+                fireFX.surfaceFire = surfaceFire;
                 //fireFX.transform.localScale = Vector3.one * (caliber/10);
 
-                Debug.Log("[BDArmory.BulletHitFX]: BulletHit fire, burn rate: " + fireFX.burnRate);
-                if (enginefire) //called again here since engine fires sidestep the leak-> canburn->kill leaks-> set fire code by applying fire directly
-                {
-                    foreach (var existingLeakFX in hitPart.GetComponentsInChildren<FuelLeakFX>())
-                    {
-                        existingLeakFX.lifeTime = 0; //kill leakFX, start fire
-                    }
-                    var leak = hitPart.FindModuleImplementing<ModuleDrainFuel>();
-                    {
-                        leak.drainDuration = 0;
-                    }
-                }
+                Debug.Log("[BDArmory.BulletHitFX]: BulletHit fire, burn rate: " + fireFX.burnRate + "; Surface fire: " + surfaceFire);
                 fire.SetActive(true);
             }
         }

@@ -26,7 +26,7 @@ namespace BDArmory.Misc
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
-                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.66f) return;
+                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.5f) return;
                     }
                     if (penetrationFactor > 1.2)
                     {
@@ -288,7 +288,7 @@ namespace BDArmory.Misc
                             aileron.ctrlSurfaceRange = 0;
                             if (incendiary)
                             {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 20);
+                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 10);
                             }
                         }
                     }

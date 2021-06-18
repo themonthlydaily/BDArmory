@@ -151,6 +151,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = false;  //can fires occur
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = false; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
+        [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = true; //do fires add heat to parts?
 
         // Remote logging
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle

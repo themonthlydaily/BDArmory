@@ -370,6 +370,9 @@ namespace BDArmory.Modules
         public float bulletVelocity = 1030; //velocity in meters/second
 
         [KSPField]
+        public float baseBulletVelocity = -1; //vel of primary ammo type for mixed belts
+
+        [KSPField]
         public float ECPerShot = 0; //EC to use per shot for weapons like railguns
 
         public int ProjectileCount = 1;
@@ -618,10 +621,26 @@ namespace BDArmory.Modules
         UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
         public float AmmoTypeNum = 1;
 
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#Use Custom Ammoloadout")]//Barrage
+        public bool useCustomBelt = false;
+
+        [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#Configure Ammo Loadout")]//Toggle Barrage
+        public void ConfigAmmo()
+        {
+            BDAmmoSelector.Instance.Open(this, new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y), bulletType);
+        }
+
         [KSPField(isPersistant = true)]
         public string SelectedAmmoType; //presumably Aubranium can use this to filter allowed/banned ammotypes
 
         public List<string> ammoList;
+
+        [KSPField(isPersistant = true)]
+        public string ammoBelt = "";
+
+        public List<string> customAmmoBelt;
+
+        int AmmoIntervalCounter = 0;
 
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Ammo_LoadedAmmo")]//Status
         public string guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Slug");
@@ -794,7 +813,7 @@ namespace BDArmory.Modules
             for (int i = 0; i < ammoList.Count; i++)
             {
                 typecount++;
-            }
+            }            
             if (ammoList.Count > 1)
             {
                 if (!canHotSwap)
@@ -812,6 +831,9 @@ namespace BDArmory.Modules
             {
                 Fields["AmmoTypeNum"].guiActive = false;
                 Fields["AmmoTypeNum"].guiActiveEditor = false;
+                Fields["useCustomBelt"].guiActive = false;
+                Fields["useCustomBelt"].guiActiveEditor = false;
+                Events["ConfigAmmo"].guiActiveEditor = false;
             }
             UI_FloatRange FAOEditor = (UI_FloatRange)Fields["FiringTolerance"].uiControlEditor;
             FAOEditor.onFieldChanged = FAOCos;
@@ -858,6 +880,9 @@ namespace BDArmory.Modules
                 {
                     externalAmmo = true;
                 }
+                Fields["useCustomBelt"].guiActive = false;
+                Fields["useCustomBelt"].guiActiveEditor = false;
+                Events["ConfigAmmo"].guiActiveEditor = false;
             }
             if (eWeaponType == WeaponTypes.Laser)
             {
@@ -884,6 +909,9 @@ namespace BDArmory.Modules
                 Fields["detonationRange"].guiActiveEditor = false;
                 Fields["guiAmmoTypeString"].guiActiveEditor = false; //ammoswap
                 Fields["guiAmmoTypeString"].guiActive = false;
+                Fields["useCustomBelt"].guiActive = false;
+                Fields["useCustomBelt"].guiActiveEditor = false;
+                Events["ConfigAmmo"].guiActiveEditor = false;
 
             }
             muzzleFlashEmitters = new List<KSPParticleEmitter>();
@@ -908,6 +936,11 @@ namespace BDArmory.Modules
                     if (shellPool == null)
                     {
                         SetupShellPool();
+                    }
+                    if (useCustomBelt)
+                    {
+                        customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
+                        baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
                     }
                 }
                 if (eWeaponType == WeaponTypes.Rocket)
@@ -1458,6 +1491,7 @@ namespace BDArmory.Modules
                 && WMgrAuthorized())
             {
                 bool effectsShot = false;
+                CheckLoadedAmmo();
                 //Transform[] fireTransforms = part.FindModelTransforms("fireTransform");
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
                     for (int i = 0; i < fireTransforms.Length; i++)
@@ -2336,6 +2370,23 @@ namespace BDArmory.Modules
                 sTf.Dispose();
             }
         }
+
+        private void CheckLoadedAmmo()
+        {
+            if (!useCustomBelt) return;
+            if (customAmmoBelt.Count < 1) return;
+            Debug.Log("[ammobelt] count: " + customAmmoBelt.Count);
+            Debug.Log("[ammobelt] ammo counter: " + AmmoIntervalCounter);
+            if (AmmoIntervalCounter == 0 || (AmmoIntervalCounter > 1 && customAmmoBelt[AmmoIntervalCounter].ToString() != customAmmoBelt[AmmoIntervalCounter - 1].ToString()))
+            {
+                SetupAmmo(null, null);
+            }
+            AmmoIntervalCounter++;
+            if (AmmoIntervalCounter == customAmmoBelt.Count)
+            {
+                AmmoIntervalCounter = 0;
+            }
+        }
         #endregion WeaponUtilities
         //misc. like check weaponmgr
         #region WeaponSetup
@@ -2602,7 +2653,7 @@ namespace BDArmory.Modules
 
                 if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
                 {
-                    var bulletEffectiveVelocity = part.rb.velocity + bulletVelocity * fireTransforms[0].forward;
+                    var bulletEffectiveVelocity = part.rb.velocity + baseBulletVelocity * fireTransforms[0].forward;
                     var gravity = (Vector3)FlightGlobals.getGeeForceAtPosition((fireTransforms[0].position + targetPosition) / 2f);
                     var bulletAcceleration = bulletDrop ? gravity : Vector3.zero; // Drag is ignored.
                     var bulletRelativePosition = targetPosition - fireTransforms[0].position;
@@ -2705,7 +2756,7 @@ namespace BDArmory.Modules
                 {
                     float simTime = 0;
                     Vector3 pointingDirection = fireTransform.forward;
-                    Vector3 simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (bulletVelocity * fireTransform.forward);
+                    Vector3 simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (baseBulletVelocity * fireTransform.forward);
                     Vector3 simCurrPos = fireTransform.position + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
                     Vector3 simPrevPos = simCurrPos;
                     Vector3 simStartPos = simCurrPos;
@@ -3788,8 +3839,16 @@ namespace BDArmory.Modules
 
         void SetupAmmo(BaseField field, object obj)
         {
-            ammoList = BDAcTools.ParseNames(bulletType);
-            currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
+            if (useCustomBelt && customAmmoBelt.Count > 0)
+            {
+                currentType = customAmmoBelt[AmmoIntervalCounter].ToString();
+
+            }
+            else
+            {
+                ammoList = BDAcTools.ParseNames(bulletType);
+                currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
+            }
 
             if (eWeaponType == WeaponTypes.Ballistic)
             {
@@ -3812,29 +3871,50 @@ namespace BDArmory.Modules
                 tracerEndWidth = caliber / 750;
                 nonTracerWidth = caliber / 500;
                 SelectedAmmoType = bulletInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
-                if (bulletInfo.subProjectileCount > 1)
+                if (!useCustomBelt)
                 {
-                    guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
-                    maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount, 2, 5); //modify deviation if shot vs slug
-                }
-                if (bulletInfo.apBulletMod > 1)
-                {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_AP") + " ";
-                }
-                if (bulletInfo.tntMass > 0)
-                {
-                    if (airDetonation || proximityDetonation)
+                    baseBulletVelocity = bulletVelocity;
+                    if (bulletInfo.subProjectileCount > 1)
                     {
-                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
+                        guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
+                        maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount, 2, 5); //modify deviation if shot vs slug
+                    }
+                    if (bulletInfo.apBulletMod >= 1.1)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_AP") + " ";
+                    }
+                    if (bulletInfo.apBulletMod < 1.1 && bulletInfo.apBulletMod > 0.8f)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_SAP") + " ";
+                    }
+                    if (bulletInfo.tntMass > 0)
+                    {
+                        if (airDetonation || proximityDetonation)
+                        {
+                            guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
+                        }
+                        else
+                        {
+                            guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Explosive") + " ";
+                        }
+                    }
+                    if (bulletInfo.incendiary)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Incendiary") + " ";
                     }
                     else
                     {
-                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Explosive") + " ";
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Slug");
                     }
                 }
                 else
                 {
-                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Slug");
+                    guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Multiple");
+                    if (baseBulletVelocity < 0)
+                    {
+                        baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
+                    }
+
                 }
             }
             if (eWeaponType == WeaponTypes.Rocket)
@@ -3885,6 +3965,10 @@ namespace BDArmory.Modules
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_HE") + " ";
                     }
+                    if (rocketInfo.incendiary)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Incendiary") + " ";
+                    }
                     if (rocketInfo.gravitic)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Gravitic") + " ";
@@ -3909,11 +3993,9 @@ namespace BDArmory.Modules
                 incendiary = rocketInfo.incendiary;
                 PAWRefresh();
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
-                if (HighLogic.LoadedSceneIsFlight)
-                {
-                    SetInitialDetonationDistance();
-                    SetupRocketPool(SelectedAmmoType, rocketModelPath);
-                }
+
+                SetInitialDetonationDistance();
+                SetupRocketPool(SelectedAmmoType, rocketModelPath);
             }
         }
         protected void SetInitialDetonationDistance()
@@ -4049,7 +4131,7 @@ namespace BDArmory.Modules
                                 output.AppendLine($"- max range: {maxAirDetonationRange} m");
                             }
                         }
-                        if (impulseWeapon || graviticWeapon)
+                        if (impulseWeapon || graviticWeapon || incendiary)
                         {
                             output.AppendLine($"Special Weapon:");
                             if (impulseWeapon)
@@ -4061,6 +4143,10 @@ namespace BDArmory.Modules
                             {
                                 output.AppendLine($"Gravitic:");
                                 output.AppendLine($"- weight added per hit:{massAdjustment * 1000} kg");
+                            }
+                            if (incendiary)
+                            {
+                                output.AppendLine($"Incendiary:");
                             }
                         }
                         output.AppendLine("");
@@ -4095,7 +4181,7 @@ namespace BDArmory.Modules
                             output.AppendLine($"Cluster Rocket");
                             output.AppendLine($" - Submunition count: {rinfo.subProjectileCount}");
                         }
-                        if (impulseWeapon || graviticWeapon || choker || electroLaser)
+                        if (impulseWeapon || graviticWeapon || choker || electroLaser || incendiary)
                         {
                             output.AppendLine($"Special Weapon:");
                             if (impulseWeapon)
@@ -4117,6 +4203,11 @@ namespace BDArmory.Modules
                             {
                                 output.AppendLine($"Atmospheric Deprivation Warhead:");
                                 output.AppendLine($"- Will temporarily knock out air intakes");
+                            }
+                            if (incendiary)
+                            {
+                                output.AppendLine($"Incendiary:");
+                                output.AppendLine($"- Covers targets in inferno gel");
                             }
                         }
                     }

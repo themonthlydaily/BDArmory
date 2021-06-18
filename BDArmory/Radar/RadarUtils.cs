@@ -628,7 +628,14 @@ namespace BDArmory.Radar
                 radarCam.fieldOfView = Mathf.Atan(vesselbounds.size.magnitude / distanceToShip) * 180 / Mathf.PI;
             else
                 radarCam.fieldOfView = radarFOV;
-            // setup rendertexture
+            // setup rendertexture            
+
+            //hrm. 2 ideas for radar stealth coating/armor variant. 1st method - radarstealth is a per-vessel arorm type, not per-part, and the radarstealth aspect rating is a mult applied to 
+            //radarDistance to effectively make the resulting ship render smaller, so sum a reduced RCS.
+            //option 2, a per-part radar stealth coating/armor type, coould either a) have a foreach part in vessel call that looks for athe stealthcoat, and applies a grey/black shader to that specific part
+            //then proceed with the rederwithshader. not sure if this will work, investigate. b) do a renderwithshader and make use of the replacementTag to not render stealthcoat parts, readtexture, then 
+            //renderwithShader again, this time only stealthed parts with an offwhite shader color, then readPixels, and use the sum of the two renders pixelcount for rcs. Assumes the RCSShader is set with a tag
+
             radarCam.targetTexture = rcsRendering;
             RenderTexture.active = rcsRendering;
             Shader.SetGlobalVector("_LIGHTDIR", -cameraDirection);
