@@ -30,6 +30,7 @@ namespace BDArmory.Modules
 
         Coroutine startupRoutine;
         Coroutine shutdownRoutine;
+        Coroutine standbyRoutine;
         Coroutine reloadRoutine;
 
         bool finalFire;
@@ -51,7 +52,8 @@ namespace BDArmory.Modules
             Disabled,
             PoweringUp,
             PoweringDown,
-            Locked
+            Locked,
+            Standby // Not currently firing, but can still track the current target.
         }
 
         public enum BulletDragTypes
@@ -95,6 +97,7 @@ namespace BDArmory.Modules
         public float autoFireTimer = 0;
         public float autofireShotCount = 0;
         bool aimAndFireIfPossible = false;
+        bool aimOnly = false;
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
@@ -565,6 +568,9 @@ namespace BDArmory.Modules
 
         [KSPField]
         public string chargeSoundPath = "BDArmory/Parts/laserTest/sounds/charge";
+
+        [KSPField]
+        public string rocketSoundPath = "BDArmory/Sounds/rocketLoop";
 
         //audio
         [KSPField]
@@ -1258,8 +1264,8 @@ namespace BDArmory.Modules
                 }
 
                 UpdateHeat();
-                if (weaponState == WeaponStates.Enabled &&
-                    (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
+                if (weaponState == WeaponStates.Standby && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1)) { aimOnly = true; }
+                if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
                     aimAndFireIfPossible = true; // Aim and fire in a later timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made (in the Late timing phase).
 
@@ -1510,6 +1516,7 @@ namespace BDArmory.Modules
                                 pBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime; // Initially, put the bullet at the fireTransform position at the start of the next physics frame
 
                                 pBullet.sourceVessel = vessel;
+                                pBullet.team = weaponManager.Team.Name;
                                 pBullet.bulletTexturePath = bulletTexturePath;
                                 pBullet.projectileColor = projectileColorC;
                                 pBullet.startColor = startColorC;
@@ -1762,151 +1769,164 @@ namespace BDArmory.Modules
                 Ray ray = new Ray(tf.position, rayDirection);
                 lr.useWorldSpace = false;
                 lr.SetPosition(0, Vector3.zero);
-                RaycastHit hit;
-
-                if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
+                var hits = Physics.RaycastAll(ray, maxTargetingRange, 9076737);
+                if (hits.Length > 0) // Find the first valid hit.
                 {
-                    lr.useWorldSpace = true;
-                    laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
-
-                    lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
-                    lr.SetPosition(1, laserPoint);
-
-                    KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                    Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-
-                    if (p && p.vessel && p.vessel != vessel)
+                    var orderedHits = hits.OrderBy(x => x.distance);
+                    using (var hitsEnu = orderedHits.GetEnumerator())
                     {
-                        float distance = hit.distance;
-                        //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                        if (electroLaser)
+                        while (hitsEnu.MoveNext())
                         {
-                            var mdEC = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                            if (mdEC == null)
-                            {
-                                p.vessel.rootPart.AddModule("ModuleDrainEC");
-                            }
-                            var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                            if (!pulseLaser)
-                            {
-                                emp.incomingDamage += (ECPerShot / 1000);
-                            }
-                            else
-                            {
-                                emp.incomingDamage += (ECPerShot / 20);
-                            }
-                            emp.softEMP = true;
+                            var hitPart = hitsEnu.Current.collider.gameObject.GetComponentInParent<Part>();
+                            if (hitPart == null) continue;
+                            if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+                            break;
                         }
-                        else if (impulseWeapon)
+                        var hit = hitsEnu.Current;
+                        lr.useWorldSpace = true;
+                        laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
+
+                        lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
+                        lr.SetPosition(1, laserPoint);
+
+                        KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                        Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+
+                        if (p && p.vessel && p.vessel != vessel)
                         {
-                            if (!pulseLaser)
+                            float distance = hit.distance;
+                            //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+                            if (electroLaser)
                             {
-                                damage = Impulse * TimeWarp.fixedDeltaTime;
-                            }
-                            if (p.rb != null && p.rb.mass > 0)
-                            {
-                                if (Impulse > 0)
+                                var mdEC = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                if (mdEC == null)
                                 {
-                                    p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                    p.vessel.rootPart.AddModule("ModuleDrainEC");
+                                }
+                                var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+                                if (!pulseLaser)
+                                {
+                                    emp.incomingDamage += (ECPerShot / 1000);
                                 }
                                 else
                                 {
-                                    p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                    emp.incomingDamage += (ECPerShot / 20);
                                 }
+                                emp.softEMP = true;
                             }
-                        }
-                        else
-                        {
-                            damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
-                            p.AddDamage(damage);
-                        }
-                        if (HEpulses)
-                        {
-                            ExplosionFx.CreateExplosion(hit.point,
-                                           (laserDamage / 30000),
-                                           explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
-                        }
-                        if (HeatRay)
-                        {
-                            using (var hitsEnu = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+                            else if (impulseWeapon)
                             {
-                                while (hitsEnu.MoveNext())
+                                if (!pulseLaser)
                                 {
-                                    KerbalEVA kerb = hitsEnu.Current.gameObject.GetComponentUpwards<KerbalEVA>();
-                                    Part hitP = kerb ? kerb.part : hitsEnu.Current.GetComponentInParent<Part>();
-                                    if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
+                                    damage = Impulse * TimeWarp.fixedDeltaTime;
+                                }
+                                if (p.rb != null && p.rb.mass > 0)
+                                {
+                                    if (Impulse > 0)
                                     {
-                                        //p.AddDamage(damage);
-                                        p.AddSkinThermalFlux(damage);
+                                        p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+                                    }
+                                    else
+                                    {
+                                        p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
                                     }
                                 }
                             }
-                        }
-                        if (graviticWeapon)
-                        {
-                            if (p.rb != null && p.rb.mass > 0)
-                            {
-                                float duration = BDArmorySettings.WEAPON_FX_DURATION;
-                                if (!pulseLaser)
-                                {
-                                    duration = BDArmorySettings.WEAPON_FX_DURATION * TimeWarp.fixedDeltaTime;
-                                }
-                                var ME = p.FindModuleImplementing<ModuleMassAdjust>();
-                                if (ME == null)
-                                {
-                                    ME = (ModuleMassAdjust)p.AddModule("ModuleMassAdjust");
-                                }
-                                ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
-                                ME.duration += duration;
-                            }
-                        }
-                        if (BDArmorySettings.INSTAKILL) p.Destroy();
-
-                        var aName = vesselname;
-                        var tName = p.vessel.GetName();
-                        if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                        {
-                            // Always score damage.
-                            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                            {
-                                BDAScoreService.Instance.TrackDamage(aName, tName, damage);
-                            }
-                            var tData = BDACompetitionMode.Instance.Scores[tName];
-                            if (tData.damageFromBullets.ContainsKey(aName))
-                                tData.damageFromBullets[aName] += damage;
                             else
-                                tData.damageFromBullets.Add(aName, damage);
-                            if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
                             {
-                                ScoreAccumulator = 0;
+                                damage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * TimeWarp.fixedDeltaTime * 0.425f);
+                                p.AddDamage(damage);
+                            }
+                            if (HEpulses)
+                            {
+                                ExplosionFx.CreateExplosion(hit.point,
+                                               (laserDamage / 30000),
+                                               explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+                            }
+                            if (HeatRay)
+                            {
+                                using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+                                {
+                                    while (hitsEnu2.MoveNext())
+                                    {
+                                        KerbalEVA kerb = hitsEnu2.Current.gameObject.GetComponentUpwards<KerbalEVA>();
+                                        Part hitP = kerb ? kerb.part : hitsEnu2.Current.GetComponentInParent<Part>();
+                                        if (hitP == null) continue;
+                                        if (ProjectileUtils.IsIgnoredPart(hitP)) continue;
+                                        if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
+                                        {
+                                            //p.AddDamage(damage);
+                                            p.AddSkinThermalFlux(damage);
+                                        }
+                                    }
+                                }
+                            }
+                            if (graviticWeapon)
+                            {
+                                if (p.rb != null && p.rb.mass > 0)
+                                {
+                                    float duration = BDArmorySettings.WEAPON_FX_DURATION;
+                                    if (!pulseLaser)
+                                    {
+                                        duration = BDArmorySettings.WEAPON_FX_DURATION * TimeWarp.fixedDeltaTime;
+                                    }
+                                    var ME = p.FindModuleImplementing<ModuleMassAdjust>();
+                                    if (ME == null)
+                                    {
+                                        ME = (ModuleMassAdjust)p.AddModule("ModuleMassAdjust");
+                                    }
+                                    ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
+                                    ME.duration += duration;
+                                }
+                            }
+                            if (BDArmorySettings.INSTAKILL) p.Destroy();
+
+                            var aName = vesselname;
+                            var tName = p.vessel.GetName();
+                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                            {
+                                // Always score damage.
                                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                 {
-                                    BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
+                                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                                 }
-                                var aData = BDACompetitionMode.Instance.Scores[aName];
-                                aData.Score += 1;
-                                if (p.vessel.GetName() == "Pinata")
-                                {
-                                    aData.PinataHits++;
-                                }
-                                tData.lastPersonWhoHitMe = aName;
-                                tData.lastHitTime = Planetarium.GetUniversalTime();
-                                tData.everyoneWhoHitMe.Add(aName);
-                                if (tData.hitCounts.ContainsKey(aName))
-                                    ++tData.hitCounts[aName];
+                                var tData = BDACompetitionMode.Instance.Scores[tName];
+                                if (tData.damageFromBullets.ContainsKey(aName))
+                                    tData.damageFromBullets[aName] += damage;
                                 else
-                                    tData.hitCounts.Add(aName, 1);
-                            }
-                            else
-                            {
-                                ScoreAccumulator += TimeWarp.fixedDeltaTime;
+                                    tData.damageFromBullets.Add(aName, damage);
+                                if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
+                                {
+                                    ScoreAccumulator = 0;
+                                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                                    {
+                                        BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
+                                    }
+                                    var aData = BDACompetitionMode.Instance.Scores[aName];
+                                    aData.Score += 1;
+                                    if (p.vessel.GetName() == "Pinata")
+                                    {
+                                        aData.PinataHits++;
+                                    }
+                                    tData.lastPersonWhoHitMe = aName;
+                                    tData.lastHitTime = Planetarium.GetUniversalTime();
+                                    tData.everyoneWhoHitMe.Add(aName);
+                                    if (tData.hitCounts.ContainsKey(aName))
+                                        ++tData.hitCounts[aName];
+                                    else
+                                        tData.hitCounts.Add(aName, 1);
+                                }
+                                else
+                                {
+                                    ScoreAccumulator += TimeWarp.fixedDeltaTime;
+                                }
                             }
                         }
-                    }
 
-                    if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
-                    {
-                        BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0);
+                        if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
+                        {
+                            BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0, weaponManager.Team.Name);
+                        }
                     }
                 }
                 else
@@ -2016,8 +2036,10 @@ namespace BDArmory.Modules
                                 rocket.sourceVessel = vessel;
                                 rocketObj.transform.SetParent(currentRocketTfm.parent);
                                 rocket.rocketName = GetShortName() + " rocket";
+                                rocket.team = weaponManager.Team.Name;
                                 rocket.parentRB = part.rb;
                                 rocket.rocket = RocketInfo.rockets[currentType];
+                                rocket.rocketSoundPath = rocketSoundPath;
                                 rocketObj.SetActive(true);
                             }
                             if (!BDArmorySettings.INFINITE_AMMO)
@@ -2081,6 +2103,8 @@ namespace BDArmory.Modules
                                         rocket.parentRB = part.rb;
                                         rocket.rocket = RocketInfo.rockets[currentType];
                                         rocket.rocketName = GetShortName() + " rocket";
+                                        rocket.team = weaponManager.Team.Name;
+                                        rocket.rocketSoundPath = rocketSoundPath;
                                         rocketObj.SetActive(true);
                                     }
                                     if (!BDArmorySettings.INFINITE_AMMO)
@@ -2351,28 +2375,44 @@ namespace BDArmory.Modules
             }
         }
 
+        HashSet<WeaponStates> enabledStates = new HashSet<WeaponStates> { WeaponStates.Enabled, WeaponStates.PoweringUp, WeaponStates.Locked };
         public void EnableWeapon()
         {
-            if (weaponState == WeaponStates.Enabled || weaponState == WeaponStates.PoweringUp || weaponState == WeaponStates.Locked)
-            {
+            if (enabledStates.Contains(weaponState))
                 return;
-            }
 
             StopShutdownStartupRoutines();
 
             startupRoutine = StartCoroutine(StartupRoutine());
         }
 
+        HashSet<WeaponStates> disabledStates = new HashSet<WeaponStates> { WeaponStates.Disabled, WeaponStates.PoweringDown };
         public void DisableWeapon()
         {
-            if (weaponState == WeaponStates.Disabled || weaponState == WeaponStates.PoweringDown)
-            {
+            if (disabledStates.Contains(weaponState))
                 return;
-            }
 
             StopShutdownStartupRoutines();
 
-            shutdownRoutine = StartCoroutine(ShutdownRoutine());
+            if (part.isActiveAndEnabled) shutdownRoutine = StartCoroutine(ShutdownRoutine());
+        }
+
+        HashSet<WeaponStates> standbyStates = new HashSet<WeaponStates> { WeaponStates.Standby, WeaponStates.PoweringUp, WeaponStates.Locked };
+        public void StandbyWeapon()
+        {
+            if (standbyStates.Contains(weaponState))
+                return;
+            if (disabledStates.Contains(weaponState))
+            {
+                StopShutdownStartupRoutines();
+                standbyRoutine = StartCoroutine(StandbyRoutine());
+            }
+            else
+            {
+                weaponState = WeaponStates.Standby;
+                UpdateGUIWeaponState();
+                BDArmorySetup.Instance.UpdateCursorState();
+            }
         }
 
         void ParseWeaponType()
@@ -3038,8 +3078,7 @@ namespace BDArmory.Modules
         void AimAndFire()
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
-            if (!aimAndFireIfPossible) return;
-            aimAndFireIfPossible = false;
+            if (!(aimAndFireIfPossible || aimOnly)) return;
             if (this == null || FlightGlobals.currentMainBody == null) return;
 
             UpdateTargetVessel();
@@ -3050,69 +3089,75 @@ namespace BDArmory.Modules
 
             RunTrajectorySimulation();
             Aim();
-            CheckWeaponSafety();
-            CheckAIAutofire();
-            // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
-
-            if (finalFire)
+            if (aimAndFireIfPossible)
             {
-                if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+                CheckWeaponSafety();
+                CheckAIAutofire();
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
+
+                if (finalFire)
                 {
-                    finalFire = false;
-                }
-                else
-                {
-                    finalFire = true;
-                }
-                if (eWeaponType == WeaponTypes.Laser)
-                {
-                    if (finalFire)
+                    if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
                     {
-                        if (FireLaser())
+                        finalFire = false;
+                    }
+                    else
+                    {
+                        finalFire = true;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser)
+                    {
+                        if (finalFire)
                         {
-                            for (int i = 0; i < laserRenderers.Length; i++)
-                            {
-                                laserRenderers[i].enabled = true;
-                            }
-                        }
-                        else
-                        {
-                            if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                            if (FireLaser())
                             {
                                 for (int i = 0; i < laserRenderers.Length; i++)
                                 {
-                                    laserRenderers[i].enabled = false;
+                                    laserRenderers[i].enabled = true;
                                 }
                             }
-                            if (!pulseLaser || !oneShotSound)
+                            else
                             {
-                                audioSource.Stop();
+                                if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                                {
+                                    for (int i = 0; i < laserRenderers.Length; i++)
+                                    {
+                                        laserRenderers[i].enabled = false;
+                                    }
+                                }
+                                if (!pulseLaser || !oneShotSound)
+                                {
+                                    audioSource.Stop();
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    if (eWeaponType == WeaponTypes.Ballistic)
+                    else
                     {
-                        if (finalFire)
-                            Fire();
+                        if (eWeaponType == WeaponTypes.Ballistic)
+                        {
+                            if (finalFire)
+                                Fire();
+                        }
+                        if (eWeaponType == WeaponTypes.Rocket)
+                        {
+                            if (finalFire)
+                                FireRocket();
+                        }
                     }
-                    if (eWeaponType == WeaponTypes.Rocket)
+                    if (BurstFire && (RoundsRemaining < RoundsPerMag))
                     {
-                        if (finalFire)
-                            FireRocket();
+                        finalFire = true;
                     }
-                }
-                if (BurstFire && (RoundsRemaining < RoundsPerMag))
-                {
-                    finalFire = true;
-                }
-                else
-                {
-                    finalFire = false;
+                    else
+                    {
+                        finalFire = false;
+                    }
                 }
             }
+
+            aimAndFireIfPossible = false;
+            aimOnly = false;
         }
 
         void DrawAlignmentIndicator()
@@ -3371,8 +3416,11 @@ namespace BDArmory.Modules
                             targetparts = targetparts.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
                             targetparts.Reverse(); //Order by mass is lightest to heaviest. We want H>L
                             //targetparts.Shuffle(); //alternitively, increase the random range from maxtargetnum to targetparts.count, otherwise edge cases where lots of one thing (targeting command/mass) will be pulled before lighter things (weapons, maybe engines) if both selected
-                            targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(targetparts.Count, weaponManager.multiTargetNum));
-                            if (!turret) //make fixed guns all get the same target part
+                            if (turret)
+                            {
+                                targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(targetparts.Count, weaponManager.multiTargetNum));
+                            }
+                            else //make fixed guns all get the same target part
                             {
                                 targetID = 0;
                             }
@@ -3525,7 +3573,7 @@ namespace BDArmory.Modules
 
         IEnumerator StartupRoutine(bool calledByReload = false)
         {
-            if (hasReloadAnim && isReloading) //wait for relaod to finish before shutting down
+            if (hasReloadAnim && isReloading) //wait for reload to finish before shutting down
             {
                 while (reloadState.normalizedTime < 1)
                 {
@@ -3618,6 +3666,13 @@ namespace BDArmory.Modules
 
             UpdateGUIWeaponState();
         }
+        IEnumerator StandbyRoutine()
+        {
+            yield return StartupRoutine(true);
+            weaponState = WeaponStates.Standby;
+            UpdateGUIWeaponState();
+            BDArmorySetup.Instance.UpdateCursorState();
+        }
         void StopShutdownStartupRoutines()
         {
             if (shutdownRoutine != null)
@@ -3630,6 +3685,12 @@ namespace BDArmory.Modules
             {
                 StopCoroutine(startupRoutine);
                 startupRoutine = null;
+            }
+
+            if (standbyRoutine != null)
+            {
+                StopCoroutine(standbyRoutine);
+                standbyRoutine = null;
             }
         }
 

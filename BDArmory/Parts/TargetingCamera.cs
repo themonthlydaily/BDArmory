@@ -312,6 +312,11 @@ namespace BDArmory.Parts
         {
             ReadyForUse = false;
             GameEvents.onVesselChange.Remove(VesselChange);
+            foreach (var camera in cameras)
+            {
+                if (camera != null && camera.gameObject != null)
+                { Destroy(camera.gameObject); }
+            }
         }
 
         public static bool IsTGPCamera(Camera c)

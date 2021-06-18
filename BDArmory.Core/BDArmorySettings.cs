@@ -48,7 +48,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistantSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
         [BDAPersistantSettingsField] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
-        [BDAPersistantSettingsField] public static int KERBAL_SAFETY = 2;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
+        [BDAPersistantSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistantSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
         [BDAPersistantSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
         [BDAPersistantSettingsField] public static bool AUTOCATEGORIZE_PARTS = true;
@@ -135,7 +135,10 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
         [BDAPersistantSettingsField] public static bool BD_AMMOBINS = false;   //can ammo bins explode?
         [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
+        [BDAPersistantSettingsField] public static float BD_AMMO_DMG_MULT = 1; //ammosplosion damage
         [BDAPersistantSettingsField] public static bool BD_PROPULSION = false; //engine thrust reduction, fires
+        [BDAPersistantSettingsField] public static float BD_PROP_FLOOR = 20; //minimum thrust% damaged engines produce
+        [BDAPersistantSettingsField] public static float BD_PROP_FLAMEOUT = 25; //remaiing HP% engines flameout
         [BDAPersistantSettingsField] public static bool BD_BALANCED_THRUST = true;
         [BDAPersistantSettingsField] public static float BD_PROP_DAM_RATE = 1; //rate multiplier, 0.1-2
         [BDAPersistantSettingsField] public static bool BD_INTAKES = false; //Can intakes be damaged?
@@ -185,6 +188,7 @@ namespace BDArmory.Core
         // Resource steal
         [BDAPersistantSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
         [BDAPersistantSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
+        [BDAPersistantSettingsField] public static float RESOURCE_STEAL_CM_RATION = 0f;
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.

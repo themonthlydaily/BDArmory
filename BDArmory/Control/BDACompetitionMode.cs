@@ -19,45 +19,66 @@ namespace BDArmory.Control
     {
         public Vessel vesselRef; // TODO Reuse these fields instead of looking for them each time.
         public MissileFire weaponManagerRef;
-        public int Score;
-        public int PinataHits;
-        public int totalDamagedPartsDueToRamming = 0;
-        public int totalDamagedPartsDueToMissiles = 0;
-        public string lastPersonWhoHitMe = "";
-        public string lastPersonWhoHitMeWithAMissile = "";
-        public string lastPersonWhoRammedMe = "";
-        public double lastHitTime; // Bullets
-        public bool tagIsIt = false; // For tag mode
-        public int tagKillsWhileIt = 0; // For tag mode
-        public int tagTimesIt = 0; // For tag mode
-        public double tagTotalTime = 0; // For tag mode
-        public double tagScore = 0; // For tag mode
-        public double lastMissileHitTime; // Missiles
-        public double lastFiredTime;
-        public double lastRammedTime; // Rams
-        public bool landedState;
-        public double lastLandedTime;
-        public double landedKillTimer;
-        public double AverageSpeed;
-        public double AverageAltitude;
-        public int averageCount;
-        public int previousPartCount;
-        public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
-        public HashSet<string> everyoneWhoHitMe = new HashSet<string>();
-        public HashSet<string> everyoneWhoRammedMe = new HashSet<string>();
-        public HashSet<string> everyoneWhoHitMeWithMissiles = new HashSet<string>();
-        public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>();
-        public Dictionary<string, int> hitCounts = new Dictionary<string, int>();
-        public Dictionary<string, float> damageFromBullets = new Dictionary<string, float>();
-        public Dictionary<string, float> damageFromMissiles = new Dictionary<string, float>();
-        public int shotsFired = 0;
-        public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>();
-        public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>();
-        public Dictionary<string, int> missileHitCounts = new Dictionary<string, int>();
-        public GMKillReason gmKillReason = GMKillReason.None;
-        public bool cleanDeath = false;
-        public string team;
+        public bool cleanDeath = false; // Whether the kill was a "head-shot".
+        public string team; // The vessel's team.
 
+        #region Guns
+        public int Score; // Number of hits this vessel landed.
+        public int PinataHits; // Number of hits this vessel landed on the piñata.
+        public int shotsFired = 0; // Number of shots fired by this vessel.
+        public double lastHitTime; // Time of the last bullet hit on this vessel.
+        public string lastPersonWhoHitMe = ""; // The last vessel that shot this vessel.
+        public HashSet<string> everyoneWhoHitMe = new HashSet<string>(); // Every other vessel that landed a shot on this vessel.
+        public Dictionary<string, int> hitCounts = new Dictionary<string, int>(); // Hits taken from guns fired by other vessels.
+        public Dictionary<string, float> damageFromBullets = new Dictionary<string, float>(); // Damage taken from guns fired by other vessels.
+        #endregion
+
+        #region Ramming
+        public int totalDamagedPartsDueToRamming = 0; // Number of other vessels' parts destroyed by this vessel due to ramming.
+        public int previousPartCount; // Number of parts this vessel had last time we checked (for ramming tracking).
+        public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
+        public double lastRammedTime; // Time of the last ram against this vessel.
+        public string lastPersonWhoRammedMe = ""; // The last vessel that rammed this vessel.
+        public HashSet<string> everyoneWhoRammedMe = new HashSet<string>(); // Every other vessel that rammed this vessel.
+        public Dictionary<string, int> rammingPartLossCounts = new Dictionary<string, int>(); // Number of parts lost due to ramming by other vessels.
+        #endregion
+
+        #region Missiles
+        public int totalDamagedPartsDueToMissiles = 0; // Number of other vessels' parts damaged by this vessel due to missile strikes.
+        public double lastMissileHitTime; // Time of the last missile strike hitting this vessel.
+        public string lastPersonWhoHitMeWithAMissile = ""; // The last vessel that hit this vessel with a missile.
+        public HashSet<string> everyoneWhoHitMeWithMissiles = new HashSet<string>(); // Every other vessel that landed a missile strike against this vessel.
+        public Dictionary<string, float> damageFromMissiles = new Dictionary<string, float>(); // Damage taken from missile strikes from other vessels.
+        public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>(); // Number of parts damaged by missile strikes from other vessels.
+        public Dictionary<string, int> missileHitCounts = new Dictionary<string, int>(); // Number of missile strikes from other vessels.
+        #endregion
+
+        #region GM
+        public double lastFiredTime; // Time that this vessel last fired a gun.
+        public bool landedState; // Whether the vessel is landed or not.
+        public double lastLandedTime; // Time that this vessel was landed last.
+        public double landedKillTimer; // Counter tracking time this vessel is landed (for the kill timer).
+        public double AverageSpeed; // Average speed of this vessel recently (for the killer GM).
+        public double AverageAltitude; // Average altitude of this vessel recently (for the killer GM).
+        public int averageCount; // Count for the averaging stats.
+        public GMKillReason gmKillReason = GMKillReason.None; // Reason the GM killed this vessel.
+        #endregion
+
+        #region Tag
+        public bool tagIsIt = false; // Whether this vessel is IT or not.
+        public int tagKillsWhileIt = 0; // The number of kills gained while being IT.
+        public int tagTimesIt = 0; // The number of times this vessel was IT.
+        public double tagTotalTime = 0; // The total this vessel spent being IT.
+        public double tagScore = 0; // Abstract score for tag mode.
+        #endregion
+
+        #region Misc
+        public double remainingHP; // HP of vessel
+        #endregion
+
+        /// <summary>
+        /// Time that this vessel last took damage.
+        /// </summary>
         public double LastDamageTime()
         {
             var lastDamageWasFrom = LastDamageWasFrom();
@@ -73,6 +94,9 @@ namespace BDArmory.Control
                     return 0;
             }
         }
+        /// <summary>
+        /// What type of damage the last damage taken was.
+        /// </summary>
         public DamageFrom LastDamageWasFrom()
         {
             double lastTime = 0;
@@ -94,6 +118,9 @@ namespace BDArmory.Control
             }
             return damageFrom;
         }
+        /// <summary>
+        /// The name of the last vessel to damage this one.
+        /// </summary>
         public string LastPersonWhoDamagedMe()
         {
             var lastDamageWasFrom = LastDamageWasFrom();
@@ -110,6 +137,10 @@ namespace BDArmory.Control
             }
         }
 
+        HashSet<string> everyoneWhoDamagedMe = new HashSet<string>(); // Every other vessel that damaged this vessel (backing store variable).
+        /// <summary>
+        /// Every other vessel that damaged this one.
+        /// </summary>
         public HashSet<string> EveryOneWhoDamagedMe()
         {
             foreach (var hit in everyoneWhoHitMe)
@@ -431,6 +462,7 @@ namespace BDArmory.Control
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
+            FX.BulletHitFX.CleanPartsOnFireInfo();
             // now find all vessels with weapons managers
             foreach (var pilot in getAllPilots())
             {
@@ -493,6 +525,8 @@ namespace BDArmory.Control
 
             //clear target database so pilots don't attack yet
             BDATargetManager.ClearDatabase();
+            // CleanUpKSPsDeadReferences(); FIXME memory leak debugging.
+            RunDebugChecks();
 
             foreach (var vname in Scores.Keys)
             {
@@ -1399,12 +1433,12 @@ namespace BDArmory.Control
 
         private void CheckAltitudeLimits()
         {
-            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 46f) // Kill off those flying too high.
+            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 55f) // Kill off those flying too high.
             {
-                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 20f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 39f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 18f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 38f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
-                    if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude > limit)
+                    if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude > limit)
                     {
                         Scores[weaponManager.vessel.vesselName].gmKillReason = GMKillReason.GM;
                         var killerName = Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe;
@@ -1422,10 +1456,10 @@ namespace BDArmory.Control
             }
             if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -1) // Kill off those flying too low.
             {
-                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
-                    if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.altitude < limit)
+                    if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude < limit)
                     {
                         Scores[weaponManager.vessel.vesselName].gmKillReason = GMKillReason.GM;
                         var killerName = Scores[weaponManager.vessel.vesselName].lastPersonWhoHitMe;
@@ -2092,7 +2126,8 @@ namespace BDArmory.Control
                 Debug.Log("[BDArmory.BDACompetitionMode]: No active competition, not dumping results.");
                 return;
             }
-            CheckMemoryUsage();
+            // RunDebugChecks();
+            // CheckMemoryUsage();
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
                 VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
@@ -2108,21 +2143,27 @@ namespace BDArmory.Control
             logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - competitionStartTime) + "s (of " + (BDArmorySettings.COMPETITION_DURATION * 60d) + "s) at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
             // Find out who's still alive
+            var survivingTeams = new HashSet<string>();
             foreach (var vessel in FlightGlobals.Vessels)
             {
                 if (vessel == null || !vessel.loaded || vessel.packed)
                     continue;
-                if (vessel.FindPartModuleImplementing<MissileFire>() != null)
-                    alive.Add(vessel.vesselName);
+                var mf = vessel.FindPartModuleImplementing<MissileFire>();
+                double HP;
+                if (mf != null)
+                {
+                    HP = Mathf.Clamp((1 - ((mf.totalHP - mf.vessel.parts.Count) / mf.totalHP)), 0, 1) * 100;
+                    if (Scores.ContainsKey(vessel.vesselName))
+                    {
+                        Scores[vessel.vesselName].remainingHP = HP;
+                        survivingTeams.Add(Scores[vessel.vesselName].team); //move this here so last man standing can claim the win, even if they later don't meet the 'survive' criteria
+                    }
+                    if (HP > 25 && vessel.verticalSpeed < 30) //if all that's left of a plane is a cockpit or a wreck uncontrollably falling out of the sky, can it really count as 'survived'?
+                        alive.Add(vessel.vesselName);
+                }
             }
 
-            // General result. (Note: uses hand-coded JSON to make parsing easier in python.)
-            var survivingTeams = new HashSet<string>();
-            foreach (var vesselName in alive)
-            {
-                if (Scores.ContainsKey(vesselName))
-                    survivingTeams.Add(Scores[vesselName].team);
-            }
+            // General result. (Note: uses hand-coded JSON to make parsing easier in python.)     
             if (survivingTeams.Count == 0)
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: RESULT:Mutual Annihilation");
             else if (survivingTeams.Count == 1)
@@ -2234,6 +2275,10 @@ namespace BDArmory.Control
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: CLEANMISSILEKILL:" + key + ":" + whoCleanShotWhoWithMissiles[key]);
             foreach (var key in whoCleanRammedWho.Keys)
                 logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: CLEANRAM:" + key + ":" + whoCleanRammedWho[key]);
+
+            // remaining health
+            foreach (var key in Scores.Keys)
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: HPLEFT:" + key + ":" + Scores[key].remainingHP);
 
             // Accuracy
             foreach (var key in Scores.Keys)
@@ -2750,7 +2795,6 @@ namespace BDArmory.Control
             tData.lastRammedTime = timeOfCollision;
             tData.lastPersonWhoRammedMe = rammingVesselName;
             tData.everyoneWhoRammedMe.Add(rammingVesselName);
-            tData.everyoneWhoDamagedMe.Add(rammingVesselName);
             if (tData.rammingPartLossCounts.ContainsKey(rammingVesselName))
                 tData.rammingPartLossCounts[rammingVesselName] += partsLost;
             else
@@ -2960,12 +3004,13 @@ namespace BDArmory.Control
                         emitterNames.Add(pe.gameObject.name, 1);
                 }
             }
-            Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.Select(pe => pe.Key + ":" + pe.Value)));
+            Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.OrderByDescending(kvp => kvp.Value).Select(pe => pe.Key + ":" + pe.Value)));
 
             strings.Clear();
             strings.Add("Parts: " + FindObjectsOfType<Part>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Part)).Length);
             strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Vessel)).Length);
-            strings.Add("CometVessels: " + FindObjectsOfType<CometVessel>().Length);
+            strings.Add("GameObjects: " + FindObjectsOfType<GameObject>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(GameObject)).Length);
+            strings.Add($"FlightState ProtoVessels: {HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).Count()} active of {HighLogic.CurrentGame.flightState.protoVessels.Count}");
             Debug.Log("DEBUG " + string.Join(", ", strings));
         }
 
@@ -2974,6 +3019,46 @@ namespace BDArmory.Control
             CheckMemoryUsage();
             CheckNumbersOfThings();
         }
-    }
 
+        public void CleanUpKSPsDeadReferences()
+        {
+            var toRemove = new List<uint>();
+            foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
+                if (FlightGlobals.PersistentVesselIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent vessel references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentVesselIds.Remove(key);
+
+            toRemove.Clear();
+            foreach (var key in FlightGlobals.PersistentLoadedPartIds.Keys)
+                if (FlightGlobals.PersistentLoadedPartIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent loaded part references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentLoadedPartIds.Remove(key);
+
+            // Usually doesn't find any.
+            toRemove.Clear();
+            foreach (var key in FlightGlobals.PersistentUnloadedPartIds.Keys)
+                if (FlightGlobals.PersistentUnloadedPartIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent unloaded part references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
+
+            var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef == null).ToList();
+            if (protoVessels.Count > 0) { Debug.Log($"DEBUG Found {protoVessels.Count} inactive ProtoVessels in flightState."); }
+            foreach (var protoVessel in protoVessels)
+            {
+                if (protoVessel == null) continue;
+                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
+                if (protoVessel == null) continue;
+                if (protoVessel.protoPartSnapshots != null)
+                {
+                    foreach (var protoPart in protoVessel.protoPartSnapshots)
+                    {
+                        protoPart.modules.Clear();
+                        protoPart.pVesselRef = null;
+                        protoPart.partRef = null;
+                    }
+                    protoVessel.protoPartSnapshots.Clear();
+                }
+            }
+        }
+    }
 }

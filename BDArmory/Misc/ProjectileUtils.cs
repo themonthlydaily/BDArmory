@@ -22,7 +22,7 @@ namespace BDArmory.Misc
                     _FuelResources = new HashSet<string>();
                     foreach (var resource in PartResourceLibrary.Instance.resourceDefinitions)
                     {
-                        if (resource.name.EndsWith("Fuel") || resource.name.EndsWith("Oxidizer") || resource.name.EndsWith("Air") || resource.name.EndsWith("Charge")) // FIXME These ought to be configurable
+                        if (resource.name.EndsWith("Fuel") || resource.name.EndsWith("Oxidizer") || resource.name.EndsWith("Air") || resource.name.EndsWith("Charge") || resource.name.EndsWith("Gas") || resource.name.EndsWith("Propellant")) // FIXME These ought to be configurable
                         { _FuelResources.Add(resource.name); }
                     }
                     Debug.Log("[BDArmory.ProjectileUtils]: Fuel resources: " + string.Join(", ", _FuelResources));
@@ -40,7 +40,7 @@ namespace BDArmory.Misc
                     _AmmoResources = new HashSet<string>();
                     foreach (var resource in PartResourceLibrary.Instance.resourceDefinitions)
                     {
-                        if (resource.name.EndsWith("Ammo") || resource.name.EndsWith("Shells") || resource.name.EndsWith("Rocket"))
+                        if (resource.name.EndsWith("Ammo") || resource.name.EndsWith("Shell") || resource.name.EndsWith("Shells") || resource.name.EndsWith("Rocket") || resource.name.EndsWith("Rockets") || resource.name.EndsWith("Bolt") || resource.name.EndsWith("Mauser"))
                         { _AmmoResources.Add(resource.name); }
                     }
                     Debug.Log("[BDArmory.ProjectileUtils]: Ammo resources: " + string.Join(", ", _AmmoResources));
@@ -49,18 +49,40 @@ namespace BDArmory.Misc
             }
         }
         static HashSet<string> _AmmoResources;
+        static HashSet<string> CMResources
+        {
+            get
+            {
+                if (_CMResources == null)
+                {
+                    _CMResources = new HashSet<string>();
+                    foreach (var resource in PartResourceLibrary.Instance.resourceDefinitions)
+                    {
+                        if (resource.name.EndsWith("Flare") || resource.name.EndsWith("Smoke") || resource.name.EndsWith("Chaff"))
+                        { _CMResources.Add(resource.name); }
+                    }
+                    Debug.Log("[BDArmory.ProjectileUtils]: Couter-measure resources: " + string.Join(", ", _CMResources));
+                }
+                return _CMResources;
+            }
+        }
+        static HashSet<string> _CMResources;
 
-        public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool hasRichocheted, Vessel sourceVessel, string name)
+        public static HashSet<string> IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
+        public static bool IsIgnoredPart(Part part) { return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name); }
+
+        public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool hasRichocheted, Vessel sourceVessel, string name, string team)
         {
             //hitting a vessel Part
             //No struts, they cause weird bugs :) -BahamutoD
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
+            if (IsIgnoredPart(hitPart)) return; // Ignore ignored parts.
 
             // Add decals
             if (BDArmorySettings.BULLET_HITS)
             {
-                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, hasRichocheted, caliber, penetrationfactor);
+                BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, hasRichocheted, caliber, penetrationfactor, team);
             }
             // Apply damage
             float damage;
@@ -122,8 +144,9 @@ namespace BDArmory.Misc
                 // steal resources if enabled
                 if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
                 {
-                    StealResource(hitPart.vessel, sourceVessel, FuelResources, BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
-                    StealResource(hitPart.vessel, sourceVessel, AmmoResources, BDArmorySettings.RESOURCE_STEAL_AMMO_RATION);
+                    if (BDArmorySettings.RESOURCE_STEAL_FUEL_RATION > 0f) StealResource(hitPart.vessel, sourceVessel, FuelResources, BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
+                    if (BDArmorySettings.RESOURCE_STEAL_AMMO_RATION > 0f) StealResource(hitPart.vessel, sourceVessel, AmmoResources, BDArmorySettings.RESOURCE_STEAL_AMMO_RATION, true);
+                    if (BDArmorySettings.RESOURCE_STEAL_CM_RATION > 0f) StealResource(hitPart.vessel, sourceVessel, CMResources, BDArmorySettings.RESOURCE_STEAL_CM_RATION, true);
                 }
             }
         }
@@ -185,7 +208,7 @@ namespace BDArmory.Misc
             {
                 if (BDArmorySettings.BULLET_HITS)
                 {
-                    BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, true, caliber, 0);
+                    BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, true, caliber, 0, null);
                 }
 
                 return true;
@@ -366,7 +389,7 @@ namespace BDArmory.Misc
             }
         }
 
-        private static void StealResource(Vessel src, Vessel dst, HashSet<string> resourceNames, double ration)
+        private static void StealResource(Vessel src, Vessel dst, HashSet<string> resourceNames, double ration, bool integerAmounts = false)
         {
             // identify all parts on source vessel with resource
             Dictionary<string, HashSet<PartResource>> srcParts = new Dictionary<string, HashSet<PartResource>>();
@@ -385,8 +408,14 @@ namespace BDArmory.Misc
                 }
 
                 double remainingAmount = srcParts[resourceName].Sum(p => p.amount);
+                if (integerAmounts)
+                {
+                    remainingAmount = Math.Floor(remainingAmount);
+                    if (remainingAmount == 0) continue; // Nothing left to steal.
+                }
                 double amount = remainingAmount * ration;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: " + src.vesselName + " is trying to steal " + amount.ToString("F1") + " of " + resourceName + " from " + dst.vesselName);
+                if (integerAmounts) { amount = Math.Ceiling(amount); } // Round up steal amount so that something is always stolen if there's something to steal.
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: " + dst.vesselName + " is trying to steal " + amount.ToString("F1") + " of " + resourceName + " from " + src.vesselName);
 
                 // transfer resource from src->dst parts, honoring their priorities
                 PriorityQueue sourceQueue = new PriorityQueue(srcParts[resourceName]);
@@ -394,7 +423,7 @@ namespace BDArmory.Misc
                 List<PartResource> sources = null, destinations = null;
                 double tolerance = 1e-3;
                 double amountTaken = 0;
-                while (amount - amountTaken > tolerance)
+                while (amount - amountTaken >= (integerAmounts ? 1d : tolerance))
                 {
                     if (sources == null)
                     {
@@ -406,30 +435,47 @@ namespace BDArmory.Misc
                         destinations = destinationQueue.Pop();
                         if (destinations.Count() == 0) break;
                     }
-                    var availability = sources.Where(e => e.amount > tolerance / sources.Count()); // All source parts with something in.
-                    var opportunity = destinations.Where(e => e.maxAmount - e.amount > tolerance / destinations.Count()); // All destination parts with room to spare.
-                    if (availability.Count() == 0) sources = null;
-                    if (opportunity.Count() == 0) destinations = null;
+                    var availability = sources.Where(e => e.amount >= tolerance / sources.Count()); // All source parts with something in.
+                    var opportunity = destinations.Where(e => e.maxAmount - e.amount >= tolerance / destinations.Count()); // All destination parts with room to spare.
+                    if (availability.Count() == 0) { sources = null; }
+                    if (opportunity.Count() == 0) { destinations = null; }
                     if (sources == null || destinations == null) continue;
-                    var minTransferAvailable = availability.Min(e => e.amount); // Minimum amount transferable per part to empty a part.
-                    var minTransferOpportunity = opportunity.Min(e => e.maxAmount - e.amount); // Minimum amount transferable per part to fill a part.
-                    var totalTransfer = Math.Min(availability.Count() * minTransferAvailable, opportunity.Count() * minTransferOpportunity); // The lowest amount transferable between these groups of parts where a part gets completely emptied or completely filled.
-                    totalTransfer = Math.Min(amount, totalTransfer); // Don't transfer more than the required amount.
-                    var perPartAmount = totalTransfer / (availability.Count() * opportunity.Count());
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: Transferring " + perPartAmount.ToString("F1") + " of " + resourceName + " from each of " + string.Join(", ", availability.Select(a => a.part.name + " (" + a.amount.ToString("F1") + "/" + a.maxAmount.ToString("F1") + ")").ToList()) + " on " + src.vesselName + " to each of " + string.Join(", ", opportunity.Select(o => o.part.name + " (" + o.amount.ToString("F1") + "/" + o.maxAmount.ToString("F1") + ")").ToList()) + " on " + dst.vesselName);
+                    if (integerAmounts)
+                    {
+                        if (availability.Sum(e => e.amount) < 1d) { sources = null; }
+                        if (opportunity.Sum(e => e.maxAmount - e.amount) < 1d) { destinations = null; }
+                        if (sources == null || destinations == null) continue;
+                    }
+                    var minFractionAvailable = availability.Min(r => r.amount / r.maxAmount); // Minimum fraction of container size available for transfer.
+                    var minFractionOpportunity = opportunity.Min(r => (r.maxAmount - r.amount) / r.maxAmount); // Minimum fraction of container size available to fill a part.
+                    var totalTransferAvailable = availability.Sum(r => r.maxAmount * minFractionAvailable);
+                    var totalTransferOpportunity = opportunity.Sum(r => r.maxAmount * minFractionOpportunity);
+                    var totalTransfer = Math.Min(amount, Math.Min(totalTransferAvailable, totalTransferOpportunity)); // Total amount to transfer that either transfers the amount required, empties a container or fills a container.
+                    if (integerAmounts) { totalTransfer = Math.Floor(totalTransfer); }
+                    var totalContainerSizeAvailable = availability.Sum(r => r.maxAmount);
+                    var totalContainerSizeOpportunity = opportunity.Sum(r => r.maxAmount);
+                    var transferFractionAvailable = totalTransfer / totalContainerSizeAvailable;
+                    var transferFractionOpportunity = totalTransfer / totalContainerSizeOpportunity;
+
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Transferring {totalTransfer:F1} of {resourceName} from {string.Join(", ", availability.Select(a => $"{a.part.name} ({a.amount:F1}/{a.maxAmount:F1})").ToList())} on {src.vesselName} to {string.Join(", ", opportunity.Select(o => $"{o.part.name} ({o.amount:F1}/{o.maxAmount:F1})").ToList())} on {dst.vesselName}");
+                    // Transfer directly between parts doesn't seem to be working properly (it leaves the source, but doesn't arrive at the destination).
+                    var measuredOut = 0d;
+                    var measuredIn = 0d;
                     foreach (var sourceResource in availability)
-                        foreach (var destinationResource in opportunity)
-                        {
-                            var measuredOut = sourceResource.part.TransferResource(sourceResource.info.id, -perPartAmount); // Transfer directly between parts doesn't seem to be working properly (it leaves the source, but doesn't arrive at the destination).
-                            var measuredIn = -destinationResource.part.TransferResource(destinationResource.info.id, perPartAmount);
-                            if (Math.Abs(measuredOut - perPartAmount) > tolerance / sources.Count() || Math.Abs(measuredIn - perPartAmount) > tolerance / destinations.Count())
-                            {
-                                Debug.LogWarning("[BDArmory.ProjectileUtils]: Discrepancy in the amount of " + resourceName + " transferred from " + sourceResource.part.name + " (" + (perPartAmount - measuredOut).ToString("F3") + ") to " + destinationResource.part.name + " (" + (perPartAmount - measuredIn).ToString("F3") + ")");
-                            }
-                        }
+                    { measuredOut += sourceResource.part.TransferResource(sourceResource.info.id, -transferFractionAvailable * sourceResource.maxAmount); }
+                    foreach (var destinationResource in opportunity)
+                    { measuredIn += -destinationResource.part.TransferResource(destinationResource.info.id, transferFractionOpportunity * destinationResource.maxAmount); }
+                    if (Math.Abs(measuredIn - measuredOut) > tolerance)
+                    { Debug.LogWarning($"[BDArmory.ProjectileUtils]: Discrepancy in the amount of {resourceName} transferred from {string.Join(", ", availability.Select(r => r.part.name))} ({measuredOut:F3}) to {string.Join(", ", opportunity.Select(r => r.part.name))} ({measuredIn:F3})"); }
+
                     amountTaken += totalTransfer;
+                    if (totalTransfer < tolerance)
+                    {
+                        Debug.LogWarning($"[BDArmory.ProjectileUtils]: totalTransfer was {totalTransfer} for resource {resourceName}, amount: {amount}, availability: {string.Join(", ", availability.Select(r => r.amount))}, opportunity: {string.Join(", ", opportunity.Select(r => r.maxAmount - r.amount))}");
+                        if (availability.Sum(r => r.amount) < opportunity.Sum(r => r.maxAmount - r.amount)) { sources = null; } else { destinations = null; }
+                    }
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils]: Final amount of " + resourceName + " stolen: " + amountTaken.ToString("F1"));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.ProjectileUtils]: Final amount of {resourceName} stolen: {amountTaken:F1}");
             }
         }
 

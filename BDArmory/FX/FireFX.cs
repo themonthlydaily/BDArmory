@@ -58,28 +58,30 @@ namespace BDArmory.FX
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
 
-                BDArmorySetup.numberOfParticleEmitters++;
-                pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
+            BDArmorySetup.numberOfParticleEmitters++;
+            pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
 
-                using (var pe = pEmitters.AsEnumerable().GetEnumerator())
-                    while (pe.MoveNext())
-                    {
-                        if (pe.Current == null) continue;
-                        pe.Current.emit = true;
-                        _highestEnergy = pe.Current.maxEnergy;
-                        EffectBehaviour.AddParticleEmitter(pe.Current);
-                    }
+            using (var pe = pEmitters.AsEnumerable().GetEnumerator())
+                while (pe.MoveNext())
+                {
+                    if (pe.Current == null) continue;
+                    pe.Current.emit = true;
+                    _highestEnergy = pe.Current.maxEnergy;
+                    EffectBehaviour.AddParticleEmitter(pe.Current);
+                }
 
-            var kerbalSeats = parentPart.parent.Modules.OfType<KerbalSeat>();
-            if (kerbalSeats.Count() > 0)
-                Seat = kerbalSeats.First();
-            else
-                Seat = null;
+            Seat = null;
+            if (parentPart.parent != null)
+            {
+                var kerbalSeats = parentPart.parent.Modules.OfType<KerbalSeat>();
+                if (kerbalSeats.Count() > 0)
+                    Seat = kerbalSeats.First();
+            }
             if (parentPart.protoModuleCrew.Count > 0) //crew can extingusih fire
             {
                 burnTime = 10;
             }
-            if (parentPart.parent != null && parentPart.parent.protoModuleCrew.Count > 0 || Seat.Occupant != null)
+            if (parentPart.parent != null && parentPart.parent.protoModuleCrew.Count > 0 || (Seat != null && Seat.Occupant != null))
             {
                 burnTime = 20; //though adjacent parts will take longer to get to and extingusih
             }
@@ -281,10 +283,10 @@ namespace BDArmory.FX
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 if (fuel != null)
                 {
-                    tntMassEquivilent += Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f));
+                    tntMassEquivilent += (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f))/2);
                     if (fuel != null && ox != null)
                     {
-                        tntMassEquivilent += Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f));
+                        tntMassEquivilent += (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f))/2);
                         tntMassEquivilent *= 1.3f;
                     }
                     if (fuel.amount > fuel.maxAmount * 0.3f)
@@ -295,7 +297,7 @@ namespace BDArmory.FX
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
                 if (mp != null)
                 {
-                    tntMassEquivilent += Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f));
+                    tntMassEquivilent += (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f))/3);
                     if (mp.amount > mp.maxAmount * 0.3f)
                     {
                         excessFuel = true;
@@ -310,6 +312,11 @@ namespace BDArmory.FX
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
                 }
+                tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.FireFX] Fuel Explosion in " + this.parentPart.name + ", TNT mass equivilent " + tntMassEquivilent);
+                }
                 if (excessFuel)
                 {
                     float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivilent);
@@ -321,6 +328,8 @@ namespace BDArmory.FX
                             try
                             {
                                 Part partHit = blastHits.Current.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                 if (partHit != null && partHit.mass > 0)
                                 {
                                     Rigidbody rb = partHit.Rigidbody;
@@ -336,6 +345,10 @@ namespace BDArmory.FX
                                         {
                                             if (rb == null) return;
                                             BulletHitFX.AttachFire(hit, p, 1, SourceVessel, 20);
+                                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                            {
+                                                Debug.Log("[BDArmory.FireFX] " +  this.parentPart.name + " hit by burning fuel");
+                                            }
                                         }
                                     }
                                 }
@@ -371,7 +384,8 @@ namespace BDArmory.FX
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                Detonate();
+                if(gameObject.activeInHierarchy)
+                    Detonate();
                 parentPart = null;
                 transform.parent = null;
                 gameObject.SetActive(false);

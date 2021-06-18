@@ -13,6 +13,7 @@ namespace BDArmory.Misc
         public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, string attacker, RaycastHit hitLoc)
         {
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
+            if (ProjectileUtils.IsIgnoredPart(part)) return; // Ignore ignored parts.
 
             double damageChance = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE * ((1 - part.GetDamagePercentage()) * 10) * (penetrationFactor / 2)), 0, 100); //more heavily damaged parts more likely to take battledamage
 
@@ -60,17 +61,24 @@ namespace BDArmory.Misc
                 }
             }
             //AmmoBins
-            if (BDArmorySettings.BD_AMMOBINS && penetrationFactor > 1.2 && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
+            if (BDArmorySettings.BD_AMMOBINS && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
             {
                 var ammo = part.FindModuleImplementing<ModuleCASE>();
                 if (ammo != null)
                 {
-                    double Diceroll = UnityEngine.Random.Range(0, 100);
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
-                    if (Diceroll <= (damageChance) && part.GetDamagePercentage() < 0.95f)
+                    ammo.SourceVessel = attacker; //moving this here so shots that destroy ammoboxes outright still report attacker if 'Ammo Explodes When Destroyed' is enabled
+                    if (penetrationFactor > 1.2)
                     {
-                        ammo.SourceVessel = attacker;
-                        ammo.DetonateIfPossible();
+                        double Diceroll = UnityEngine.Random.Range(0, 100);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
+                        if (Diceroll <= (damageChance) && part.GetDamagePercentage() < 0.95f)
+                        {
+                            ammo.DetonateIfPossible();
+                        }
+                    }
+                    if (!ammo.hasDetonated) //hit didn't destroy box
+                    {
+                        ammo.SourceVessel = ammo.vessel.GetName();
                     }
                 }
             }
@@ -99,12 +107,13 @@ namespace BDArmory.Misc
                                     }
                                 }
                         }
-                        if (engine.thrustPercentage > 20) //engines take thrust damage per hit
+                        if (engine.thrustPercentage > BDArmorySettings.BD_PROP_FLOOR) //engines take thrust damage per hit
                         {
                             //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
                             //engine.thrustPercentage -= ((engine.maxThrust * 0.125f) / 100); //workaround hack
-                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE); //AP does bonus damage
-                            Mathf.Clamp(engine.thrustPercentage, 15f, 100); //even heavily damaged engines will still put out something
+                            //AP does bonus damage
+                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE)*10; //convert from damagepercent to thrustpercent
+                            Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
                             engine.PlayFlameoutFX(true);
                             /*
@@ -153,7 +162,7 @@ namespace BDArmory.Misc
                                 }
                             }
                         }
-                        if (part.GetDamagePercentage() < 0.25f)
+                        if (part.GetDamagePercentage() < (BDArmorySettings.BD_PROP_FLAMEOUT/100))
                         {
                             if (engine.EngineIgnited)
                             {
@@ -183,7 +192,7 @@ namespace BDArmory.Misc
                         {
                             HEBonus = 1.4f;
                         }
-                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE/2))); //HE does bonus damage
+                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE / 2))); //HE does bonus damage
                         Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
                         intake.area *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
@@ -398,7 +407,7 @@ namespace BDArmory.Misc
                                 crewMember.StartRespawnPeriod();
                             }
                             //ScreenMessages.PostScreenMessage(crewMember.name + " killed by damage to " + part.vessel.name + part.partName + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                            ScreenMessages.PostScreenMessage("Cockpit snipe! " + crewMember.name + " killed!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                             ScreenMessages.PostScreenMessage("Cockpit snipe on " + part.vessel.GetName() + "! " + crewMember.name + " killed!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
                         }
                     }
                 }

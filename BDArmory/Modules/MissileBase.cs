@@ -946,6 +946,7 @@ namespace BDArmory.Modules
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
                                 if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
                                 if (partHit.vessel != vessel && partHit.vessel == SourceVessel) // Not ourselves, but the source vessel.
                                 {
@@ -1006,6 +1007,7 @@ namespace BDArmory.Modules
                                     {
                                         var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
                                         if (hitPart == null) continue;
+                                        if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
 
                                         if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                         {
@@ -1041,6 +1043,7 @@ namespace BDArmory.Modules
                                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 
                                     if (partHit == null) continue;
+                                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                     if (partHit.vessel == vessel || partHit.vessel == SourceVessel) continue;
                                     if (partHit.vessel.vesselType == VesselType.Debris) continue; // Ignore debris
 

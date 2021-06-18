@@ -1,4 +1,34 @@
-﻿v1.4.6.1
+﻿FIXES
+	- Fix check for ammo ignoring the infinite ammo setting in CheckEngagementEnvelope.
+	- Adjust Krakensbane adjustments in 'full' Kerbal Safety to hopefully reduce amount of Krakenation.
+	- Make the default value for kerbal safety be 'partial' instead of 'full' due to stability issues with 'full'.
+	- Fix NRE in FireFX.
+IMPROVEMENTS
+	- Add option for tournament parser to parse multiple tournaments.
+	- Allow turrets other than the current one to track the main target so they're ready to fire if the current one is unable to do so.
+	- Resource stealing:
+		- Change resource steal to drain and fill containers evenly w.r.t. fraction of the containers, still respecting priority settings.
+		- Add option for counter-measure stealing.
+		- Add a few fuel and ammo resources that were missed.
+		- Steal integer amounts of ammo and counter-measures.
+	- Altitudes:
+		- Add Max Altitude (AGL) setting to pilot AI with a toggle to enable/disable it.
+		- Add action group options for 'Toggle Max Altitude', 'Enable Max Altitude' and 'Disable Max Altitude'.
+		- Change killer GM altitude limits to AGL.
+	- Make the WM, MMG, pilot AI and surface AI modules get ignored by explosions, bullets, rockets, lasers and missiles so that they can be placed externally without being easily destroyed.
+	- Disable Kerbal Safety "R.I.P." in-game messages as they were too spammy.
+
+v1.4.6.2
+FIXES
+	- Add in steer limiter localization text (is used on Modular Missile Guidance)
+	- Always score damage from lasers, but only score hits with pulse lasers or when the accumulator is sufficient.
+	- Fix bug in advanced targeting for fixed guns.
+	- Adjust intake damage amounts.
+IMPROVEMENTS
+	- Add SRB battle damage.
+	- Filled command seats can extinguish fires.
+
+v1.4.6.1
 FIXES
 	- Fix various occassional NREs.
 	- Fix bug in parser for 'dead teams'.
