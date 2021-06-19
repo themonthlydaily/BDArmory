@@ -327,7 +327,7 @@ namespace BDArmory.UI
 				line++;
 				GUI.EndGroup();
 
-				Rect TeamColorsGroup = new Rect(15, 360, toolWindowWidth - 20, teamWindowHeight);
+				Rect TeamColorsGroup = new Rect(15, 365, toolWindowWidth - 20, teamWindowHeight);
 				GUI.BeginGroup(TeamColorsGroup, GUIContent.none, BDArmorySetup.BDGuiSkin.box);
 
 				using (var teamManagers = weaponManagers.GetEnumerator())
