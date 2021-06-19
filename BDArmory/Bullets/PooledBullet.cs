@@ -550,7 +550,7 @@ namespace BDArmory.Bullets
 
             if (distanceFromStart <= 500f) return false;
 
-            if (!explosive || tntmass <= 0) return false;
+            if (!explosive || tntMass <= 0) return false;
 
             if (airDetonation)
             {
