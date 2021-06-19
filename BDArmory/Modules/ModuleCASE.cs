@@ -23,8 +23,8 @@ namespace BDArmory.Modules
         public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => CASEcost;
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
 
-        private double ammoMass;
-        private double ammoQuantity;
+        private double ammoMass = 0;
+        private double ammoQuantity = 0;
         private double ammoExplosionYield = 0;
 
         private string explModelPath = "BDArmory/Models/explosion/explosion";
@@ -33,9 +33,9 @@ namespace BDArmory.Modules
         private string limitEdexploModelPath = "BDArmory/Models/explosion/30mmExplosion";
         private string shuntExploModelPath = "BDArmory/Models/explosion/CASEexplosion";
 
-        public string SourceVessel;
-        public bool hasDetonated;
-        private float blastRadius;
+        public string SourceVessel = "";
+        public bool hasDetonated = false;
+        private float blastRadius = 0;
 
         public override void OnStart(StartState state)
         {
@@ -298,10 +298,10 @@ namespace BDArmory.Modules
                 explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield * 10)); //reduce damage done based on ammo remaining. almost empty ammo box should do much less damage than full one
                 explDamage *= Mathf.Clamp(distance, 0, 1);
                 hitPart.AddDamage(explDamage);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged for " + (hitPart.MaxDamage() * 0.9f));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged for " + explDamage);
                 if (BDArmorySettings.BATTLEDAMAGE)
                 {
-                    Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, SourceVessel, hit);
+                    Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, false, SourceVessel, hit);
                 }
             }
             {
@@ -364,6 +364,16 @@ namespace BDArmory.Modules
             output.AppendLine("");
 
             return output.ToString();
+        }
+        void Update()
+        {
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
+            {
+                if (this.part.temperature > 900) //ammo cooks off, part is too hot
+                {
+                    DetonateIfPossible();
+                }
+            }
         }
     }
 }

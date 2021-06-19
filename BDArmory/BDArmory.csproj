@@ -246,6 +246,7 @@
     <Compile Include="UI\BDInputUtils.cs" />
     <Compile Include="UI\BDKeyBinder.cs" />
     <Compile Include="UI\BDStagingAreaGauge.cs" />
+    <Compile Include="UI\BDAmmoSelector.cs" />
     <Compile Include="UI\BDTargetSelector.cs" />
     <Compile Include="UI\BDATeamIcons.cs" />
     <Compile Include="UI\BDTISetup.cs" />
