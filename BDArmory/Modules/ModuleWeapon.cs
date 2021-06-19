@@ -648,6 +648,7 @@ namespace BDArmory.Modules
             }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_useBelt")]//Using Custom Loadout
         public bool useCustomBelt = false;
 
         [KSPEvent(advancedTweakable = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Ammo_Setup")]//Configure Ammo Loadout
