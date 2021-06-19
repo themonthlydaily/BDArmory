@@ -1571,8 +1571,9 @@ namespace BDArmory.Control
 
         public void RemoveSpaceObject(Vessel vessel)
         {
-            if (!(BDArmorySettings.ASTEROID_RAIN || BDArmorySettings.ASTEROID_FIELD)) // Don't remove asteroids when we're using them.
-                StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
+            if (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel)) return; // Don't remove asteroids when we're using them.
+            if (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel)) return; // Don't remove asteroids when we're using them.
+            StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
         }
 
         HashSet<VesselType> debrisTypes = new HashSet<VesselType> { VesselType.Debris, VesselType.SpaceObject }; // Consider space objects as debris.

@@ -145,6 +145,7 @@ namespace BDArmory.Control
         // Pooling of asteroids
         List<Vessel> asteroidPool;
         int lastPoolIndex = 0;
+        HashSet<string> asteroidNames = new HashSet<string>();
         #endregion
 
         /// <summary>
@@ -190,6 +191,7 @@ namespace BDArmory.Control
                 }
                 if (destroyAsteroids) { asteroidPool.Clear(); }
             }
+            UpdatePooledAsteroidNames();
             cleaningInProgress = 0;
         }
 
@@ -452,6 +454,13 @@ namespace BDArmory.Control
                     asteroidPool.Add(asteroid);
                 }
             }
+            UpdatePooledAsteroidNames();
+        }
+
+        void UpdatePooledAsteroidNames()
+        {
+            if (asteroidPool == null) asteroidNames.Clear();
+            else asteroidNames = asteroidPool.Select(a => a.vesselName).ToHashSet();
         }
 
         /// <summary>
@@ -497,11 +506,19 @@ namespace BDArmory.Control
         /// </summary>
         void ReplaceNullPooledAsteroids()
         {
+            BDACompetitionMode.Instance.competitionStatus.Add("Replacing lost asteroids.");
             for (int i = 0; i < asteroidPool.Count; ++i)
             {
                 if (asteroidPool[i] == null)
                 { ReplacePooledAsteroid(i); }
             }
+            UpdatePooledAsteroidNames();
+        }
+
+        public static bool IsManagedAsteroid(Vessel vessel)
+        {
+            if (Instance == null || Instance.asteroidNames == null) return false;
+            return Instance.asteroidNames.Contains(vessel.vesselName);
         }
 
         /// <summary>
@@ -539,6 +556,7 @@ namespace BDArmory.Control
         #region Fields
         public static AsteroidField Instance;
         Vessel[] asteroids;
+        HashSet<string> asteroidNames = new HashSet<string>();
         bool floating;
         Coroutine floatingCoroutine;
         System.Random RNG;
@@ -574,6 +592,7 @@ namespace BDArmory.Control
                 foreach (var asteroid in asteroids)
                 { if (asteroid != null) Destroy(asteroid); }
             }
+            UpdateAsteroidNames();
         }
 
         /// <summary>
@@ -606,6 +625,7 @@ namespace BDArmory.Control
                 if (asteroid != null)
                 { asteroids[i] = asteroid; }
             }
+            UpdateAsteroidNames();
 
             floatingCoroutine = StartCoroutine(Float());
             StartCoroutine(CleanOutAsteroids());
@@ -667,6 +687,18 @@ namespace BDArmory.Control
             }
 
             yield return InitialRotation();
+        }
+
+        void UpdateAsteroidNames()
+        {
+            if (asteroids == null) asteroidNames.Clear();
+            else asteroidNames = asteroids.Select(a => a.vesselName).ToHashSet();
+        }
+
+        public static bool IsManagedAsteroid(Vessel vessel)
+        {
+            if (Instance == null || Instance.asteroidNames == null) return false;
+            return Instance.asteroidNames.Contains(vessel.vesselName);
         }
 
         public void CheckAsteroids()
