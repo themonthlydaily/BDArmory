@@ -83,6 +83,7 @@ namespace BDArmory.FX
         public static ObjectPool penetrationFXPool;
         public static ObjectPool leakFXPool;
         public static ObjectPool FireFXPool;
+        public static ObjectPool flameFXPool;
         public static Dictionary<Vessel, List<float>> PartsOnFire = new Dictionary<Vessel, List<float>>();
 
         public static int MaxFiresPerVessel = 3;
@@ -104,13 +105,13 @@ namespace BDArmory.FX
             {
                 if (decalPool_paint1 == null)
                     decalPool_paint1 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal3");
-                
+
                 if (decalPool_paint2 == null)
                     decalPool_paint2 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal4");
 
                 if (decalPool_paint3 == null)
                     decalPool_paint3 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal5");
-                
+
             }
         }
 
@@ -147,6 +148,21 @@ namespace BDArmory.FX
                 bFX.audioSource.spatialBlend = 1;
                 penetrationFXTemplate.SetActive(false);
                 penetrationFXPool = ObjectPool.CreateObjectPool(penetrationFXTemplate, 10, true, true, 10f * Time.deltaTime, false);
+            }
+            if (flameFXPool == null)
+            {
+                var flameTemplate = GameDatabase.Instance.GetModel("BDArmory/FX/FlameEffect2/model");
+                flameTemplate.AddComponent<DecalEmitterScript>();
+                DecalEmitterScript.shrinkRateFlame = 0.125f;
+                DecalEmitterScript.shrinkRateSmoke = 0.125f;
+                foreach (var pe in flameTemplate.GetComponentsInChildren<KSPParticleEmitter>())
+                {
+                    if (!pe.useWorldSpace) continue;
+                    var gpe = pe.gameObject.AddComponent<DecalGaplessParticleEmitter>();
+                    gpe.Emit = false;
+                }
+                flameTemplate.SetActive(false);
+                flameFXPool = ObjectPool.CreateObjectPool(flameTemplate, 10, true, true);
             }
         }
 
@@ -243,6 +259,16 @@ namespace BDArmory.FX
             return true;
         }
 
+        public static void CleanPartsOnFireInfo()
+        {
+            foreach (var key in PartsOnFire.Keys)
+            {
+                PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList(); // Remove expired fires.
+                if (PartsOnFire[key].Count == 0) { PartsOnFire.Remove(key); } // Remove parts no longer on fire.
+            }
+            PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys.
+        }
+
         void OnEnable()
         {
             startTime = Time.time;
@@ -319,7 +345,7 @@ namespace BDArmory.FX
                 SetupShellPool();
             if (BDArmorySettings.PAINTBALL_MODE && decalPool_paint1 == null)
                 SetupShellPool();
-            if (bulletHitFXPool == null || penetrationFXPool == null)
+            if (bulletHitFXPool == null || penetrationFXPool == null || flameFXPool == null)
                 SetupBulletHitFXPool();
 
             if ((hitPart != null) && caliber != 0 && !hitPart.IgnoreDecal())
@@ -349,10 +375,10 @@ namespace BDArmory.FX
                 }
             }
         }
-
         // FIXME Use an object pool for flames?          
 
         public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel)
+
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS)
             {
@@ -444,23 +470,9 @@ namespace BDArmory.FX
         {
             if (!CanFlamesBeAttached(hitPart)) return;
 
-            var modelUrl = "BDArmory/FX/FlameEffect2/model";
-
-            var flameObject = (GameObject)Instantiate(GameDatabase.Instance.GetModel(modelUrl), contactPoint, Quaternion.identity);
-
-            flameObject.SetActive(true);
+            var flameObject = flameFXPool.GetPooledObject();
             flameObject.transform.SetParent(hitPart.transform);
-            flameObject.AddComponent<DecalEmitterScript>();
-
-            DecalEmitterScript.shrinkRateFlame = 0.125f;
-            DecalEmitterScript.shrinkRateSmoke = 0.125f;
-
-            foreach (var pe in flameObject.GetComponentsInChildren<KSPParticleEmitter>())
-            {
-                if (!pe.useWorldSpace) continue;
-                var gpe = pe.gameObject.AddComponent<DecalGaplessParticleEmitter>();
-                gpe.Emit = true;
-            }
+            flameObject.SetActive(true);
         }
     }
 }

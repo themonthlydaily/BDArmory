@@ -899,8 +899,7 @@ namespace BDArmory.UI
                 if (showWeaponList && !toolMinimized)
                 {
                     line += 0.25f;
-                    Rect weaponListGroupRect = new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10,
-                        ((float)ActiveWeaponManager.weaponArray.Length + 0.1f) * entryHeight);
+                    Rect weaponListGroupRect = new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10, weaponsHeight * entryHeight);
                     GUI.BeginGroup(weaponListGroupRect, GUIContent.none, BDGuiSkin.box); //darker box
                     weaponLines += 0.1f;
 
@@ -948,6 +947,7 @@ namespace BDArmory.UI
                         }
                         weaponLines++;
                     }
+
                     weaponLines += 0.1f;
                     GUI.EndGroup();
                 }
@@ -962,6 +962,7 @@ namespace BDArmory.UI
                         new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10, (guardHeight) * entryHeight),
                         GUIContent.none, BDGuiSkin.box);
                     guardLines += 0.1f;
+
                     contentWidth -= 16;
                     leftIndent += 3;
                     string guardButtonLabel = Localizer.Format("#LOC_BDArmory_WMWindow_NoneWeapon", (ActiveWeaponManager.guardMode ? Localizer.Format("#LOC_BDArmory_Generic_On") : Localizer.Format("#LOC_BDArmory_Generic_Off")));//"Guard Mode " + "ON""Off"
@@ -1070,14 +1071,13 @@ namespace BDArmory.UI
                     ActiveWeaponManager.maxMissilesOnTarget = mslCount;
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
-
                     guardLines += 0.5f;
 
-                    float TargetLines = 0;
                     showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
                         showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), showTargetOptions ? BDGuiSkin.box : BDGuiSkin.button);//"Advanced Targeting"
                     guardLines += 1.15f;
 
+                    float TargetLines = 0;
                     if (showTargetOptions && showGuardMenu && !toolMinimized)
                     {
                         TargetLines += 0.1f;
@@ -1161,6 +1161,7 @@ namespace BDArmory.UI
                             + (ActiveWeaponManager.targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
                             + (ActiveWeaponManager.targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
                         GUI.EndGroup();
+                        TargetLines += 0.1f;
                     }
                     TargetingHeight = Mathf.Lerp(TargetingHeight, TargetLines, 0.15f);
                     guardLines += TargetingHeight;
@@ -1207,14 +1208,17 @@ namespace BDArmory.UI
                         }
                         EngageLines += 1.1f;
                         GUI.EndGroup();
+                        EngageLines += 0.1f;
                     }
                     EngageHeight = Mathf.Lerp(EngageHeight, EngageLines, 0.15f);
                     guardLines += EngageHeight;
                     guardLines += 0.1f;
+                    guardLines += 0.5f;
+
+                    guardLines += 0.1f;
                     GUI.EndGroup();
                 }
-                guardLines += 0.75f;
-                guardHeight = Mathf.Lerp(guardHeight, guardLines + .01f, 0.15f);
+                guardHeight = Mathf.Lerp(guardHeight, guardLines, 0.15f);
                 line += guardHeight;
 
                 float moduleLines = 0;
@@ -1224,9 +1228,9 @@ namespace BDArmory.UI
                     GUI.BeginGroup(
                         new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10, numberOfModules * entryHeight),
                         GUIContent.none, BDGuiSkin.box);
+                    moduleLines += 0.1f;
 
                     numberOfModules = 0;
-                    moduleLines += 0.1f;
                     //RWR
                     if (ActiveWeaponManager.rwr)
                     {
@@ -1359,9 +1363,8 @@ namespace BDArmory.UI
                         moduleLines++;
                     }
 
+                    moduleLines += 0.1f;
                     GUI.EndGroup();
-
-                    line += 0.1f;
                 }
                 modulesHeight = Mathf.Lerp(modulesHeight, moduleLines, 0.15f);
                 line += modulesHeight;
@@ -1767,6 +1770,17 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CMStealRation")}:  ({BDArmorySettings.RESOURCE_STEAL_CM_RATION})", leftLabel);//CM Steal Ration
                     BDArmorySettings.RESOURCE_STEAL_CM_RATION = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.RESOURCE_STEAL_CM_RATION, 0f, 1f) * 100f) / 100f;
                 }
+
+                // Peace mode
+                if (BDArmorySettings.PEACE_MODE != (BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"))))//"Peace Mode"
+                {
+                    BDATargetManager.ClearDatabase();
+                    if (OnPeaceEnabled != null)
+                    {
+                        OnPeaceEnabled();
+                    }
+                }
+
                 ++line;
             }
 
@@ -1954,21 +1968,21 @@ namespace BDArmory.UI
 
                 { // Killer GM Max Altitude
                     string killerGMMaxAltitudeText;
-                    if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH > 45f) killerGMMaxAltitudeText = "Never";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 10f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH * 100f) + "m";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 30f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 9f) + "km";
-                    else killerGMMaxAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 29f) * 5f + 20f) + "km";
+                    if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH > 54f) killerGMMaxAltitudeText = "Never";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 20f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH * 100f) + "m";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 39f) killerGMMaxAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 18f) + "km";
+                    else killerGMMaxAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 38f) * 5f + 20f) + "km";
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionAltitudeLimitHigh")}: ({killerGMMaxAltitudeText})", leftLabel);
-                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH, 1f, 46f));
+                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH, 1f, 55f));
                 }
                 { // Killer GM Min Altitude
                     string killerGMMinAltitudeText;
                     if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 0f) killerGMMinAltitudeText = "Never";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 10f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 100f) + "m";
-                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 30f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 9f) + "km";
-                    else killerGMMinAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 29f) * 5f + 20f) + "km";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 100f) + "m";
+                    else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f) killerGMMinAltitudeText = Mathf.RoundToInt(BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f) + "km";
+                    else killerGMMinAltitudeText = Mathf.RoundToInt((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) + "km";
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionAltitudeLimitLow")}: ({killerGMMinAltitudeText})", leftLabel);
-                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW, -1f, 35f));
+                    BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW, -1f, 44f));
                 }
 
                 if (BDArmorySettings.RUNWAY_PROJECT)
@@ -2053,6 +2067,7 @@ namespace BDArmory.UI
                 {
                     if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
                     {
+                        BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
                         BDACompetitionMode.Instance.RunDebugChecks();
                     }
                 }
@@ -2088,18 +2103,6 @@ namespace BDArmory.UI
                 }
                 else
                     BDArmorySettings.REMOTE_LOGGING_ENABLED = false;
-
-                ++line;
-                bool origPm = BDArmorySettings.PEACE_MODE;
-                BDArmorySettings.PEACE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PEACE_MODE, Localizer.Format("#LOC_BDArmory_Settings_PeaceMode"));//"Peace Mode"
-                if (BDArmorySettings.PEACE_MODE && !origPm)
-                {
-                    BDATargetManager.ClearDatabase();
-                    if (OnPeaceEnabled != null)
-                    {
-                        OnPeaceEnabled();
-                    }
-                }
 
                 ++line;
                 GUI.Label(SLineRect(++line), "= " + Localizer.Format("#LOC_BDArmory_Settings_DogfightCompetition") + " =", centerLabel);//Dogfight Competition

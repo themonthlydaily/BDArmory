@@ -198,6 +198,7 @@ namespace BDArmory.Modules
                 vessel.OnJustAboutToBeDestroyed += DeactivatePilot;
                 GameEvents.onVesselWasModified.Add(onVesselWasModified);
                 MissileFire.OnChangeTeam += OnToggleTeam;
+                GameEvents.onPartDie.Add(OnPartDie);
 
                 activeVessel = vessel;
                 UpdateWeaponManager();
@@ -211,9 +212,22 @@ namespace BDArmory.Modules
             RefreshPartWindow();
         }
 
+        void OnPartDie() { OnPartDie(part); }
+        protected virtual void OnPartDie(Part p)
+        {
+            if (part == p)
+            {
+                Destroy(this); // Force this module to be removed from the gameObject as something is holding onto part references and causing a memory leak.
+            }
+        }
+
         protected virtual void OnDestroy()
         {
+            part.OnJustAboutToBeDestroyed -= DeactivatePilot;
+            if (vessel != null) vessel.OnJustAboutToBeDestroyed -= DeactivatePilot;
+            GameEvents.onVesselWasModified.Remove(onVesselWasModified);
             MissileFire.OnChangeTeam -= OnToggleTeam;
+            GameEvents.onPartDie.Remove(OnPartDie);
         }
 
         protected virtual void OnGUI()

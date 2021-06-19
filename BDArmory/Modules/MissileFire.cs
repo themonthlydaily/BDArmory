@@ -23,15 +23,14 @@ namespace BDArmory.Modules
         #region Declarations
 
         //weapons
-        private const int LIST_CAPACITY = 100;
-        private List<IBDWeapon> weaponTypes = new List<IBDWeapon>(LIST_CAPACITY);
+        private List<IBDWeapon> weaponTypes = new List<IBDWeapon>();
         public IBDWeapon[] weaponArray;
 
         // extension for feature_engagementenvelope: specific lists by weapon engagement type
-        private List<IBDWeapon> weaponTypesAir = new List<IBDWeapon>(LIST_CAPACITY);
-        private List<IBDWeapon> weaponTypesMissile = new List<IBDWeapon>(LIST_CAPACITY);
-        private List<IBDWeapon> weaponTypesGround = new List<IBDWeapon>(LIST_CAPACITY);
-        private List<IBDWeapon> weaponTypesSLW = new List<IBDWeapon>(LIST_CAPACITY);
+        private List<IBDWeapon> weaponTypesAir = new List<IBDWeapon>();
+        private List<IBDWeapon> weaponTypesMissile = new List<IBDWeapon>();
+        private List<IBDWeapon> weaponTypesGround = new List<IBDWeapon>();
+        private List<IBDWeapon> weaponTypesSLW = new List<IBDWeapon>();
 
         [KSPField(guiActiveEditor = false, isPersistant = true, guiActive = false)] public int weaponIndex;
 
@@ -1015,6 +1014,7 @@ namespace BDArmory.Modules
             {
                 try
                 {
+                    Destroy(this); // Force this module to be removed from the gameObject as something is holding onto part references and causing a memory leak.
                     GameEvents.onPartDie.Remove(OnPartDie);
                     GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
                     GameEvents.onVesselCreate.Remove(OnVesselCreate);
@@ -5156,12 +5156,12 @@ namespace BDArmory.Modules
                                 if (resource.Current == null) continue;
                                 if (resource.Current.resourceName != ammoName) continue;
                                 if (resource.Current.amount > 0)
-                                {  
+                                {
                                     return true;
                                 }
                             }
                     }
-            return false;
+                return false;
             }
         }
 
