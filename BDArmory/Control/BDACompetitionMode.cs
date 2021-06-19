@@ -462,6 +462,7 @@ namespace BDArmory.Control
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
             nextUpdateTick = competitionStartTime + 2; // 2 seconds before we start tracking
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
+            FX.BulletHitFX.CleanPartsOnFireInfo();
             // now find all vessels with weapons managers
             foreach (var pilot in getAllPilots())
             {
@@ -524,6 +525,8 @@ namespace BDArmory.Control
 
             //clear target database so pilots don't attack yet
             BDATargetManager.ClearDatabase();
+            // CleanUpKSPsDeadReferences(); FIXME memory leak debugging.
+            RunDebugChecks();
 
             foreach (var vname in Scores.Keys)
             {
@@ -1430,9 +1433,9 @@ namespace BDArmory.Control
 
         private void CheckAltitudeLimits()
         {
-            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 46f) // Kill off those flying too high.
+            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 55f) // Kill off those flying too high.
             {
-                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 20f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH < 39f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 18f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_HIGH - 38f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude > limit)
@@ -1453,7 +1456,7 @@ namespace BDArmory.Control
             }
             if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -1) // Kill off those flying too low.
             {
-                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 10f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 30f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 9f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 29f) * 5f + 20f) * 1000f;
+                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) * 1000f;
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude < limit)
@@ -2123,7 +2126,8 @@ namespace BDArmory.Control
                 Debug.Log("[BDArmory.BDACompetitionMode]: No active competition, not dumping results.");
                 return;
             }
-            CheckMemoryUsage();
+            // RunDebugChecks();
+            // CheckMemoryUsage();
             if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
                 VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
@@ -3000,12 +3004,13 @@ namespace BDArmory.Control
                         emitterNames.Add(pe.gameObject.name, 1);
                 }
             }
-            Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.Select(pe => pe.Key + ":" + pe.Value)));
+            Debug.Log("DEBUG inactive/disabled emitter names: " + string.Join(", ", emitterNames.OrderByDescending(kvp => kvp.Value).Select(pe => pe.Key + ":" + pe.Value)));
 
             strings.Clear();
             strings.Add("Parts: " + FindObjectsOfType<Part>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Part)).Length);
             strings.Add("Vessels: " + FindObjectsOfType<Vessel>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(Vessel)).Length);
-            strings.Add("CometVessels: " + FindObjectsOfType<CometVessel>().Length);
+            strings.Add("GameObjects: " + FindObjectsOfType<GameObject>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(GameObject)).Length);
+            strings.Add($"FlightState ProtoVessels: {HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).Count()} active of {HighLogic.CurrentGame.flightState.protoVessels.Count}");
             Debug.Log("DEBUG " + string.Join(", ", strings));
         }
 
@@ -3014,6 +3019,46 @@ namespace BDArmory.Control
             CheckMemoryUsage();
             CheckNumbersOfThings();
         }
-    }
 
+        public void CleanUpKSPsDeadReferences()
+        {
+            var toRemove = new List<uint>();
+            foreach (var key in FlightGlobals.PersistentVesselIds.Keys)
+                if (FlightGlobals.PersistentVesselIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent vessel references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentVesselIds.Remove(key);
+
+            toRemove.Clear();
+            foreach (var key in FlightGlobals.PersistentLoadedPartIds.Keys)
+                if (FlightGlobals.PersistentLoadedPartIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent loaded part references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentLoadedPartIds.Remove(key);
+
+            // Usually doesn't find any.
+            toRemove.Clear();
+            foreach (var key in FlightGlobals.PersistentUnloadedPartIds.Keys)
+                if (FlightGlobals.PersistentUnloadedPartIds[key] == null) toRemove.Add(key);
+            Debug.Log($"DEBUG Found {toRemove.Count} null persistent unloaded part references.");
+            foreach (var key in toRemove) FlightGlobals.PersistentUnloadedPartIds.Remove(key);
+
+            var protoVessels = HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef == null).ToList();
+            if (protoVessels.Count > 0) { Debug.Log($"DEBUG Found {protoVessels.Count} inactive ProtoVessels in flightState."); }
+            foreach (var protoVessel in protoVessels)
+            {
+                if (protoVessel == null) continue;
+                ShipConstruction.RecoverVesselFromFlight(protoVessel, HighLogic.CurrentGame.flightState, true);
+                if (protoVessel == null) continue;
+                if (protoVessel.protoPartSnapshots != null)
+                {
+                    foreach (var protoPart in protoVessel.protoPartSnapshots)
+                    {
+                        protoPart.modules.Clear();
+                        protoPart.pVesselRef = null;
+                        protoPart.partRef = null;
+                    }
+                    protoVessel.protoPartSnapshots.Clear();
+                }
+            }
+        }
+    }
 }

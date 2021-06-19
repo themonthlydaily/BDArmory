@@ -540,7 +540,7 @@ namespace BDArmory.Competition
             var HPLeft = BDACompetitionMode.Instance.Scores;
             if (HPLeft.ContainsKey(playerName))
             {
-                result = HPLeft[playerName].AverageHP;
+                result = HPLeft[playerName].remainingHP;
             }
             return result;
         }
