@@ -631,7 +631,7 @@ namespace BDArmory.Modules
 
             if (advancedAmmoOption == true)
             {
-                Events["ToggleAmmoConfig"].guiName = Localizer.Format("#LOC_BDArmory_advanced");//"Enable Engage Options"
+                Events["ToggleAmmoConfig"].guiName = Localizer.Format("#LOC_BDArmory_advanced");//"Advanced Ammo Config"
                 Events["ConfigAmmo"].guiActive = true;
                 Events["ConfigAmmo"].guiActiveEditor = true;
                 Fields["AmmoTypeNum"].guiActive = false;
@@ -639,11 +639,12 @@ namespace BDArmory.Modules
             }
             else
             {
-                Events["ToggleAmmoConfig"].guiName = Localizer.Format("#LOC_BDArmory_simple");//"Disable Engage Options"
+                Events["ToggleAmmoConfig"].guiName = Localizer.Format("#LOC_BDArmory_simple");//"Simple Ammo Config
                 Events["ConfigAmmo"].guiActive = false;
                 Events["ConfigAmmo"].guiActiveEditor = false;
                 Fields["AmmoTypeNum"].guiActive = true;
                 Fields["AmmoTypeNum"].guiActiveEditor = true;
+                useCustomBelt = false;
             }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
