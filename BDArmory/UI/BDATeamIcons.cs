@@ -279,6 +279,8 @@ namespace BDArmory.UI
 									string UIdist;
 									string UoM;
 									string vName;
+									string selectedWeapon;
+									string AIstate;
 									distance = targetRelPos.magnitude;
 									if (distance >= 100)
 									{
@@ -394,6 +396,34 @@ namespace BDArmory.UI
 											{
 												Rect distRect = new Rect((guiPos.x - 12), (guiPos.y + (20 * BDTISettings.ICONSCALE)), 100, 32);
 												GUI.Label(distRect, UIdist + UoM, IconUIStyle);
+											}
+											if (BDTISettings.TELEMETRY)
+											{	
+												var weapon = (ModuleWeapon)wm.Current.selectedWeapon;
+												var missile = (MissileLauncher)wm.Current.selectedWeapon;
+												selectedWeapon = "Using: " + wm.Current.selectedWeaponString;
+												if (weapon != null)
+												{
+													if (weapon.heat > (weapon.maxHeat / 3))
+														selectedWeapon += "; Heat: " + weapon.heat.ToString("0.0");
+													if (weapon.isReloading)
+														selectedWeapon += "; Reloading";
+												}
+												if (missile != null)
+												{
+													if (wm.Current.heatTarget.exists || wm.Current.vesselRadarData.locked || wm.Current.laserPointDetected || wm.Current.antiRadTargetAcquired)
+														selectedWeapon += "; Aquiring Target";														
+												}
+												AIstate = " Pilot " + wm.Current.AI.currentStatus;
+												Rect telemetryRect = new Rect((guiPos.x + (32 * BDTISettings.ICONSCALE)), guiPos.y + 32, 200, 32);
+												GUI.Label(telemetryRect, selectedWeapon, IconUIStyle);
+												Rect telemetryRect2 = new Rect((guiPos.x + (32 * BDTISettings.ICONSCALE)), guiPos.y + 52, 200, 32);
+												GUI.Label(telemetryRect2, AIstate, IconUIStyle);
+												if (wm.Current.isFlaring || wm.Current.isChaffing || wm.Current.isECMJamming)
+												{
+													Rect telemetryRect3 = new Rect((guiPos.x + (32 * BDTISettings.ICONSCALE)), guiPos.y + 72, 200, 32);
+													GUI.Label(telemetryRect3, "Deploying Counter-Measures", IconUIStyle);
+												}
 											}
 										}
 									}
