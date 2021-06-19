@@ -1066,15 +1066,18 @@ namespace BDArmory.Modules
             // Calculate threat rating from any threats
             float minimumEvasionTime = minEvasionTime;
             threatRating = evasionThreshold + 1f; // Don't evade by default
-            if (weaponManager && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold))
+            if (weaponManager != null)
             {
-                threatRating = 0f; // Allow entering evasion code if we're under missile fire
-                minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
-            }
-            else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
-            {
-                if (weaponManager.incomingMissTime >= evasionTimeThreshold) // If we haven't been under fire long enough, ignore gunfire
-                    threatRating = weaponManager.incomingMissDistance;
+                if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)
+                {
+                    threatRating = 0f; // Allow entering evasion code if we're under missile fire
+                    minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
+                }
+                else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
+                {
+                    if (weaponManager.incomingMissTime >= evasionTimeThreshold) // If we haven't been under fire long enough, ignore gunfire
+                        threatRating = weaponManager.incomingMissDistance;
+                }
             }
 
             debugString.AppendLine($"Threat Rating: {threatRating}");
