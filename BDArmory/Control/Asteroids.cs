@@ -342,7 +342,6 @@ namespace BDArmory.Control
                     foreach (var vessel in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
                     { maxSqrDistance = Mathf.Max(maxSqrDistance, (vessel.transform.position - averagePosition).sqrMagnitude); }
                     radius = maxSqrDistance > 5e5f ? Mathf.Sqrt(maxSqrDistance) * 1.5f : 1000f;
-                    Debug.Log($"DEBUG Updating asteroid rain radius to {radius:F0}m");
                 }
             }
             else
