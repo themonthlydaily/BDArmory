@@ -123,11 +123,13 @@ namespace BDArmory.Radar
 
         /// <summary>
         /// Force radar signature update
-        /// Optionally, pass in a list of the vessels to update, otherwise all vessels in FlightGlobals get updated.
+        /// Optionally, pass in a list of the vessels to update, otherwise all vessels in BDATargetManager.LoadedVessels get updated.
+        /// 
+        /// FIXME this appears to cause a rather large amount of memory to leak.
         /// </summary>
         public static void ForceUpdateRadarCrossSections(List<Vessel> vessels = null)
         {
-            foreach (var vessel in (vessels == null ? FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)) : vessels))
+            foreach (var vessel in (vessels == null ? BDATargetManager.LoadedVessels : vessels))
             {
                 GetVesselRadarCrossSection(vessel, true);
             }
@@ -181,7 +183,7 @@ namespace BDArmory.Radar
             if (force || ti.radarBaseSignature == -1 || ti.radarBaseSignatureNeedsUpdate)
             {
                 // is it just some debris? then dont bother doing a real rcs rendering and just fake it with the parts mass
-                if (v.vesselType == VesselType.Debris && !v.IsControllable)
+                if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && !v.IsControllable)
                 {
                     ti.radarBaseSignature = v.GetTotalMass();
                 }
@@ -276,7 +278,7 @@ namespace BDArmory.Radar
         /// <param name="inEditorZoom">when true, we try to make the rendered vessel fill the rendertexture completely, for a better detailed view. This does skew the computed cross section, so it is only for a good visual in editor!</param>
         public static float RenderVesselRadarSnapshot(Vessel v, Transform t, bool inEditorZoom = false)
         {
-            if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)) Debug.LogError($"DEBUG Rendering radar snapshot of {v.vesselName}, which should be being ignored!");
+            if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)) Debug.LogError($"[BDArmory.RadarUtils]: Rendering radar snapshot of {v.vesselName}, which should be being ignored!");
             const float radarDistance = 1000f;
             const float radarFOV = 2.0f;
             Vector3 presentationPosition = -t.forward * radarDistance;
@@ -341,6 +343,7 @@ namespace BDArmory.Radar
             double[] rcsValues = new double[numAspects];
             rcsTotal = 0;
             Vector3 aspect;
+            Color32[] pixels;
 
             // Loop through all aspects
             for (int i = 0; i < numAspects; i++)
@@ -355,9 +358,13 @@ namespace BDArmory.Radar
                 // Count pixel colors to determine radar returns
                 rcsVariable = 0;
 
-                var pixels = drawTextureVariable.GetPixels();
-                for (int pixel = 0; pixel < pixels.Length; ++pixel)
-                    rcsVariable += pixels[pixel].maxColorComponent;
+                pixels = drawTextureVariable.GetPixels32(); // GetPixels causes a memory leak, so we need to go via GetPixels32!
+                for (int pixelIndex = 0; pixelIndex < pixels.Length; ++pixelIndex)
+                {
+                    var pixel = pixels[pixelIndex];
+                    var maxColorComponent = Mathf.Max(pixel.r, Mathf.Max(pixel.g, pixel.b));
+                    rcsVariable += (float)maxColorComponent / 255f;
+                }
 
                 // normalize rcs value, so that a sphere with cross section of 1 m^2 gives a return of 1 m^2:
                 rcsVariable /= RCS_NORMALIZATION_FACTOR;
@@ -824,8 +831,8 @@ namespace BDArmory.Radar
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
                 {
-                    // ignore null, unloaded and ignored types
-                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
+                    // ignore null and unloaded
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
 
                     // ignore self, ignore behind ray
                     Vector3 vectorToTarget = (loadedvessels.Current.transform.position - ray.origin);
@@ -903,7 +910,7 @@ namespace BDArmory.Radar
                 while (loadedvessels.MoveNext())
                 {
                     // ignore null, unloaded and ignored types
-                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
 
                     // IFF code check to prevent friendly lock-on (neutral vessel without a weaponmanager WILL be lockable!)
                     MissileFire wm = VesselModuleRegistry.GetModule<MissileFire>(loadedvessels.Current);
@@ -1001,8 +1008,8 @@ namespace BDArmory.Radar
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
                 {
-                    // ignore null, unloaded, self and ignores types
-                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
+                    // ignore null, unloaded and self
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
                     if (loadedvessels.Current == myWpnManager.vessel) continue;
 
                     // ignore too close ones
@@ -1119,7 +1126,7 @@ namespace BDArmory.Radar
                     while (loadedvessels.MoveNext())
                     {
                         // ignore null, unloaded
-                        if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
+                        if (loadedvessels.Current == null || !loadedvessels.Current.loaded) continue;
 
                         // ignore self, ignore behind ray
                         Vector3 vectorToTarget = (loadedvessels.Current.transform.position - ray.origin);
