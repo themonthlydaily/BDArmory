@@ -410,9 +410,9 @@ namespace BDArmory.Modules
         public bool debilitated = false;
 
         public bool guardFiringMissile;
-        bool antiRadTargetAcquired;
+        public bool antiRadTargetAcquired;
         Vector3 antiRadiationTarget;
-        bool laserPointDetected;
+        public bool laserPointDetected;
 
         ModuleTargetingCamera foundCam;
 

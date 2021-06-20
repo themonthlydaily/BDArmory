@@ -2,6 +2,7 @@
 using BDArmory.Modules;
 using UnityEngine;
 using BDArmory.Control;
+using System;
 
 namespace BDArmory.UI
 {
@@ -280,6 +281,8 @@ namespace BDArmory.UI
                                     string UIdist;
                                     string UoM;
                                     string vName;
+                                    string selectedWeapon = String.Empty;
+                                    string AIstate = String.Empty;
                                     distance = targetRelPos.magnitude;
                                     if (distance >= 100)
                                     {
@@ -395,6 +398,30 @@ namespace BDArmory.UI
                                             {
                                                 Rect distRect = new Rect((guiPos.x - 12), (guiPos.y + (20 * BDTISettings.ICONSCALE)), 100, 32);
                                                 GUI.Label(distRect, UIdist + UoM, IconUIStyle);
+                                            }
+                                            if (BDTISettings.TELEMETRY)
+                                            {
+                                                selectedWeapon = "Using: " + wm.Current.selectedWeaponString;
+                                                AIstate = "No AI";
+                                                if (wm.Current.AI != null)
+                                                {
+                                                    AIstate = "Pilot " + wm.Current.AI.currentStatus;
+                                                }
+                                                Rect telemetryRect = new Rect((guiPos.x + (32 * BDTISettings.ICONSCALE)), guiPos.y + 32, 200, 32);
+                                                GUI.Label(telemetryRect, selectedWeapon, IconUIStyle);
+                                                Rect telemetryRect2 = new Rect((guiPos.x + (32 * BDTISettings.ICONSCALE)), guiPos.y + 48, 200, 32);
+                                                GUI.Label(telemetryRect2, AIstate, IconUIStyle);
+                                                if (wm.Current.isFlaring || wm.Current.isChaffing || wm.Current.isECMJamming)
+                                                {
+                                                    Rect telemetryRect3 = new Rect((guiPos.x + (32 * BDTISettings.ICONSCALE)), guiPos.y + 64, 200, 32);
+                                                    GUI.Label(telemetryRect3, "Deploying Counter-Measures", IconUIStyle);
+                                                }
+                                                Rect SpeedRect = new Rect((guiPos.x - (96 * BDTISettings.ICONSCALE)), guiPos.y + 64, 100, 32);
+                                                GUI.Label(SpeedRect, "Speed: " + wm.Current.vessel.speed.ToString("0.0") + "m/s", IconUIStyle);
+                                                Rect RAltRect = new Rect((guiPos.x - (96 * BDTISettings.ICONSCALE)), guiPos.y + 80, 100, 32);
+                                                GUI.Label(RAltRect, "Alt: " + wm.Current.vessel.altitude.ToString("0.0") + "m", IconUIStyle);
+                                                Rect ThrottleRect = new Rect((guiPos.x - (96 * BDTISettings.ICONSCALE)), guiPos.y + 96, 100, 32);
+                                                GUI.Label(ThrottleRect, "Throttle: " + wm.Current.vessel.ctrlState.mainThrottle.ToString("0.0") + "%", IconUIStyle);
                                             }
                                         }
                                     }
