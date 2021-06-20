@@ -5,14 +5,16 @@ using System.Linq;
 using BDArmory.Core.Extension;
 using BDArmory.FX;
 using BDArmory.Modules;
+using BDArmory.Control;
 
 namespace BDArmory.Misc
 {
     class BattleDamageHandler
     {
-        public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, string attacker, RaycastHit hitLoc)
+        public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc)
         {
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
+            if (ProjectileUtils.IsIgnoredPart(part)) return; // Ignore ignored parts.
 
             double damageChance = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE * ((1 - part.GetDamagePercentage()) * 10) * (penetrationFactor / 2)), 0, 100); //more heavily damaged parts more likely to take battledamage
 
@@ -24,7 +26,7 @@ namespace BDArmory.Misc
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
-                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.66f) return;
+                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.5f) return;
                     }
                     if (penetrationFactor > 1.2)
                     {
@@ -34,7 +36,7 @@ namespace BDArmory.Misc
                         }
                         else
                         {
-                            BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
+                            BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker);
                         }
                     }
                 }
@@ -49,6 +51,10 @@ namespace BDArmory.Misc
                         double Diceroll = UnityEngine.Random.Range(0, 100);
                         if (explosivedamage)
                         {
+                            Diceroll *= 0.33;
+                        }
+                        if (incendiary)
+                        {
                             Diceroll *= 0.66;
                         }
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Battery Dice Roll: " + Diceroll);
@@ -60,17 +66,28 @@ namespace BDArmory.Misc
                 }
             }
             //AmmoBins
-            if (BDArmorySettings.BD_AMMOBINS && penetrationFactor > 1.2 && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
+            if (BDArmorySettings.BD_AMMOBINS && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
             {
                 var ammo = part.FindModuleImplementing<ModuleCASE>();
                 if (ammo != null)
                 {
-                    double Diceroll = UnityEngine.Random.Range(0, 100);
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
-                    if (Diceroll <= (damageChance) && part.GetDamagePercentage() < 0.95f)
+                    ammo.SourceVessel = attacker; //moving this here so shots that destroy ammoboxes outright still report attacker if 'Ammo Explodes When Destroyed' is enabled
+                    if (penetrationFactor > 1.2)
                     {
-                        ammo.SourceVessel = attacker;
-                        ammo.DetonateIfPossible();
+                        double Diceroll = UnityEngine.Random.Range(0, 100);
+                        if (incendiary)
+                        {
+                            Diceroll *= 0.66;
+                        }
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Ammo TAC DiceRoll: " + Diceroll + "; needs: " + damageChance);
+                        if (Diceroll <= (damageChance) && part.GetDamagePercentage() < 0.95f)
+                        {
+                            ammo.DetonateIfPossible();
+                        }
+                    }
+                    if (!ammo.hasDetonated) //hit didn't destroy box
+                    {
+                        ammo.SourceVessel = ammo.vessel.GetName();
                     }
                 }
             }
@@ -99,12 +116,11 @@ namespace BDArmory.Misc
                                     }
                                 }
                         }
-                        if (engine.thrustPercentage > 20) //engines take thrust damage per hit
+                        if (engine.thrustPercentage > BDArmorySettings.BD_PROP_FLOOR) //engines take thrust damage per hit
                         {
-                            //engine.maxThrust -= ((engine.maxThrust * 0.125f) / 100); // doesn't seem to adjust thrust; investigate
-                            //engine.thrustPercentage -= ((engine.maxThrust * 0.125f) / 100); //workaround hack
-                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE); //AP does bonus damage
-                            Mathf.Clamp(engine.thrustPercentage, 15f, 100); //even heavily damaged engines will still put out something
+                            //AP does bonus damage
+                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE)*10; //convert from damagepercent to thrustpercent
+                            Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
                             engine.PlayFlameoutFX(true);
                             /*
@@ -132,7 +148,7 @@ namespace BDArmory.Misc
                             var leak = part.GetComponentInChildren<FuelLeakFX>();
                             if (leak == null && !isSRB) //engine isn't a srb
                             {
-                                BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, attacker);
+                                BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker);
                             }
                         }
                         if (part.GetDamagePercentage() < 0.50f || (part.GetDamagePercentage() < 0.625f && penetrationFactor > 2))
@@ -140,7 +156,7 @@ namespace BDArmory.Misc
                             var alreadyburning = part.GetComponentInChildren<FireFX>();
                             if (isSRB) //srbs are steel tubes full of explosives; treat differently
                             {
-                                if (explosivedamage && SRBFuelled)
+                                if ((explosivedamage || incendiary) && SRBFuelled)
                                 {
                                     BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
                                 }
@@ -149,11 +165,11 @@ namespace BDArmory.Misc
                             {
                                 if (alreadyburning == null)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, -1, 1, true);
                                 }
                             }
                         }
-                        if (part.GetDamagePercentage() < 0.25f)
+                        if (part.GetDamagePercentage() < (BDArmorySettings.BD_PROP_FLAMEOUT/100))
                         {
                             if (engine.EngineIgnited)
                             {
@@ -183,7 +199,11 @@ namespace BDArmory.Misc
                         {
                             HEBonus = 1.4f;
                         }
-                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE/2))); //HE does bonus damage
+                        if (incendiary)
+                        {
+                            HEBonus = 1.1f;
+                        }
+                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE / 2))); //HE does bonus damage
                         Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
                         intake.area *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
@@ -199,7 +219,11 @@ namespace BDArmory.Misc
                         double HEBonus = 1;
                         if (explosivedamage)
                         {
-                            HEBonus = 1.5;
+                            HEBonus = 1.4;
+                        }
+                        if (incendiary)
+                        {
+                            HEBonus = 1.25;
                         }
                         //gimbal.gimbalRange *= (1 - (((1 - part.GetDamagePercentatge()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
                         double Diceroll = UnityEngine.Random.Range(0, 100);
@@ -208,6 +232,10 @@ namespace BDArmory.Misc
                         {
                             gimbal.enabled = false;
                             gimbal.gimbalRange = 0;
+                            if (incendiary)
+                            {
+                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 20);
+                            }
                         }
                     }
                 }
@@ -249,11 +277,19 @@ namespace BDArmory.Misc
                         {
                             HEBonus = 1.2f;
                         }
+                        if (incendiary)
+                        {
+                            HEBonus = 1.1f;
+                        }
                         if (Diceroll <= (BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus))
                         {
                             aileron.actuatorSpeed = 0;
                             aileron.authorityLimiter = 0;
                             aileron.ctrlSurfaceRange = 0;
+                            if (incendiary)
+                            {
+                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 10);
+                            }
                         }
                     }
                 }
@@ -326,10 +362,17 @@ namespace BDArmory.Misc
                         part.RemoveModule(cam);
                     }
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took subsystem damage");
+                    if (Diceroll <= (damageChance * 2))
+                    {
+                        if (incendiary)
+                        {
+                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 20);
+                        }
+                    }
                 }
             }
             //Command parts
-            if (BDArmorySettings.BD_COCKPITS && penetrationFactor > 1 && part.GetDamagePercentage() < 0.9f) //lets have this be triggered by penetrative damage, not blast splash
+            if (BDArmorySettings.BD_COCKPITS && penetrationFactor > 1.2f && part.GetDamagePercentage() < 0.9f) //lets have this be triggered by penetrative damage, not blast splash
             {
                 if (part.GetComponent<ModuleCommand>() != null)
                 {
@@ -339,11 +382,11 @@ namespace BDArmory.Misc
                     {
                         using (List<Part>.Enumerator craftPart = part.vessel.parts.GetEnumerator())
                         {
-                            using (List<BDModulePilotAI>.Enumerator control = part.vessel.FindPartModulesImplementing<BDModulePilotAI>().GetEnumerator())
+                            using (var control = VesselModuleRegistry.GetModules<BDModulePilotAI>(part.vessel).GetEnumerator()) // FIXME should this be IBDAIControl?
                                 while (control.MoveNext())
                                 {
                                     if (control.Current == null) continue;
-                                    control.Current.evasionThreshold += 10; //pilot jitteriness increases
+                                    control.Current.evasionThreshold += 5; //pilot jitteriness increases
                                     control.Current.maxSteer *= 0.9f;
                                     if (control.Current.steerDamping > 0.625f) //damage to controls
                                     {
@@ -368,7 +411,7 @@ namespace BDArmory.Misc
                     }
                 }
             }
-            if (part.protoModuleCrew.Count > 0 && penetrationFactor > 1 && part.GetDamagePercentage() < 0.95f)
+            if (part.protoModuleCrew.Count > 0 && penetrationFactor > 1.5f && part.GetDamagePercentage() < 0.95f)
             {
                 if (BDArmorySettings.BD_PILOT_KILLS)
                 {
@@ -398,7 +441,9 @@ namespace BDArmory.Misc
                                 crewMember.StartRespawnPeriod();
                             }
                             //ScreenMessages.PostScreenMessage(crewMember.name + " killed by damage to " + part.vessel.name + part.partName + ".", 5.0f, ScreenMessageStyle.UPPER_LEFT);
-                            ScreenMessages.PostScreenMessage("Cockpit snipe! " + crewMember.name + " killed!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                            ScreenMessages.PostScreenMessage("Cockpit snipe on " + part.vessel.GetName() + "! " + crewMember.name + " killed!", 5.0f, ScreenMessageStyle.UPPER_LEFT);
+                            BDACompetitionMode.Instance.OnVesselModified(part.vessel);
+
                         }
                     }
                 }

@@ -537,7 +537,7 @@ namespace BDArmory.Modules
                 foundCam = BDATargetManager.GetLaserTarget(this, parentOnly);
                 if (foundCam != null && foundCam.cameraEnabled && foundCam.groundStabilized && BDATargetManager.CanSeePosition(foundCam.groundTargetPosition, vessel.transform.position, MissileReferenceTransform.position))
                 {
-                    Debug.Log("[BDArmory.MissileBase]: Laser guided missileBase actively found laser point. Enabling guidance.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Laser guided missileBase actively found laser point. Enabling guidance.");
                     lockedCamera = foundCam;
                     TargetAcquired = true;
                 }
@@ -581,7 +581,7 @@ namespace BDArmory.Modules
                         {
                             if (_radarFailTimer > maxRadarFailTime)
                             {
-                                Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Parent radar lost target.");
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Parent radar lost target.");
                                 radarTarget = TargetSignatureData.noTarget;
                                 legacyTargetVessel = null;
                                 return;
@@ -590,7 +590,7 @@ namespace BDArmory.Modules
                             {
                                 if (_radarFailTimer == 0)
                                 {
-                                    Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed - waiting for data");
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed - waiting for data");
                                 }
                                 _radarFailTimer += Time.fixedDeltaTime;
                                 radarTarget.timeAcquired = Time.time;
@@ -604,7 +604,7 @@ namespace BDArmory.Modules
                     }
                     else
                     {
-                        Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Out of range and no data feed.");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Semi-Active Radar guidance failed. Out of range and no data feed.");
                         radarTarget = TargetSignatureData.noTarget;
                         legacyTargetVessel = null;
                         return;
@@ -617,7 +617,7 @@ namespace BDArmory.Modules
 
                     if (angleToTarget > maxOffBoresight)
                     {
-                        Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  Target is out of active seeker gimbal limits.");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  Target is out of active seeker gimbal limits.");
                         radarTarget = TargetSignatureData.noTarget;
                         legacyTargetVessel = null;
                         return;
@@ -672,7 +672,7 @@ namespace BDArmory.Modules
                                                     RadarWarningReceiver.PingRWR(ray, lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.Torpedo, 2f);
                                                 else
                                                     RadarWarningReceiver.PingRWR(ray, lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
-                                                Debug.Log("[BDArmory.MissileBase]: Pitbull! Radar missilebase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0"));
+                                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Pitbull! Radar missilebase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0"));
                                             }
                                             else if (locksCount > 2)
                                             {
@@ -704,7 +704,7 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-                            Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  No target locked.");
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed.  No target locked.");
                             radarTarget = TargetSignatureData.noTarget;
                             legacyTargetVessel = null;
                             radarLOALSearching = false;
@@ -777,7 +777,7 @@ namespace BDArmory.Modules
                         else
                             RadarWarningReceiver.PingRWR(new Ray(transform.position, radarTarget.predictedPosition - transform.position), lockedSensorFOV, RadarWarningReceiver.RWRThreatTypes.MissileLaunch, 2f);
 
-                        Debug.Log("[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0"));
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Pitbull! Radar missileBase has gone active.  Radar sig strength: " + radarTarget.signalStrength.ToString("0.0"));
                     }
                     return;
                 }
@@ -791,7 +791,7 @@ namespace BDArmory.Modules
                     _radarFailTimer += Time.fixedDeltaTime;
                     if (_radarFailTimer > maxRadarFailTime)
                     {
-                        Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Active Radar guidance failed. LOAL could not lock a target.");
                         radarTarget = TargetSignatureData.noTarget;
                         legacyTargetVessel = null;
                         radarLOALSearching = false;
@@ -886,7 +886,7 @@ namespace BDArmory.Modules
         {
             if (DetonationDistanceState == DetonationDistanceStates.Detonate)
             {
-                Debug.Log("[BDArmory.MissileBase]: Target detected inside sphere - detonating");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Target detected inside sphere - detonating");
 
                 Detonate();
             }
@@ -917,7 +917,7 @@ namespace BDArmory.Modules
 
         public float GetTntMass()
         {
-            return vessel.FindPartModulesImplementing<BDExplosivePart>().Max(x => x.tntMass);
+            return VesselModuleRegistry.GetModules<BDExplosivePart>(vessel).Max(x => x.tntMass);
         }
 
         public void CheckDetonationState()
@@ -946,6 +946,7 @@ namespace BDArmory.Modules
                             {
                                 Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
                                 if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
                                 if (partHit.vessel != vessel && partHit.vessel == SourceVessel) // Not ourselves, but the source vessel.
                                 {
@@ -1006,6 +1007,7 @@ namespace BDArmory.Modules
                                     {
                                         var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
                                         if (hitPart == null) continue;
+                                        if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
 
                                         if (hitPart.vessel != SourceVessel && hitPart.vessel != vessel)
                                         {
@@ -1041,10 +1043,11 @@ namespace BDArmory.Modules
                                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
 
                                     if (partHit == null) continue;
+                                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                                     if (partHit.vessel == vessel || partHit.vessel == SourceVessel) continue;
                                     if (partHit.vessel.vesselType == VesselType.Debris) continue; // Ignore debris
 
-                                    Debug.Log("[BDArmory.MissileBase]: Missile proximity sphere hit | Distance overlap = " + optimalDistance + "| Part name = " + partHit.name);
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Missile proximity sphere hit | Distance overlap = " + optimalDistance + "| Part name = " + partHit.name);
 
                                     //We found a hit a different vessel than ours
                                     if (DetonateAtMinimumDistance)
@@ -1097,9 +1100,6 @@ namespace BDArmory.Modules
 
         protected void CollisionEnter(Collision col)
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory.MissileBase]: Missile Collided");
-
             if (TimeIndex > 2 && HasFired && col.collider.gameObject.GetComponentInParent<Part>().GetFireFX())
             {
                 ContactPoint contact = col.contacts[0];
@@ -1111,7 +1111,7 @@ namespace BDArmory.Modules
 
             if (DetonationDistanceState != DetonationDistanceStates.CheckingProximity) return;
 
-            Debug.Log("[BDArmory.MissileBase]: Missile Collided - Triggering Detonation");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileBase]: Missile Collided - Triggering Detonation");
             Detonate();
         }
 

@@ -525,7 +525,7 @@ namespace BDArmory.UI
         public void SaveGPSTargets(ConfigNode saveNode = null)
         {
             string saveTitle = HighLogic.CurrentGame.Title;
-            Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDATargetManager]: Save title: " + saveTitle);
             ConfigNode fileNode = ConfigNode.Load(gpsTargetsCfg);
             if (fileNode == null)
             {
@@ -583,7 +583,7 @@ namespace BDArmory.UI
                 string targetString = GPSListToString();
                 gpsNode.SetValue("Targets", targetString, true);
                 fileNode.Save(gpsTargetsCfg);
-                Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDATargetManager]: ==== Saved BDA GPS Targets ====");
             }
         }
 
@@ -724,34 +724,32 @@ namespace BDArmory.UI
             TargetInfo info = v.gameObject.GetComponent<TargetInfo>();
             if (!info)
             {
-                List<MissileFire>.Enumerator mf = v.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    if (reporter.Team.IsEnemy(mf.Current.Team))
+                using (var mf = VesselModuleRegistry.GetModules<MissileFire>(v).GetEnumerator())
+                    while (mf.MoveNext())
                     {
-                        info = v.gameObject.AddComponent<TargetInfo>();
-                        info.detectedTime[reporter.Team] = Time.time;
-                        break;
-                    }
-                }
-                mf.Dispose();
-
-                List<MissileBase>.Enumerator ml = v.FindPartModulesImplementing<MissileBase>().GetEnumerator();
-                while (ml.MoveNext())
-                {
-                    if (ml.Current == null) continue;
-                    if (ml.Current.HasFired)
-                    {
-                        if (reporter.Team.IsEnemy(ml.Current.Team))
+                        if (mf.Current == null) continue;
+                        if (reporter.Team.IsEnemy(mf.Current.Team))
                         {
                             info = v.gameObject.AddComponent<TargetInfo>();
                             info.detectedTime[reporter.Team] = Time.time;
                             break;
                         }
                     }
-                }
-                ml.Dispose();
+
+                using (var ml = VesselModuleRegistry.GetModules<MissileBase>(v).GetEnumerator())
+                    while (ml.MoveNext())
+                    {
+                        if (ml.Current == null) continue;
+                        if (ml.Current.HasFired)
+                        {
+                            if (reporter.Team.IsEnemy(ml.Current.Team))
+                            {
+                                info = v.gameObject.AddComponent<TargetInfo>();
+                                info.detectedTime[reporter.Team] = Time.time;
+                                break;
+                            }
+                        }
+                    }
             }
 
             // add target to database
@@ -782,14 +780,7 @@ namespace BDArmory.UI
 
         public static void ClearDatabase()
         {
-            using (var teamDB = TargetDatabase.GetEnumerator())
-                while (teamDB.MoveNext())
-                {
-                    using (var targetList = teamDB.Current.Value.GetEnumerator())
-                        while (targetList.MoveNext())
-                            targetList.Current.detectedTime.Clear();
-                    teamDB.Current.Value.Clear();
-                }
+            TargetDatabase.Clear();
         }
 
         public static TargetInfo GetAirToAirTarget(MissileFire mf)
@@ -1100,15 +1091,13 @@ namespace BDArmory.UI
             using (var friendlyTarget = FlightGlobals.Vessels.GetEnumerator())
                 while (friendlyTarget.MoveNext())
                 {
-                    if (friendlyTarget.Current == null || friendlyTarget.Current == weaponManager.vessel)
-                        continue;
-                    var wms = friendlyTarget.Current.FindPartModuleImplementing<MissileFire>();
-                    if (wms == null || wms.Team != weaponManager.Team)
-                        continue;
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(friendlyTarget.Current.vesselType)) continue;
+                    if (friendlyTarget.Current == null || friendlyTarget.Current == weaponManager.vessel) continue;
+                    var wms = VesselModuleRegistry.GetModule<MissileFire>(friendlyTarget.Current);
+                    if (wms == null || wms.Team != weaponManager.Team) continue;
                     Vector3 targetDistance = friendlyTarget.Current.CoM - weaponManager.vessel.CoM;
                     float friendlyPosDot = Vector3.Dot(targetDistance, aimDirection);
-                    if (friendlyPosDot <= 0)
-                        continue;
+                    if (friendlyPosDot <= 0) continue;
                     float friendlyDistance = targetDistance.magnitude;
                     float friendlyPosDotNorm = friendlyPosDot / friendlyDistance;       //scale down the dot to be a 0-1 so we can check it againts cosUnsafeAngle
 

@@ -96,22 +96,21 @@ namespace BDArmory.Parts
             }
 
             bool moduleFound = false;
-            List<ModuleTargetingCamera>.Enumerator mtc = v.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                Debug.Log("[BDArmory.TargetingCamera]: Vessel switched to vessel with targeting camera.  Refreshing camera state.");
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(v).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    Debug.Log("[BDArmory.TargetingCamera]: Vessel switched to vessel with targeting camera.  Refreshing camera state.");
 
-                if (mtc.Current.cameraEnabled)
-                {
-                    mtc.Current.DelayedEnable();
+                    if (mtc.Current.cameraEnabled)
+                    {
+                        mtc.Current.DelayedEnable();
+                    }
+                    else
+                    {
+                        mtc.Current.DisableCamera();
+                    }
+                    moduleFound = true;
                 }
-                else
-                {
-                    mtc.Current.DisableCamera();
-                }
-                moduleFound = true;
-            }
-            mtc.Dispose();
 
             if (!moduleFound)
             {
@@ -312,6 +311,11 @@ namespace BDArmory.Parts
         {
             ReadyForUse = false;
             GameEvents.onVesselChange.Remove(VesselChange);
+            foreach (var camera in cameras)
+            {
+                if (camera != null && camera.gameObject != null)
+                { Destroy(camera.gameObject); }
+            }
         }
 
         public static bool IsTGPCamera(Camera c)

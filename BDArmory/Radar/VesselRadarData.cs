@@ -234,13 +234,12 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (mf.MoveNext())
-            {
-                if (mf.Current == null) continue;
-                mf.Current.vesselRadarData = this;
-            }
-            mf.Dispose();
+            using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
+                while (mf.MoveNext())
+                {
+                    if (mf.Current == null) continue;
+                    mf.Current.vesselRadarData = this;
+                }
             GameEvents.onVesselDestroy.Add(OnVesselDestroyed);
             GameEvents.onVesselCreate.Add(OnVesselDestroyed);
             MissileFire.OnChangeTeam += OnChangeTeam;
@@ -249,14 +248,7 @@ namespace BDArmory.Radar
 
             if (!weaponManager)
             {
-                List<MissileFire>.Enumerator mfa = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mfa.MoveNext())
-                {
-                    if (mfa.Current == null) continue;
-                    weaponManager = mfa.Current;
-                    break;
-                }
-                mfa.Dispose();
+                weaponManager = VesselModuleRegistry.GetMissileFire(vessel, true);
             }
 
             StartCoroutine(StartupRoutine());
@@ -589,13 +581,12 @@ namespace BDArmory.Radar
         /// </summary>
         private void UpdateRWRRange()
         {
-            List<RadarWarningReceiver>.Enumerator rwr = vessel.FindPartModulesImplementing<RadarWarningReceiver>().GetEnumerator();
-            while (rwr.MoveNext())
-            {
-                if (rwr.Current == null) continue;
-                rwr.Current.rwrDisplayRange = rIncrements[rangeIndex];
-            }
-            rwr.Dispose();
+            using (var rwr = VesselModuleRegistry.GetModules<RadarWarningReceiver>(vessel).GetEnumerator())
+                while (rwr.MoveNext())
+                {
+                    if (rwr.Current == null) continue;
+                    rwr.Current.rwrDisplayRange = rIncrements[rangeIndex];
+                }
         }
 
         private bool TryLockTarget(RadarDisplayData radarTarget)
@@ -698,36 +689,33 @@ namespace BDArmory.Radar
             //rCount = 0;
             UnlinkAllExternalRadars();
 
-            List<ModuleRadar>.Enumerator radar = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator();
-            while (radar.MoveNext())
-            {
-                if (radar.Current == null) continue;
-                radar.Current.DisableRadar();
-            }
-            radar.Dispose();
+            using (var radar = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
+                while (radar.MoveNext())
+                {
+                    if (radar.Current == null) continue;
+                    radar.Current.DisableRadar();
+                }
         }
 
         public void SlaveTurrets()
         {
-            List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                if (mtc.Current == null) continue;
-                mtc.Current.slaveTurrets = false;
-            }
-            mtc.Dispose();
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    if (mtc.Current == null) continue;
+                    mtc.Current.slaveTurrets = false;
+                }
             slaveTurrets = true;
         }
 
         public void UnslaveTurrets()
         {
-            List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                if (mtc.Current == null) continue;
-                mtc.Current.slaveTurrets = false;
-            }
-            mtc.Dispose();
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    if (mtc.Current == null) continue;
+                    mtc.Current.slaveTurrets = false;
+                }
 
             slaveTurrets = false;
 
@@ -1189,7 +1177,7 @@ namespace BDArmory.Radar
 
         private void UnlinkVRD(VesselRadarData vrd)
         {
-            Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
+            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
             externalVRDs.Remove(vrd);
 
             List<ModuleRadar> radarsToUnlink = new List<ModuleRadar>();
@@ -1209,7 +1197,7 @@ namespace BDArmory.Radar
             while (mr.MoveNext())
             {
                 if (mr.Current == null) continue;
-                Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
+                if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
                 UnlinkRadar(mr.Current);
             }
             mr.Dispose();
@@ -1301,7 +1289,7 @@ namespace BDArmory.Radar
                 using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (v.MoveNext())
                     {
-                        if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
+                        if (v.Current == null || !v.Current.loaded || v.Current == vessel || VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                         if (v.Current.id.ToString() != vesselID) continue;
                         VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
                         if (!vrd) continue;
@@ -1321,7 +1309,7 @@ namespace BDArmory.Radar
                 yield return null;
             }
             LinkVRD(vrd);
-            Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
+            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
                       vrd.vessel.vesselName);
         }
 
@@ -1369,17 +1357,11 @@ namespace BDArmory.Radar
                 while (v.MoveNext())
                 {
                     if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
 
                     BDTeam team = null;
-                    List<MissileFire>.Enumerator mf = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                    while (mf.MoveNext())
-                    {
-                        if (mf.Current == null) continue;
-                        team = mf.Current.Team;
-                        break;
-                    }
-                    mf.Dispose();
-
+                    var mf = VesselModuleRegistry.GetMissileFire(v.Current, true);
+                    if (mf != null) team = mf.Team;
                     if (team != weaponManager.Team) continue;
                     VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
                     if (vrd && vrd.radarCount > 0)
