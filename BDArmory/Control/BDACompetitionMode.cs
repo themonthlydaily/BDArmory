@@ -538,7 +538,7 @@ namespace BDArmory.Control
 
             //clear target database so pilots don't attack yet
             BDATargetManager.ClearDatabase();
-            // CleanUpKSPsDeadReferences(); FIXME memory leak debugging.
+            CleanUpKSPsDeadReferences();
             RunDebugChecks();
 
             foreach (var vname in Scores.Keys)
@@ -646,47 +646,44 @@ namespace BDArmory.Control
                     }
 
 
-                using (var leader = leaders.GetEnumerator())
-                    while (leader.MoveNext())
+                foreach (var leader in leaders)
+                {
+                    foreach (var otherLeader in leaders)
                     {
-                        using (var otherLeader = leaders.GetEnumerator())
-                            while (otherLeader.MoveNext())
-                            {
-                                if (leader.Current == otherLeader.Current)
-                                    continue;
-                                try // Somehow, if a vessel gets destroyed during competition start, the following can throw a null reference exception despite checking for nulls!
-                                {
-                                    if ((leader.Current.transform.position - otherLeader.Current.transform.position).sqrMagnitude < sqrDistance)
-                                        waiting = true;
-                                }
-                                catch (Exception e)
-                                {
-                                    Debug.LogWarning("[BDArmory.BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message + "\n" + e.StackTrace);
-                                    competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
-                                    competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
-                                    StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
-                                    yield break;
-                                }
-                            }
-
-                        // Increase the distance for large teams
-                        if (!pilots.ContainsKey(leader.Current.weaponManager.Team))
+                        if (leader == otherLeader)
+                            continue;
+                        try // Somehow, if a vessel gets destroyed during competition start, the following can throw a null reference exception despite checking for nulls! This is due to the IBDAIControl.transform getter. How to fix this?
                         {
-                            competitionStatus.Set("Competition: The teams were changed during competition start-up, aborting.");
-                            competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
-                            StopCompetition();
+                            if ((leader.transform.position - otherLeader.transform.position).sqrMagnitude < sqrDistance)
+                                waiting = true;
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogWarning("[BDArmory.BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message + "\n" + e.StackTrace);
+                            competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                            competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
+                            StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
                             yield break;
                         }
-                        var teamDistance = 800f + 100f * pilots[leader.Current.weaponManager.Team].Count;
-                        using (var pilot = pilots[leader.Current.weaponManager.Team].GetEnumerator())
-                            while (pilot.MoveNext())
-                                if (pilot.Current != null
-                                        && pilot.Current.currentCommand == PilotCommands.Follow
-                                        && (pilot.Current.vessel.CoM - pilot.Current.commandLeader.vessel.CoM).sqrMagnitude > teamDistance * teamDistance)
-                                    waiting = true;
-
-                        if (waiting) break;
                     }
+
+                    // Increase the distance for large teams
+                    if (!pilots.ContainsKey(leader.weaponManager.Team))
+                    {
+                        competitionStatus.Set("Competition: The teams were changed during competition start-up, aborting.");
+                        competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
+                        StopCompetition();
+                        yield break;
+                    }
+                    var teamDistance = 800f + 100f * pilots[leader.weaponManager.Team].Count;
+                    foreach (var pilot in pilots[leader.weaponManager.Team])
+                        if (pilot != null
+                                && pilot.currentCommand == PilotCommands.Follow
+                                && (pilot.vessel.CoM - pilot.commandLeader.vessel.CoM).sqrMagnitude > teamDistance * teamDistance)
+                            waiting = true;
+
+                    if (waiting) break;
+                }
 
                 yield return null;
             }
@@ -711,25 +708,22 @@ namespace BDArmory.Control
                         yield break;
                     }
             }
-            RadarUtils.ForceUpdateRadarCrossSections(); // Update RCS
-            using (var teamPilots = pilots.GetEnumerator())
-                while (teamPilots.MoveNext())
-                    using (var pilot = teamPilots.Current.Value.GetEnumerator())
-                        while (pilot.MoveNext())
-                        {
-                            if (pilot.Current == null) continue;
+            if (BDATargetManager.LoadedVessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)).Any(v => VesselModuleRegistry.GetModuleCount<ModuleRadar>(v) > 0)) RadarUtils.ForceUpdateRadarCrossSections(); // Update RCS if any vessels have radars.
+            foreach (var teamPilots in pilots)
+                foreach (var pilot in teamPilots.Value)
+                {
+                    if (pilot == null) continue;
 
-                            if (!pilot.Current.weaponManager.guardMode)
-                                pilot.Current.weaponManager.ToggleGuardMode();
+                    if (!pilot.weaponManager.guardMode)
+                        pilot.weaponManager.ToggleGuardMode();
 
-                            using (var leader = leaders.GetEnumerator())
-                                while (leader.MoveNext())
-                                    BDATargetManager.ReportVessel(pilot.Current.vessel, leader.Current.weaponManager);
+                    foreach (var leader in leaders)
+                        BDATargetManager.ReportVessel(pilot.vessel, leader.weaponManager);
 
-                            pilot.Current.ReleaseCommand();
-                            pilot.Current.CommandAttack(centerGPS);
-                            pilot.Current.vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
-                        }
+                    pilot.ReleaseCommand();
+                    pilot.CommandAttack(centerGPS);
+                    pilot.vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
+                }
 
             competitionStatus.Add("Competition starting!  Good luck!");
             CompetitionStarted();
