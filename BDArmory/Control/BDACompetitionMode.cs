@@ -607,8 +607,8 @@ namespace BDArmory.Control
                         yield break;
                     }
 
-            if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
-            if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(); }
+            // if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
+            if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
 
             competitionStatus.Add("Competition: Sending pilots to start position.");
             Vector3 center = Vector3.zero;
@@ -708,7 +708,8 @@ namespace BDArmory.Control
                         yield break;
                     }
             }
-            if (BDATargetManager.LoadedVessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)).Any(v => VesselModuleRegistry.GetModuleCount<ModuleRadar>(v) > 0)) RadarUtils.ForceUpdateRadarCrossSections(); // Update RCS if any vessels have radars.
+            if (BDATargetManager.LoadedVessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)).Any(v => VesselModuleRegistry.GetModuleCount<ModuleRadar>(v) > 0)) // Update RCS if any vessels have radars.
+            { RadarUtils.ForceUpdateRadarCrossSections(); }
             foreach (var teamPilots in pilots)
                 foreach (var pilot in teamPilots.Value)
                 {

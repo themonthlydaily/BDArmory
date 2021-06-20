@@ -232,11 +232,10 @@ namespace BDArmory.Control
         public void UpdateSettings(bool warning = false)
         {
             altitude = BDArmorySettings.ASTEROID_RAIN_ALTITUDE * 100f; // Convert to m.
-            radius = BDArmorySettings.ASTEROID_RAIN_RADIUS * 1000f; // Convert to m.
+            if (!(BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID && BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD)) radius = BDArmorySettings.ASTEROID_RAIN_RADIUS * 1000f; // Convert to m.
             numberOfAsteroids = BDArmorySettings.ASTEROID_RAIN_NUMBER;
-            geoCoords = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS;
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
-            if (spawnPoint.magnitude > 10f * radius)
+            if (spawnPoint.magnitude > 9e4f)
             {
                 if (warning) { BDACompetitionMode.Instance.competitionStatus.Add($"Asteroid Rain spawning point is {spawnPoint.magnitude / 1000:F1}km away, which is more than 10 times the radius away. Spawning here instead."); }
                 geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(Vector3d.zero);
@@ -258,9 +257,11 @@ namespace BDArmory.Control
         /// <summary>
         /// Spawn asteroid rain.
         /// </summary>
-        public void SpawnRain()
+        public void SpawnRain(Vector2d geoCoords)
         {
             Reset();
+            this.geoCoords = geoCoords;
+            if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID && BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD) this.radius = 1000f; // Initial radius for spawn in case we don't have any planes yet.
             UpdateSettings(true);
             StartCoroutine(StartRain());
         }
@@ -289,6 +290,8 @@ namespace BDArmory.Control
             raining = true;
             var spawnRateTracker = 0d;
             var waitForFixedUpdate = new WaitForFixedUpdate();
+            var relocationTimer = Time.time;
+            var relocationTimeout = 2d;
             while (raining)
             {
                 if (cleaningInProgress > 0) // Don't spawn anything if asteroids are getting added to the pool.
@@ -298,11 +301,6 @@ namespace BDArmory.Control
                 }
                 while (spawnRateTracker > 1d)
                 {
-                    if (Vector3d.Dot(upDirection, (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized) < 0.99)
-                    {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Asteroids]: Planet has rotated significantly, updating settings.");
-                        UpdateSettings();
-                    } // Planet rotation has moved the spawn point and direction significantly.
                     var asteroid = GetAsteroid();
                     if (asteroid != null)
                     {
@@ -315,14 +313,46 @@ namespace BDArmory.Control
                     }
                     --spawnRateTracker;
                 }
-                spawnRateTracker += spawnRate;
                 yield return waitForFixedUpdate;
+                if (Time.time - relocationTimer > relocationTimeout)
+                {
+                    UpdateRainLocation();
+                    relocationTimer = Time.time;
+                }
+                spawnRateTracker += spawnRate;
             }
         }
 
         void UpdateRainLocation()
         {
-            using (var vessel = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).Select(wm => wm.vessel).GetEnumerator()) { }
+            if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID)
+            {
+                Vector3 averagePosition = spawnPoint;
+                float maxSqrDistance = 0;
+                int count = 1;
+                foreach (var vessel in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
+                {
+                    averagePosition += vessel.transform.position;
+                    ++count;
+                }
+                averagePosition /= (float)count;
+                geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(averagePosition);
+                if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD)
+                {
+                    foreach (var vessel in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null && wm.vessel != null).Select(wm => wm.vessel))
+                    { maxSqrDistance = Mathf.Max(maxSqrDistance, (vessel.transform.position - averagePosition).sqrMagnitude); }
+                    radius = maxSqrDistance > 5e5f ? Mathf.Sqrt(maxSqrDistance) * 1.5f : 1000f;
+                    Debug.Log($"DEBUG Updating asteroid rain radius to {radius:F0}m");
+                }
+            }
+            else
+            {
+                if (Vector3d.Dot(upDirection, (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized) < 0.99) // Planet rotation has moved the spawn point and direction significantly.
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Asteroids]: Planet has rotated significantly, updating settings.");
+                }
+            }
+            UpdateSettings();
         }
 
         /// <summary>
@@ -426,7 +456,7 @@ namespace BDArmory.Control
         void SetupAsteroidPool(int count)
         {
             if (asteroidPool == null) { asteroidPool = new List<Vessel>(); }
-            else { asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < 10f * radius).ToList(); }
+            else { asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < 9e4f).ToList(); }
             foreach (var asteroid in asteroidPool)
             {
                 if (asteroid.FindPartModuleImplementing<ModuleAsteroid>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidResource>() != null) // We don't use the VesselModuleRegistry here as we'd need to force update it for each asteroid anyway.
@@ -549,6 +579,8 @@ namespace BDArmory.Control
             int withCollidersCount = 0;
             double minMass = double.MaxValue;
             double maxMass = 0d;
+            double minRadius = double.MaxValue;
+            double maxRadius = 0d;
             for (int i = 0; i < asteroidPool.Count; ++i)
             {
                 if (asteroidPool[i] == null) { Debug.Log($"DEBUG asteroid at position {i} is null"); continue; }
@@ -559,11 +591,13 @@ namespace BDArmory.Control
                         ++activeCount;
                     maxMass = Math.Max(maxMass, asteroidPool[i].GetTotalMass());
                     minMass = Math.Min(minMass, asteroidPool[i].GetTotalMass());
+                    maxRadius = Math.Max(maxRadius, asteroidPool[i].GetRadius());
+                    minRadius = Math.Min(minRadius, asteroidPool[i].GetRadius());
                     if (asteroidPool[i].FindPartModuleImplementing<ModuleAsteroid>() != null || asteroidPool[i].FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroidPool[i].FindPartModuleImplementing<ModuleAsteroidResource>() != null) ++withModulesCount;
                     if (asteroidPool[i].rootPart != null && asteroidPool[i].rootPart.GetColliderBounds().Length > 1) ++withCollidersCount;
                 }
             }
-            Debug.Log($"DEBUG {activeCount} asteroids active of {asteroidPool.Count}, mass range: {minMass}t — {maxMass}t, #withModules: {withModulesCount}, #withCollidersCount: {withCollidersCount}, cleaning in progress: {cleaningInProgress}");
+            Debug.Log($"DEBUG {activeCount} asteroids active of {asteroidPool.Count}, mass range: {minMass}t — {maxMass}t, radius range: {minRadius}—{maxRadius}, #withModules: {withModulesCount}, #withCollidersCount: {withCollidersCount}, cleaning in progress: {cleaningInProgress}");
         }
         #endregion
     }
