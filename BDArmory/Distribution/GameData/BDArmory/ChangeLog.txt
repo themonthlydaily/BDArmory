@@ -5,7 +5,7 @@ FIXES
 	- Rounds with the 'Proximity' Fuze type now properly proximity detonate
 	- Adjust Krakensbane adjustments in 'full' Kerbal Safety to hopefully reduce amount of Krakenation.
 	- Make the default value for kerbal safety be 'partial' instead of 'full' due to stability issues with 'full'.
-	- Fix various NREs.
+	- Fix various NREs and memory leaks.
 IMPROVEMENTS
 	- General
 		- Make the WM, MMG, pilot AI and surface AI modules get ignored by explosions, bullets, rockets, lasers and missiles so that they can be placed externally without being easily destroyed.
@@ -22,6 +22,8 @@ IMPROVEMENTS
 		- Adds Custom Ammo Loadouts; weapons with multiple ammo types can be configured to fire non-homogeneous loadouts (e.g. AP, AP, AP, HE, AP...)
 		- Adds Custom Ammo Belt config GUI
 		- Weapons can be configured to use custom ammo belts in .cfg with useCustomBelt = true and ammoBelt = foo; bar; 
+		- New VesselModuleRegistry class for much faster access to vessel modules which gives a nice overall performance boost.
+		- New Asteroid Rain game mode added.
 	- Resource stealing:
 		- Change resource steal to drain and fill containers evenly w.r.t. fraction of the containers, still respecting priority settings.
 		- Add option for counter-measure stealing.
