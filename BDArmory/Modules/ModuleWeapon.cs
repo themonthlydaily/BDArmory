@@ -840,7 +840,7 @@ namespace BDArmory.Modules
             for (int i = 0; i < ammoList.Count; i++)
             {
                 typecount++;
-            }            
+            }
             if (ammoList.Count > 1)
             {
                 if (!canHotSwap)
@@ -960,7 +960,7 @@ namespace BDArmory.Modules
                     }
                     if (useCustomBelt)
                     {
-                        if (!string.IsNullOrEmpty(ammoBelt)
+                        if (!string.IsNullOrEmpty(ammoBelt))
                         {
                             customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
                             baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
