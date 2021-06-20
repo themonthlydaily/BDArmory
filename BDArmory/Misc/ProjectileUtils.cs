@@ -165,6 +165,90 @@ namespace BDArmory.Misc
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Armor penetration = " + penetration + " | Thickness = " + thickness);
             }
+            if (penetrationFactor < 1)
+            {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                {
+                    Debug.Log("[BDArmory.ProjectileUtils]: Bullet Stopped by Armor");
+                }
+            }
+            return penetrationFactor;
+        }
+        public static void CalculateArmorDamage(Part hitPart, float penetrationFactor, float caliber, float hardness, float ductility, float density, float impactVel, string sourceVesselName)
+        {
+            float thickness = (float)hitPart.GetArmorThickness();
+            double volumeToReduce = -1;
+            float caliberModifier = 1; //how many calibers wide is the armor loss/spall?       
+            float spallMass = 0;
+            float spallCaliber = 1;
+            //Spalling/Armor damage
+            if (ductility > 0.20f)
+            {
+                if (penetrationFactor > 2) //material can't stretch fast enough, necking/point embrittlelment/etc, material tears
+                {
+                    if (thickness < 2 * caliber)
+                    {
+                        caliberModifier = 4;                    // - bullet capped by necked material, add to caliber/bulletmass                        
+                    }
+                    else
+                    {
+                        caliberModifier = 2;
+                    }
+                    spallCaliber = caliber * (caliberModifier / 2);
+                    spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * thickness * (density / 1000000);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    {
+                        Debug.Log("[BDArmory.ProjectileUtils]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass + "g");
+                    }
+                }
+                if (penetrationFactor > 0.75 && penetrationFactor < 2) //material deformed around impact point
+                {
+                    caliberModifier = 2;
+                }
+            }
+            else //ductility < 0.20
+            {
+                if (hardness > 500)
+                {
+                    if (penetrationFactor > 1)
+                    {
+                        if (ductility < 0.05f) //ceramics
+                        {
+                            volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 500), 2) * 500 * thickness);
+                            //total failue of 10x10cm armor tile(s)
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
+                                Debug.Log("[BDArmory.ProjectileUtils]: Armor failure!");
+                            }
+                        }
+                        else //0.05-0.19 ductility - harder steels, etc
+                        {
+                            caliberModifier = 2 + (20 / ductility * 10) * penetrationFactor;
+                        }
+                    }
+                    if (penetrationFactor > 0.66 && penetrationFactor <= 1)
+                    {
+                        if (ductility < 0.05f) //ceramics
+                        {
+                            volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 500), 2) * 500 * thickness);
+                            //stops round, but shatters material in doing so
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            {
+                                Debug.Log("[BDArmory.ProjectileUtils]: Armor failure!");
+                            }
+                        }
+                        spallCaliber = ((1 - penetrationFactor) + 1) * (Mathf.Pow(0.5f * caliber, 2) * Mathf.PI / 100);
+                        volumeToReduce = spallCaliber;
+                        spallMass = spallCaliber * (density / 10000);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        {
+                            Debug.Log("[BDArmory.ProjectileUtils]: Armor failure!");
+                            Debug.Log("[BDArmory.ProjectileUtils]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass + "g");
+                        }
+                    }
+                }
+                //else //low hardness non ductile materials (i.e. kevlar/aramid) not going to spall
+            }
 
             bool fullyPenetrated = penetration > thickness; //check whether bullet penetrates the plate
 
@@ -259,7 +343,7 @@ namespace BDArmory.Misc
                         {
                             if (thickness < (shrapnelThickness * 1.7))//armor cracks; 
                             {
-                                volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 100), 2) * 100 * (thickness / 10));
+                                volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 500), 2) * 500 * (thickness / 10));
                                 hitPart.ReduceArmor(volumeToReduce);
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
@@ -365,7 +449,7 @@ namespace BDArmory.Misc
                         {
                             if (ductility < 0.05f) //ceramics
                             {
-                                hitPart.ReduceArmor((Mathf.Pow(Mathf.CeilToInt(spallCaliber / 100), 2) * 100 * thickness));
+                                hitPart.ReduceArmor((Mathf.Pow(Mathf.CeilToInt(spallCaliber / 500), 2) * 500 * thickness));
                                 //total failue of 10x10cm armor tile(s)
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 {
