@@ -139,6 +139,9 @@ namespace BDArmory.Control
         int cleaningInProgress;
         System.Random RNG;
 
+        // updating spawn center
+        double timeOfNextUpdate;
+
         Coroutine rainCoroutine;
         Coroutine cleanUpCoroutine;
         HashSet<Vessel> beingRemoved = new HashSet<Vessel>();
@@ -150,6 +153,7 @@ namespace BDArmory.Control
         #endregion
 
         #region Monobehaviour functions
+
         /// <summary>
         /// Initialisation.
         /// </summary>
@@ -164,6 +168,7 @@ namespace BDArmory.Control
                 RNG = new System.Random();
             }
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
+            timeOfNextUpdate = Planetarium.GetUniversalTime() + 10.0;
         }
 
         /// <summary>
@@ -235,6 +240,13 @@ namespace BDArmory.Control
             radius = BDArmorySettings.ASTEROID_RAIN_RADIUS * 1000f; // Convert to m.
             numberOfAsteroids = BDArmorySettings.ASTEROID_RAIN_NUMBER;
             geoCoords = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS;
+
+            var vessels = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).Select(wm => wm.vessel);
+            var avgLat = vessels.Select(e => e.latitude).Average();
+            var avgLng = vessels.Select(e => e.longitude).Average();
+            geoCoords.x = avgLat;
+            geoCoords.y = avgLng;
+
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             if (spawnPoint.magnitude > 10f * radius)
             {
@@ -298,11 +310,13 @@ namespace BDArmory.Control
                 }
                 while (spawnRateTracker > 1d)
                 {
-                    if (Vector3d.Dot(upDirection, (FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude) - FlightGlobals.currentMainBody.transform.position).normalized) < 0.99)
+                    var now = Planetarium.GetUniversalTime();
+                    if( now > timeOfNextUpdate )
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Asteroids]: Planet has rotated significantly, updating settings.");
+                        // re-center asteroids on vessel centroid
                         UpdateSettings();
-                    } // Planet rotation has moved the spawn point and direction significantly.
+                        timeOfNextUpdate += 10.0;
+                    }
                     var asteroid = GetAsteroid();
                     if (asteroid != null)
                     {
