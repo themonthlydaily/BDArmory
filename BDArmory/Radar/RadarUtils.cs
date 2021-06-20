@@ -276,6 +276,7 @@ namespace BDArmory.Radar
         /// <param name="inEditorZoom">when true, we try to make the rendered vessel fill the rendertexture completely, for a better detailed view. This does skew the computed cross section, so it is only for a good visual in editor!</param>
         public static float RenderVesselRadarSnapshot(Vessel v, Transform t, bool inEditorZoom = false)
         {
+            if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)) Debug.LogError($"DEBUG Rendering radar snapshot of {v.vesselName}, which should be being ignored!");
             const float radarDistance = 1000f;
             const float radarFOV = 2.0f;
             Vector3 presentationPosition = -t.forward * radarDistance;
@@ -823,9 +824,8 @@ namespace BDArmory.Radar
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
                 {
-                    // ignore null, unloaded
-                    if (loadedvessels.Current == null) continue;
-                    if (!loadedvessels.Current.loaded) continue;
+                    // ignore null, unloaded and ignored types
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
 
                     // ignore self, ignore behind ray
                     Vector3 vectorToTarget = (loadedvessels.Current.transform.position - ray.origin);
@@ -902,9 +902,8 @@ namespace BDArmory.Radar
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
                 {
-                    // ignore null, unloaded
-                    if (loadedvessels.Current == null) continue;
-                    if (!loadedvessels.Current.loaded) continue;
+                    // ignore null, unloaded and ignored types
+                    if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
 
                     // IFF code check to prevent friendly lock-on (neutral vessel without a weaponmanager WILL be lockable!)
                     MissileFire wm = VesselModuleRegistry.GetModule<MissileFire>(loadedvessels.Current);
@@ -1002,7 +1001,7 @@ namespace BDArmory.Radar
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
                 {
-                    // ignore null, unloaded and self
+                    // ignore null, unloaded, self and ignores types
                     if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
                     if (loadedvessels.Current == myWpnManager.vessel) continue;
 
@@ -1120,8 +1119,7 @@ namespace BDArmory.Radar
                     while (loadedvessels.MoveNext())
                     {
                         // ignore null, unloaded
-                        if (loadedvessels.Current == null) continue;
-                        if (!loadedvessels.Current.loaded) continue;
+                        if (loadedvessels.Current == null || !loadedvessels.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(loadedvessels.Current.vesselType)) continue;
 
                         // ignore self, ignore behind ray
                         Vector3 vectorToTarget = (loadedvessels.Current.transform.position - ray.origin);

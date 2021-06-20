@@ -3581,7 +3581,7 @@ namespace BDArmory.Modules
                         using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                             while (v.MoveNext())
                             {
-                                if (v.Current == null || !v.Current.loaded) continue;
+                                if (v.Current == null || !v.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                                 if (!v.Current.IsControllable) continue;
                                 if (v.Current == vessel) continue;
                                 Vector3 targetVector = v.Current.transform.position - part.transform.position;

@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.UI;
 
 namespace BDArmory.Control
 {
@@ -148,6 +149,7 @@ namespace BDArmory.Control
         HashSet<string> asteroidNames = new HashSet<string>();
         #endregion
 
+        #region Monobehaviour functions
         /// <summary>
         /// Initialisation.
         /// </summary>
@@ -171,6 +173,14 @@ namespace BDArmory.Control
         {
             Reset(true);
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
+        }
+        #endregion
+
+        #region Rain functions
+        public static bool IsRaining()
+        {
+            if (Instance == null) return false;
+            return Instance.raining;
         }
 
         /// <summary>
@@ -310,6 +320,11 @@ namespace BDArmory.Control
             }
         }
 
+        void UpdateRainLocation()
+        {
+            using (var vessel = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).Select(wm => wm.vessel).GetEnumerator()) { }
+        }
+
         /// <summary>
         /// Reposition the asteroid to the desired position once it's properly spawned.
         /// </summary>
@@ -381,7 +396,9 @@ namespace BDArmory.Control
             else
             { if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.Asteroids]: Asteroid {asteroid.vesselName} is null, unable to remove."); }
         }
+        #endregion
 
+        #region Pooling
         /// <summary>
         /// Wait until the collider bounds have been generated, then remove various modules from the asteroid for performance reasons.
         /// </summary>
@@ -392,10 +409,10 @@ namespace BDArmory.Control
             var wait = new WaitForFixedUpdate();
             asteroid.gameObject.SetActive(true);
             var startTime = Time.time;
-            while (asteroid != null && (asteroid.packed || !asteroid.loaded || asteroid.rootPart.GetColliderBounds().Length < 2 || Time.time - startTime > 10)) yield return wait;
+            while (asteroid != null && Time.time - startTime < 10 && (asteroid.packed || !asteroid.loaded || asteroid.rootPart.GetColliderBounds().Length < 2)) yield return wait;
             if (asteroid != null)
             {
-                if (Time.time - startTime > 10) Debug.LogWarning($"[BDArmory.Asteroids]: Timed out waiting for colliders on {asteroid.vesselName} to be generated.");
+                if (Time.time - startTime >= 10) Debug.LogWarning($"[BDArmory.Asteroids]: Timed out waiting for colliders on {asteroid.vesselName} to be generated.");
                 AsteroidUtils.CleanOutAsteroid(asteroid);
                 asteroid.gameObject.SetActive(false);
             }
@@ -548,6 +565,7 @@ namespace BDArmory.Control
             }
             Debug.Log($"DEBUG {activeCount} asteroids active of {asteroidPool.Count}, mass range: {minMass}t — {maxMass}t, #withModules: {withModulesCount}, #withCollidersCount: {withCollidersCount}, cleaning in progress: {cleaningInProgress}");
         }
+        #endregion
     }
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]

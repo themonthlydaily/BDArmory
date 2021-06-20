@@ -1289,7 +1289,7 @@ namespace BDArmory.Radar
                 using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (v.MoveNext())
                     {
-                        if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
+                        if (v.Current == null || !v.Current.loaded || v.Current == vessel || VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                         if (v.Current.id.ToString() != vesselID) continue;
                         VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
                         if (!vrd) continue;

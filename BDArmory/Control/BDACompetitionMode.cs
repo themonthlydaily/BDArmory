@@ -1571,9 +1571,7 @@ namespace BDArmory.Control
 
         public void RemoveSpaceObject(Vessel vessel)
         {
-            if (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel)) return; // Don't remove asteroids when we're using them.
-            if (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel)) return; // Don't remove asteroids when we're using them.
-            StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0));
+            StartCoroutine(DelayedVesselRemovalCoroutine(vessel, 0.1f)); // We need a small delay to make sure the new asteroids get registered if they're being used for Asteroid Rain or Asteroid Field.
         }
 
         HashSet<VesselType> debrisTypes = new HashSet<VesselType> { VesselType.Debris, VesselType.SpaceObject }; // Consider space objects as debris.
@@ -1630,6 +1628,8 @@ namespace BDArmory.Control
                         Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.GetName());
                     if (vessel.vesselType == VesselType.SpaceObject)
                     {
+                        if (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
+                        if (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
                         var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
                         if (cometVessel) { Destroy(cometVessel); }
                     }
