@@ -656,7 +656,7 @@ namespace BDArmory.Modules
         public List<string> ammoList;
 
         [KSPField(isPersistant = true)]
-        public string ammoBelt = "";
+        public string ammoBelt = "def";
 
         public List<string> customAmmoBelt;
 
@@ -834,7 +834,7 @@ namespace BDArmory.Modules
             for (int i = 0; i < ammoList.Count; i++)
             {
                 typecount++;
-            }            
+            }
             if (ammoList.Count > 1)
             {
                 if (!canHotSwap)
@@ -954,8 +954,15 @@ namespace BDArmory.Modules
                     }
                     if (useCustomBelt)
                     {
-                        customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
-                        baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
+                        if (!string.IsNullOrEmpty(ammoBelt))
+                        {
+                            customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
+                            baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
+                        }
+                        else
+                        {
+                            customAmmoBelt = BDAcTools.ParseNames(bulletType);
+                        }
                     }
                 }
                 if (eWeaponType == WeaponTypes.Rocket)
