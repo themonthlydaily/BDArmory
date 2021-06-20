@@ -51,6 +51,7 @@ namespace BDArmory.FX
                     pe.emit = false;
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
+            parentPart = null;
         }
         void Update()
         {

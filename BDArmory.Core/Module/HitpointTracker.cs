@@ -148,11 +148,22 @@ namespace BDArmory.Core.Module
                 part.RefreshAssociatedWindows();
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
+            GameEvents.onPartDie.Add(OnPartDie);
         }
 
         private void OnDestroy()
         {
             GameEvents.onEditorShipModified.Remove(ShipModified);
+            GameEvents.onPartDie.Remove(OnPartDie);
+        }
+
+        void OnPartDie() { OnPartDie(part); }
+        void OnPartDie(Part p)
+        {
+            if (p == part)
+            {
+                Destroy(this); // Force this module to be removed from the gameObject as something is holding onto part references and causing a memory leak.
+            }
         }
 
         public void ShipModified(ShipConstruct data)

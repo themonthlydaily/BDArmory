@@ -165,13 +165,13 @@ namespace BDArmory.Modules
                 var engineFX = p.FindModuleImplementing<ModuleEnginesFX>();
                 if (engine != null)
                 {
-                    if (engine.enabled) //kill engines
+                    if (engine.enabled && engine.allowShutdown) //kill engines
                     {
                         engine.Shutdown();
                         engine.allowRestart = false;
                     }
                 }
-                if (engineFX != null)
+                if (engineFX != null && engine.allowShutdown) //unless they're lit SRBs
                 {
                     if (engineFX.enabled)
                     {

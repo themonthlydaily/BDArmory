@@ -274,24 +274,22 @@ namespace BDArmory.Modules
             if (rails.Count == 0)
             {
                 rails.Add(part.FindModelTransform("railTransform"));
-                IEnumerator<Transform> t = part.FindModelTransforms("newRail").AsEnumerable().GetEnumerator();
-                while (t.MoveNext())
-                {
-                    if (t.Current == null) continue;
-                    rails.Add(t.Current);
-                }
-                t.Dispose();
+                using (var t = part.FindModelTransforms("newRail").AsEnumerable().GetEnumerator())
+                    while (t.MoveNext())
+                    {
+                        if (t.Current == null) continue;
+                        rails.Add(t.Current);
+                    }
             }
 
             for (int i = 1; i < rails.Count; i++)
             {
-                IEnumerator<Transform> t = rails[i].GetComponentsInChildren<Transform>().AsEnumerable().GetEnumerator();
-                while (t.MoveNext())
-                {
-                    if (t.Current == null) continue;
-                    t.Current.name = "deleted";
-                }
-                t.Dispose();
+                using (var t = rails[i].GetComponentsInChildren<Transform>().AsEnumerable().GetEnumerator())
+                    while (t.MoveNext())
+                    {
+                        if (t.Current == null) continue;
+                        t.Current.name = "deleted";
+                    }
                 Destroy(rails[i].gameObject);
             }
 
@@ -362,6 +360,18 @@ namespace BDArmory.Modules
             if (!HighLogic.LoadedSceneIsFlight) return;
             UpdateMissileChildren();
             RotateToIndex(railIndex, true);
+        }
+
+        void OnDestroy()
+        {
+            if (rails != null)
+            {
+                foreach (var rail in rails)
+                {
+                    if (rail != null && rail.gameObject != null)
+                    { Destroy(rail.gameObject); }
+                }
+            }
         }
 
         void OnAttach()

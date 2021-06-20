@@ -87,6 +87,7 @@ namespace BDArmory.FX
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
             ExplosivePart = null; // Clear the Part reference.
+            ExplosionEvents.Clear(); // Make sure we don't have any left over events leaking memory.
         }
 
         private void CalculateBlastEvents()
@@ -453,7 +454,7 @@ namespace BDArmory.FX
                     var damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
                     if (BDArmorySettings.BATTLEDAMAGE)
                     {
-                        Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, SourceVesselName, eventToExecute.Hit);
+                        Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
                     }
 
                     // Update scoring structures

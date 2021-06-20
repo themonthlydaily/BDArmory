@@ -37,9 +37,7 @@ namespace BDArmory.UI
 
 		//legacy version check
 		bool LegacyTILoaded = false;
-
-		bool shownPSA = false;
-
+		bool showPSA = false;
 		private Texture2D dit;
 		public Texture2D TextureIconDebris
 		{
@@ -118,9 +116,12 @@ namespace BDArmory.UI
 							break;
 					}
 				}
-			if (LegacyTILoaded)
+			if (HighLogic.LoadedSceneIsFlight)
 			{
-				ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_legacyinstall"), 20.0f, ScreenMessageStyle.UPPER_CENTER);
+				if (LegacyTILoaded)
+				{
+					ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_legacyinstall"), 20.0f, ScreenMessageStyle.UPPER_CENTER);
+				}
 			}
 			TILabel = new GUIStyle();
 			TILabel.font = BDArmorySetup.BDGuiSkin.window.font;
@@ -224,12 +225,7 @@ namespace BDArmory.UI
 				ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_legacyinstall"), 5.0f, ScreenMessageStyle.UPPER_CENTER);
 			}
 			else
-			{
-				if (!shownPSA)
-				{
-					ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_PSA"), 5.0f, ScreenMessageStyle.UPPER_CENTER);
-					shownPSA = true;
-				}
+			{				
 				showTeamIconGUI = true;
 				LoadConfig();
 			}
@@ -299,6 +295,11 @@ namespace BDArmory.UI
 			BDTISettings.TEAMICONS = GUI.Toggle(new Rect(5, 25, 300, 20), BDTISettings.TEAMICONS, Localizer.Format("#LOC_BDArmory_Enable_Icons"), BDArmorySetup.BDGuiSkin.toggle);
 			if (BDTISettings.TEAMICONS)
 			{
+				if (GameSettings.FLT_VESSEL_LABELS && !showPSA)
+				{
+					ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_PSA"), 7.0f, ScreenMessageStyle.UPPER_CENTER);
+					showPSA = true;
+				}
 				Rect IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 280);
 				GUI.BeginGroup(IconOptionsGroup, GUIContent.none, BDArmorySetup.BDGuiSkin.box);
 				BDTISettings.TEAMNAMES = GUI.Toggle(new Rect(15, line * 25, toolWindowWidth - 20, 20), BDTISettings.TEAMNAMES, Localizer.Format("#LOC_BDArmory_Icon_teams"), BDArmorySetup.BDGuiSkin.toggle);

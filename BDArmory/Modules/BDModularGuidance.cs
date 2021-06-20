@@ -536,6 +536,7 @@ namespace BDArmory.Modules
             WeaponNameWindow.OnActionGroupEditorOpened.Remove(OnActionGroupEditorOpened);
             WeaponNameWindow.OnActionGroupEditorClosed.Remove(OnActionGroupEditorClosed);
             GameEvents.onPartDie.Remove(PartDie);
+            if (_velocityTransform != null) { Destroy(_velocityTransform.gameObject); }
         }
 
         private void SetMissileTransform()

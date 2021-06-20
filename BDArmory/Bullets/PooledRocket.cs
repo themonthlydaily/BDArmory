@@ -37,6 +37,7 @@ namespace BDArmory.Bullets
         public bool choker;
         public float massMod = 0;
         public float impulse = 0;
+        public bool incendiary;
         public float detonationRange;
         public float tntMass;
         bool explosive = true;
@@ -76,8 +77,6 @@ namespace BDArmory.Bullets
         float randThrustSeed;
 
         public AudioSource audioSource;
-
-        HashSet<Vessel> craftHit = new HashSet<Vessel>();
 
         void OnEnable()
         {
@@ -162,7 +161,9 @@ namespace BDArmory.Bullets
                     pe.emit = false;
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
+            sourceVessel = null;
             sourceVesselName = null;
+            spawnTransform = null;
         }
 
         void FixedUpdate()
@@ -290,7 +291,7 @@ namespace BDArmory.Bullets
                                     impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
                                 else
                                     impactVelocity = rb.velocity.magnitude;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName, team);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team);
                                 Detonate(hit.point, false);
                                 return;
                             }
@@ -344,7 +345,7 @@ namespace BDArmory.Bullets
                             if (penetrationFactor > 1)
                             {
                                 hasPenetrated = true;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName, team);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team);
                                 penTicker += 1;
                                 ProjectileUtils.CheckPartForExplosion(hitPart);
 
@@ -373,7 +374,7 @@ namespace BDArmory.Bullets
                                 }
 
                                 hasPenetrated = false;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, false, sourceVessel, rocketName, team);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team);
                                 Detonate(hit.point, false);
                                 hasDetonated = true;
                             }
@@ -423,6 +424,8 @@ namespace BDArmory.Bullets
             bool detonate = false;
 
             if (distanceFromStart <= blastRadius) return false;
+
+            if (!explosive || tntMass <= 0) return false;
 
             if (flak)
             {
@@ -515,11 +518,61 @@ namespace BDArmory.Bullets
                     {
                         direction = (pos + rb.velocity * Time.deltaTime).normalized;
                     }
+                    if (gravitic)
+                    {
+                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
+                        {
+                            while (hitsEnu.MoveNext())
+                            {
+                                if (hitsEnu.Current == null) continue;
+
+                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                                if (partHit == null) continue;
+                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                                float distance = Vector3.Distance(transform.position, partHit.transform.position);
+                                if (gravitic)
+                                {
+                                    if (partHit.mass > 0)
+                                    {
+                                        var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
+                                        if (ME == null)
+                                        {
+                                            ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
+                                        }
+                                        ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
+                                        ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
+                                    }
+                                }                                
+                            }
+                        }
+                    }
+                    if (incendiary)
+                    {
+                        for (int f = 0; f < 20; f++) //throw 20 random raytraces out in a sphere and see what gets tagged
+                        {
+                            Ray LoSRay = new Ray(transform.position, VectorUtils.GaussianDirectionDeviation(transform.forward, 170));
+                            RaycastHit hit;
+                            if (Physics.Raycast(LoSRay, out hit, blastRadius * 1.2f, 9076737)) // only add fires to parts in LoS of blast
+                            {
+                                KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                                Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+                                float distance = Vector3.Distance(transform.position, hit.point);
+                                if (p != null)
+                                {
+                                    BulletHitFX.AttachFire(hit, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, false, true); //else apply fire to occluding part
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                        Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
+                                }
+                            }
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                Debug.Log("[Rocket] incendiary raytrace: " + hit.point.x + "; " + hit.point.y + "; " + hit.point.z);
+                        }
+                    }
                     if (concussion || EMP || choker)
                     {
                         using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, 557057).AsEnumerable().GetEnumerator())
                         {
-                            craftHit.Clear();
+                            var craftHit = new HashSet<Vessel>();
                             while (hitsEnu.MoveNext())
                             {
                                 if (hitsEnu.Current == null) continue;
@@ -564,32 +617,7 @@ namespace BDArmory.Bullets
                     else
                     {
                         ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
-                    }
-                    if (gravitic)
-                    {
-                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
-                        {
-                            while (hitsEnu.MoveNext())
-                            {
-                                if (hitsEnu.Current == null) continue;
-
-                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit == null) continue;
-                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                                if (partHit.mass > 0)
-                                {
-                                    float distance = Vector3.Distance(transform.position, partHit.transform.position);
-                                    var ME = partHit.vessel.rootPart.FindModuleImplementing<ModuleMassAdjust>();
-                                    if (ME == null)
-                                    {
-                                        ME = (ModuleMassAdjust)partHit.vessel.rootPart.AddModule("ModuleMassAdjust");
-                                    }
-                                    ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
-                                    ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
-                                }
-                            }
-                        }
-                    }
+                    }                                        
                 }
             } // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
             gameObject.SetActive(false);
@@ -597,7 +625,8 @@ namespace BDArmory.Bullets
 
         void SetupAudio()
         {
-            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource = gameObject.GetComponent<AudioSource>();
+            if (audioSource == null) { audioSource = gameObject.AddComponent<AudioSource>(); }
             audioSource.loop = true;
             audioSource.minDistance = 1;
             audioSource.maxDistance = 2000;

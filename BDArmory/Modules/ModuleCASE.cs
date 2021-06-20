@@ -23,8 +23,8 @@ namespace BDArmory.Modules
         public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => CASEcost;
         public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
 
-        private double ammoMass;
-        private double ammoQuantity;
+        private double ammoMass = 0;
+        private double ammoQuantity = 0;
         private double ammoExplosionYield = 0;
 
         private string explModelPath = "BDArmory/Models/explosion/explosion";
@@ -33,9 +33,9 @@ namespace BDArmory.Modules
         private string limitEdexploModelPath = "BDArmory/Models/explosion/30mmExplosion";
         private string shuntExploModelPath = "BDArmory/Models/explosion/CASEexplosion";
 
-        public string SourceVessel;
-        public bool hasDetonated;
-        private float blastRadius;
+        public string SourceVessel = "";
+        public bool hasDetonated = false;
+        private float blastRadius = 0;
 
         public override void OnStart(StartState state)
         {
@@ -150,11 +150,11 @@ namespace BDArmory.Modules
                         {
                             ammoMass = ammo.Current.info.density;
                             ammoQuantity = ammo.Current.amount;
-                            ammoExplosionYield += (((ammoMass * 1000) * ammoQuantity) / 6);
+                            ammoExplosionYield += (((ammoMass * 1000) * ammoQuantity) / 10);
                         }
                     }
             }
-            blastRadius = BlastPhysicsUtils.CalculateBlastRange(ammoExplosionYield);
+            blastRadius = BlastPhysicsUtils.CalculateBlastRange(ammoExplosionYield * BDArmorySettings.BD_AMMO_DMG_MULT);
         }
         public float GetBlastRadius()
         {
@@ -204,7 +204,7 @@ namespace BDArmory.Modules
                                             Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
                                             if (p == partHit)
                                             {
-                                                ApplyDamage(p, hit);
+                                                ApplyDamage(p, hit, (1-Mathf.Sqrt(distToG0.magnitude/(blastRadius/2))));
                                             }
                                         }
                                     }
@@ -268,7 +268,7 @@ namespace BDArmory.Modules
                     part.Destroy();
             }
         }
-        private void ApplyDamage(Part hitPart, RaycastHit hit)
+        private void ApplyDamage(Part hitPart, RaycastHit hit, float distance = 0)
         {
             //hitting a vessel Part
             //No struts, they cause weird bugs :) -BahamutoD
@@ -286,18 +286,19 @@ namespace BDArmory.Modules
                 hitPart.AddDamage(explDamage);
                 float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
                 hitPart.ReduceArmor(armorToReduce);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + "damaged, armor reduced by " + armorToReduce);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged, armor reduced by " + armorToReduce);
             }
             else //CASE I
             {
                 explDamage = Mathf.Min((hitPart.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f), 600); //clamp damage to 90% part HP or 600 HP, whchever is lower
                 explDamage *= BDArmorySettings.BD_AMMO_DMG_MULT;
                 explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield*10)); //reduce damage done based on ammo remaining. almost empty ammo box should do much less damage than full one
+                explDamage *= Mathf.Clamp(distance, 0, 1);
                 hitPart.AddDamage(explDamage);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + "damaged for " + (hitPart.MaxDamage() * 0.9f));
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged for " + explDamage);
                 if (BDArmorySettings.BATTLEDAMAGE)
                 {
-                    Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, SourceVessel, hit);
+                    Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, false, SourceVessel, hit);
                 }
             }
             {
@@ -360,6 +361,16 @@ namespace BDArmory.Modules
             output.AppendLine("");
 
             return output.ToString();
+        }
+        void Update()
+        {
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
+            {
+                if (this.part.temperature > 900) //ammo cooks off, part is too hot
+                {
+                    DetonateIfPossible();
+                }
+            }
         }
     }
 }
