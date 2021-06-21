@@ -183,39 +183,23 @@ namespace BDArmory.Targeting
                     return;
                 }
             }
-            // IEnumerator otherInfo = vessel.gameObject.GetComponents<TargetInfo>().GetEnumerator();
-            // while (otherInfo.MoveNext())
-            // {
-            //     if ((object)otherInfo.Current != this)
-            //     {
-            //         Destroy(this);
-            //         return;
-            //     }
-            // }
 
             Team = null;
-            bool foundMf = false;
-            List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (mf.MoveNext())
+            var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null)
             {
-                foundMf = true;
-                Team = mf.Current.Team;
-                weaponManager = mf.Current;
-                break;
+                Team = mf.Team;
+                weaponManager = mf;
             }
-            mf.Dispose();
-
-            if (!foundMf)
+            else
             {
-                List<MissileBase>.Enumerator ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator();
-                while (ml.MoveNext())
+                var ml = VesselModuleRegistry.GetMissileBase(vessel, true);
+                if (ml != null)
                 {
                     isMissile = true;
-                    MissileBaseModule = ml.Current;
-                    Team = ml.Current.Team;
-                    break;
+                    MissileBaseModule = ml;
+                    Team = ml.Team;
                 }
-                ml.Dispose();
             }
 
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
@@ -231,6 +215,7 @@ namespace BDArmory.Targeting
                 //massRoutine = StartCoroutine(MassRoutine());              // TODO: CHECK BEHAVIOUR AND SIDE EFFECTS!
             }
             UpdateTargetPartList();
+            GameEvents.onVesselDestroy.Add(CleanFriendliesEngaging);
         }
 
         void OnPeaceEnabled()
@@ -244,6 +229,8 @@ namespace BDArmory.Targeting
             BDArmorySetup.OnPeaceEnabled -= OnPeaceEnabled;
             vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselPartCountChanged.Remove(VesselModified);
+            GameEvents.onVesselDestroy.Remove(CleanFriendliesEngaging);
+            BDATargetManager.RemoveTarget(this);
         }
 
         IEnumerator UpdateRCSDelayed()
@@ -263,7 +250,7 @@ namespace BDArmory.Targeting
 
         void Update()
         {
-            if (!vessel)
+            if (vessel == null)
             {
                 AboutToBeDestroyed();
             }
@@ -326,6 +313,12 @@ namespace BDArmory.Targeting
                 targetWeaponList.RemoveRange(10, (targetWeaponList.Count - 10));
         }
 
+        void CleanFriendliesEngaging(Vessel v)
+        {
+            var toRemove = friendliesEngaging.Where(kvp => kvp.Value == null).Select(kvp => kvp.Key).ToList();
+            foreach (var key in toRemove)
+            { friendliesEngaging.Remove(key); }
+        }
         public int NumFriendliesEngaging(BDTeam team)
         {
             if (friendliesEngaging.TryGetValue(team, out var friendlies))
@@ -341,7 +334,7 @@ namespace BDArmory.Targeting
             float maxThrust = 0;
             float finalThrust = 0;
 
-            using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
                 while (engines.MoveNext())
                 {
                     if (engines.Current == null) continue;
@@ -386,7 +379,7 @@ namespace BDArmory.Targeting
             if (myMf == null) return 0;
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
-            using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;

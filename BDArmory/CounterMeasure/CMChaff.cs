@@ -39,6 +39,11 @@ namespace BDArmory.CounterMeasure
             StartCoroutine(LifeRoutine());
         }
 
+        void OnDisable()
+        {
+            body = null;
+        }
+
         IEnumerator LifeRoutine()
         {
             geoPos = VectorUtils.WorldPositionToGeoCoords(transform.position, body);

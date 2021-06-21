@@ -129,41 +129,23 @@ namespace BDArmory.Modules
                 while (vs.MoveNext())
                 {
                     if (vs.Current == null) continue;
-                    if (!vs.Current.loaded || vs.Current == vessel) continue;
+                    if (!vs.Current.loaded || vs.Current == vessel || VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType)) continue;
 
-                    IBDAIControl pilot = null;
-                    MissileFire wm = null;
-                    List<IBDAIControl>.Enumerator ps = vs.Current.FindPartModulesImplementing<IBDAIControl>().GetEnumerator();
-                    while (ps.MoveNext())
-                    {
-                        if (ps.Current == null) continue;
-                        pilot = ps.Current;
-                        break;
-                    }
-                    ps.Dispose();
-
+                    IBDAIControl pilot = VesselModuleRegistry.GetIBDAIControl(vs.Current, true);
                     if (pilot == null) continue;
-                    List<MissileFire>.Enumerator ws = vs.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                    while (ws.MoveNext())
-                    {
-                        // TODO:  JDK:  note that this assigns the last module found.  Is that what we want?
-                        wm = ws.Current;
-                    }
-                    ws.Dispose();
-
-                    if (!wm || wm.Team != weaponManager.Team) continue;
+                    MissileFire wm = VesselModuleRegistry.GetMissileFire(vs.Current, true);
+                    if (wm == null || wm.Team != weaponManager.Team) continue;
                     friendlies.Add(pilot);
                 }
 
             //TEMPORARY
             wingmen = new List<IBDAIControl>();
-            List<IBDAIControl>.Enumerator fs = friendlies.GetEnumerator();
-            while (fs.MoveNext())
-            {
-                if (fs.Current == null) continue;
-                wingmen.Add(fs.Current);
-            }
-            fs.Dispose();
+            using (var fs = friendlies.GetEnumerator())
+                while (fs.MoveNext())
+                {
+                    if (fs.Current == null) continue;
+                    wingmen.Add(fs.Current);
+                }
         }
 
         void RefreshWingmen()
@@ -219,18 +201,11 @@ namespace BDArmory.Modules
                 using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (vs.MoveNext())
                     {
-                        if (vs.Current == null) continue;
-                        if (!vs.Current.loaded) continue;
+                        if (vs.Current == null || !vs.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType)) continue;
 
                         if (vs.Current.id.ToString() != wingIDs.Current) continue;
-                        List<IBDAIControl>.Enumerator pilots = vs.Current.FindPartModulesImplementing<IBDAIControl>().GetEnumerator();
-                        while (pilots.MoveNext())
-                        {
-                            if (pilots.Current == null) continue;
-                            wingmen.Add(pilots.Current);
-                            break;
-                        }
-                        pilots.Dispose();
+                        var pilot = VesselModuleRegistry.GetIBDAIControl(vs.Current, true);
+                        if (pilot != null) wingmen.Add(pilot);
                     }
             }
             wingIDs.Dispose();
@@ -428,12 +403,11 @@ namespace BDArmory.Modules
 
                     if (commandSelf)
                     {
-                        List<IBDAIControl>.Enumerator ai = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator();
-                        while (ai.MoveNext())
-                        {
-                            func(ai.Current, -1, data);
-                        }
-                        ai.Dispose();
+                        using (var ai = VesselModuleRegistry.GetModules<IBDAIControl>(vessel).GetEnumerator())
+                            while (ai.MoveNext())
+                            {
+                                func(ai.Current, -1, data); // Note: this commands *all* AIs on the vessel.
+                            }
                     }
                 }
                 else

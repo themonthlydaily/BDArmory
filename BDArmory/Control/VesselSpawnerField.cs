@@ -58,6 +58,8 @@ namespace BDArmory.Control
             new SpawnLocation("The Scar", new Vector2d(16.88, 50.48)),
             new SpawnLocation("Western Approach", new Vector2d(0.2, -84.26)),
             new SpawnLocation("White Cliffs", new Vector2d(25.689, -144.14)),
+            new SpawnLocation("Ice Floe 1", new Vector2d(-73.0986, -114.983)),
+            new SpawnLocation("Ice Floe 2", new Vector2d(-71.0594, 60.3108)),
         };
 
         public static void Save()
