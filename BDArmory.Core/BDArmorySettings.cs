@@ -125,6 +125,18 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE = false;
         [BDAPersistantSettingsField] public static bool HEART_BLEED_ENABLED = false;
         [BDAPersistantSettingsField] public static bool RESOURCE_STEAL_ENABLED = false;
+        [BDAPersistantSettingsField] public static bool ASTEROID_FIELD = false;
+        [BDAPersistantSettingsField] public static int ASTEROID_FIELD_NUMBER = 100; // Number of asteroids
+        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
+        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
+        // [BDAPersistantSettingsField] public static bool ASTEROID_FIELD_VESSEL_ATTRACTION = false; // Asteroids are attracted to vessels.
+        [BDAPersistantSettingsField] public static bool ASTEROID_RAIN = false;
+        [BDAPersistantSettingsField] public static int ASTEROID_RAIN_NUMBER = 100; // Number of asteroids
+        [BDAPersistantSettingsField] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.
+        [BDAPersistantSettingsField] public static float ASTEROID_RAIN_ALTITUDE = 2f; // Km.k
+        [BDAPersistantSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
+        [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
+        [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
@@ -151,6 +163,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = false;  //can fires occur
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = false; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
+        [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = true; //do fires add heat to parts?
 
         // Remote logging
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle

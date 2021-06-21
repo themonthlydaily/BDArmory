@@ -135,6 +135,7 @@
     <Compile Include="Competition\BDAScoreService.cs" />
     <Compile Include="Competition\RemoteOrchestrationWindow.cs" />
     <Compile Include="Control\AIUtils.cs" />
+    <Compile Include="Control\Asteroids.cs" />
     <Compile Include="Control\BDACompetitionMode.cs" />
     <Compile Include="Control\BDATournament.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
@@ -219,6 +220,7 @@
     <Compile Include="Modules\ModuleWingCommander.cs" />
     <Compile Include="Modules\RadarWarningReceiver.cs" />
     <Compile Include="Modules\RWPS3R2NukeModule.cs" />
+    <Compile Include="Modules\VesselModuleRegistry.cs" />
     <Compile Include="Parts\GPSTargetInfo.cs" />
     <Compile Include="Parts\SeismicChargeFX.cs" />
     <Compile Include="Parts\TGPCamRotator.cs" />
@@ -244,6 +246,7 @@
     <Compile Include="UI\BDInputUtils.cs" />
     <Compile Include="UI\BDKeyBinder.cs" />
     <Compile Include="UI\BDStagingAreaGauge.cs" />
+    <Compile Include="UI\BDAmmoSelector.cs" />
     <Compile Include="UI\BDTargetSelector.cs" />
     <Compile Include="UI\BDATeamIcons.cs" />
     <Compile Include="UI\BDTISetup.cs" />

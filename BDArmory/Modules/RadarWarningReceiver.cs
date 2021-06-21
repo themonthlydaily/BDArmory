@@ -146,17 +146,16 @@ namespace BDArmory.Modules
                     WindowRectRWRInitialized = true;
                 }
 
-                List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    mf.Current.rwr = this;
-                    if (!weaponManager)
+                using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
+                    while (mf.MoveNext())
                     {
-                        weaponManager = mf.Current;
+                        if (mf.Current == null) continue;
+                        mf.Current.rwr = this; // Set the rwr on all weapon managers to this.
+                        if (!weaponManager)
+                        {
+                            weaponManager = mf.Current; // Set the first found weapon manager as the one in control.
+                        }
                     }
-                }
-                mf.Dispose();
                 //if (rwrEnabled) EnableRWR();
                 EnableRWR();
             }
@@ -457,6 +456,7 @@ namespace BDArmory.Modules
                 while (vessel.MoveNext())
                 {
                     if (vessel.Current == null || !vessel.Current.loaded) continue;
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.Current.vesselType)) continue;
                     Vector3 dirToVessel = vessel.Current.transform.position - ray.origin;
                     if (Vector3.Angle(ray.direction, dirToVessel) < fov / 2)
                     {

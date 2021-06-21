@@ -370,7 +370,7 @@ namespace BDArmory.Core.Extension
                         case "Oxidizer":
                             if (resources.Current.amount > 1d) hasFuel = true;
                             break;
-                        case "Monopropellant":
+                        case "MonoPropellant":
                             if (resources.Current.amount > 1d) hasFuel = true;
                             break;
                     }
