@@ -1066,15 +1066,18 @@ namespace BDArmory.Modules
             // Calculate threat rating from any threats
             float minimumEvasionTime = minEvasionTime;
             threatRating = evasionThreshold + 1f; // Don't evade by default
-            if (weaponManager && (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold))
+            if (weaponManager != null)
             {
-                threatRating = 0f; // Allow entering evasion code if we're under missile fire
-                minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
-            }
-            else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
-            {
-                if (weaponManager.incomingMissTime >= evasionTimeThreshold) // If we haven't been under fire long enough, ignore gunfire
-                    threatRating = weaponManager.incomingMissDistance;
+                if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)
+                {
+                    threatRating = 0f; // Allow entering evasion code if we're under missile fire
+                    minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
+                }
+                else if (weaponManager.underFire && !ramming) // If we're ramming, ignore gunfire.
+                {
+                    if (weaponManager.incomingMissTime >= evasionTimeThreshold) // If we haven't been under fire long enough, ignore gunfire
+                        threatRating = weaponManager.incomingMissDistance;
+                }
             }
 
             debugString.AppendLine($"Threat Rating: {threatRating}");
@@ -1239,13 +1242,22 @@ namespace BDArmory.Modules
                 return false;
             }
 
+            // Adjust some values for asteroids.
+            var threshold = collisionAvoidanceThreshold;
+            if (v.vesselType == VesselType.SpaceObject) // Give asteroids some extra room.
+            {
+                var radius = v.GetRadius();
+                threshold += radius;
+                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2f;
+            }
+
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
             float timeToCPA = vessel.ClosestTimeToCPA(v, maxTime); // This uses the same kinematics as AIUtils.PredictPosition.
             if (timeToCPA > 0 && timeToCPA < maxTime)
             {
                 Vector3 tPos = AIUtils.PredictPosition(v, timeToCPA);
                 Vector3 myPos = AIUtils.PredictPosition(vessel, timeToCPA);
-                if (Vector3.SqrMagnitude(tPos - myPos) < collisionAvoidanceThreshold * collisionAvoidanceThreshold) // Within collisionAvoidanceThreshold of each other. Danger Will Robinson!
+                if (Vector3.SqrMagnitude(tPos - myPos) < threshold * threshold) // Within collisionAvoidanceThreshold of each other. Danger Will Robinson!
                 {
                     badDirection = tPos - vesselTransform.position;
                     return true;
@@ -1672,7 +1684,7 @@ namespace BDArmory.Modules
 
             float steerPitch = (0.015f * steerMult * pitchError) - (SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x * (1 + steerKiAdjust));
             float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming ? (180f / 25f) : 4f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * 0.2f * -localAngVel.z * (1 + steerKiAdjust));
-            var debugPitchK = 0.015f * steerMult * pitchError;
+            var debugPitchP = 0.015f * steerMult * pitchError;
             var debugPitchD = -SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x * (1 + steerKiAdjust);
 
             pitchIntegral += pitchError;
@@ -1685,7 +1697,7 @@ namespace BDArmory.Modules
             pitchIntegral = Mathf.Clamp(pitchIntegral, -0.2f / (pitchKi * dynamicAdjustment), 0.2f / (pitchKi * dynamicAdjustment)); //0.2f is the limit of the integral variable, making it bigger increases overshoot
             steerPitch += pitchIntegral * pitchKi * dynamicAdjustment; //Adds the integral component to the mix
             var debugPitchI = pitchIntegral * pitchKi;
-            debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}, dynAdj: {3,7:F4}", debugPitchK, debugPitchI, debugPitchD, dynamicAdjustment));
+            debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}, dynAdj: {3,7:F4}", debugPitchP, debugPitchI, debugPitchD, dynamicAdjustment));
 
             float yawKi = 0.1f * (steerKiAdjust / 15);
             yawIntegral = Mathf.Clamp(yawIntegral, -0.2f / (yawKi * dynamicAdjustment), 0.2f / (yawKi * dynamicAdjustment));
@@ -1790,7 +1802,7 @@ namespace BDArmory.Modules
 
             if (command != PilotCommands.Free && (vessel.transform.position - flightCenter).sqrMagnitude < radius * radius * 1.5f)
             {
-                Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: AI Pilot reached command destination.");
                 command = PilotCommands.Free;
             }
 
@@ -2218,22 +2230,37 @@ namespace BDArmory.Modules
 
                 // Check for collisions with other vessels.
                 bool vesselCollision = false;
+                VesselType collisionVesselType = VesselType.Plane;
                 collisionAvoidDirection = vessel.srf_vel_direction;
-                using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
+                using (var vs = BDATargetManager.LoadedVessels.GetEnumerator()) // Note: we can't ignore some vessel types here as we also need to avoid debris, etc.
                     while (vs.MoveNext())
                     {
                         if (vs.Current == null) continue;
                         if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
                         if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime, out collisionAvoidDirection)) continue;
-                        var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
-                        if (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel) continue;
+                        if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
+                        {
+                            var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
+                            if (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel) continue;
+                        }
                         vesselCollision = true;
+                        collisionVesselType = vs.Current.vesselType;
                         break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
                     }
                 if (vesselCollision)
                 {
                     Vector3 axis = -Vector3.Cross(vesselTransform.up, collisionAvoidDirection);
-                    collisionAvoidDirection = Quaternion.AngleAxis(25, axis) * collisionAvoidDirection;        //don't need to change the angle that much to avoid, and it should prevent stupid suicidal manuevers as well
+                    float angle;
+                    switch (collisionVesselType)
+                    {
+                        case VesselType.SpaceObject:
+                            angle = 45f;
+                            break;
+                        default:
+                            angle = 25f;
+                            break;
+                    }
+                    collisionAvoidDirection = Quaternion.AngleAxis(angle, axis) * collisionAvoidDirection;        //don't need to change the angle that much to avoid, and it should prevent stupid suicidal manuevers as well
                     collisionDetectionTimer += Time.fixedDeltaTime;
                     return FlyAvoidOthers(s); // Call ourself again to trigger the actual avoidance.
                 }
@@ -2517,7 +2544,7 @@ namespace BDArmory.Modules
                 vertFactor += Vector3.Dot(targetVessel.Velocity() / targetVessel.srfSpeed, (targetVessel.ReferenceTransform.position - vesselTransform.position).normalized) * 0.3f;   //the target moving away from us encourages upward motion, moving towards us encourages downward motion
             else
                 vertFactor += 0.4f;
-            vertFactor -= weaponManager.underFire ? 0.5f : 0;   //being under fire encourages going downwards as well, to gain energy
+            vertFactor -= (weaponManager != null && weaponManager.underFire) ? 0.5f : 0;   //being under fire encourages going downwards as well, to gain energy
 
             float alt = (float)vessel.radarAltitude;
 

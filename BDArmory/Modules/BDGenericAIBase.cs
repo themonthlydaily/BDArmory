@@ -275,7 +275,7 @@ namespace BDArmory.Modules
 
         protected void UpdateWeaponManager()
         {
-            weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+            weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
             if (weaponManager != null)
                 weaponManager.AI = this;
         }
@@ -327,7 +327,7 @@ namespace BDArmory.Modules
                     var nonGuardTargetVessel = vessel.targetObject.GetVessel();
                     if (nonGuardTargetVessel != null)
                     {
-                        var targetWeaponManager = nonGuardTargetVessel.FindPartModuleImplementing<MissileFire>();
+                        var targetWeaponManager = VesselModuleRegistry.GetModule<MissileFire>(nonGuardTargetVessel);
                         if (targetWeaponManager != null && weaponManager.Team.IsEnemy(targetWeaponManager.Team))
                             targetVessel = (Vessel)vessel.targetObject;
                     }

@@ -661,7 +661,7 @@ namespace BDArmory.Modules
 
             Debug.Log("[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName + " with target at " + (targetPosition - vessel.CoM).ToString("0.0"));
 
-            var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
+            var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel); // Get the pilot AI if the  missile has one.
             if (pilotAI != null)
             {
                 ResetMissile();
@@ -712,7 +712,7 @@ namespace BDArmory.Modules
             {
                 Debug.Log("[BDArmory.BDModularGuidance]: Missile CheckMiss showed miss for " + vessel.vesselName);
 
-                var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
+                var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel); // Get the pilot AI if the  missile has one.
                 if (pilotAI != null)
                 {
                     ResetMissile();
@@ -736,7 +736,7 @@ namespace BDArmory.Modules
             {
                 if (!mfChecked)
                 {
-                    weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                    weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                     mfChecked = true;
                 }
                 if (mfChecked && weaponManager != null && !weaponManager.guardFiringMissile)
@@ -922,7 +922,7 @@ namespace BDArmory.Modules
         [KSPAction("Reset Missile")]
         public void AGReset(KSPActionParam param)
         {
-            var pilotAI = vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the  missile has one.
+            var pilotAI = VesselModuleRegistry.GetModule<BDModulePilotAI>(vessel); // Get the pilot AI if the  missile has one.
             if (pilotAI != null)
             {
                 ResetMissile();
@@ -954,14 +954,8 @@ namespace BDArmory.Modules
                 GameEvents.onPartDie.Add(PartDie);
                 BDATargetManager.FiredMissiles.Add(this);
 
-                List<MissileFire>.Enumerator wpm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (wpm.MoveNext())
-                {
-                    if (wpm.Current == null) continue;
-                    Team = wpm.Current.Team;
-                    break;
-                }
-                wpm.Dispose();
+                var wpm = VesselModuleRegistry.GetMissileFire(vessel, true);
+                if (wpm != null) Team = wpm.Team;
 
                 SourceVessel = vessel;
                 SetTargeting();
@@ -1073,9 +1067,9 @@ namespace BDArmory.Modules
 
         public override float GetBlastRadius()
         {
-            if (vessel.FindPartModulesImplementing<BDExplosivePart>().Count > 0)
+            if (VesselModuleRegistry.GetModuleCount<BDExplosivePart>(vessel) > 0)
             {
-                return vessel.FindPartModulesImplementing<BDExplosivePart>().Max(x => x.blastRadius);
+                return VesselModuleRegistry.GetModules<BDExplosivePart>(vessel).Max(x => x.blastRadius);
             }
             else
             {
@@ -1115,8 +1109,9 @@ namespace BDArmory.Modules
             }
             else
             {
-                vessel.FindPartModulesImplementing<BDExplosivePart>().ForEach(explosivePart => { if (!explosivePart.manualOverride) explosivePart.DetonateIfPossible(); });
-                if (vessel.FindPartModulesImplementing<BDExplosivePart>().Any(explosivePart => explosivePart.hasDetonated))
+                foreach (var explosivePart in VesselModuleRegistry.GetModules<BDExplosivePart>(vessel))
+                { if (!explosivePart.manualOverride) explosivePart.DetonateIfPossible(); }
+                if (VesselModuleRegistry.GetModules<BDExplosivePart>(vessel).Any(explosivePart => explosivePart.hasDetonated))
                 {
                     HasExploded = true;
                     AutoDestruction();
@@ -1280,6 +1275,10 @@ namespace BDArmory.Modules
         {
             enabled = false;
             instance = this;
+        }
+
+        void Start()
+        {
             StartCoroutine(CheckActionGroupEditor());
         }
 

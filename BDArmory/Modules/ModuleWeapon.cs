@@ -174,14 +174,7 @@ namespace BDArmory.Modules
             get
             {
                 if (mf) return mf;
-                List<MissileFire>.Enumerator wm = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (wm.MoveNext())
-                {
-                    if (wm.Current == null) continue;
-                    mf = wm.Current;
-                    break;
-                }
-                wm.Dispose();
+                mf = VesselModuleRegistry.GetMissileFire(vessel, true);
                 return mf;
             }
         }
@@ -253,7 +246,7 @@ namespace BDArmory.Modules
             {
                 ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
                 int lastAmmoID = this.AmmoID;
-                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
@@ -663,7 +656,7 @@ namespace BDArmory.Modules
         public List<string> ammoList;
 
         [KSPField(isPersistant = true)]
-        public string ammoBelt = "";
+        public string ammoBelt = "def";
 
         public List<string> customAmmoBelt;
 
@@ -712,6 +705,7 @@ namespace BDArmory.Modules
             {
                 yield return new WaitForSeconds(delay);
             }
+            if (weaponManager == null) yield break;
             weaponManager.gunRippleIndex = weaponManager.gunRippleIndex + 1;
 
             //Debug.Log([BDArmory.ModuleWeapon]: incrementing ripple index to: " + weaponManager.gunRippleIndex);
@@ -840,7 +834,7 @@ namespace BDArmory.Modules
             for (int i = 0; i < ammoList.Count; i++)
             {
                 typecount++;
-            }            
+            }
             if (ammoList.Count > 1)
             {
                 if (!canHotSwap)
@@ -960,8 +954,15 @@ namespace BDArmory.Modules
                     }
                     if (useCustomBelt)
                     {
-                        customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
-                        baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
+                        if (!string.IsNullOrEmpty(ammoBelt))
+                        {
+                            customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
+                            baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
+                        }
+                        else
+                        {
+                            customAmmoBelt = BDAcTools.ParseNames(bulletType);
+                        }
                     }
                 }
                 if (eWeaponType == WeaponTypes.Rocket)
@@ -1257,7 +1258,7 @@ namespace BDArmory.Modules
                     }
                     else
                     {
-                        if (weaponManager.gunRippleIndex == rippleIndex)
+                        if (weaponManager != null && weaponManager.gunRippleIndex == rippleIndex)
                         {
                             StartCoroutine(IncrementRippleIndex(0));
                             finalFire = false;
@@ -3155,7 +3156,7 @@ namespace BDArmory.Modules
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
             if (!(aimAndFireIfPossible || aimOnly)) return;
-            if (this == null || FlightGlobals.currentMainBody == null) return;
+            if (this == null || weaponManager == null || FlightGlobals.currentMainBody == null) return;
 
             UpdateTargetVessel();
             if (targetAcquired)
@@ -3580,7 +3581,7 @@ namespace BDArmory.Modules
                         using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                             while (v.MoveNext())
                             {
-                                if (v.Current == null || !v.Current.loaded) continue;
+                                if (v.Current == null || !v.Current.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                                 if (!v.Current.IsControllable) continue;
                                 if (v.Current == vessel) continue;
                                 Vector3 targetVector = v.Current.transform.position - part.transform.position;

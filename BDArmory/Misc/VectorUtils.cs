@@ -114,16 +114,25 @@ namespace BDArmory.Misc
         /// <remarks>Note a standard normal variable is technically unbounded</remarks>
         public static float Gaussian()
         {
-            // Technically this will raise an exception if the first random produces a zero
+            // Technically this will raise an exception if the first random produces a zero (which should never happen now that it's log(1-rnd))
             try
             {
-                return Mathf.Sqrt(-2 * Mathf.Log(UnityEngine.Random.value)) * Mathf.Cos(Mathf.PI * UnityEngine.Random.value);
+                return Mathf.Sqrt(-2 * Mathf.Log(1f - UnityEngine.Random.value)) * Mathf.Cos(Mathf.PI * UnityEngine.Random.value);
             }
             catch (Exception e)
             { // I have no idea what exception Mathf.Log raises when it gets a zero
                 Debug.LogWarning("[BDArmory.VectorUtils]: Exception thrown in Gaussian: " + e.Message + "\n" + e.StackTrace);
                 return 0;
             }
+        }
+
+        public static Vector3d GaussianVector3d(Vector3d mean, Vector3d stdDev)
+        {
+            return new Vector3d(
+                mean.x + stdDev.x * Math.Sqrt(-2 * Math.Log(1 - RandomGen.NextDouble())) * Math.Cos(Math.PI * RandomGen.NextDouble()),
+                mean.y + stdDev.y * Math.Sqrt(-2 * Math.Log(1 - RandomGen.NextDouble())) * Math.Cos(Math.PI * RandomGen.NextDouble()),
+                mean.z + stdDev.z * Math.Sqrt(-2 * Math.Log(1 - RandomGen.NextDouble())) * Math.Cos(Math.PI * RandomGen.NextDouble())
+            );
         }
 
         /// <returns>

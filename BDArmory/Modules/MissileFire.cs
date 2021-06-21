@@ -148,7 +148,7 @@ namespace BDArmory.Modules
 
                 if (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser)
                 {
-                    using (List<ModuleWeapon>.Enumerator w = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                    using (var w = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                         while (w.MoveNext())
                         {
                             if (w.Current == null) continue;
@@ -225,7 +225,7 @@ namespace BDArmory.Modules
         public void ToggleEngageAir()
         {
             engageAir = !engageAir;
-            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -240,7 +240,7 @@ namespace BDArmory.Modules
         public void ToggleEngageMissile()
         {
             engageMissile = !engageMissile;
-            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -255,7 +255,7 @@ namespace BDArmory.Modules
         public void ToggleEngageSrf()
         {
             engageSrf = !engageSrf;
-            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -270,7 +270,7 @@ namespace BDArmory.Modules
         public void ToggleEngageSLW()
         {
             engageSLW = !engageSLW;
-            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -410,9 +410,9 @@ namespace BDArmory.Modules
         public bool debilitated = false;
 
         public bool guardFiringMissile;
-        bool antiRadTargetAcquired;
+        public bool antiRadTargetAcquired;
         Vector3 antiRadiationTarget;
-        bool laserPointDetected;
+        public bool laserPointDetected;
 
         ModuleTargetingCamera foundCam;
 
@@ -586,7 +586,7 @@ namespace BDArmory.Modules
             if (!guardMode)
             {
                 //disable turret firing and guard mode
-                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
@@ -619,7 +619,7 @@ namespace BDArmory.Modules
         {
             if (CurrentMissile)
             {
-                using (List<MissileBase>.Enumerator missile = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                using (var missile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                     while (missile.MoveNext())
                     {
                         if (missile.Current == null) continue;
@@ -631,7 +631,7 @@ namespace BDArmory.Modules
             }
             else if (selectedWeapon != null && selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket)
             {
-                using (List<ModuleWeapon>.Enumerator rocket = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                using (var rocket = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (rocket.MoveNext())
                     {
                         if (rocket.Current == null) continue;
@@ -643,8 +643,7 @@ namespace BDArmory.Modules
         [KSPAction("Deploy Kerbal's Parachute")] // If there's an EVAing kerbal.
         public void AGDeployKerbalsParachute(KSPActionParam param)
         {
-            var EVAChutes = vessel.FindPartModulesImplementing<ModuleEvaChute>();
-            foreach (var chute in EVAChutes)
+            foreach (var chute in VesselModuleRegistry.GetModules<ModuleEvaChute>(vessel))
             {
                 if (chute == null) continue;
                 chute.deployAltitude = (float)vessel.radarAltitude + 100f; // Current height + 100 so that it deploys immediately.
@@ -705,7 +704,7 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight)
             {
                 SetTarget(null); // Without this, friendliesEngaging never gets updated
-                using (var wpnMgr = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                using (var wpnMgr = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
                     while (wpnMgr.MoveNext())
                     {
                         if (wpnMgr.Current == null) continue;
@@ -784,7 +783,7 @@ namespace BDArmory.Modules
             get
             {
                 if ((sw != null && sw.GetPart().vessel == vessel) || weaponIndex <= 0) return sw;
-                using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+                using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
@@ -815,7 +814,7 @@ namespace BDArmory.Modules
             if (weaponIndex <= 0 || (selectedWeapon.GetWeaponClass() != WeaponClasses.Gun &&
                                      selectedWeapon.GetWeaponClass() != WeaponClasses.Rocket &&
                                      selectedWeapon.GetWeaponClass() != WeaponClasses.DefenseLaser)) return;
-            using (List<ModuleWeapon>.Enumerator weap = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weap = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weap.MoveNext())
                 {
                     if (weap.Current == null) continue;
@@ -831,7 +830,7 @@ namespace BDArmory.Modules
             if (weaponIndex <= 0 || (selectedWeapon.GetWeaponClass() != WeaponClasses.Gun &&
                                      selectedWeapon.GetWeaponClass() != WeaponClasses.Rocket &&
                                      selectedWeapon.GetWeaponClass() != WeaponClasses.DefenseLaser)) return;
-            using (List<ModuleWeapon>.Enumerator weap = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weap = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weap.MoveNext())
                 {
                     if (weap.Current == null) continue;
@@ -985,13 +984,7 @@ namespace BDArmory.Modules
                 GetTotalHP();
                 UpdateMaxGunRange(vessel);
 
-                using (List<IBDAIControl>.Enumerator aipilot = vessel.FindPartModulesImplementing<IBDAIControl>().GetEnumerator())
-                    while (aipilot.MoveNext())
-                    {
-                        if (aipilot.Current == null) continue;
-                        AI = aipilot.Current;
-                        break;
-                    }
+                AI = VesselModuleRegistry.GetIBDAIControl(vessel, true);
 
                 RefreshModules();
             }
@@ -1039,6 +1032,7 @@ namespace BDArmory.Modules
 
         void OnVesselCreate(Vessel v)
         {
+            if (v == null) return;
             RefreshModules();
         }
 
@@ -1047,6 +1041,11 @@ namespace BDArmory.Modules
             if (!part)
             {
                 GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
+            }
+            if (vessel == null)
+            {
+                Destroy(this);
+                return;
             }
 
             if ((j.Parent && j.Parent.vessel == vessel) || (j.Child && j.Child.vessel == vessel))
@@ -2111,7 +2110,7 @@ namespace BDArmory.Modules
         {
             isECMJamming = true;
             //yield return new WaitForSeconds(UnityEngine.Random.Range(0.2f, 1f));
-            using (List<ModuleECMJammer>.Enumerator ecm = vessel.FindPartModulesImplementing<ModuleECMJammer>().GetEnumerator())
+            using (var ecm = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
                 while (ecm.MoveNext())
                 {
                     if (ecm.Current == null) continue;
@@ -2121,7 +2120,7 @@ namespace BDArmory.Modules
             yield return new WaitForSeconds(10.0f);
             isECMJamming = false;
 
-            using (List<ModuleECMJammer>.Enumerator ecm1 = vessel.FindPartModulesImplementing<ModuleECMJammer>().GetEnumerator())
+            using (var ecm1 = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel).GetEnumerator())
                 while (ecm1.MoveNext())
                 {
                     if (ecm1.Current == null) continue;
@@ -2136,7 +2135,7 @@ namespace BDArmory.Modules
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
-                using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
+                using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
                     while (cm.MoveNext())
                     {
                         if (cm.Current == null) continue;
@@ -2160,7 +2159,7 @@ namespace BDArmory.Modules
             // yield return new WaitForSeconds(0.2f); // Reaction time delay
             for (int i = 0; i < repetition; i++)
             {
-                using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
+                using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
                     while (cm.MoveNext())
                     {
                         if (cm.Current == null) continue;
@@ -2184,7 +2183,7 @@ namespace BDArmory.Modules
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " starting All CM routine");
             for (int i = 0; i < count; i++)
             {
-                using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
+                using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
                     while (cm.MoveNext())
                     {
                         if (cm.Current == null) continue;
@@ -2209,7 +2208,7 @@ namespace BDArmory.Modules
             if (incomingMissileDistance < 2500)
             {
                 cmAmount = Mathf.RoundToInt((2500 - incomingMissileDistance) / 400);
-                using (List<CMDropper>.Enumerator cm = vessel.FindPartModulesImplementing<CMDropper>().GetEnumerator())
+                using (var cm = VesselModuleRegistry.GetModules<CMDropper>(vessel).GetEnumerator())
                     while (cm.MoveNext())
                     {
                         if (cm.Current == null) continue;
@@ -2256,7 +2255,7 @@ namespace BDArmory.Modules
                 MissileBase ml = missile;
                 if (checkClearance && (!CheckBombClearance(ml) || (ml is MissileLauncher && ((MissileLauncher)ml).rotaryRail && !((MissileLauncher)ml).rotaryRail.readyMissile == ml)))
                 {
-                    using (List<MissileBase>.Enumerator otherMissile = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                    using (var otherMissile = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (otherMissile.MoveNext())
                         {
                             if (otherMissile.Current == null) continue;
@@ -2373,8 +2372,9 @@ namespace BDArmory.Modules
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
+            if (vessel == null) return;
 
-            using (List<IBDWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<IBDWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -2602,7 +2602,7 @@ namespace BDArmory.Modules
 
                 //Get ripple weapon count, so we don't have to enumerate the whole list again.
                 List<ModuleWeapon> rippleWeapons = new List<ModuleWeapon>();
-                using (List<ModuleWeapon>.Enumerator weapCnt = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                using (var weapCnt = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapCnt.MoveNext())
                     {
                         if (weapCnt.Current == null) continue;
@@ -2644,7 +2644,7 @@ namespace BDArmory.Modules
             {
                 if (CurrentMissile.part.ShieldedFromAirstream)
                 {
-                    using (List<MissileBase>.Enumerator ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                    using (var ml = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                         while (ml.MoveNext())
                         {
                             if (ml.Current == null) continue;
@@ -2654,7 +2654,7 @@ namespace BDArmory.Modules
 
                 if (CurrentMissile.inCargoBay)
                 {
-                    using (List<ModuleCargoBay>.Enumerator bay = vessel.FindPartModulesImplementing<ModuleCargoBay>().GetEnumerator())
+                    using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
                         while (bay.MoveNext())
                         {
                             if (bay.Current == null) continue;
@@ -2693,7 +2693,7 @@ namespace BDArmory.Modules
                 }
                 else
                 {
-                    using (List<ModuleCargoBay>.Enumerator bay = vessel.FindPartModulesImplementing<ModuleCargoBay>().GetEnumerator())
+                    using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
                         while (bay.MoveNext())
                         {
                             if (bay.Current == null) continue;
@@ -2714,7 +2714,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                using (List<ModuleCargoBay>.Enumerator bay = vessel.FindPartModulesImplementing<ModuleCargoBay>().GetEnumerator())
+                using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
                     while (bay.MoveNext())
                     {
                         if (bay.Current == null) continue;
@@ -2752,7 +2752,7 @@ namespace BDArmory.Modules
             //TODO BDModularGuidance: Rotatory Rail?
             MissileLauncher cm = CurrentMissile as MissileLauncher;
             if (cm == null) return;
-            using (List<BDRotaryRail>.Enumerator rotRail = vessel.FindPartModulesImplementing<BDRotaryRail>().GetEnumerator())
+            using (var rotRail = VesselModuleRegistry.GetModules<BDRotaryRail>(vessel).GetEnumerator())
                 while (rotRail.MoveNext())
                 {
                     if (rotRail.Current == null) continue;
@@ -2796,7 +2796,7 @@ namespace BDArmory.Modules
         void SetMissileTurrets()
         {
             MissileLauncher cm = CurrentMissile as MissileLauncher;
-            using (List<MissileTurret>.Enumerator mt = vessel.FindPartModulesImplementing<MissileTurret>().GetEnumerator())
+            using (var mt = VesselModuleRegistry.GetModules<MissileTurret>(vessel).GetEnumerator())
                 while (mt.MoveNext())
                 {
                     if (mt.Current == null) continue;
@@ -2872,7 +2872,7 @@ namespace BDArmory.Modules
                 weaponArray[weaponIndex].GetWeaponClass() == WeaponClasses.SLW)
             {
                 MissileBase firstMl = null;
-                using (List<MissileBase>.Enumerator ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator())
+                using (var ml = VesselModuleRegistry.GetModules<MissileBase>(vessel).GetEnumerator())
                     while (ml.MoveNext())
                     {
                         if (ml.Current == null) continue;
@@ -2922,7 +2922,7 @@ namespace BDArmory.Modules
                         return missile;
                     }
                 }
-                using (List<MissileLauncher>.Enumerator ml = vessel.FindPartModulesImplementing<MissileLauncher>().GetEnumerator())
+                using (var ml = VesselModuleRegistry.GetModules<MissileLauncher>(vessel).GetEnumerator())
                     while (ml.MoveNext())
                     {
                         if (ml.Current == null) continue;
@@ -3061,7 +3061,8 @@ namespace BDArmory.Modules
 
         void RefreshModules()
         {
-            radars = vessel.FindPartModulesImplementing<ModuleRadar>();
+            VesselModuleRegistry.OnVesselModified(vessel); // Make sure the registry is up-to-date.
+            radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
             // DISABLE RADARS
             /*
             List<ModuleRadar>.Enumerator rad = radars.GetEnumerator();
@@ -3073,9 +3074,9 @@ namespace BDArmory.Modules
             }
             rad.Dispose();
             */
-            jammers = vessel.FindPartModulesImplementing<ModuleECMJammer>();
-            targetingPods = vessel.FindPartModulesImplementing<ModuleTargetingCamera>();
-            wmModules = vessel.FindPartModulesImplementing<IBDWMModule>();
+            jammers = VesselModuleRegistry.GetModules<ModuleECMJammer>(vessel);
+            targetingPods = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
+            wmModules = VesselModuleRegistry.GetModules<IBDWMModule>(vessel);
         }
 
         #endregion Weapon Info
@@ -4507,7 +4508,7 @@ namespace BDArmory.Modules
             if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
             {
                 //make this not have to go every frame
-                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
@@ -4539,7 +4540,7 @@ namespace BDArmory.Modules
 
             if (!guardTarget && selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
             {
-                using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
@@ -4780,7 +4781,7 @@ namespace BDArmory.Modules
             if (selectedWeapon == null) return;
             int TurretID = 0;
             int MissileID = 0;
-            using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -4904,10 +4905,11 @@ namespace BDArmory.Modules
 
         public void UpdateMaxGunRange(Vessel v)
         {
-            if (v != vessel || vessel == null) return;
+            if (v != vessel || vessel == null || !part.isActiveAndEnabled) return;
+            VesselModuleRegistry.OnVesselModified(v);
             List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
             maxGunRange = 10f;
-            foreach (var weapon in vessel.FindPartModulesImplementing<ModuleWeapon>())
+            foreach (var weapon in VesselModuleRegistry.GetModules<ModuleWeapon>(vessel))
             {
                 if (weapon == null) continue;
                 if (gunLikeClasses.Contains(weapon.GetWeaponClass()))
@@ -5018,7 +5020,7 @@ namespace BDArmory.Modules
             float finalDistance = distance;
             //vessel.LandedOrSplashed ? distance : distance/2; //decrease distance requirement if airborne
 
-            using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -5170,7 +5172,7 @@ namespace BDArmory.Modules
         { // Check if the vessel has both weapons and ammo for them. Optionally, restrict checks to a subset of the weapon classes.
             if (outOfAmmo && !BDArmorySettings.INFINITE_AMMO) return false; // It's already been checked and found to be true, don't look again.
             bool hasWeaponsAndAmmo = false;
-            foreach (var weapon in vessel.FindPartModulesImplementing<IBDWeapon>())
+            foreach (var weapon in VesselModuleRegistry.GetModules<IBDWeapon>(vessel))
             {
                 if (weapon == null) continue; // First entry is the "no weapon" option.
                 if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
@@ -5187,7 +5189,7 @@ namespace BDArmory.Modules
         public int CountWeapons(List<WeaponClasses> weaponClasses = null)
         { // Count number of weapons with ammo
             int countWeaponsAndAmmo = 0;
-            foreach (var weapon in vessel.FindPartModulesImplementing<IBDWeapon>())
+            foreach (var weapon in VesselModuleRegistry.GetModules<IBDWeapon>(vessel))
             {
                 if (weapon == null) continue; // First entry is the "no weapon" option.
                 if (weaponClasses != null && !weaponClasses.Contains(weapon.GetWeaponClass())) continue; // Ignore weapon classes we're not interested in.
@@ -5204,7 +5206,7 @@ namespace BDArmory.Modules
 
         void ToggleTurret()
         {
-            using (List<ModuleWeapon>.Enumerator weapon = vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;

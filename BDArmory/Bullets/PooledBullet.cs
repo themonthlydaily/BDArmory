@@ -106,10 +106,18 @@ namespace BDArmory.Bullets
 
         #endregion Declarations
 
+        static RaycastHit[] hits;
+        static RaycastHit[] reverseHits;
         private Vector3[] linePositions = new Vector3[2];
 
         private double distanceTraveled = 0;
         public double DistanceTraveled { get { return distanceTraveled; } }
+
+        void Awake()
+        {
+            if (hits == null) { hits = new RaycastHit[100]; }
+            if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
+        }
 
         void OnEnable()
         {
@@ -340,22 +348,34 @@ namespace BDArmory.Bullets
 
             float dist = currentVelocity.magnitude * period;
             bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
-            var hits = Physics.RaycastAll(bulletRay, dist, 9076737);
+            var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, 9076737);
+            if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
+            {
+                hits = Physics.RaycastAll(bulletRay, dist, 9076737);
+                hitCount = hits.Length;
+            }
+            int reverseHitCount = 0;
             if (reverse)
             {
-                var reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
-                for (int i = 0; i < reverseHits.Length; ++i)
+                reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, 9076737);
+                if (reverseHitCount == reverseHits.Length)
                 {
-                    reverseHits[i].distance = dist - reverseHits[i].distance;
+                    reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
+                    reverseHitCount = reverseHits.Length;
                 }
-                hits = hits.Concat(reverseHits).ToArray();
+                for (int i = 0; i < reverseHitCount; ++i)
+                { reverseHits[i].distance = dist - reverseHits[i].distance; }
             }
-            if (hits.Length > 0)
+            if (hitCount + reverseHitCount > 0)
             {
-                var orderedHits = hits.OrderBy(x => x.distance);
+                var orderedHits = hits.Take(hitCount).Concat(reverseHits.Take(reverseHitCount)).OrderBy(x => x.distance);
 
                 using (var hitsEnu = orderedHits.GetEnumerator())
                 {
+                    RaycastHit hit;
+                    Part hitPart;
+                    KerbalEVA hitEVA;
+
                     while (hitsEnu.MoveNext())
                     {
                         if (!hasPenetrated || hasRicocheted || hasDetonated)
@@ -363,9 +383,9 @@ namespace BDArmory.Bullets
                             return true;
                         }
 
-                        RaycastHit hit = hitsEnu.Current;
-                        Part hitPart = null;
-                        KerbalEVA hitEVA = null;
+                        hit = hitsEnu.Current;
+                        hitPart = null;
+                        hitEVA = null;
 
                         try
                         {
@@ -550,7 +570,7 @@ namespace BDArmory.Bullets
 
             if (distanceFromStart <= 500f) return false;
 
-            if (!explosive || tntmass <= 0) return false;
+            if (!explosive || tntMass <= 0) return false;
 
             if (airDetonation)
             {

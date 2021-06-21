@@ -196,7 +196,7 @@ namespace BDArmory.FX
                             }
                         }
                     }
-                    else                    
+                    else
                     {
                         if (fuel != null)
                         {
@@ -269,7 +269,7 @@ namespace BDArmory.FX
                 {
                     if (parentPart.temperature < 1300)
                     {
-                        if (fuel != null || ox != null)
+                        if (fuel != null)
                         {
                             parentPart.temperature += burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * Time.deltaTime;
                         }
@@ -277,7 +277,7 @@ namespace BDArmory.FX
                         {
                             parentPart.temperature += burnRate * Mathf.Clamp((float)((1 - (mp.amount / mp.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * Time.deltaTime;
                         }
-                        else if (ec != null)
+                        else if (ec != null || ox != null)
                         {
                             parentPart.temperature += burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime;
                         }
@@ -359,7 +359,7 @@ namespace BDArmory.FX
             {
                 gameObject.SetActive(false);
             }
-                if (enginerestartTime > 0 && Time.time - 10 > enginerestartTime)
+            if (engine != null && enginerestartTime > 0 && Time.time - 10 > enginerestartTime)
             {
                 engine.Activate();
                 enginerestartTime = -1;
@@ -378,10 +378,10 @@ namespace BDArmory.FX
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 if (fuel != null)
                 {
-                    tntMassEquivilent += (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f))/2);
+                    tntMassEquivilent += (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f)) / 2);
                     if (fuel != null && ox != null)
                     {
-                        tntMassEquivilent += (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f))/2);
+                        tntMassEquivilent += (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f)) / 2);
                         tntMassEquivilent *= 1.3f;
                     }
                     if (fuel.amount > fuel.maxAmount * 0.3f)
@@ -392,7 +392,7 @@ namespace BDArmory.FX
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
                 if (mp != null)
                 {
-                    tntMassEquivilent += (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f))/3);
+                    tntMassEquivilent += (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f)) / 3);
                     if (mp.amount > mp.maxAmount * 0.3f)
                     {
                         excessFuel = true;
@@ -442,7 +442,7 @@ namespace BDArmory.FX
                                             BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)));
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
-                                                Debug.Log("[BDArmory.FireFX] " +  this.parentPart.name + " hit by burning fuel");
+                                                Debug.Log("[BDArmory.FireFX] " + this.parentPart.name + " hit by burning fuel");
                                             }
                                         }
                                     }
@@ -479,7 +479,7 @@ namespace BDArmory.FX
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                if(gameObject.activeInHierarchy)
+                if (gameObject.activeInHierarchy)
                     Detonate();
                 parentPart = null;
                 transform.parent = null;

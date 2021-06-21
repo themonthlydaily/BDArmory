@@ -114,7 +114,7 @@ namespace BDArmory.UI
             // TEST
             FloatingOrigin.fetch.threshold = 20000; //20km
             FloatingOrigin.fetch.thresholdSqr = 20000 * 20000; //20km
-            Debug.Log($"[BDArmory.LoadedVesselSwitcher]: FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
+            // Debug.Log($"[BDArmory.LoadedVesselSwitcher]: FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
 
             //BDArmorySetup.WindowRectVesselSwitcher = new Rect(10, Screen.height / 6f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, 10);
         }
@@ -131,7 +131,7 @@ namespace BDArmory.UI
             _ready = false;
 
             // TEST
-            Debug.Log($"[BDArmory.LoadedVesselSwitcher]: FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
+            // Debug.Log($"[BDArmory.LoadedVesselSwitcher]: FLOATINGORIGIN: threshold is {FloatingOrigin.fetch.threshold}");
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -220,18 +220,16 @@ namespace BDArmory.UI
             using (var v = FlightGlobals.Vessels.GetEnumerator())
                 while (v.MoveNext())
                 {
-                    if (v.Current == null || !v.Current.loaded || v.Current.packed)
-                        continue;
-                    using (var wms = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                        while (wms.MoveNext())
-                            if (wms.Current != null)
-                            {
-                                if (weaponManagers.TryGetValue(wms.Current.Team.Name, out var teamManagers))
-                                    teamManagers.Add(wms.Current);
-                                else
-                                    weaponManagers.Add(wms.Current.Team.Name, new List<MissileFire> { wms.Current });
-                                break;
-                            }
+                    if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                    var wms = VesselModuleRegistry.GetMissileFire(v.Current);
+                    if (wms != null)
+                    {
+                        if (weaponManagers.TryGetValue(wms.Team.Name, out var teamManagers))
+                            teamManagers.Add(wms);
+                        else
+                            weaponManagers.Add(wms.Team.Name, new List<MissileFire> { wms });
+                    }
                 }
             upToDateWMs = true;
         }
@@ -446,7 +444,7 @@ namespace BDArmory.UI
                                 {
                                     BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManager.Item1];
                                 }
-                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDTISetup.TILabel);                               
+                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDTISetup.TILabel);
                                 teamNameShowing = true;
                                 height += _buttonHeight + _buttonGap;
                             }
@@ -825,7 +823,7 @@ namespace BDArmory.UI
                 {
                     if (VesselSpawner.Instance.originalTeams.ContainsKey(weaponManager.vessel.vesselName))
                     {
-                        Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]);
                         weaponManager.SetTeam(BDTeam.Get(VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]));
                     }
                 }
@@ -874,7 +872,7 @@ namespace BDArmory.UI
             // switch everyone to their own teams
             foreach (var weaponManager in weaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).ToList()) // Get a copy in case activating stages causes the weaponManager list to change.
             {
-                Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + T.ToString());
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + T.ToString());
                 weaponManager.SetTeam(BDTeam.Get(T.ToString()));
                 if (separateTeams) T++;
             }
@@ -950,9 +948,9 @@ namespace BDArmory.UI
                     // check all the planes
                     while (v.MoveNext())
                     {
-                        if (v.Current == null || !v.Current.loaded || v.Current.packed)
-                            continue;
-                        using (var wms = v.Current.FindPartModulesImplementing<MissileFire>().GetEnumerator())
+                        if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
+                        if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                        using (var wms = VesselModuleRegistry.GetModules<MissileFire>(v.Current).GetEnumerator())
                             while (wms.MoveNext())
                                 if (wms.Current != null && wms.Current.vessel != null)
                                 {
@@ -1077,7 +1075,7 @@ namespace BDArmory.UI
                 {
                     if (bestVessel != null && bestVessel.loaded && !bestVessel.packed && !(bestVessel.isActiveVessel)) // if a vessel dies it'll use a default score for a few seconds
                     {
-                        Debug.Log("[BDArmory.LoadedVesselSwitcher]: Switching vessel to " + bestVessel.GetDisplayName());
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.LoadedVesselSwitcher]: Switching vessel to " + bestVessel.GetDisplayName());
                         ForceSwitchVessel(bestVessel);
                     }
                 }
