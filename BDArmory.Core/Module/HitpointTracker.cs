@@ -418,6 +418,14 @@ namespace BDArmory.Core.Module
             if (maxHitPoints != 0)
             {
                 hitpoints = maxHitPoints;
+                if (HullTypeNum == 1)
+                {
+                    hitpoints /= 4;
+                }
+                else if (HullTypeNum == 3)
+                {
+                    hitpoints *= 1.75f;
+                }
             }
 
             if (hitpoints <= 0) hitpoints = HpRounding;

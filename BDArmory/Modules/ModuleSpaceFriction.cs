@@ -17,7 +17,6 @@ namespace BDArmory.Modules
     /// TL;DR, provides the means for SciFi style space dogfights
     /// </summary>
 
-        [KSPField]
         private double frictionCoeff = 1.0f; //how much force is applied to decellerate craft
 
         //[KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Space Friction"), UI_Toggle(disabledText = "Disabled", enabledText = "Enabled", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
@@ -31,10 +30,9 @@ namespace BDArmory.Modules
 
         public float maxVelocity = 300; //MaxSpeed setting in PilotAI
 
-        [KSPField(isPersistant = true)]
         public float frictMult; //engine thrust of craft
 
-        public float driftMult = 2; //additional drag multipler for cornering/decellerating so things don't take the same amount of time to decelerate as they do to accelerate
+        //public float driftMult = 2; //additional drag multipler for cornering/decellerating so things don't take the same amount of time to decelerate as they do to accelerate
 
         private bool BDAcraft = false; //check to see if craft is active BDA craft, if not, unaffected by countergrav so debris crashes, etc
         public static bool GameIsPaused
@@ -71,6 +69,7 @@ namespace BDArmory.Modules
                     {
                         if (engine.Current == null) continue;
                             frictMult += (engine.Current.maxThrust * (engine.Current.thrustPercentage/100)); //double check this respects thrustLimiter
+                        //have this called onvesselModified?
                     }
                 if (pilot != null)
                 {
@@ -79,11 +78,10 @@ namespace BDArmory.Modules
                 //add some additional code to pilot Ai so if in null atmo, can do broadside approach (steal from surfaceAI)?
                 //not sure how to implement it, since if this kicks on at runtime, and doesn't ahve user-accesible toggles...
                 //alt plan would be build a new Space AI class that has the frict module at its core, and is basically 90% pilotAi with some surface Ai stuff added
-                //if that route taken, would need to find everything that looks for AIs and add in the space IA so it's properly reconnized
+                //if that route taken, would need to find everything that looks for AIs and add in the space AI so it's properly reconnized
                 //if (BDArmorySettings.DRAW_DEBUG_LABELS) 
                     Debug.Log("[Spacehacks] frictMult for " + part.vessel.GetName() + " is " + frictMult.ToString("0.00"));
             }
-            driftMult = BDArmorySettings.SF_DRAGMULT;
         }
 
         public void FixedUpdate()
@@ -102,7 +100,7 @@ namespace BDArmory.Modules
                             }
                             frictionCoeff = Mathf.Pow(((float)part.vessel.speed / maxVelocity), 3) * frictMult; //at maxSpeed, have friction be 100% of vessel's engines thrust
                                                                                                                 
-                            frictionCoeff *= (1+(Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) / 180) * driftMult); //greater AoA off prograde, greater drag
+                            frictionCoeff *= (1+(Vector3.Angle(this.part.vessel.srf_vel_direction, this.part.vessel.GetTransform().up) / 180) * BDArmorySettings.SF_DRAGMULT); //greater AoA off prograde, greater drag
 
                             part.vessel.rootPart.rb.AddForceAtPosition((-part.vessel.srf_vel_direction * frictionCoeff), part.vessel.CoM, ForceMode.Acceleration);
                         }
