@@ -205,7 +205,7 @@ namespace BDArmory.UI
             int selected_index = armorBox.Show();
             float armorLines = 0;
             armorLines++;
-            if (armorBox.isClickedComboButton)
+            if (armorBox.isOpen)
             {
                 armorLines += 6;
             }

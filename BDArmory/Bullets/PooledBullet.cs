@@ -40,6 +40,7 @@ namespace BDArmory.Bullets
 
         public Vessel sourceVessel;
         public string sourceVesselName;
+        public string team;
         public Color lightColor = Misc.Misc.ParseColor255("255, 235, 145, 255");
         public Color projectileColor;
         public string bulletTexturePath;
@@ -463,7 +464,7 @@ namespace BDArmory.Bullets
                         if (impulse != 0 && hitPart.rb != null)
                         {
                             hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
-                            ProjectileUtils.ApplyScore(hitPart, sourceVessel, distanceTraveled, 0, bullet.name);
+                            ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name);
                             break; //impulse rounds shouldn't penetrate/do damage
                         }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
@@ -532,7 +533,7 @@ namespace BDArmory.Bullets
                         if (penetrationFactor > 1 && !hasRicocheted) //fully penetrated continue ballistic damage
                         {
                             hasPenetrated = true;
-							bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);bullet.name);
+                            bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
                             ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team);
                             penTicker += 1;
                             ProjectileUtils.CheckPartForExplosion(hitPart);

@@ -280,13 +280,13 @@ namespace BDArmory.Core.Module
             {
                 Destroy(this); // Force this module to be removed from the gameObject as something is holding onto part references and causing a memory leak.
             }
-
-        public void ShipModified(ShipConstruct data)
-        {
-            _updateHitpoints = true;
         }
+        public void ShipModified(ShipConstruct data)
+		{
+			_updateHitpoints = true;
+		}
 
-        public override void OnUpdate()
+		public override void OnUpdate()
         {
             RefreshHitPoints();
             if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
