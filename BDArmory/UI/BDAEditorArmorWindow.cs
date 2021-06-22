@@ -305,6 +305,7 @@ namespace BDArmory.UI
                                 }
                                 if (SetType)
                                 {
+                                    if (parts.Current.IsMissile()) continue;
                                     armor.ArmorTypeNum = (ArmorInfo.armors.FindIndex(t => t.name == selectedArmor) + 1);
                                     if (armor.ArmorThickness > 10)
                                     {

@@ -40,6 +40,10 @@ namespace BDArmory.Core.Module
         public string guiHullTypeString = "#LOC_BDArmory_Aluminium";
 
         public float HullmassAdjust = 0f;
+
+        private bool IgnoreForArmorSetup = false;
+
+        private bool isAI = false;
 		
         private float OldArmorType = 1;
 
@@ -214,15 +218,16 @@ namespace BDArmory.Core.Module
                 {
                     typecount++;
                 }
-				if (part.name == "Weapon Manager" || part.name == "BDModulePilotAI")
+                if (part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "bdPilotAI" || part.name == "missileController" || part.name == "bdammGuidanceModule")
                 {
+                    isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
                 }
                 UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
                 ATrangeEditor.onFieldChanged = ArmorSetup;
                 ATrangeEditor.maxValue = (float)typecount;
-				if (part.name == "Weapon Manager" || part.name == "BDModulePilotAI")
+				if (isAI)
                 {
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     ATrangeEditor.maxValue = 1;
@@ -230,13 +235,14 @@ namespace BDArmory.Core.Module
                 UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
                 HTrangeEditor.onFieldChanged = HullSetup;
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || part.isEngine() || (part.name == "Weapon Manager" || part.name == "BDModulePilotAI"))
+                if (part.IsMissile() || part.IsWeapon() || part.isEngine() || isAI)
                 {
                     HullTypeNum = 2;
                     HTrangeEditor.minValue = 2;
                     HTrangeEditor.maxValue = 2;
                     Fields["HullTypeNum"].guiActiveEditor = false;
                     Fields["guiHullTypeString"].guiActiveEditor = false;
+                    IgnoreForArmorSetup = true;
                 }
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
@@ -454,7 +460,7 @@ namespace BDArmory.Core.Module
 
         public void AddDamage(float partdamage)
         {
-            if (part.name == "Weapon Manager" || part.name == "BDModulePilotAI") return;
+            if (isAI) return;
 
             partdamage = Mathf.Max(partdamage, 0f) * -1;
             Hitpoints += partdamage;
@@ -553,7 +559,7 @@ namespace BDArmory.Core.Module
                     ArmorTypeNum = 1; //reset to 'None'
                 }
             }
-			if (part.name == "Weapon Manager" || part.name == "BDModulePilotAI")
+			if (isAI)
             {
                 ArmorTypeNum = 1; //reset to 'None'
             }
@@ -588,7 +594,7 @@ namespace BDArmory.Core.Module
 
         public void SetArmor()
         {
-			if (part.name == "Weapon Manager" || part.name == "BDModulePilotAI") return; //replace with newer implementation
+			if (isAI) return; //replace with newer implementation
             if (ArmorTypeNum > 1)
             {
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
@@ -637,8 +643,7 @@ namespace BDArmory.Core.Module
         }
 		public void HullSetup(BaseField field, object obj)
         {
-            if (part.IsMissile() || part.IsWeapon() || part.isEngine()) return; //don't change weapons/engines
-            if (part.name == "Weapon Manager" || part.name == "BDModulePilotAI") return; //replace with newer implementation
+            if (IgnoreForArmorSetup) return;
             if (HullTypeNum == 1)
             {
                 HullmassAdjust = (partMass / 3)- partMass;

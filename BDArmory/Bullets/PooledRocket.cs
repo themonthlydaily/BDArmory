@@ -79,6 +79,7 @@ namespace BDArmory.Bullets
 
         public AudioSource audioSource;
 
+        HashSet<Vessel> craftHit = new HashSet<Vessel>();
         void OnEnable()
         {
             BDArmorySetup.numberOfParticleEmitters++;
@@ -405,6 +406,7 @@ namespace BDArmory.Bullets
 
                                 hasPenetrated = false;
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
                                 Detonate(hit.point, false);
                                 hasDetonated = true;
                             }
