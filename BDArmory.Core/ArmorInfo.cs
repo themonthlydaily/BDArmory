@@ -53,7 +53,7 @@ namespace BDArmory.Core
                     if (nodes[i].parent.name != "BD_Armors") continue; // Ignore other config files.
                     node = nodes[i].config;
                     if (!node.HasValue("name") || (string)ParseField(nodes[i].config, "name", typeof(string)) != "def") continue; // Ignore other configs.
-                    Debug.Log("[BDArmoryArmorInfo]: Parsing default armor definition from " + nodes[i].parent.name);
+                    Debug.Log("[BDArmory.ArmorInfo]: Parsing default armor definition from " + nodes[i].parent.name);
                     defaultArmor = new ArmorInfo(
                         "def",
                         (float)ParseField(node, "Density", typeof(float)),
@@ -84,7 +84,7 @@ namespace BDArmory.Core
                             Debug.LogError("[BDArmory.ArmorInfo]: Armor definition " + name_ + " from " + nodes[i].parent.name + " already exists, skipping.");
                         continue;
                     }
-                    Debug.Log("[BDArmory.BulletInfo]: Parsing definition of armor " + name_ + " from " + nodes[i].parent.name);
+                    Debug.Log("[BDArmory.ArmorInfo]: Parsing definition of armor " + name_ + " from " + nodes[i].parent.name);
                     armors.Add(
                         new ArmorInfo(
                             name_,

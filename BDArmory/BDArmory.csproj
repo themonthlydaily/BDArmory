@@ -212,6 +212,7 @@
     <Compile Include="Modules\ModuleRadar.cs" />
     <Compile Include="Modules\ModuleReactiveArmor.cs" />
     <Compile Include="Modules\ModuleSelfSealingTank.cs" />
+    <Compile Include="Modules\ModuleSpaceFriction.cs" />
     <Compile Include="Modules\ModuleSpaceRadar.cs" />
     <Compile Include="Modules\ModuleTargetingCamera.cs" />
     <Compile Include="Modules\ModuleTurret.cs" />

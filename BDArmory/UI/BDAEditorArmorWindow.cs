@@ -189,7 +189,7 @@ namespace BDArmory.UI
             {
                 oldThickness = Thickness;
                 SetThickness = true;
-                maxThickness = 0;
+                maxThickness = 10;
                 CalculateArmorMass();
             }
 
@@ -412,5 +412,5 @@ namespace BDArmory.UI
             mousePos.y = Screen.height - mousePos.y;
             return mousePos;
         }
-    } //EditorRCsWindow
+    } 
 }
