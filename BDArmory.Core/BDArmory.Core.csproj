@@ -35,7 +35,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Armorinfo.cs" />
+    <Compile Include="ArmorInfo.cs" />
     <Compile Include="BDAPersistantSettingsField.cs" />
     <Compile Include="BDArmorySettings.cs" />
     <Compile Include="Bootstrapper.cs" />
