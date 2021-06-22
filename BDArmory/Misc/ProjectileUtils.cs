@@ -1,4 +1,4 @@
-﻿using BDArmory.Competition;
+﻿﻿using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -165,7 +165,7 @@ namespace BDArmory.Misc
             {
                 Debug.Log("[BDArmory.ProjectileUtils]: Armor penetration = " + penetration + " | Thickness = " + thickness);
             }
-            if (penetrationFactor < 1)
+			if (penetrationFactor < 1)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
@@ -249,7 +249,6 @@ namespace BDArmory.Misc
                 }
                 //else //low hardness non ductile materials (i.e. kevlar/aramid) not going to spall
             }
-
             bool fullyPenetrated = penetration > thickness; //check whether bullet penetrates the plate
 
             double massToReduce = Math.PI * Math.Pow((caliber * 0.001) / 2, 2) * (penetration);

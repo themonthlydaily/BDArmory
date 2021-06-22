@@ -162,7 +162,7 @@ namespace BDArmory.FX
             if (ProjMass > 0)
             {
                 shrapnelrange = Range * 2;
-            }
+			}
             using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())
