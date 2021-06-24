@@ -2149,7 +2149,7 @@ namespace BDArmory.Control
                         Scores[vessel.vesselName].remainingHP = HP;
                         survivingTeams.Add(Scores[vessel.vesselName].team); //move this here so last man standing can claim the win, even if they later don't meet the 'survive' criteria
                     }
-                    if (HP > 25 && vessel.verticalSpeed < 30) //if all that's left of a plane is a cockpit or a wreck uncontrollably falling out of the sky, can it really count as 'survived'?
+                    if (HP < 25 && vessel.verticalSpeed > 30) //if all that's left of a plane is a cockpit or a wreck uncontrollably falling out of the sky, can it really count as 'survived'?
                         alive.Add(vessel.vesselName);
                 }
             }
