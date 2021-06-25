@@ -1,4 +1,20 @@
-﻿v1.4.7.0
+﻿v1.4.7.1
+FIXES
+	- Quick fix for craft names using invalid filename chars in the remote orchestration.
+	- Hide the Asteroid Rain radius slider when Follow Spread is enabled.
+	- Fix some NREs.
+	- Bias testing:
+		- Add a random spawn order toggle to the vessel spawner window, which applies in single spawn mode (i.e., everything except continuous spawning).
+		- Add option to parsing script to only parse the first N logs for use in analysing trends in results.
+IMPROVEMENTS
+	- Compiled with KSP 1.12 assemblies.
+	- Improve MIA (survived/not-survived) definition in results logs.
+	- Add telemetry readout to crafts TeamIcons HUD.
+	- Ammo belts:
+		- Add API ammo option to Vulcans, .50 cals, GAU, and M230.
+		- Add 35x228AHEADBullet ammo option to Oerlikon Millennium turret
+
+v1.4.7.0
 FIXES
 	- Fixes weapons without ammo not firing if Infinite Ammo enabled
 	- EMPs will no longer shutdown SRBs
