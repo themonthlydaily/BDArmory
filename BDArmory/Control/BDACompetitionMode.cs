@@ -2141,16 +2141,46 @@ namespace BDArmory.Control
                     continue;
                 var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 double HP;
+                double WreckFactor = 0;
                 if (mf != null)
                 {
-                    HP = Mathf.Clamp((1 - ((mf.totalHP - mf.vessel.parts.Count) / mf.totalHP)), 0, 1) * 100;
+                    HP = (mf.vessel.parts.Count / mf.totalHP) * 100;
                     if (Scores.ContainsKey(vessel.vesselName))
                     {
                         Scores[vessel.vesselName].remainingHP = HP;
                         survivingTeams.Add(Scores[vessel.vesselName].team); //move this here so last man standing can claim the win, even if they later don't meet the 'survive' criteria
                     }
-                    if (HP > 25 && vessel.verticalSpeed < 30) //if all that's left of a plane is a cockpit or a wreck uncontrollably falling out of the sky, can it really count as 'survived'?
+                    if (HP < 100)
+                    {
+                        WreckFactor += ((100 - HP) / 100); //the less plane remaining, the greater the chance it's a wreck
+                    }
+                    if (vessel.verticalSpeed < -30) //falling out of the sky? Could be an intact plane diving to default alt, could be a cockpit
+                    {
+                        WreckFactor += 0.5f;
+                        var AI = VesselModuleRegistry.GetBDModulePilotAI(vessel, true);
+                        if (vessel.radarAltitude < AI.defaultAltitude) //craft is uncontrollably diving, not returning from high alt to cruising alt
+                        {
+                            WreckFactor += 0.5f;
+                        }
+                    }
+                    if (VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel) > 0)
+                    {
+                        int engineOut = 0;
+                        foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+                        {
+                            if (!engine.EngineIgnited || engine == null)
+                                engineOut++;
+                        }
+                        WreckFactor += (engineOut / VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel))/2;
+                    }
+                    else
+                    {
+                        WreckFactor += 0.5f; //could be a glider, could be missing engines
+                    }
+                    if (WreckFactor < 1.1f)
+                    {
                         alive.Add(vessel.vesselName);
+                    }
                 }
             }
 

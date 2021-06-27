@@ -421,7 +421,7 @@ namespace BDArmory.UI
                                                 Rect RAltRect = new Rect((guiPos.x - (96 * BDTISettings.ICONSCALE)), guiPos.y + 80, 100, 32);
                                                 GUI.Label(RAltRect, "Alt: " + wm.Current.vessel.altitude.ToString("0.0") + "m", IconUIStyle);
                                                 Rect ThrottleRect = new Rect((guiPos.x - (96 * BDTISettings.ICONSCALE)), guiPos.y + 96, 100, 32);
-                                                GUI.Label(ThrottleRect, "Throttle: " + wm.Current.vessel.ctrlState.mainThrottle.ToString("0.0") + "%", IconUIStyle);
+                                                GUI.Label(ThrottleRect, "Throttle: " + Mathf.CeilToInt(wm.Current.vessel.ctrlState.mainThrottle*100) + "%", IconUIStyle);
                                             }
                                         }
                                     }

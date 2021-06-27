@@ -202,7 +202,7 @@ namespace BDArmory.Core.Module
         {
             isEnabled = true;
 
-            if (part != null) _updateHitpoints = true;
+            //if (part != null) _updateHitpoints = true; //this just calls Setupprefab, already directly called later in OnStart
 
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -210,6 +210,8 @@ namespace BDArmory.Core.Module
                 //Once started the max value of the field should be the initial one
                 armorField.maxValue = Armor;
                 part.RefreshAssociatedWindows();
+                partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
+                HullmassAdjust = 0;
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -267,10 +269,11 @@ namespace BDArmory.Core.Module
             partSize = CalcPartBounds(this.part, this.transform).size;
             armorVolume =  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
 ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust);  //mass * surface area approximation of a cylinder, where H/W are unknown
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
+            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
+            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             SetupPrefab();
-            ArmorSetup(null, null);
+            ArmorSetup(null, null); 
+            HullSetup(null, null); //reaquire hull mass adjust for mass calcs
         }
 
         private void OnDestroy()
@@ -493,19 +496,19 @@ namespace BDArmory.Core.Module
         #endregion Hitpoints Functions
 
         #region Armour
-        public void ReduceArmor(float massToReduce)
+        public void ReduceArmor(float massToReduce) //incoming massToreduce should be cm3
         {
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
-                Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * (Density / 1000000000)));
+                Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * (Density / 1000000000))); //g/m3
             }
-            float reduceMass = (massToReduce * (Density / 1000000000));
-            Armor -= ((1 - (reduceMass / armorMass)) * armorMass);
+            float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
+            Armor -= (reduceMass / armorMass) * Armor; //now properly reduces armor thickness
             if (Armor < 0)
             {
                 Armor = 0;
             }
-            armorMass -= reduceMass; //massToReduce is cm/3, armorMass is kg/m3
+            armorMass -= reduceMass; //tons
             if (armorMass < 0)
             {
                 armorMass = 0;
@@ -543,7 +546,10 @@ namespace BDArmory.Core.Module
                     maxSupportedArmor = ArmorThickness;
                 }
             }
-            Debug.Log("[ARMOR] max supported armor for " + part.name + " is " + maxSupportedArmor);
+            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+            {
+                Debug.Log("[ARMOR] max supported armor for " + part.name + " is " + maxSupportedArmor);
+            }
             //if maxSupportedArmor > 0 && < armorThickness, that's entirely the fault of the MM patcher
             UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
             armorFieldFlight.minValue = 0f;
