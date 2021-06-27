@@ -68,7 +68,7 @@ namespace BDArmory.Modules
                     while (engine.MoveNext())
                     {
                         if (engine.Current == null) continue;
-                            frictMult += (engine.Current.maxThrust * (engine.Current.thrustPercentage/100)); //double check this respects thrustLimiter
+                            frictMult += (engine.Current.maxThrust * (engine.Current.thrustPercentage/100)); 
                         //have this called onvesselModified?
                     }
                 if (pilot != null)
@@ -80,7 +80,7 @@ namespace BDArmory.Modules
                 //alt plan would be build a new Space AI class that has the frict module at its core, and is basically 90% pilotAi with some surface Ai stuff added
                 //if that route taken, would need to find everything that looks for AIs and add in the space AI so it's properly reconnized
                 //if (BDArmorySettings.DRAW_DEBUG_LABELS) 
-                    Debug.Log("[Spacehacks] frictMult for " + part.vessel.GetName() + " is " + frictMult.ToString("0.00"));
+                    //Debug.Log("[Spacehacks] frictMult for " + part.vessel.GetName() + " is " + frictMult.ToString("0.00"));
             }
         }
 
