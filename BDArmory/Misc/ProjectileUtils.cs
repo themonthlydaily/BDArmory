@@ -564,6 +564,10 @@ namespace BDArmory.Misc
             if (hitpart.skinTemperature > SafeTemp) //has the armor started melting/denaturing/whatever?
             {
                 yieldStrength *= 0.75f;
+                if (hitpart.skinTemperature > SafeTemp * 1.5f)
+                {
+                    yieldStrength *= 0.5f;
+                }
             }
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {

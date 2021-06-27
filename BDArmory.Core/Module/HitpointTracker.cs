@@ -315,6 +315,13 @@ namespace BDArmory.Core.Module
                 }
                 RefreshHitPoints();
             }
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                {
+                    ReduceArmor((armorVolume * ((float)part.skinTemperature/SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                }
+            }
         }
 
         private void RefreshHitPoints()
@@ -601,7 +608,7 @@ namespace BDArmory.Core.Module
             if (ArmorTypeNum > 1) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
-                armorCost = armorVolume * armorInfo.Cost;
+                armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
             }
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
         }
