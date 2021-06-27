@@ -378,6 +378,7 @@ namespace BDArmory.Core.Module
                 var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
                 var structuralVolume = sphereSurface * 0.1f;
                 //var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
+
                 var density = (partMass * 1000f) / structuralVolume;
                 density = Mathf.Clamp(density, 1000, 10000);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
@@ -662,6 +663,7 @@ namespace BDArmory.Core.Module
             }
             return result;
         }
+
 		public void HullSetup(BaseField field, object obj)
         {
             if (IgnoreForArmorSetup) return;

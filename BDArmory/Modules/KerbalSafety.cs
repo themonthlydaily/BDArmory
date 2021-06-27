@@ -483,6 +483,7 @@ namespace BDArmory.Modules
                         message = kerbalName + " failed to eject from " + part.vessel.vesselName + ", all exits were blocked. R.I.P.";
                         // BDACompetitionMode.Instance.competitionStatus.Add(message);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + message);
+
                     }
                 }
             }
