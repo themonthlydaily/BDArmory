@@ -669,16 +669,19 @@ namespace BDArmory.Core.Module
             {
                 HullmassAdjust = (partMass / 3)- partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
+                part.maxTemp = 770;
             }
             else if (HullTypeNum == 2)
             {
                 HullmassAdjust = 0;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
+                part.maxTemp = 1000;
             }
             else //hulltype 3
             {
                 HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
+                part.maxTemp = 2000;
             }
             CalculateTotalHitpoints();
         }
