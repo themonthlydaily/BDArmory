@@ -31,6 +31,7 @@ namespace BDArmory.UI
         private int previous_index = -1;
 
         private float totalArmorMass;
+        private float totalArmorCost;
         private bool CalcArmor = false;
         private bool SetType = false;
         private bool SetThickness = false;
@@ -185,6 +186,8 @@ namespace BDArmory.UI
             Thickness = Mathf.Round(Thickness);
             Thickness *= 5;
             line ++;
+            GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalCost") + " " + totalArmorCost, style);
+            line ++;
             if (Thickness != oldThickness)
             {
                 oldThickness = Thickness;
@@ -281,6 +284,7 @@ namespace BDArmory.UI
             Vessel v = new Vessel();
             v.parts = EditorLogic.fetch.ship.Parts;
             totalArmorMass = 0;
+            totalArmorCost = 0;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                 while (parts.MoveNext())
                 {
@@ -322,6 +326,7 @@ namespace BDArmory.UI
                                 armor.ArmorSetup(null, null);
                             }
                             totalArmorMass += armor.armorMass;
+                            totalArmorCost += armor.armorCost;
                         }
                         else
                         {
