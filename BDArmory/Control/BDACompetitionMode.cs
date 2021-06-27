@@ -2140,7 +2140,7 @@ namespace BDArmory.Control
                 if (vessel == null || !vessel.loaded || vessel.packed || VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType))
                     continue;
                 var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
-                double HP;
+                double HP = 0;
                 double WreckFactor = 0;
                 if (mf != null)
                 {
@@ -2152,13 +2152,13 @@ namespace BDArmory.Control
                     }
                     if (HP < 100)
                     {
-                        WreckFactor += ((100 - HP) / 100); //the less plane remaining, the greater the chance it's a wreck
+                        WreckFactor += (100 - HP) / 100; //the less plane remaining, the greater the chance it's a wreck
                     }
                     if (vessel.verticalSpeed < -30) //falling out of the sky? Could be an intact plane diving to default alt, could be a cockpit
                     {
                         WreckFactor += 0.5f;
                         var AI = VesselModuleRegistry.GetBDModulePilotAI(vessel, true);
-                        if (vessel.radarAltitude < AI.defaultAltitude) //craft is uncontrollably diving, not returning from high alt to cruising alt
+                        if (AI == null || vessel.radarAltitude < AI.defaultAltitude) //craft is uncontrollably diving, not returning from high alt to cruising alt
                         {
                             WreckFactor += 0.5f;
                         }
@@ -2171,13 +2171,13 @@ namespace BDArmory.Control
                             if (!engine.EngineIgnited || engine == null)
                                 engineOut++;
                         }
-                        WreckFactor += (engineOut / VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel))/2;
+                        WreckFactor += (engineOut / VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel)) / 2;
                     }
                     else
                     {
                         WreckFactor += 0.5f; //could be a glider, could be missing engines
                     }
-                    if (WreckFactor < 1.1f)
+                    if (WreckFactor < 1.1f) // 'wrecked' requires some combination of diving, no engines, and missing parts
                     {
                         alive.Add(vessel.vesselName);
                     }
