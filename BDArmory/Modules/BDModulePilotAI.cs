@@ -973,6 +973,10 @@ namespace BDArmory.Modules
             useAB = true;
             useBrakes = true;
             vessel.ActionGroups.SetGroup(KSPActionGroup.SAS, true);
+            if (vessel.atmDensity < 0.05)
+            {
+                vessel.ActionGroups.SetGroup(KSPActionGroup.RCS, true);
+            }
 
             steerMode = SteerModes.NormalFlight;
             useVelRollTarget = false;
@@ -2186,7 +2190,7 @@ namespace BDArmory.Modules
                 float maxAngle = 70.0f * Mathf.Deg2Rad; // Maximum angle (towards surface normal) to aim.
                 if (BDArmorySettings.SPACE_HACKS)
                 {
-                    maxAngle = 120.0f * Mathf.Deg2Rad;
+                    maxAngle = 180.0f * Mathf.Deg2Rad;
                 }
                 float adjustmentFactor = 1f; // Mathf.Clamp(1.0f - Mathf.Pow(terrainAlertDistance / terrainAlertThreatRange, 2.0f), 0.0f, 1.0f); // Don't yank too hard as it kills our speed too much. (This doesn't seem necessary.)
                                              // First, aim up to maxAngle towards the surface normal.
