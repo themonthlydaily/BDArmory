@@ -411,6 +411,7 @@ namespace BDArmory.Misc
 
                         ApplyScore(hitPart, sourcevessel, 1, damage, "Spall Damage");
 
+
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
                             BattleDamageHandler.CheckDamageFX(hitPart, spallCaliber, blowthroughFactor, true, false, sourcevessel, hit);

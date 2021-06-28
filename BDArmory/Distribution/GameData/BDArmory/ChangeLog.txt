@@ -1,4 +1,4 @@
-﻿v1.4.7.0
+v1.4.7.0
 FIXES
 	- Fixes weapons without ammo not firing if Infinite Ammo enabled
 	- EMPs will no longer shutdown SRBs

@@ -374,9 +374,11 @@ namespace BDArmory.Bullets
                             if (penetrationFactor > 1)
                             {
                                 hasPenetrated = true;
-								bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass * 1000, caliber);
+
+								                bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass * 1000, caliber);
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team);
-								ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
+								                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
+
                                 penTicker += 1;
                                 ProjectileUtils.CheckPartForExplosion(hitPart);
 
@@ -474,7 +476,6 @@ namespace BDArmory.Bullets
                             if (partHit == null) continue;
                             if (partHit.vessel == sourceVessel) continue;
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-
                             var aName = sourceVessel.GetName(); //proxi detonated rocket scoring
                             var tName = partHit.vessel.GetName();
 
@@ -502,6 +503,7 @@ namespace BDArmory.Bullets
                                     tData.hitCounts.Add(aName, 1);
 
                             }
+
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
                             return detonate = true;
@@ -652,6 +654,7 @@ namespace BDArmory.Bullets
                     {
                         ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
                     }                                        
+
                 }
             } // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
             gameObject.SetActive(false);

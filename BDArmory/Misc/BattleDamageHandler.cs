@@ -201,6 +201,7 @@ namespace BDArmory.Misc
                         {
                             HEBonus = 1.4f;
                         }
+
                         if (incendiary)
                         {
                             HEBonus = 1.1f;

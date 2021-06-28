@@ -641,13 +641,13 @@ namespace BDArmory.Bullets
                     while (hitsEnu.MoveNext())
                     {
                         if (hitsEnu.Current == null) continue;
-
                         try
                         {
                             Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
                             if (partHit == null) continue;
                             if (partHit.vessel == sourceVessel) continue;
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+
 
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);

@@ -170,6 +170,7 @@ namespace BDArmory.UI
 
             GUIStyle style = BDArmorySetup.BDGuiSkin.label;
             float line = 1.5f;
+
             style.fontStyle = FontStyle.Normal;
             Visualizer = GUI.Toggle(new Rect(10, line * lineHeight, 280, lineHeight), Visualizer, Localizer.Format("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
             if (refreshVisualizer || Visualizer != oldVisualizer)
@@ -333,6 +334,7 @@ namespace BDArmory.UI
                             armor.HullTypeNum = hullmat;
                             armor.HullSetup(null, null);
                         }
+
                     }
                 }
             CalcArmor = false;
