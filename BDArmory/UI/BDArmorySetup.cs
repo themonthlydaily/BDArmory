@@ -2463,11 +2463,13 @@ namespace BDArmory.UI
         void HideGameUI()
         {
             GAME_UI_ENABLED = false;
+            BDACompetitionMode.Instance.UpdateGUIElements();
         }
 
         void ShowGameUI()
         {
             GAME_UI_ENABLED = true;
+            BDACompetitionMode.Instance.UpdateGUIElements();
         }
 
         internal void OnDestroy()
