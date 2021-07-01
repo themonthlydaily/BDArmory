@@ -320,6 +320,11 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 0f, maxValue = 3f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         float vesselCollisionAvoidancePeriod = 1.5f; // Avoid for 1.5s.
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandoffDistance", advancedTweakable = true, //Min Approach Distance
+    groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+    UI_FloatRange(minValue = 0f, maxValue = 1000f, stepIncrement = 50f, scene = UI_Scene.All)]
+        float vesselStandoffDistance = 200f; // try to avoid getting closer than 200m
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendMultiplier", advancedTweakable = true, //Extend Distance Multiplier
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
@@ -369,9 +374,17 @@ namespace BDArmory.Modules
         public float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
         #endregion
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
-            UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_enabledText", disabledText = "#LOC_BDArmory_Orbit_disabledText", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
-        public bool ClockwiseOrbit = true;
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BroadsideAttack"),//Attack vector
+    UI_Toggle(enabledText = "#LOC_BDArmory_BroadsideAttack_enabledText", disabledText = "#LOC_BDArmory_BroadsideAttack_disabledText")]//Broadside--Bow
+        public bool BroadsideAttack = false;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Preferred broadside direction
+    UI_ChooseOption(options = new string[3] { "#LOC_BDArmory_Orbit_Starboard", "#LOC_BDArmory_Orbit_Random", "#LOC_BDArmory_Orbit_Port" }, scene = UI_Scene.All),]
+        public string OrbitDirectionName = "#LOC_BDArmory_Orbit_Random";
+        readonly string[] orbitDirections = new string[3] { "#LOC_BDArmory_Orbit_Starboard", "#LOC_BDArmory_Orbit_Random", "#LOC_BDArmory_Orbit_Port" };
+
+        [KSPField(isPersistant = true)]
+        int sideSlipDirection = 0;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_UnclampTuning", advancedTweakable = true),//Unclamp tuning 
             UI_Toggle(enabledText = "#LOC_BDArmory_UnclampTuning_enabledText", disabledText = "#LOC_BDArmory_UnclampTuning_disabledText", scene = UI_Scene.All),]//Unclamped--Clamped
@@ -396,6 +409,7 @@ namespace BDArmory.Modules
             { nameof(minEvasionTime), 10f },
             { nameof(evasionThreshold), 300f },
             { nameof(evasionTimeThreshold), 3f },
+            { nameof(vesselStandoffDistance), 5000f },
             { nameof(turnRadiusTwiddleFactorMin), 10f},
             { nameof(turnRadiusTwiddleFactorMax), 10f},
             { nameof(controlSurfaceLag), 1f},
@@ -562,6 +576,7 @@ namespace BDArmory.Modules
         Vector3 terrainAlertDirection; // Terrain slope in the direction of the velocity at the terrain intercept.
         Vector3 terrainAlertCorrectionDirection; // The direction to go to avoid the terrain.
         float terrainAlertCoolDown = 0; // Cool down period before allowing other special modes to take effect (currently just "orbitting").
+        bool orbitDirReset = true; //allow orbit direction to change if recently triggred tarrain avoid
         Vector3 relativeVelocityRightDirection; // Right relative to current velocity and upDirection.
         Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
         Vector3 terrainAlertDebugPos, terrainAlertDebugDir, terrainAlertDebugPos2, terrainAlertDebugDir2; // Debug vector3's for drawing lines.
@@ -870,6 +885,13 @@ namespace BDArmory.Modules
             prevTargetDir = vesselTransform.up;
             if (initialTakeOff && !vessel.LandedOrSplashed) // In case we activate pilot after taking off manually.
                 initialTakeOff = false;
+
+            if (BroadsideAttack && sideSlipDirection == 0)
+            {
+                sideSlipDirection = orbitDirections.IndexOf(OrbitDirectionName);
+                if (sideSlipDirection == 0)
+                    sideSlipDirection = UnityEngine.Random.Range(0, 2) > 1 ? 1 : -1;
+            }
 
             bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
         }
@@ -1214,7 +1236,14 @@ namespace BDArmory.Modules
                         ramming = false;
                         SetStatus("Engaging");
                         debugString.AppendLine($"Flying to target " + targetVessel.vesselName);
-                        FlyToTargetVessel(s, targetVessel);
+                        if (BroadsideAttack)
+                        {
+                            FlyOrbit(s, targetVessel.CoM, weaponManager.maxGunRange, maxSpeed, sideSlipDirection);
+                        }
+                        else
+                        {
+                            FlyToTargetVessel(s, targetVessel);
+                        }
                     }
                 }
             }
@@ -1224,7 +1253,7 @@ namespace BDArmory.Modules
                 if (!extending && !(terrainAlertCoolDown > 0))
                 {
                     SetStatus("Orbiting");
-                    FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, ClockwiseOrbit);
+                    FlyOrbit(s, assignedPositionGeo, 2000, idleSpeed, sideSlipDirection);
                 }
             }
 
@@ -1380,6 +1409,10 @@ namespace BDArmory.Modules
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20)
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
+                            if (distanceToTarget < vesselStandoffDistance)
+                            {
+                                AdjustThrottle(minSpeed, true); //getting too close, slow down
+                            }
                         }
                         else
                         {
@@ -1444,6 +1477,11 @@ namespace BDArmory.Modules
                 else
                     finalMaxSpeed = strafingSpeed + (float)v.srfSpeed;
                 finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);
+                if (!v.LandedOrSplashed && distanceToTarget < vesselStandoffDistance) //target ahead, flying, and within standoff distance
+                {
+                    AdjustThrottle(minSpeed, true); //getting too close, slow down
+                    debugString.AppendLine($"Getting too close to Enemy. Braking!");
+                }
             }
             AdjustThrottle(finalMaxSpeed, true);
 
@@ -1776,14 +1814,22 @@ namespace BDArmory.Modules
             }
         }
 
-        void FlyOrbit(FlightCtrlState s, Vector3d centerGPS, float radius, float speed, bool clockwise)
+        void FlyOrbit(FlightCtrlState s, Vector3d centerGPS, float radius, float speed, int direction)
         {
             if (regainEnergy)
             {
                 RegainEnergy(s, vessel.Velocity());
                 return;
             }
-
+            if (terrainAlertCoolDown > 0 && orbitDirReset) //change orbit direction if about to collide with terrain
+            {
+                sideSlipDirection *= -1; //swap orbit direction
+                orbitDirReset = false;
+            }
+            if (!orbitDirReset && terrainAlertCoolDown <= 0)
+            {
+                orbitDirReset = true; //reset the orbit direction bool
+            }
             finalMaxSteer = GetSteerLimiterForSpeedAndPower();
 
             debugString.AppendLine($"Flying orbit");
@@ -1792,7 +1838,9 @@ namespace BDArmory.Modules
             Vector3 myVectorFromCenter = Vector3.ProjectOnPlane(vessel.transform.position - flightCenter, upDirection);
             Vector3 myVectorOnOrbit = myVectorFromCenter.normalized * radius;
 
-            Vector3 targetVectorFromCenter = Quaternion.AngleAxis(clockwise ? 15f : -15f, upDirection) * myVectorOnOrbit;
+            //Vector3 targetVectorFromCenter = Quaternion.AngleAxis(clockwise ? 15f : -15f, upDirection) * myVectorOnOrbit;
+
+            Vector3 targetVectorFromCenter = Quaternion.AngleAxis(sideSlipDirection*15, upDirection) * myVectorOnOrbit;
 
             Vector3 verticalVelVector = Vector3.Project(vessel.Velocity(), upDirection); //for vv damping
 
@@ -2745,7 +2793,7 @@ namespace BDArmory.Modules
             else if (command == PilotCommands.FlyTo)
             {
                 SetStatus("Fly To");
-                FlyOrbit(s, assignedPositionGeo, 2500, idleSpeed, ClockwiseOrbit);
+                FlyOrbit(s, assignedPositionGeo, 2500, idleSpeed, sideSlipDirection);
             }
             else if (command == PilotCommands.Attack)
             {
@@ -2762,7 +2810,7 @@ namespace BDArmory.Modules
                 else
                 {
                     SetStatus("Attack");
-                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, ClockwiseOrbit);
+                    FlyOrbit(s, assignedPositionGeo, 4500, maxSpeed, sideSlipDirection);
                 }
             }
         }
