@@ -141,27 +141,35 @@ namespace BDArmory.Modules
                 {
                     if (BDArmorySettings.SF_REPULSOR)
                     {
-                        vesselAlt = 10;
-                        if (AI != null)
+                        if ((BDAcraft && (pilot != null || driver != null)) || //have pilotless craft fall
+                            (!BDAcraft))
                         {
-                            vesselAlt = AI.minAltitude;
-                        }
-                        else if (SAI != null)
-                        {
-                            vesselAlt = SAI.MaxSlopeAngle * 2;
-                        }
-                        float accelMult = 1f;
-                        if (vessel.verticalSpeed > 1) //vessel ascending
-                        {
-                            accelMult = Mathf.Clamp(Mathf.Abs((float)vessel.verticalSpeed), 1f, 100);
-                        }
-                        if (vessel.radarAltitude < vesselAlt)
-                        {
-                            for (int i = 0; i < part.vessel.Parts.Count; i++)
+                            vesselAlt = 10;
+                            if (AI != null)
                             {
-                                if (part.vessel.parts[i].PhysicsSignificance != 1) //attempting to apply rigidbody force to non-significant parts will NRE
+                                vesselAlt = AI.minAltitude;
+                            }
+                            else if (SAI != null)
+                            {
+                                vesselAlt = SAI.MaxSlopeAngle * 2;
+                            }
+                            float accelMult = 1f;
+                            if (vessel.verticalSpeed > 1) //vessel ascending
+                            {
+                                accelMult = Mathf.Clamp(Mathf.Abs((float)vessel.verticalSpeed), 1f, 100);
+                            }
+                            if (vessel.radarAltitude < Mathf.Max((vesselAlt / 10), 5))
+                            {
+                                accelMult = Mathf.Clamp((float)vessel.radarAltitude / vesselAlt, 0.3f, 1);
+                            }
+                            if (vessel.radarAltitude < vesselAlt)
+                            {
+                                for (int i = 0; i < part.vessel.Parts.Count; i++)
                                 {
-                                    part.vessel.Parts[i].Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(part.vessel.Parts[i].transform.position) * ((vesselAlt/ part.vessel.radarAltitude)) / accelMult), ForceMode.Acceleration);
+                                    if (part.vessel.parts[i].PhysicsSignificance != 1) //attempting to apply rigidbody force to non-significant parts will NRE
+                                    {
+                                        part.vessel.Parts[i].Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(part.vessel.Parts[i].transform.position) * ((vesselAlt / part.vessel.radarAltitude)) / accelMult), ForceMode.Acceleration);
+                                    }
                                 }
                             }
                         }

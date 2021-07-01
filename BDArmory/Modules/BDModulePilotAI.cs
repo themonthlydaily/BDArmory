@@ -576,7 +576,6 @@ namespace BDArmory.Modules
         Vector3 terrainAlertDirection; // Terrain slope in the direction of the velocity at the terrain intercept.
         Vector3 terrainAlertCorrectionDirection; // The direction to go to avoid the terrain.
         float terrainAlertCoolDown = 0; // Cool down period before allowing other special modes to take effect (currently just "orbitting").
-        bool orbitDirReset = true; //allow orbit direction to change if recently triggred tarrain avoid
         Vector3 relativeVelocityRightDirection; // Right relative to current velocity and upDirection.
         Vector3 relativeVelocityDownDirection; // Down relative to current velocity and upDirection.
         Vector3 terrainAlertDebugPos, terrainAlertDebugDir, terrainAlertDebugPos2, terrainAlertDebugDir2; // Debug vector3's for drawing lines.
@@ -1479,7 +1478,7 @@ namespace BDArmory.Modules
                 finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);
                 if (!v.LandedOrSplashed && distanceToTarget < vesselStandoffDistance) //target ahead, flying, and within standoff distance
                 {
-                    AdjustThrottle(minSpeed, true); //getting too close, slow down
+                    finalMaxSpeed = minSpeed;
                     debugString.AppendLine($"Getting too close to Enemy. Braking!");
                 }
             }
@@ -1820,15 +1819,6 @@ namespace BDArmory.Modules
             {
                 RegainEnergy(s, vessel.Velocity());
                 return;
-            }
-            if (terrainAlertCoolDown > 0 && orbitDirReset) //change orbit direction if about to collide with terrain
-            {
-                sideSlipDirection *= -1; //swap orbit direction
-                orbitDirReset = false;
-            }
-            if (!orbitDirReset && terrainAlertCoolDown <= 0)
-            {
-                orbitDirReset = true; //reset the orbit direction bool
             }
             finalMaxSteer = GetSteerLimiterForSpeedAndPower();
 
