@@ -1517,12 +1517,7 @@ namespace BDArmory.Modules
                 CheckLoadedAmmo();
                 //Transform[] fireTransforms = part.FindModelTransforms("fireTransform");
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
-                    for (int i = 0; i < fireTransforms.Length; i++) //could convert this to have i advance every time the gun fires, instead of of iterating through all
-																	//each triggerpull. Main issues would be syncing firetransforms with fire anims, way that might work is to adapt the 
-																	//multiammo syntax list builder code for transforms and anims, so you'd build a model with transform1; transform2;transform3
-																	//and fireAnim1; fireAnim2; fireAnim3, the three transforms and anims would be found, registered, and added to a list, so the proper 
-																	//one is used each time. How to set, though. Have it tie in to Barrage/salvo toggle? Might want to make it so any barrage-set weapons
-																	//also automatically get given BurstFire tags to ensure that a single triggerpull cycles through all barrels
+                    for (int i = 0; i < fireTransforms.Length; i++) 
                     {
                         if (CanFire(requestResourceAmount))
                         {
