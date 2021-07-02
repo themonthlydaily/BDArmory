@@ -32,9 +32,8 @@ namespace BDArmory.Misc
                     if (penetrationFactor > 1.2)
                     {
                         if (alreadyburning != null)
-                        {
-                            if (BDArmorySettings.BD_FIRES_ENABLED)
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                        {                            
+                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
                         }
                         else
                         {
