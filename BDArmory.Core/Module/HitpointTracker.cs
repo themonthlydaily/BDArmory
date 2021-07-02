@@ -203,15 +203,14 @@ namespace BDArmory.Core.Module
             isEnabled = true;
 
             //if (part != null) _updateHitpoints = true; //this just calls Setupprefab, already directly called later in OnStart
-
+            partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
+            HullmassAdjust = 0;
             if (HighLogic.LoadedSceneIsFlight)
             {
                 UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                 //Once started the max value of the field should be the initial one
                 armorField.maxValue = Armor;
                 part.RefreshAssociatedWindows();
-                partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
-                HullmassAdjust = 0;
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -274,6 +273,7 @@ namespace BDArmory.Core.Module
             SetupPrefab();
             ArmorSetup(null, null); 
             HullSetup(null, null); //reaquire hull mass adjust for mass calcs
+            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
         private void OnDestroy()
@@ -650,6 +650,7 @@ namespace BDArmory.Core.Module
                 armorFieldFlight.minValue = 0f;
                 armorFieldFlight.maxValue = 10;
                 part.RefreshAssociatedWindows();
+                //GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
         }
         private static Bounds CalcPartBounds(Part p, Transform t)
@@ -685,6 +686,7 @@ namespace BDArmory.Core.Module
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
                 part.maxTemp = 2000;
             }
+            //GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             CalculateTotalHitpoints();
         }
         #endregion Armour
