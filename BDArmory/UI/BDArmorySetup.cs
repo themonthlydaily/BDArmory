@@ -16,9 +16,9 @@ using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Parts;
 using BDArmory.Radar;
-using BDArmory.Targeting;
 using UnityEngine;
 using KSP.Localization;
+using KSP.UI.Screens;
 
 namespace BDArmory.UI
 {
@@ -78,6 +78,9 @@ namespace BDArmory.UI
         public static BDArmorySetup Instance;
         public static bool GAME_UI_ENABLED = true;
         public string Version { get; private set; } = "Unknown";
+
+        //toolbar button
+        static bool toolbarButtonAdded = false;
 
         //settings gui
         public static bool windowSettingsEnabled;
@@ -483,6 +486,37 @@ namespace BDArmory.UI
                 { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
             };
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+
+            if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
+            { StartCoroutine(ToolbarButtonRoutine()); }
+        }
+
+        IEnumerator ToolbarButtonRoutine()
+        {
+            if (toolbarButtonAdded) yield break;
+            while (!ApplicationLauncher.Ready)
+            { yield return null; }
+            if (toolbarButtonAdded) yield break;
+            toolbarButtonAdded = true;
+            Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon", false);
+            ApplicationLauncher.Instance.AddModApplication(
+                ToggleToolbarButton,
+                ToggleToolbarButton,
+                () => { },
+                () => { },
+                () => { },
+                () => { },
+                ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB,
+                buttonTexture
+            );
+        }
+        /// <summary>
+        /// Toggle the BDAToolbar or BDA settings window depending on the scene.
+        /// </summary>
+        void ToggleToolbarButton()
+        {
+            if (HighLogic.LoadedSceneIsFlight) { windowBDAToolBarEnabled = !windowBDAToolBarEnabled; }
+            else { windowSettingsEnabled = !windowSettingsEnabled; }
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
