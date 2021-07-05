@@ -724,7 +724,6 @@ namespace BDArmory.Control
                     pilot.ReleaseCommand();
                     pilot.CommandAttack(centerGPS);
                     pilot.vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
-                    pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[6]); // Trigger an action group on start; Modular Missiles use lower AGs (1-3), 7-10 used for AI/Tag mode
                 }
 
             competitionStatus.Add("Competition starting!  Good luck!");

@@ -595,7 +595,6 @@ namespace BDArmory.Modules
 
         string lastStatus = "Free";
 
-        bool AGReset = false;
         #endregion
 
         #region RMB info in editor
@@ -1391,16 +1390,10 @@ namespace BDArmory.Modules
                             if (distanceToTarget < vesselStandoffDistance)
                             {
                                 AdjustThrottle(minSpeed, true); //getting too close, slow down
-                                AGReset = true; //potential use case for spacecraft firing retros on AG brake
                             }
                         }
                         else
                         {
-                            if (!AGReset)
-                            {
-                                AGReset = true;
-                                vessel.ActionGroups.SetGroup(KSPActionGroup.Custom07, true); //AG 8/9 used for Tag mode, reset AG
-                            }
                             if (distanceToTarget > 3500f || angleToTarget > 90f || vessel.srfSpeed < takeOffSpeed)
                             {
                                 finalMaxSteer = GetSteerLimiterForSpeedAndPower();
@@ -1458,7 +1451,8 @@ namespace BDArmory.Modules
             if (targetDot > 0f)
             {
                 if (strafingDistance < 0f) // Beyond range of beginning strafing run.
-                    finalMaxSpeed = Mathf.Max((distanceToTarget - 100f) / 8f, 0f) + (float)v.srfSpeed;
+                    //finalMaxSpeed = Mathf.Max((distanceToTarget - vesselStandoffDistance) / 8f, 0f) + (float)v.srfSpeed;
+                    finalMaxSpeed = Mathf.Max(((distanceToTarget - vesselStandoffDistance) / 8f) + (float)v.srfSpeed, minSpeed); //change this so too close will result in braking/decel, not matching speed
                 else
                     finalMaxSpeed = strafingSpeed + (float)v.srfSpeed;
                 finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);

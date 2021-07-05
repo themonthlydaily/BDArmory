@@ -241,6 +241,7 @@ namespace BDArmory.Modules
             if (typeof(T) == typeof(MissileBase)) { return GetMissileBases(vessel) as List<T>; }
             if (typeof(T) == typeof(BDModulePilotAI)) { return GetBDModulePilotAIs(vessel) as List<T>; }
             if (typeof(T) == typeof(IBDAIControl)) { return GetIBDAIControls(vessel) as List<T>; }
+            if (typeof(T) == typeof(BDModuleSurfaceAI)) { return GetBDModuleSurfaceAIs(vessel) as List<T>; }
             if (typeof(T) == typeof(ModuleWeapon)) { return GetModuleWeapons(vessel) as List<T>; }
             if (typeof(T) == typeof(IBDWeapon)) { return GetIBDWeapons(vessel) as List<T>; }
             if (typeof(T) == typeof(ModuleEngines)) { return GetModuleEngines(vessel) as List<T>; }
