@@ -1975,7 +1975,7 @@ namespace BDArmory.Modules
                                         BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
                                     }
                                     var aData = BDACompetitionMode.Instance.Scores[aName];
-                                    aData.Score += 1;
+                                    aData.Hits += 1;
                                     if (p.vessel.GetName() == "Pinata")
                                     {
                                         aData.PinataHits++;

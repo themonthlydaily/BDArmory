@@ -422,14 +422,14 @@ namespace BDArmory.UI
                     if (VesselSpawner.Instance.vesselsSpawningContinuously)
                     {
                         foreach (var teamManager in orderedTeamManagers)
-                            teamManager.Item2.Sort((wm1, wm2) => ((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm2.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm2.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm2.vessel.vesselName].Score : 0)).CompareTo((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm1.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm1.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm1.vessel.vesselName].Score : 0))); // Sort within each team by cumulative hits.
-                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Score : 0)).CompareTo(tm1.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Score : 0))))); // Sort teams by total cumulative hits.
+                            teamManager.Item2.Sort((wm1, wm2) => ((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm2.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm2.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm2.vessel.vesselName].Hits : 0)).CompareTo((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm1.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm1.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm1.vessel.vesselName].Hits : 0))); // Sort within each team by cumulative hits.
+                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0)).CompareTo(tm1.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0))))); // Sort teams by total cumulative hits.
                     }
                     else
                     {
                         foreach (var teamManager in orderedTeamManagers)
-                            teamManager.Item2.Sort((wm1, wm2) => (BDACompetitionMode.Instance.Scores.ContainsKey(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm2.vessel.vesselName].Score : 0).CompareTo(BDACompetitionMode.Instance.Scores.ContainsKey(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm1.vessel.vesselName].Score : 0)); // Sort within each team by hits.
-                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Score : 0).CompareTo(tm1.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Score : 0)))); // Sort teams by total hits.
+                            teamManager.Item2.Sort((wm1, wm2) => (BDACompetitionMode.Instance.Scores.ContainsKey(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm2.vessel.vesselName].Hits : 0).CompareTo(BDACompetitionMode.Instance.Scores.ContainsKey(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm1.vessel.vesselName].Hits : 0)); // Sort within each team by hits.
+                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0).CompareTo(tm1.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0)))); // Sort teams by total hits.
                     }
                     foreach (var teamManager in orderedTeamManagers)
                     {
@@ -496,7 +496,7 @@ namespace BDArmory.UI
                     if (BDACompetitionMode.Instance.Scores.ContainsKey(key))
                     {
                         // DEAD <death order>:<death time>: vesselName(<Score>[, <MissileScore>][, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
-                        statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key].Item1 + ":" + BDACompetitionMode.Instance.DeathOrder[key].Item2.ToString("0.0") + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Score.ToString();
+                        statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key].Item1 + ":" + BDACompetitionMode.Instance.DeathOrder[key].Item2.ToString("0.0") + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Hits.ToString();
                         if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
                             statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
                         if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
@@ -507,13 +507,13 @@ namespace BDArmory.UI
                             statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagScore.ToString("0.0");
                         switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
                         {
-                            case DamageFrom.Bullet:
+                            case DamageFrom.Guns:
                                 statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
                                 break;
                             case DamageFrom.Missile:
                                 statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
                                 break;
-                            case DamageFrom.Ram:
+                            case DamageFrom.Ramming:
                                 statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
                                 break;
                             default:
@@ -574,7 +574,7 @@ namespace BDArmory.UI
             if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
             {
                 scoreData = BDACompetitionMode.Instance.Scores[vesselName];
-                currentScore = scoreData.Score;
+                currentScore = scoreData.Hits;
                 currentRamScore = scoreData.totalDamagedPartsDueToRamming;
                 currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
                 if (BDArmorySettings.TAG_MODE)

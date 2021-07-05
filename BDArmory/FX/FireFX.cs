@@ -318,7 +318,7 @@ namespace BDArmory.FX
                         if (ScoreAccumulator >= 1) //could be reduced, gaining +1 hit per sec, per fire seems high
                         {
                             var aData = BDACompetitionMode.Instance.Scores[aName];
-                            aData.Score += 1;
+                            aData.Hits += 1;
 
                             if (parentPart.vessel.GetName() == "Pinata")
                             {

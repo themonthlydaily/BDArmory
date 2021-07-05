@@ -486,7 +486,7 @@ namespace BDArmory.Bullets
                                     BDAScoreService.Instance.TrackHit(aName, tName, name, distanceFromStart);
                                 }
                                 var aData = BDACompetitionMode.Instance.Scores[aName];
-                                aData.Score += 1;
+                                aData.Hits += 1;
                                 if (partHit.vessel.GetName() == "Pinata")
                                 {
                                     aData.PinataHits++;

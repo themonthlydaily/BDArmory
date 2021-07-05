@@ -314,7 +314,7 @@ namespace BDArmory.Modules
                         BDAScoreService.Instance.TrackDamage(aName, tName, explDamage);
                     }
                     var aData = BDACompetitionMode.Instance.Scores[aName];
-                    aData.Score += 1;
+                    aData.Hits += 1;
 
                     if (part.vessel.GetName() == "Pinata")
                     {

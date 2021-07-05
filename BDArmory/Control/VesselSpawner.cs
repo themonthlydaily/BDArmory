@@ -1045,7 +1045,7 @@ namespace BDArmory.Control
                         // If a competition is active, update the scoring structure.
                         if ((BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.competitionIsActive) && !BDACompetitionMode.Instance.Scores.ContainsKey(vessel.vesselName))
                         {
-                            BDACompetitionMode.Instance.Scores[vessel.vesselName] = new ScoringData { vesselRef = vessel, lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count }; // Note: we can't assign the weaponManagerRef yet as it may not be updated.
+                            BDACompetitionMode.Instance.Scores[vessel.vesselName] = new ScoringData { lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count }; // Note: we can't assign the weaponManagerRef yet as it may not be updated.
                             if (!BDACompetitionMode.Instance.DeathOrder.ContainsKey(vessel.vesselName)) // Temporarily add the vessel to the DeathOrder to prevent it from being detected as newly dead until it's finished spawning.
                                 BDACompetitionMode.Instance.DeathOrder.Add(vessel.vesselName, new Tuple<int, double>(BDACompetitionMode.Instance.DeathOrder.Count, 0));
                         }
@@ -1256,19 +1256,19 @@ namespace BDArmory.Control
                 scoreData[spawnCount] = BDACompetitionMode.Instance.Scores[vesselName]; // Save the Score instance for the vessel.
                 if (newSpawn)
                 {
-                    BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { vesselRef = vessel, weaponManagerRef = VesselModuleRegistry.GetModule<MissileFire>(vessel), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
+                    BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { weaponManagerRef = VesselModuleRegistry.GetModule<MissileFire>(vessel), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
                     continuousSpawningScores[vesselName].cumulativeTagTime = scoreData.Sum(kvp => kvp.Value.tagTotalTime);
-                    continuousSpawningScores[vesselName].cumulativeHits = scoreData.Sum(kvp => kvp.Value.Score);
+                    continuousSpawningScores[vesselName].cumulativeHits = scoreData.Sum(kvp => kvp.Value.Hits);
                     continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRamming = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToRamming);
                     continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToMissiles = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToMissiles);
                     // Re-insert some information needed for Tag.
                     switch (scoreData[spawnCount].LastDamageWasFrom())
                     {
-                        case DamageFrom.Bullet:
+                        case DamageFrom.Guns:
                             BDACompetitionMode.Instance.Scores[vesselName].lastHitTime = scoreData[spawnCount].lastHitTime;
                             BDACompetitionMode.Instance.Scores[vesselName].lastPersonWhoHitMe = scoreData[spawnCount].lastPersonWhoHitMe;
                             break;
-                        case DamageFrom.Ram:
+                        case DamageFrom.Ramming:
                             BDACompetitionMode.Instance.Scores[vesselName].lastRammedTime = scoreData[spawnCount].lastRammedTime;
                             BDACompetitionMode.Instance.Scores[vesselName].lastPersonWhoRammedMe = scoreData[spawnCount].lastPersonWhoRammedMe;
                             break;
@@ -1329,7 +1329,7 @@ namespace BDArmory.Control
                 if (vesselScore.cleanKilledBy.Count > 0) logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANKILL:" + string.Join(", ", vesselScore.cleanKilledBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 if (vesselScore.cleanRammedBy.Count > 0) logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANRAM:" + string.Join(", ", vesselScore.cleanRammedBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
                 if (vesselScore.cleanMissileKilledBy.Count > 0) logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  CLEANMISSILEKILL:" + string.Join(", ", vesselScore.cleanMissileKilledBy.Select(kvp => kvp.Key + ":" + kvp.Value)));
-                if (scoreData.Sum(kvp => kvp.Value.shotsFired) > 0) logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  ACCURACY:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.shotsFired > 0).Select(kvp => kvp.Key + ":" + kvp.Value.Score + "/" + kvp.Value.shotsFired)));
+                if (scoreData.Sum(kvp => kvp.Value.shotsFired) > 0) logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  ACCURACY:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.shotsFired > 0).Select(kvp => kvp.Key + ":" + kvp.Value.Hits + "/" + kvp.Value.shotsFired)));
                 if (BDArmorySettings.TAG_MODE)
                 {
                     if (scoreData.Sum(kvp => kvp.Value.tagScore) > 0) logStrings.Add("[BDArmory.VesselSpawner:" + BDACompetitionMode.Instance.CompetitionID + "]:  TAGSCORE:" + string.Join(", ", scoreData.Where(kvp => kvp.Value.tagScore > 0).Select(kvp => kvp.Key + ":" + kvp.Value.tagScore.ToString("0.0"))));

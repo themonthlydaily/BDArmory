@@ -15,17 +15,225 @@ using UnityEngine;
 
 namespace BDArmory.Control
 {
+    public class CompetitionScores
+    {
+        #region Fields
+        public Dictionary<string, ScoringData> ScoreData;
+        #endregion
+
+        #region Helper functions
+        /// <summary>
+        /// Configure the scoring structure.
+        /// If a piñata is involved, include it here too.
+        /// </summary>
+        /// <param name="vessels">List of vessels involved in the competition.</param>
+        public void ConfigurePlayers(List<Vessel> vessels)
+        {
+            ScoreData = vessels.ToDictionary(v => v.vesselName, v => new ScoringData());
+            foreach (var vessel in vessels)
+            {
+                ScoreData[vessel.vesselName].team = VesselModuleRegistry.GetMissileFire(vessel, true).Team.Name;
+            }
+        }
+        /// <summary>
+        /// Register a shot fired.
+        /// </summary>
+        /// <param name="shooter">The shooting vessel</param>
+        public void RegisterShot(string shooter)
+        {
+            if (!ScoreData.ContainsKey(shooter)) return;
+            ++ScoreData[shooter].shotsFired;
+        }
+        /// <summary>
+        /// Register a bullet hit.
+        /// </summary>
+        /// <param name="attacker">The attacking vessel</param>
+        /// <param name="victim">The victim vessel</param>
+        /// <param name="weaponName">The name of the weapon that fired the projectile</param>
+        /// <param name="distanceTraveled">The distance travelled by the projectile</param>
+        public void RegisterHit(string attacker, string victim, string weaponName = "", double distanceTraveled = 0)
+        {
+            if (!ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return;
+
+            var now = Planetarium.GetUniversalTime();
+
+            // Attacker stats.
+            ++ScoreData[attacker].Hits;
+            if (victim == "pinata") ++ScoreData[attacker].PinataHits;
+
+            // Victim stats.
+            if (ScoreData[victim].previousPersonWheDamagedMe != attacker)
+            {
+                ScoreData[victim].previousLastDamageTime = now;
+                ScoreData[victim].previousPersonWheDamagedMe = attacker;
+            }
+            ScoreData[victim].lastHitTime = now;
+            ScoreData[victim].lastPersonWhoHitMe = attacker;
+            ScoreData[victim].everyoneWhoHitMe.Add(attacker);
+            if (ScoreData[victim].hitCounts.ContainsKey(attacker)) { ++ScoreData[victim].hitCounts[attacker]; }
+            else { ScoreData[victim].hitCounts[attacker] = 1; }
+            ScoreData[victim].lastDamageTime = now;
+            ScoreData[victim].lastDamageWasFrom = DamageFrom.Guns;
+            ScoreData[victim].lastPersonWhoDamagedMe = attacker;
+
+            // Remote logging
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackHit(attacker, victim, weaponName, distanceTraveled); }
+        }
+        /// <summary>
+        /// Register damage from bullets.
+        /// </summary>
+        /// <param name="attacker">Attacking vessel</param>
+        /// <param name="victim">Victim vessel</param>
+        /// <param name="damage">Amount of damage</param> 
+        public void RegisterHitDamage(string attacker, string victim, float damage)
+        {
+            if (damage <= 0 || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return;
+
+            if (ScoreData[victim].damageFromBullets.ContainsKey(attacker)) { ScoreData[victim].damageFromBullets[attacker] += damage; }
+            else { ScoreData[victim].damageFromBullets[attacker] = damage; }
+
+            // Remote logging
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackDamage(attacker, victim, damage); }
+        }
+        public void RegisterRam(string attacker, string victim, int partsLost)
+        {
+            if (partsLost <= 0 || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return;
+
+            var now = Planetarium.GetUniversalTime();
+
+            // Attacker stats.
+            ScoreData[attacker].totalDamagedPartsDueToRamming += partsLost;
+
+            // Victim stats.
+            if (ScoreData[victim].previousPersonWheDamagedMe != attacker)
+            {
+                ScoreData[victim].previousLastDamageTime = now;
+                ScoreData[victim].previousPersonWheDamagedMe = attacker;
+            }
+            ScoreData[victim].lastRammedTime = now;
+            ScoreData[victim].lastPersonWhoRammedMe = attacker;
+            ScoreData[victim].everyoneWhoRammedMe.Add(attacker);
+            if (ScoreData[victim].rammingPartLossCounts.ContainsKey(attacker)) { ScoreData[victim].rammingPartLossCounts[attacker] += partsLost; }
+            else { ScoreData[victim].rammingPartLossCounts[attacker] = partsLost; }
+            ScoreData[victim].lastDamageTime = now;
+            ScoreData[victim].lastDamageWasFrom = DamageFrom.Ramming;
+            ScoreData[victim].lastPersonWhoDamagedMe = attacker;
+
+            // Remote logging
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackRammedParts(attacker, victim, partsLost); }
+        }
+        /// <summary>
+        /// Register the number of parts on the victim that were damaged by the attacker's missile.
+        /// </summary>
+        /// <param name="attacker">The vessel that launched the missile</param>
+        /// <param name="victim">The struck vessel</param>
+        /// <param name="partsHit">The number of parts hit (can be 1 at a time)</param>
+        public void RegisterMissileHit(string attacker, string victim, int partsHit)
+        {
+            if (partsHit <= 0 || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return;
+
+            var now = Planetarium.GetUniversalTime();
+
+            // Attacker stats.
+            ScoreData[attacker].totalDamagedPartsDueToMissiles += partsHit;
+
+            // Victim stats.
+            if (ScoreData[victim].previousPersonWheDamagedMe != attacker)
+            {
+                ScoreData[victim].previousLastDamageTime = now;
+                ScoreData[victim].previousPersonWheDamagedMe = attacker;
+            }
+            ScoreData[victim].lastMissileHitTime = now;
+            ScoreData[victim].lastPersonWhoHitMeWithAMissile = attacker;
+            ScoreData[victim].everyoneWhoHitMeWithMissiles.Add(attacker);
+            if (ScoreData[victim].missilePartDamageCounts.ContainsKey(attacker)) { ScoreData[victim].missilePartDamageCounts[attacker] += partsHit; }
+            else { ScoreData[victim].missilePartDamageCounts[attacker] = partsHit; }
+            ScoreData[victim].lastDamageTime = now;
+            ScoreData[victim].lastDamageWasFrom = DamageFrom.Missile;
+            ScoreData[victim].lastPersonWhoDamagedMe = attacker;
+
+            // Remote logging
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); }
+        }
+        /// <summary>
+        /// Register individual missile strikes
+        /// </summary>
+        /// <param name="attacker">The vessel that launched the missile.</param>
+        /// <param name="victim">The struck vessel.</param>
+        public void RegisterMissileStrike(string attacker, string victim)
+        {
+            if (!ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return;
+
+            if (ScoreData[victim].missileHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].missileHitCounts[attacker]; }
+            else { ScoreData[victim].missileHitCounts[attacker] = 1; }
+        }
+        /// <summary>
+        /// Register damage from missile strikes.
+        /// </summary>
+        /// <param name="attacker">The vessel that launched the missile</param>
+        /// <param name="victim">The struck vessel</param>
+        /// <param name="damage">The amount of damage done</param>
+        public void RegisterMissileDamage(string attacker, string victim, float damage)
+        {
+            if (damage <= 0 || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return;
+
+            if (ScoreData[victim].damageFromMissiles.ContainsKey(attacker)) { ScoreData[victim].damageFromMissiles[attacker] += damage; }
+            else { ScoreData[victim].damageFromMissiles[attacker] = damage; }
+
+            // Remote logging
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackMissileDamage(attacker, victim, damage); }
+        }
+
+        public void RegisterDeath(string vesselName)
+        {
+            if (!ScoreData.ContainsKey(vesselName)) return;
+            if (ScoreData[vesselName].lastDamageWasFrom == DamageFrom.None) // Died without being hit by anyone => Incompetence
+            {
+                ScoreData[vesselName].aliveState = AliveState.Dead;
+                ScoreData[vesselName].lastDamageWasFrom = DamageFrom.Incompetence;
+                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                { BDAScoreService.Instance.TrackDeath(vesselName); }
+                return;
+            }
+            var now = Planetarium.GetUniversalTime();
+            if (now - ScoreData[vesselName].lastDamageTime < BDArmorySettings.SCORING_HEADSHOT) // Died shortly after being hit
+            {
+                if (ScoreData[vesselName].previousLastDamageTime < 0) // No-one else hit them => Clean kill
+                { ScoreData[vesselName].aliveState = AliveState.CleanKill; }
+                else if (now - ScoreData[vesselName].previousLastDamageTime > BDArmorySettings.SCORING_MERCYKILL) // Last hit from someone else was a while ago => Head-shot
+                { ScoreData[vesselName].aliveState = AliveState.HeadShot; }
+                else // Last hit from someone else was recent => Mercy kill
+                { ScoreData[vesselName].aliveState = AliveState.MercyKill; }
+                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                { BDAScoreService.Instance.TrackKill(ScoreData[vesselName].lastPersonWhoDamagedMe, vesselName); }
+            }
+            else // Survived for a while after being hit => Assist
+            {
+                ScoreData[vesselName].aliveState = AliveState.AssistedKill;
+                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+                { BDAScoreService.Instance.TrackDeath(vesselName); }
+            }
+        }
+        #endregion
+    }
+
     // trivial score keeping structure
     public class ScoringData
     {
-        public Vessel vesselRef; // TODO Reuse these fields instead of looking for them each time.
-        public MissileFire weaponManagerRef;
+        public MissileFire weaponManagerRef; // TODO Remove this and use the VesselModuleRegistry instead.
         public bool cleanDeath = false; // Whether the kill was a "head-shot".
+        public AliveState aliveState = AliveState.Alive; // State of the vessel.
+        public DamageFrom deathBy => lastDamageWasFrom; //  If killed, then check the lastPersonWhoDamagedMe for the killer.
         public string team; // The vessel's team.
 
         #region Guns
-        public int Score; // Number of hits this vessel landed.
-        public int PinataHits; // Number of hits this vessel landed on the piñata.
+        public int Hits; // Number of hits this vessel landed.
+        public int PinataHits; // Number of hits this vessel landed on the piñata (included in Hits).
         public int shotsFired = 0; // Number of shots fired by this vessel.
         public double lastHitTime; // Time of the last bullet hit on this vessel.
         public string lastPersonWhoHitMe = ""; // The last vessel that shot this vessel.
@@ -36,8 +244,6 @@ namespace BDArmory.Control
 
         #region Ramming
         public int totalDamagedPartsDueToRamming = 0; // Number of other vessels' parts destroyed by this vessel due to ramming.
-        public int previousPartCount; // Number of parts this vessel had last time we checked (for ramming tracking).
-        public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
         public double lastRammedTime; // Time of the last ram against this vessel.
         public string lastPersonWhoRammedMe = ""; // The last vessel that rammed this vessel.
         public HashSet<string> everyoneWhoRammedMe = new HashSet<string>(); // Every other vessel that rammed this vessel.
@@ -74,7 +280,14 @@ namespace BDArmory.Control
         #endregion
 
         #region Misc
+        public int previousPartCount; // Number of parts this vessel had last time we checked (for tracking when a vessel has lost parts).
+        public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
         public double remainingHP; // HP of vessel
+        public double lastDamageTime = -1;
+        public DamageFrom lastDamageWasFrom = DamageFrom.None;
+        public string lastPersonWhoDamagedMe = "";
+        public double previousLastDamageTime = -1;
+        public string previousPersonWheDamagedMe = "";
         #endregion
 
         /// <summary>
@@ -85,11 +298,11 @@ namespace BDArmory.Control
             var lastDamageWasFrom = LastDamageWasFrom();
             switch (lastDamageWasFrom)
             {
-                case DamageFrom.Bullet:
+                case DamageFrom.Guns:
                     return lastHitTime;
                 case DamageFrom.Missile:
                     return lastMissileHitTime;
-                case DamageFrom.Ram:
+                case DamageFrom.Ramming:
                     return lastRammedTime;
                 default:
                     return 0;
@@ -105,7 +318,7 @@ namespace BDArmory.Control
             if (lastHitTime > lastTime)
             {
                 lastTime = lastHitTime;
-                damageFrom = DamageFrom.Bullet;
+                damageFrom = DamageFrom.Guns;
             }
             if (lastMissileHitTime > lastTime)
             {
@@ -115,7 +328,7 @@ namespace BDArmory.Control
             if (lastRammedTime > lastTime)
             {
                 lastTime = lastRammedTime;
-                damageFrom = DamageFrom.Ram;
+                damageFrom = DamageFrom.Ramming;
             }
             return damageFrom;
         }
@@ -127,11 +340,11 @@ namespace BDArmory.Control
             var lastDamageWasFrom = LastDamageWasFrom();
             switch (lastDamageWasFrom)
             {
-                case DamageFrom.Bullet:
+                case DamageFrom.Guns:
                     return lastPersonWhoHitMe;
                 case DamageFrom.Missile:
                     return lastPersonWhoHitMeWithAMissile;
-                case DamageFrom.Ram:
+                case DamageFrom.Ramming:
                     return lastPersonWhoRammedMe;
                 default:
                     return "";
@@ -168,7 +381,8 @@ namespace BDArmory.Control
             return everyoneWhoDamagedMe;
         }
     }
-    public enum DamageFrom { None, Bullet, Missile, Ram };
+    public enum DamageFrom { None, Guns, Missile, Ramming, Incompetence };
+    public enum AliveState { Alive, CleanKill, HeadShot, MercyKill, AssistedKill, Dead };
     public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton };
     public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared };
 
@@ -180,6 +394,7 @@ namespace BDArmory.Control
 
         #region Flags and variables
         // Score tracking flags and variables.
+        public CompetitionScores Scores2 = new CompetitionScores(); // TODO Switch to using this for tracking scores instead.
         public Dictionary<string, ScoringData> Scores = new Dictionary<string, ScoringData>();
         public Dictionary<string, Tuple<int, double>> DeathOrder = new Dictionary<string, Tuple<int, double>>();
         public Dictionary<string, string> whoCleanShotWho = new Dictionary<string, string>();
@@ -499,7 +714,6 @@ namespace BDArmory.Control
                 // put these in the scoring dictionary - these are the active participants
                 Scores[pilot.vessel.GetName()] = new ScoringData
                 {
-                    vesselRef = pilot.vessel,
                     weaponManagerRef = pilot.weaponManager,
                     lastFiredTime = Planetarium.GetUniversalTime(),
                     previousPartCount = pilot.vessel.parts.Count,
@@ -1971,7 +2185,7 @@ namespace BDArmory.Control
                             var lastDamageWasFrom = Scores[key].LastDamageWasFrom();
                             switch (lastDamageWasFrom)
                             {
-                                case DamageFrom.Bullet:
+                                case DamageFrom.Guns:
                                     if (!whoCleanShotWho.ContainsKey(key))
                                     {
                                         // twice - so 2 points
@@ -1994,7 +2208,7 @@ namespace BDArmory.Control
                                         whoKilledMe += " (BOOM! HEADSHOT!)";
                                     }
                                     break;
-                                case DamageFrom.Ram:
+                                case DamageFrom.Ramming:
                                     if (!whoCleanRammedWho.ContainsKey(key))
                                     {
                                         // if ram killed
@@ -2032,11 +2246,11 @@ namespace BDArmory.Control
                         {
                             switch (Scores[key].LastDamageWasFrom())
                             {
-                                case DamageFrom.Bullet:
+                                case DamageFrom.Guns:
                                 case DamageFrom.Missile:
                                     competitionStatus.Add(key + " was killed by " + whoKilledMe);
                                     break;
-                                case DamageFrom.Ram:
+                                case DamageFrom.Ramming:
                                     competitionStatus.Add(key + " was rammed to death by " + whoKilledMe);
                                     break;
                                 default:
@@ -2320,7 +2534,7 @@ namespace BDArmory.Control
 
             // Accuracy
             foreach (var key in Scores.Keys)
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: ACCURACY:" + key + ":" + Scores[key].Score + "/" + Scores[key].shotsFired);
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: ACCURACY:" + key + ":" + Scores[key].Hits + "/" + Scores[key].shotsFired);
 
             // Time "IT" and kills while "IT" logging
             if (BDArmorySettings.TAG_MODE)

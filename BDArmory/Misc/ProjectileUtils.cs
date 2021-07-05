@@ -115,7 +115,7 @@ namespace BDArmory.Misc
                 // update scoring structure on attacker
                 {
                     var aData = BDACompetitionMode.Instance.Scores[aName];
-                    aData.Score += 1;
+                    aData.Hits += 1;
                     // keep track of who shot who for point keeping
 
                     // competition logic for 'Pinata' mode - this means a pilot can't be named 'Pinata'

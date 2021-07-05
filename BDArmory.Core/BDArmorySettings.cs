@@ -219,6 +219,10 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
         [BDAPersistantSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
 
-        [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                  //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+        [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+
+        // Scoring categories
+        [BDAPersistantSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-shot time limit
+        [BDAPersistantSettingsField] public static float SCORING_MERCYKILL = 10;                   // Mercy-kill time limit
     }
 }
