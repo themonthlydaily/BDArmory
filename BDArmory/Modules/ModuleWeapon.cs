@@ -3914,7 +3914,7 @@ namespace BDArmory.Modules
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_AP") + " ";
                     }
-                    if (bulletInfo.apBulletMod < 1.1 && bulletInfo.apBulletMod > 0.8f)
+                    else if (bulletInfo.apBulletMod < 1.1 && bulletInfo.apBulletMod > 0.8f)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_SAP") + " ";
                     }
