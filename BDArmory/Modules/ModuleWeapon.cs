@@ -9,7 +9,6 @@ using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
-using BDArmory.Core.Module;
 using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Targeting;
