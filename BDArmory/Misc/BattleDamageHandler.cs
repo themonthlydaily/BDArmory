@@ -6,6 +6,7 @@ using BDArmory.Core.Extension;
 using BDArmory.FX;
 using BDArmory.Modules;
 using BDArmory.Control;
+using BDArmory.Core.Module;
 
 namespace BDArmory.Misc
 {
@@ -31,7 +32,7 @@ namespace BDArmory.Misc
                     if (penetrationFactor > 1.2)
                     {
                         if (alreadyburning != null)
-                        {
+                        {                            
                             BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
                         }
                         else
@@ -61,6 +62,22 @@ namespace BDArmory.Misc
                         if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
                         {
                             BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                        }
+                    }
+                }
+                var Armor = part.FindModuleImplementing<HitpointTracker>();
+                if (Armor != null)
+                {
+                    if (Armor.HullTypeNum == 1) //wooden parts can potentially catch fire
+                    {
+                        if (incendiary)
+                        {
+                            double Diceroll = UnityEngine.Random.Range(0, 100);
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Wooded part Dice Roll: " + Diceroll);
+                            if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
+                            {
+                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 90);
+                            }
                         }
                     }
                 }

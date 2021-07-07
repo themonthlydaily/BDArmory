@@ -208,6 +208,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SPACE_HACKS = false;
         [BDAPersistantSettingsField] public static bool SF_FRICTION = false;
         [BDAPersistantSettingsField] public static bool SF_GRAVITY = false;
+        [BDAPersistantSettingsField] public static bool SF_REPULSOR = false;
         [BDAPersistantSettingsField] public static float SF_DRAGMULT = 2f;
 
         // Tournament settings
