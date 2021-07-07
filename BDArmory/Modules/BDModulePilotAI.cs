@@ -1221,7 +1221,7 @@ namespace BDArmory.Modules
                         ramming = false;
                         SetStatus("Engaging");
                         debugString.AppendLine($"Flying to target " + targetVessel.vesselName);
-                        FlyToTargetVessel(s, targetVessel);                        
+                        FlyToTargetVessel(s, targetVessel);
                     }
                 }
             }
@@ -1387,10 +1387,6 @@ namespace BDArmory.Modules
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20)
                         {
                             steerMode = SteerModes.Aiming; //steer to aim
-                            if (distanceToTarget < vesselStandoffDistance)
-                            {
-                                AdjustThrottle(minSpeed, true); //getting too close, slow down
-                            }
                         }
                         else
                         {
@@ -1448,20 +1444,19 @@ namespace BDArmory.Modules
 
             //manage speed when close to enemy
             float finalMaxSpeed = maxSpeed;
-            if (targetDot > 0f)
+            if (targetDot > 0f) // Target is ahead.
             {
-                if (strafingDistance < 0f) // Beyond range of beginning strafing run.
-                    //finalMaxSpeed = Mathf.Max((distanceToTarget - vesselStandoffDistance) / 8f, 0f) + (float)v.srfSpeed;
-                    finalMaxSpeed = Mathf.Max(((distanceToTarget - vesselStandoffDistance) / 8f) + (float)v.srfSpeed, minSpeed); //change this so too close will result in braking/decel, not matching speed
-                else
-                    finalMaxSpeed = strafingSpeed + (float)v.srfSpeed;
-                finalMaxSpeed = Mathf.Max(finalMaxSpeed, minSpeed);
-                if (!v.LandedOrSplashed && distanceToTarget < vesselStandoffDistance) //target ahead, flying, and within standoff distance
+                if (strafingDistance < 0f) // Beyond range of beginning strafing run for landed/splashed targets.
                 {
-                    finalMaxSpeed = minSpeed;
-                    debugString.AppendLine($"Getting too close to Enemy. Braking!");
+                    if (distanceToTarget > vesselStandoffDistance) // Adjust target speed based on distance from desired stand-off distance.
+                        finalMaxSpeed = (distanceToTarget - vesselStandoffDistance) / 8f + (float)v.srfSpeed; // Beyond stand-off distance, approach a little faster.
+                    else
+                        finalMaxSpeed = distanceToTarget / vesselStandoffDistance * (float)v.srfSpeed; // Within stand-off distance, back off the thottle a bit.
                 }
+                else
+                { finalMaxSpeed = strafingSpeed + (float)v.srfSpeed; }
             }
+            finalMaxSpeed = Mathf.Clamp(finalMaxSpeed, minSpeed, maxSpeed);
             AdjustThrottle(finalMaxSpeed, true);
 
             if ((targetDot < 0 && vessel.srfSpeed > finalMaxSpeed)
