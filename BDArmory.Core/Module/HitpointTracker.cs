@@ -397,19 +397,19 @@ namespace BDArmory.Core.Module
 
             if (!part.IsMissile())
             {
-                //var averageSize = part.GetAverageBoundSize();
-                //var sphereRadius = averageSize * 0.5f;
-                //var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
-                //var structuralVolume = sphereSurface * 0.1f;
-                var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
+                var averageSize = part.GetAverageBoundSize();
+                var sphereRadius = averageSize * 0.5f;
+                var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
+                var structuralVolume = sphereSurface * 0.1f;
+                //var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
 
                 var density = (partMass * 1000f) / structuralVolume;
-                //density = Mathf.Clamp(density, 1000, 10000);
+                density = Mathf.Clamp(density, 1000, 10000);
                 //if (BDArmorySettings.DRAW_DEBUG_LABELS) 
                 //Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
 
-                //var structuralMass = density * structuralVolume; //this just means hp = mass
+                var structuralMass = density * structuralVolume; //this just means hp = mass
                 //biger things need more hp; but things that are denser, should also have more hp, so it's a bit mroe complicated than have hp = volume * hp mult
                 //hp = (volume * Hp mult) * density mod?
                 //lets take some examples; 3 identical size parts, mk1 cockpit(930kg), mk1 stuct tube (100kg), mk1 LF tank (250kg)
@@ -420,14 +420,14 @@ namespace BDArmory.Core.Module
 
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: " + part.name + " structural Volume: " + structuralVolume + "; density: " + density);
                 //3. final calculations
-                //hitpoints = structuralMass * hitpointMultiplier * 0.333f; 
-                hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
+                hitpoints = structuralMass * hitpointMultiplier * 0.333f; 
+                //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
                 
-                //if (hitpoints > 10 * partMass * 1000f || hitpoints < 0.1f * partMass * 1000f)
-                //{
-                //    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
-                //    hitpoints = hitpointMultiplier * partMass * 333f;
-                //}
+                if (hitpoints > 10 * partMass * 1000f || hitpoints < 0.1f * partMass * 1000f)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
+                    hitpoints = hitpointMultiplier * partMass * 333f;
+                }
 
                 // SuicidalInsanity B9 patch
                 if (part.name.Contains("B9.Aero.Wing.Procedural"))
