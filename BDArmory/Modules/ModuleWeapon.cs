@@ -1517,7 +1517,7 @@ namespace BDArmory.Modules
                 CheckLoadedAmmo();
                 //Transform[] fireTransforms = part.FindModelTransforms("fireTransform");
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
-                    for (int i = 0; i < fireTransforms.Length; i++)
+                    for (int i = 0; i < fireTransforms.Length; i++) 
                     {
                         if (CanFire(requestResourceAmount))
                         {
@@ -3913,7 +3913,7 @@ namespace BDArmory.Modules
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_AP") + " ";
                     }
-                    if (bulletInfo.apBulletMod < 1.1 && bulletInfo.apBulletMod > 0.8f)
+                    else if (bulletInfo.apBulletMod < 1.1 && bulletInfo.apBulletMod > 0.8f)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_SAP") + " ";
                     }
