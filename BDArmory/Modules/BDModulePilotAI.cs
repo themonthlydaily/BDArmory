@@ -1446,15 +1446,21 @@ namespace BDArmory.Modules
             float finalMaxSpeed = maxSpeed;
             if (targetDot > 0f) // Target is ahead.
             {
-                if (strafingDistance < 0f) // Beyond range of beginning strafing run for landed/splashed targets.
+                if (strafingDistance < 0f) // target flying, or beyond range of beginning strafing run for landed/splashed targets.
                 {
                     if (distanceToTarget > vesselStandoffDistance) // Adjust target speed based on distance from desired stand-off distance.
                         finalMaxSpeed = (distanceToTarget - vesselStandoffDistance) / 8f + (float)v.srfSpeed; // Beyond stand-off distance, approach a little faster.
                     else
+                    {
+                        //Mathf.Max(finalMaxSpeed = (distanceToTarget - vesselStandoffDistance) / 8f + (float)v.srfSpeed, 0); //for less aggressive braking
                         finalMaxSpeed = distanceToTarget / vesselStandoffDistance * (float)v.srfSpeed; // Within stand-off distance, back off the thottle a bit.
+                        debugString.AppendLine($"Getting too close to Enemy. Braking!");
+                    }
                 }
                 else
-                { finalMaxSpeed = strafingSpeed + (float)v.srfSpeed; }
+                {
+                    finalMaxSpeed = strafingSpeed + (float)v.srfSpeed;
+                }
             }
             finalMaxSpeed = Mathf.Clamp(finalMaxSpeed, minSpeed, maxSpeed);
             AdjustThrottle(finalMaxSpeed, true);
