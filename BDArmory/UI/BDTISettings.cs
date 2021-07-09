@@ -14,6 +14,7 @@
 		[SettingsDataField] public static bool DEBRIS = true;
 		[SettingsDataField] public static bool PERSISTANT = true;
 		[SettingsDataField] public static bool POINTERS = true;
+		[SettingsDataField] public static bool TELEMETRY = false;
 		[SettingsDataField] public static float ICONSCALE = 1.0f;
 	}
 }

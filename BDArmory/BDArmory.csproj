@@ -135,6 +135,7 @@
     <Compile Include="Competition\BDAScoreService.cs" />
     <Compile Include="Competition\RemoteOrchestrationWindow.cs" />
     <Compile Include="Control\AIUtils.cs" />
+    <Compile Include="Control\Asteroids.cs" />
     <Compile Include="Control\BDACompetitionMode.cs" />
     <Compile Include="Control\BDATournament.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
@@ -211,6 +212,7 @@
     <Compile Include="Modules\ModuleRadar.cs" />
     <Compile Include="Modules\ModuleReactiveArmor.cs" />
     <Compile Include="Modules\ModuleSelfSealingTank.cs" />
+    <Compile Include="Modules\ModuleSpaceFriction.cs" />
     <Compile Include="Modules\ModuleSpaceRadar.cs" />
     <Compile Include="Modules\ModuleTargetingCamera.cs" />
     <Compile Include="Modules\ModuleTurret.cs" />
@@ -219,6 +221,7 @@
     <Compile Include="Modules\ModuleWingCommander.cs" />
     <Compile Include="Modules\RadarWarningReceiver.cs" />
     <Compile Include="Modules\RWPS3R2NukeModule.cs" />
+    <Compile Include="Modules\VesselModuleRegistry.cs" />
     <Compile Include="Parts\GPSTargetInfo.cs" />
     <Compile Include="Parts\SeismicChargeFX.cs" />
     <Compile Include="Parts\TGPCamRotator.cs" />
@@ -232,6 +235,7 @@
     <Compile Include="Targeting\TargetInfo.cs" />
     <Compile Include="Targeting\TargetSignatureData.cs" />
     <Compile Include="UI\BDAEditorAnalysisWindow.cs" />
+    <Compile Include="UI\BDAEditorArmorWindow.cs" />
     <Compile Include="UI\BDAEditorCategory.cs" />
     <Compile Include="UI\BDATargetManager.cs" />
     <Compile Include="UI\BDAWindowSettingsField.cs" />
@@ -244,6 +248,7 @@
     <Compile Include="UI\BDInputUtils.cs" />
     <Compile Include="UI\BDKeyBinder.cs" />
     <Compile Include="UI\BDStagingAreaGauge.cs" />
+    <Compile Include="UI\BDAmmoSelector.cs" />
     <Compile Include="UI\BDTargetSelector.cs" />
     <Compile Include="UI\BDATeamIcons.cs" />
     <Compile Include="UI\BDTISetup.cs" />
@@ -275,6 +280,7 @@
     <None Include="Distribution\GameData\BDArmory\AssetBundles\bdarmoryshaders_windows.bundle" />
     <None Include="Distribution\GameData\BDArmory\ATM_BDArmory.cfg" />
     <None Include="Distribution\GameData\BDArmory\BDArmory.version" />
+    <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Armors.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Bullets.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Rockets.cfg" />
     <None Include="Distribution\GameData\BDArmory\craft\BDA - Test Plane - AA.craft" />

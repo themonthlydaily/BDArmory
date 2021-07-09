@@ -19,6 +19,7 @@ namespace BDArmory.Bullets
         public bool gravitic { get; private set; }
         public bool impulse { get; private set; }
         public bool explosive { get; private set; }
+        public bool incendiary { get; private set; }
         public float tntMass { get; private set; }
         public int subProjectileCount { get; private set; }
         public float thrustDeviation { get; private set; }
@@ -29,7 +30,7 @@ namespace BDArmory.Bullets
         public static RocketInfo defaultRocket;
 
         public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime,
-                         bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, bool explosive, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
+                         bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, bool explosive, bool incendiary, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
         {
             this.name = name;
             this.rocketMass = rocketMass;
@@ -43,6 +44,7 @@ namespace BDArmory.Bullets
             this.gravitic = gravitic;
             this.impulse = impulse;
             this.explosive = explosive;
+            this.incendiary = incendiary;
             this.tntMass = tntMass;
             this.subProjectileCount = subProjectileCount;
             this.thrustDeviation = thrustDeviation;
@@ -78,6 +80,7 @@ namespace BDArmory.Bullets
                         (bool)ParseField(node, "gravitic", typeof(bool)),
                         (bool)ParseField(node, "impulse", typeof(bool)),
                         (bool)ParseField(node, "explosive", typeof(bool)),
+                        (bool)ParseField(node, "incendiary", typeof(bool)),
                         (float)ParseField(node, "tntMass", typeof(float)),
                         (int)ParseField(node, "subProjectileCount", typeof(int)),
                         (float)ParseField(node, "thrustDeviation", typeof(float)),
@@ -118,6 +121,7 @@ namespace BDArmory.Bullets
                             (bool)ParseField(node, "gravitic", typeof(bool)),
                             (bool)ParseField(node, "impulse", typeof(bool)),
                             (bool)ParseField(node, "explosive", typeof(bool)),
+                            (bool)ParseField(node, "incendiary", typeof(bool)),
                             (float)ParseField(node, "tntMass", typeof(float)),
                             (int)ParseField(node, "subProjectileCount", typeof(int)),
                             (float)ParseField(node, "thrustDeviation", typeof(float)),

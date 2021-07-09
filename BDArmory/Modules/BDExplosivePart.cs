@@ -139,13 +139,8 @@ namespace BDArmory.Modules
                 part.OnJustAboutToBeDestroyed += DetonateIfPossible;
                 part.force_activate();
                 sourcevessel = vessel;
-                using (List<MissileFire>.Enumerator MF = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                    while (MF.MoveNext()) // grab the vessel the Weapon manager is on at start
-                    {
-                        if (MF.Current == null) continue;
-                        sourcevessel = MF.Current.vessel;
-                        break;
-                    }
+                var MF = VesselModuleRegistry.GetModule<MissileFire>(vessel, true);
+                if (MF != null) sourcevessel = MF.vessel; // grab the vessel the Weapon manager is on at start
             }
             if (part.FindModuleImplementing<MissileLauncher>() == null)
             {
@@ -260,7 +255,7 @@ namespace BDArmory.Modules
                     {
                         if (Armed)
                         {
-                            if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
+                            if (VesselModuleRegistry.GetModule<MissileFire>(vessel) == null)
                             {
                                 if (sourcevessel != null && sourcevessel != part.vessel)
                                 {
@@ -279,7 +274,7 @@ namespace BDArmory.Modules
 
         private void GetTeamID()
         {
-            var weaponManager = sourcevessel.FindPartModuleImplementing<MissileFire>();
+            var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(sourcevessel);
             IFFID = weaponManager != null ? weaponManager.teamString : null;
         }
 
@@ -368,7 +363,7 @@ namespace BDArmory.Modules
                     if (partHit.vessel == vessel || partHit.vessel == sourcevessel) continue;
                     if (partHit.vessel.vesselType == VesselType.Debris) continue;
                     if (sourcevessel != null && partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;
-                    var weaponManager = partHit.vessel.FindPartModuleImplementing<MissileFire>();
+                    var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(partHit.vessel);
                     if (IFF_On && (weaponManager == null || weaponManager.teamString == IFFID)) continue;
                     if (detonateAtMinimumDistance)
                     {

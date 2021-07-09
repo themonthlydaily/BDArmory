@@ -300,11 +300,13 @@ namespace BDArmory.Modules
                 using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (vs.MoveNext())
                     {
-                        if (vs.Current == null || vs.Current == vessel) continue;
-                        var ibdaiControl = vs.Current.FindPartModuleImplementing<IBDAIControl>();
-                        if (!vs.Current.LandedOrSplashed || (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel)
-                            || vs.Current.GetTotalMass() < AvoidMass)
-                            continue;
+                        if (vs.Current == null || vs.Current == vessel || vs.Current.GetTotalMass() < AvoidMass) continue;
+                        if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
+                        {
+                            var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
+                            if (!vs.Current.LandedOrSplashed || (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel))
+                                continue;
+                        }
                         dodgeVector = PredictCollisionWithVessel(vs.Current, 5f * predictMult, 0.5f);
                         if (dodgeVector != null) break;
                     }
@@ -501,7 +503,7 @@ namespace BDArmory.Modules
 
         bool PanicModes()
         {
-            if (!vessel.LandedOrSplashed)
+            if (!vessel.LandedOrSplashed && !BDArmorySettings.SF_REPULSOR) 
             {
                 targetVelocity = 0;
                 targetDirection = Vector3.ProjectOnPlane(vessel.srf_velocity, upDir);
@@ -617,8 +619,9 @@ namespace BDArmory.Modules
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
             => !BroadsideAttack &&
-            (((target != null ? target.Splashed : false) && (SurfaceType & AIUtils.VehicleMovementType.Water) != 0)
-            || ((target != null ? target.Landed : false) && (SurfaceType & AIUtils.VehicleMovementType.Land) != 0))
+            (((target != null ? target.Splashed : false) && (SurfaceType & AIUtils.VehicleMovementType.Water) != 0) //boat targeting boat
+            || ((target != null ? target.Landed : false) && (SurfaceType & AIUtils.VehicleMovementType.Land) != 0) //vee targeting vee
+            || (((target != null && !target.LandedOrSplashed) && (SurfaceType & AIUtils.VehicleMovementType.Amphibious) != 0) && BDArmorySettings.SPACE_HACKS)) //repulsorcraft targeting repulsorcraft
             ; //valid if can traverse the same medium and using bow fire
 
         /// <returns>null if no collision, dodge vector if one detected</returns>

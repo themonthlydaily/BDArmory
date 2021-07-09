@@ -38,6 +38,8 @@ namespace BDArmory.Control
             spawnLocationCamera = new GameObject("StationaryCameraParent");
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
+            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn")) // Ensure AutoSpawn folder exists.
+            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
         }
 
         void OnDestroy()
@@ -52,6 +54,8 @@ namespace BDArmory.Control
         float originalCameraNearClipPlane;
         public void ShowSpawnPoint(double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false)
         {
+            if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); }
+            if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); }
             if (!spawning)
             {
                 FlightGlobals.fetch.SetVesselPosition(FlightGlobals.currentMainBody.flightGlobalsIndex, latitude, longitude, Math.Max(5, altitude), FlightGlobals.ActiveVessel.vesselType == VesselType.Plane ? 0 : 90, 0, true, true);
@@ -63,7 +67,7 @@ namespace BDArmory.Control
                 var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(latitude, longitude);
                 var spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitude, longitude, terrainAltitude + altitude);
                 var radialUnitVector = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
-                var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
+                var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
                 var flightCamera = FlightCamera.fetch;
                 var cameraPosition = Vector3.RotateTowards(distance * radialUnitVector, Vector3.Cross(radialUnitVector, refDirection), 70f * Mathf.Deg2Rad, 0);
                 if (!spawnLocationCamera.activeSelf)
@@ -246,7 +250,7 @@ namespace BDArmory.Control
             {
                 spawnConfig.teamCounts = spawnConfig.teamsSpecific.Select(tl => tl.Count).ToList();
             }
-            spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
+            if (BDArmorySettings.VESSEL_SPAWN_RANDOM_ORDER) spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             spawnedVesselCount = 0; // Reset our spawned vessel count.
             message = "Spawning " + spawnConfig.craftFiles.Count + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : ".");
             Debug.Log("[BDArmory.VesselSpawner]: " + message);
@@ -325,7 +329,7 @@ namespace BDArmory.Control
                     var distanceToCoMainBody = (testPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                     ray = new Ray(testPosition, -radialUnitVector);
                     message = "Waiting up to 10s for terrain to settle.";
-                    Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     var startTime = Planetarium.GetUniversalTime();
                     double lastStableTimeStart = startTime;
@@ -374,7 +378,7 @@ namespace BDArmory.Control
             var spawnedVessels = new Dictionary<string, Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>>();
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
-            var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
+            var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             string failedVessels = "";
             var shipFacility = EditorFacility.None;
             List<List<string>> teamVesselNames = null;
@@ -613,7 +617,7 @@ namespace BDArmory.Control
                         var weaponManagers = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList();
                         foreach (var vessel in vesselsToCheck.ToList())
                         {
-                            var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                            var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                             if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
                             {
                                 // Turn on the brakes.
@@ -709,17 +713,17 @@ namespace BDArmory.Control
                     {
                         foreach (var vessel in spawnedVessels.Select(v => v.Value.Item1))
                         {
-                            var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                            var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                             if (!weaponManager) continue; // Safety check in case the vessel got destroyed.
 
                             // Activate the vessel with AG10, or failing that, staging.
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
-                            if (!vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                            if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
-                                Debug.Log("[BDArmory.VesselSpawner]: " + vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
-                                foreach (var engine in vessel.FindPartModulesImplementing<ModuleEngines>())
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
+                                foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                                     engine.Activate();
                             }
                         }
@@ -815,9 +819,9 @@ namespace BDArmory.Control
                 double startTime = Planetarium.GetUniversalTime();
                 if ((vesselsSpawningOnceContinuously) && (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING))
                 {
-                    while ((Planetarium.GetUniversalTime() - startTime) < 10d)
+                    while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
                     {
-                        BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (10d - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
+                        BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
                         yield return new WaitForSeconds(1);
                     }
                 }
@@ -925,7 +929,7 @@ namespace BDArmory.Control
                     var distanceToCoMainBody = (testPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                     ray = new Ray(testPosition, -radialUnitVector);
                     message = "Waiting up to 10s for terrain to settle.";
-                    Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + message);
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     var startTime = Planetarium.GetUniversalTime();
                     double lastStableTimeStart = startTime;
@@ -953,7 +957,7 @@ namespace BDArmory.Control
             Vector3d craftGeoCoords;
             Vector3 craftSpawnPosition;
             var shipFacility = EditorFacility.None;
-            var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.9f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
+            var refDirection = Math.Abs(Vector3.Dot(Vector3.up, radialUnitVector)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
             var geeDirection = FlightGlobals.getGeeForceAtPosition(Vector3.zero);
             var spawnSlots = OptimiseSpawnSlots(BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0 ? Math.Min(spawnConfig.craftFiles.Count, BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS) : spawnConfig.craftFiles.Count);
             var spawnCounts = spawnConfig.craftFiles.ToDictionary(c => c, c => 0);
@@ -991,7 +995,7 @@ namespace BDArmory.Control
                     craftToSpawn.Enqueue(spawnQueue.Dequeue());
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
-                    var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => v.FindPartModuleImplementing<MissileFire>() != null).Select(v => v.GetName()).ToList().Contains(craftURLToVesselName[craftURL])).ToList();
+                    var missing = spawnConfig.craftFiles.Where(craftURL => craftURLToVesselName.ContainsKey(craftURL) && !craftToSpawn.Contains(craftURL) && !FlightGlobals.Vessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && VesselModuleRegistry.GetModuleCount<MissileFire>(v) > 0).Select(v => v.GetName()).Contains(craftURLToVesselName[craftURL])).ToList();
                     if (missing.Count > 0)
                     {
                         Debug.Log("[BDArmory.VesselSpawner]: MISSING vessels: " + string.Join(", ", craftURLToVesselName.Where(c => missing.Contains(c.Key)).Select(c => c.Value)));
@@ -1127,17 +1131,17 @@ namespace BDArmory.Control
                         }
 
                         // Check if the weapon manager has been added to the weapon managers list.
-                        var weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                        var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                         if (weaponManager != null && weaponManagers.Contains(weaponManager)) // The weapon manager has been added, let's go!
                         {
                             // Activate the vessel with AG10.
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
-                            if (!vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                            if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 Debug.Log("[BDArmory.VesselSpawner]: " + vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
-                                foreach (var engine in vessel.FindPartModulesImplementing<ModuleEngines>())
+                                foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                                     engine.Activate();
                             }
                             // Assign the vessel to an unassigned team.
@@ -1252,7 +1256,7 @@ namespace BDArmory.Control
                 scoreData[spawnCount] = BDACompetitionMode.Instance.Scores[vesselName]; // Save the Score instance for the vessel.
                 if (newSpawn)
                 {
-                    BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { vesselRef = vessel, weaponManagerRef = vessel.FindPartModuleImplementing<MissileFire>(), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
+                    BDACompetitionMode.Instance.Scores[vesselName] = new ScoringData { vesselRef = vessel, weaponManagerRef = VesselModuleRegistry.GetModule<MissileFire>(vessel), lastFiredTime = Planetarium.GetUniversalTime(), previousPartCount = vessel.parts.Count(), tagIsIt = scoreData[spawnCount].tagIsIt };
                     continuousSpawningScores[vesselName].cumulativeTagTime = scoreData.Sum(kvp => kvp.Value.tagTotalTime);
                     continuousSpawningScores[vesselName].cumulativeHits = scoreData.Sum(kvp => kvp.Value.Score);
                     continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRamming = scoreData.Sum(kvp => kvp.Value.totalDamagedPartsDueToRamming);
@@ -1472,11 +1476,31 @@ namespace BDArmory.Control
             return optimisedSlots;
         }
 
+        public Vessel SpawnSpawnProbe(Vector2d geoCoords, float altitude)
+        {
+            // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
+            var dummyVar = EditorFacility.None;
+            Vector3d dummySpawnCoords;
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + altitude * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
+            if (!File.Exists($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft"))
+            {
+                message = "GameData/BDArmory/craft/SpawnProbe.craft is missing. Please create the craft (a simple octo2 probe core will do).";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogError("[BDArmory.Asteroids]: " + message);
+                return null;
+            }
+            Vessel spawnProbe = SpawnVesselFromCraftFile($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft", dummySpawnCoords, 0, 0f, out dummyVar);
+            spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
+            return spawnProbe;
+        }
+
         private int removeVesselsPending = 0;
         // Remove a vessel and clean up any remaining parts. This fixes the case where the currently focussed vessel refuses to die properly.
         public void RemoveVessel(Vessel vessel)
         {
             if (vessel == null) return;
+            if (BDArmorySettings.ASTEROID_RAIN && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
+            if (BDArmorySettings.ASTEROID_FIELD && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
             ++removeVesselsPending;
             StartCoroutine(RemoveVesselCoroutine(vessel));
         }
@@ -1497,17 +1521,17 @@ namespace BDArmory.Control
             else
             {
                 if (vessel.vesselType == VesselType.SpaceObject)
+                { BDACompetitionMode.Instance.RemoveSpaceObject(vessel); }
+                else
                 {
-                    var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
-                    if (cometVessel) { Destroy(cometVessel); }
-                }
-                vessel.Die(); // Kill the vessel
-                yield return new WaitForFixedUpdate();
-                if (vessel != null)
-                {
-                    var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
-                    foreach (var part in partsToKill)
-                        part.Die();
+                    vessel.Die(); // Kill the vessel
+                    yield return new WaitForFixedUpdate();
+                    if (vessel != null)
+                    {
+                        var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
+                        foreach (var part in partsToKill)
+                            part.Die();
+                    }
                 }
                 yield return new WaitForFixedUpdate();
             }
@@ -1526,7 +1550,7 @@ namespace BDArmory.Control
                 score = continuousSpawningScores[vesselName];
                 vessel = score.vessel;
                 if (vessel == null) continue; // Vessel hasn't been respawned yet.
-                weaponManager = vessel.FindPartModuleImplementing<MissileFire>();
+                weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
                 if (weaponManager == null) continue; // Weapon manager hasn't registered yet.
                 if (score.outOfAmmoTime == 0 && !weaponManager.HasWeaponsAndAmmo())
                     score.outOfAmmoTime = Planetarium.GetUniversalTime();
@@ -1792,7 +1816,7 @@ namespace BDArmory.Control
                 float heading = vesselData.heading;
                 if (shipConstruct == null)
                 {
-                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back);
+                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back); //FIXME add a check if spawning in null-atmo to have craft spawn horizontal, not nose-down
                 }
                 else if (shipConstruct.shipFacility == EditorFacility.SPH)
                 {
