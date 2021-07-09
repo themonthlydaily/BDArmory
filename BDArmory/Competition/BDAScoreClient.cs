@@ -320,6 +320,7 @@ namespace BDArmory.Competition
             pendingRequest = false;
         }
 
+        int count = 0;
         private void SaveCraftFile(VesselModel vessel, byte[] bytes)
         {
             PlayerModel p = players[vessel.player_id];
@@ -331,8 +332,18 @@ namespace BDArmory.Competition
 
             string vesselName = string.Format("{0}_{1}", p.name, vessel.name);
             playerVessels.Add(vesselName, new Tuple<string, string>(p.name, vessel.name));
-            string filename = string.Format("{0}/{1}.craft", vesselPath, vesselName);
-            System.IO.File.WriteAllBytes(filename, bytes);
+            string filename;
+            try
+            {
+                filename = string.Format("{0}/{1}.craft", vesselPath, vesselName);
+                System.IO.File.WriteAllBytes(filename, bytes);
+            }
+            catch (Exception e)
+            {
+                Debug.Log($"[BDArmory.BDAScoreClient]: Invalid filename: {e.Message}");
+                filename = string.Format("{0}/Invalid filename {1}.craft", vesselPath, ++count);
+                System.IO.File.WriteAllBytes(filename, bytes);
+            }
 
             // load the file and modify its vessel name to match the player
             string[] lines = File.ReadAllLines(filename);

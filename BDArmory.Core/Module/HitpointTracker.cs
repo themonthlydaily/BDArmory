@@ -31,7 +31,7 @@ namespace BDArmory.Core.Module
         UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
         public float ArmorTypeNum = 1; //replace with prev/next buttons? //or a popup GUI box with a list of selectable types...
 
-         //Add a part material type setting, so parts can be selected to be made out of wood/aluminium/steel to adjust base partmass/HP?
+        //Add a part material type setting, so parts can be selected to be made out of wood/aluminium/steel to adjust base partmass/HP?
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_HullType"),//hull material Types
         UI_FloatRange(minValue = 1, maxValue = 3, stepIncrement = 1, scene = UI_Scene.Editor)]
         public float HullTypeNum = 2;
@@ -44,7 +44,7 @@ namespace BDArmory.Core.Module
         private bool IgnoreForArmorSetup = false;
 
         private bool isAI = false;
-		
+
         private float OldArmorType = 1;
 
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorMass")]//armor mass
@@ -295,15 +295,16 @@ namespace BDArmory.Core.Module
             if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
             if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             SetupPrefab();
-            ArmorSetup(null, null); 
+            ArmorSetup(null, null);
             HullSetup(null, null); //reaquire hull mass adjust for mass calcs
-            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            if (HighLogic.LoadedSceneIsEditor)
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
         private void OnDestroy()
         {
             GameEvents.onEditorShipModified.Remove(ShipModified);
-			GameEvents.onPartDie.Remove(OnPartDie);
+            GameEvents.onPartDie.Remove(OnPartDie);
         }
 
         void OnPartDie() { OnPartDie(part); }
@@ -315,11 +316,11 @@ namespace BDArmory.Core.Module
             }
         }
         public void ShipModified(ShipConstruct data)
-		{
-			_updateHitpoints = true;
-		}
+        {
+            _updateHitpoints = true;
+        }
 
-		public override void OnUpdate()
+        public override void OnUpdate()
         {
             RefreshHitPoints();
             if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
@@ -343,7 +344,7 @@ namespace BDArmory.Core.Module
             {
                 if (part.skinTemperature > SafeUseTemp * 1.5f)
                 {
-                    ReduceArmor((armorVolume * ((float)part.skinTemperature/SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
                 }
             }
         }
@@ -441,7 +442,7 @@ namespace BDArmory.Core.Module
                         hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
                     } //breaks when pWings are made stupidly thick
                 }
-				if (HullTypeNum == 1)
+                if (HullTypeNum == 1)
                 {
                     hitpoints /= 4;
                 }
@@ -615,7 +616,7 @@ namespace BDArmory.Core.Module
                     ArmorTypeNum = 1; //reset to 'None'
                 }
             }
-			if (isAI)
+            if (isAI)
             {
                 ArmorTypeNum = 1; //reset to 'None'
             }
@@ -651,7 +652,7 @@ namespace BDArmory.Core.Module
 
         public void SetArmor()
         {
-			if (isAI) return; //replace with newer implementation
+            if (isAI) return; //replace with newer implementation
             if (ArmorTypeNum > 1)
             {
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
@@ -704,12 +705,12 @@ namespace BDArmory.Core.Module
             return result;           
         }
 
-		public void HullSetup(BaseField field, object obj)
+        public void HullSetup(BaseField field, object obj)
         {
             if (IgnoreForArmorSetup) return;
             if (HullTypeNum == 1)
             {
-                HullmassAdjust = (partMass / 3)- partMass;
+                HullmassAdjust = (partMass / 3) - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
             }
