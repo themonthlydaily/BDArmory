@@ -2375,7 +2375,7 @@ namespace BDArmory.Control
                 double WreckFactor = 0;
                 if (mf != null)
                 {
-                    HP = (mf.vessel.parts.Count / mf.totalHP) * 100;
+                    HP = (mf.currentHP / mf.totalHP) * 100;
                     if (Scores.ContainsKey(vessel.vesselName))
                     {
                         Scores[vessel.vesselName].remainingHP = HP;

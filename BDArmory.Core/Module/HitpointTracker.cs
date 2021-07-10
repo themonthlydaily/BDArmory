@@ -250,18 +250,42 @@ namespace BDArmory.Core.Module
             GameEvents.onPartDie.Add(OnPartDie);
             bottom = part.FindAttachNode("bottom");
             top = part.FindAttachNode("top");
+            int topSize = 0;
+            int bottomSize = 0;
+            try
+            {
+                if (top != null)
+                {
+                    topSize = top.size;
+                }
+                if (bottom != null)
+                {
+                    bottomSize = bottom.size;
+                }
+            }
+            catch
+            {
+                Debug.Log("[BDArmoryCore.HitpointTracker]: no node size detected");
+            }
+            //if attachnode top != bottom, then cone. is nodesize Attachnode.radius or Attachnode.size?
             //getSize returns size of a rectangular prism; most parts are circular, some are conical; use sizeAdjust to compensate
             if (bottom != null && top != null) //cylinder
             {
                 sizeAdjust = 0.783f;
             }
-            else if ((bottom == null && top != null) || (bottom != null && top == null)) //cone
+            else if ((bottom == null && top != null) || (bottom != null && top == null) || (topSize > bottomSize || bottomSize > topSize)) //cone
             {
                 sizeAdjust = 0.422f;
             }
             else //no bottom or top nodes, assume srf attached part; these are usually panels of some sort. Will need to determine method of ID'ing triangular panels/wings
             {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
                 sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
+            }
+            if (ArmorThickness > 0)
+            {
+                startsArmored = true;
+                Armor = ArmorThickness;
+                ArmorTypeNum = 2;
             }
             armorMass = 0;
             partMass = part.mass;
@@ -382,15 +406,24 @@ namespace BDArmory.Core.Module
 
                 var density = (partMass * 1000f) / structuralVolume;
                 density = Mathf.Clamp(density, 1000, 10000);
-                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
+                //if (BDArmorySettings.DRAW_DEBUG_LABELS) 
+                //Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
 
-                var structuralMass = density * structuralVolume;
-                //Debug.Log("[HP] " + part.name + " structural Volume: " + structuralVolume + "; density: " + density + " structural mass: " + structuralMass);
-                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralMass : " + structuralMass);
-                //3. final calculations
-                hitpoints = structuralMass * hitpointMultiplier * 0.333f;
+                var structuralMass = density * structuralVolume; //this just means hp = mass
+                //biger things need more hp; but things that are denser, should also have more hp, so it's a bit mroe complicated than have hp = volume * hp mult
+                //hp = (volume * Hp mult) * density mod?
+                //lets take some examples; 3 identical size parts, mk1 cockpit(930kg), mk1 stuct tube (100kg), mk1 LF tank (250kg)
+                //if, say, a Hp mod of 300, so 2.55m3 * 300 = 765 -> 800hp
+                //cockpit has a density of ~364, fueltank of 98, struct tube of 39
+                //density can't be linear scalar. Cuberoot? would need to reduce hp mult.
+                //2.55 * 100* 364^1/3 = 1785, 2.55 * 100 * 98^1/3 = 1157, 2.55 * 100 * 39^1/3 = 854
 
+                // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: " + part.name + " structural Volume: " + structuralVolume + "; density: " + density);
+                //3. final calculations
+                hitpoints = structuralMass * hitpointMultiplier * 0.333f; 
+                //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
+                
                 if (hitpoints > 10 * partMass * 1000f || hitpoints < 0.1f * partMass * 1000f)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
@@ -402,7 +435,7 @@ namespace BDArmory.Core.Module
                 {
                     if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                     {
-                        hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
+                        hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.                      
                     }
                     else
                     {
@@ -535,6 +568,7 @@ namespace BDArmory.Core.Module
                     startsArmored = true;
                     UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
                     armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
+                    ArmorTypeNum = 2;
                 }
             }
             if (maxSupportedArmor < 0) //hasn't been set in cfg
@@ -587,7 +621,7 @@ namespace BDArmory.Core.Module
                 ArmorTypeNum = 1; //reset to 'None'
             }
             armorInfo = ArmorInfo.armors[ArmorInfo.armorNames[(int)ArmorTypeNum - 1]]; //what does this return if armorname cannot be found (mod armor removed/not present in install?)
-            if (startsArmored && ArmorTypeNum < 2)
+            if (startsArmored)
             {
                 ArmorTypeNum = 2;
             }
@@ -604,6 +638,7 @@ namespace BDArmory.Core.Module
             Hardness = armorInfo.Hardness;
             Strength = armorInfo.Strength;
             SafeUseTemp = armorInfo.SafeUseTemp;
+            Debug.Log(" armorType = " + ArmorTypeNum);
             SetArmor();
             armorMass = 0;
             armorCost = 0;
@@ -657,13 +692,17 @@ namespace BDArmory.Core.Module
         private static Bounds CalcPartBounds(Part p, Transform t)
         {
             Bounds result = new Bounds(t.position, Vector3.zero);
+            Bounds[] bounds = p.GetRendererBounds(); //slower than getColliderBounds, but it only runs once, and doesn't have to deal with culling isTrgger colliders (airlocks, ladders, etc)
             {
-                if (p.collider && !p.Modules.Contains("LaunchClamp"))
+                if (!p.Modules.Contains("LaunchClamp"))
                 {
-                    result.Encapsulate(p.collider.bounds);
+                    for (int i = 0; i < bounds.Length; i++)
+                    {
+                        result.Encapsulate(bounds[i]);
+                    }
                 }
             }
-            return result;
+            return result;           
         }
 
         public void HullSetup(BaseField field, object obj)

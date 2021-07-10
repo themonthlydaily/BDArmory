@@ -381,7 +381,7 @@ namespace BDArmory.UI
                                             {
 
                                                 double hpPercent = 1;
-                                                hpPercent = Mathf.Clamp((1 - ((wm.Current.totalHP - wm.Current.vessel.parts.Count) / wm.Current.totalHP)), 0, 1);
+                                                hpPercent = Mathf.Clamp(wm.Current.currentHP / wm.Current.totalHP, 0, 1);
                                                 if (hpPercent > 0)
                                                 {
                                                     Rect barRect = new Rect((guiPos.x - (32 * BDTISettings.ICONSCALE)), (guiPos.y + (30 * BDTISettings.ICONSCALE)), (64 * BDTISettings.ICONSCALE), 12);
