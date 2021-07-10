@@ -209,15 +209,13 @@ namespace BDArmory.Control
                 { ScoreData[vesselName].aliveState = AliveState.HeadShot; }
                 else // Last hit from someone else was recent => Mercy kill
                 { ScoreData[vesselName].aliveState = AliveState.MercyKill; }
-                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                { BDAScoreService.Instance.TrackKill(ScoreData[vesselName].lastPersonWhoDamagedMe, vesselName); }
             }
             else // Survived for a while after being hit => Assist
             {
                 ScoreData[vesselName].aliveState = AliveState.AssistedKill;
-                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                { BDAScoreService.Instance.TrackDeath(vesselName); }
             }
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackKill(ScoreData[vesselName].lastPersonWhoDamagedMe, vesselName); }
         }
         #endregion
     }
