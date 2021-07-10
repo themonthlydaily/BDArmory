@@ -1919,7 +1919,7 @@ namespace BDArmory.Control
             if (now < nextUpdateTick)
                 return;
             CheckForBadlyNamedVessels();
-            double updateTickLength = BDArmorySettings.TAG_MODE ? 0.1 : BDArmorySettings.GRAVITY_HACKS ? 0.5 : 2;
+            double updateTickLength = BDArmorySettings.TAG_MODE ? 0.1 : BDArmorySettings.GRAVITY_HACKS ? 0.5 : 1;
             vesselsToKill.Clear();
             nextUpdateTick = nextUpdateTick + updateTickLength;
             int numberOfCompetitiveVessels = 0;
