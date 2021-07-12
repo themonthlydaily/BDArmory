@@ -1,0 +1,369 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.0.1  (Win32)">
+	<META NAME="CREATED" CONTENT="20210202;13113452">
+	<META NAME="CHANGED" CONTENT="20210202;13363632">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		A:link { so-language: zxx }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<P STYLE="margin-bottom: 0in"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">	Building
+a plane in FAR is no different than in stock - CoL behind the CoM,
+wheels just behind the CoM, try to have fuel tanks placed so that CoM
+moves forward as fuel drains, remember to have proper control surface
+inputs for the control surfaces, etc. </FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">	Where
+FAR differs from stock is the level of granularity of the aerodynamic
+model being used, the level of control the user has in tweaking and
+tuning a design the method of calculating lift, and the data the user
+gets from the editor about how their craft will perform. In the stock
+game, adding wing parts and an engine is all you need (usually) to
+make something that will fly. FAR is a bit more complicated. FAR
+looks not at the number of wings you have bolted onto a craft, but
+where the wing areas are, and how large they are. Wings that are
+clipped into a fuselage will be ignored, and wings clipped into each
+other will be viewed as one wing, not multiple. Additionally, wings
+with insufficient vertical separation (wing stacking) will impart a
+malus to lift, similar to real-life. FAR, when looking at total lift
+and drag of a craft, uses a Voxel-based system to calculate the
+aerodynamics of the craft as a whole, rather than simply adding up
+all the lift produced by wing parts on the craft and seeing if the
+lift value is enough to counter gravity. Blended body designs will
+exhibit the body lift you'd expect them to, craft with all sorts of
+lumps or protrusions will have higher drag, etc, and FAR takes
+area-ruling into account when calculating trans-sonic and supersonic
+drag. Finally, the settings on control surfaces matter much more &ndash;
+in Stock you can get away with all control surfaces left on default
+Pitch/Yaw/Roll settings, but in FAR you'll want to specify what axis
+each control surface responds to. That said, if a craft built with
+FAR looks like a plane, it will likely fly like one. But how
+well?<BR><BR>	FAR includes a number of tools to get a detailed
+technical look at how your craft will perform; use of these tools
+isn't required or necessary. They provide diagnostic feedback on
+flight performance, before it's even left the SPH. They are
+completely optional, but they can help enormously, either for fine
+tuning, or helping someone new to FAR better understand why their
+plane is or isn't performing.<BR>	Clicking on the FAR icon on the
+toolbar in the Editor brings up the FAR Analysis window. This window
+has several sub-windows that all display information about different
+aspects of the craft's flight-worthiness.<BR><A HREF="https://i.imgur.com/IWDBqru.png"><FONT COLOR="#000080"><IMG SRC="https://i.imgur.com/IWDBqru.png" NAME="graphics1" ALT="IWDBqru.png" ALIGN=BOTTOM WIDTH=660 HEIGHT=449 BORDER=1></FONT></A><BR><BR>Here
+is the default window that is opened, the Sweep Analysis window.
+There are several data fields that values can be entered, and a Graph
+readout.<BR>The </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Lower</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">,
+</FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Upper</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">,
+and </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Mach
+</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">data
+fields allow specifying the range of Angles of Attack for FAR to
+calculate on a craft. </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Num
+Pts </FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">can
+be ignored, for the most part, it simply controls how many datapoints
+are calculated for the graph. More points, the finer resolution the
+graph ranges are. By adjusting these values, you can see how the
+plane is predicted to behave at the specified airspeed in mach.
+Clicking the </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Switch
+to Mach Sweep</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+button will change the data inputs, and allow you to see how the
+craft will behave at a set AoA over a range of airspeeds
+instead.<BR></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Flap
+Settings</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+allow calculating flap deployment if the craft has any, and what
+level of deployment, from none (0), to fully deployed (3).<BR></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Pitch
+setting</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+is what level of deflection any control surfaces with Pitch enabled
+are deflected, ranging from 0 (no deflection) to 1 (full
+deflection).<BR><BR>	In the example above, a sweep graph has already
+been plotted, testing craft performance from -15 degrees AoA to 40
+degrees AoA, at Mach 0.5 (~168m/s). This yields 4 colored
+lines.<BR>-</FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Yellow
+(Cm)</B></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">:
+The Yellow line is a measure of Pitch movement, and can be read as an
+indication of craft stability. Ideally, this value decreases as AoA
+increases, such a craft will want to return to a neutral AoA in the
+absence of Pitch inputs; an increasing value as AoA increases means
+the craft has pitch instability &ndash; it will want to lawn dart or
+stall in the absence of control surface Pitch inputs; this is
+generally undesirable.<BR>Here, the example craft is fairly stable,
+at least up to 40 degrees AoA.<BR>-</FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Red
+(Cd): </B></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">The
+Red line indicates the coefficient of drag. Generally linear at low
+AoA, becomes non-linear at high AoA.<BR>Here, craft drag is fairly
+low up to ~20 degrees AoA, and begins to rapidly increase past
+that.<BR>-</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Cyan
+(Cl): </B></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">The
+Cyan line is the coefficient of lift. This stays more or less linear
+up to critical AoA, at which point maximum lift is achieved and past
+this point the craft will go into a stall and begin losing
+lift.<BR>Here, the craft will begin to stall at around ~22 degrees
+AoA.<BR>-</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Green
+(L/D)</B></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">:
+The Green line is simply a measure of the Cyan line divided by the
+Red line, and acts as a general measure of how efficient the craft is
+at producing lift.<BR>Here, best lift vs drag is achieved at ~5
+degrees AoA.<BR><BR>	What does this tell us? At ~170m/s, the craft is
+stable and will return to prograde in the absence of control inputs,
+it will begin to bleed energy past ~5 degrees AoA, and past 20
+degrees AoA the craft is in danger of stalling.<BR>But what about Yaw
+or Roll stability, or general information about the craft? Clicking
+the Static Analysis button in the top left allows transition to the
+Data+Stability Derivatives sub-window:</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><BR><A HREF="https://i.imgur.com/WR4ppZP.png"><FONT COLOR="#000080"><IMG SRC="https://i.imgur.com/WR4ppZP.png" NAME="graphics2" ALT="WR4ppZP.png" ALIGN=BOTTOM WIDTH=697 HEIGHT=591 BORDER=1></FONT></A><BR></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Lots
+of scary numbers.<BR><BR>The Stability Derivatives window is likely
+where the most time will be spent tweaking a craft in FAR. The Flight
+Conditions allows the user to select the planet, altitude and speed
+in mach you want FAR to simulate the craft in flight at, which will
+affect all the data values below the </SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Calculate
+Stability Derivatives</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+button once it has been clicked.<BR>	The top data field</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">is
+raw data about elements of the craft. Of immediate usefulness are the
+</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Level
+Flight</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+data. Here, Altitude and Airspeed have been set to 1.5km altitude and
+0.5, and from here, the analysis states what that airspeed is in m/s,
+the coefficient of lift (Cl) and drag (Cd) the craft will have, and
+the necessary AoA required to maintain level flight. Checking various
+speed and altitude combos is a good idea, as needed AoA will almost
+certainly change, perhaps drastically. Setting altitude to 0 and
+airspeed to 0.2 mach (~68m/s, simulating takeoff) would show needed
+AoA has jumped to 8.4 degrees for the example craft here, for
+example. Wing incidence (rotation of the wing along the Pitch axis to
+provide intrinsic AoA while flying prograde) can reduce this.</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><BR></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">The
+</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Inertia</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+fields state what sort of torque is generated during roll/yaw/pitch
+movements, with X = Axis of Roll, Y = Axis of Pitch, and Z = Axis of
+yaw. </SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><BR>Finally,
+</FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Aircraft
+Properties</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+simply measures wing dimensions and wing area.<BR><BR></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">The
+</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Longitudinal
+</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">and
+</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Lateral
+Derivative </SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">numbers
+come in 3 flavors: Green, White, and Red. White numbers are neutral,
+and their values are simply data values. Green numbers indicate that
+that particular aspect of craft performance is within expected
+tolerances for stable flight, and Red numbers indicate instability in
+that particular aspect of craft performance.<BR>Of the values listed,
+some of the main important ones:<BR></SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Mw</B></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">:
+Is your CoM in the right place? If this value is red, the craft will
+try to nosedive or back flip. Try shifting either the CoM or the main
+wing around to bring the CoM closer to what in stock would be the CoL
+indicator.<BR></SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Y&szlig;</B></FONT></FONT></STRONG><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">and
+</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>N&szlig;</B></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">:
+Yaw sideslip stability, does the plane want to fly straight?. Unless
+the tailplane is huge (i.e. large enough to be generating substantial
+amounts of lift), likely to be green. Dihedral (Wing is angled, with
+wing tips higher than the wing root) improves this.<BR></SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>L&szlig;</B></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">:
+When the lift vector and gravity don't line up (when the craft has
+rolled and is not parallel with the horizon), sideslip occurs. Does
+this induce the craft to roll? Generally going to be green unless
+tiny tailplanes and/or excessive Anhedral(Wing is angled, with wing
+tips lower than the wing root) are present.<BR></SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Mq</B></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">,
+</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Lp</B></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">,
+and </SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Nr</B></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">:
+Pitch, Roll, and Yaw rotation stability. If the craft undergoes
+rotation, will said rotation damp out? Generally not going to be red
+unless other things are also red.<BR></SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>Lr</B></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">:
+Does the plane have a vertical stabilizer? If red, the craft lacks
+sufficient Yaw stability, and will want to flatspin. Fix with either
+a larger tail or a longer empennage)</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+<BR></FONT></FONT><BR>
+</P>
+<P><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">	The
+third tab is the </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Stability
+Derivative Simulation</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">.
+This just takes the data from the latest Stability Derivatives
+calculation in the Data+Stability Derivatives window. The Stability
+Deriv Sim isn't something I've ever really used, and is </FONT></FONT><EM><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">entirely
+optional,</FONT></FONT></EM><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+it is entirely possible to design excellent FAR craft without even
+opening this window.<BR>That said, here is a brief rundown of the
+tab.<BR>Once you've run a Data+Stability Derivatives calculation, you
+get the aircraft's flight stats - properties, longitudinal
+derivatives, and lateral derivatives.<BR>Switching to the Stability
+sim tab ports the D+SD numbers into the sim, and presents you with a
+subset of those numbers, a graph, and some data inputs.<BR>For the
+longitude sim, these are: </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">init
+w</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+- downward velocity, in m/s; </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">init
+u</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+- forward velocity, in m/s; </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">init
+q</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+- pitch rate, in rad/s; and </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">init
+theta</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+- pitch attitude, in radians.<BR>For the lateral sim, these are:</FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+init beta</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+- sideslip angle, in radians; </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">init
+p</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+- roll rate, in rad/s; </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">init
+r</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+- yaw rate, in rad/s; and </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">init
+phi </FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">-
+roll angle, in radians<BR>EndTime is how long the sim will run for -
+i would suggest changing this to ~30 or so to get a better idea of
+overall stability.<BR></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><B>dt</B></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+I don't know, but it appears to change Y-axis graph scale. </FONT></FONT>
+</P>
+<P><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">What
+the sim panel is used for is determining flight stability in response
+to deviations from the initial static stability values calculated
+earlier - the stability deriv panel gives a snapshot of how the
+aircraft will perform in any one specific state of altitude, speed,
+and orientation; the sim panel shows how stable the craft is when
+subject to changing states.<BR>When you enter a number into one or
+more of the init</FONT></FONT><EM><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">X</FONT></FONT></EM><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+fields and click the 'Run Simulation' button, you get a graph output
+with four colored lines , each corresponding to one of the 4&nbsp;
+derivatives, that show the change in flight state that the specified
+deviation. This output will likely be an oscillating waveform. A
+craft that is stable should have a waveform that damps out and
+decreases toward a neutral rest state as time increases.. An unstable
+craft will have a waveform with increasing magnitude and frequency as
+time increases </FONT></FONT>
+</P>
+<P><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">So
+if you wanted to, say, see if a plane is stable pitching up 5 degrees
+from a 1km ASL level cruise at mach 1, you would go to the stability
+deriv tab, enter in the appropriate flight conditions, then go to the
+Sim tab and run a simulation with init theta set to 0.0872 (1 radian
+= ~57.3 deg; 5 deg = pi/36). If you wanted to see how it performs at
+2km, you'd have to go back to the stability tab, run another
+stability calculation, and return to the sim tab to run another sim,
+etc.<BR><BR>For the most part, the vast majority of seeing if an
+aircraft is stable will be done in via Data+Stability calculations;
+the Sim tab is mainly there to give an idea if an aircraft's
+oscillations damp down in flight. It's a tool that's there for those
+who know how to use it, but is by no means essential for successfully
+building something in FAR.<BR><BR>	The last tab is the</FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+Transonic Design</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+tab. This has two main components. On the left is the</FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+Transonic Area Ruling Analysis.</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+This updates whenever a change is made to the craft being built in
+the editor, and tells you the vessel's </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Max
+Cross-Section Area</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">,
+</FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Mach
+1 Wave Drag Area</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">,
+and </FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Critical
+Mach Number. </FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">The
+max Cross-Section is self-explanitory, it tells you how large your
+craft is as a cross-section. Generally want this to be lower for
+lower drag. The Mach 1 wave drag is a measure of the area that will
+generate wave drag at mach 1, and Critical Mach number is the
+airspeed at which the airflow over some point of the aircraft
+reaches, but does not exceed, the speed of sound. Exceeding this
+speed will result in those areas of the plane creating shock waves ,
+and a corresponding increase in drag coefficient.<BR>Clicking the
+</FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">Raise
+Gear</FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+Button at the top will raise landing gear, and allow you to see what
+the craft performance will look like when gear is retracted.<BR>The
+Right side of the Transonic Design Tab allows you to toggle on
+various curves (displayed as a 2D plane along the longitudinal axis)
+of either the craft's cross section, curvature, or pressure
+coefficient. Smoother is better. </FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Now,
+interpreting FAR analysis data has been covered, but what about
+tuning? In stock, Control surfaces have togglable pitch, Yaw, and
+Roll inputs, and deflection amount can be changed. In FAR, instead
+the Control Surface options become this:</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><A HREF="https://i.imgur.com/aABs35H.png"><FONT COLOR="#000080"><IMG SRC="https://i.imgur.com/aABs35H.png" NAME="graphics3" ALT="aABs35H.png" ALIGN=BOTTOM WIDTH=703 HEIGHT=470 BORDER=1></FONT></A><BR></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Pitch</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">,
+</SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Yaw</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">,
+and </SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Roll
+</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">inputs
+can be customized. In this case, the inner aileron here has full Roll
+input, and will provide a 20% Pitch input as well. </SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Control
+Dflect</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+is the number of degrees the control surface will rotate when
+deflecting from input..</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+</FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">AoA%</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+allows the control surface to respond to craft AoA. Setting this to
+100, for example, would mean that if, say, the craft pitches up and
+increases AoA by 5 degrees, the control surface would deflect down an
+equal amount, the practical effect of which would be damping sudden
+increases in AoA. Setting it to -100%, likewise, would cause the
+control surface to deflect up 5 degrees, remaining parallel with the
+prograde vector and providing Pitch input after Pitch control
+Surfaces have ceased input.<BR></SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">BrakeRudder
+</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">allows
+the control surface to be used similarly to A.I.R.B.R.A.K.E.s with
+Yaw inputs enabled, and permits Yaw inputs without needing vertical
+stabilizers/rudders.<BR>Lastly, </SPAN></FONT></FONT><STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">Mass-Strength
+Multiplier %</SPAN></FONT></FONT></STRONG><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt"><SPAN STYLE="font-weight: normal">
+allows tweaking the mass of the wing or control surface. This in
+important, for FAR models aero stresses and aero failures &ndash; in
+other words, pull a hard turn with wings that aren't sufficiently
+sturdy, and the aero forces exerted on the plane during the turn will
+rip the wing off. Heavier wings are stronger, and can higher Gee
+turns. That said, default Mass-Strength is somewhat heavy &ndash; the
+example craft has a mass of ~4200 kg with all wing parts at 1.0;
+reducing M-S Mult to 0.5 dropped the craft weight to ~3500kg. The
+lower the strength, the less aerostress the wing can tolerate before
+failing, but the lower the mass, the less the overall mass of the
+craft, and the less wing loading. Finding the ideal setting may take
+some trial and error, but main wings and control surfaces with more
+than 10 degrees of deflection should probably remain above
+0.5.<BR><BR>Tuning control settings can take some time. Setting
+inputs too low results in a reduction of maneuverability. Conversely,
+setting them too high runs the risk of the control surface stalling
+at full deflection, resulting in a loss of control, which may
+translate to overall degraded aircraft performance or sudden
+oscillations as the craft reacts to the sudden reduction in control
+authority on that axis. Also of note is the effect of speed on
+control surface performance. At higher speeds, aeropressures increase
+on deployed surfaces. A control surface that could fully deploy
+without incident at low speed may undergo more aerostress than it can
+handle and break, or result in the craft undergoing too great a
+vector change, resulting in increased drag and unwanted energy
+loss.<BR><BR>	So you've built a plane, tweaked it, and have now
+launched it. As mentioned earlier, if a craft looks like a plane,
+chances are it will fly like one. But what if it doesn&rsquo;t? Some
+things to check, then. What is the Lift Coefficient of the aircraft,
+and what AoA is required to generate lift at takeoff conditions? If
+the Lift coefficient is small, consider increasing the wing area of
+the craft by adding more wing, or reducing the mass of the craft. The
+other option is increasing craft thrust - higher thrust can get away
+with smaller wings, and vice -versa. If the AoA required is high,
+consider adding some Angle of Incidence to the main wing &ndash; AoI
+is the measure of the angle of the main wing compared to the
+fuselage, with the leading edge of the wing higher than the trailing
+edge (usually). Be careful when adding AoI, as more than a few
+degrees of tilt to the wing may result in needing negative AoA at
+higher speeds to maintain level flight, as well as adding unnecessary
+drag. If both cL and AoA are acceptable, check CoM and Landing gear
+placement. If going for a modern tricycle arrangement, are the rear
+wheels just behind the CoM to permit the aircraft to pivot the nose
+up during takeoff? If going for a inverse tricycle arrangement, are
+the main wheels providing enough elevation relative to the rear wheel
+to add some extrinsic Angle of Incidence when the craft is a rest or
+taking off?<BR>If the craft is yawing left or right on the runway
+during liftoff, are your landing gears on straight? non-perpendicular
+wheels can behave oddly. If your gears are fine, is the craft Yaw
+stable at low speed? If not, try a wider wheel base or larger
+tail/greater yaw authority.<BR><BR>	Once the craft is airborne, do
+the control surface deflection settings permit a level of response
+appropriate to the craft? Most turns are accomplished by rolling,
+then pitching, rather than via yaw; Does the craft have a good roll
+rate, and sufficient pitch authority? If not, consider increasing
+either control surface deflection or more/larger control surfaces. Is
+the CoM more or less centered on the main wing to permit the craft to
+easily rotate around it for pitch maneuvers? If using a
+multi-fueslage design, is the CoM centered with the Center of Thrust,
+and/or is there sufficient dihedral or tailplane area to prevent
+sideslip and yaw?</SPAN></FONT></FONT><FONT FACE="Times New Roman, serif"><FONT SIZE=2 STYLE="font-size: 11pt">
+</FONT></FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+</BODY>
+</HTML>

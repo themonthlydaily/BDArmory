@@ -55,7 +55,7 @@ Shader "Custom/rcsShader"
 			float4 RCSFragmentShader(Interpolators i) : SV_TARGET
 			{
 				float3 lightDir = _WorldSpaceLightPos0.xyz;
-				float3 lightColor = _RCSCOLOR.rgb;
+				float3 lightColor = _RCSCOLOR;
 				float3 reflectionDir = reflect(-_LIGHTDIR, i.normal);
 				return DotClamped(_LIGHTDIR, reflectionDir);
 			}

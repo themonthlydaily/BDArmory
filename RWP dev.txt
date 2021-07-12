@@ -1,0 +1,68 @@
+
+Black holes
+add a singularityWeapon field
+-ballistics - basically an inverse concussion rocket explosion
+-Lasers - ditto
+-Rockets: rocketprojectile acts a a singularity during flight, sucking in(or repelling) anything too close to it as it passes || rocket explodes into a singularity that lasts for a short time - this is just a continous inverse concussion rocket explosion
+
+due to how the code for a singularity projectile would work, could easily be converted to/support BFG 9k functionality...
+
+would this be WeaponType = Rocket, or a new class, weaponType = Exotic?
+depends on 1) what sort of projectile is being fired (gameObject bullet with rendered tracer, mesh object with particleFX, etc.
+2) method of firing  -chargeup before firing? There needs to be sufficient difference from standard rockets/bullets to justify the new projectile type, vs increasing the modularity/functionality of an existing type.
+-Rockets are already due to get a bunch more types already - incidiary, EMP, choker, homing?, how bloated would Pooledrocket.cs get?
+could rocket be modified to support spawning configurable gameobjects instead of hardcoded ones? Investigate.
+
+chain lightning gun - have it spawn a lighting node at hit.point, similar to FXbulletHIt, that basically seals the ModuleEMP code to find the nearest vessel that isn't the source vessel, then do a linerender/raytrace, damage, attach lightning node, 20 goto 10...
+
+
+potential RWP round ideas, and the coding theyd require:
+
+
+Stop Rammin', ya Git!
+-Ramming Speed. No guns, custom melee weapons. Would need to code/model melee weapons - giant sawblades?
+	--hmmm.. have multiple hurtTransforms on the model that are animated along with it, have them call a Applydamage() to any part they hit? need a way of detecting when a collision occurs that isn't a series of RayTrace calls...
+Alternatively, make it so the rayTrace only gets called every 0.2 s instead of 0.02, and only when in proximity to another vessel...?
+
+Asphixiation Situation - Choker Rockets only, max alt 2000m. 
+**Choker functionality done! (Still needto get them on rockets, though - look to EMP code)
+
+Seeker Scramble - Inverse Tag/onslaught/king of the hill. Objsetive is to be not 'it', tagged craft vs everyone else, tagged craft has to shoot another plane to transfer tag, no damage. instead, hunter-Killer DOOM ORB will relentlessly home in on tagged ship at 120% tagged ship's current velocity
+Score accumulated while it; if DOOM ORB eats a plane, every plane on the other team gets an assist. Need to code DOOM ORB - shouldn't be too hard - and the modified scoring code -more work
+
+I Feel the Warp Overtaking Me - every 45 sec(adjustable) all craft get a random boon of Chaos. All boons have a benefit and a detriment, for fairness. Some ideas:
+- engines produce half thrust, but gun damage doubled 
+- engine thrust doubled, accuracy halved
+- craft mass increased, ammo/fuel regen
+- craft mass decreased, weapon fire rate halved
+- remaining fuel halved, weapons become lasers
+
+have boons display an icon/color over plane (similar to BDTeamIcons) to indicate which boon is active. Boons would require new boon module, GM code to assign them every interval
+
+
+Drones?
+Need to rething how I'm doing this. The take a missilelauncher, have the missilelauncher module get removed and replaced by a WM/AI isn't working, due to MissileFire freaking out somewhere , proably due to the suddenly missile missilelauncher moduule. Might possibly work if the missilelauncher module is left in place, but just have post launch guidance disabled so the Ai does that instead...? Still need a precision-build model for all the transforms/col/com offsets, etc.
+
+New plan: rename missilebase to ordinancebase, and A) add a new child class Dronelauncher to it that works similarly, but duplicate code is an issue, or B) rename missileLauncher to ordinancelauncher, since that's really what the module is at this point, and add a drone guidance subsection. Guidance shouldn't be hard to modify, it's really a matter of moving the target point to move to from collision offset to weapon lead offset. Also not having missile reported to TargetInfo as isMissile = true; see if that causes AI to trat it as a potential vessel target instead of something to dodge once then forget about.
+
+Could have limitations trying to do drones with missiles + guns, but at that point you'd probably be better off making drone subassemblies in the SPH instead...
+
+Still leaves potential for missile-armed drones, since that's a similar offset
+use the spawnprobe code from vessel spawning code as a method for relaodable missile rails that don't need a missile attached to them first/ Get a empty craft file with just that missile, then ahve the rail able to have the player select from a list (or just have it be set, so a AMRAAM relaodable rail, sidewinder RR, etc)
+
+
+
+now that Doc has overhauled the bullet prediction offset, see about 1) making sure that the prediction, GUI renderer, and bullet proper use the same movement code, so all three should arrive at the same point. 2) adding drag to bullets, and again, making sure the drag code is reflected across all three areas.
+
+bullets are reducing vel every tick, vel*drag
+prediction would need to do it all at once, vel* (drag ^ FilghtTime / FixedDeltaTime {vel * drag ^ number of physics ticks in the flighttime})
+need filght time to target, though
+I'm sure this is a solved problem, though, it's a constant acceleration
+
+Add craft HP/percent craft remaining score to scoring mechanic
+-would this be an average at end of tourney, then?
+Have craft that are less than 10% HP left/3 parts/doing terrain avoid at round end be counted as kills (i.e. orphaned cockpits/shattered remanants of a plane falling to their doom)
+
+need to fix BattleDamate fires/fuel leaks on non-active engines/srbs
+(make SRBs explode?)
+look into fixed guns not firing when subsystem targeting?

@@ -13,6 +13,7 @@ using UnityEngine;
 
 namespace BDArmory.UI
 {
+    //FIXME: need to figure out why this and the Radar RCS GUI can't be open at the same time. identical WindowIDs?
     [KSPAddon(KSPAddon.Startup.EditorAny, false)]
     internal class BDAEditorArmorWindow : MonoBehaviour
     {
@@ -343,7 +344,6 @@ namespace BDArmory.UI
                                 }
                                 if (SetType)
                                 {
-                                    if (parts.Current.IsMissile()) continue;
                                     armor.ArmorTypeNum = (ArmorInfo.armors.FindIndex(t => t.name == selectedArmor) + 1);
                                     if (armor.ArmorThickness > 10)
                                     {

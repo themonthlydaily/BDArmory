@@ -1027,7 +1027,7 @@ namespace BDArmory.Modules
             CheckLandingGear();
             if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
             { turningTimer = 0; }
-            else if (belowMinAltitude && !(gainAltInhibited && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0)) // If we're below minimum altitude, gain altitude unless we're being inhibited and gaining altitude.
+            else if ((belowMinAltitude && !(gainAltInhibited && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0)) && !BDArmorySettings.SF_REPULSOR) // If we're below minimum altitude, gain altitude unless we're being inhibited and gaining altitude.
             {
                 if (initialTakeOff || command != PilotCommands.Follow)
                 {
