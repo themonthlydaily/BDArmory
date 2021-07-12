@@ -3,7 +3,6 @@ using System.Linq;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -121,9 +120,6 @@ namespace BDArmory.Radar
         };
         private static int numAspects = rcsAspects.GetLength(0); // Number of aspects
         public static float[,] worstRCSAspects = new float[3, 3]; // Worst three aspects
-
-        static Shader RCSshader;
-
 
         /// <summary>
         /// Force radar signature update
@@ -282,7 +278,7 @@ namespace BDArmory.Radar
         /// <param name="inEditorZoom">when true, we try to make the rendered vessel fill the rendertexture completely, for a better detailed view. This does skew the computed cross section, so it is only for a good visual in editor!</param>
         public static float RenderVesselRadarSnapshot(Vessel v, Transform t, bool inEditorZoom = false)
         {
-            if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType) && HighLogic.LoadedSceneIsFlight) Debug.LogError($"[BDArmory.RadarUtils]: Rendering radar snapshot of {v.vesselName}, which should be being ignored!");
+            if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)) Debug.LogError($"[BDArmory.RadarUtils]: Rendering radar snapshot of {v.vesselName}, which should be being ignored!");
             const float radarDistance = 1000f;
             const float radarFOV = 2.0f;
             Vector3 presentationPosition = -t.forward * radarDistance;
@@ -313,42 +309,7 @@ namespace BDArmory.Radar
                             }
                     }
             }
-            /*
-            Color StealthAdjust;
-            RCSshader = BDAShaderLoader.RCSShader;
-            //using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator()) //need to be vessel.parts if Highlogic.LoadedSceneisFlight?
-            using (List<Part>.Enumerator parts = v.parts.GetEnumerator())
-                while (parts.MoveNext())
-                {
-                    HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
-                    FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
-                    if (flag != null)
-                    {
-                        if (flag.flagDisplayed)
-                        {
-                            flag.ToggleFlag();
-                        }
-                    }
-                    var r = parts.Current.GetComponentInChildren<Renderer>();
-                    if (r != null)
-                    {
-                        //r.material.shader = Shader.Find("KSP/Particles/Alpha Blended");
-                        r.material.shader = RCSshader;
-                        r.material.SetColor("_RCSCOLOR", Color.white);
-                        //r.material.SetVector("_LIGHTDIR", -cameraDirection);
-                        if (a != null && a.stealthRating < 1)
-                        {
-                            StealthAdjust.r = a.stealthRating; //need to debug, this isn't yielding diffeent shades of white based on stealthrating
-                            StealthAdjust.g = a.stealthRating;
-                            StealthAdjust.b = a.stealthRating;
-                            StealthAdjust.a = 1;
-                            //r.material.SetColor("_TintColor", StealthAdjust);
-                            r.material.SetColor("_RCSCOLOR", StealthAdjust);
-                        }
-                    }
 
-                }
-            */
             Bounds vesselbounds = CalcVesselBounds(v, t);
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -392,7 +353,7 @@ namespace BDArmory.Radar
                 aspect = Vector3.RotateTowards(aspect, Vector3.Cross(t.right, t.up), -rcsAspects[i, 1] / 180f * Mathf.PI, 0);
 
                 // Render aspect
-                RenderSinglePass(v, t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
+                RenderSinglePass(t, false, aspect, vesselbounds, radarDistance, radarFOV, rcsRenderingVariable, drawTextureVariable);
 
                 // Count pixel colors to determine radar returns
                 rcsVariable = 0;
@@ -466,9 +427,9 @@ namespace BDArmory.Radar
                 aspect3 = Vector3.RotateTowards(aspect3, Vector3.Cross(t.right, t.up), -worstRCSAspects[2, 1] / 180f * Mathf.PI, 0);
 
                 // Render three highest aspects
-                RenderSinglePass(v, t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
-                RenderSinglePass(v, t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
-                RenderSinglePass(v, t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
+                RenderSinglePass(t, inEditorZoom, aspect1, vesselbounds, radarDistance, radarFOV, rcsRendering1, drawTexture1);
+                RenderSinglePass(t, inEditorZoom, aspect2, vesselbounds, radarDistance, radarFOV, rcsRendering2, drawTexture2);
+                RenderSinglePass(t, inEditorZoom, aspect3, vesselbounds, radarDistance, radarFOV, rcsRendering3, drawTexture3);
             }
             else
             {
@@ -491,27 +452,7 @@ namespace BDArmory.Radar
                     v.SetPosition(v.transform.position - presentationPosition);
                 }
             }
-            
-            //using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
-            using (List<Part>.Enumerator parts = v.parts.GetEnumerator())
-                while (parts.MoveNext())
-                {
-                    HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
-                    FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
-                    if (flag != null)
-                    {
-                        if (!flag.flagDisplayed)
-                        {
-                            flag.ToggleFlag();
-                        }
-                    }
-                    var r = parts.Current.GetComponentInChildren<Renderer>();
-                    if (r != null)
-                    {
-                        //r.material.shader = Shader.Find(a.defaultShader);
-                    }
-                }
-            
+
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 Debug.Log($"[BDArmory.RadarUtils]: - Vessel all-aspect rcs is: rcsTotal: {rcsTotal}");
@@ -624,16 +565,16 @@ namespace BDArmory.Radar
             }
 
             // pass1: frontal
-            RenderSinglePass(v, t, inEditorZoom, t.up, vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal);
+            RenderSinglePass(t, inEditorZoom, t.up, vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal);
             // pass2: lateral
-            RenderSinglePass(v, t, inEditorZoom, t.right, vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral);
+            RenderSinglePass(t, inEditorZoom, t.right, vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral);
             // pass3: Ventral
-            RenderSinglePass(v, t, inEditorZoom, t.forward, vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral);
+            RenderSinglePass(t, inEditorZoom, t.forward, vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral);
 
             //additional 45� offset renderings:
-            RenderSinglePass(v, t, inEditorZoom, (t.up + t.right), vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal45);
-            RenderSinglePass(v, t, inEditorZoom, (t.right + t.forward), vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral45);
-            RenderSinglePass(v, t, inEditorZoom, (t.forward - t.up), vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral45);
+            RenderSinglePass(t, inEditorZoom, (t.up + t.right), vesselbounds, radarDistance, radarFOV, rcsRenderingFrontal, drawTextureFrontal45);
+            RenderSinglePass(t, inEditorZoom, (t.right + t.forward), vesselbounds, radarDistance, radarFOV, rcsRenderingLateral, drawTextureLateral45);
+            RenderSinglePass(t, inEditorZoom, (t.forward - t.up), vesselbounds, radarDistance, radarFOV, rcsRenderingVentral, drawTextureVentral45);
 
             // revert presentation (only if outside editor and thus vessel is a real vessel)
             if (HighLogic.LoadedSceneIsFlight)
@@ -685,7 +626,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Internal helpder method
         /// </summary>
-        private static void RenderSinglePass(Vessel v, Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture)
+        private static void RenderSinglePass(Transform t, bool inEditorZoom, Vector3 cameraDirection, Bounds vesselbounds, float radarDistance, float radarFOV, RenderTexture rcsRendering, Texture2D rcsTexture)
         {
             // Render one snapshop pass:
             // setup camera FOV
@@ -698,54 +639,19 @@ namespace BDArmory.Radar
                 radarCam.fieldOfView = Mathf.Atan(vesselbounds.size.magnitude / distanceToShip) * 180 / Mathf.PI;
             else
                 radarCam.fieldOfView = radarFOV;
-            // setup rendertexture
+            // setup rendertexture            
+
+            //hrm. 2 ideas for radar stealth coating/armor variant. 1st method - radarstealth is a per-vessel arorm type, not per-part, and the radarstealth aspect rating is a mult applied to 
+            //radarDistance to effectively make the resulting ship render smaller, so sum a reduced RCS.
+            //option 2, a per-part radar stealth coating/armor type, coould either a) have a foreach part in vessel call that looks for athe stealthcoat, and applies a grey/black shader to that specific part
+            //then proceed with the rederwithshader. not sure if this will work, investigate. b) do a renderwithshader and make use of the replacementTag to not render stealthcoat parts, readtexture, then 
+            //renderwithShader again, this time only stealthed parts with an offwhite shader color, then readPixels, and use the sum of the two renders pixelcount for rcs. Assumes the RCSShader is set with a tag
 
             radarCam.targetTexture = rcsRendering;
             RenderTexture.active = rcsRendering;
-
-            RCSshader = BDAShaderLoader.RCSShader;
-            //using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator()) //need to be vessel.parts if Highlogic.LoadedSceneisFlight?
-            using (List<Part>.Enumerator parts = v.parts.GetEnumerator())
-                while (parts.MoveNext())
-                {
-                    Color StealthAdjust;
-                    HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
-                    FlagDecal flag = parts.Current.GetComponent<FlagDecal>();
-                    if (flag != null)
-                    {
-                        if (flag.flagDisplayed)
-                        {
-                            flag.ToggleFlag();
-                        }
-                    }
-                    var r = parts.Current.GetComponentsInChildren<Renderer>(); 
-                    {
-                        for (int i = 0; i < r.Length; i++)
-                        {
-                            //r.material.shader = Shader.Find("KSP/Particles/Alpha Blended");
-                            r[i].material.shader = RCSshader;
-                            if (a != null && a.stealthRating < 1)
-                            {
-                                StealthAdjust.r = a.stealthRating; 
-                                StealthAdjust.g = a.stealthRating;
-                                StealthAdjust.b = a.stealthRating;
-                                StealthAdjust.a = 1;
-                                r[i].material.SetColor("_RCSCOLOR", StealthAdjust);
-                                //r[i].material.SetColor("_RCSCOLOR", Color.blue); //Need to rewrite RCS shader so color input actually respected, currently locked to white, regardless of what it's set to
-                            }
-                            else
-                            {
-                                r[i].material.SetColor("_RCSCOLOR", Color.white);
-                            }
-                            r[i].material.SetVector("_LIGHTDIR", -cameraDirection);
-                        }
-                    }
-                }
-
-            //Shader.SetGlobalVector("_LIGHTDIR", -cameraDirection);
-            //Shader.SetGlobalColor("_RCSCOLOR", Color.white);
-            //radarCam.RenderWithShader(BDAShaderLoader.RCSShader, string.Empty);
-            radarCam.Render();
+            Shader.SetGlobalVector("_LIGHTDIR", -cameraDirection);
+            Shader.SetGlobalColor("_RCSCOLOR", Color.white);
+            radarCam.RenderWithShader(BDAShaderLoader.RCSShader, string.Empty);
             rcsTexture.ReadPixels(new Rect(0, 0, radarResolution, radarResolution), 0, 0);
             rcsTexture.Apply();
         }

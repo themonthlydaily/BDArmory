@@ -18,7 +18,6 @@ namespace BDArmory.Core
                                                      //Too low, and armor is brittle. Too High, and armor cannot effectively stop projectiles in reasonable distance
         public float Diffusivity { get; private set; } //ability to disperse electrical/thermal energy when material is subject to laser/EMP attack. Higher is better
         public float SafeUseTemp { get; private set; } //In Kelvin, determines max temp armor retains full mechanical properties
-        public float StealthRating { get; private set; } //radar stealthiness
         public float Cost { get; private set; }
 
         //public bool Reactive {get; private set; } have a reactive armor bool?
@@ -27,7 +26,7 @@ namespace BDArmory.Core
         public static List<string> armorNames;
         public static ArmorInfo defaultArmor;
 
-        public ArmorInfo(string name, float Density, float Strength, float Hardness, float Ductility, float Diffusivity, float SafeUseTemp, float StealthRating, float Cost)
+        public ArmorInfo(string name, float Density, float Strength, float Hardness, float Ductility, float Diffusivity, float SafeUseTemp, float Cost)
         {
             this.name = name;
             this.Density = Density;
@@ -36,7 +35,6 @@ namespace BDArmory.Core
             this.Ductility = Ductility;
             this.Diffusivity = Diffusivity;
             this.SafeUseTemp = SafeUseTemp;
-            this.StealthRating = StealthRating;
             this.Cost = Cost;
         }
 
@@ -64,7 +62,6 @@ namespace BDArmory.Core
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
-                        (float)ParseField(node, "StealthRating", typeof(float)),
                         (float)ParseField(node, "Cost", typeof(float))
                     );
                     armors.Add(defaultArmor);
@@ -97,7 +94,6 @@ namespace BDArmory.Core
                         (float)ParseField(node, "Ductility", typeof(float)),
                         (float)ParseField(node, "Diffusivity", typeof(float)),
                         (float)ParseField(node, "SafeUseTemp", typeof(float)),
-                        (float)ParseField(node, "StealthRating", typeof(float)),
                         (float)ParseField(node, "Cost", typeof(float))
                         )
                     );

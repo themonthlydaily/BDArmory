@@ -95,8 +95,6 @@ namespace BDArmory.Core.Module
         [KSPField(isPersistant = true)]
         public float SafeUseTemp;
         [KSPField(isPersistant = true)]
-        public float stealthRating;
-        [KSPField(isPersistant = true)]
         public float Cost;
 
         private bool startsArmored = false;
@@ -105,14 +103,10 @@ namespace BDArmory.Core.Module
         public Vector3 partSize;
         [KSPField(isPersistant = true)]
         public float maxSupportedArmor = -1; //upper cap on armor per part, overridable in MM/.cfg
-        [KSPField(isPersistant = true)]
-        public float armorVolume = -1;
+        public float armorVolume;
         private float sizeAdjust;
         AttachNode bottom;
         AttachNode top;
-        private float hullRadarReturnFactor = 1;
-        private float armorRadarReturnFactor = 1;
-        public string defaultShader;
 
         #endregion KSP Fields
 
@@ -287,7 +281,7 @@ namespace BDArmory.Core.Module
             {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
                 sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
             }
-            if (ArmorThickness > 10)
+            if (ArmorThickness > 0)
             {
                 startsArmored = true;
                 Armor = ArmorThickness;
@@ -296,35 +290,14 @@ namespace BDArmory.Core.Module
             armorMass = 0;
             partMass = part.mass;
             partSize = CalcPartBounds(this.part, this.transform).size;
-            if (armorVolume < 0) //make this persistant to get around diffeences in part bounds between SPH/Flight. 
-            {
-                armorVolume =  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
-    ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust);  //mass * surface area approximation of a cylinder, where H/W are unknown
-                if (HighLogic.LoadedSceneIsFlight) //Value correction for loading legacy craft via VesselMover spawner/tournament autospawn that haven't got a armorvolume value in their .craft file.
-                {
-                    armorVolume *= 0.63f; //part bounds dimensions when calced in Flight are consistantly 1.6-1.7x larger than correct SPH dimensions. 
-                }
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
-            }
-
+            armorVolume =  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
+((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust);  //mass * surface area approximation of a cylinder, where H/W are unknown
+            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
+            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
             SetupPrefab();
-            ArmorSetup(null, null);
+            ArmorSetup(null, null); 
             HullSetup(null, null); //reaquire hull mass adjust for mass calcs
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-            }
-            var r = part.GetComponentInChildren<Renderer>();
-            if (r != null)
-            {
-                defaultShader = r.material.shader.name;
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r.material.shader.name);
-            }
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part mass is: " + partMass + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
-            }
+            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
 
         private void OnDestroy()
@@ -428,10 +401,10 @@ namespace BDArmory.Core.Module
                 var sphereRadius = averageSize * 0.5f;
                 var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
                 var structuralVolume = sphereSurface * 0.1f;
-                //var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust); //switch to far more accurate method of determining part volume
+                //var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
 
                 var density = (partMass * 1000f) / structuralVolume;
-                density = Mathf.Clamp(density, 1000, 10000); //why is this clamping density to 1000kg/m3?
+                density = Mathf.Clamp(density, 1000, 10000);
                 //if (BDArmorySettings.DRAW_DEBUG_LABELS) 
                 //Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
@@ -447,8 +420,7 @@ namespace BDArmory.Core.Module
 
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: " + part.name + " structural Volume: " + structuralVolume + "; density: " + density);
                 //3. final calculations
-                hitpoints = structuralMass * hitpointMultiplier * 0.333f; //this just spits out a modified version of HP = mass
-				//HP determined by volume * scaling HP multiplier * scaling density modifier; small stuff will have enough Hp to not die to stiff breeze, large stuff doesn't get ludicrous HP vals
+                hitpoints = structuralMass * hitpointMultiplier * 0.333f; 
                 //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
                 
                 if (hitpoints > 10 * partMass * 1000f || hitpoints < 0.1f * partMass * 1000f)
@@ -590,7 +562,6 @@ namespace BDArmory.Core.Module
             if (ArmorThickness != 0)
             {
                 Armor = ArmorThickness;
-                maxSupportedArmor = ArmorThickness;
                 if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
                 {
                     startsArmored = true;
@@ -666,18 +637,15 @@ namespace BDArmory.Core.Module
             Hardness = armorInfo.Hardness;
             Strength = armorInfo.Strength;
             SafeUseTemp = armorInfo.SafeUseTemp;
-            armorRadarReturnFactor = 0;
-            SetArmor();            
+            Debug.Log(" armorType = " + ArmorTypeNum);
+            SetArmor();
             armorMass = 0;
             armorCost = 0;
             if (ArmorTypeNum > 1) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
-                armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons   
-                armorRadarReturnFactor = armorInfo.StealthRating;
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: Armor mass is: " + armorMass + " (" + Armor + "/1000) * " + armorVolume + " * " + Density + "/1000");
+                armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
             }
-            CalculateRCSreduction();
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
         }
 
@@ -724,8 +692,6 @@ namespace BDArmory.Core.Module
         {
             Bounds result = new Bounds(t.position, Vector3.zero);
             Bounds[] bounds = p.GetRendererBounds(); //slower than getColliderBounds, but it only runs once, and doesn't have to deal with culling isTrgger colliders (airlocks, ladders, etc)
-                                                    //Err... not so sure about that, me. This is yielding different resutls in SPH/flight. SPH is proper dimensions, flight is giving bigger x/y/z
-                                                    // a mk1 cockpit (x: 1.25, y: 1.6, z: 1.9, area 11 in SPh becomes x: 2.5, y: 1.25, z: 2.5, area 19
             {
                 if (!p.Modules.Contains("LaunchClamp"))
                 {
@@ -746,45 +712,21 @@ namespace BDArmory.Core.Module
                 HullmassAdjust = (partMass / 3)- partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                hullRadarReturnFactor = 0.5f;
             }
             else if (HullTypeNum == 2)
             {
                 HullmassAdjust = 0;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
                 part.maxTemp = 1000;
-                hullRadarReturnFactor = 1;
             }
             else //hulltype 3
             {
                 HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
                 part.maxTemp = 2000;
-                hullRadarReturnFactor = 1;
             }
             //GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             CalculateTotalHitpoints();
-            CalculateRCSreduction();
-        }
-        private void CalculateRCSreduction()
-        {
-            if (ArmorTypeNum > 1 && Armor > 1) //if ArmorType != None and armor thickness != 0
-            {
-                stealthRating = armorRadarReturnFactor; //radar return based on armor material
-                if (armorRadarReturnFactor > 1 && hullRadarReturnFactor < 1) //radar-translucent armor and hull materials
-                {
-                    stealthRating = 1 - (hullRadarReturnFactor * (armorRadarReturnFactor-1));
-                }
-            }
-            else //(ArmorTypeNum < 1 || Armor < 1) //no armor, radar return based on hull material
-            {
-                stealthRating = hullRadarReturnFactor;                
-            }
-            if (stealthRating > 1 || stealthRating < 0)
-            {
-                stealthRating = Mathf.Clamp(stealthRating, 0, 1);
-            }
-            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: Radar return rating is " + stealthRating);
         }
         #endregion Armour
     }
