@@ -201,7 +201,6 @@
     <Compile Include="Modules\MissileTurret.cs" />
     <Compile Include="Modules\ModuleAmmoSwitch.cs" />
     <Compile Include="Modules\ModuleCASE.cs" />
-    <Compile Include="Modules\ModuleCloakingDevice.cs" />
     <Compile Include="Modules\ModuleDrainEC.cs" />
     <Compile Include="Modules\ModuleDrainIntakes.cs" />
     <Compile Include="Modules\ModuleDrainFuel.cs" />
