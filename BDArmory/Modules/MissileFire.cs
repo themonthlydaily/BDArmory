@@ -44,6 +44,7 @@ namespace BDArmory.Modules
         public int missilesAway;
 
         public float totalHP;
+        public float currentHP;
 
         public bool hasLoadedRippleData;
         float rippleTimer;
@@ -980,8 +981,10 @@ namespace BDArmory.Modules
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
                 GameEvents.onPartDie.Add(OnPartDie);
                 GameEvents.onVesselPartCountChanged.Add(UpdateMaxGunRange);
+                GameEvents.onVesselPartCountChanged.Add(UpdateCurrentHP);
 
-                GetTotalHP();
+                totalHP = GetTotalHP();
+                currentHP = totalHP;
                 UpdateMaxGunRange(vessel);
 
                 AI = VesselModuleRegistry.GetIBDAIControl(vessel, true);
@@ -1055,8 +1058,9 @@ namespace BDArmory.Modules
             }
         }
 
-        public void GetTotalHP() // get total craft HP
+        public int GetTotalHP() // get total craft HP
         {
+            int HP = 0;
             using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
                 while (p.MoveNext())
                 {
@@ -1071,9 +1075,17 @@ namespace BDArmory.Modules
                         totalHP += hp.Hitpoints;
                     }
                     */
-                    ++totalHP;
+                    ++HP;
+                    // ++totalHP;
                     //Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " part count: " + totalHP);
                 }
+            return HP;
+        }
+
+        void UpdateCurrentHP(Vessel v)
+        {
+            if (v == vessel)
+            { currentHP = GetTotalHP(); }
         }
 
         public override void OnUpdate()
@@ -1212,6 +1224,7 @@ namespace BDArmory.Modules
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
             GameEvents.onVesselPartCountChanged.Remove(UpdateMaxGunRange);
+            GameEvents.onVesselPartCountChanged.Remove(UpdateCurrentHP);
             GameEvents.onEditorPartPlaced.Remove(UpdateMaxGunRange);
             GameEvents.onEditorPartDeleted.Remove(UpdateMaxGunRange);
         }
