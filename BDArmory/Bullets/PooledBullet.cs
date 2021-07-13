@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -38,6 +39,7 @@ namespace BDArmory.Bullets
 
         public Vessel sourceVessel;
         public string sourceVesselName;
+        public string team;
         public Color lightColor = Misc.Misc.ParseColor255("255, 235, 145, 255");
         public Color projectileColor;
         public string bulletTexturePath;
@@ -83,6 +85,7 @@ namespace BDArmory.Bullets
         public float caliber = 1;
         public float bulletVelocity; //muzzle velocity
         public bool explosive = false;
+        public bool incendiary;
         public float apBulletMod = 0;
         public float ballisticCoefficient;
         public float flightTimeElapsed;
@@ -103,10 +106,18 @@ namespace BDArmory.Bullets
 
         #endregion Declarations
 
+        static RaycastHit[] hits;
+        static RaycastHit[] reverseHits;
         private Vector3[] linePositions = new Vector3[2];
 
         private double distanceTraveled = 0;
         public double DistanceTraveled { get { return distanceTraveled; } }
+
+        void Awake()
+        {
+            if (hits == null) { hits = new RaycastHit[100]; }
+            if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
+        }
 
         void OnEnable()
         {
@@ -283,10 +294,13 @@ namespace BDArmory.Bullets
 
         /// <summary>
         /// Move the bullet for the period of time, tracking distance traveled and accounting for drag and gravity.
+        /// This is now done using the second order symplectic leapfrog method.
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
         {
+            if (bulletDrop)
+                currentVelocity += 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position);
 
             //calculate flight time for drag purposes
             flightTimeElapsed += period;
@@ -310,16 +324,11 @@ namespace BDArmory.Bullets
                     break;
             }
 
-            if (bulletDrop)
-            {
-                // Gravity???
-                var gravity_ = FlightGlobals.getGeeForceAtPosition(transform.position);
-                //var gravity_ = Physics.gravity;
-                currentVelocity += gravity_ * period;
-            }
-
             //move bullet
             transform.position += currentVelocity * period;
+
+            if (bulletDrop)
+                currentVelocity += 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position);
         }
 
         /// <summary>
@@ -338,23 +347,35 @@ namespace BDArmory.Bullets
             currPosition = transform.position;
 
             float dist = currentVelocity.magnitude * period;
-            bulletRay = new Ray(currPosition, currentVelocity);
-            var hits = Physics.RaycastAll(bulletRay, dist, 9076737);
+            bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
+            var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, 9076737);
+            if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
+            {
+                hits = Physics.RaycastAll(bulletRay, dist, 9076737);
+                hitCount = hits.Length;
+            }
+            int reverseHitCount = 0;
             if (reverse)
             {
-                var reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
-                for (int i = 0; i < reverseHits.Length; ++i)
+                reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, 9076737);
+                if (reverseHitCount == reverseHits.Length)
                 {
-                    reverseHits[i].distance = dist - reverseHits[i].distance;
+                    reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
+                    reverseHitCount = reverseHits.Length;
                 }
-                hits = hits.Concat(reverseHits).ToArray();
+                for (int i = 0; i < reverseHitCount; ++i)
+                { reverseHits[i].distance = dist - reverseHits[i].distance; }
             }
-            if (hits.Length > 0)
+            if (hitCount + reverseHitCount > 0)
             {
-                var orderedHits = hits.OrderBy(x => x.distance);
+                var orderedHits = hits.Take(hitCount).Concat(reverseHits.Take(reverseHitCount)).OrderBy(x => x.distance);
 
                 using (var hitsEnu = orderedHits.GetEnumerator())
                 {
+                    RaycastHit hit;
+                    Part hitPart;
+                    KerbalEVA hitEVA;
+
                     while (hitsEnu.MoveNext())
                     {
                         if (!hasPenetrated || hasRicocheted || hasDetonated)
@@ -362,9 +383,9 @@ namespace BDArmory.Bullets
                             return true;
                         }
 
-                        RaycastHit hit = hitsEnu.Current;
-                        Part hitPart = null;
-                        KerbalEVA hitEVA = null;
+                        hit = hitsEnu.Current;
+                        hitPart = null;
+                        hitEVA = null;
 
                         try
                         {
@@ -377,6 +398,8 @@ namespace BDArmory.Bullets
                             return true;
                         }
 
+                        if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+
                         if (hitEVA != null)
                         {
                             hitPart = hitEVA.part;
@@ -386,7 +409,7 @@ namespace BDArmory.Bullets
                             else
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
                             distanceTraveled += hit.distance;
-                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
+                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team);
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             KillBullet(); // Kerbals are too thick-headed for penetration...
                             return true;
@@ -464,7 +487,7 @@ namespace BDArmory.Bullets
                         if (penetrationFactor > 1 && !hasRicocheted) //fully penetrated continue ballistic damage
                         {
                             hasPenetrated = true;
-                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
+                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team);
                             penTicker += 1;
                             ProjectileUtils.CheckPartForExplosion(hitPart);
 
@@ -502,7 +525,7 @@ namespace BDArmory.Bullets
 
                             distanceTraveled += hit.distance;
                             hasPenetrated = false;
-                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, hasRicocheted, sourceVessel, bullet.name);
+                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team);
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             hasDetonated = true;
                             KillBullet();
@@ -547,40 +570,44 @@ namespace BDArmory.Bullets
 
             if (distanceFromStart <= 500f) return false;
 
-            if (explosive && airDetonation)
+            if (!explosive || tntMass <= 0) return false;
+
+            if (airDetonation)
             {
                 if (distanceFromStart > maxAirDetonationRange || distanceFromStart > defaultDetonationRange)
                 {
                     return detonate = true;
                 }
-
-                if (proximityDetonation)
+            }
+            if (proximityDetonation)
+            {
+                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
                 {
-                    using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
+                    while (hitsEnu.MoveNext())
                     {
-                        while (hitsEnu.MoveNext())
+                        if (hitsEnu.Current == null) continue;
+
+                        try
                         {
-                            if (hitsEnu.Current == null) continue;
+                            Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                            if (partHit == null) continue;
+                            if (partHit.vessel == sourceVessel) continue;
+                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 
-                            try
-                            {
-                                Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                                if (partHit != null && partHit.vessel == sourceVessel) continue;
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                                Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
 
-                                if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                                    Debug.Log("[BDArmory.PooledBullet]: Bullet proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);
-
-                                return detonate = true;
-                            }
-                            catch (Exception e)
-                            {
-                                // ignored
-                                Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
-                            }
+                            return detonate = true;
+                        }
+                        catch (Exception e)
+                        {
+                            // ignored
+                            Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                         }
                     }
                 }
             }
+            
             return detonate;
         }
 
@@ -711,7 +738,7 @@ namespace BDArmory.Bullets
             //ricochet
             if (BDArmorySettings.BULLET_HITS)
             {
-                BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, true, caliber, 0);
+                BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, true, caliber, 0, null);
             }
 
             tracerStartWidth /= 2;

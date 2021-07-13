@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
@@ -57,6 +58,8 @@ namespace BDArmory.Control
             new SpawnLocation("The Scar", new Vector2d(16.88, 50.48)),
             new SpawnLocation("Western Approach", new Vector2d(0.2, -84.26)),
             new SpawnLocation("White Cliffs", new Vector2d(25.689, -144.14)),
+            new SpawnLocation("Ice Floe 1", new Vector2d(-73.0986, -114.983)),
+            new SpawnLocation("Ice Floe 2", new Vector2d(-71.0594, 60.3108)),
         };
 
         public static void Save()
@@ -86,12 +89,20 @@ namespace BDArmory.Control
             foreach (var spawnLocation in VesselSpawner.spawnLocations)
                 spawnLocations.AddValue("LOCATION", spawnLocation.ToString());
 
-            fileNode.Save(VesselSpawner.spawnLocationsCfg);
+            if (!Directory.GetParent(VesselSpawner.spawnLocationsCfg).Exists)
+            { Directory.GetParent(VesselSpawner.spawnLocationsCfg).Create(); }
+            var success = fileNode.Save(VesselSpawner.spawnLocationsCfg);
+            if (success && File.Exists(VesselSpawner.oldSpawnLocationsCfg)) // Remove the old settings if it exists and the new settings were saved.
+            { File.Delete(VesselSpawner.oldSpawnLocationsCfg); }
         }
 
         public static void Load()
         {
             ConfigNode fileNode = ConfigNode.Load(VesselSpawner.spawnLocationsCfg);
+            if (fileNode == null)
+            {
+                fileNode = ConfigNode.Load(VesselSpawner.oldSpawnLocationsCfg); // Try the old location.
+            }
             VesselSpawner.spawnLocations = new List<SpawnLocation>();
             if (fileNode != null)
             {

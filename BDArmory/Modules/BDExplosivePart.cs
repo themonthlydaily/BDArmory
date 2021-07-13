@@ -3,6 +3,7 @@ using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using BDArmory.Control;
 using BDArmory.FX;
+using BDArmory.Misc;
 using KSP.Localization;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +29,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonateAtMinimumDistance"), UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)] // Detonate At Minumum Distance
         public bool detonateAtMinimumDistance = false;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Status")]//Status
+        [KSPField(guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_Status")]//Status
         public string guiStatusString = "ARMED";
 
         //PartWindow buttons
@@ -48,7 +49,7 @@ namespace BDArmory.Modules
             }
         }
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Targeting Logic")]//Status
+        [KSPField(guiActive = false, guiActiveEditor = false, guiName = "Targeting Logic")]//Status
         public string guiIFFString = "Ignore Allies";
 
         //PartWindow buttons
@@ -113,7 +114,8 @@ namespace BDArmory.Modules
             Detonate();
         }
 
-        public bool Armed { get; set; } = true;
+        [KSPField(isPersistant = true)]
+        public bool Armed = true;
         public bool Shaped { get; set; } = false;
         public bool isMissile = true;
 
@@ -137,13 +139,8 @@ namespace BDArmory.Modules
                 part.OnJustAboutToBeDestroyed += DetonateIfPossible;
                 part.force_activate();
                 sourcevessel = vessel;
-                using (List<MissileFire>.Enumerator MF = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator())
-                    while (MF.MoveNext()) // grab the vessel the Weapon manager is on at start
-                    {
-                        if (MF.Current == null) continue;
-                        sourcevessel = MF.Current.vessel;
-                        break;
-                    }
+                var MF = VesselModuleRegistry.GetModule<MissileFire>(vessel, true);
+                if (MF != null) sourcevessel = MF.vessel; // grab the vessel the Weapon manager is on at start
             }
             if (part.FindModuleImplementing<MissileLauncher>() == null)
             {
@@ -176,6 +173,26 @@ namespace BDArmory.Modules
                 Fields["guiStatusString"].guiActive = true;
                 Fields["guiIFFString"].guiActiveEditor = true;
                 Fields["guiIFFString"].guiActive = true;
+                if (Armed)
+                {
+                    guiStatusString = "ARMED";
+                    Events["Toggle"].guiName = Localizer.Format("Disarm Warhead");
+                }
+                else
+                {
+                    guiStatusString = "Safe";
+                    Events["Toggle"].guiName = Localizer.Format("Arm Warhead");
+                }
+                if (IFF_On)
+                {
+                    guiIFFString = "Ignore Allies";
+                    Events["ToggleIFF"].guiName = Localizer.Format("Disable IFF");
+                }
+                else
+                {
+                    guiIFFString = "Indescriminate";
+                    Events["ToggleIFF"].guiName = Localizer.Format("Enable IFF");
+                }
                 if (manualOverride)
                 {
                     Fields["detonationRange"].guiActiveEditor = true;
@@ -238,7 +255,7 @@ namespace BDArmory.Modules
                     {
                         if (Armed)
                         {
-                            if (vessel.FindPartModulesImplementing<MissileFire>().Count <= 0) // doing it this way to avoid having to calcualte part trees in case of multiple MMG missiles on a vessel
+                            if (VesselModuleRegistry.GetModule<MissileFire>(vessel) == null)
                             {
                                 if (sourcevessel != null && sourcevessel != part.vessel)
                                 {
@@ -257,7 +274,7 @@ namespace BDArmory.Modules
 
         private void GetTeamID()
         {
-            var weaponManager = sourcevessel.FindPartModuleImplementing<MissileFire>();
+            var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(sourcevessel);
             IFFID = weaponManager != null ? weaponManager.teamString : null;
         }
 
@@ -342,10 +359,11 @@ namespace BDArmory.Modules
 
                     Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
                     if (partHit == null || partHit.vessel == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
                     if (partHit.vessel == vessel || partHit.vessel == sourcevessel) continue;
                     if (partHit.vessel.vesselType == VesselType.Debris) continue;
                     if (sourcevessel != null && partHit.vessel.vesselName.Contains(sourcevessel.vesselName)) continue;
-                    var weaponManager = partHit.vessel.FindPartModuleImplementing<MissileFire>();
+                    var weaponManager = VesselModuleRegistry.GetModule<MissileFire>(partHit.vessel);
                     if (IFF_On && (weaponManager == null || weaponManager.teamString == IFFID)) continue;
                     if (detonateAtMinimumDistance)
                     {

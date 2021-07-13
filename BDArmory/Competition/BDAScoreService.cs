@@ -26,6 +26,7 @@ namespace BDArmory.Competition
         public Dictionary<string, Dictionary<string, int>> killsOnTarget = new Dictionary<string, Dictionary<string, int>>();
         public Dictionary<string, int> assists = new Dictionary<string, int>();
         public Dictionary<string, int> deaths = new Dictionary<string, int>();
+        public Dictionary<string, double> HPremaining = new Dictionary<string, double>();
         public Dictionary<string, string> longestHitWeapon = new Dictionary<string, string>();
         public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
         public Dictionary<string, int> rammedPartsOut = new Dictionary<string, int>();
@@ -288,6 +289,7 @@ namespace BDArmory.Competition
             damageIn.Clear();
             damageOut.Clear();
             deaths.Clear();
+            HPremaining.Clear();
             hitsIn.Clear();
             hitsOnTarget.Clear();
             hitsOut.Clear();
@@ -415,6 +417,7 @@ namespace BDArmory.Competition
                 record.wins = ComputeWins(playerName);
                 record.kills = ComputeTotalKills(playerName);
                 record.deaths = ComputeTotalDeaths(playerName);
+                record.HPremaining = ComputeAverageHPremaining(playerName);
                 record.assists = ComputeTotalAssists(playerName);
                 record.death_order = ComputeDeathOrder(playerName);
                 record.death_time = ComputeDeathTime(playerName);
@@ -527,6 +530,17 @@ namespace BDArmory.Competition
             if (deaths.ContainsKey(playerName))
             {
                 result = deaths[playerName];
+            }
+            return result;
+        }
+
+        private double ComputeAverageHPremaining(string playerName)
+        {
+            double result = 0;
+            var HPLeft = BDACompetitionMode.Instance.Scores;
+            if (HPLeft.ContainsKey(playerName))
+            {
+                result = HPLeft[playerName].remainingHP;
             }
             return result;
         }

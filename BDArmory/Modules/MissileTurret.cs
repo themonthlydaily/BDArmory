@@ -72,16 +72,7 @@ namespace BDArmory.Modules
             get
             {
                 if (wm && wm.vessel == vessel) return wm;
-                wm = null;
-
-                List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    wm = mf.Current;
-                    break;
-                }
-                mf.Dispose();
+                wm = VesselModuleRegistry.GetMissileFire(vessel, true);
                 return wm;
             }
         }

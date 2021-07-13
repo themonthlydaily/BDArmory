@@ -56,9 +56,9 @@ namespace BDArmory.Modules
                 }
             }
             vessel.ActionGroups.ToggleGroup(KSPActionGroup.Custom10); // restart engines
-            if (!vessel.FindPartModulesImplementing<ModuleEngines>().Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+            if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
             {
-                foreach (var engine in vessel.FindPartModulesImplementing<ModuleEngines>())
+                foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                     engine.Activate();
             }
             disabled = false;
@@ -112,18 +112,24 @@ namespace BDArmory.Modules
             if (EMPDamage > EMPThreshold && !bricked && !disabled) //does the damage exceed the soft cap, but not the hard cap?
             {
                 disabled = true; //if so disable the craft
-                //Debug.Log("[BDArmory.ModuleDrainEC]: vessel disabled"); // add a screenmassage the craft's been EMP'd?
+                var message = "Disabling " + vessel.vesselName + " for " + rebootTimer + "s due to EMP damage";
+                Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
                 DisableVessel();
             }
             if (EMPDamage > BrickThreshold && !bricked) //does the damage exceed the hard cap?
             {
                 bricked = true; //if so brick the craft
-                //Debug.Log("[BDArmory.ModuleDrainEC]: vessel bricked");
+                var message = vessel.vesselName + " is bricked!";
+                Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
             }
             if (EMPDamage <= 0 && disabled && !bricked) //reset craft
             {
+                var message = "Rebooting " + vessel.vesselName;
+                Debug.Log("[BDArmory.ModuleDrainEC]: " + message);
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
                 EnableVessel();
-                //Debug.Log("[BDArmory.ModuleDrainEC]: vessel rebooted");
             }
         }
         private void DisableVessel()
@@ -159,13 +165,13 @@ namespace BDArmory.Modules
                 var engineFX = p.FindModuleImplementing<ModuleEnginesFX>();
                 if (engine != null)
                 {
-                    if (engine.enabled) //kill engines
+                    if (engine.enabled && engine.allowShutdown) //kill engines
                     {
                         engine.Shutdown();
                         engine.allowRestart = false;
                     }
                 }
-                if (engineFX != null)
+                if (engineFX != null && engine.allowShutdown) //unless they're lit SRBs
                 {
                     if (engineFX.enabled)
                     {

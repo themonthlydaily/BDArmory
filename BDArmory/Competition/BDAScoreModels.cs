@@ -199,6 +199,7 @@ namespace BDArmory.Competition
         public int assists;
         public int kills;
         public int deaths;
+        public double HPremaining;
         public float distance;
         public string weapon;
         public float death_order;

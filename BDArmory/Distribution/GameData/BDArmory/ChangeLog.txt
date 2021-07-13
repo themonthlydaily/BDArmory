@@ -1,4 +1,157 @@
-﻿v1.4.4.4
+﻿v1.4.7.1
+FIXES
+	- Quick fix for craft names using invalid filename chars in the remote orchestration.
+	- Hide the Asteroid Rain radius slider when Follow Spread is enabled.
+	- Fix some NREs.
+	- Bias testing:
+		- Add a random spawn order toggle to the vessel spawner window, which applies in single spawn mode (i.e., everything except continuous spawning).
+		- Add option to parsing script to only parse the first N logs for use in analysing trends in results.
+IMPROVEMENTS
+	- Compiled with KSP 1.12 assemblies.
+	- Improve MIA (survived/not-survived) definition in results logs.
+	- Add telemetry readout to crafts TeamIcons HUD.
+	- Ammo belts:
+		- Add API ammo option to Vulcans, .50 cals, GAU, and M230.
+		- Add 35x228AHEADBullet ammo option to Oerlikon Millennium turret
+
+v1.4.7.0
+FIXES
+	- Fixes weapons without ammo not firing if Infinite Ammo enabled
+	- EMPs will no longer shutdown SRBs
+	- Rounds with the 'Proximity' Fuze type now properly proximity detonate
+	- Adjust Krakensbane adjustments in 'full' Kerbal Safety to hopefully reduce amount of Krakenation.
+	- Make the default value for kerbal safety be 'partial' instead of 'full' due to stability issues with 'full'.
+	- Fix various NREs and memory leaks.
+IMPROVEMENTS
+	- General
+		- Make the WM, MMG, pilot AI and surface AI modules get ignored by explosions, bullets, rockets, lasers and missiles so that they can be placed externally without being easily destroyed.
+		- Disable Kerbal Safety "R.I.P." in-game messages as they were too spammy.
+		- Add option for tournament parser to parse multiple tournaments.
+		- Allow turrets other than the current one to track the main target so they're ready to fire if the current one is unable to do so.
+		- Optimizes RocketFx, reduces rocket performance impact
+		- Adds score reporting to proximity-fuzed rockets
+		- Rocket soundFX is now customizable in weapon .cfg using the 'rocketSoundPath' field
+		- Expands Scoring metrics; Adds HP remaining (how much of the vessel is left at end of heat) and MIA (is the vessel a wreck falling out of the sky, or an intact plane?) fields
+		- Minor tweaks to Ammo Type PAW descriptions
+		- Pulse laser beam duration now clamped to fire rate
+		- Adds Incendiary ammo, plus associated BattleDamage support
+		- Adds Custom Ammo Loadouts; weapons with multiple ammo types can be configured to fire non-homogeneous loadouts (e.g. AP, AP, AP, HE, AP...)
+		- Adds Custom Ammo Belt config GUI
+		- Weapons can be configured to use custom ammo belts in .cfg with useCustomBelt = true and ammoBelt = foo; bar; 
+		- New VesselModuleRegistry class for much faster access to vessel modules which gives a nice overall performance boost.
+		- New Asteroid Rain game mode added.
+	- Resource stealing:
+		- Change resource steal to drain and fill containers evenly w.r.t. fraction of the containers, still respecting priority settings.
+		- Add option for counter-measure stealing.
+		- Add a few fuel and ammo resources that were missed.
+		- Steal integer amounts of ammo and counter-measures.
+	- Altitudes:
+		- Add Max Altitude (AGL) setting to pilot AI with a toggle to enable/disable it.
+		- Add action group options for 'Toggle Max Altitude', 'Enable Max Altitude' and 'Disable Max Altitude'.
+		- Change killer GM altitude limits to AGL.
+	- Team Icons
+		- Adds reminder message to toggle stock vessel labels if they are enabled
+		- Adds check if legacy Team Icons is installed. Remove prior installations of Team Icons
+		- Integrates Team Icons into BDA
+		- Adds User-selectable colors
+		- Team colors no longer change if a team is completely destroyed
+		- Adds Team Color indicators to Vessel Switcher GUI
+		- Paintball mode now uses Team-colored paintballs for easy hit tracking
+		- Adds Rocket alert icons
+		- Threat Indicators now show all vessels attacking a vessel + 200f
+		- Adds Telemetry HUD to Craft Icons
+	- Battle Damage
+		- Adds Damage Multiplier slider for Battle Damage Ammo Explosion damage
+		- Ammo Explosion now properly scales damage based on distance, ammo remaining in the box
+		- Ammo Explosions now properly report damage from explosions to attacker vessel responsible for triggering the explosion
+		- Fuel Tank explosions now less damaging, now use Ammo Explosion Damage Mult setting
+		- Adds ability to set lower limit on Engine thrust reduction from battle Damage
+		- Adds adjustable threshold for engine kills from Battle Damage
+		- Crew Fatalities now report name of vessel pilot was in
+		- Crew Fatalities now knock out AI if all pilots killed
+		- Self-Sealing tanks now prevent leaks unless below 50% HP
+		- Leak rate now dependent on tank pressure
+		- Fire burn rate now dependent on tank volume and available fuel
+		- Firebottles temporarily shut down burning engines to extinguish them
+		- Fires can now add heat to burning part
+		- If Fire Damage and Fire heat enabled, fires will begin do damage once part temp exceeds damage threshold
+		- Fueltanks/ammo boxes that are too hot will cook off
+		- Fires now properly recognize MonoPropellant tanks
+		- Fires now distinguish between surface and internal. Internal fires require firebottles to extinguish, surface fires will burn for a short duration, but not consume resources
+
+v1.4.6.2
+FIXES
+	- Add in steer limiter localization text (is used on Modular Missile Guidance)
+	- Always score damage from lasers, but only score hits with pulse lasers or when the accumulator is sufficient.
+	- Fix bug in advanced targeting for fixed guns.
+	- Adjust intake damage amounts.
+IMPROVEMENTS
+	- Add SRB battle damage.
+	- Filled command seats can extinguish fires.
+
+v1.4.6.1
+FIXES
+	- Fix various occasional NREs.
+	- Fix bug in parser for 'dead teams'.
+	- When a missile has lost its MissileBase set its isMissile tag to false so it no longer counts as a missile.
+	- Don't detonate CASE ammo when the vessel is null, packed or not loaded.
+	- Fixed overheated guns sometimes not being detected as overheated.
+	- Fix AI having issues avoiding terrain when in an inverted dive (would happen most frequently during missile evasion).
+IMPROVEMENTS
+	- Updated HP patch for AoA Technologies.
+	- Add check for whether guns with low RPM can fire soon, switch to a different weapon if the next time a low RPM gun can fire is greater than the Weapon Manager fire interval setting.
+	- Re-add multiple subsystem targeting to the advanced targeting.
+
+v1.4.6.0
+FIXES
+	- Store the armed/IFF state in the craft files instead of just the GUI strings.
+	- Use the correct ShipConstruct in the editor for setting the max gun range and set a minimum of 10 for the max gun range to avoid breaking the part window sliders.
+	- Add another check for vessels disappearing during spawning.
+	- Add a 0.1s time-out to the ballistic trajectory closest approach simulation to prevent freezes.
+	- Pause fire effects when the game is paused.
+	- Store the armed and IFF states of explosive parts, not their GUI strings.
+	- Fix missiles not being targeted when Engage Missiles option was selected.
+	- Fix for the AI stopping extending prematurely.
+	- Fix extending to get enough distance to fire missiles not working.
+IMPROVEMENTS
+	- Migrate non-static configs to the PluginData folder to avoid invalidating the ModuleManager cache (should give slightly faster start-up times).
+	- Add a Game Modes section to the settings and rearrange the various toggles to match.
+	- Add Heart-Bleed and Resource-Steal game modes.
+		- Fuel resources that can be stolen are 'LiquidFuel', 'SolidFuel', 'Oxidizer', 'IntakeAir' and 'ElectricCharge'.
+		- Ammo resources that can be stolen are those ending in 'Ammo', 'Shells' and 'Rocket'.
+	- Remove Target Missiles toggle from the weapons manager, this is now automatically set based on if weapons onboard the craft have the engage missiles option enabled.
+	- Expose AI extending settings to be editable by user. The AI extends when all of the below conditions are true:
+		- The target is outside of an angle in front of the craft (default of 78 degrees, now selected using Extend Target Angle).
+		- The target's speed is less than the craft's speed (default of target's speed is less than 80% of craft speed, now selected using Extend Target Velocity Factor).
+		- The target is close (default of within 400 meters, now selected using Extend Target Distance).
+	- Advanced targeting setting deprecated - targeting options are now per vessel.
+	- Max turret target setting deprecated - is now set per vessel.
+	- Adds Max Turret Targets setting to Weapon manager.
+	- Adds Targeting Options to Weapon manager.
+
+v1.4.5.0
+FIXES
+	- Fix the floating origin corrections to the vessel traces and apply the corrective rotations to the coordinates such that the local coordinates are (east, up, north) and the identity rotation is a craft pointing nose up with the underside pointing north. Include a simple python script to plot the traces.
+	- Re-enable the extending debugging (when debug labels are on).
+	- Fix the smoothing of the target acceleration and velocity for long-range targets to be applied dynamically so as to not affect short range targets and to reset when switching targets.
+IMPROVEMENTS
+	- Update the in-flight Guard Menu to match the settings in the weapon manager in the SPH.
+	- Dynamically adjust (max) gun range based on the guns that are actually on a vessel.
+	- Add log and competition status messages about disabling a vessel due to EMP damage.
+	- Upgrade the numerical integrator for bullets and ballistic trajectory simulations to use the 2nd order symplectic leapfrog method (this vastly improves the accuracy and speed of the trajectory simulations). Allows for ballistic aiming out to at least 50km.
+	- Include dead teams information in the results.
+	- Re-worked steer limiter. Steer limits are now based on two control points, defined by four variables
+		- Low Speed Control Point: Steer limit and Speed
+		- High Speed Control Point: Steer limit and Speed
+		- Below the low speed control point speed, the limit will be equal to the low speed steer limit.
+		- Above the high speed control point speed, the speed will be equal to the high speed control point limit.
+		- Between the two control points, the steer limit will vary linearly based on the craft's current speed.
+	- Add toggle for whether competition status messages are displayed.
+	- Change clearance check minimum drop time to greater than or equal to 0.1s instead of greater than 0.3s
+	- Add 1.5 safety factor to blast radius determination for missile evasion
+	- Clamp the minimum radar missile FOV used for missile evasion to 40 degrees, results in fewer instances of craft turning back towards a missile at inopportune times.
+
+v1.4.4.4
 FIXES
 	- Fix missiles firing without exhaust and heat-seeking missiles firing without a target.
 		- Regenerate exhaust prefab object pools when they're detected to contain nulls due to scene changes or reloads.

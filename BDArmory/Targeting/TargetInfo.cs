@@ -27,7 +27,10 @@ namespace BDArmory.Targeting
         public bool alreadyScheduledRCSUpdate = false;
         public float radarMassAtUpdate = 0f;
 
-        public List<Part> targetPartList = new List<Part>();
+        public List<Part> targetWeaponList = new List<Part>();
+        public List<Part> targetEngineList = new List<Part>();
+        public List<Part> targetCommandList = new List<Part>();
+        public List<Part> targetMassList = new List<Part>();
 
         public bool isLandedOrSurfaceSplashed
         {
@@ -180,39 +183,23 @@ namespace BDArmory.Targeting
                     return;
                 }
             }
-            // IEnumerator otherInfo = vessel.gameObject.GetComponents<TargetInfo>().GetEnumerator();
-            // while (otherInfo.MoveNext())
-            // {
-            //     if ((object)otherInfo.Current != this)
-            //     {
-            //         Destroy(this);
-            //         return;
-            //     }
-            // }
 
             Team = null;
-            bool foundMf = false;
-            List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (mf.MoveNext())
+            var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null)
             {
-                foundMf = true;
-                Team = mf.Current.Team;
-                weaponManager = mf.Current;
-                break;
+                Team = mf.Team;
+                weaponManager = mf;
             }
-            mf.Dispose();
-
-            if (!foundMf)
+            else
             {
-                List<MissileBase>.Enumerator ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator();
-                while (ml.MoveNext())
+                var ml = VesselModuleRegistry.GetMissileBase(vessel, true);
+                if (ml != null)
                 {
                     isMissile = true;
-                    MissileBaseModule = ml.Current;
-                    Team = ml.Current.Team;
-                    break;
+                    MissileBaseModule = ml;
+                    Team = ml.Team;
                 }
-                ml.Dispose();
             }
 
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
@@ -228,6 +215,7 @@ namespace BDArmory.Targeting
                 //massRoutine = StartCoroutine(MassRoutine());              // TODO: CHECK BEHAVIOUR AND SIDE EFFECTS!
             }
             UpdateTargetPartList();
+            GameEvents.onVesselDestroy.Add(CleanFriendliesEngaging);
         }
 
         void OnPeaceEnabled()
@@ -241,6 +229,8 @@ namespace BDArmory.Targeting
             BDArmorySetup.OnPeaceEnabled -= OnPeaceEnabled;
             vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselPartCountChanged.Remove(VesselModified);
+            GameEvents.onVesselDestroy.Remove(CleanFriendliesEngaging);
+            BDATargetManager.RemoveTarget(this);
         }
 
         IEnumerator UpdateRCSDelayed()
@@ -260,7 +250,7 @@ namespace BDArmory.Targeting
 
         void Update()
         {
-            if (!vessel)
+            if (vessel == null)
             {
                 AboutToBeDestroyed();
             }
@@ -276,54 +266,59 @@ namespace BDArmory.Targeting
 
         public void UpdateTargetPartList()
         {
-            targetPartList.Clear();
-            int targetCount = 0;
-            if (BDArmorySettings.TARGET_COMMAND || BDArmorySettings.TARGET_ENGINES || BDArmorySettings.TARGET_WEAPONS)
-            {
-                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                    while (part.MoveNext())
+            targetCommandList.Clear();
+            targetWeaponList.Clear();
+            targetMassList.Clear();
+            targetEngineList.Clear();
+            //anything else? fueltanks? - could be useful if incindiary ammo gets implemented
+            //power generation? - radiators/generators - if doing CoaDE style fights/need reactors to power weapons
+
+            if (vessel == null) return;
+            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                while (part.MoveNext())
+                {
+                    if (part.Current == null) continue;
+
+                    if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
                     {
-                        if (part.Current == null) continue;
-                        if (BDArmorySettings.TARGET_WEAPONS)
-                        {
-                            if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
-                            {
-                                targetPartList.Add(part.Current);
-                                targetCount++;
-                            }
-                        }
-                        if (BDArmorySettings.TARGET_ENGINES)
-                        {
-                            if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
-                            {
-                                targetPartList.Add(part.Current);
-                                targetCount++;
-                            }
-                        }
-                        if (BDArmorySettings.TARGET_COMMAND)
-                        {
-                            if (part.Current.FindModuleImplementing<ModuleCommand>() || part.Current.FindModuleImplementing<KerbalSeat>())
-                            {
-                                targetPartList.Add(part.Current);
-                                targetCount++;
-                            }
-                        }
+                        targetWeaponList.Add(part.Current);
                     }
-            }
-            //else if nothing prioritized, or all priority targets destroyed
-            if (targetCount < 1)
-            {
-                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                    while (part.MoveNext())
+
+                    if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
                     {
-                        targetPartList.Add(part.Current);
+                        targetEngineList.Add(part.Current);
                     }
-            }
-            targetPartList = targetPartList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
-            targetPartList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
-            //Debug.Log("[BDArmory.MTD]: Rebuilt target part list, count: " + targetPartList.Count);
+
+                    if (part.Current.FindModuleImplementing<ModuleCommand>() || part.Current.FindModuleImplementing<KerbalSeat>())
+                    {
+                        targetCommandList.Add(part.Current);
+                    }
+                    targetMassList.Add(part.Current);
+                }
+            targetMassList = targetMassList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
+            targetMassList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+            if (targetMassList.Count > 10)
+                targetMassList.RemoveRange(10, (targetMassList.Count - 10)); //trim to max turret targets
+            targetCommandList = targetCommandList.OrderBy(w => w.mass).ToList();
+            targetCommandList.Reverse();
+            if (targetCommandList.Count > 10)
+                targetCommandList.RemoveRange(10, (targetCommandList.Count - 10));
+            targetEngineList = targetEngineList.OrderBy(w => w.mass).ToList();
+            targetEngineList.Reverse();
+            if (targetEngineList.Count > 10)
+                targetEngineList.RemoveRange(10, (targetEngineList.Count - 10));
+            targetWeaponList = targetWeaponList.OrderBy(w => w.mass).ToList();
+            targetWeaponList.Reverse();
+            if (targetWeaponList.Count > 10)
+                targetWeaponList.RemoveRange(10, (targetWeaponList.Count - 10));
         }
 
+        void CleanFriendliesEngaging(Vessel v)
+        {
+            var toRemove = friendliesEngaging.Where(kvp => kvp.Value == null).Select(kvp => kvp.Key).ToList();
+            foreach (var key in toRemove)
+            { friendliesEngaging.Remove(key); }
+        }
         public int NumFriendliesEngaging(BDTeam team)
         {
             if (friendliesEngaging.TryGetValue(team, out var friendlies))
@@ -339,7 +334,7 @@ namespace BDArmory.Targeting
             float maxThrust = 0;
             float finalThrust = 0;
 
-            using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v).GetEnumerator())
                 while (engines.MoveNext())
                 {
                     if (engines.Current == null) continue;
@@ -384,7 +379,7 @@ namespace BDArmory.Targeting
             if (myMf == null) return 0;
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
-            using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
