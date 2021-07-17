@@ -88,6 +88,9 @@ namespace BDArmory.UI
         // FIXME Round 4
         public bool round4running = false;
         #endregion
+        #region GUI strings
+        string tournamentStyle = "RNG";
+        #endregion
 
         #region Styles
         Rect SLineRect(float line)
@@ -488,6 +491,18 @@ namespace BDArmory.UI
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentDelayBetweenHeats")}: ({BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS}s)", leftLabel); // Delay between heats
                 BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS, 0f, 15f));
 
+                switch (BDArmorySettings.TOURNAMENT_STYLE)
+                {
+                    case 0:
+                        tournamentStyle = "RNG";
+                        break;
+                    case 1:
+                        tournamentStyle = "N-choose-K";
+                        break;
+                }
+                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentStyle")}: ({tournamentStyle})", leftLabel); // Tournament Style
+                BDArmorySettings.TOURNAMENT_STYLE = Mathf.RoundToInt(GUI.HorizontalSlider(SRightButtonRect(line), BDArmorySettings.TOURNAMENT_STYLE, 0f, 1f));
+
                 var value = BDArmorySettings.TOURNAMENT_ROUNDS < 21 ? BDArmorySettings.TOURNAMENT_ROUNDS : (16 + BDArmorySettings.TOURNAMENT_ROUNDS / 5);
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentRounds")}:  ({BDArmorySettings.TOURNAMENT_ROUNDS})", leftLabel); // Rounds
                 value = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 36f));
@@ -508,6 +523,8 @@ namespace BDArmory.UI
 
                     BDArmorySettings.TOURNAMENT_FULL_TEAMS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TOURNAMENT_FULL_TEAMS, Localizer.Format("#LOC_BDArmory_Settings_TournamentFullTeams"));  // Re-use craft to fill teams
                 }
+
+                // Tournament status
                 if (BDATournament.Instance.tournamentType == TournamentType.FFA)
                 {
                     GUI.Label(SLineRect(++line), $"ID: {BDATournament.Instance.tournamentID}, {BDATournament.Instance.vesselCount} vessels, {BDATournament.Instance.numberOfRounds} rounds, {BDATournament.Instance.numberOfHeats} heats per round ({BDATournament.Instance.heatsRemaining} remaining).", leftLabel);
@@ -530,7 +547,15 @@ namespace BDArmory.UI
                         if (GUI.Button(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TournamentSetup"), BDArmorySetup.BDGuiSkin.button)) // Setup tournament
                         {
                             ParseAllSpawnFieldsNow();
-                            BDATournament.Instance.SetupTournament(BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION, BDArmorySettings.TOURNAMENT_ROUNDS, BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT, BDArmorySettings.TOURNAMENT_TEAMS_PER_HEAT, BDArmorySettings.TOURNAMENT_VESSELS_PER_TEAM, BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS);
+                            BDATournament.Instance.SetupTournament(
+                                BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION,
+                                BDArmorySettings.TOURNAMENT_ROUNDS,
+                                BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT,
+                                BDArmorySettings.TOURNAMENT_TEAMS_PER_HEAT,
+                                BDArmorySettings.TOURNAMENT_VESSELS_PER_TEAM,
+                                BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                                BDArmorySettings.TOURNAMENT_STYLE
+                            );
                             BDArmorySetup.SaveConfig();
                         }
 
