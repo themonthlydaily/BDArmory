@@ -79,7 +79,8 @@ namespace BDArmory.Modules
 
         void OnVesselCreate(Vessel v)
         {
-            EnsureVesselJammer();
+            if (v == vessel)
+                EnsureVesselJammer();
         }
 
         public void EnableJammer()
