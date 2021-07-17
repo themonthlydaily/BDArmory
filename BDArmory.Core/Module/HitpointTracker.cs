@@ -636,10 +636,6 @@ namespace BDArmory.Core.Module
                 ArmorTypeNum = 1; //reset to 'None'
             }
             armorInfo = ArmorInfo.armors[ArmorInfo.armorNames[(int)ArmorTypeNum - 1]]; //what does this return if armorname cannot be found (mod armor removed/not present in install?)
-            if (startsArmored)
-            {
-                ArmorTypeNum = 2;
-            }
             //if (SelectedArmorType != ArmorInfo.armorNames[(int)ArmorTypeNum - 1]) //armor selection overridden by Editor widget
             //{
             //	armorInfo = ArmorInfo.armors[SelectedArmorType];
