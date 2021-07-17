@@ -44,6 +44,7 @@ namespace BDArmory.Modules
         public int missilesAway;
 
         public float totalHP;
+        public float currentHP;
 
         public bool hasLoadedRippleData;
         float rippleTimer;
@@ -980,8 +981,10 @@ namespace BDArmory.Modules
                 GameEvents.onPartJointBreak.Add(OnPartJointBreak);
                 GameEvents.onPartDie.Add(OnPartDie);
                 GameEvents.onVesselPartCountChanged.Add(UpdateMaxGunRange);
+                GameEvents.onVesselPartCountChanged.Add(UpdateCurrentHP);
 
-                GetTotalHP();
+                totalHP = GetTotalHP();
+                currentHP = totalHP;
                 UpdateMaxGunRange(vessel);
 
                 AI = VesselModuleRegistry.GetIBDAIControl(vessel, true);
@@ -1055,8 +1058,9 @@ namespace BDArmory.Modules
             }
         }
 
-        public void GetTotalHP() // get total craft HP
+        public int GetTotalHP() // get total craft HP
         {
+            int HP = 0;
             using (List<Part>.Enumerator p = vessel.parts.GetEnumerator())
                 while (p.MoveNext())
                 {
@@ -1071,9 +1075,17 @@ namespace BDArmory.Modules
                         totalHP += hp.Hitpoints;
                     }
                     */
-                    ++totalHP;
+                    ++HP;
+                    // ++totalHP;
                     //Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " part count: " + totalHP);
                 }
+            return HP;
+        }
+
+        void UpdateCurrentHP(Vessel v)
+        {
+            if (v == vessel)
+            { currentHP = GetTotalHP(); }
         }
 
         public override void OnUpdate()
@@ -1212,6 +1224,7 @@ namespace BDArmory.Modules
             GameEvents.onPartJointBreak.Remove(OnPartJointBreak);
             GameEvents.onPartDie.Remove(OnPartDie);
             GameEvents.onVesselPartCountChanged.Remove(UpdateMaxGunRange);
+            GameEvents.onVesselPartCountChanged.Remove(UpdateCurrentHP);
             GameEvents.onEditorPartPlaced.Remove(UpdateMaxGunRange);
             GameEvents.onEditorPartDeleted.Remove(UpdateMaxGunRange);
         }
@@ -3597,6 +3610,47 @@ namespace BDArmory.Modules
                             targetWeaponRPM = candidateRPM;
                         }
 
+                        if (candidateClass == WeaponClasses.Rocket)
+                        {
+                            // For point defense, favor turrets and RoF
+                            float candidateRocketAccel = (((ModuleWeapon)item.Current).thrust / ((ModuleWeapon)item.Current).rocketMass);
+                            float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute/2;
+                            bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
+                            float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
+                            float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
+                            bool compareRocketRPM = false;
+
+                            if (targetWeapon != null && (candidateYTraverse > 0 || candidatePTraverse > 0))
+                            {
+                                candidateRPM *= 2.0f; // weight selection towards turrets
+                            }
+                            if ((targetWeapon != null) && targetRocketAccel < candidateRocketAccel)
+                            {
+                                candidateRPM *= 1.5f; //weight towards faster rockets
+                            }
+                            if (!candidatePFuzed)
+                            {
+                                candidateRPM *= 0.01f; //negatively weight against contact-fuze rockets
+                            }
+                            if (candidateMinrange > distance)
+                            {
+                                candidateRPM *= .01f; //if within min range, massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                            }
+                            if ((targetWeapon != null) && targetWeapon.GetWeaponClass() == WeaponClasses.Gun)
+                            {
+                                compareRocketRPM = true;
+                            }
+                            if ((targetWeapon != null) && (targetWeaponRPM > candidateRPM))
+                                continue; //dont replace better guns (but do replace missiles)
+                            if ((compareRocketRPM && (targetWeaponRPM * 2) < candidateRPM) || (!compareRocketRPM && (targetWeaponRPM) < candidateRPM))
+                            {
+                                targetWeapon = item.Current;
+                                targetRocketAccel = candidateRocketAccel;
+                                targetWeaponRPM = candidateRPM;
+                            }
+                        }
+
                         if (candidateClass != WeaponClasses.Missile) continue;
                         // TODO: for AA, favour higher thrust+turnDPS
 
@@ -3645,9 +3699,19 @@ namespace BDArmory.Modules
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                             bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
+                              float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
+
+                            if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
+                                continue; //dont replace missiles within their engage range
 
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //dont replace a higher priority weapon with a lower priority one
+
+                            if (targetWeapon != null && (candidateYTraverse > 0 || candidatePTraverse > 0))
+                            {
+                                candidateRPM *= 2.0f; // weight selection towards turrets
+                            }
 
                             if ((targetWeapon != null) && targetRocketAccel < candidateRocketAccel)
                             {
@@ -4021,24 +4085,42 @@ namespace BDArmory.Modules
                         if ((distance > gunRange) && (targetWeapon != null))
                             continue;
                         // For Ground Attack, favour higher blast strength
+                        float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                         float candidateImpact = (((ModuleWeapon)item.Current).bulletMass * ((ModuleWeapon)item.Current).bulletVelocity);
                         int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
+                        bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
+                        float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
+                        float candidateTraverse = ((ModuleWeapon)item.Current).yawRange * ((ModuleWeapon)item.Current).maxPitch;
+                        float candidateRadius = ((ModuleWeapon)item.Current).targetRadius;
+                        float candidateCaliber = ((ModuleWeapon)item.Current).caliber;
 
                         if (targetWeaponPriority > candidatePriority)
                             continue; //dont replace better guns or missiles within their engage range
 
+                        if (candidateRadius > 4) //smmall vees target with high-ROF weapons to improve hit chance, bigger stuff use bigger guns
+                        {
+                            candidateRPM = candidateImpact*candidateRPM;
+                        }
+                        if (candidateGimbal && candidateTraverse > 0)
+                        {
+                            candidateRPM *= 1.5f; // weight selection towards turrets
+                        }
+                        if (candidateMinrange > distance)
+                        {
+                            candidateRPM *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                        }
                         if (targetWeaponPriority < candidatePriority) //use priority gun
                         {
                             targetWeapon = item.Current;
-                            targetWeaponImpact = candidateImpact;
+                            targetWeaponImpact = candidateRPM;
                             targetWeaponPriority = candidatePriority;
                         }
                         else //if equal priority, use standard weighting
                         {
-                            if (targetWeaponImpact < candidateImpact) //don't replace bigger guns
+                            if (targetWeaponImpact < candidateRPM) //don't replace bigger guns
                             {
                                 targetWeapon = item.Current;
-                                targetWeaponImpact = candidateImpact;
+                                targetWeaponImpact = candidateRPM;
                                 targetWeaponPriority = candidatePriority;
                             }
                         }
@@ -4127,7 +4209,8 @@ namespace BDArmory.Modules
             if (engageableWeapon == null) return true;
             if (!engageableWeapon.engageEnabled) return true;
             //if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false; //covered in weapon select logic
-            if (distanceToTarget > engageableWeapon.GetEngagementRangeMax()) return false;
+             //if (distanceToTarget > engageableWeapon.GetEngagementRangeMax()) return false;
+            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax()*1.1f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
 
             switch (weaponCandidate.GetWeaponClass())
             {

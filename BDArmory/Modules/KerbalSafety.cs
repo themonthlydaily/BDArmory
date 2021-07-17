@@ -400,7 +400,7 @@ namespace BDArmory.Modules
             {
                 Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is MIA. Ejected: " + ejected + ", deployed chute: " + deployingChute);
             }
-            if (KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName))
+            if (kerbalName != null && KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName))
             {
                 KerbalSafetyManager.Instance.kerbals.Remove(kerbalName); // Stop managing this kerbal.
             }

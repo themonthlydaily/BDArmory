@@ -74,7 +74,7 @@ namespace BDArmory.Control
          * The last heat in a round will have fewer craft if the number of craft is not divisible by the number of vessels per heat.
          * The vessels per heat is limited to the number of available craft.
          */
-        public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat)
+        public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat, int tournamentStyle)
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.FFA;
@@ -106,36 +106,81 @@ namespace BDArmory.Control
                     break;
             }
             rounds = new Dictionary<int, Dictionary<int, VesselSpawner.SpawnConfig>>();
-            Debug.Log("[BDArmory.BDATournament]: Generating " + numberOfRounds + " rounds for tournament " + tournamentID + ", each with " + vesselsPerHeat + " vessels per heat.");
-            for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
+            switch (tournamentStyle)
             {
-                craftFiles.Shuffle();
-                int vesselsThisHeat = vesselsPerHeat;
-                int count = 0;
-                List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
-                rounds.Add(rounds.Count, new Dictionary<int, VesselSpawner.SpawnConfig>());
-                int heatIndex = 0;
-                while (selectedFiles.Count > 0)
-                {
-                    rounds[roundIndex].Add(rounds[roundIndex].Count, new VesselSpawner.SpawnConfig(
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                        BDArmorySettings.VESSEL_SPAWN_DISTANCE,
-                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                        true, // Kill everything first.
-                        BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
-                        0, // Number of teams.
-                        null, // List of team numbers.
-                        null, // List of List of teams' vessels.
-                        null, // No folder, we're going to specify the craft files.
-                        selectedFiles.ToList() // Add a copy of the craft files list.
-                    ));
-                    count += vesselsThisHeat;
-                    vesselsThisHeat = heatIndex++ < fullHeatCount ? vesselsPerHeat : vesselsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of craft files.
-                    selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
-                }
+                case 0: // RNG
+                    {
+                        message = $"Generating {numberOfRounds} randomised rounds for tournament {tournamentID} for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)}, each with {vesselsPerHeat} vessels per heat.";
+                        Debug.Log("[BDArmory.BDATournament]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
+                        {
+                            craftFiles.Shuffle();
+                            int vesselsThisHeat = vesselsPerHeat;
+                            int count = 0;
+                            List<string> selectedFiles = craftFiles.Take(vesselsThisHeat).ToList();
+                            rounds.Add(rounds.Count, new Dictionary<int, VesselSpawner.SpawnConfig>());
+                            int heatIndex = 0;
+                            while (selectedFiles.Count > 0)
+                            {
+                                rounds[roundIndex].Add(rounds[roundIndex].Count, new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                    true, // Kill everything first.
+                                    BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
+                                    0, // Number of teams.
+                                    null, // List of team numbers.
+                                    null, // List of List of teams' vessels.
+                                    null, // No folder, we're going to specify the craft files.
+                                    selectedFiles.ToList() // Add a copy of the craft files list.
+                                ));
+                                count += vesselsThisHeat;
+                                vesselsThisHeat = heatIndex++ < fullHeatCount ? vesselsPerHeat : vesselsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of craft files.
+                                selectedFiles = craftFiles.Skip(count).Take(vesselsThisHeat).ToList();
+                            }
+                        }
+                        break;
+                    }
+                case 1: // N-choose-K
+                    {
+                        var nCr = N_Choose_K(vesselCount, vesselsPerHeat);
+                        message = $"Generating a round-robin style tournament for {vesselCount} vessels in AutoSpawn{(folder == "" ? "" : "/" + folder)} with {vesselsPerHeat} vessels per heat and {numberOfRounds} rounds. This requires {numberOfRounds * nCr} heats.";
+                        Debug.Log($"[BDArmory.BDATournament]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        // Generate all combinations of vessels for a round.
+                        var heatList = new List<VesselSpawner.SpawnConfig>();
+                        foreach (var combination in Combinations(vesselCount, vesselsPerHeat))
+                        {
+                            heatList.Add(new VesselSpawner.SpawnConfig(
+                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                true, // Kill everything first.
+                                BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
+                                0, // Number of teams.
+                                null, // List of team numbers.
+                                null, // List of List of teams' vessels.
+                                null, // No folder, we're going to specify the craft files.
+                                combination.Select(i => craftFiles[i]).ToList() // Add a copy of the craft files list.
+                            ));
+                        }
+                        // Populate the rounds.
+                        for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
+                        {
+                            heatList.Shuffle(); // Randomise the playing order within each round.
+                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, VesselSpawner.SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                        }
+                        break;
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException("tournamentStyle", "Invalid tournament style value - not implemented.");
             }
             teamFiles = null; // Clear the teams lists.
             return true;
@@ -150,7 +195,7 @@ namespace BDArmory.Control
         /// <param name="vesselsPerTeam"></param>
         /// <param name="numberOfTeams"></param>
         /// <returns></returns>
-        public bool Generate(string folder, int numberOfRounds, int teamsPerHeat, int vesselsPerTeam, int numberOfTeams)
+        public bool Generate(string folder, int numberOfRounds, int teamsPerHeat, int vesselsPerTeam, int numberOfTeams, int tournamentStyle)
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.Teams;
@@ -216,38 +261,85 @@ namespace BDArmory.Control
 
             int fullHeatCount = teamFiles.Count / teamsPerHeat;
             rounds = new Dictionary<int, Dictionary<int, VesselSpawner.SpawnConfig>>();
-            Debug.Log("[BDArmory.BDATournament]: Generating " + numberOfRounds + " rounds for tournament " + tournamentID + ", each with " + teamsPerHeat + " teams per heat.");
-            for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
+            switch (tournamentStyle)
             {
-                teamsIndex.Shuffle();
-                int teamsThisHeat = teamsPerHeat;
-                int count = 0;
-                var selectedTeams = teamsIndex.Take(teamsThisHeat).ToList();
-                var selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam);
-                rounds.Add(rounds.Count, new Dictionary<int, VesselSpawner.SpawnConfig>());
-                int heatIndex = 0;
-                while (selectedTeams.Count > 0)
-                {
-                    rounds[roundIndex].Add(rounds[roundIndex].Count, new VesselSpawner.SpawnConfig(
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                        BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                        BDArmorySettings.VESSEL_SPAWN_DISTANCE,
-                        BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                        BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                        true, // Kill everything first.
-                        BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
-                        numberOfTeams, // Number of teams indicator.
-                        null, //selectedCraft.Select(c => c.Count).ToList(), // Not used here.
-                        selectedCraft, // List of lists of vessels. For splitting specific vessels into specific teams.
-                        null, // No folder, we're going to specify the craft files.
-                        null //selectedCraft.SelectMany(c => c.ToList()).ToList() // Add a copy of the craft files list.
-                    ));
-                    count += teamsThisHeat;
-                    teamsThisHeat = heatIndex++ < fullHeatCount ? teamsPerHeat : teamsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of teams.
-                    selectedTeams = teamsIndex.Skip(count).Take(teamsThisHeat).ToList();
-                    selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam);
-                }
+                case 0: // RNG
+                    {
+                        message = $"Generating {numberOfRounds} randomised rounds for tournament {tournamentID} for {teamCount} teams in AutoSpawn{(folder == "" ? "" : "/" + folder)}, each with {teamsPerHeat} teams per heat.";
+                        Debug.Log("[BDArmory.BDATournament]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
+                        {
+                            teamsIndex.Shuffle();
+                            int teamsThisHeat = teamsPerHeat;
+                            int count = 0;
+                            var selectedTeams = teamsIndex.Take(teamsThisHeat).ToList();
+                            var selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam);
+                            rounds.Add(rounds.Count, new Dictionary<int, VesselSpawner.SpawnConfig>());
+                            int heatIndex = 0;
+                            while (selectedTeams.Count > 0)
+                            {
+                                rounds[roundIndex].Add(rounds[roundIndex].Count, new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                    true, // Kill everything first.
+                                    BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
+                                    numberOfTeams, // Number of teams indicator.
+                                    null, //selectedCraft.Select(c => c.Count).ToList(), // Not used here.
+                                    selectedCraft, // List of lists of vessels. For splitting specific vessels into specific teams.
+                                    null, // No folder, we're going to specify the craft files.
+                                    null // No list of craft files, we've specified them directly in selectedCraft.
+                                ));
+                                count += teamsThisHeat;
+                                teamsThisHeat = heatIndex++ < fullHeatCount ? teamsPerHeat : teamsPerHeat - 1; // Take one less for the remaining heats to distribute the deficit of teams.
+                                selectedTeams = teamsIndex.Skip(count).Take(teamsThisHeat).ToList();
+                                selectedCraft = SelectTeamCraft(selectedTeams, vesselsPerTeam);
+                            }
+                        }
+                        break;
+                    }
+                case 1: // N-choose-K
+                    {
+                        var nCr = N_Choose_K(teamCount, teamsPerHeat);
+                        message = $"Generating a round-robin style tournament for {teamCount} teams in AutoSpawn{(folder == "" ? "" : "/" + folder)} with {teamsPerHeat} teams per heat and {numberOfRounds} rounds. This requires {numberOfRounds * nCr} heats.";
+                        Debug.Log($"[BDArmory.BDATournament]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        // Generate all combinations of teams for a round.
+                        var combinations = Combinations(teamCount, teamsPerHeat);
+                        // Populate the rounds.
+                        for (int roundIndex = 0; roundIndex < numberOfRounds; ++roundIndex)
+                        {
+                            var heatList = new List<VesselSpawner.SpawnConfig>();
+                            foreach (var combination in combinations)
+                            {
+                                var selectedCraft = SelectTeamCraft(combination.Select(i => teamsIndex[i]).ToList(), vesselsPerTeam); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
+                                heatList.Add(new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                    true, // Kill everything first.
+                                    BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
+                                    numberOfTeams, // Number of teams indicator.
+                                    null, //selectedCraft.Select(c => c.Count).ToList(), // Not used here.
+                                    selectedCraft, // List of lists of vessels. For splitting specific vessels into specific teams.
+                                    null, // No folder, we're going to specify the craft files.
+                                    null // No list of craft files, we've specified them directly in selectedCraft.
+                                ));
+                            }
+                            heatList.Shuffle(); // Randomise the playing order within each round.
+                            rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, VesselSpawner.SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
+                        }
+                        break;
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException("tournamentStyle", "Invalid tournament style value - not implemented.");
             }
             return true;
         }
@@ -386,6 +478,60 @@ namespace BDArmory.Control
                 return false;
             }
         }
+
+        #region Helper functions
+        /// <summary>
+        /// Calculate N-choose-K.
+        /// </summary>
+        /// <param name="n">N</param>
+        /// <param name="k">K</param>
+        /// <returns>The number of ways of choosing K unique items of a collection of N.</returns>
+        public static int N_Choose_K(int n, int k)
+        {
+            k = Mathf.Clamp(k, 0, n);
+            k = Math.Min(n, k);
+            var numer = Enumerable.Range(n - k + 1, k).Aggregate(1, (acc, val) => acc * val);
+            var denom = Enumerable.Range(1, k).Aggregate(1, (acc, val) => acc * val);
+            return Mathf.RoundToInt(numer / denom);
+        }
+        /// <summary>
+        /// Generate all combinations of N-choose-K.
+        /// </summary>
+        /// <param name="n">N</param>
+        /// <param name="k">K</param>
+        /// <returns>List of list of unique combinations of K indices from 0 to N-1.</returns>
+        public static List<List<int>> Combinations(int n, int k)
+        {
+            k = Mathf.Clamp(k, 0, n);
+            var combinations = new List<List<int>>();
+            var temp = new List<int>();
+            GenerateCombinations(ref combinations, temp, 0, n, k);
+            return combinations;
+        }
+        /// <summary>
+        /// Recursively generate all combinations of N-choose-K.
+        /// Helper function.
+        /// </summary>
+        /// <param name="combinations">The combinations are accumulated in this list of lists.</param>
+        /// <param name="temp">Temporary buffer containing current chosen values.</param>
+        /// <param name="i">Current choice</param>
+        /// <param name="n">N</param>
+        /// <param name="k">K remaining to choose</param>
+        static void GenerateCombinations(ref List<List<int>> combinations, List<int> temp, int i, int n, int k)
+        {
+            if (k == 0)
+            {
+                combinations.Add(temp.ToList()); // Take a copy otherwise C# disposes of it.
+                return;
+            }
+            for (int j = i; j < n; ++j)
+            {
+                temp.Add(j);
+                GenerateCombinations(ref combinations, temp, j + 1, n, k - 1);
+                temp.RemoveAt(temp.Count - 1);
+            }
+        }
+        #endregion
     }
 
     public enum TournamentStatus { Stopped, Running, Waiting, Completed };
@@ -482,17 +628,17 @@ namespace BDArmory.Control
             return true;
         }
 
-        public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, string stateFile = "")
+        public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, int tournamentStyle = 0, string stateFile = "")
         {
             if (stateFile != "") this.stateFile = stateFile;
             tournamentState = new TournamentState();
             if (numberOfTeams == 0) // FFA
             {
-                if (!tournamentState.Generate(folder, rounds, vesselsPerHeat)) return;
+                if (!tournamentState.Generate(folder, rounds, vesselsPerHeat, tournamentStyle)) return;
             }
             else // Folders or random teams
             {
-                if (!tournamentState.Generate(folder, rounds, teamsPerHeat, vesselsPerTeam, numberOfTeams)) return;
+                if (!tournamentState.Generate(folder, rounds, teamsPerHeat, vesselsPerTeam, numberOfTeams, tournamentStyle)) return;
             }
             tournamentID = tournamentState.tournamentID;
             tournamentType = tournamentState.tournamentType;
@@ -505,9 +651,6 @@ namespace BDArmory.Control
             numberOfHeats = numberOfRounds > 0 ? tournamentState.rounds[0].Count : 0;
             heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
             tournamentStatus = heatsRemaining > 0 ? TournamentStatus.Stopped : TournamentStatus.Completed;
-            message = "Tournament generated for " + vesselCount + " craft found in AutoSpawn" + (folder == "" ? "" : "/" + folder);
-            BDACompetitionMode.Instance.competitionStatus.Add(message);
-            Debug.Log("[BDArmory.BDATournament]: " + message);
             SaveTournamentState();
         }
 

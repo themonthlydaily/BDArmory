@@ -16,9 +16,9 @@ using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Parts;
 using BDArmory.Radar;
-using BDArmory.Targeting;
 using UnityEngine;
 using KSP.Localization;
+using KSP.UI.Screens;
 
 namespace BDArmory.UI
 {
@@ -78,6 +78,9 @@ namespace BDArmory.UI
         public static BDArmorySetup Instance;
         public static bool GAME_UI_ENABLED = true;
         public string Version { get; private set; } = "Unknown";
+
+        //toolbar button
+        static bool toolbarButtonAdded = false;
 
         //settings gui
         public static bool windowSettingsEnabled;
@@ -483,6 +486,37 @@ namespace BDArmory.UI
                 { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
             };
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+
+            if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
+            { StartCoroutine(ToolbarButtonRoutine()); }
+        }
+
+        IEnumerator ToolbarButtonRoutine()
+        {
+            if (toolbarButtonAdded) yield break;
+            while (!ApplicationLauncher.Ready)
+            { yield return null; }
+            if (toolbarButtonAdded) yield break;
+            toolbarButtonAdded = true;
+            Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon", false);
+            ApplicationLauncher.Instance.AddModApplication(
+                ToggleToolbarButton,
+                ToggleToolbarButton,
+                () => { },
+                () => { },
+                () => { },
+                () => { },
+                ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB,
+                buttonTexture
+            );
+        }
+        /// <summary>
+        /// Toggle the BDAToolbar or BDA settings window depending on the scene.
+        /// </summary>
+        void ToggleToolbarButton()
+        {
+            if (HighLogic.LoadedSceneIsFlight) { windowBDAToolBarEnabled = !windowBDAToolBarEnabled; }
+            else { windowSettingsEnabled = !windowSettingsEnabled; }
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -1674,6 +1708,7 @@ namespace BDArmory.UI
             }
             if (BDArmorySettings.GENERAL_SETTINGS_TOGGLE)
             {
+                GameSettings.ADVANCED_TWEAKABLES = GUI.Toggle(SLineRect(++line), GameSettings.ADVANCED_TWEAKABLES, Localizer.Format("#autoLOC_900906") + (GameSettings.ADVANCED_TWEAKABLES ? "" : " <— Access many more AI tuning options")); // Advanced tweakables
                 BDArmorySettings.INSTAKILL = GUI.Toggle(SLeftRect(++line), BDArmorySettings.INSTAKILL, Localizer.Format("#LOC_BDArmory_Settings_Instakill"));//"Instakill"
                 BDArmorySettings.INFINITE_AMMO = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_AMMO, Localizer.Format("#LOC_BDArmory_Settings_InfiniteAmmo"));//"Infinite Ammo"
                 BDArmorySettings.BULLET_HITS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BULLET_HITS, Localizer.Format("#LOC_BDArmory_Settings_BulletHits"));//"Bullet Hits"
@@ -1832,6 +1867,11 @@ namespace BDArmory.UI
                         else
                             AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
                     }
+                    BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsCentroid")); // Follows Vessels' Location.
+                    if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID)
+                    {
+                        BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD = GUI.Toggle(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsSpread")); // Follows Vessels' Spread.
+                    }
                     line += 0.25f;
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainNumber")}:  ({BDArmorySettings.ASTEROID_RAIN_NUMBER})", leftLabel);
                     if (BDArmorySettings.ASTEROID_RAIN_NUMBER != (BDArmorySettings.ASTEROID_RAIN_NUMBER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), Mathf.Round(BDArmorySettings.ASTEROID_RAIN_NUMBER / 10f), 1f, 200f) * 10f))) // Asteroid Rain Number
@@ -1840,15 +1880,13 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainAltitude")}:  ({altitudeString})", leftLabel);
                     if (BDArmorySettings.ASTEROID_RAIN_ALTITUDE != (BDArmorySettings.ASTEROID_RAIN_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_ALTITUDE, 1f, 100f)))) // Asteroid Rain Altitude
                     { if (HighLogic.LoadedSceneIsFlight) AsteroidRain.Instance.UpdateSettings(); }
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainRadius")}:  ({BDArmorySettings.ASTEROID_RAIN_RADIUS}km)", leftLabel);
-                    if (BDArmorySettings.ASTEROID_RAIN_RADIUS != (BDArmorySettings.ASTEROID_RAIN_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_RADIUS, 1f, 10f)))) // Asteroid Rain Radius
-                    { if (HighLogic.LoadedSceneIsFlight) AsteroidRain.Instance.UpdateSettings(); }
-                    line -= 0.25f;
-                    BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsCentroid")); // Follows Vessels' Location.
-                    if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID)
+                    if (!BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD)
                     {
-                        BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD = GUI.Toggle(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsSpread")); // Follows Vessels' Spread.
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainRadius")}:  ({BDArmorySettings.ASTEROID_RAIN_RADIUS}km)", leftLabel);
+                        if (BDArmorySettings.ASTEROID_RAIN_RADIUS != (BDArmorySettings.ASTEROID_RAIN_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_RADIUS, 1f, 10f)))) // Asteroid Rain Radius
+                        { if (HighLogic.LoadedSceneIsFlight) AsteroidRain.Instance.UpdateSettings(); }
                     }
+                    line -= 0.25f;
                 }
 
                 ++line;
@@ -2148,10 +2186,16 @@ namespace BDArmory.UI
                                 break;
                         }
                     }
+#if DEBUG
                     if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
                     {
                         StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
                     }
+                    if (GUI.Button(SLeftRect(++line), "Test Shuffle randomness"))
+                    {
+                        TestShuffleRandomness();
+                    }
+#endif
                 }
 
                 ++line;
@@ -2295,6 +2339,44 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
+
+#if DEBUG
+        internal static void TestShuffleRandomness()
+        {
+            int N = 52; // Standard deck of cards
+            int iterations = 1000000;
+            Dictionary<Tuple<int, int>, int> freqs = new Dictionary<Tuple<int, int>, int>();
+
+            // Initialise to 0's
+            for (int i = 0; i < N; ++i)
+            {
+                for (int j = 0; j < N; ++j)
+                {
+                    freqs[new Tuple<int, int>(i, j)] = 0;
+                }
+            }
+
+            // Populate frequencies
+            for (int iteration = 0; iteration < iterations; ++iteration)
+            {
+                var items = Enumerable.Range(0, N).ToList();
+                items.Shuffle();
+                int pos = 0;
+                for (int i = 0; i < N; ++i, ++pos)
+                {
+                    ++freqs[new Tuple<int, int>(pos, items[i])];
+                }
+            }
+
+            // If Shuffle is properly random, the distribution of frequencies should be fairly flat
+            var lines = new List<string>();
+            foreach (var pair in freqs.Keys)
+            { lines.Add($"  [{pair.Item1}, {pair.Item2}, {(float)freqs[pair] * N / iterations}]"); }
+            var line = "[\n" + string.Join(",\n", lines) + "\n]";
+            File.WriteAllText("/tmp/ShuffleTest", line);
+            Debug.Log($"DEBUG Shuffle test results written to /tmp/ShuffleTest");
+        }
+#endif
 
         internal static void ResizeRwrWindow(float rwrScale)
         {
@@ -2462,11 +2544,13 @@ namespace BDArmory.UI
         void HideGameUI()
         {
             GAME_UI_ENABLED = false;
+            BDACompetitionMode.Instance.UpdateGUIElements();
         }
 
         void ShowGameUI()
         {
             GAME_UI_ENABLED = true;
+            BDACompetitionMode.Instance.UpdateGUIElements();
         }
 
         internal void OnDestroy()
