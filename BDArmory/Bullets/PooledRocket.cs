@@ -352,7 +352,7 @@ namespace BDArmory.Bullets
                                 //calculate bullet deformation
                                 float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, 1, Density);
                                 //calculate penetration
-                                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness);
+                                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
                                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
                                 ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName());
