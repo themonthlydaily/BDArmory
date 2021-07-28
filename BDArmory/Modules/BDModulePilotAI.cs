@@ -315,10 +315,15 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 0f, maxValue = 50f, stepIncrement = 1f, scene = UI_Scene.All)]
         public float collisionAvoidanceThreshold = 30f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CollisionAvoidancePeriod", advancedTweakable = true, //Vessel collision avoidance period
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CollisionAvoidanceLookAheadPeriod", advancedTweakable = true, //Vessel collision avoidance look ahead period
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 3f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float vesselCollisionAvoidancePeriod = 1.5f; // Avoid for 1.5s.
+        public float vesselCollisionAvoidanceLookAheadPeriod = 1.5f; // Look 1.5s ahead for potential collisions.
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CollisionAvoidanceStrength", advancedTweakable = true, //Vessel collision avoidance strength
+           groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+           UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float vesselCollisionAvoidanceStrength = 1f; // 1° per frame.
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandoffDistance", advancedTweakable = true, //Min Approach Distance
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -548,11 +553,11 @@ namespace BDArmory.Modules
         bool useBrakes = true;
         bool regainEnergy = false;
 
-        //collision detection (for other vessels). Look ahead period is vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime
-        int vesselCollisionAvoidanceTickerFreq = 10; // Number of fixedDeltaTime steps between vessel-vessel collision checks.
+        //collision detection (for other vessels).
+        const int vesselCollisionAvoidanceTickerFreq = 10; // Number of fixedDeltaTime steps between vessel-vessel collision checks.
         int collisionDetectionTicker = 0;
-        float collisionDetectionTimer = 0;
         Vector3 collisionAvoidDirection;
+        public Vessel currentlyAvoidedVessel;
 
         // Terrain avoidance and below minimum altitude globals.
         int terrainAlertTicker = 0; // A ticker to reduce the frequency of terrain alert checks.
@@ -822,6 +827,13 @@ namespace BDArmory.Modules
             if (!maxAltitudeToggle)
                 StartCoroutine(FixAltitudesSectionLayout());
         }
+        void SetMinCollisionAvoidanceLookAheadPeriod()
+        {
+            var minCollisionAvoidanceLookAheadPeriod = (UI_FloatRange)Fields["vesselCollisionAvoidanceLookAheadPeriod"].uiControlEditor;
+            minCollisionAvoidanceLookAheadPeriod.minValue = vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime;
+            minCollisionAvoidanceLookAheadPeriod = (UI_FloatRange)Fields["vesselCollisionAvoidanceLookAheadPeriod"].uiControlFlight;
+            minCollisionAvoidanceLookAheadPeriod.minValue = vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime;
+        }
 
         IEnumerator FixAltitudesSectionLayout() // Fix the layout of the Altitudes section by briefly disabling the fields underneath the one that was removed.
         {
@@ -852,6 +864,7 @@ namespace BDArmory.Modules
             // SetSliderClamps("DynamicDampingYawMin", "DynamicDampingYawMax");
             // SetSliderClamps("DynamicDampingRollMin", "DynamicDampingRollMax");
             SetAltitudeClamps();
+            SetMinCollisionAvoidanceLookAheadPeriod();
             dynamicDamping = dynamicSteerDamping;
             CustomDynamicAxisField = CustomDynamicAxisFields;
             ToggleDynamicDampingFields();
@@ -1698,7 +1711,7 @@ namespace BDArmory.Modules
             steerRoll -= rollDamping;
             steerRoll *= dynamicAdjustment;
 
-            if (steerMode == SteerModes.NormalFlight && !avoidingTerrain) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives
+            if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or avoiding other vessels as we need a quick reaction
             {
                 //premature dive fix
                 pitchError = pitchError * Mathf.Clamp01((21 - Mathf.Exp(Mathf.Abs(rollError) / 30)) / 20);
@@ -2234,23 +2247,24 @@ namespace BDArmory.Modules
         }
 
         bool FlyAvoidOthers(FlightCtrlState s) // Check for collisions with other vessels and try to avoid them.
-        { // Mostly a re-hash of FlyAvoidCollision, but with terrain detection removed.
-            if (vesselCollisionAvoidancePeriod < Time.fixedDeltaTime) return false;
-            if (collisionDetectionTimer > vesselCollisionAvoidancePeriod)
+        {
+            if (currentlyAvoidedVessel != null) // Avoidance has been triggered.
             {
-                collisionDetectionTimer = 0;
-                collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1;
-            }
-            if (collisionDetectionTimer > 0)
-            {
-                //fly avoid
                 SetStatus("AvoidCollision");
                 debugString.AppendLine($"Avoiding Collision");
-                collisionDetectionTimer += Time.fixedDeltaTime;
 
-                Vector3 target = vesselTransform.position + collisionAvoidDirection;
-                FlyToPosition(s, target);
-                return true;
+                // Monitor collision avoidance, adjusting or stopping as necessary.
+                if (currentlyAvoidedVessel != null && PredictCollisionWithVessel(currentlyAvoidedVessel, vesselCollisionAvoidanceLookAheadPeriod * 1.2f, out collisionAvoidDirection)) // *1.2f for hysteresis.
+                {
+                    FlyAvoidVessel(s);
+                    return true;
+                }
+                else // Stop avoiding, but immediately check again for new collisions.
+                {
+                    currentlyAvoidedVessel = null;
+                    collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1;
+                    return FlyAvoidOthers(s);
+                }
             }
             else if (collisionDetectionTicker > vesselCollisionAvoidanceTickerFreq) // Only check every vesselCollisionAvoidanceTickerFreq frames.
             {
@@ -2265,7 +2279,7 @@ namespace BDArmory.Modules
                     {
                         if (vs.Current == null) continue;
                         if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
-                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidancePeriod + vesselCollisionAvoidanceTickerFreq * Time.fixedDeltaTime, out collisionAvoidDirection)) continue;
+                        if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out collisionAvoidDirection)) continue;
                         if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
                         {
                             var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
@@ -2273,29 +2287,27 @@ namespace BDArmory.Modules
                         }
                         vesselCollision = true;
                         collisionVesselType = vs.Current.vesselType;
+                        currentlyAvoidedVessel = vs.Current;
                         break; // Early exit on first detected vessel collision. Chances of multiple vessel collisions are low.
                     }
                 if (vesselCollision)
                 {
-                    Vector3 axis = -Vector3.Cross(vesselTransform.up, collisionAvoidDirection);
-                    float angle;
-                    switch (collisionVesselType)
-                    {
-                        case VesselType.SpaceObject:
-                            angle = 45f;
-                            break;
-                        default:
-                            angle = 25f;
-                            break;
-                    }
-                    collisionAvoidDirection = Quaternion.AngleAxis(angle, axis) * collisionAvoidDirection;        //don't need to change the angle that much to avoid, and it should prevent stupid suicidal manuevers as well
-                    collisionDetectionTimer += Time.fixedDeltaTime;
-                    return FlyAvoidOthers(s); // Call ourself again to trigger the actual avoidance.
+                    FlyAvoidVessel(s);
+                    return true;
                 }
+                else
+                { currentlyAvoidedVessel = null; }
             }
             else
             { ++collisionDetectionTicker; }
             return false;
+        }
+
+        void FlyAvoidVessel(FlightCtrlState s)
+        {
+            // Rotate the current flyingToPosition away from the direction to avoid.
+            Vector3 axis = Vector3.Cross(vessel.srf_vel_direction, collisionAvoidDirection);
+            FlyToPosition(s, vesselTransform.position + Quaternion.AngleAxis(-vesselCollisionAvoidanceStrength, axis) * (flyingToPosition - vesselTransform.position)); // Rotate the flyingToPosition around the axis by the collision avoidance strength (each frame).
         }
 
         Vector3 GetLimitedClimbDirectionForSpeed(Vector3 direction)
