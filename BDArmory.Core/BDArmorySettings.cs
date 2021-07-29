@@ -23,7 +23,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
-        [BDAPersistantSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 450f;
+        [BDAPersistantSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
 
         // General toggle settings
         [BDAPersistantSettingsField] public static bool INSTAKILL = false;
