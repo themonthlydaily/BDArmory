@@ -631,7 +631,7 @@ namespace BDArmory.Misc
             else return true;
         }
 
-        public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness)
+        public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness, float APmod)
         {
             float Energy = CalculateProjectileEnergy(projMass, impactVel);
             //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
@@ -646,7 +646,7 @@ namespace BDArmory.Misc
             }
             else
             {
-                penetration = (Energy / (Mathf.PI * Mathf.Pow(caliber / 2 + (newCaliber / 2 * (2 * Ductility * Ductility)), 2) / 100 * Strength * (Density / 7850) * thickness)) * thickness;
+                penetration = ((Energy / (Mathf.PI * Mathf.Pow(caliber / 2 + (newCaliber / 2 * (2 * Ductility * Ductility)), 2) / 100 * Strength * (Density / 7850) * thickness)) * thickness * APmod);
             } //penetration in mm
             //apparently shattered projectiles add 30% to armor thickness; oblique impact beyond 55deg decreases effective thickness(splatted projectile digs in to plate instead of richochets)
 

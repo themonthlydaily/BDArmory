@@ -2195,10 +2195,16 @@ namespace BDArmory.UI
                                 break;
                         }
                     }
+#if DEBUG
                     if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
                     {
                         StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
                     }
+                    if (GUI.Button(SLeftRect(++line), "Test Shuffle randomness"))
+                    {
+                        TestShuffleRandomness();
+                    }
+#endif
                 }
 
                 ++line;
@@ -2342,6 +2348,44 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
+
+#if DEBUG
+        internal static void TestShuffleRandomness()
+        {
+            int N = 52; // Standard deck of cards
+            int iterations = 1000000;
+            Dictionary<Tuple<int, int>, int> freqs = new Dictionary<Tuple<int, int>, int>();
+
+            // Initialise to 0's
+            for (int i = 0; i < N; ++i)
+            {
+                for (int j = 0; j < N; ++j)
+                {
+                    freqs[new Tuple<int, int>(i, j)] = 0;
+                }
+            }
+
+            // Populate frequencies
+            for (int iteration = 0; iteration < iterations; ++iteration)
+            {
+                var items = Enumerable.Range(0, N).ToList();
+                items.Shuffle();
+                int pos = 0;
+                for (int i = 0; i < N; ++i, ++pos)
+                {
+                    ++freqs[new Tuple<int, int>(pos, items[i])];
+                }
+            }
+
+            // If Shuffle is properly random, the distribution of frequencies should be fairly flat
+            var lines = new List<string>();
+            foreach (var pair in freqs.Keys)
+            { lines.Add($"  [{pair.Item1}, {pair.Item2}, {(float)freqs[pair] * N / iterations}]"); }
+            var line = "[\n" + string.Join(",\n", lines) + "\n]";
+            File.WriteAllText("/tmp/ShuffleTest", line);
+            Debug.Log($"DEBUG Shuffle test results written to /tmp/ShuffleTest");
+        }
+#endif
 
         internal static void ResizeRwrWindow(float rwrScale)
         {

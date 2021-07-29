@@ -103,7 +103,8 @@ namespace BDArmory.Core.Module
         public Vector3 partSize;
         [KSPField(isPersistant = true)]
         public float maxSupportedArmor = -1; //upper cap on armor per part, overridable in MM/.cfg
-        public float armorVolume;
+        [KSPField(isPersistant = true)]
+        public float armorVolume = -1;
         private float sizeAdjust;
         AttachNode bottom;
         AttachNode top;
@@ -281,7 +282,7 @@ namespace BDArmory.Core.Module
             {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
                 sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
             }
-            if (ArmorThickness > 0)
+            if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
             {
                 startsArmored = true;
                 Armor = ArmorThickness;
@@ -290,15 +291,28 @@ namespace BDArmory.Core.Module
             armorMass = 0;
             partMass = part.mass;
             partSize = CalcPartBounds(this.part, this.transform).size;
-            armorVolume =  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
-((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust);  //mass * surface area approximation of a cylinder, where H/W are unknown
-            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
-            if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
+            if (armorVolume < 0) //make this persistant to get around diffeences in part bounds between SPH/Flight. 
+            {
+                armorVolume =  // thickness * armor mass; moving it to Start since it only needs to be calc'd once
+    ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust);  //mass * surface area approximation of a cylinder, where H/W are unknown
+                if (HighLogic.LoadedSceneIsFlight) //Value correction for loading legacy craft via VesselMover spawner/tournament autospawn that haven't got a armorvolume value in their .craft file.
+                {
+                    armorVolume *= 0.63f; //part bounds dimensions when calced in Flight are consistantly 1.6-1.7x larger than correct SPH dimensions. Won't be exact, but good enough for legacy craft support
+                }
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
+            }
             SetupPrefab();
             ArmorSetup(null, null);
             HullSetup(null, null); //reaquire hull mass adjust for mass calcs
             if (HighLogic.LoadedSceneIsEditor)
-                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            {
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship); //will error if called in flightscene
+            }           
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part mass is: " + partMass + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
+            }
         }
 
         private void OnDestroy()
@@ -563,6 +577,7 @@ namespace BDArmory.Core.Module
             if (ArmorThickness != 0)
             {
                 Armor = ArmorThickness;
+                maxSupportedArmor = ArmorThickness;
                 if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
                 {
                     startsArmored = true;
@@ -621,10 +636,6 @@ namespace BDArmory.Core.Module
                 ArmorTypeNum = 1; //reset to 'None'
             }
             armorInfo = ArmorInfo.armors[ArmorInfo.armorNames[(int)ArmorTypeNum - 1]]; //what does this return if armorname cannot be found (mod armor removed/not present in install?)
-            if (startsArmored)
-            {
-                ArmorTypeNum = 2;
-            }
             //if (SelectedArmorType != ArmorInfo.armorNames[(int)ArmorTypeNum - 1]) //armor selection overridden by Editor widget
             //{
             //	armorInfo = ArmorInfo.armors[SelectedArmorType];
@@ -693,6 +704,8 @@ namespace BDArmory.Core.Module
         {
             Bounds result = new Bounds(t.position, Vector3.zero);
             Bounds[] bounds = p.GetRendererBounds(); //slower than getColliderBounds, but it only runs once, and doesn't have to deal with culling isTrgger colliders (airlocks, ladders, etc)
+                                                     //Err... not so sure about that, me. This is yielding different resutls in SPH/flight. SPH is proper dimensions, flight is giving bigger x/y/z
+                                                     // a mk1 cockpit (x: 1.25, y: 1.6, z: 1.9, area 11 in SPh becomes x: 2.5, y: 1.25, z: 2.5, area 19
             {
                 if (!p.Modules.Contains("LaunchClamp"))
                 {

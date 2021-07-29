@@ -151,6 +151,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 	teamDraws = Counter([team for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Draw" for team in heat['result']['teams']])
 	teamDeaths = Counter([team for round in tournamentData.values() for heat in round.values() if 'dead teams' in heat['result'] for team in heat['result']['dead teams']])
 	teams = {team: members for round in tournamentData.values() for heat in round.values() if 'teams' in heat['result'] for team, members in heat['result']['teams'].items()}
+	teams.update({team: members for round in tournamentData.values() for heat in round.values() if 'dead teams' in heat['result'] for team, members in heat['result']['dead teams'].items()})
 	summary = {
 		'craft': {
 			craft: {

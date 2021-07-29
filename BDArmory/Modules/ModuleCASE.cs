@@ -78,7 +78,14 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight)
             {
                 SourceVessel = part.vessel.GetName(); //set default to vesselname for cases where no attacker, i.e. Ammo exploding on destruction cooking off adjacent boxes
+                GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
             }
+        }
+
+        public void HandleSceneChange(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
+        {
+            if (fromTo.from == GameScenes.FLIGHT)
+            { hasDetonated = true; } // Don't trigger explosions on scene changes.
         }
 
         void CASESetup(BaseField field, object obj)
@@ -165,6 +172,7 @@ namespace BDArmory.Modules
         }
         public void DetonateIfPossible()
         {
+            if (part == null) return;
             if (!hasDetonated)
             {
                 hasDetonated = true; // Set hasDetonated here to avoid recursive calls due to ammo boxes exploding each other.
@@ -335,17 +343,19 @@ namespace BDArmory.Modules
                         tData.damageFromBullets[aName] += explDamage;
                     else
                         tData.damageFromBullets.Add(aName, explDamage);
-
                 }
             }
         }
+
         void OnDestroy()
         {
-            if (part != null && vessel != null && vessel.loaded && !vessel.packed && BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !(VesselSpawner.Instance != null && VesselSpawner.Instance.vesselsSpawning))
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !(VesselSpawner.Instance != null && VesselSpawner.Instance.vesselsSpawning))
             {
                 DetonateIfPossible();
             }
+            GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
         }
+
         public override string GetInfo()
         {
             StringBuilder output = new StringBuilder();
