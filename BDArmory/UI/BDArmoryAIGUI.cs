@@ -4,6 +4,7 @@ using BDArmory.Modules;
 using UnityEngine;
 using KSP.Localization;
 using KSP.UI.Screens;
+using static UnityEngine.GUILayout;
 
 namespace BDArmory.UI
 {
@@ -269,39 +270,39 @@ namespace BDArmory.UI
             {
                 showPID = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                             showPID, Localizer.Format("#LOC_BDArmory_PilotAI_PID"), showPID ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"PiD"                    
-                line += 1.2f;
+                line += 1.5f;
 
                 showAltitude = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     showAltitude, Localizer.Format("#LOC_BDArmory_PilotAI_Altitudes"), showAltitude ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Altitude"        
-                line += 1.2f;
+                line += 1.5f;
 
                 showSpeed = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     showSpeed, Localizer.Format("#LOC_BDArmory_PilotAI_Speeds"), showSpeed ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Speed"                    
-                line += 1.2f;
+                line += 1.5f;
 
                 showControl = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     showControl, Localizer.Format("#LOC_BDArmory_AIWindow_ControlLimits"), showControl ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Control"  
-                line += 1.2f;
+                line += 1.5f;
 
                 showEvade = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     showEvade, Localizer.Format("#LOC_BDArmory_AIWindow_EvadeExtend"), showEvade ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Evasion"                    
-                line += 1.2f;
+                line += 1.5f;
 
                 showTerrain = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     showTerrain, Localizer.Format("#LOC_BDArmory_AIWindow_Terrain"), showTerrain ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Terrain"  
-                line += 1.2f;
+                line += 1.5f;
 
                 showRam = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     showRam, Localizer.Format("#LOC_BDArmory_PilotAI_Ramming"), showRam ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"rammin"                    
-                line += 1.2f;
+                line += 1.5f;
 
                 showMisc = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     showMisc, Localizer.Format("#LOC_BDArmory_PilotAI_Misc"), showMisc ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Misc"  
-                line += 1.2f;
+                line += 1.5f;
 
                 ActivePilot.UpToEleven = GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), 100, entryHeight),
                     ActivePilot.UpToEleven, ActivePilot.UpToEleven ? Localizer.Format("#LOC_BDArmory_UnclampTuning_enabledText") : Localizer.Format("#LOC_BDArmory_UnclampTuning_disabledText"), ActivePilot.UpToEleven ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Misc"  
-                line += 1.2f;
+                line += 5;
 
                 float pidLines = 0;
                 float altLines = 0;
@@ -323,187 +324,78 @@ namespace BDArmory.UI
                     int infoLength = 1;
                     windowColumns = 3;
 
-                    GUI.Label(new Rect(leftIndent, (contentTop), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_PID"), Title);//"infolink"
-
-
-                    scrollInfoVector = GUI.BeginScrollView(new Rect(leftIndent + (ColumnWidth*2), contentTop + (entryHeight * 1.5f), ColumnWidth - (leftIndent), WindowHeight - (entryHeight * 1.5f) - (2 * contentTop)), scrollInfoVector,
-                                        new Rect(0, 0, ColumnWidth - (leftIndent*2) - 20, infoHeight + contentTop));
-
-                    if (showPID)
+                    GUI.Label(new Rect(leftIndent + (ColumnWidth * 2), (contentTop), ColumnWidth - (leftIndent), entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_infoLink"), Title);//"infolink"
+                    BeginArea(new Rect(leftIndent + (ColumnWidth * 2), contentTop + (entryHeight * 1.5f), ColumnWidth - (leftIndent), WindowHeight - (entryHeight * 1.5f) - (2 * contentTop)));
+                    using (var scrollViewScope = new ScrollViewScope(scrollInfoVector, Width(ColumnWidth - (leftIndent)), Height(WindowHeight - (entryHeight * 1.5f) - (2 * contentTop))))
                     {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_PID"), BoldLabel);//"Pid Controller"
-                        infoLines+= 1.25f;
+                        scrollInfoVector = scrollViewScope.scrollPosition;
 
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_SteerMult").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_SteerMult"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_SteerKi").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_SteerKi"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Steerdamp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Steerdamp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Dyndamp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Dyndamp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
+                        if (showPID)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_PID"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_SteerMult"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_SteerKi"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Steerdamp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_PidHelp_Dyndamp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
+                        if (showAltitude)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_Altitudes"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_Def"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_min"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_max"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
+                        if (showSpeed)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_Speeds"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_min"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_takeoff"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_idle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_gnd"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
+                        if (showControl)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_ControlLimits"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp_limiters"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp_bank"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp_clamps"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
+                        if (showEvade)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_EvadeExtend"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Evade"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Dodge"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_standoff"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Extend"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVars"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendAngle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendDist"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVel"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
+                        if (showTerrain)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_Terrain"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_TerrainHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
+                        if (showRam)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_Ramming"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_RamHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
+                        if (showMisc)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_Misc"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_miscHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_orbitHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_standbyHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20));
+                        }
                     }
-                    if (showAltitude)
-                    {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_Altitudes"), BoldLabel);//"Pid Controller"
-                        infoLines += 1.25f;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_Def").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_Def"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_min").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_min"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_max").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_AltHelp_max"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-                    }
-                    if (showSpeed)
-                    {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_Speeds"), BoldLabel);//"Pid Controller"
-                        infoLines += 1.25f;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_min").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_min"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_takeoff").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_takeoff"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_idle").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_idle"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_gnd").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_gnd"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-                    }
-                    if (showControl)
-                    {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_ControlLimits"), BoldLabel);//"Pid Controller"
-                        infoLines += 1.25f;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp_limiters").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp_limiters"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp_clamps").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_ControlHelp_clamps"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-                    }
-                    if (showEvade)
-                    {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_EvadeExtend"), BoldLabel);//"Pid Controller"
-                        infoLines += 1.25f;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Evade").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Evade"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Dodge").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Dodge"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_standoff").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_standoff"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Extend").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Extend"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-                    }
-                    if (showTerrain)
-                    {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_Terrain"), BoldLabel);//"Pid Controller"
-                        infoLines += 1.25f;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_TerrainHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_TerrainHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-                    }
-                    if (showRam)
-                    {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_Ramming"), BoldLabel);//"Pid Controller"
-                        infoLines += 1.25f;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_RamHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_RamHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-                    }
-                    if (showMisc)
-                    {
-                        infoLines += 0.5f;
-                        GUI.Label(new Rect(leftIndent, (infoLines * entryHeight), ColumnWidth - (leftIndent * 4) - 20, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_Misc"), BoldLabel);//"Pid Controller"
-                        infoLines += 1.25f;
-
-                        infoLength = Mathf.CeilToInt((Localizer.Format("#LOC_BDArmory_AIWindow_miscHelp").Length / 50));
-                        GUI.Label(new Rect(leftIndent, infoLines * entryHeight, ColumnWidth - (leftIndent * 4) - 20, entryHeight * infoLength),
-                           Localizer.Format("#LOC_BDArmory_AIWindow_miscHelp"), infoLinkStyle);// "No AI found."
-                        infoLines += infoLength;
-                    }
-                    infoHeight = Mathf.Max(Mathf.Lerp(infoHeight, infoLines * entryHeight + contentTop + 5, 1), (line * entryHeight) + contentTop);
-                    GUI.EndScrollView();                    
+                    EndArea();                    
                 }
                 
                 scrollViewVector = GUI.BeginScrollView(new Rect(leftIndent + 100, contentTop + (entryHeight * 1.5f), (ColumnWidth * 2) - 100 - (leftIndent), WindowHeight - (entryHeight * 1.5f) - (2 * contentTop)), scrollViewVector, 
@@ -1079,7 +971,7 @@ namespace BDArmory.UI
                     evadeLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, ((pidLines + altLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_evadeDist"), contextLabel);//"dynamic damp max"
+                        GUI.Label(new Rect(150, (evadeLines * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_evadeDist"), contextLabel);//"dynamic damp max"
                         evadeLines++;
                     }
 
