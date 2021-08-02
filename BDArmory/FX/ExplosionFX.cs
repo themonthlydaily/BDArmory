@@ -159,11 +159,11 @@ namespace BDArmory.FX
                 overlapSphereColliders = Physics.OverlapSphere(Position, Range, 9076737);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
-			      float shrapnelrange = Range;
+            float shrapnelrange = Range;
             if (ProjMass > 0)
             {
                 shrapnelrange = Range * 2;
-			      }
+            }
             using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())
@@ -264,7 +264,7 @@ namespace BDArmory.FX
                 if (IsAngleAllowed(Direction, hit))
                 {
                     //Adding damage hit
-                    if(distance <= Range)//part within blast
+                    if (distance <= Range)//part within blast
                     {
                         eventList.Add(new PartBlastHitEvent()
                         {
@@ -623,8 +623,8 @@ namespace BDArmory.FX
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;
             eFx.isFX = isfx;
-eFx.ProjMass = projectilemass;
-eFx.pEmitters = newExplosion.GetComponentsInChildren<KSPParticleEmitter>();
+            eFx.ProjMass = projectilemass;
+            eFx.pEmitters = newExplosion.GetComponentsInChildren<KSPParticleEmitter>();
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
             if (tntMassEquivalent <= 5)
             {
