@@ -40,6 +40,7 @@ namespace BDArmory.UI
 
         [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
+        [BDAWindowSettingsField] public static Rect WindowRectAI;
 
         //reflection field lists
         static FieldInfo[] iFs;
@@ -494,6 +495,7 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
             BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
             BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
+            BDGUIUtils.RepositionWindow(ref WindowRectAI);
         }
 
         void Update()

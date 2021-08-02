@@ -316,8 +316,8 @@ namespace BDArmory.UI
                 return;
 
             // Encapsulate editor ShipConstruct into a vessel:
-            Vessel v = new Vessel();
-            v.parts = EditorLogic.fetch.ship.Parts;
+            //Vessel v = new Vessel();
+            //v.parts = EditorLogic.fetch.ship.Parts;
             totalArmorMass = 0;
             totalArmorCost = 0;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
@@ -391,8 +391,8 @@ namespace BDArmory.UI
             if (EditorLogic.RootPart == null)
                 return;
             // Encapsulate editor ShipConstruct into a vessel:
-            Vessel v = new Vessel();
-            v.parts = EditorLogic.fetch.ship.Parts;
+            //Vessel v = new Vessel();
+            //v.parts = EditorLogic.fetch.ship.Parts;
             if (Visualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
