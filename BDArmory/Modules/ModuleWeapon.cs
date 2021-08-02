@@ -1247,9 +1247,12 @@ namespace BDArmory.Modules
                     if ((userFiring || autoFire || agHoldFiring) &&
                         (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue)))
                     {
-                        if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
+                        if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                         {
-                            StartCoroutine(IncrementRippleIndex(0));
+                            if (useRippleFire) //old method wouldn't catch non-ripple guns (i.e. Vulcan) trying to fire at targets beyond fire range
+                            {
+                                StartCoroutine(IncrementRippleIndex(0));
+                            }
                             finalFire = false;
                         }
                         else if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Rocket) //WeaponTypes.Cannon is deprecated
@@ -1333,9 +1336,12 @@ namespace BDArmory.Modules
                         if ((userFiring || autoFire || agHoldFiring) &&
                             (!turret || turret.TargetInRange(targetPosition, 10, float.MaxValue)))
                         {
-                            if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
+                            if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                             {
-                                StartCoroutine(IncrementRippleIndex(0));
+                                if (useRippleFire)
+                                {
+                                    StartCoroutine(IncrementRippleIndex(0));
+                                }
                                 finalFire = false;
                             }
                             else
