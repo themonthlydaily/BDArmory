@@ -428,8 +428,8 @@ namespace BDArmory.UI
                     pidLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150 + leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerMultLow"), Label);//"Steer Mult"
-                        GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerMultHi"), rightLabel);//"Steer Mult"
+                        GUI.Label(new Rect(150 + leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerMultLow"), Label);//"sluggish"
+                        GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerMultHi"), rightLabel);//"twitchy"
                         pidLines++;
                     }                   
 
@@ -438,13 +438,13 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, (pidLines * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.steerKiAdjust, 0.01f, ActivePilot.UpToEleven ? 20 : 1);
                     ActivePilot.steerKiAdjust = Mathf.Round(ActivePilot.steerKiAdjust * 100f) / 100f;
-                    GUI.Label(new Rect(leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_SteerKi") + " :" + ActivePilot.steerKiAdjust.ToString("0.00"), Label);//"Steer Mult"
+                    GUI.Label(new Rect(leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_SteerKi") + " :" + ActivePilot.steerKiAdjust.ToString("0.00"), Label);//"Steer Ki"
                     pidLines++;
 
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150 + leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerKiLow"), Label);//"Steer Mult"
-                        GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerKiHi"), rightLabel);//"Steer Mult"
+                        GUI.Label(new Rect(150 + leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerKiLow"), Label);//"undershoot"
+                        GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerKiHi"), rightLabel);//"Overshoot"
                         pidLines++;
                     }
                    
@@ -453,26 +453,26 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, (pidLines * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.steerDamping, 0.01f, ActivePilot.UpToEleven ? 100 : 8);
                     ActivePilot.steerDamping = Mathf.Round(ActivePilot.steerDamping * 100f) / 100f;
-                    GUI.Label(new Rect(leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_SteerDamping") + " :" + ActivePilot.steerDamping.ToString("0.00"), Label);//"Steer Mult"
+                    GUI.Label(new Rect(leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_SteerDamping") + " :" + ActivePilot.steerDamping.ToString("0.00"), Label);//"Steer Damping"
 
                     pidLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150 + leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerDampLow"), Label);//"Steer Mult"
-                        GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerDampHi"), rightLabel);//"Steer Mult"
+                        GUI.Label(new Rect(150 + leftIndent, (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerDampLow"), Label);//"Wobbly"
+                        GUI.Label(new Rect(150 + leftIndent + (contentWidth - leftIndent - 150 - 85 - 20), (pidLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_SteerDampHi"), rightLabel);//"Stiff"
                         pidLines++;
                     }
 
                     ActivePilot.dynamicSteerDamping =
                        GUI.Toggle(new Rect(leftIndent, (pidLines * entryHeight), contentWidth - (2 * leftIndent), entryHeight),
-                           ActivePilot.dynamicSteerDamping, Localizer.Format("#LOC_BDArmory_DynamicDamping"), ActivePilot.dynamicSteerDamping ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                           ActivePilot.dynamicSteerDamping, Localizer.Format("#LOC_BDArmory_DynamicDamping"), ActivePilot.dynamicSteerDamping ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic damping"
                     pidLines += 1.25f;
 
                     if (ActivePilot.dynamicSteerDamping)
                     {
                         float dynPidLines = 0;
                         ActivePilot.CustomDynamicAxisFields = GUI.Toggle(new Rect(leftIndent, (pidLines * entryHeight), contentWidth - (2 * leftIndent), entryHeight),
-                        ActivePilot.CustomDynamicAxisFields, Localizer.Format("#LOC_BDArmory_3AxisDynamicSteerDamping"), ActivePilot.CustomDynamicAxisFields ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                        ActivePilot.CustomDynamicAxisFields, Localizer.Format("#LOC_BDArmory_3AxisDynamicSteerDamping"), ActivePilot.CustomDynamicAxisFields ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"3 axis damping"
                         dynPidLines++;
                         if (!ActivePilot.CustomDynamicAxisFields)
                         {
@@ -525,7 +525,7 @@ namespace BDArmory.UI
                         else
                         {
                             ActivePilot.dynamicDampingPitch = GUI.Toggle(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), contentWidth - (2 * leftIndent), entryHeight),
-                            ActivePilot.dynamicDampingPitch, Localizer.Format("#LOC_BDArmory_DynamicDampingPitch"), ActivePilot.dynamicDampingPitch ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                            ActivePilot.dynamicDampingPitch, Localizer.Format("#LOC_BDArmory_DynamicDampingPitch"), ActivePilot.dynamicDampingPitch ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic damp pitch"
                             dynPidLines += 1.25f;
 
                             if (ActivePilot.dynamicDampingPitch)
@@ -539,7 +539,7 @@ namespace BDArmory.UI
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"dynamic damp min"
                                     dynPidLines++;
                                 }
 
@@ -548,12 +548,12 @@ namespace BDArmory.UI
                                         new Rect(leftIndent + 150, ((pidLines + dynPidLines) * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                                         ActivePilot.DynamicDampingPitchMax, 1f, ActivePilot.UpToEleven ? 100 : 8);
                                 ActivePilot.DynamicDampingPitchMax = Mathf.Round(ActivePilot.DynamicDampingPitchMax * 10f) / 10f;
-                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + " :" + ActivePilot.DynamicDampingPitchMax.ToString("0.0"), Label);//"dynamic damping min"
+                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + " :" + ActivePilot.DynamicDampingPitchMax.ToString("0.0"), Label);//"dynamic damping max"
 
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"damp max"
                                     dynPidLines++;
                                 }
                                 
@@ -562,18 +562,18 @@ namespace BDArmory.UI
                                         new Rect(leftIndent + 150, ((pidLines + dynPidLines) * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                                         ActivePilot.dynamicSteerDampingPitchFactor, 0.1f, ActivePilot.UpToEleven ? 100 : 10);
                                 ActivePilot.dynamicSteerDampingPitchFactor = Mathf.Round(ActivePilot.dynamicSteerDampingPitchFactor * 10f) / 10f;
-                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchFactor") + " :" + ActivePilot.dynamicSteerDampingPitchFactor.ToString("0.0"), Label);//"dynamic damping min"
+                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchFactor") + " :" + ActivePilot.dynamicSteerDampingPitchFactor.ToString("0.0"), Label);//"dynamic damping mult"
 
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult"), contextLabel);//"dynamic damp Mult"
                                     dynPidLines++;
                                 }
                             }
 
                             ActivePilot.dynamicDampingYaw = GUI.Toggle(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), contentWidth - (2 * leftIndent), entryHeight),
-                           ActivePilot.dynamicDampingYaw, Localizer.Format("#LOC_BDArmory_DynamicDampingYaw"), ActivePilot.dynamicDampingYaw ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                           ActivePilot.dynamicDampingYaw, Localizer.Format("#LOC_BDArmory_DynamicDampingYaw"), ActivePilot.dynamicDampingYaw ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic damp yaw"
                             dynPidLines += 1.25f;
                             if (ActivePilot.dynamicDampingYaw)
                             {                               
@@ -587,7 +587,7 @@ namespace BDArmory.UI
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"dynamic damp min"
                                     dynPidLines++;
                                 }
                                 
@@ -596,12 +596,12 @@ namespace BDArmory.UI
                                         new Rect(leftIndent + 150, ((pidLines + dynPidLines) * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                                         ActivePilot.DynamicDampingYawMax, 1f, ActivePilot.UpToEleven ? 100 : 8);
                                 ActivePilot.DynamicDampingYawMax = Mathf.Round(ActivePilot.DynamicDampingYawMax * 10f) / 10f;
-                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMax") + " :" + ActivePilot.DynamicDampingYawMax.ToString("0.0"), Label);//"dynamic damping min"
+                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMax") + " :" + ActivePilot.DynamicDampingYawMax.ToString("0.0"), Label);//"dynamic damping max"
 
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"dynamic damp max"
                                     dynPidLines++;
                                 }
                                
@@ -610,18 +610,18 @@ namespace BDArmory.UI
                                         new Rect(leftIndent + 150, ((pidLines + dynPidLines) * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                                         ActivePilot.dynamicSteerDampingYawFactor, 0.1f, ActivePilot.UpToEleven ? 100 : 10);
                                 ActivePilot.dynamicSteerDampingYawFactor = Mathf.Round(ActivePilot.dynamicSteerDampingYawFactor / 10) * 10;
-                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingYawFactor") + " :" + ActivePilot.dynamicSteerDampingYawFactor.ToString("0.0"), Label);//"dynamic damping min"
+                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingYawFactor") + " :" + ActivePilot.dynamicSteerDampingYawFactor.ToString("0.0"), Label);//"dynamic damping yaw mult"
 
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult"), contextLabel);//"dynamic damp mult"
                                     dynPidLines++;
                                 }
                             }
 
                             ActivePilot.dynamicDampingRoll = GUI.Toggle(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), contentWidth - (2 * leftIndent), entryHeight),
-                            ActivePilot.dynamicDampingRoll, Localizer.Format("#LOC_BDArmory_DynamicDampingRoll"), ActivePilot.dynamicDampingRoll ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                            ActivePilot.dynamicDampingRoll, Localizer.Format("#LOC_BDArmory_DynamicDampingRoll"), ActivePilot.dynamicDampingRoll ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic damp roll"
                             dynPidLines += 1.25f;
                             if (ActivePilot.dynamicDampingRoll)
                             {                                
@@ -635,7 +635,7 @@ namespace BDArmory.UI
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"dynamic damp min"
                                     dynPidLines++;
                                 }
                                 
@@ -644,12 +644,12 @@ namespace BDArmory.UI
                                         new Rect(leftIndent + 150, ((pidLines + dynPidLines) * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                                         ActivePilot.DynamicDampingRollMax, 1f, ActivePilot.UpToEleven ? 100 : 8);
                                 ActivePilot.DynamicDampingRollMax = Mathf.Round(ActivePilot.DynamicDampingRollMax * 10f) / 10f;
-                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMax") + " :" + ActivePilot.DynamicDampingRollMax.ToString("0.0"), Label);//"dynamic damping min"
+                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMax") + " :" + ActivePilot.DynamicDampingRollMax.ToString("0.0"), Label);//"dynamic damping max"
 
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"dynamic damp max"
                                     dynPidLines++;
                                 }
                                                                 
@@ -658,12 +658,11 @@ namespace BDArmory.UI
                                         new Rect(leftIndent + 150, ((pidLines + dynPidLines) * entryHeight), contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                                         ActivePilot.dynamicSteerDampingRollFactor, 0.1f, ActivePilot.UpToEleven ? 100 : 10);
                                 ActivePilot.dynamicSteerDampingRollFactor = Mathf.Round(ActivePilot.dynamicSteerDampingRollFactor * 10f) / 10f;
-                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingRollFactor") + " :" + ActivePilot.dynamicSteerDampingRollFactor.ToString("0.0"), Label);//"dynamic damping min"
-
+                                GUI.Label(new Rect(leftIndent, ((pidLines + dynPidLines) * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_DynamicDampingRollFactor") + " :" + ActivePilot.dynamicSteerDampingRollFactor.ToString("0.0"), Label);//"dynamic damping roll mult"
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
-                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult"), contextLabel);//"Steer Mult"
+                                    GUI.Label(new Rect(150, ((pidLines + dynPidLines) * entryHeight), contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult"), contextLabel);//"dynamic damp mult"
                                     dynPidLines++;
                                 }
                             }
@@ -685,7 +684,7 @@ namespace BDArmory.UI
                         GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                     altLines += 0.25f;
 
-                    GUI.Label(new Rect(leftIndent, altLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_Altitudes"), BoldLabel);//"Dynamic Damping"
+                    GUI.Label(new Rect(leftIndent, altLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_PilotAI_Altitudes"), BoldLabel);//"Altitudes"
                     altLines++;
                     
                     ActivePilot.defaultAltitude =
@@ -693,11 +692,11 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, altLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.defaultAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
                     ActivePilot.defaultAltitude = Mathf.Round(ActivePilot.defaultAltitude / 25) * 25;
-                    GUI.Label(new Rect(leftIndent, altLines * entryHeight, 200, entryHeight), Localizer.Format("#LOC_BDArmory_DefaultAltitude") + " :" + ActivePilot.defaultAltitude.ToString("0"), Label);//"dynamic damping min"
+                    GUI.Label(new Rect(leftIndent, altLines * entryHeight, 200, entryHeight), Localizer.Format("#LOC_BDArmory_DefaultAltitude") + " :" + ActivePilot.defaultAltitude.ToString("0"), Label);//"default altitude"
                     altLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, altLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DefAlt"), contextLabel);//"dynamic damp min"
+                        GUI.Label(new Rect(150, altLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_DefAlt"), contextLabel);//"defalult alt"
                         altLines++;
                     }
 
@@ -706,16 +705,16 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, altLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.minAltitude, 25, ActivePilot.UpToEleven ? 60000 : 6000);
                     ActivePilot.minAltitude = Mathf.Round(ActivePilot.minAltitude / 25) * 25;
-                    GUI.Label(new Rect(leftIndent, altLines * entryHeight, 200, entryHeight), Localizer.Format("#LOC_BDArmory_MinAltitude") + " :" + ActivePilot.minAltitude.ToString("0"), Label);//"dynamic damping min"
+                    GUI.Label(new Rect(leftIndent, altLines * entryHeight, 200, entryHeight), Localizer.Format("#LOC_BDArmory_MinAltitude") + " :" + ActivePilot.minAltitude.ToString("0"), Label);//"min altitude"
                     altLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, altLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_MinAlt"), contextLabel);//"dynamic damp max"
+                        GUI.Label(new Rect(150, altLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_MinAlt"), contextLabel);//"min alt"
                         altLines++;
                     }
 
                     ActivePilot.maxAltitudeToggle = GUI.Toggle(new Rect(leftIndent, altLines * entryHeight, contentWidth - (2 * leftIndent), entryHeight),
-                    ActivePilot.maxAltitudeToggle, Localizer.Format("#LOC_BDArmory_MaxAltitude"), ActivePilot.maxAltitudeToggle ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                    ActivePilot.maxAltitudeToggle, Localizer.Format("#LOC_BDArmory_MaxAltitude"), ActivePilot.maxAltitudeToggle ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"max altitude AGL"
                     altLines += 1.25f;
 
                     if (ActivePilot.maxAltitudeToggle)
@@ -725,11 +724,11 @@ namespace BDArmory.UI
                                 new Rect(leftIndent + 150, altLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                                 ActivePilot.maxAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
                         ActivePilot.maxAltitude = Mathf.Round(ActivePilot.maxAltitude / 25) * 25;
-                        GUI.Label(new Rect(leftIndent, altLines * entryHeight, 200, entryHeight), Localizer.Format("#LOC_BDArmory_MaxAltitude") + " :" + ActivePilot.maxAltitude.ToString("0"), Label);//"dynamic damping min"
+                        GUI.Label(new Rect(leftIndent, altLines * entryHeight, 200, entryHeight), Localizer.Format("#LOC_BDArmory_MaxAltitude") + " :" + ActivePilot.maxAltitude.ToString("0"), Label);//"max altitude"
                         altLines++;
                         if (contextTipsEnabled)
                         {
-                            GUI.Label(new Rect(150, altLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_MaxAlt"), contextLabel);//"dynamic damp mult"
+                            GUI.Label(new Rect(150, altLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_MaxAlt"), contextLabel);//"max alt"
                             altLines++;
                         }
                     }
@@ -754,12 +753,12 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, spdLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.maxSpeed, 20, ActivePilot.UpToEleven ? 3000 : 800);
                     ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed);
-                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_MaxSpeed") + " :" + ActivePilot.maxSpeed.ToString("0"), Label);//"dynamic damping min"
+                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_MaxSpeed") + " :" + ActivePilot.maxSpeed.ToString("0"), Label);//"max speed"
 
                     spdLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"dynamic damp min"
+                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"max speed"
                         spdLines++;
                     }
 
@@ -768,12 +767,12 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, spdLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.takeOffSpeed, 10f, ActivePilot.UpToEleven ? 2000 : 200);
                     ActivePilot.takeOffSpeed = Mathf.Round(ActivePilot.takeOffSpeed);
-                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_TakeOffSpeed") + " :" + ActivePilot.takeOffSpeed.ToString("0"), Label);//"dynamic damping max"
+                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_TakeOffSpeed") + " :" + ActivePilot.takeOffSpeed.ToString("0"), Label);//"takeoff speed"
 
                     spdLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_takeoff"), contextLabel);//"dynamic damp max"
+                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_takeoff"), contextLabel);//"takeoff speed help"
                         spdLines++;
                     }
 
@@ -782,12 +781,12 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, spdLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.minSpeed, 10, ActivePilot.UpToEleven ? 2000 : 200);
                     ActivePilot.minSpeed = Mathf.Round(ActivePilot.minSpeed);
-                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_MinSpeed") + " :" + ActivePilot.minSpeed.ToString("0"), Label);//"dynamic damping min"
+                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_MinSpeed") + " :" + ActivePilot.minSpeed.ToString("0"), Label);//"min speed"
 
                     spdLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_minSpeed"), contextLabel);//"dynamic damp min"
+                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_minSpeed"), contextLabel);//"min speed help"
                         spdLines++;
                     }
 
@@ -796,12 +795,12 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, spdLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.strafingSpeed, 10, 200);
                     ActivePilot.strafingSpeed = Mathf.Round(ActivePilot.strafingSpeed);
-                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_StrafingSpeed") + " :" + ActivePilot.strafingSpeed.ToString("0"), Label);//"dynamic damping min"
+                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_StrafingSpeed") + " :" + ActivePilot.strafingSpeed.ToString("0"), Label);//"strafing speed"
 
                     spdLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_atkSpeed"), contextLabel);//"dynamic damp min"
+                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_atkSpeed"), contextLabel);//"strafe speed"
                         spdLines++;
                     }
 
@@ -810,12 +809,12 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, spdLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.idleSpeed, 10, ActivePilot.UpToEleven ? 3000 : 200);
                     ActivePilot.idleSpeed = Mathf.Round(ActivePilot.idleSpeed);
-                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_IdleSpeed") + " :" + ActivePilot.idleSpeed.ToString("0"), Label);//"dynamic damping min"
+                    GUI.Label(new Rect(leftIndent, spdLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_IdleSpeed") + " :" + ActivePilot.idleSpeed.ToString("0"), Label);//"idle speed"
 
                     spdLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"dynamic damp min"
+                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"idle speed context help"
                         spdLines++;
                     }
                     GUI.EndGroup();
@@ -839,12 +838,12 @@ namespace BDArmory.UI
                             new Rect(leftIndent + 150, ctrlLines * entryHeight, contentWidth - (leftIndent*2) - (150 + 10), entryHeight),
                             ActivePilot.maxSteer, 0.1f, 1);
                     ActivePilot.maxSteer = Mathf.Round(ActivePilot.maxSteer * 20f) / 20f;
-                    GUI.Label(new Rect(leftIndent, ctrlLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedSteerLimiter") + " :" + ActivePilot.maxSteer.ToString("0.00"), Label);//"dynamic damping min"
+                    GUI.Label(new Rect(leftIndent, ctrlLines * entryHeight, 85, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedSteerLimiter") + " :" + ActivePilot.maxSteer.ToString("0.00"), Label);//"Low speed Limiter"
 
                     ctrlLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, ctrlLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_LSSL"), contextLabel);//"dynamic damp min"
+                        GUI.Label(new Rect(150, ctrlLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_LSSL"), contextLabel);//"Low limiter context"
                         ctrlLines++;
                     }
 
