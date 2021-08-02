@@ -815,7 +815,7 @@ namespace BDArmory.UI
                     spdLines++;
                     if (contextTipsEnabled)
                     {
-                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_atkSpeed"), contextLabel);//"dynamic damp min"
+                        GUI.Label(new Rect(150, spdLines * entryHeight, contentWidth - 150, entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"dynamic damp min"
                         spdLines++;
                     }
                     GUI.EndGroup();
