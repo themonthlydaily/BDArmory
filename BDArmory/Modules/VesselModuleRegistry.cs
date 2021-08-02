@@ -555,6 +555,7 @@ namespace BDArmory.Modules
         }
         #endregion
 
+#if DEBUG
         public IEnumerator PerformanceTest()
         {
             var wait = new WaitForSeconds(0.1f);
@@ -624,6 +625,7 @@ namespace BDArmory.Modules
             }
             BDACompetitionMode.Instance.competitionStatus.Add("VesselModuleRegistry performance test complete.");
         }
+#endif
         #endregion
     }
 }

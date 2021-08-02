@@ -264,12 +264,13 @@ namespace BDArmory.FX
 
         public static void CleanPartsOnFireInfo()
         {
+            HashSet<Vessel> keysToRemove = new HashSet<Vessel>();
             foreach (var key in PartsOnFire.Keys)
             {
                 PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList(); // Remove expired fires.
-                if (PartsOnFire[key].Count == 0) { PartsOnFire.Remove(key); } // Remove parts no longer on fire.
+                if (PartsOnFire[key].Count == 0) { keysToRemove.Add(key); } // Remove parts no longer on fire.
             }
-            PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys.
+            PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null && !keysToRemove.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys (vessels) and those with no parts on fire.
         }
 
         void Awake()

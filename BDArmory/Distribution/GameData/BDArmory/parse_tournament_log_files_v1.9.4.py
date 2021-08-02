@@ -15,6 +15,7 @@ parser.add_argument('-s', '--score', action='store_false', help="Compute scores.
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
 parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0.5,0.01,1e-7,0,5e-2,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
+parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
 
@@ -60,7 +61,8 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 		if not args.current_dir and len(round.name) == 0:
 			continue
 		tournamentData[round.name] = {}
-		for heat in sorted(round.glob("[0-9]*.log")):
+		logFiles = sorted(round.glob("[0-9]*.log"))
+		for heat in logFiles if args.N == None else logFiles[:args.N]:
 			with open(heat, "r") as logFile:
 				tournamentData[round.name][heat.name] = {'result': None, 'duration': 0, 'craft': {}}
 				for line in logFile:
@@ -149,6 +151,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 	teamDraws = Counter([team for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Draw" for team in heat['result']['teams']])
 	teamDeaths = Counter([team for round in tournamentData.values() for heat in round.values() if 'dead teams' in heat['result'] for team in heat['result']['dead teams']])
 	teams = {team: members for round in tournamentData.values() for heat in round.values() if 'teams' in heat['result'] for team, members in heat['result']['teams'].items()}
+	teams.update({team: members for round in tournamentData.values() for heat in round.values() if 'dead teams' in heat['result'] for team, members in heat['result']['dead teams'].items()})
 	summary = {
 		'craft': {
 			craft: {

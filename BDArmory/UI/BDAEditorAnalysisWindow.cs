@@ -367,6 +367,7 @@ namespace BDArmory.UI
             // Encapsulate editor ShipConstruct into a vessel:
             Vessel v = new Vessel();
             v.parts = EditorLogic.fetch.ship.Parts;
+            v.vesselType = VesselType.Plane; // Tell KSP that it's not debris (which we ignore in the snapshot).
             // RadarUtils.RenderVesselRadarSnapshot(v, EditorLogic.RootPart.transform);  //first rendering for true RCS
             RadarUtils.RenderVesselRadarSnapshot(v, EditorLogic.RootPart.transform, true);  //create renders
             takeSnapshot = false;
