@@ -26,6 +26,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
 
         // General toggle settings
+        [BDAPersistantSettingsField] public static bool AI_TOOLBAR_BUTTON = true;                 // Show or hide the BDA AI toolbar button.
         [BDAPersistantSettingsField] public static bool INSTAKILL = false;
         [BDAPersistantSettingsField] public static bool INFINITE_AMMO = false;
         [BDAPersistantSettingsField] public static bool BULLET_HITS = true;

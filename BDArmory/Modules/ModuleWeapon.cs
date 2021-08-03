@@ -1244,12 +1244,15 @@ namespace BDArmory.Modules
                     userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) &&
                                   (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled &&
                                   !aiControlled);
-                    if ((userFiring || autoFire || agHoldFiring) &&
-                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue)))
+                    if ( (userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                     {
-                        if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
+                        if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                         {
-                            StartCoroutine(IncrementRippleIndex(0));
+                            if (useRippleFire) //old method wouldn't catch non-ripple guns (i.e. Vulcan) trying to fire at targets beyond fire range
+                            {
+                                StartCoroutine(IncrementRippleIndex(0));
+                            }
                             finalFire = false;
                         }
                         else if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Rocket) //WeaponTypes.Cannon is deprecated
@@ -1330,12 +1333,15 @@ namespace BDArmory.Modules
 
                     if (eWeaponType == WeaponTypes.Laser)
                     {
-                        if ((userFiring || autoFire || agHoldFiring) &&
-                            (!turret || turret.TargetInRange(targetPosition, 10, float.MaxValue)))
+                        if ((userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                         {
-                            if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
+                            if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                             {
-                                StartCoroutine(IncrementRippleIndex(0));
+                                if (useRippleFire)
+                                {
+                                    StartCoroutine(IncrementRippleIndex(0));
+                                }
                                 finalFire = false;
                             }
                             else
@@ -3399,7 +3405,7 @@ namespace BDArmory.Modules
             }
             if (!hasReloadAnim && hasDeployAnim && (AnimTimer >= 1 && isReloading))
             {
-                if (rocketPod)
+                if (eWeaponType == WeaponTypes.Rocket && rocketPod)
                 {
                     RoundsRemaining = 0;
                     UpdateRocketScales();
