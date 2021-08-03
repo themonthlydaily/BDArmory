@@ -1517,7 +1517,7 @@ namespace BDArmory.Modules
                 CheckLoadedAmmo();
                 //Transform[] fireTransforms = part.FindModelTransforms("fireTransform");
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
-                    for (int i = 0; i < fireTransforms.Length; i++) 
+                    for (int i = 0; i < fireTransforms.Length; i++)
                     {
                         if (CanFire(requestResourceAmount))
                         {
@@ -1753,6 +1753,7 @@ namespace BDArmory.Modules
                             {
                                 ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
                             }
+                            BDACompetitionMode.Instance.Scores2.RegisterShot(aName);
                             LaserBeam(aName);
                             if (hasFireAnimation)
                             {
@@ -1779,6 +1780,7 @@ namespace BDArmory.Modules
                             {
                                 ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
                             }
+                            BDACompetitionMode.Instance.Scores2.RegisterShot(aName);
                         }
                         for (float iTime = TimeWarp.fixedDeltaTime; iTime >= 0; iTime -= timeGap)
                             timeFired = Time.time - iTime;
@@ -1906,7 +1908,7 @@ namespace BDArmory.Modules
                                 {
                                     damage *= (1 - ((armor.Diffusivity * armor.ArmorThickness) / laserDamage)); //but this works for now
                                 }
-                                p.ReduceArmor(damage/10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
+                                p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
                                 p.AddDamage(damage);
                             }
                             if (HEpulses)
@@ -1955,6 +1957,16 @@ namespace BDArmory.Modules
 
                             var aName = vesselname;
                             var tName = p.vessel.GetName();
+                            BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, damage);
+                            if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
+                            {
+                                // ScoreAccumulator = 0;
+                                BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, WeaponName, distance);
+                            }
+                            else
+                            {
+                                // ScoreAccumulator += TimeWarp.fixedDeltaTime;
+                            }
                             if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
                             {
                                 // Always score damage.
@@ -1963,13 +1975,14 @@ namespace BDArmory.Modules
                                     BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                                 }
                                 var tData = BDACompetitionMode.Instance.Scores[tName];
-                                if (tData.damageFromBullets.ContainsKey(aName))
-                                    tData.damageFromBullets[aName] += damage;
+                                if (tData.damageFromGuns.ContainsKey(aName))
+                                    tData.damageFromGuns[aName] += damage;
                                 else
-                                    tData.damageFromBullets.Add(aName, damage);
+                                    tData.damageFromGuns.Add(aName, damage);
                                 if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
                                 {
                                     ScoreAccumulator = 0;
+                                    BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, WeaponName, distance);
                                     if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                     {
                                         BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);

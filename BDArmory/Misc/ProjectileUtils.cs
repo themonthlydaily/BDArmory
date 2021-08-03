@@ -102,6 +102,8 @@ namespace BDArmory.Misc
         {
             var aName = sourceVessel;//.GetName();
             var tName = hitPart.vessel.GetName();
+            BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, name, distanceTraveled);
+            BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, damage);
 
             if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
             {
@@ -136,10 +138,10 @@ namespace BDArmory.Misc
                     else
                         tData.hitCounts.Add(aName, 1);
                     // Track damage
-                    if (tData.damageFromBullets.ContainsKey(aName))
-                        tData.damageFromBullets[aName] += damage;
+                    if (tData.damageFromGuns.ContainsKey(aName))
+                        tData.damageFromGuns[aName] += damage;
                     else
-                        tData.damageFromBullets.Add(aName, damage);
+                        tData.damageFromGuns.Add(aName, damage);
                 }
             }
         }

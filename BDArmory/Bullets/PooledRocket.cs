@@ -96,14 +96,14 @@ namespace BDArmory.Bullets
                     {
                         pe.Current.emit = false;
                     }
-                    
+
                     else if (pe.Current.useWorldSpace)
                     {
                         BDAGaplessParticleEmitter gpe = pe.Current.gameObject.AddComponent<BDAGaplessParticleEmitter>();
                         gpe.rb = rb;
                         gpe.emit = true;
                     }
-                    
+
                     else
                     {
                         pe.Current.emit = true;
@@ -137,6 +137,7 @@ namespace BDArmory.Bullets
                 if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
                     ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
+                BDACompetitionMode.Instance.Scores2.RegisterShot(sourceVesselName);
             }
             else
             {
@@ -375,9 +376,9 @@ namespace BDArmory.Bullets
                             {
                                 hasPenetrated = true;
 
-								                bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass * 1000, caliber);
+                                bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass * 1000, caliber);
                                 ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team);
-								                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
+                                ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, (rocketMass * 1000), penetrationFactor);
 
                                 penTicker += 1;
                                 ProjectileUtils.CheckPartForExplosion(hitPart);
@@ -479,6 +480,8 @@ namespace BDArmory.Bullets
                             var aName = sourceVessel.GetName(); //proxi detonated rocket scoring
                             var tName = partHit.vessel.GetName();
 
+                            BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, name, distanceFromStart);
+
                             if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
                             {
                                 if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
@@ -578,7 +581,7 @@ namespace BDArmory.Bullets
                                         ME.massMod += (massMod * (1 - (distance / blastRadius))); //this way craft at edge of blast might only get disabled instead of bricked
                                         ME.duration += (BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius))); //can bypass EMP damage cap
                                     }
-                                }                                
+                                }
                             }
                         }
                     }
@@ -653,7 +656,7 @@ namespace BDArmory.Bullets
                     else
                     {
                         ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, direction);
-                    }                                        
+                    }
 
                 }
             } // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher

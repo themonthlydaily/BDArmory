@@ -314,6 +314,8 @@ namespace BDArmory.Modules
             {
                 var aName = SourceVessel;
                 var tName = part.vessel.GetName();
+                BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName);
+                BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, explDamage);
 
                 if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
                 {
@@ -339,10 +341,10 @@ namespace BDArmory.Modules
                     else
                         tData.hitCounts.Add(aName, 1);
                     // Track damage
-                    if (tData.damageFromBullets.ContainsKey(aName))
-                        tData.damageFromBullets[aName] += explDamage;
+                    if (tData.damageFromGuns.ContainsKey(aName))
+                        tData.damageFromGuns[aName] += explDamage;
                     else
-                        tData.damageFromBullets.Add(aName, explDamage);
+                        tData.damageFromGuns.Add(aName, explDamage);
                 }
             }
         }

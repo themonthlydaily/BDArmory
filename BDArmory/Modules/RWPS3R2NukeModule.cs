@@ -220,6 +220,14 @@ namespace BDArmory.Modules
                                     // Scoring
                                     var aName = Sourcevessel; // Attacker
                                     var tName = p.vessel.GetName(); // Target
+                                    if (BDACompetitionMode.Instance.Scores2.RegisterMissileHit(aName, tName, 1))
+                                    {
+                                        // if (vesselsHitByMissiles.ContainsKey(tName))
+                                        //     ++vesselsHitByMissiles[tName];
+                                        // else
+                                        //     vesselsHitByMissiles[tName] = 1;
+                                        BDACompetitionMode.Instance.Scores2.RegisterMissileDamage(aName, tName, blastDamage);
+                                    }
                                     if (tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
                                     {
                                         // Part hit counts
@@ -272,7 +280,7 @@ namespace BDArmory.Modules
                 }
             }
             if (vesselsHitByMissiles.Count > 0)
-            {
+            { // Note: Missile strike isn't counted here.
                 string message = "";
                 foreach (var vesselName in vesselsHitByMissiles.Keys)
                     message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];

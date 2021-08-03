@@ -180,9 +180,17 @@ namespace BDArmory.FX
                         // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
                         if (damaged && ExplosionSource == ExplosionSourceType.Missile && BDACompetitionMode.Instance)
                         {
+                            var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
+                            if (BDACompetitionMode.Instance.Scores2.RegisterMissileHit(sourceVesselName, damagedVesselName, 1))
+                            {
+                                // if (explosionEventsVesselsHitByMissiles.ContainsKey(damagedVesselName))
+                                //     ++explosionEventsVesselsHitByMissiles[damagedVesselName];
+                                // else
+                                //     explosionEventsVesselsHitByMissiles[damagedVesselName] = 1;
+                            }
                             if (sourceVesselName != null && BDACompetitionMode.Instance.Scores.ContainsKey(sourceVesselName)) // Check that the source vessel is in the competition.
                             {
-                                var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
+                                // var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
                                 if (damagedVesselName != null && damagedVesselName != sourceVesselName && BDACompetitionMode.Instance.Scores.ContainsKey(damagedVesselName)) // Check that the damaged vessel is in the competition and isn't the source vessel.
                                 {
                                     if (BDACompetitionMode.Instance.Scores[damagedVesselName].missilePartDamageCounts.ContainsKey(sourceVesselName))
@@ -225,6 +233,7 @@ namespace BDArmory.FX
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
                 foreach (var vesselName in explosionEventsVesselsHitByMissiles.Keys) // Note: sourceVesselName is already checked for being in the competition before damagedVesselName is added to explosionEventsVesselsHitByMissiles, so we don't need to check it here.
                 {
+                    BDACompetitionMode.Instance.Scores2.RegisterMissileStrike(sourceVesselName, vesselName);
                     if (BDACompetitionMode.Instance.Scores[vesselName].missileHitCounts.ContainsKey(sourceVesselName))
                         ++BDACompetitionMode.Instance.Scores[vesselName].missileHitCounts[sourceVesselName];
                     else
@@ -508,6 +517,16 @@ namespace BDArmory.FX
                             case ExplosionSourceType.Missile:
                                 var aName = eventToExecute.SourceVesselName; // Attacker
                                 var tName = part.vessel.GetName(); // Target
+                                switch (ExplosionSource)
+                                {
+                                    case ExplosionSourceType.Bullet:
+                                        BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, damage);
+                                        break;
+                                    case ExplosionSourceType.Missile:
+                                        BDACompetitionMode.Instance.Scores2.RegisterMissileDamage(aName, tName, damage);
+                                        break;
+                                }
+
                                 if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
                                 {
                                     var tData = BDACompetitionMode.Instance.Scores[tName];
@@ -515,10 +534,10 @@ namespace BDArmory.FX
                                     switch (ExplosionSource)
                                     {
                                         case ExplosionSourceType.Bullet:
-                                            if (tData.damageFromBullets.ContainsKey(aName))
-                                                tData.damageFromBullets[aName] += damage;
+                                            if (tData.damageFromGuns.ContainsKey(aName))
+                                                tData.damageFromGuns[aName] += damage;
                                             else
-                                                tData.damageFromBullets.Add(aName, damage);
+                                                tData.damageFromGuns.Add(aName, damage);
                                             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                                                 BDAScoreService.Instance.TrackDamage(aName, tName, damage);
                                             break;

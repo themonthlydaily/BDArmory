@@ -312,9 +312,18 @@ namespace BDArmory.FX
                     }
                     ////////////////////////////////////////////////
 
-                    ScoreAccumulator = 0;
                     var aName = SourceVessel;
                     var tName = parentPart.vessel.GetName();
+                    BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
+                    if (ScoreAccumulator >= 1)
+                    {
+                        BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName);
+                        // ScoreAccumulator = 0;
+                    }
+                    else
+                    {
+                        // ScoreAccumulator += 1 * Time.deltaTime;
+                    }
 
                     if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
                     {
@@ -324,10 +333,10 @@ namespace BDArmory.FX
                         }
                         // Track damage. Moving this here to properly track damage per tick
                         var tData = BDACompetitionMode.Instance.Scores[tName];
-                        if (tData.damageFromBullets.ContainsKey(aName))
-                            tData.damageFromBullets[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
+                        if (tData.damageFromGuns.ContainsKey(aName))
+                            tData.damageFromGuns[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
                         else
-                            tData.damageFromBullets.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
+                            tData.damageFromGuns.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
 
                         if (ScoreAccumulator >= 1) //could be reduced, gaining +1 hit per sec, per fire seems high
                         {
@@ -346,11 +355,12 @@ namespace BDArmory.FX
                                 ++tData.hitCounts[aName];
                             else
                                 tData.hitCounts.Add(aName, 1);
+                            ScoreAccumulator = 0;
                         }
-                    }
-                    else
-                    {
-                        ScoreAccumulator += 1 * Time.deltaTime;
+                        else
+                        {
+                            ScoreAccumulator += 1 * Time.deltaTime;
+                        }
                     }
                 }
             }

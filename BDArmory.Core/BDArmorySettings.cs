@@ -225,6 +225,6 @@ namespace BDArmory.Core
 
         // Scoring categories
         [BDAPersistantSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-shot time limit
-        [BDAPersistantSettingsField] public static float SCORING_MERCYKILL = 10;                   // Mercy-kill time limit
+        [BDAPersistantSettingsField] public static float SCORING_KILLSTEAL = 10;                   // Mercy-kill time limit
     }
 }
