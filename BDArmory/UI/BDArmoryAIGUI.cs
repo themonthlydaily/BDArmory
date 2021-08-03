@@ -86,7 +86,7 @@ namespace BDArmory.UI
             Title.fontStyle = BDArmorySetup.BDGuiSkin.window.fontStyle;
             Title.alignment = TextAnchor.UpperCenter;
 
-            infoLinkStyle = BDArmorySetup.BDGuiSkin.label;
+            infoLinkStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
             infoLinkStyle.alignment = TextAnchor.UpperLeft;
             infoLinkStyle.normal.textColor = Color.white;
 
