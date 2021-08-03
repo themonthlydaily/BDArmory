@@ -1244,7 +1244,7 @@ namespace BDArmory.Modules
                     userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) &&
                                   (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled &&
                                   !aiControlled);
-                    iif ( (userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                    if ( (userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
                         (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                     {
                         if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
