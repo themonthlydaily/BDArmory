@@ -1711,6 +1711,13 @@ namespace BDArmory.UI
             if (BDArmorySettings.GENERAL_SETTINGS_TOGGLE)
             {
                 GameSettings.ADVANCED_TWEAKABLES = GUI.Toggle(SLineRect(++line), GameSettings.ADVANCED_TWEAKABLES, Localizer.Format("#autoLOC_900906") + (GameSettings.ADVANCED_TWEAKABLES ? "" : " <— Access many more AI tuning options")); // Advanced tweakables
+                if (BDArmorySettings.AI_TOOLBAR_BUTTON != (BDArmorySettings.AI_TOOLBAR_BUTTON = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AI_TOOLBAR_BUTTON, Localizer.Format("#LOC_BDArmory_Settings_AIToolbarButton")))) // AI Toobar Button
+                {
+                    if (BDArmorySettings.AI_TOOLBAR_BUTTON)
+                    { BDArmoryAIGUI.Instance.AddToolbarButton(); }
+                    else
+                    { BDArmoryAIGUI.Instance.RemoveToolbarButton(); }
+                }
                 BDArmorySettings.INSTAKILL = GUI.Toggle(SLeftRect(++line), BDArmorySettings.INSTAKILL, Localizer.Format("#LOC_BDArmory_Settings_Instakill"));//"Instakill"
                 BDArmorySettings.INFINITE_AMMO = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_AMMO, Localizer.Format("#LOC_BDArmory_Settings_InfiniteAmmo"));//"Infinite Ammo"
                 BDArmorySettings.BULLET_HITS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BULLET_HITS, Localizer.Format("#LOC_BDArmory_Settings_BulletHits"));//"Bullet Hits"
@@ -2204,7 +2211,7 @@ namespace BDArmory.UI
             }
 
             //competition mode
-            if (HighLogic.LoadedSceneIsFlight)
+            if (HighLogic.LoadedSceneIsFlight && BDACompetitionMode.Instance != null)
             {
                 if (BDArmorySettings.REMOTE_LOGGING_VISIBLE)
                 {
