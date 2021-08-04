@@ -257,27 +257,6 @@ public static ApplicationLauncherButton button;
                 }
             }
         }
-        void GetAIEditor()
-        {
-            if (EditorLogic.fetch.ship == null) return;
-            ActivePilot = null;
-            ActiveDriver = null;
-            foreach (var p in EditorLogic.fetch.ship.Parts)
-            {
-                foreach (var AI in p.FindModulesImplementing<BDModulePilotAI>())
-                {
-                    if (AI == null) continue;
-                    ActivePilot = AI;
-                    return;
-                }
-                foreach (var AI in p.FindModulesImplementing<BDModuleSurfaceAI>())
-                {
-                    if (AI == null) continue;
-                    ActiveDriver = AI;
-                    return;
-                }
-            }
-        }
 
         #region GUI
 
