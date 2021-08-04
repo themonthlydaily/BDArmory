@@ -46,6 +46,10 @@ namespace BDArmory.UI
         public static BDInputInfo TOURNAMENT_SETUP = new BDInputInfo("Setup Tournament");
         public static BDInputInfo TOURNAMENT_RUN = new BDInputInfo("Run Tournament");
 
+        //GUI
+        public static BDInputInfo AI_GUI_TOGGLE = new BDInputInfo("[/]", "Toggle AI GUI");
+        public static BDInputInfo WM_GUI_TOGGLE = new BDInputInfo("[*]", "Toggle WM GUI");
+
         public static void SaveSettings()
         {
             ConfigNode fileNode = ConfigNode.Load(BDArmorySettings.settingsConfigURL);
