@@ -541,7 +541,7 @@ namespace BDArmory.UI
                     missileWarning = false;
                 }
 
-                if (BDInputUtils.GetKey(BDInputSettingsFields.WM_GUI_TOGGLE))
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.WM_GUI_TOGGLE))
                 {
                     windowBDAToolBarEnabled = !windowBDAToolBarEnabled;
                 }
