@@ -6,7 +6,6 @@ using KSP.Localization;
 using KSP.UI.Screens;
 using static UnityEngine.GUILayout;
 using System;
-using System.Collections.Generic;
 
 namespace BDArmory.UI
 {
@@ -1188,7 +1187,7 @@ namespace BDArmory.UI
                         {
                             ActivePilot.lowSpeedSwitch =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
-                                    ActivePilot.lowSpeedSwitch, 100f, 500);
+                                    ActivePilot.lowSpeedSwitch, 10f, 500);
                             ActivePilot.lowSpeedSwitch = Mathf.Round(ActivePilot.lowSpeedSwitch);
                         }
                         else
@@ -1197,7 +1196,7 @@ namespace BDArmory.UI
                             string lsls = GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), ActivePilot.lowSpeedSwitch.ToString("0"));
                             if (Single.TryParse(lsls, out lowspdlimit))
                             {
-                                ActivePilot.lowSpeedSwitch = Mathf.Clamp(lowspdlimit, 100f, 500);
+                                ActivePilot.lowSpeedSwitch = Mathf.Clamp(lowspdlimit, 10f, 500);
                             }
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedLimiterSpeed") + " :" + ActivePilot.lowSpeedSwitch.ToString("0"), Label);//"dynamic damping max"
@@ -1236,7 +1235,7 @@ namespace BDArmory.UI
                         {
                             ActivePilot.cornerSpeed =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, ctrlLines, contentWidth),
-                                    ActivePilot.cornerSpeed, 10, 200);
+                                    ActivePilot.cornerSpeed, 10, 500);
                             ActivePilot.cornerSpeed = Mathf.Round(ActivePilot.cornerSpeed);
                         }
                         else
@@ -1245,7 +1244,7 @@ namespace BDArmory.UI
                             string hsls = GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), ActivePilot.cornerSpeed.ToString("0"));
                             if (Single.TryParse(hsls, out hispeedlimit))
                             {
-                                ActivePilot.cornerSpeed = Mathf.Clamp(hispeedlimit, 10, 200);
+                                ActivePilot.cornerSpeed = Mathf.Clamp(hispeedlimit, 10, 500);
                             }
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HighSpeedLimiterSpeed") + " :" + ActivePilot.cornerSpeed.ToString("0"), Label);//"dynamic damping min"
