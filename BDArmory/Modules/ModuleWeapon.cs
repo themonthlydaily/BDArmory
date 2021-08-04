@@ -1244,8 +1244,8 @@ namespace BDArmory.Modules
                     userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) &&
                                   (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled &&
                                   !aiControlled);
-                    if ((userFiring || autoFire || agHoldFiring) &&
-                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue)))
+                    if ( (userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                     {
                         if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                         {
@@ -1333,8 +1333,8 @@ namespace BDArmory.Modules
 
                     if (eWeaponType == WeaponTypes.Laser)
                     {
-                        if ((userFiring || autoFire || agHoldFiring) &&
-                            (!turret || turret.TargetInRange(targetPosition, 10, float.MaxValue)))
+                        if ((userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                         {
                             if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                             {
@@ -3392,7 +3392,7 @@ namespace BDArmory.Modules
             }
             if (!hasReloadAnim && hasDeployAnim && (AnimTimer >= 1 && isReloading))
             {
-                if (rocketPod)
+                if (eWeaponType == WeaponTypes.Rocket && rocketPod)
                 {
                     RoundsRemaining = 0;
                     UpdateRocketScales();
