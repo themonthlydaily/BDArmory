@@ -12,18 +12,19 @@ namespace BDArmory.UI
 {
     [KSPAddon(KSPAddon.Startup.EveryScene, false)]
     public class BDArmoryAIGUI : MonoBehaviour
-    {       
+    {
         //toolbar gui
         public static bool infoLinkEnabled = false;
         public static bool contextTipsEnabled = false;
         public static bool NumFieldsEnabled = false;
         public static bool windowBDAAIGUIEnabled;
 
-        public static ApplicationLauncherButton button;
+public static ApplicationLauncherButton button;
 
         float WindowWidth = 500;
         float WindowHeight = 250;
         float height = 0;
+
         float ColumnWidth = 350;
         float _buttonSize = 26;
         float _windowMargin = 4;
@@ -164,11 +165,12 @@ namespace BDArmory.UI
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             {
                 if (BDInputUtils.GetKey(BDInputSettingsFields.AI_GUI_TOGGLE))
+
                 {
                     windowBDAAIGUIEnabled = !windowBDAAIGUIEnabled;
                 }
-            }            
-        }       
+            }
+        }
 
         void VesselChange(Vessel v)
         {
@@ -255,8 +257,27 @@ namespace BDArmory.UI
                 }
             }
         }
-
-
+        void GetAIEditor()
+        {
+            if (EditorLogic.fetch.ship == null) return;
+            ActivePilot = null;
+            ActiveDriver = null;
+            foreach (var p in EditorLogic.fetch.ship.Parts)
+            {
+                foreach (var AI in p.FindModulesImplementing<BDModulePilotAI>())
+                {
+                    if (AI == null) continue;
+                    ActivePilot = AI;
+                    return;
+                }
+                foreach (var AI in p.FindModulesImplementing<BDModuleSurfaceAI>())
+                {
+                    if (AI == null) continue;
+                    ActiveDriver = AI;
+                    return;
+                }
+            }
+        }
 
         #region GUI
 
@@ -267,7 +288,7 @@ namespace BDArmory.UI
             if (!windowBDAAIGUIEnabled || (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor)) return;
             //BDArmorySetup.WindowRectAI = new Rect(BDArmorySetup.WindowRectAI.x, BDArmorySetup.WindowRectAI.y, WindowWidth, WindowHeight);
             BDArmorySetup.WindowRectAI = GUI.Window(GetInstanceID(), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
-            BDGUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);       
+            BDGUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
         }
 
         float pidHeight;
@@ -318,7 +339,7 @@ namespace BDArmory.UI
             float windowColumns = 2;
             float contentWidth = ((ColumnWidth * 2) - 100 - 20);
 
-            GUI.DragWindow(new Rect(_windowMargin +_buttonSize * 6, 0, (ColumnWidth * 2) - (2 * _windowMargin) - (10 * _buttonSize), _windowMargin + _buttonSize));
+            GUI.DragWindow(new Rect(_windowMargin + _buttonSize * 6, 0, (ColumnWidth * 2) - (2 * _windowMargin) - (9 * _buttonSize), _windowMargin + _buttonSize));
 
             GUI.Label(new Rect(100, contentTop, contentWidth, entryHeight),
                Localizer.Format("#LOC_BDArmory_AIWindow_title"), Title);// "No AI found."
@@ -329,6 +350,7 @@ namespace BDArmory.UI
             //Exit Button
             GUIStyle buttonStyle = windowBDAAIGUIEnabled ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box;
             if (GUI.Button(TitleButtonRect(1), "X", buttonStyle))
+
             {
                 windowBDAAIGUIEnabled = !windowBDAAIGUIEnabled;
             }
@@ -336,6 +358,7 @@ namespace BDArmory.UI
             //Infolink button
             buttonStyle = infoLinkEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
             if (GUI.Button(TitleButtonRect(2), "i", buttonStyle))
+
             {
                 infoLinkEnabled = !infoLinkEnabled;
             }
@@ -346,7 +369,6 @@ namespace BDArmory.UI
             {
                 contextTipsEnabled = !contextTipsEnabled;
             }
-
             //Numeric fields button
             buttonStyle = NumFieldsEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
             if (GUI.Button(TitleButtonRect(4), "#", buttonStyle))
@@ -371,7 +393,7 @@ namespace BDArmory.UI
                     }
                 }
 
-                showPID = GUI.Toggle(SubsectionRect(leftIndent, line),
+                showPID = GUI.Toggle(SubsectionRect(leftIndent, line),               
                             showPID, Localizer.Format("#LOC_BDArmory_PilotAI_PID"), showPID ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"PiD"                    
                 line += 1.5f;
 
@@ -536,8 +558,6 @@ namespace BDArmory.UI
                         }
                     }
                     GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerFactor") + " :" + ActivePilot.steerMult.ToString("0.0"), Label);//"Steer Mult"
-
-
                     pidLines++;
                     if (contextTipsEnabled)
                     {
@@ -660,6 +680,7 @@ namespace BDArmory.UI
                                 GUI.Label(ContextLabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), Label);//"dynamic damp max"
                                 dynPidLines++;
                             }
+
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.dynamicSteerDampingFactor =
@@ -693,6 +714,7 @@ namespace BDArmory.UI
 
                             if (ActivePilot.dynamicDampingPitch)
                             {
+
                                 if (!NumFieldsEnabled)
                                 {
                                     ActivePilot.DynamicDampingPitchMin =
@@ -710,6 +732,7 @@ namespace BDArmory.UI
                                     }
                                 }
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchMin") + " :" + ActivePilot.DynamicDampingPitchMin.ToString("0.0"), Label);//"dynamic damping min"
+
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
@@ -757,7 +780,6 @@ namespace BDArmory.UI
                                     }
                                 }
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchFactor") + " :" + ActivePilot.dynamicSteerDampingPitchFactor.ToString("0.0"), Label);//"dynamic damping mult"
-
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
@@ -795,6 +817,7 @@ namespace BDArmory.UI
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"dynamic damp min"
                                     dynPidLines++;
                                 }
+
                                 if (!NumFieldsEnabled)
                                 {
                                     ActivePilot.DynamicDampingYawMax =
@@ -819,6 +842,7 @@ namespace BDArmory.UI
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"dynamic damp max"
                                     dynPidLines++;
                                 }
+
                                 if (!NumFieldsEnabled)
                                 {
                                     ActivePilot.dynamicSteerDampingYawFactor =
@@ -850,6 +874,7 @@ namespace BDArmory.UI
                             dynPidLines += 1.25f;
                             if (ActivePilot.dynamicDampingRoll)
                             {
+
                                 if (!NumFieldsEnabled)
                                 {
                                     ActivePilot.DynamicDampingRollMin =
@@ -874,6 +899,7 @@ namespace BDArmory.UI
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMin"), contextLabel);//"dynamic damp min"
                                     dynPidLines++;
                                 }
+
                                 if (!NumFieldsEnabled)
                                 {
                                     ActivePilot.DynamicDampingRollMax =
@@ -898,6 +924,7 @@ namespace BDArmory.UI
                                     GUI.Label(ContextLabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMax"), contextLabel);//"dynamic damp max"
                                     dynPidLines++;
                                 }
+
                                 if (!NumFieldsEnabled)
                                 {
                                     ActivePilot.dynamicSteerDampingRollFactor =
@@ -915,6 +942,7 @@ namespace BDArmory.UI
                                     }
                                 }
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollFactor") + " :" + ActivePilot.dynamicSteerDampingRollFactor.ToString("0.0"), Label);//"dynamic damping roll mult"
+
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
@@ -942,6 +970,7 @@ namespace BDArmory.UI
 
                     GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_PilotAI_Altitudes"), BoldLabel);//"Altitudes"
                     altLines++;
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.defaultAltitude =
@@ -959,12 +988,14 @@ namespace BDArmory.UI
                         }
                     }
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_DefaultAltitude") + " :" + ActivePilot.defaultAltitude.ToString("0"), Label);//"default altitude"
+
                     altLines++;
                     if (contextTipsEnabled)
                     {
                         GUI.Label(ContextLabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_AIWindow_DefAlt"), contextLabel);//"defalult alt"
                         altLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.minAltitude =
@@ -982,6 +1013,7 @@ namespace BDArmory.UI
                         }
                     }
                     GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MinAltitude") + " :" + ActivePilot.minAltitude.ToString("0"), Label);//"min altitude"
+
                     altLines++;
                     if (contextTipsEnabled)
                     {
@@ -1012,6 +1044,7 @@ namespace BDArmory.UI
                             }
                         }
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MaxAltitude") + " :" + ActivePilot.maxAltitude.ToString("0"), Label);//"max altitude"
+
                         altLines++;
                         if (contextTipsEnabled)
                         {
@@ -1058,6 +1091,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"max speed"
                         spdLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.takeOffSpeed =
@@ -1075,13 +1109,14 @@ namespace BDArmory.UI
                         }
                     }
                     GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_TakeOffSpeed") + " :" + ActivePilot.takeOffSpeed.ToString("0"), Label);//"takeoff speed"
-
+                    
                     spdLines++;
                     if (contextTipsEnabled)
                     {
                         GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_takeoff"), contextLabel);//"takeoff speed help"
                         spdLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.minSpeed =
@@ -1106,6 +1141,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_minSpeed"), contextLabel);//"min speed help"
                         spdLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.strafingSpeed =
@@ -1130,6 +1166,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_atkSpeed"), contextLabel);//"strafe speed"
                         spdLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.idleSpeed =
@@ -1169,6 +1206,7 @@ namespace BDArmory.UI
 
                     GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_ControlLimits"), BoldLabel);//"Control"
                     ctrlLines++;
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.maxSteer =
@@ -1193,6 +1231,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LSSL"), contextLabel);//"Low limiter context"
                         ctrlLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.lowSpeedSwitch =
@@ -1217,6 +1256,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LSLS"), contextLabel);//"dynamic damp max"
                         ctrlLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.maxSteerAtMaxSpeed =
@@ -1241,6 +1281,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HSSL"), contextLabel);//"dynamic damp min"
                         ctrlLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.cornerSpeed =
@@ -1265,6 +1306,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HSLS"), contextLabel);//"dynamic damp min"
                         ctrlLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.maxBank =
@@ -1289,6 +1331,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_bankLimit"), contextLabel);//"dynamic damp min"
                         ctrlLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.maxAllowedGForce =
@@ -1313,6 +1356,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_GForce"), contextLabel);//"dynamic damp min"
                         ctrlLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.maxAllowedAoA =
@@ -1352,6 +1396,7 @@ namespace BDArmory.UI
 
                     GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvadeExtend"), BoldLabel);//"Speed"
                     evadeLines++;
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.minEvasionTime =
@@ -1376,6 +1421,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_MinEvade"), contextLabel);//"dynamic damp min"
                         evadeLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.evasionThreshold =
@@ -1401,6 +1447,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_evadeDist"), contextLabel);//"dynamic damp max"
                         evadeLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.evasionTimeThreshold =
@@ -1425,6 +1472,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_evadetimeDist"), contextLabel);//"dynamic damp min"
                         evadeLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.collisionAvoidanceThreshold =
@@ -1443,12 +1491,14 @@ namespace BDArmory.UI
                     }
                     GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceThreshold") + " :" + ActivePilot.collisionAvoidanceThreshold.ToString("0"), Label);//"dynamic damping min"
 
+
                     evadeLines++;
                     if (contextTipsEnabled)
                     {
                         GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ColDist"), contextLabel);//"dynamic damp min"
                         evadeLines++;
                     }
+
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.vesselCollisionAvoidancePeriod =
@@ -1473,6 +1523,7 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ColTime"), contextLabel);//"dynamic damp min"
                         evadeLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.vesselStandoffDistance =
@@ -1495,6 +1546,7 @@ namespace BDArmory.UI
                     if (contextTipsEnabled)
                     {
                         GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_standoff"), contextLabel);//"dynamic damp min"
+
                         evadeLines += 1.25f;
                     }
                     if (ActivePilot.canExtend)
@@ -1516,7 +1568,6 @@ namespace BDArmory.UI
                                 }
                         }
                             GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendMultiplier") + " :" + ActivePilot.extendMult.ToString("0.0"), Label);//"dynamic damping min"
-
                         evadeLines++;
                         if (contextTipsEnabled)
                         {
@@ -1615,6 +1666,7 @@ ActivePilot.canExtend, Localizer.Format("#LOC_BDArmory_ExtendToggle"), ActivePil
 
                     GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_PilotAI_Terrain"), BoldLabel);//"Speed"
                     gndLines++;
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.turnRadiusTwiddleFactorMin =
@@ -1639,6 +1691,7 @@ ActivePilot.canExtend, Localizer.Format("#LOC_BDArmory_ExtendToggle"), ActivePil
                         GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
                         gndLines++;
                     }
+
                     if (!NumFieldsEnabled)
                     {
                         ActivePilot.turnRadiusTwiddleFactorMax =
@@ -1719,7 +1772,7 @@ ActivePilot.allowRamming, Localizer.Format("#LOC_BDArmory_AllowRamming"), Active
                 {
                     miscLines += 0.2f;
                     GUI.BeginGroup(
-                        new Rect(leftIndent, ((pidLines + altLines + spdLines + ctrlLines + evadeLines + gndLines + ramLines + miscLines) * entryHeight), contentWidth, miscHeight * entryHeight),
+                        new Rect(0, ((pidLines + altLines + spdLines + ctrlLines + evadeLines + gndLines + ramLines + miscLines) * entryHeight), contentWidth, miscHeight * entryHeight),
                         GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                     miscLines += 0.25f;
 
@@ -2146,6 +2199,7 @@ ActiveDriver.ManeuverRCS, Localizer.Format("#LOC_BDArmory_ManeuverRCS") + " : " 
             }     
 
 
+
             WindowHeight = contentTop + (line * entryHeight) + 5;
             WindowWidth = Mathf.Lerp(WindowWidth, windowColumns * ColumnWidth, 0.15f);
             var previousWindowHeight = BDArmorySetup.WindowRectAI.height;
@@ -2160,7 +2214,8 @@ ActiveDriver.ManeuverRCS, Localizer.Format("#LOC_BDArmory_ManeuverRCS") + " : " 
         internal void OnDestroy()
         {
             GameEvents.onVesselChange.Remove(VesselChange);
-            GameEvents.onEditorPartPlaced.Remove(OnEditorPartPlacedEvent); 
+            GameEvents.onEditorLoad.Remove(OnEditorLoad);
+            GameEvents.onEditorPartPlaced.Remove(OnEditorPartPlacedEvent);
             GameEvents.onEditorPartDeleted.Remove(OnEditorPartDeletedEvent);
         }
     }
