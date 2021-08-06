@@ -2893,10 +2893,6 @@ namespace BDArmory.UI
 
             GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Tournament") + " -", centerLabel);//Tournament
             InputSettingsList("TOURNAMENT_", ref inputID, ref line);
-            ++line;
-
-            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_GUI") + " -", centerLabel);//Tournament
-            InputSettingsList("GUI_", ref inputID, ref line);
             GUI.EndScrollView();
 
             line = settingsHeight / settingsLineHeight;
