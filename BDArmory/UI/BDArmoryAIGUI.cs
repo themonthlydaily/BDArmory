@@ -162,7 +162,7 @@ namespace BDArmory.UI
         {
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             {
-                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.AI_GUI_TOGGLE))
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.GUI_AI_TOGGLE))
                 {
                     windowBDAAIGUIEnabled = !windowBDAAIGUIEnabled;
                 }
