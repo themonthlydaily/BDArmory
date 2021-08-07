@@ -687,7 +687,7 @@ namespace BDArmory.Modules
             maxAltField.onFieldChanged = ClampAltitudes;
         }
 
-        void ClampAltitudes(BaseField field, object obj)
+        public void ClampAltitudes(BaseField field, object obj)
         {
             switch (field.name)
             {
