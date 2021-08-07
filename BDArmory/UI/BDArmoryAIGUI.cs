@@ -1077,6 +1077,7 @@ namespace BDArmory.UI
 
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_PilotAI_Altitudes"), BoldLabel);//"Altitudes"
                         altLines++;
+                        var oldDefaultAlt = ActivePilot.defaultAltitude;
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.defaultAltitude =
@@ -1089,6 +1090,12 @@ namespace BDArmory.UI
                             inputFields["defaultAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["defaultAltitude"].possibleValue, 6));
                             ActivePilot.defaultAltitude = (float)inputFields["defaultAltitude"].currentValue;
                         }
+                        if (ActivePilot.defaultAltitude != oldDefaultAlt)
+                        {
+                            ActivePilot.ClampAltitudes("defaultAltitude");
+                            inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
+                            inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
+                        }
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_DefaultAltitude") + " :" + ActivePilot.defaultAltitude.ToString("0"), Label);//"default altitude"
                         altLines++;
                         if (contextTipsEnabled)
@@ -1096,26 +1103,24 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_AIWindow_DefAlt"), contextLabel);//"defalult alt"
                             altLines++;
                         }
-                        var oldminAlt = ActivePilot.minAltitude;
+                        var oldMinAlt = ActivePilot.minAltitude;
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.minAltitude =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                     ActivePilot.minAltitude, 25, ActivePilot.UpToEleven ? 60000 : 6000);
                             ActivePilot.minAltitude = Mathf.Round(ActivePilot.minAltitude / 25) * 25;
-                            if (ActivePilot.minAltitude != oldminAlt)
-                            {
-                                ActivePilot.ClampAltitudes(null, null);
-                            }
                         }
                         else
                         {
                             inputFields["minAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["minAltitude"].possibleValue, 5));
                             ActivePilot.minAltitude = (float)inputFields["minAltitude"].currentValue;
-                            if (ActivePilot.minAltitude != oldminAlt)
-                            {
-                                ActivePilot.ClampAltitudes(null, null);
-                            }
+                        }
+                        if (ActivePilot.minAltitude != oldMinAlt)
+                        {
+                            ActivePilot.ClampAltitudes("minAltitude");
+                            inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
+                            inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MinAltitude") + " :" + ActivePilot.minAltitude.ToString("0"), Label);//"min altitude"
                         altLines++;
@@ -1131,26 +1136,24 @@ namespace BDArmory.UI
 
                         if (ActivePilot.maxAltitudeToggle)
                         {
-                            var oldmaxAlt = ActivePilot.maxAltitude;
+                            var oldMaxAlt = ActivePilot.maxAltitude;
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.maxAltitude =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                         ActivePilot.maxAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
                                 ActivePilot.maxAltitude = Mathf.Round(ActivePilot.maxAltitude / 25) * 25;
-                                if (ActivePilot.maxAltitude != oldmaxAlt)
-                                {
-                                    ActivePilot.ClampAltitudes(null, null);
-                                }
                             }
                             else
                             {
                                 inputFields["maxAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["maxAltitude"].possibleValue, 6));
                                 ActivePilot.maxAltitude = (float)inputFields["maxAltitude"].currentValue;
-                                if (ActivePilot.maxAltitude != oldmaxAlt)
-                                {
-                                    ActivePilot.ClampAltitudes(null, null);
-                                } 
+                            }
+                            if (ActivePilot.maxAltitude != oldMaxAlt)
+                            {
+                                ActivePilot.ClampAltitudes("maxAltitude");
+                                inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
+                                inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
                             }
                             GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MaxAltitude") + " :" + ActivePilot.maxAltitude.ToString("0"), Label);//"max altitude"
                             altLines++;
@@ -1675,19 +1678,16 @@ namespace BDArmory.UI
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
                                     ActivePilot.turnRadiusTwiddleFactorMin, 1, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMin = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMin * 10f) / 10f;
-                            if (ActivePilot.turnRadiusTwiddleFactorMin != oldminAlt)
-                            {
-                                ActivePilot.OnMinUpdated(null, null);
-                            }
                         }
                         else
                         {
                             inputFields["turnRadiusTwiddleFactorMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["turnRadiusTwiddleFactorMin"].possibleValue, 3));
                             ActivePilot.turnRadiusTwiddleFactorMin = (float)inputFields["turnRadiusTwiddleFactorMin"].currentValue;
-                            if (ActivePilot.turnRadiusTwiddleFactorMin != oldminAlt)
-                            {
-                                ActivePilot.OnMinUpdated(null, null);
-                            }
+                        }
+                        if (ActivePilot.turnRadiusTwiddleFactorMin != oldMinTwiddle)
+                        {
+                            ActivePilot.OnMinUpdated(null, null);
+                            inputFields["turnRadiusTwiddleFactorMax"].currentValue = ActivePilot.turnRadiusTwiddleFactorMax;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + " :" + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
 
@@ -1704,19 +1704,16 @@ namespace BDArmory.UI
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
                                     ActivePilot.turnRadiusTwiddleFactorMax, 1, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMax = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMax * 10) / 10;
-                            if (ActivePilot.turnRadiusTwiddleFactorMax != oldminAlt)
-                            {
-                                ActivePilot.OnMaxUpdated(null, null);
-                            }
                         }
                         else
                         {
                             inputFields["turnRadiusTwiddleFactorMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["turnRadiusTwiddleFactorMax"].possibleValue, 3));
                             ActivePilot.turnRadiusTwiddleFactorMax = (float)inputFields["turnRadiusTwiddleFactorMax"].currentValue;
-                            if (ActivePilot.turnRadiusTwiddleFactorMax != oldminAlt)
-                            {
-                                ActivePilot.OnMaxUpdated(null, null);
-                            }
+                        }
+                        if (ActivePilot.turnRadiusTwiddleFactorMax != oldMaxTwiddle)
+                        {
+                            ActivePilot.OnMaxUpdated(null, null);
+                            inputFields["turnRadiusTwiddleFactorMin"].currentValue = ActivePilot.turnRadiusTwiddleFactorMin;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + " :" + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
 
