@@ -148,7 +148,7 @@ namespace BDArmory.Modules
         }
         void Update()
         {
-            if(HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && vessel != null && !vessel.packed)
             {
                 if (this.part.temperature > 493) //autoignition temp of kerosene is 220 c
                 {

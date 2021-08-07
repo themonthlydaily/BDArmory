@@ -38,6 +38,8 @@ namespace BDArmory.Control
             spawnLocationCamera = new GameObject("StationaryCameraParent");
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
+            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn")) // Ensure AutoSpawn folder exists.
+            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
         }
 
         void OnDestroy()
@@ -248,7 +250,7 @@ namespace BDArmory.Control
             {
                 spawnConfig.teamCounts = spawnConfig.teamsSpecific.Select(tl => tl.Count).ToList();
             }
-            spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
+            if (BDArmorySettings.VESSEL_SPAWN_RANDOM_ORDER) spawnConfig.craftFiles.Shuffle(); // Randomise the spawn order.
             spawnedVesselCount = 0; // Reset our spawned vessel count.
             message = "Spawning " + spawnConfig.craftFiles.Count + " vessels at an altitude of " + spawnConfig.altitude.ToString("G0") + "m" + (spawnConfig.craftFiles.Count > 8 ? ", this may take some time..." : ".");
             Debug.Log("[BDArmory.VesselSpawner]: " + message);
@@ -817,9 +819,9 @@ namespace BDArmory.Control
                 double startTime = Planetarium.GetUniversalTime();
                 if ((vesselsSpawningOnceContinuously) && (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING))
                 {
-                    while ((Planetarium.GetUniversalTime() - startTime) < 10d)
+                    while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
                     {
-                        BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (10d - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
+                        BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then respawning pilots");
                         yield return new WaitForSeconds(1);
                     }
                 }
@@ -1814,7 +1816,7 @@ namespace BDArmory.Control
                 float heading = vesselData.heading;
                 if (shipConstruct == null)
                 {
-                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back);
+                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back); //FIXME add a check if spawning in null-atmo to have craft spawn horizontal, not nose-down
                 }
                 else if (shipConstruct.shipFacility == EditorFacility.SPH)
                 {

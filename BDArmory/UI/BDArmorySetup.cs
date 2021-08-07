@@ -16,9 +16,9 @@ using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Parts;
 using BDArmory.Radar;
-using BDArmory.Targeting;
 using UnityEngine;
 using KSP.Localization;
+using KSP.UI.Screens;
 
 namespace BDArmory.UI
 {
@@ -40,6 +40,7 @@ namespace BDArmory.UI
 
         [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
+        [BDAWindowSettingsField] public static Rect WindowRectAI;
 
         //reflection field lists
         static FieldInfo[] iFs;
@@ -79,6 +80,9 @@ namespace BDArmory.UI
         public static bool GAME_UI_ENABLED = true;
         public string Version { get; private set; } = "Unknown";
 
+        //toolbar button
+        static bool toolbarButtonAdded = false;
+
         //settings gui
         public static bool windowSettingsEnabled;
         public string fireKeyGui;
@@ -92,15 +96,20 @@ namespace BDArmory.UI
         //toolbar gui
         public static bool hasAddedButton = false;
         public static bool windowBDAToolBarEnabled;
-        float toolWindowWidth = 300;
+        float toolWindowWidth = 400;
         float toolWindowHeight = 100;
+        float columnWidth = 400;
         bool showWeaponList;
         bool showGuardMenu;
         bool showModules;
+        bool showPriorities;
         bool showTargetOptions;
         bool showEngageList;
         int numberOfModules;
         bool showWindowGPS;
+        bool infoLinkEnabled;
+        bool NumFieldsEnabled;
+        private Vector2 scrollInfoVector;
 
         //gps window
         public bool showingWindowGPS
@@ -133,6 +142,8 @@ namespace BDArmory.UI
         GUIStyle centerLabelOrange;
         GUIStyle centerLabelBlue;
         GUIStyle leftLabel;
+        GUIStyle leftLabelBold;
+        GUIStyle infoLinkStyle;
         GUIStyle leftLabelRed;
         GUIStyle rightLabelRed;
         GUIStyle leftLabelGray;
@@ -390,6 +401,15 @@ namespace BDArmory.UI
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
 
+            leftLabelBold = new GUIStyle();
+            leftLabelBold.alignment = TextAnchor.UpperLeft;
+            leftLabelBold.normal.textColor = Color.white;
+            leftLabelBold.fontStyle = FontStyle.Bold;
+
+            infoLinkStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
+            infoLinkStyle.alignment = TextAnchor.UpperLeft;
+            infoLinkStyle.normal.textColor = Color.white;
+
             middleLeftLabel = new GUIStyle(leftLabel);
             middleLeftLabel.alignment = TextAnchor.MiddleLeft;
 
@@ -474,6 +494,7 @@ namespace BDArmory.UI
 
             BulletInfo.Load();
             RocketInfo.Load();
+            ArmorInfo.Load();
 
             // Spawn fields
             spawnFields = new Dictionary<string, SpawnField> {
@@ -482,6 +503,37 @@ namespace BDArmory.UI
                 { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 0) },
             };
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
+
+            if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
+            { StartCoroutine(ToolbarButtonRoutine()); }
+        }
+
+        IEnumerator ToolbarButtonRoutine()
+        {
+            if (toolbarButtonAdded) yield break;
+            while (!ApplicationLauncher.Ready)
+            { yield return null; }
+            if (toolbarButtonAdded) yield break;
+            toolbarButtonAdded = true;
+            Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon", false);
+            ApplicationLauncher.Instance.AddModApplication(
+                ToggleToolbarButton,
+                ToggleToolbarButton,
+                () => { },
+                () => { },
+                () => { },
+                () => { },
+                ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB,
+                buttonTexture
+            );
+        }
+        /// <summary>
+        /// Toggle the BDAToolbar or BDA settings window depending on the scene.
+        /// </summary>
+        void ToggleToolbarButton()
+        {
+            if (HighLogic.LoadedSceneIsFlight) { windowBDAToolBarEnabled = !windowBDAToolBarEnabled; }
+            else { windowSettingsEnabled = !windowSettingsEnabled; }
         }
 
         private void CheckIfWindowsSettingsAreWithinScreen()
@@ -493,6 +545,7 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
             BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
             BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
+            BDGUIUtils.RepositionWindow(ref WindowRectAI);
         }
 
         void Update()
@@ -504,7 +557,7 @@ namespace BDArmory.UI
                     missileWarning = false;
                 }
 
-                if (Input.GetKeyDown(KeyCode.KeypadMultiply))
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.GUI_WM_TOGGLE))
                 {
                     windowBDAToolBarEnabled = !windowBDAToolBarEnabled;
                 }
@@ -671,7 +724,7 @@ namespace BDArmory.UI
             }
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
-            WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, Localizer.Format("#LOC_BDArmory_WMWindow_title") + "          ", BDGuiSkin.window);//"BDA Weapon Manager"
+            WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, "", BDGuiSkin.window);//"BDA Weapon Manager"
             BDGUIUtils.UseMouseEventInRect(WindowRectToolbar);
             if (showWindowGPS && ActiveWeaponManager)
             {
@@ -702,6 +755,7 @@ namespace BDArmory.UI
 
         float rippleHeight;
         float weaponsHeight;
+        float priorityheight;
         float guardHeight;
         float TargetingHeight;
         float EngageHeight;
@@ -713,23 +767,27 @@ namespace BDArmory.UI
         {
             float line = 0;
             float leftIndent = 10;
-            float contentWidth = (toolWindowWidth) - (2 * leftIndent);
+            float contentWidth = (columnWidth) - (2 * leftIndent);
+            float windowColumns = 1;
             float contentTop = 10;
             float entryHeight = 20;
             float _buttonSize = 26;
             float _windowMargin = 4;
 
-            GUI.DragWindow(new Rect(_windowMargin + _buttonSize, 0, toolWindowWidth - 2 * _windowMargin - 4 * _buttonSize, _windowMargin + _buttonSize));
+            GUI.DragWindow(new Rect(_windowMargin + _buttonSize, 0, columnWidth - 2 * _windowMargin - 6 * _buttonSize, _windowMargin + _buttonSize));
 
             line += 1.25f;
             line += 0.25f;
 
+            //title
+            GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - 6 * _buttonSize, _windowMargin + _buttonSize), Localizer.Format("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
+
             // Version.
-            GUI.Label(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize - 57, 23, 57, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - 4 * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
-                GUI.Button(new Rect(toolWindowWidth - _windowMargin - _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
+                GUI.Button(new Rect(columnWidth - _windowMargin - _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
             {
                 ToggleWindowSettings();
             }
@@ -738,7 +796,7 @@ namespace BDArmory.UI
             if (hasVesselSwitcher)
             {
                 GUIStyle vsStyle = showVesselSwitcherGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 2 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
+                if (GUI.Button(new Rect(columnWidth - _windowMargin - 2 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
                 {
                     showVesselSwitcherGUI = !showVesselSwitcherGUI;
                 }
@@ -748,12 +806,26 @@ namespace BDArmory.UI
             if (hasVesselSpawner)
             {
                 GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
+                if (GUI.Button(new Rect(columnWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
                 {
                     showVesselSpawnerGUI = !showVesselSpawnerGUI;
                     if (!showVesselSpawnerGUI)
                         SaveConfig();
                 }
+            }
+
+            //inflolink
+            GUIStyle iStyle = infoLinkEnabled ? BDGuiSkin.box : BDGuiSkin.button;
+            if (GUI.Button(new Rect(columnWidth - _windowMargin - 4 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "i", iStyle))
+            {
+                infoLinkEnabled = !infoLinkEnabled;
+            }
+
+            //numeric fields
+            GUIStyle nStyle = NumFieldsEnabled ? BDGuiSkin.box : BDGuiSkin.button;
+            if (GUI.Button(new Rect(columnWidth - _windowMargin - 5 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "#", nStyle))
+            {
+                NumFieldsEnabled = !NumFieldsEnabled;
             }
 
             if (ActiveWeaponManager != null)
@@ -855,8 +927,21 @@ namespace BDArmory.UI
                         {
                             Rect sliderRect = new Rect(leftIndent + (contentWidth / 2) + 2,
                                 contentTop + (line * entryHeight) + 6.5f, (contentWidth / 2) - 2, 12);
-                            ActiveWeaponManager.rippleRPM = GUI.HorizontalSlider(sliderRect,
-                                ActiveWeaponManager.rippleRPM, 100, 1600, rippleSliderStyle, rippleThumbStyle);
+
+                            if (!NumFieldsEnabled)
+                            {
+                                ActiveWeaponManager.rippleRPM = GUI.HorizontalSlider(sliderRect,
+                                    ActiveWeaponManager.rippleRPM, 100, 1600, rippleSliderStyle, rippleThumbStyle);
+                            }
+                            else
+                            {
+                                float rippleRPM;
+                                string RPM = GUI.TextField(sliderRect, ActiveWeaponManager.rippleRPM.ToString("0"));
+                                if (Single.TryParse(RPM, out rippleRPM))
+                                {
+                                    ActiveWeaponManager.rippleRPM = Mathf.Clamp(rippleRPM, 100, 1600);
+                                }
+                            }
                         }
                         rippleHeight = Mathf.Lerp(rippleHeight, 1.25f, 0.15f);
                     }
@@ -872,16 +957,20 @@ namespace BDArmory.UI
                 if (!toolMinimized)
                 {
                     showWeaponList =
-                        GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), contentWidth / 3, entryHeight),
+                        GUI.Toggle(new Rect(leftIndent, contentTop + (line * entryHeight), contentWidth / 4, entryHeight),
                             showWeaponList, Localizer.Format("#LOC_BDArmory_WMWindow_ListWeapons"), showWeaponList ? BDGuiSkin.box : BDGuiSkin.button);//"Weapons"
                     showGuardMenu =
                         GUI.Toggle(
-                            new Rect(leftIndent + (contentWidth / 3), contentTop + (line * entryHeight), contentWidth / 3,
+                            new Rect(leftIndent + (contentWidth / 4), contentTop + (line * entryHeight), contentWidth / 4,
                                 entryHeight), showGuardMenu, Localizer.Format("#LOC_BDArmory_WMWindow_GuardMenu"),//"Guard Menu"
                             showGuardMenu ? BDGuiSkin.box : BDGuiSkin.button);
+                    showPriorities =
+                        GUI.Toggle(new Rect(leftIndent + (2 * contentWidth / 4), contentTop + (line * entryHeight), contentWidth / 4,
+                             entryHeight), showPriorities, Localizer.Format("#LOC_BDArmory_WMWindow_TargetPriority"),//"Tgt priority"
+                            showPriorities ? BDGuiSkin.box : BDGuiSkin.button);
                     showModules =
                         GUI.Toggle(
-                            new Rect(leftIndent + (2 * contentWidth / 3), contentTop + (line * entryHeight), contentWidth / 3,
+                            new Rect(leftIndent + (3 * contentWidth / 4), contentTop + (line * entryHeight), contentWidth / 4,
                                 entryHeight), showModules, Localizer.Format("#LOC_BDArmory_WMWindow_ModulesToggle"),//"Modules"
                             showModules ? BDGuiSkin.box : BDGuiSkin.button);
                     line++;
@@ -891,7 +980,7 @@ namespace BDArmory.UI
                 if (showWeaponList && !toolMinimized)
                 {
                     line += 0.25f;
-                    Rect weaponListGroupRect = new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10, weaponsHeight * entryHeight);
+                    Rect weaponListGroupRect = new Rect(5, contentTop + (line * entryHeight), columnWidth - 10, weaponsHeight * entryHeight);
                     GUI.BeginGroup(weaponListGroupRect, GUIContent.none, BDGuiSkin.box); //darker box
                     weaponLines += 0.1f;
 
@@ -951,7 +1040,7 @@ namespace BDArmory.UI
                 {
                     line += 0.25f;
                     GUI.BeginGroup(
-                        new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10, (guardHeight) * entryHeight),
+                        new Rect(5, contentTop + (line * entryHeight), columnWidth - 10, (guardHeight) * entryHeight),
                         GUIContent.none, BDGuiSkin.box);
                     guardLines += 0.1f;
 
@@ -965,24 +1054,48 @@ namespace BDArmory.UI
                     }
                     guardLines += 1.25f;
 
-                    GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_FiringInterval"), leftLabel);//"Firing Interval"
-                    ActiveWeaponManager.targetScanInterval =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.targetScanInterval, 0.5f, 60f);
-                    ActiveWeaponManager.targetScanInterval = Mathf.Round(ActiveWeaponManager.targetScanInterval * 2f) / 2f;
+                    GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_FiringInterval"), leftLabel);//"Firing Interval"                 
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetScanInterval =
+                       GUI.HorizontalSlider(
+                           new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                           ActiveWeaponManager.targetScanInterval, 0.5f, 60f);
+                        ActiveWeaponManager.targetScanInterval = Mathf.Round(ActiveWeaponManager.targetScanInterval * 2f) / 2f;
+                    }
+                    else
+                    {
+                        float scanI;
+                        string inverval = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.targetScanInterval.ToString("0.0"));
+                        if (Single.TryParse(inverval, out scanI))
+                        {
+                            ActiveWeaponManager.targetScanInterval = Mathf.Clamp(scanI, 0.5f, 60);
+                        }
+                    }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
-                        ActiveWeaponManager.targetScanInterval.ToString(), leftLabel);
+                            ActiveWeaponManager.targetScanInterval.ToString(), leftLabel);
                     guardLines++;
 
                     // extension for feature_engagementenvelope: set the firing burst length
                     string burstLabel = Localizer.Format("#LOC_BDArmory_WMWindow_BurstLength");//"Burst Length"
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), burstLabel, leftLabel);
-                    ActiveWeaponManager.fireBurstLength =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.fireBurstLength, 0, 10);
-                    ActiveWeaponManager.fireBurstLength = Mathf.Round(ActiveWeaponManager.fireBurstLength * 20f) / 20f;
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.fireBurstLength =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                ActiveWeaponManager.fireBurstLength, 0, 10);
+                        ActiveWeaponManager.fireBurstLength = Mathf.Round(ActiveWeaponManager.fireBurstLength * 20f) / 20f;
+                    }
+                    else
+                    {
+                        float burst;
+                        string bLength = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.fireBurstLength.ToString("0.00"));
+                        if (Single.TryParse(bLength, out burst))
+                        {
+                            ActiveWeaponManager.fireBurstLength = Mathf.Clamp(burst, 0, 10);
+                        }
+                    }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.fireBurstLength.ToString(), leftLabel);
                     guardLines++;
@@ -991,11 +1104,23 @@ namespace BDArmory.UI
                     var oldAutoFireCosAngleAdjustment = ActiveWeaponManager.AutoFireCosAngleAdjustment;
                     string accuracyLabel = Localizer.Format("#LOC_BDArmory_WMWindow_FiringTolerance");//"Firing Angle"
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), accuracyLabel, leftLabel);
-                    ActiveWeaponManager.AutoFireCosAngleAdjustment =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 4);
-                    ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20f) / 20f;
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.AutoFireCosAngleAdjustment =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                ActiveWeaponManager.AutoFireCosAngleAdjustment, 0, 4);
+                        ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Round(ActiveWeaponManager.AutoFireCosAngleAdjustment * 20f) / 20f;
+                    }
+                    else
+                    {
+                        float firingAngle;
+                        string tolerance = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.AutoFireCosAngleAdjustment.ToString("0.00"));
+                        if (Single.TryParse(tolerance, out firingAngle))
+                        {
+                            ActiveWeaponManager.AutoFireCosAngleAdjustment = Mathf.Clamp(firingAngle, 0, 4);
+                        }
+                    }
                     if (ActiveWeaponManager.AutoFireCosAngleAdjustment != oldAutoFireCosAngleAdjustment)
                         ActiveWeaponManager.OnAFCAAUpdated(null, null);
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
@@ -1004,68 +1129,128 @@ namespace BDArmory.UI
 
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_FieldofView"),//"Field of View"
                         leftLabel);
-                    float guardAngle = ActiveWeaponManager.guardAngle;
-                    guardAngle =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            guardAngle, 10, 360);
-                    guardAngle = guardAngle / 10f;
-                    guardAngle = Mathf.Round(guardAngle);
-                    ActiveWeaponManager.guardAngle = guardAngle * 10f;
+                    if (!NumFieldsEnabled)
+                    {
+                        float guardAngle = ActiveWeaponManager.guardAngle;
+                        guardAngle =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                guardAngle, 10, 360);
+                        guardAngle = guardAngle / 10f;
+                        guardAngle = Mathf.Round(guardAngle);
+                        ActiveWeaponManager.guardAngle = guardAngle * 10f;
+                    }
+                    else
+                    {
+                        float viewAngle;
+                        string FOV = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.guardAngle.ToString("0"));
+                        if (Single.TryParse(FOV, out viewAngle))
+                        {
+                            ActiveWeaponManager.guardAngle = Mathf.Clamp(viewAngle, 10, 360);
+                        }
+                    }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.guardAngle.ToString(), leftLabel);
                     guardLines++;
 
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_VisualRange"), leftLabel);//"Visual Range"
-                    float guardRange = ActiveWeaponManager.guardRange;
-                    guardRange =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            guardRange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
-                    guardRange = guardRange / 100;
-                    guardRange = Mathf.Round(guardRange);
-                    ActiveWeaponManager.guardRange = guardRange * 100;
+                    if (!NumFieldsEnabled)
+                    {
+                        float guardRange = ActiveWeaponManager.guardRange;
+                        guardRange =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                guardRange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
+                        guardRange = guardRange / 100;
+                        guardRange = Mathf.Round(guardRange);
+                        ActiveWeaponManager.guardRange = guardRange * 100;
+                    }
+                    else
+                    {
+                        float viewrange;
+                        string VR = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.guardRange.ToString("0"));
+                        if (Single.TryParse(VR, out viewrange))
+                        {
+                            ActiveWeaponManager.guardRange = Mathf.Clamp(viewrange, 100, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
+                        }
+                    }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.guardRange.ToString(), leftLabel);
                     guardLines++;
 
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_GunsRange"), leftLabel);//"Guns Range"
-                    float gRange = ActiveWeaponManager.gunRange;
-                    gRange =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            gRange, 0, ActiveWeaponManager.maxGunRange);
-                    gRange /= 10f;
-                    gRange = Mathf.Round(gRange);
-                    gRange *= 10f;
-                    ActiveWeaponManager.gunRange = gRange;
+                    if (!NumFieldsEnabled)
+                    {
+                        float gRange = ActiveWeaponManager.gunRange;
+                        gRange =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                gRange, 0, ActiveWeaponManager.maxGunRange);
+                        gRange /= 10f;
+                        gRange = Mathf.Round(gRange);
+                        gRange *= 10f;
+                        ActiveWeaponManager.gunRange = gRange;
+                    }
+                    else
+                    {
+                        float gunRange;
+                        string gR = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.gunRange.ToString("0"));
+                        if (Single.TryParse(gR, out gunRange))
+                        {
+                            ActiveWeaponManager.gunRange = Mathf.Clamp(gunRange, 0, ActiveWeaponManager.maxGunRange);
+                        }
+                    }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.gunRange.ToString(), leftLabel);
                     guardLines++;
 
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_MultiTargetNum"), leftLabel);//"Max Turret targets "
-                    ActiveWeaponManager.multiTargetNum =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            ActiveWeaponManager.multiTargetNum, 1, 10);
-                    ActiveWeaponManager.multiTargetNum = Mathf.Round(ActiveWeaponManager.multiTargetNum);
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.multiTargetNum =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                ActiveWeaponManager.multiTargetNum, 1, 10);
+                        ActiveWeaponManager.multiTargetNum = Mathf.Round(ActiveWeaponManager.multiTargetNum);
+                    }
+                    else
+                    {
+                        float targetNum;
+                        string tgtNum = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.multiTargetNum.ToString("0"));
+                        if (Single.TryParse(tgtNum, out targetNum))
+                        {
+                            ActiveWeaponManager.multiTargetNum = Mathf.Clamp(targetNum, 1, 10);
+                        }
+                    }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.multiTargetNum.ToString(), leftLabel);
                     guardLines++;
 
                     GUI.Label(new Rect(leftIndent, (guardLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_MissilesTgt"), leftLabel);//"Missiles/Tgt"
-                    float mslCount = ActiveWeaponManager.maxMissilesOnTarget;
-                    mslCount =
-                        GUI.HorizontalSlider(
-                            new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
-                            mslCount, 1, MissileFire.maxAllowableMissilesOnTarget);
-                    mslCount = Mathf.Round(mslCount);
-                    ActiveWeaponManager.maxMissilesOnTarget = mslCount;
+                    if (!NumFieldsEnabled)
+                    {
+                        float mslCount = ActiveWeaponManager.maxMissilesOnTarget;
+                        mslCount =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + 90, (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight),
+                                mslCount, 1, MissileFire.maxAllowableMissilesOnTarget);
+                        mslCount = Mathf.Round(mslCount);
+                        ActiveWeaponManager.maxMissilesOnTarget = mslCount;
+                    }
+                    else
+                    {
+                        float msslNum;
+                        string mssls = GUI.TextField(new Rect(leftIndent + (90), (guardLines * entryHeight), contentWidth - 90 - 38, entryHeight), ActiveWeaponManager.maxMissilesOnTarget.ToString("0"));
+                        if (Single.TryParse(mssls, out msslNum))
+                        {
+                            ActiveWeaponManager.maxMissilesOnTarget = Mathf.Clamp(msslNum, 1, MissileFire.maxAllowableMissilesOnTarget);
+                        }
+                    }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (guardLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.maxMissilesOnTarget.ToString(), leftLabel);
                     guardLines += 0.5f;
 
-                    showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
+                    showTargetOptions = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), columnWidth - (2 * leftIndent), entryHeight),
                         showTargetOptions, Localizer.Format("#LOC_BDArmory_Settings_Adv_Targeting"), showTargetOptions ? BDGuiSkin.box : BDGuiSkin.button);//"Advanced Targeting"
                     guardLines += 1.15f;
 
@@ -1074,7 +1259,7 @@ namespace BDArmory.UI
                     {
                         TargetLines += 0.1f;
                         GUI.BeginGroup(
-                            new Rect(5, contentTop + (guardLines * entryHeight), toolWindowWidth - 10, TargetingHeight * entryHeight),
+                            new Rect(5, contentTop + (guardLines * entryHeight), columnWidth - 10, TargetingHeight * entryHeight),
                             GUIContent.none, BDGuiSkin.box);
                         TargetLines += 0.25f;
                         string CoMlabel = Localizer.Format("#LOC_BDArmory_TargetCOM", (ActiveWeaponManager.targetCoM ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Air; True, False
@@ -1159,7 +1344,7 @@ namespace BDArmory.UI
                     guardLines += TargetingHeight;
                     guardLines += 0.1f;
 
-                    showEngageList = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), toolWindowWidth - (2 * leftIndent), entryHeight),
+                    showEngageList = GUI.Toggle(new Rect(leftIndent, contentTop + (guardLines * entryHeight), columnWidth - (2 * leftIndent), entryHeight),
                         showEngageList, showEngageList ? Localizer.Format("#LOC_BDArmory_DisableEngageOptions") : Localizer.Format("#LOC_BDArmory_EnableEngageOptions"), showEngageList ? BDGuiSkin.box : BDGuiSkin.button);//"Enable/Disable Engagement options"
                     guardLines += 1.15f;
 
@@ -1168,7 +1353,7 @@ namespace BDArmory.UI
                     {
                         EngageLines += 0.1f;
                         GUI.BeginGroup(
-                            new Rect(5, contentTop + (guardLines * entryHeight), toolWindowWidth - 10, EngageHeight * entryHeight),
+                            new Rect(5, contentTop + (guardLines * entryHeight), columnWidth - 10, EngageHeight * entryHeight),
                             GUIContent.none, BDGuiSkin.box);
                         EngageLines += 0.25f;
 
@@ -1213,12 +1398,291 @@ namespace BDArmory.UI
                 guardHeight = Mathf.Lerp(guardHeight, guardLines, 0.15f);
                 line += guardHeight;
 
+                float priorityLines = 0;
+                if (showPriorities && !toolMinimized)
+                {
+                    line += 0.25f;
+                    GUI.BeginGroup(
+                        new Rect(5, contentTop + (line * entryHeight), columnWidth - 10, (priorityheight) * entryHeight),
+                        GUIContent.none, BDGuiSkin.box);
+                    priorityLines += 0.1f;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetBias"), leftLabel);//"current target bias"                 
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetBias =
+                       GUI.HorizontalSlider(
+                           new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                           ActiveWeaponManager.targetBias, -10, 10);
+                        ActiveWeaponManager.targetBias = Mathf.Round(ActiveWeaponManager.targetBias * 10f) / 10f;
+                    }
+                    else
+                    {
+                        float Tbias;
+                        string currTgt = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetBias.ToString("0.0"));
+                        if (Single.TryParse(currTgt, out Tbias))
+                        {
+                            ActiveWeaponManager.targetBias = Mathf.Clamp(Tbias, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                            ActiveWeaponManager.targetScanInterval.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetProximity"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightRange =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightRange, -10, 10);
+                        ActiveWeaponManager.targetWeightRange = Mathf.Round(ActiveWeaponManager.targetWeightRange * 10) / 10;
+                    }
+                    else
+                    {
+                        float tRange;
+                        string TgtDist = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightRange.ToString("0.0"));
+                        if (Single.TryParse(TgtDist, out tRange))
+                        {
+                            ActiveWeaponManager.targetWeightRange = Mathf.Clamp(tRange, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightRange.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetAngletoTarget"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightATA =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightATA, -10, 10);
+                        ActiveWeaponManager.targetWeightATA = Mathf.Round(ActiveWeaponManager.targetWeightATA * 10) / 10;
+                    }
+                    else
+                    {
+                        float tATA;
+                        string TgtAngle = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightATA.ToString("0.0"));
+                        if (Single.TryParse(TgtAngle, out tATA))
+                        {
+                            ActiveWeaponManager.targetWeightATA = Mathf.Clamp(tATA, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightATA.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetAngleDist"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightAoD =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightAoD, -10, 10);
+                        ActiveWeaponManager.targetWeightAoD = Mathf.Round(ActiveWeaponManager.targetWeightAoD * 10) / 10;
+                    }
+                    else
+                    {
+                        float tAoD;
+                        string TgtAngleDist = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightAoD.ToString("0.0"));
+                        if (Single.TryParse(TgtAngleDist, out tAoD))
+                        {
+                            ActiveWeaponManager.targetWeightAoD = Mathf.Clamp(tAoD, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightAoD.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetAccel"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightAccel =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightAccel, -10, 10);
+                        ActiveWeaponManager.targetWeightAccel = Mathf.Round(ActiveWeaponManager.targetWeightAccel * 10) / 10;
+                    }
+                    else
+                    {
+                        float tAccel;
+                        string TgtSpd = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightAccel.ToString("0.0"));
+                        if (Single.TryParse(TgtSpd, out tAccel))
+                        {
+                            ActiveWeaponManager.targetWeightAccel = Mathf.Clamp(tAccel, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightAccel.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetClosingTime"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightClosureTime =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightClosureTime, -10, 10);
+                        ActiveWeaponManager.targetWeightClosureTime = Mathf.Round(ActiveWeaponManager.targetWeightClosureTime * 10) / 10;
+                    }
+                    else
+                    {
+                        float tclosingT;
+                        string Time2Tgt = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightClosureTime.ToString("0.0"));
+                        if (Single.TryParse(Time2Tgt, out tclosingT))
+                        {
+                            ActiveWeaponManager.targetWeightClosureTime = Mathf.Clamp(tclosingT, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightClosureTime.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetgunNumber"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightWeaponNumber =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightWeaponNumber, -10, 10);
+                        ActiveWeaponManager.targetWeightWeaponNumber = Mathf.Round(ActiveWeaponManager.targetWeightWeaponNumber * 10) / 10;
+                    }
+                    else
+                    {
+                        float gunsNum;
+                        string tGuns = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightWeaponNumber.ToString("0.0"));
+                        if (Single.TryParse(tGuns, out gunsNum))
+                        {
+                            ActiveWeaponManager.targetWeightWeaponNumber = Mathf.Clamp(gunsNum, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightWeaponNumber.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetMass"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightMass =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightMass, -10, 10);
+                        ActiveWeaponManager.targetWeightMass = Mathf.Round(ActiveWeaponManager.targetWeightMass * 10) / 10;
+                    }
+                    else
+                    {
+                        float tMass;
+                        string massTgt = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightMass.ToString("0.0"));
+                        if (Single.TryParse(massTgt, out tMass))
+                        {
+                            ActiveWeaponManager.targetWeightMass = Mathf.Clamp(tMass, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightMass.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetAllies"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightFriendliesEngaging =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightFriendliesEngaging, -10, 10);
+                        ActiveWeaponManager.targetWeightFriendliesEngaging = Mathf.Round(ActiveWeaponManager.targetWeightFriendliesEngaging * 10) / 10;
+                    }
+                    else
+                    {
+                        float allies;
+                        string teamatk = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightFriendliesEngaging.ToString("0.0"));
+                        if (Single.TryParse(teamatk, out allies))
+                        {
+                            ActiveWeaponManager.targetWeightFriendliesEngaging = Mathf.Clamp(allies, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightFriendliesEngaging.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetThreat"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightThreat =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightThreat, -10, 10);
+                        ActiveWeaponManager.targetWeightThreat = Mathf.Round(ActiveWeaponManager.targetWeightThreat * 10) / 10;
+                    }
+                    else
+                    {
+                        float tThreat;
+                        string tgtthreat = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightThreat.ToString("0.0"));
+                        if (Single.TryParse(tgtthreat, out tThreat))
+                        {
+                            ActiveWeaponManager.targetWeightThreat = Mathf.Clamp(tThreat, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightThreat.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_defendVIP"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightProtectVIP =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightProtectVIP, -10, 10);
+                        ActiveWeaponManager.targetWeightProtectVIP = Mathf.Round(ActiveWeaponManager.targetWeightProtectVIP * 10) / 10;
+                    }
+                    else
+                    {
+                        float defVIP;
+                        string CIPdef = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightProtectVIP.ToString("0.0"));
+                        if (Single.TryParse(CIPdef, out defVIP))
+                        {
+                            ActiveWeaponManager.targetWeightProtectVIP = Mathf.Clamp(defVIP, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightProtectVIP.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_targetVIP"), leftLabel); //target proximity"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightAttackVIP =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightProtectVIP, -10, 10);
+                        ActiveWeaponManager.targetWeightAttackVIP = Mathf.Round(ActiveWeaponManager.targetWeightAttackVIP * 10) / 10;
+                    }
+                    else
+                    {
+                        float atkVIP;
+                        string VIPtgt = GUI.TextField(new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight), ActiveWeaponManager.targetWeightAttackVIP.ToString("0.0"));
+                        if (Single.TryParse(VIPtgt, out atkVIP))
+                        {
+                            ActiveWeaponManager.targetWeightAttackVIP = Mathf.Clamp(atkVIP, -10, 10);
+                        }
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightAttackVIP.ToString(), leftLabel);
+                    priorityLines++;
+
+                    priorityLines += 0.1f;
+                    GUI.EndGroup();
+                }
+                priorityheight = Mathf.Lerp(priorityheight, priorityLines, 0.15f);
+                line += priorityheight;
+                
                 float moduleLines = 0;
                 if (showModules && !toolMinimized)
                 {
                     line += 0.25f;
                     GUI.BeginGroup(
-                        new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 10, numberOfModules * entryHeight),
+                        new Rect(5, contentTop + (line * entryHeight), columnWidth - 10, numberOfModules * entryHeight),
                         GUIContent.none, BDGuiSkin.box);
                     moduleLines += 0.1f;
 
@@ -1365,13 +1829,63 @@ namespace BDArmory.UI
                 if (showWindowGPS && !toolMinimized)
                 {
                     line += 0.25f;
-                    GUI.BeginGroup(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth, WindowRectGps.height));
+                    GUI.BeginGroup(new Rect(5, contentTop + (line * entryHeight), columnWidth, WindowRectGps.height));
                     WindowGPS();
                     GUI.EndGroup();
                     gpsLines = WindowRectGps.height / entryHeight;
                 }
                 gpsHeight = Mathf.Lerp(gpsHeight, gpsLines, 0.15f);
                 line += gpsHeight;
+
+                if (infoLinkEnabled && !toolMinimized)
+                {
+                    windowColumns = 2;
+
+                    GUI.Label(new Rect(leftIndent + columnWidth, contentTop, columnWidth - (leftIndent), entryHeight), Localizer.Format("#LOC_BDArmory_AIWindow_infoLink"), kspTitleLabel);//"infolink"
+                    GUILayout.BeginArea(new Rect(leftIndent + columnWidth, contentTop + (entryHeight * 1.5f), columnWidth - (leftIndent), toolWindowHeight - (entryHeight * 1.5f) - (2 * contentTop)));
+                    using (var scrollViewScope = new GUILayout.ScrollViewScope(scrollInfoVector, GUILayout.Width(columnWidth - (leftIndent)), GUILayout.Height(toolWindowHeight - (entryHeight * 1.5f) - (2 * contentTop))))
+                    {
+                        scrollInfoVector = scrollViewScope.scrollPosition;
+                        if (showWeaponList)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_ListWeapons"), leftLabelBold, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Weapons
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_Weapons_Desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //weapons desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_Ripple_Salvo_Desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //ripple/salvo desc
+                        }
+                        if (showGuardMenu)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_GuardMenu"), leftLabelBold, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Guard Mode
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_GuardTab_Desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Guard desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_FiringInterval_Desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //firing inverval desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_BurstLength_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //burst length desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_FiringTolerance_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //firing angle desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_FieldofView_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //FoV desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_VisualRange_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //guard range desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_GunsRange_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //weapon range desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_MultiTargetNum_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //multiturrets desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_MissilesTgt_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //multimissiles desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_TargetType_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //subsection targeting desc
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_EngageType_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //engagement toggles desc
+                        }
+                        if (showPriorities)
+                        {
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_Prioritues_Desc"), leftLabelBold, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt Priorities
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetBias_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt Bias
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetProximity_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt dist
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetAngletoTarget_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt angle
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetAngleDist_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt angle/dist
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetAccel_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt accel
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetClosingTime_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt closing time
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetgunNumber_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt weapons num
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetMass_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt mass
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetAllies_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt allies attacking
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetThreat_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt threat
+                            GUILayout.Label(Localizer.Format("#LOC_BDArmory_WMWindow_targetVIP_desc"), infoLinkStyle, GUILayout.Width(columnWidth - (leftIndent * 4) - 20)); //Tgt VIP
+                        }
+
+                    }
+                    GUILayout.EndArea();
+                }
             }
             else
             {
@@ -1379,10 +1893,11 @@ namespace BDArmory.UI
                    Localizer.Format("#LOC_BDArmory_WMWindow_NoWeaponManager"), BDGuiSkin.box);// "No Weapon Manager found."
                 line++;
             }
-
+            toolWindowWidth = Mathf.Lerp(toolWindowWidth, columnWidth * windowColumns, 0.15f);
             toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
             var previousWindowHeight = WindowRectToolbar.height;
             WindowRectToolbar.height = toolWindowHeight;
+            WindowRectToolbar.width = toolWindowWidth;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
             BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
@@ -1673,6 +2188,14 @@ namespace BDArmory.UI
             }
             if (BDArmorySettings.GENERAL_SETTINGS_TOGGLE)
             {
+                GameSettings.ADVANCED_TWEAKABLES = GUI.Toggle(SLineRect(++line), GameSettings.ADVANCED_TWEAKABLES, Localizer.Format("#autoLOC_900906") + (GameSettings.ADVANCED_TWEAKABLES ? "" : " <— Access many more AI tuning options")); // Advanced tweakables
+                if (BDArmorySettings.AI_TOOLBAR_BUTTON != (BDArmorySettings.AI_TOOLBAR_BUTTON = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AI_TOOLBAR_BUTTON, Localizer.Format("#LOC_BDArmory_Settings_AIToolbarButton")))) // AI Toobar Button
+                {
+                    if (BDArmorySettings.AI_TOOLBAR_BUTTON)
+                    { BDArmoryAIGUI.Instance.AddToolbarButton(); }
+                    else
+                    { BDArmoryAIGUI.Instance.RemoveToolbarButton(); }
+                }
                 BDArmorySettings.INSTAKILL = GUI.Toggle(SLeftRect(++line), BDArmorySettings.INSTAKILL, Localizer.Format("#LOC_BDArmory_Settings_Instakill"));//"Instakill"
                 BDArmorySettings.INFINITE_AMMO = GUI.Toggle(SRightRect(line), BDArmorySettings.INFINITE_AMMO, Localizer.Format("#LOC_BDArmory_Settings_InfiniteAmmo"));//"Infinite Ammo"
                 BDArmorySettings.BULLET_HITS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BULLET_HITS, Localizer.Format("#LOC_BDArmory_Settings_BulletHits"));//"Bullet Hits"
@@ -1746,7 +2269,23 @@ namespace BDArmory.UI
                         VehiclePhysics.Gravity.Refresh();
                     }
                 }
-
+                BDArmorySettings.SPACE_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SPACE_HACKS, Localizer.Format("#LOC_BDArmory_Settings_SpaceHacks"));
+                {
+                    if (BDArmorySettings.SPACE_HACKS)
+                    {
+                        BDArmorySettings.SF_FRICTION = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_FRICTION, Localizer.Format("#LOC_BDArmory_Settings_SpaceFriction"));
+                        BDArmorySettings.SF_GRAVITY = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_GRAVITY, Localizer.Format("#LOC_BDArmory_Settings_IgnoreGravity"));
+                        GUI.Label(SLeftRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_SpaceFrictionMult")}:  ({BDArmorySettings.SF_DRAGMULT})", leftLabel);//Space Friction Mult
+                        BDArmorySettings.SF_DRAGMULT = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.SF_DRAGMULT, 1f, 10));
+                        BDArmorySettings.SF_REPULSOR = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_REPULSOR, Localizer.Format("#LOC_BDArmory_Settings_Repulsor"));
+                    }
+                    else
+                    {
+                        BDArmorySettings.SF_FRICTION = false;
+                        BDArmorySettings.SF_GRAVITY = false;
+                        BDArmorySettings.SF_REPULSOR = false;
+                    }
+                }
                 // Heartbleed
                 BDArmorySettings.HEART_BLEED_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HEART_BLEED_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_HeartBleed"));//"Heart Bleed"
                 if (BDArmorySettings.HEART_BLEED_ENABLED)
@@ -1815,6 +2354,11 @@ namespace BDArmory.UI
                         else
                             AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
                     }
+                    BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsCentroid")); // Follows Vessels' Location.
+                    if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID)
+                    {
+                        BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD = GUI.Toggle(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsSpread")); // Follows Vessels' Spread.
+                    }
                     line += 0.25f;
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainNumber")}:  ({BDArmorySettings.ASTEROID_RAIN_NUMBER})", leftLabel);
                     if (BDArmorySettings.ASTEROID_RAIN_NUMBER != (BDArmorySettings.ASTEROID_RAIN_NUMBER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), Mathf.Round(BDArmorySettings.ASTEROID_RAIN_NUMBER / 10f), 1f, 200f) * 10f))) // Asteroid Rain Number
@@ -1823,15 +2367,13 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainAltitude")}:  ({altitudeString})", leftLabel);
                     if (BDArmorySettings.ASTEROID_RAIN_ALTITUDE != (BDArmorySettings.ASTEROID_RAIN_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_ALTITUDE, 1f, 100f)))) // Asteroid Rain Altitude
                     { if (HighLogic.LoadedSceneIsFlight) AsteroidRain.Instance.UpdateSettings(); }
-                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainRadius")}:  ({BDArmorySettings.ASTEROID_RAIN_RADIUS}km)", leftLabel);
-                    if (BDArmorySettings.ASTEROID_RAIN_RADIUS != (BDArmorySettings.ASTEROID_RAIN_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_RADIUS, 1f, 10f)))) // Asteroid Rain Radius
-                    { if (HighLogic.LoadedSceneIsFlight) AsteroidRain.Instance.UpdateSettings(); }
-                    line -= 0.25f;
-                    BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsCentroid")); // Follows Vessels' Location.
-                    if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID)
+                    if (!BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD)
                     {
-                        BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD = GUI.Toggle(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainFollowsSpread")); // Follows Vessels' Spread.
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidRainRadius")}:  ({BDArmorySettings.ASTEROID_RAIN_RADIUS}km)", leftLabel);
+                        if (BDArmorySettings.ASTEROID_RAIN_RADIUS != (BDArmorySettings.ASTEROID_RAIN_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_RAIN_RADIUS, 1f, 10f)))) // Asteroid Rain Radius
+                        { if (HighLogic.LoadedSceneIsFlight) AsteroidRain.Instance.UpdateSettings(); }
                     }
+                    line -= 0.25f;
                 }
 
                 ++line;
@@ -2131,17 +2673,19 @@ namespace BDArmory.UI
                                 break;
                         }
                     }
+#if DEBUG
                     if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
                     {
                         StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
                     }
+#endif
                 }
 
                 ++line;
             }
 
             //competition mode
-            if (HighLogic.LoadedSceneIsFlight)
+            if (HighLogic.LoadedSceneIsFlight && BDACompetitionMode.Instance != null)
             {
                 if (BDArmorySettings.REMOTE_LOGGING_VISIBLE)
                 {
@@ -2323,32 +2867,31 @@ namespace BDArmory.UI
             settingsWidth = origSettingsWidth - 2 * settingsMargin;
             settingsHeight = origSettingsHeight - 100;
             Rect viewRect = new Rect(2, 20, settingsWidth + GUI.skin.verticalScrollbar.fixedWidth, settingsHeight);
-            Rect scrollerRect = new Rect(0, 0, settingsWidth - GUI.skin.verticalScrollbar.fixedWidth - 1, inputFields != null ? (inputFields.Length + 9) * settingsLineHeight : settingsHeight);
+            Rect scrollerRect = new Rect(0, 0, settingsWidth - GUI.skin.verticalScrollbar.fixedWidth - 1, inputFields != null ? (inputFields.Length + 11) * settingsLineHeight : settingsHeight);
 
             _displayViewerPosition = GUI.BeginScrollView(viewRect, _displayViewerPosition, scrollerRect, false, true);
 
-            GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Weapons") + " -", centerLabel);//Weapons
-            line++;
+            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_GUI") + " -", centerLabel); //GUI
+            InputSettingsList("GUI_", ref inputID, ref line);
+            ++line;
+
+            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Weapons") + " -", centerLabel);//Weapons
             InputSettingsList("WEAP_", ref inputID, ref line);
-            line++;
+            ++line;
 
-            GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_TargetingPod") + " -", centerLabel);//Targeting Pod
-            line++;
+            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_TargetingPod") + " -", centerLabel);//Targeting Pod
             InputSettingsList("TGP_", ref inputID, ref line);
-            line++;
+            ++line;
 
-            GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Radar") + " -", centerLabel);//Radar
-            line++;
+            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Radar") + " -", centerLabel);//Radar
             InputSettingsList("RADAR_", ref inputID, ref line);
-            line++;
+            ++line;
 
-            GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_VesselSwitcher") + " -", centerLabel);//Vessel Switcher
-            line++;
+            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_VesselSwitcher") + " -", centerLabel);//Vessel Switcher
             InputSettingsList("VS_", ref inputID, ref line);
-            line++;
+            ++line;
 
-            GUI.Label(SLineRect(line), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Tournament") + " -", centerLabel);//Tournament
-            line++;
+            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Tournament") + " -", centerLabel);//Tournament
             InputSettingsList("TOURNAMENT_", ref inputID, ref line);
             GUI.EndScrollView();
 
@@ -2445,11 +2988,13 @@ namespace BDArmory.UI
         void HideGameUI()
         {
             GAME_UI_ENABLED = false;
+            BDACompetitionMode.Instance.UpdateGUIElements();
         }
 
         void ShowGameUI()
         {
             GAME_UI_ENABLED = true;
+            BDACompetitionMode.Instance.UpdateGUIElements();
         }
 
         internal void OnDestroy()

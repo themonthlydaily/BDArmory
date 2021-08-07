@@ -23,9 +23,10 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
-        [BDAPersistantSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 450f;
+        [BDAPersistantSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
 
         // General toggle settings
+        [BDAPersistantSettingsField] public static bool AI_TOOLBAR_BUTTON = true;                 // Show or hide the BDA AI toolbar button.
         [BDAPersistantSettingsField] public static bool INSTAKILL = false;
         [BDAPersistantSettingsField] public static bool INFINITE_AMMO = false;
         [BDAPersistantSettingsField] public static bool BULLET_HITS = true;
@@ -192,6 +193,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SHOW_SPAWN_LOCATIONS = false;              // Show the interesting spawn locations.
         [BDAPersistantSettingsField] public static int VESSEL_SPAWN_NUMBER_OF_TEAMS = 0;           // Number of Teams: 0 - FFA, 1 - Folders, 2-10 specified directly
         [BDAPersistantSettingsField] public static string VESSEL_SPAWN_FILES_LOCATION = "";        // Spawn files location (under AutoSpawn).
+        [BDAPersistantSettingsField] public static bool VESSEL_SPAWN_RANDOM_ORDER = true;          // Shuffle vessels before spawning them.
 
         // Heartbleed
         [BDAPersistantSettingsField] public static float HEART_BLEED_RATE = 0.01f;
@@ -203,13 +205,23 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
         [BDAPersistantSettingsField] public static float RESOURCE_STEAL_CM_RATION = 0f;
 
+        //Space Friction
+        [BDAPersistantSettingsField] public static bool SPACE_HACKS = false;
+        [BDAPersistantSettingsField] public static bool SF_FRICTION = false;
+        [BDAPersistantSettingsField] public static bool SF_GRAVITY = false;
+        [BDAPersistantSettingsField] public static bool SF_REPULSOR = false;
+        [BDAPersistantSettingsField] public static float SF_DRAGMULT = 2f;
+
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
+        [BDAPersistantSettingsField] public static int TOURNAMENT_STYLE = 0;                       // Tournament Style (Random, N-choose-K, etc.)
         [BDAPersistantSettingsField] public static float TOURNAMENT_DELAY_BETWEEN_HEATS = 10;      // Delay between heats
         [BDAPersistantSettingsField] public static int TOURNAMENT_ROUNDS = 1;                      // Rounds
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_HEAT = 8;            // Vessels Per Heat
         [BDAPersistantSettingsField] public static int TOURNAMENT_TEAMS_PER_HEAT = 2;              // Teams Per Heat
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
         [BDAPersistantSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
+
+        [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                  //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
     }
 }
