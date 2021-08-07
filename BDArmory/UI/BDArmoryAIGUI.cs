@@ -1668,17 +1668,26 @@ namespace BDArmory.UI
 
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_PilotAI_Terrain"), BoldLabel);//"Speed"
                         gndLines++;
+                        var oldMinTwiddle = ActivePilot.turnRadiusTwiddleFactorMin;
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.turnRadiusTwiddleFactorMin =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
                                     ActivePilot.turnRadiusTwiddleFactorMin, 1, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMin = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMin * 10f) / 10f;
+                            if (ActivePilot.turnRadiusTwiddleFactorMin != oldminAlt)
+                            {
+                                ActivePilot.OnMinUpdated(null, null);
+                            }
                         }
                         else
                         {
                             inputFields["turnRadiusTwiddleFactorMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["turnRadiusTwiddleFactorMin"].possibleValue, 3));
                             ActivePilot.turnRadiusTwiddleFactorMin = (float)inputFields["turnRadiusTwiddleFactorMin"].currentValue;
+                            if (ActivePilot.turnRadiusTwiddleFactorMin != oldminAlt)
+                            {
+                                ActivePilot.OnMinUpdated(null, null);
+                            }
                         }
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + " :" + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
 
@@ -1688,17 +1697,26 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_terrainMin"), contextLabel);//"dynamic damp min"
                             gndLines++;
                         }
+                        var oldMaxTwiddle = ActivePilot.turnRadiusTwiddleFactorMax;
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.turnRadiusTwiddleFactorMax =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, gndLines, contentWidth),
                                     ActivePilot.turnRadiusTwiddleFactorMax, 1, ActivePilot.UpToEleven ? 10 : 5);
                             ActivePilot.turnRadiusTwiddleFactorMax = Mathf.Round(ActivePilot.turnRadiusTwiddleFactorMax * 10) / 10;
+                            if (ActivePilot.turnRadiusTwiddleFactorMax != oldminAlt)
+                            {
+                                ActivePilot.OnMaxUpdated(null, null);
+                            }
                         }
                         else
                         {
                             inputFields["turnRadiusTwiddleFactorMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["turnRadiusTwiddleFactorMax"].possibleValue, 3));
                             ActivePilot.turnRadiusTwiddleFactorMax = (float)inputFields["turnRadiusTwiddleFactorMax"].currentValue;
+                            if (ActivePilot.turnRadiusTwiddleFactorMax != oldminAlt)
+                            {
+                                ActivePilot.OnMaxUpdated(null, null);
+                            }
                         }
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + " :" + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
 
