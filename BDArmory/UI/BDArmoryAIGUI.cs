@@ -1096,17 +1096,26 @@ namespace BDArmory.UI
                             GUI.Label(ContextLabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_AIWindow_DefAlt"), contextLabel);//"defalult alt"
                             altLines++;
                         }
+                        var oldminAlt = ActivePilot.minAltitude;
                         if (!NumFieldsEnabled)
                         {
                             ActivePilot.minAltitude =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                     ActivePilot.minAltitude, 25, ActivePilot.UpToEleven ? 60000 : 6000);
                             ActivePilot.minAltitude = Mathf.Round(ActivePilot.minAltitude / 25) * 25;
+                            if (ActivePilot.minAltitude != oldminAlt)
+                            {
+                                ActivePilot.ClampAltitudes(null, null);
+                            }
                         }
                         else
                         {
                             inputFields["minAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["minAltitude"].possibleValue, 5));
                             ActivePilot.minAltitude = (float)inputFields["minAltitude"].currentValue;
+                            if (ActivePilot.minAltitude != oldminAlt)
+                            {
+                                ActivePilot.ClampAltitudes(null, null);
+                            }
                         }
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MinAltitude") + " :" + ActivePilot.minAltitude.ToString("0"), Label);//"min altitude"
                         altLines++;
@@ -1122,17 +1131,26 @@ namespace BDArmory.UI
 
                         if (ActivePilot.maxAltitudeToggle)
                         {
+                            var oldmaxAlt = ActivePilot.maxAltitude;
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.maxAltitude =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, altLines, contentWidth),
                                         ActivePilot.maxAltitude, 100, ActivePilot.UpToEleven ? 100000 : 15000);
                                 ActivePilot.maxAltitude = Mathf.Round(ActivePilot.maxAltitude / 25) * 25;
+                                if (ActivePilot.maxAltitude != oldmaxAlt)
+                                {
+                                    ActivePilot.ClampAltitudes(null, null);
+                                }
                             }
                             else
                             {
                                 inputFields["maxAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["maxAltitude"].possibleValue, 6));
                                 ActivePilot.maxAltitude = (float)inputFields["maxAltitude"].currentValue;
+                                if (ActivePilot.maxAltitude != oldmaxAlt)
+                                {
+                                    ActivePilot.ClampAltitudes(null, null);
+                                } 
                             }
                             GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MaxAltitude") + " :" + ActivePilot.maxAltitude.ToString("0"), Label);//"max altitude"
                             altLines++;
