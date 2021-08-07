@@ -689,7 +689,11 @@ namespace BDArmory.Modules
 
         public void ClampAltitudes(BaseField field, object obj)
         {
-            switch (field.name)
+            ClampAltitudes(field.name);
+        }
+        public void ClampAltitudes(string fieldName)
+        {
+            switch (fieldName)
             {
                 case "minAltitude":
                     if (defaultAltitude < minAltitude) { defaultAltitude = minAltitude; }
@@ -704,7 +708,7 @@ namespace BDArmory.Modules
                     if (defaultAltitude > maxAltitude) { defaultAltitude = maxAltitude; }
                     break;
                 default:
-                    Debug.LogError($"[BDArmory.BDModulePilotAI]: Invalid altitude {field.name} in ClampAltitudes.");
+                    Debug.LogError($"[BDArmory.BDModulePilotAI]: Invalid altitude {fieldName} in ClampAltitudes.");
                     break;
             }
         }
@@ -1642,6 +1646,12 @@ namespace BDArmory.Modules
                 rollUp += (1 - finalMaxSteer) * 10f;
             }
             rollTarget = (targetPosition + (rollUp * upDirection)) - vesselTransform.position;
+
+            // Adjust roll target to avoid entering terrain avoidance
+            if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(targetDirection, vessel.Velocity()) < 0)
+            {
+                // If we're not avoiding terrain and the target is behind us and the roll target is downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground
+            }
 
             //test
             if (steerMode == SteerModes.Aiming && !belowMinAltitude)
