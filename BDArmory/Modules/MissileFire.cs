@@ -968,6 +968,7 @@ namespace BDArmory.Modules
                 if (vessel.isActiveVessel)
                 {
                     BDArmorySetup.Instance.ActiveWeaponManager = this;
+                    BDArmorySetup.Instance.ConfigTextFields();
                 }
 
                 UpdateVolume();

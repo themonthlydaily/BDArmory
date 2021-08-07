@@ -11,7 +11,7 @@ namespace BDArmory.UI
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class VesselSpawnerWindow : MonoBehaviour
     {
-        private class SpawnField : MonoBehaviour
+        public class SpawnField : MonoBehaviour
         {
             public SpawnField Initialise(double l, double v, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; currentValue = v; minValue = minV; maxValue = maxV; return this; }
             public double lastUpdated;
@@ -19,7 +19,7 @@ namespace BDArmory.UI
             private double _value;
             public double currentValue { get { return _value; } set { _value = value; possibleValue = _value.ToString("G6"); } }
             private double minValue;
-            private double maxValue;
+            public double maxValue;
             private bool coroutineRunning = false;
             private Coroutine coroutine;
 
