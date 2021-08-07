@@ -52,7 +52,7 @@ namespace BDArmory.UI
         public static BDArmoryAIGUI Instance;
         public static bool buttonSetup;
 
-        Dictionary<string, SpawnField> inputFields;
+        Dictionary<string, NumericInputField> inputFields;
 
         GUIStyle BoldLabel;
         GUIStyle Label;
@@ -167,7 +167,7 @@ namespace BDArmory.UI
         {
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             {
-                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.AI_GUI_TOGGLE))
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.GUI_AI_TOGGLE))
                 {
                     windowBDAAIGUIEnabled = !windowBDAAIGUIEnabled;
                 }
@@ -223,78 +223,76 @@ namespace BDArmory.UI
             if (ActivePilot != null)
             {
                 oldClamp = ActivePilot.UpToEleven;
-                inputFields = new Dictionary<string, SpawnField> {
+                inputFields = new Dictionary<string, NumericInputField> {
+                    { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerMult, 0.1, 20) },
+                    { "steerKiAdjust", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerKiAdjust, 0.01, 1) },
+                    { "steerDamping", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerDamping, 1, 8) },
 
-                { "steerMult", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.steerMult, 0.1, 20) },
-                { "steerKiAdjust", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.steerKiAdjust, 0.01, 1) },
-                { "steerDamping", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.steerDamping, 1, 8) },
+                    { "DynamicDampingMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingMin, 1, 8) },
+                    { "DynamicDampingMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingMax, 1, 8) },
+                    { "dynamicSteerDampingFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingFactor, 1, 10) },
 
-                { "DynamicDampingMin", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingMin, 1, 8) },
-                { "DynamicDampingMax", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingMax, 1, 8) },
-                { "dynamicSteerDampingFactor", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.dynamicSteerDampingFactor, 1, 10) },
+                    { "DynamicDampingPitchMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingPitchMin, 1, 8) },
+                    { "DynamicDampingPitchMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingPitchMax, 1, 8) },
+                    { "dynamicSteerDampingPitchFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingPitchFactor, 1, 10) },
 
-                { "DynamicDampingPitchMin", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingPitchMin, 1, 8) },
-                { "DynamicDampingPitchMax", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingPitchMax, 1, 8) },
-                { "dynamicSteerDampingPitchFactor", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.dynamicSteerDampingPitchFactor, 1, 10) },
+                    { "DynamicDampingYawMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingYawMin, 1, 8) },
+                    { "DynamicDampingYawMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingYawMax, 1, 8) },
+                    { "dynamicSteerDampingYawFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingYawFactor, 1, 10) },
 
-                { "DynamicDampingYawMin", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingYawMin, 1, 8) },
-                { "DynamicDampingYawMax", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingYawMax, 1, 8) },
-                { "dynamicSteerDampingYawFactor", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.dynamicSteerDampingYawFactor, 1, 10) },
+                    { "DynamicDampingRollMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
+                    { "DynamicDampingRollMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
+                    { "dynamicSteerDampingRollFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingRollFactor, 1, 10) },
 
-                { "DynamicDampingRollMin", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
-                { "DynamicDampingRollMax", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
-                { "dynamicSteerDampingRollFactor", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.dynamicSteerDampingRollFactor, 1, 10) },
+                    { "defaultAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.defaultAltitude, 100, 15000) },
+                    { "minAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minAltitude, 25, 6000) },
+                    { "maxAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAltitude, 100, 15000) },
 
-                { "defaultAltitude", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.defaultAltitude, 100, 15000) },
-                { "minAltitude", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.minAltitude, 25, 6000) },
-                { "maxAltitude", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.maxAltitude, 100, 15000) },
+                    { "maxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSpeed, 20, 800) },
+                    { "takeOffSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.takeOffSpeed, 10, 200) },
+                    { "minSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minSpeed, 10, 200) },
+                    { "strafingSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.strafingSpeed, 10, 200) },
+                    { "idleSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.idleSpeed, 10, 200) },
 
-                { "maxSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.maxSpeed, 20, 800) },
-                { "takeOffSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.takeOffSpeed, 10, 200) },
-                { "minSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.minSpeed, 10, 200) },
-                { "strafingSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.strafingSpeed, 10, 200) },
-                { "idleSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.idleSpeed, 10, 200) },
+                    { "maxSteer", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteer, 0.1, 1) },
+                    { "lowSpeedSwitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.lowSpeedSwitch, 10, 500) },
+                    { "maxSteerAtMaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteerAtMaxSpeed, 0.1, 1) },
+                    { "cornerSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.cornerSpeed, 10, 500) },
+                    { "maxBank", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxBank, 10, 180) },
+                    { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
+                    { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
 
-                { "maxSteer", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.maxSteer, 0.1, 1) },
-                { "lowSpeedSwitch", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.lowSpeedSwitch, 10, 500) },
-                { "maxSteerAtMaxSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.maxSteerAtMaxSpeed, 0.1, 1) },
-                { "cornerSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.cornerSpeed, 10, 500) },
-                { "maxBank", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.maxBank, 10, 180) },
-                { "maxAllowedGForce", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
-                { "maxAllowedAoA", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
+                    { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
+                    { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
+                    { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
+                    { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
+                    { "vesselCollisionAvoidancePeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidancePeriod, 0, 3) },
+                    { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
+                    { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
+                    { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
+                    { "extendTargetAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetAngle, 0, 180) },
+                    { "extendTargetDist", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetDist, 0, 5000) },
 
-                { "minEvasionTime", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
-                { "evasionThreshold", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
-                { "evasionTimeThreshold", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
-                { "collisionAvoidanceThreshold", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
-                { "vesselCollisionAvoidancePeriod", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.vesselCollisionAvoidancePeriod, 0, 3) },
-                { "vesselStandoffDistance", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
-                { "extendMult", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
-                { "extendTargetVel", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
-                { "extendTargetAngle", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.extendTargetAngle, 0, 180) },
-                { "extendTargetDist", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.extendTargetDist, 0, 5000) },
+                    { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 1, 5) },
+                    { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 1, 5) },
 
-                { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 1, 5) },
-                { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 1, 5) },
-
-                { "controlSurfaceLag", gameObject.AddComponent<SpawnField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
-            };
+                    { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
+                };
             }
             else if (ActiveDriver != null)
             {
                 oldClamp = ActiveDriver.UpToEleven;
-                inputFields = new Dictionary<string, SpawnField>
-                {
-                    { "MaxSlopeAngle", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 1, 30) },
-                    { "CruiseSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.CruiseSpeed, 5, 60) },
-                    { "MaxSpeed", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 5,  80) },
-                    { "MaxDrift", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.MaxDrift, 1, 180) },
-                    { "TargetPitch", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.MaxSlopeAngle, -10, 10) },
-                    { "BankAngle", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.CruiseSpeed, -45, 45) },
-                    { "steerMult", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 0.2,  20) },
-                    { "MinEngagementRange", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.MinEngagementRange, 0, 6000) },
-                    { "MaxEngagementRange", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.MaxEngagementRange, 0, 8000) },
-                    { "AvoidMass", gameObject.AddComponent<SpawnField>().Initialise(0, ActiveDriver.AvoidMass, 0, 100) },
+                inputFields = new Dictionary<string, NumericInputField> {
+                    { "MaxSlopeAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 1, 30) },
+                    { "CruiseSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, 5, 60) },
+                    { "MaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 5,  80) },
+                    { "MaxDrift", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxDrift, 1, 180) },
+                    { "TargetPitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, -10, 10) },
+                    { "BankAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, -45, 45) },
+                    { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 0.2,  20) },
+                    { "MinEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MinEngagementRange, 0, 6000) },
+                    { "MaxEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxEngagementRange, 0, 8000) },
+                    { "AvoidMass", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.AvoidMass, 0, 100) },
                 };
             }
         }
@@ -414,6 +412,90 @@ namespace BDArmory.UI
             if (GUI.Button(TitleButtonRect(4), "#", buttonStyle))
             {
                 NumFieldsEnabled = !NumFieldsEnabled;
+                if (!NumFieldsEnabled)
+                {
+                    // Try to parse all the fields immediately so that they're up to date.
+                    foreach (var field in inputFields.Keys)
+                    { inputFields[field].tryParseValueNow(); }
+                    if (ActivePilot != null)
+                    {
+                        foreach (var field in inputFields.Keys)
+                        {
+                            try
+                            {
+                                var fieldInfo = typeof(BDModulePilotAI).GetField(field);
+                                if (fieldInfo != null)
+                                { fieldInfo.SetValue(ActivePilot, Convert.ChangeType(inputFields[field].currentValue, fieldInfo.FieldType)); }
+                                else // Check if it's a property instead of a field.
+                                {
+                                    var propInfo = typeof(BDModulePilotAI).GetProperty(field);
+                                    propInfo.SetValue(ActivePilot, Convert.ChangeType(inputFields[field].currentValue, propInfo.PropertyType));
+                                }
+                            }
+                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
+                        }
+                    }
+                    else if (ActiveDriver != null)
+                    {
+                        foreach (var field in inputFields.Keys)
+                        {
+                            try
+                            {
+                                var fieldInfo = typeof(BDModuleSurfaceAI).GetField(field);
+                                if (fieldInfo != null)
+                                { fieldInfo.SetValue(ActiveDriver, Convert.ChangeType(inputFields[field].currentValue, fieldInfo.FieldType)); }
+                                else // Check if it's a property instead of a field.
+                                {
+                                    var propInfo = typeof(BDModuleSurfaceAI).GetProperty(field);
+                                    propInfo.SetValue(ActiveDriver, Convert.ChangeType(inputFields[field].currentValue, propInfo.PropertyType));
+                                }
+                            }
+                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
+                        }
+                    }
+                    // Then make any special conversions here.
+                }
+                else // Set the input fields to their current values.
+                {
+                    // Make any special conversions first.
+                    // Then set each of the field values to the current slider value.   
+                    if (ActivePilot != null)
+                    {
+                        foreach (var field in inputFields.Keys)
+                        {
+                            try
+                            {
+                                var fieldInfo = typeof(BDModulePilotAI).GetField(field);
+                                if (fieldInfo != null)
+                                { inputFields[field].currentValue = Convert.ToDouble(fieldInfo.GetValue(ActivePilot)); }
+                                else // Check if it's a property instead of a field.
+                                {
+                                    var propInfo = typeof(BDModulePilotAI).GetProperty(field);
+                                    inputFields[field].currentValue = Convert.ToDouble(propInfo.GetValue(ActivePilot));
+                                }
+                            }
+                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message + "\n" + e.StackTrace); }
+                        }
+                    }
+                    else if (ActiveDriver != null)
+                    {
+                        foreach (var field in inputFields.Keys)
+                        {
+                            try
+                            {
+                                var fieldInfo = typeof(BDModuleSurfaceAI).GetField(field);
+                                if (fieldInfo != null)
+                                { inputFields[field].currentValue = Convert.ToDouble(fieldInfo.GetValue(ActiveDriver)); }
+                                else // Check if it's a property instead of a field.
+                                {
+                                    var propInfo = typeof(BDModuleSurfaceAI).GetProperty(field);
+                                    inputFields[field].currentValue = Convert.ToDouble(propInfo.GetValue(ActiveDriver));
+                                }
+                            }
+                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
+                        }
+                    }
+                }
             }
 
             if (ActivePilot == null && ActiveDriver == null)
@@ -514,7 +596,7 @@ namespace BDArmory.UI
 
                         inputFields["turnRadiusTwiddleFactorMin"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
                         inputFields["turnRadiusTwiddleFactorMax"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
-                        inputFields["controlSurfaceLag"].maxValue = ActivePilot.UpToEleven ? 1 : 0.2;
+                        inputFields["controlSurfaceLag"].maxValue = ActivePilot.UpToEleven ? 1 : 0.2f;
 
                         oldClamp = ActivePilot.UpToEleven;
                     }
@@ -642,6 +724,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["steerMult"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines, contentWidth), inputFields["steerMult"].possibleValue, 5));
+                            ActivePilot.steerMult = (float)inputFields["steerMult"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerFactor") + " :" + ActivePilot.steerMult.ToString("0.0"), Label);//"Steer Mult"
 
@@ -663,6 +746,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["steerKiAdjust"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines, contentWidth), inputFields["steerKiAdjust"].possibleValue, 5));
+                            ActivePilot.steerKiAdjust = (float)inputFields["steerKiAdjust"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerKi") + " :" + ActivePilot.steerKiAdjust.ToString("0.00"), Label);//"Steer Ki"
                         pidLines++;
@@ -683,6 +767,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["steerDamping"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines, contentWidth), inputFields["steerDamping"].possibleValue, 6));
+                            ActivePilot.steerDamping = (float)inputFields["steerDamping"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerDamping") + " :" + ActivePilot.steerDamping.ToString("0.00"), Label);//"Steer Damping"
 
@@ -721,6 +806,7 @@ namespace BDArmory.UI
                                 else
                                 {
                                     inputFields["DynamicDampingMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingMin"].possibleValue, 5));
+                                    ActivePilot.DynamicDampingMin = (float)inputFields["DynamicDampingMin"].currentValue;
                                 }
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMin") + " :" + ActivePilot.DynamicDampingMin.ToString("0.0"), Label);//"dynamic damping min"
                                 dynPidLines++;
@@ -739,6 +825,7 @@ namespace BDArmory.UI
                                 else
                                 {
                                     inputFields["DynamicDampingMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingMax"].possibleValue, 5));
+                                    ActivePilot.DynamicDampingMax = (float)inputFields["DynamicDampingMax"].currentValue;
                                 }
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + " :" + ActivePilot.DynamicDampingMax.ToString("0.0"), Label);//"dynamic damping max"
 
@@ -758,6 +845,7 @@ namespace BDArmory.UI
                                 else
                                 {
                                     inputFields["dynamicSteerDampingFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingFactor"].possibleValue, 5));
+                                    ActivePilot.dynamicSteerDampingFactor = (float)inputFields["dynamicSteerDampingFactor"].currentValue;
                                 }
                                 GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult") + " :" + ActivePilot.dynamicSteerDampingFactor.ToString("0.0"), Label);//"dynamic damping mult"
 
@@ -786,6 +874,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["DynamicDampingPitchMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingPitchMin"].possibleValue, 5));
+                                        ActivePilot.DynamicDampingPitchMin = (float)inputFields["DynamicDampingPitchMin"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchMin") + " :" + ActivePilot.DynamicDampingPitchMin.ToString("0.0"), Label);//"dynamic damping min"
                                     dynPidLines++;
@@ -804,6 +893,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["DynamicDampingPitchMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingPitchMax"].possibleValue, 5));
+                                        ActivePilot.DynamicDampingPitchMax = (float)inputFields["DynamicDampingPitchMax"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + " :" + ActivePilot.DynamicDampingPitchMax.ToString("0.0"), Label);//"dynamic damping max"
 
@@ -823,6 +913,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["dynamicSteerDampingPitchFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingPitchFactor"].possibleValue, 5));
+                                        ActivePilot.dynamicSteerDampingPitchFactor = (float)inputFields["dynamicSteerDampingPitchFactor"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchFactor") + " :" + ActivePilot.dynamicSteerDampingPitchFactor.ToString("0.0"), Label);//"dynamic damping mult"
 
@@ -849,6 +940,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["DynamicDampingYawMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingYawMin"].possibleValue, 5));
+                                        ActivePilot.DynamicDampingYawMin = (float)inputFields["DynamicDampingYawMin"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMin") + " :" + ActivePilot.DynamicDampingYawMin.ToString("0.0"), Label);//"dynamic damping min"
 
@@ -868,6 +960,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["DynamicDampingYawMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingYawMax"].possibleValue, 5));
+                                        ActivePilot.DynamicDampingYawMax = (float)inputFields["DynamicDampingYawMax"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMax") + " :" + ActivePilot.DynamicDampingYawMax.ToString("0.0"), Label);//"dynamic damping max"
 
@@ -882,11 +975,12 @@ namespace BDArmory.UI
                                         ActivePilot.dynamicSteerDampingYawFactor =
                                             GUI.HorizontalSlider(SettingSliderRect(leftIndent, pidLines + dynPidLines, contentWidth),
                                                 ActivePilot.dynamicSteerDampingYawFactor, 0.1f, ActivePilot.UpToEleven ? 100 : 10);
-                                        ActivePilot.dynamicSteerDampingYawFactor = Mathf.Round(ActivePilot.dynamicSteerDampingYawFactor / 10) * 10;
+                                        ActivePilot.dynamicSteerDampingYawFactor = Mathf.Round(ActivePilot.dynamicSteerDampingYawFactor * 10) / 10;
                                     }
                                     else
                                     {
                                         inputFields["dynamicSteerDampingYawFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingYawFactor"].possibleValue, 5));
+                                        ActivePilot.dynamicSteerDampingYawFactor = (float)inputFields["dynamicSteerDampingYawFactor"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawFactor") + " :" + ActivePilot.dynamicSteerDampingYawFactor.ToString("0.0"), Label);//"dynamic damping yaw mult"
 
@@ -913,6 +1007,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["DynamicDampingRollMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingRollMin"].possibleValue, 5));
+                                        ActivePilot.DynamicDampingRollMin = (float)inputFields["DynamicDampingRollMin"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMin") + " :" + ActivePilot.DynamicDampingRollMin.ToString("0.0"), Label);//"dynamic damping min"
 
@@ -932,6 +1027,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["DynamicDampingRollMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingRollMax"].possibleValue, 5));
+                                        ActivePilot.DynamicDampingRollMax = (float)inputFields["DynamicDampingRollMax"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMax") + " :" + ActivePilot.DynamicDampingRollMax.ToString("0.0"), Label);//"dynamic damping max"
 
@@ -951,6 +1047,7 @@ namespace BDArmory.UI
                                     else
                                     {
                                         inputFields["dynamicSteerDampingRollFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingRollFactor"].possibleValue, 5));
+                                        ActivePilot.dynamicSteerDampingRollFactor = (float)inputFields["dynamicSteerDampingRollFactor"].currentValue;
                                     }
                                     GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollFactor") + " :" + ActivePilot.dynamicSteerDampingRollFactor.ToString("0.0"), Label);//"dynamic damping roll mult"
                                     dynPidLines++;
@@ -990,6 +1087,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["defaultAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["defaultAltitude"].possibleValue, 6));
+                            ActivePilot.defaultAltitude = (float)inputFields["defaultAltitude"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_DefaultAltitude") + " :" + ActivePilot.defaultAltitude.ToString("0"), Label);//"default altitude"
                         altLines++;
@@ -1008,6 +1106,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["minAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["minAltitude"].possibleValue, 5));
+                            ActivePilot.minAltitude = (float)inputFields["minAltitude"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MinAltitude") + " :" + ActivePilot.minAltitude.ToString("0"), Label);//"min altitude"
                         altLines++;
@@ -1033,6 +1132,7 @@ namespace BDArmory.UI
                             else
                             {
                                 inputFields["maxAltitude"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, altLines, contentWidth), inputFields["maxAltitude"].possibleValue, 6));
+                                ActivePilot.maxAltitude = (float)inputFields["maxAltitude"].currentValue;
                             }
                             GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MaxAltitude") + " :" + ActivePilot.maxAltitude.ToString("0"), Label);//"max altitude"
                             altLines++;
@@ -1067,6 +1167,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["maxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["maxSpeed"].possibleValue, 5));
+                            ActivePilot.maxSpeed = (float)inputFields["maxSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MaxSpeed") + " :" + ActivePilot.maxSpeed.ToString("0"), Label);//"max speed"
 
@@ -1086,6 +1187,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["takeOffSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["takeOffSpeed"].possibleValue, 5));
+                            ActivePilot.takeOffSpeed = (float)inputFields["takeOffSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_TakeOffSpeed") + " :" + ActivePilot.takeOffSpeed.ToString("0"), Label);//"takeoff speed"
 
@@ -1105,6 +1207,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["minSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["minSpeed"].possibleValue, 5));
+                            ActivePilot.minSpeed = (float)inputFields["minSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MinSpeed") + " :" + ActivePilot.minSpeed.ToString("0"), Label);//"min speed"
 
@@ -1124,6 +1227,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["strafingSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["strafingSpeed"].possibleValue, 3));
+                            ActivePilot.strafingSpeed = (float)inputFields["strafingSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_StrafingSpeed") + " :" + ActivePilot.strafingSpeed.ToString("0"), Label);//"strafing speed"
 
@@ -1143,6 +1247,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["idleSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["idleSpeed"].possibleValue, 4));
+                            ActivePilot.idleSpeed = (float)inputFields["idleSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_IdleSpeed") + " :" + ActivePilot.idleSpeed.ToString("0"), Label);//"idle speed"
 
@@ -1177,6 +1282,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["maxSteer"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxSteer"].possibleValue, 5));
+                            ActivePilot.maxSteer = (float)inputFields["maxSteer"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedSteerLimiter") + " :" + ActivePilot.maxSteer.ToString("0.00"), Label);//"Low speed Limiter"
 
@@ -1196,6 +1302,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["lowSpeedSwitch"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["lowSpeedSwitch"].possibleValue, 3));
+                            ActivePilot.lowSpeedSwitch = (float)inputFields["lowSpeedSwitch"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedLimiterSpeed") + " :" + ActivePilot.lowSpeedSwitch.ToString("0"), Label);//"dynamic damping max"
 
@@ -1215,6 +1322,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["maxSteerAtMaxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxSteerAtMaxSpeed"].possibleValue, 3));
+                            ActivePilot.maxSteerAtMaxSpeed = (float)inputFields["maxSteerAtMaxSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HighSpeedSteerLimiter") + " :" + ActivePilot.maxSteerAtMaxSpeed.ToString("0.00"), Label);//"dynamic damping min"
 
@@ -1234,6 +1342,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["cornerSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["cornerSpeed"].possibleValue, 3));
+                            ActivePilot.cornerSpeed = (float)inputFields["cornerSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HighSpeedLimiterSpeed") + " :" + ActivePilot.cornerSpeed.ToString("0"), Label);//"dynamic damping min"
 
@@ -1253,6 +1362,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["maxBank"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxBank"].possibleValue, 3));
+                            ActivePilot.maxBank = (float)inputFields["maxBank"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_BankLimiter") + " :" + ActivePilot.maxBank.ToString("0"), Label);//"dynamic damping min"
 
@@ -1272,6 +1382,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["maxAllowedGForce"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxAllowedGForce"].possibleValue, 6));
+                            ActivePilot.maxAllowedGForce = (float)inputFields["maxAllowedGForce"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_maxAllowedGForce") + " :" + ActivePilot.maxAllowedGForce.ToString("0.00"), Label);//"dynamic damping min"
 
@@ -1291,6 +1402,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["maxAllowedAoA"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxAllowedAoA"].possibleValue, 6));
+                            ActivePilot.maxAllowedAoA = (float)inputFields["maxAllowedAoA"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_maxAllowedAoA") + " :" + ActivePilot.maxAllowedAoA.ToString("0.0"), Label);//"dynamic damping min"
 
@@ -1325,6 +1437,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["minEvasionTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["minEvasionTime"].possibleValue, 6));
+                            ActivePilot.minEvasionTime = (float)inputFields["minEvasionTime"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_MinEvasionTime") + " :" + ActivePilot.minEvasionTime.ToString("0.00"), Label);//"dynamic damping min"
 
@@ -1345,6 +1458,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["evasionThreshold"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["evasionThreshold"].possibleValue, 4));
+                            ActivePilot.evasionThreshold = (float)inputFields["evasionThreshold"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionThreshold") + " :" + ActivePilot.evasionThreshold.ToString("0"), Label);//"dynamic damping max"
 
@@ -1364,6 +1478,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["evasionTimeThreshold"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["evasionTimeThreshold"].possibleValue, 4));
+                            ActivePilot.evasionTimeThreshold = (float)inputFields["evasionTimeThreshold"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionTimeThreshold") + " :" + ActivePilot.evasionTimeThreshold.ToString("0.00"), Label);//"dynamic damping min"
 
@@ -1383,6 +1498,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["collisionAvoidanceThreshold"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["collisionAvoidanceThreshold"].possibleValue, 2));
+                            ActivePilot.collisionAvoidanceThreshold = (float)inputFields["collisionAvoidanceThreshold"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceThreshold") + " :" + ActivePilot.collisionAvoidanceThreshold.ToString("0"), Label);//"dynamic damping min"
 
@@ -1402,6 +1518,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["vesselCollisionAvoidancePeriod"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselCollisionAvoidancePeriod"].possibleValue, 1));
+                            ActivePilot.vesselCollisionAvoidancePeriod = (float)inputFields["vesselCollisionAvoidancePeriod"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidancePeriod") + " :" + ActivePilot.vesselCollisionAvoidancePeriod.ToString("0.0"), Label);//"dynamic damping min"
 
@@ -1421,6 +1538,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["vesselStandoffDistance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselStandoffDistance"].possibleValue, 4));
+                            ActivePilot.vesselStandoffDistance = (float)inputFields["vesselStandoffDistance"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_StandoffDistance") + " :" + ActivePilot.vesselStandoffDistance.ToString("0"), Label);//"dynamic damping min"
 
@@ -1442,6 +1560,7 @@ namespace BDArmory.UI
                             else
                             {
                                 inputFields["extendMult"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendMult"].possibleValue, 5));
+                                ActivePilot.extendMult = (float)inputFields["extendMult"].currentValue;
                             }
                             GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendMultiplier") + " :" + ActivePilot.extendMult.ToString("0.0"), Label);//"dynamic damping min"
 
@@ -1461,6 +1580,7 @@ namespace BDArmory.UI
                             else
                             {
                                 inputFields["extendTargetVel"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetVel"].possibleValue, 3));
+                                ActivePilot.extendTargetVel = (float)inputFields["extendTargetVel"].currentValue;
                             }
                             GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetVel") + " :" + ActivePilot.extendTargetVel.ToString("0.0"), Label);//"dynamic damping min"
 
@@ -1480,6 +1600,7 @@ namespace BDArmory.UI
                             else
                             {
                                 inputFields["extendTargetAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetAngle"].possibleValue, 3));
+                                ActivePilot.extendTargetAngle = (float)inputFields["extendTargetAngle"].currentValue;
                             }
                             GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetAngle") + " :" + ActivePilot.extendTargetAngle.ToString("0"), Label);// "dynamic damping min"
 
@@ -1499,6 +1620,7 @@ namespace BDArmory.UI
                             else
                             {
                                 inputFields["extendTargetDist"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetDist"].possibleValue, 7));
+                                ActivePilot.extendTargetDist = (float)inputFields["extendTargetDist"].currentValue;
                             }
                             GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetDist") + " :" + ActivePilot.extendTargetDist.ToString("0.00"), Label);//"dynamic damping min"
 
@@ -1538,6 +1660,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["turnRadiusTwiddleFactorMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["turnRadiusTwiddleFactorMin"].possibleValue, 3));
+                            ActivePilot.turnRadiusTwiddleFactorMin = (float)inputFields["turnRadiusTwiddleFactorMin"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + " :" + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
 
@@ -1557,6 +1680,7 @@ namespace BDArmory.UI
                         else
                         {
                             inputFields["turnRadiusTwiddleFactorMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, gndLines, contentWidth), inputFields["turnRadiusTwiddleFactorMax"].possibleValue, 3));
+                            ActivePilot.turnRadiusTwiddleFactorMax = (float)inputFields["turnRadiusTwiddleFactorMax"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + " :" + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
 
@@ -1598,6 +1722,7 @@ namespace BDArmory.UI
                             else
                             {
                                 inputFields["controlSurfaceLag"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ramLines, contentWidth), inputFields["controlSurfaceLag"].possibleValue, 4));
+                                ActivePilot.controlSurfaceLag = (float)inputFields["controlSurfaceLag"].currentValue;
                             }
                             GUI.Label(SettinglabelRect(leftIndent, ramLines), Localizer.Format("#LOC_BDArmory_AIWindow_ControlSurfaceLag") + " :" + ActivePilot.controlSurfaceLag.ToString("0.00"), Label);//"dynamic damping min"
 
@@ -1660,14 +1785,14 @@ namespace BDArmory.UI
                         ActiveDriver.UpToEleven, ActiveDriver.UpToEleven ? Localizer.Format("#LOC_BDArmory_UnclampTuning_enabledText") : Localizer.Format("#LOC_BDArmory_UnclampTuning_disabledText"), ActiveDriver.UpToEleven ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Misc"  
                     if (ActiveDriver.UpToEleven != oldClamp)
                     {
-                        inputFields["MaxSlopeAngle"].maxValue = ActiveDriver.UpToEleven ? 90f : 30;
-                        inputFields["CruiseSpeed"].maxValue = ActiveDriver.UpToEleven ? 300f : 60;
-                        inputFields["MaxSpeed"].maxValue = ActiveDriver.UpToEleven ? 400f : 80;
-                        inputFields["steerMult"].maxValue = ActiveDriver.UpToEleven ? 200f : 20;
-                        inputFields["steerDamping"].maxValue = ActiveDriver.UpToEleven ? 100f : 10;
-                        inputFields["MinEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 20000f : 6000;
-                        inputFields["MaxEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 30000f : 8000;
-                        inputFields["AvoidMass"].maxValue = ActiveDriver.UpToEleven ? 1000000f : 100;
+                        inputFields["MaxSlopeAngle"].maxValue = ActiveDriver.UpToEleven ? 90 : 30;
+                        inputFields["CruiseSpeed"].maxValue = ActiveDriver.UpToEleven ? 300 : 60;
+                        inputFields["MaxSpeed"].maxValue = ActiveDriver.UpToEleven ? 400 : 80;
+                        inputFields["steerMult"].maxValue = ActiveDriver.UpToEleven ? 200 : 20;
+                        inputFields["steerDamping"].maxValue = ActiveDriver.UpToEleven ? 100 : 10;
+                        inputFields["MinEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 20000 : 6000;
+                        inputFields["MaxEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 30000 : 8000;
+                        inputFields["AvoidMass"].maxValue = ActiveDriver.UpToEleven ? 1000000 : 100;
 
                         oldClamp = ActiveDriver.UpToEleven;
                     }
@@ -1753,6 +1878,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["MaxSlopeAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSlopeAngle"].possibleValue, 2));
+                        ActiveDriver.MaxSlopeAngle = (float)inputFields["MaxSlopeAngle"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxSlopeAngle") + " :" + ActiveDriver.MaxSlopeAngle.ToString("0"), Label);//"Steer Ki"
                     driverLines++;
@@ -1772,6 +1898,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["CruiseSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["CruiseSpeed"].possibleValue, 3));
+                        ActiveDriver.CruiseSpeed = (float)inputFields["CruiseSpeed"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_CruiseSpeed") + " :" + ActiveDriver.steerDamping.ToString("0"), Label);//"Steer Damping"
 
@@ -1791,6 +1918,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["MaxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSpeed"].possibleValue, 3));
+                        ActiveDriver.MaxSpeed = (float)inputFields["MaxSpeed"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxSpeed") + " :" + ActiveDriver.MaxSpeed.ToString("0"), Label);//"Steer Damping"
 
@@ -1810,6 +1938,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["MaxDrift"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxDrift"].possibleValue, 3));
+                        ActiveDriver.MaxDrift = (float)inputFields["MaxDrift"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxDrift") + " :" + ActiveDriver.MaxDrift.ToString("0"), Label);//"Steer Damping"
 
@@ -1829,6 +1958,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["TargetPitch"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["TargetPitch"].possibleValue, 5));
+                        ActiveDriver.TargetPitch = (float)inputFields["TargetPitch"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_TargetPitch") + " :" + ActiveDriver.TargetPitch.ToString("0.0"), Label);//"Steer Damping"
 
@@ -1848,6 +1978,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["BankAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["BankAngle"].possibleValue, 3));
+                        ActiveDriver.BankAngle = (float)inputFields["BankAngle"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_BankAngle") + " :" + ActiveDriver.BankAngle.ToString("0"), Label);//"Steer Damping"
 
@@ -1867,6 +1998,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["steerMult"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["steerMult"].possibleValue, 5));
+                        ActiveDriver.steerMult = (float)inputFields["steerMult"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_SteerFactor") + " :" + ActiveDriver.steerMult.ToString("0.0"), Label);//"Steer Damping"
 
@@ -1886,6 +2018,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["steerDamping"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["steerDamping"].possibleValue, 5));
+                        ActiveDriver.steerDamping = (float)inputFields["steerDamping"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_SteerDamping") + " :" + ActiveDriver.steerDamping.ToString("0.0"), Label);//"Steer Damping"
 
@@ -1914,6 +2047,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["MinEngagementRange"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MinEngagementRange"].possibleValue, 5));
+                        ActiveDriver.MinEngagementRange = (float)inputFields["MinEngagementRange"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_EngageRangeMin") + " :" + ActiveDriver.MinEngagementRange.ToString("0"), Label);//"Steer Damping"
 
@@ -1933,6 +2067,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["MaxEngagementRange"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxEngagementRange"].possibleValue, 5));
+                        ActiveDriver.MaxEngagementRange = (float)inputFields["MaxEngagementRange"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_EngageRangeMax") + " :" + ActiveDriver.MaxEngagementRange.ToString("0"), Label);//"Steer Damping"
 
@@ -1961,6 +2096,7 @@ namespace BDArmory.UI
                     else
                     {
                         inputFields["AvoidMass"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["AvoidMass"].possibleValue, 7));
+                        ActiveDriver.AvoidMass = (float)inputFields["AvoidMass"].currentValue;
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MinObstacleMass") + " :" + ActiveDriver.AvoidMass.ToString("0"), Label);//"Steer Damping"
 
