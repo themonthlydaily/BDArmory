@@ -39,6 +39,7 @@ namespace BDArmory.UI
         [BDAWindowSettingsField] public static Rect WindowRectTargetingCam;
 
         [BDAWindowSettingsField] public static Rect WindowRectRemoteOrchestration;// = new Rect(45, 100, 200, 200);
+        [BDAWindowSettingsField] public static Rect WindowRectEvolution;
         [BDAWindowSettingsField] public static Rect WindowRectVesselSpawner;
         [BDAWindowSettingsField] public static Rect WindowRectAI;
 
@@ -533,6 +534,7 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
+            BDGUIUtils.RepositionWindow(ref WindowRectEvolution);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
             BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
@@ -773,8 +775,10 @@ namespace BDArmory.UI
 
         public bool hasVesselSwitcher = false;
         public bool hasVesselSpawner = false;
+        public bool hasEvolution = false;
         public bool showVesselSwitcherGUI = false;
         public bool showVesselSpawnerGUI = false;
+        public bool showEvolutionGUI = false;
 
         float rippleHeight;
         float weaponsHeight;
@@ -896,6 +900,16 @@ namespace BDArmory.UI
                             catch (Exception e) { Debug.LogError($"[BDArmory.BDArmorySetup]: Failed to set current value of {field}: " + e.Message); }
                         }
                     }
+                }
+            }
+
+            // evolution button
+            if (hasEvolution)
+            {
+                var evolutionSkin = showEvolutionGUI ? BDGuiSkin.box : BDGuiSkin.button; ;
+                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 4 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "EV", evolutionSkin))
+                {
+                    showEvolutionGUI = !showEvolutionGUI;
                 }
             }
 
