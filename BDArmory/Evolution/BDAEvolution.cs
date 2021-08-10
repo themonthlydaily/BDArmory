@@ -120,7 +120,7 @@ namespace BDArmory.Evolution
         // next variant id
         private int nextVariantId = 0;
 
-        private VariantOptions options;
+        // private VariantOptions options;
 
         private Dictionary<string, Dictionary<string, float>> aggregateScores = new Dictionary<string, Dictionary<string, float>>();
 
