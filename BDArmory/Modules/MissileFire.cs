@@ -56,7 +56,7 @@ namespace BDArmory.Modules
         {
             get
             {
-                if (selectedWeapon != null)
+                if (rippleFire)
                 {
                     return rippleDictionary[selectedWeapon.GetShortName()].rpm;
                 }
@@ -67,20 +67,9 @@ namespace BDArmory.Modules
             }
             set
             {
-                if (selectedWeapon != null)
+                if (selectedWeapon != null && rippleDictionary.ContainsKey(selectedWeapon.GetShortName()))
                 {
-                    if (rippleDictionary.ContainsKey(selectedWeapon.GetShortName()))
-                    {
-                        rippleDictionary[selectedWeapon.GetShortName()].rpm = value;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    return;
+                    rippleDictionary[selectedWeapon.GetShortName()].rpm = value;
                 }
             }
         }
