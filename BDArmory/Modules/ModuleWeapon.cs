@@ -1121,7 +1121,7 @@ namespace BDArmory.Modules
                     try
                     {
                         fireState[i] = Misc.Misc.SetUpSingleAnimation(animList[i].ToString(), part);
-                        Debug.Log("[BDArmory.ModuleWeapon] Added fire anim " + i);
+                        //Debug.Log("[BDArmory.ModuleWeapon] Added fire anim " + i);
                         fireState[i].enabled = false;
                     }
                     catch
@@ -1721,14 +1721,14 @@ namespace BDArmory.Modules
                 if (useRippleFire)
                 {
                     barrelIndex++;
-                    Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
                     if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                     {
                         StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
                         if (barrelIndex + 1 > fireTransforms.Length)
                         {
                             barrelIndex = 0;
-                            Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
                         }
                     }
                 }
@@ -2381,12 +2381,12 @@ namespace BDArmory.Modules
 
         void PlayFireAnim()
         {
-            Debug.Log("[BDArmory.ModuleWeapon]: fireState length = " + fireState.Length);
+            //Debug.Log("[BDArmory.ModuleWeapon]: fireState length = " + fireState.Length);
             for (int i = 0; i < fireState.Length; i++)
             {
                 try
                 {
-                    Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
+                    //Debug.Log("[BDArmory.ModuleWeapon]: playing Fire Anim, i = " + i + "; fire anim " + fireState[i].name);
                 }
                 catch
                 {
