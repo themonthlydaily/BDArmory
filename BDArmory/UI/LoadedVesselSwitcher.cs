@@ -398,10 +398,10 @@ namespace BDArmory.UI
                 if (BDArmorySettings.TAG_MODE)
                 { // Sort vessels based on total tag time or tag scores.
                     var orderedWMs = weaponManagers.SelectMany(tm => tm.Value, (tm, weaponManager) => new Tuple<string, MissileFire>(tm.Key, weaponManager)).ToList(); // Use a local copy.
-                    if (VesselSpawner.Instance.vesselsSpawningContinuously && orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ContainsKey(mf.Item2.vessel.vesselName) && VesselSpawner.Instance.continuousSpawningScores.ContainsKey(mf.Item2.vessel.vesselName)))
-                        orderedWMs.Sort((mf1, mf2) => ((VesselSpawner.Instance.continuousSpawningScores[mf2.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores[mf2.Item2.vessel.vesselName].tagTotalTime).CompareTo(VesselSpawner.Instance.continuousSpawningScores[mf1.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores[mf1.Item2.vessel.vesselName].tagTotalTime)));
-                    else if (orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ContainsKey(mf.Item2.vessel.vesselName)))
-                        orderedWMs.Sort((mf1, mf2) => (BDACompetitionMode.Instance.Scores[mf2.Item2.vessel.vesselName].tagScore.CompareTo(BDACompetitionMode.Instance.Scores[mf1.Item2.vessel.vesselName].tagScore)));
+                    if (VesselSpawner.Instance.vesselsSpawningContinuously && orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(mf.Item2.vessel.vesselName) && VesselSpawner.Instance.continuousSpawningScores.ContainsKey(mf.Item2.vessel.vesselName)))
+                        orderedWMs.Sort((mf1, mf2) => ((VesselSpawner.Instance.continuousSpawningScores[mf2.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores.ScoreData[mf2.Item2.vessel.vesselName].tagTotalTime).CompareTo(VesselSpawner.Instance.continuousSpawningScores[mf1.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores.ScoreData[mf1.Item2.vessel.vesselName].tagTotalTime)));
+                    else if (orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(mf.Item2.vessel.vesselName)))
+                        orderedWMs.Sort((mf1, mf2) => (BDACompetitionMode.Instance.Scores.ScoreData[mf2.Item2.vessel.vesselName].tagScore.CompareTo(BDACompetitionMode.Instance.Scores.ScoreData[mf1.Item2.vessel.vesselName].tagScore)));
                     foreach (var weaponManagerPair in orderedWMs)
                     {
                         if (weaponManagerPair.Item2 == null) continue;
@@ -422,14 +422,14 @@ namespace BDArmory.UI
                     if (VesselSpawner.Instance.vesselsSpawningContinuously)
                     {
                         foreach (var teamManager in orderedTeamManagers)
-                            teamManager.Item2.Sort((wm1, wm2) => ((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm2.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm2.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm2.vessel.vesselName].Hits : 0)).CompareTo((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm1.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm1.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm1.vessel.vesselName].Hits : 0))); // Sort within each team by cumulative hits.
-                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0)).CompareTo(tm1.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0))))); // Sort teams by total cumulative hits.
+                            teamManager.Item2.Sort((wm1, wm2) => ((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm2.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm2.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm2.vessel.vesselName].Hits : 0)).CompareTo((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm1.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm1.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm1.vessel.vesselName].Hits : 0))); // Sort within each team by cumulative hits.
+                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].Hits : 0)).CompareTo(tm1.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].Hits : 0))))); // Sort teams by total cumulative hits.
                     }
                     else
                     {
                         foreach (var teamManager in orderedTeamManagers)
-                            teamManager.Item2.Sort((wm1, wm2) => (BDACompetitionMode.Instance.Scores.ContainsKey(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm2.vessel.vesselName].Hits : 0).CompareTo(BDACompetitionMode.Instance.Scores.ContainsKey(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm1.vessel.vesselName].Hits : 0)); // Sort within each team by hits.
-                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0).CompareTo(tm1.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.ContainsKey(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores[wm.vessel.GetName()].Hits : 0)))); // Sort teams by total hits.
+                            teamManager.Item2.Sort((wm1, wm2) => (BDACompetitionMode.Instance.Scores.Players.Contains(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm2.vessel.vesselName].Hits : 0).CompareTo(BDACompetitionMode.Instance.Scores.Players.Contains(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm1.vessel.vesselName].Hits : 0)); // Sort within each team by hits.
+                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].Hits : 0).CompareTo(tm1.Item2.Sum(wm => BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].Hits : 0)))); // Sort teams by total hits.
                     }
                     foreach (var teamManager in orderedTeamManagers)
                     {
@@ -490,49 +490,72 @@ namespace BDArmory.UI
             height += _margin;
             // add all the lost pilots at the bottom
             if (!VesselSpawner.Instance.vesselsSpawningContinuously) // Don't show the dead vessels when continuously spawning. (Especially as command seats trigger all vessels as showing up as dead.)
-                foreach (var key in BDACompetitionMode.Instance.DeathOrder.Keys)
+            {
+                foreach (var player in BDACompetitionMode.Instance.Scores.Players.Where(player => BDACompetitionMode.Instance.Scores.ScoreData[player].aliveState != AliveState.Alive))
                 {
                     string statusString = "";
-                    if (BDACompetitionMode.Instance.Scores.ContainsKey(key))
+                    if (BDACompetitionMode.Instance.Scores.Players.Contains(player))
                     {
                         // DEAD <death order>:<death time>: vesselName(<Score>[, <MissileScore>][, <RammingScore>])[ KILLED|RAMMED BY <otherVesselName>], where <Score> is the number of hits made  <RammingScore> is the number of parts destroyed.
-                        statusString += "DEAD " + BDACompetitionMode.Instance.DeathOrder[key].Item1 + ":" + BDACompetitionMode.Instance.DeathOrder[key].Item2.ToString("0.0") + " : " + key + " (" + BDACompetitionMode.Instance.Scores[key].Hits.ToString();
-                        if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles > 0)
-                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToMissiles;
-                        if (BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming > 0)
-                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].totalDamagedPartsDueToRamming;
-                        if (VesselSpawner.Instance.vesselsSpawningContinuously && BDACompetitionMode.Instance.Scores[key].tagTotalTime > 0)
-                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagTotalTime.ToString("0.0");
-                        else if (BDACompetitionMode.Instance.Scores[key].tagScore > 0)
-                            statusString += ", " + BDACompetitionMode.Instance.Scores[key].tagScore.ToString("0.0");
-                        switch (BDACompetitionMode.Instance.Scores[key].LastDamageWasFrom())
+                        statusString += "DEAD " + BDACompetitionMode.Instance.Scores.ScoreData[player].deathOrder + ":" + BDACompetitionMode.Instance.Scores.ScoreData[player].deathTime.ToString("0.0") + " : " + player + " (" + BDACompetitionMode.Instance.Scores.ScoreData[player].Hits.ToString();
+                        if (BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToMissiles > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToMissiles;
+                        if (BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRamming > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRamming;
+                        if (VesselSpawner.Instance.vesselsSpawningContinuously && BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime.ToString("0.0");
+                        else if (BDACompetitionMode.Instance.Scores.ScoreData[player].tagScore > 0)
+                            statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].tagScore.ToString("0.0");
+                        switch (BDACompetitionMode.Instance.Scores.ScoreData[player].lastDamageWasFrom)
                         {
                             case DamageFrom.Guns:
-                                statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
+                                statusString += ") KILLED BY " + BDACompetitionMode.Instance.Scores.ScoreData[player].lastPersonWhoDamagedMe;
                                 break;
                             case DamageFrom.Missile:
-                                statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
+                                statusString += ") EXPLODED BY " + BDACompetitionMode.Instance.Scores.ScoreData[player].lastPersonWhoDamagedMe;
                                 break;
                             case DamageFrom.Ramming:
-                                statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores[key].LastPersonWhoDamagedMe() + (BDACompetitionMode.Instance.Scores[key].cleanDeath ? " (Head-shot!)" : ", et al.");
+                                statusString += ") RAMMED BY " + BDACompetitionMode.Instance.Scores.ScoreData[player].lastPersonWhoDamagedMe;
+                                break;
+                            case DamageFrom.Incompetence:
+                            case DamageFrom.None:
+                                statusString += ") CRASHED AND BURNED!";
                                 break;
                             default:
                                 statusString += ")";
+                                break;
+                        }
+                        switch (BDACompetitionMode.Instance.Scores.ScoreData[player].aliveState)
+                        {
+                            case AliveState.CleanKill:
+                                statusString += " (Clean-Kill!)";
+                                break;
+                            case AliveState.HeadShot:
+                                statusString += " (Head-Shot!)";
+                                break;
+                            case AliveState.KillSteal:
+                                statusString += " (Kill-Steal!)";
+                                break;
+                            case AliveState.AssistedKill:
+                                statusString += ", et al.";
+                                break;
+                            case AliveState.Dead:
                                 break;
                         }
                         GUI.Label(new Rect(_margin, height, vesselButtonWidth, _buttonHeight), statusString, BDArmorySetup.BDGuiSkin.label);
                         height += _buttonHeight + _buttonGap;
                     }
                 }
+            }
             // Piñata killers.
             if (!BDACompetitionMode.Instance.pinataAlive)
             {
                 string postString = "";
-                foreach (var killer in BDACompetitionMode.Instance.Scores.Keys)
+                foreach (var player in BDACompetitionMode.Instance.Scores.Players)
                 {
-                    if (BDACompetitionMode.Instance.Scores[killer].PinataHits > 0)
+                    if (BDACompetitionMode.Instance.Scores.ScoreData[player].PinataHits > 0)
                     {
-                        postString += " " + killer;
+                        postString += " " + player;
                     }
                 }
                 if (postString != "")
@@ -571,9 +594,9 @@ namespace BDArmory.UI
             double currentTagScore = 0;
             int currentTimesIt = 0;
 
-            if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
+            if (BDACompetitionMode.Instance.Scores.Players.Contains(vesselName))
             {
-                scoreData = BDACompetitionMode.Instance.Scores[vesselName];
+                scoreData = BDACompetitionMode.Instance.Scores.ScoreData[vesselName];
                 currentScore = scoreData.Hits;
                 currentRamScore = scoreData.totalDamagedPartsDueToRamming;
                 currentMissileScore = scoreData.totalDamagedPartsDueToMissiles;
@@ -741,7 +764,7 @@ namespace BDArmory.UI
                 {
                     xStyle.normal.textColor = Color.red;
                 }
-                else if (Planetarium.GetUniversalTime() - scoreData.lastHitTime < 4 || Planetarium.GetUniversalTime() - scoreData.lastRammedTime < 4)
+                else if (Planetarium.GetUniversalTime() - scoreData.lastDamageTime < 4)
                 {
                     xStyle.normal.textColor = Color.yellow;
                 }
@@ -753,14 +776,11 @@ namespace BDArmory.UI
                 {
                     if (scoreData != null)
                     {
-                        if (scoreData.LastPersonWhoDamagedMe() == "")
+                        if (scoreData.lastPersonWhoDamagedMe == "")
                         {
-                            scoreData.lastPersonWhoHitMe = "BIG RED BUTTON"; // only do this if it's not already damaged
+                            scoreData.lastPersonWhoDamagedMe = "BIG RED BUTTON"; // only do this if it's not already damaged
                         }
-                        scoreData.gmKillReason = GMKillReason.BigRedButton; // Indicate that it was us who killed it and remove any "clean" kills.
-                        if (BDACompetitionMode.Instance.whoCleanShotWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWho.Remove(vesselName);
-                        if (BDACompetitionMode.Instance.whoCleanRammedWho.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanRammedWho.Remove(vesselName);
-                        if (BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.ContainsKey(vesselName)) BDACompetitionMode.Instance.whoCleanShotWhoWithMissiles.Remove(vesselName);
+                        BDACompetitionMode.Instance.Scores.RegisterDeath(vesselName, GMKillReason.BigRedButton); // Indicate that it was us who killed it and remove any "clean" kills.
                     }
                     Misc.Misc.ForceDeadVessel(wm.vessel);
                 }
@@ -964,10 +984,10 @@ namespace BDArmory.UI
 
                                     // check for damage & landed status
 
-                                    if (BDACompetitionMode.Instance.Scores.ContainsKey(vesselName))
+                                    if (BDACompetitionMode.Instance.Scores.Players.Contains(vesselName))
                                     {
                                         var currentParts = v.Current.parts.Count;
-                                        var vdat = BDACompetitionMode.Instance.Scores[vesselName];
+                                        var vdat = BDACompetitionMode.Instance.Scores.ScoreData[vesselName];
                                         if (now - vdat.lastLostPartTime < 5d) // Lost parts within the last 5s.
                                         {
                                             recentlyDamaged = true;

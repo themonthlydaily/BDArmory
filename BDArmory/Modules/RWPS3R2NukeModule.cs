@@ -220,41 +220,13 @@ namespace BDArmory.Modules
                                     // Scoring
                                     var aName = Sourcevessel; // Attacker
                                     var tName = p.vessel.GetName(); // Target
-                                    if (BDACompetitionMode.Instance.Scores2.RegisterMissileHit(aName, tName, 1))
+                                    if (BDACompetitionMode.Instance.Scores.RegisterMissileHit(aName, tName, 1))
                                     {
-                                        // if (vesselsHitByMissiles.ContainsKey(tName))
-                                        //     ++vesselsHitByMissiles[tName];
-                                        // else
-                                        //     vesselsHitByMissiles[tName] = 1;
-                                        BDACompetitionMode.Instance.Scores2.RegisterMissileDamage(aName, tName, blastDamage);
-                                    }
-                                    if (tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(tName) && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                                    {
-                                        // Part hit counts
-                                        if (BDACompetitionMode.Instance.Scores[tName].missilePartDamageCounts.ContainsKey(aName))
-                                            ++BDACompetitionMode.Instance.Scores[tName].missilePartDamageCounts[aName];
-                                        else
-                                            BDACompetitionMode.Instance.Scores[tName].missilePartDamageCounts[aName] = 1;
-                                        if (!BDACompetitionMode.Instance.Scores[tName].everyoneWhoHitMeWithMissiles.Contains(aName))
-                                            BDACompetitionMode.Instance.Scores[tName].everyoneWhoHitMeWithMissiles.Add(aName);
-                                        ++BDACompetitionMode.Instance.Scores[aName].totalDamagedPartsDueToMissiles;
-                                        BDACompetitionMode.Instance.Scores[tName].lastMissileHitTime = Planetarium.GetUniversalTime();
-                                        BDACompetitionMode.Instance.Scores[tName].lastPersonWhoHitMeWithAMissile = aName;
                                         if (vesselsHitByMissiles.ContainsKey(tName))
                                             ++vesselsHitByMissiles[tName];
                                         else
                                             vesselsHitByMissiles[tName] = 1;
-                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                            BDAScoreService.Instance.TrackMissileParts(aName, tName, 1);
-
-                                        // Part damage scoring
-                                        var tData = BDACompetitionMode.Instance.Scores[tName];
-                                        if (tData.damageFromMissiles.ContainsKey(aName))
-                                            tData.damageFromMissiles[aName] += blastDamage;
-                                        else
-                                            tData.damageFromMissiles.Add(aName, blastDamage);
-                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                            BDAScoreService.Instance.TrackMissileDamage(aName, tName, blastDamage);
+                                        BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, blastDamage);
                                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m");
                                     }
                                 }
@@ -280,7 +252,7 @@ namespace BDArmory.Modules
                 }
             }
             if (vesselsHitByMissiles.Count > 0)
-            { // Note: Missile strike isn't counted here.
+            { // Note: This doesn't count as a missile strike.
                 string message = "";
                 foreach (var vesselName in vesselsHitByMissiles.Keys)
                     message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];

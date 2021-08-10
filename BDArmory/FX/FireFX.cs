@@ -314,47 +314,11 @@ namespace BDArmory.FX
 
                     var aName = SourceVessel;
                     var tName = parentPart.vessel.GetName();
-                    BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
-                    if (ScoreAccumulator >= 1)
+                    if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE))
                     {
-                        BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName);
-                        // ScoreAccumulator = 0;
-                    }
-                    else
-                    {
-                        // ScoreAccumulator += 1 * Time.deltaTime;
-                    }
-
-                    if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                    {
-                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                        {
-                            BDAScoreService.Instance.TrackDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
-                        }
-                        // Track damage. Moving this here to properly track damage per tick
-                        var tData = BDACompetitionMode.Instance.Scores[tName];
-                        if (tData.damageFromGuns.ContainsKey(aName))
-                            tData.damageFromGuns[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
-                        else
-                            tData.damageFromGuns.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
-
                         if (ScoreAccumulator >= 1) //could be reduced, gaining +1 hit per sec, per fire seems high
                         {
-                            var aData = BDACompetitionMode.Instance.Scores[aName];
-                            aData.Hits += 1;
-
-                            if (parentPart.vessel.GetName() == "Pinata")
-                            {
-                                aData.PinataHits++;
-                            }
-                            tData.lastPersonWhoHitMe = aName;
-                            tData.lastHitTime = Planetarium.GetUniversalTime();
-                            tData.everyoneWhoHitMe.Add(aName);
-                            // Track hits
-                            if (tData.hitCounts.ContainsKey(aName))
-                                ++tData.hitCounts[aName];
-                            else
-                                tData.hitCounts.Add(aName, 1);
+                            BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName);
                             ScoreAccumulator = 0;
                         }
                         else

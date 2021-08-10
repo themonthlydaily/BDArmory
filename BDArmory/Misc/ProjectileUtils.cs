@@ -102,48 +102,8 @@ namespace BDArmory.Misc
         {
             var aName = sourceVessel;//.GetName();
             var tName = hitPart.vessel.GetName();
-            BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, name, distanceTraveled);
-            BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, damage);
-
-            if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-            {
-                // Debug.Log("[BDArmory.ProjectileUtils]: Weapon from " + aName + " damaged " + tName);
-
-                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                {
-                    BDAScoreService.Instance.TrackHit(aName, tName, name, distanceTraveled);
-                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
-                }
-                // update scoring structure on attacker
-                {
-                    var aData = BDACompetitionMode.Instance.Scores[aName];
-                    aData.Hits += 1;
-                    // keep track of who shot who for point keeping
-
-                    // competition logic for 'Pinata' mode - this means a pilot can't be named 'Pinata'
-                    if (hitPart.vessel.GetName() == "Pinata")
-                    {
-                        aData.PinataHits++;
-                    }
-                }
-                // update scoring structure on the defender.
-                {
-                    var tData = BDACompetitionMode.Instance.Scores[tName];
-                    tData.lastPersonWhoHitMe = aName;
-                    tData.lastHitTime = Planetarium.GetUniversalTime();
-                    tData.everyoneWhoHitMe.Add(aName);
-                    // Track hits
-                    if (tData.hitCounts.ContainsKey(aName))
-                        ++tData.hitCounts[aName];
-                    else
-                        tData.hitCounts.Add(aName, 1);
-                    // Track damage
-                    if (tData.damageFromGuns.ContainsKey(aName))
-                        tData.damageFromGuns[aName] += damage;
-                    else
-                        tData.damageFromGuns.Add(aName, damage);
-                }
-            }
+            BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, name, distanceTraveled);
+            BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage);
         }
         public static void StealResources(Part hitPart, Vessel sourceVessel)
         {

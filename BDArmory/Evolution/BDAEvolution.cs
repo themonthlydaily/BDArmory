@@ -369,7 +369,8 @@ namespace BDArmory.Evolution
             aggregateScores.Clear();
 
             var comp = BDACompetitionMode.Instance;
-            var scores = comp.Scores;
+            var scores = comp.Scores.ScoreData;
+            var specialKills = new HashSet<AliveState> { AliveState.CleanKill, AliveState.HeadShot, AliveState.KillSteal };
 
             // run N tournaments and aggregate their scores
             for (var k=0; k<BDArmorySettings.EVOLUTION_HEATS_PER_GROUP; k++)
@@ -405,10 +406,7 @@ namespace BDArmory.Evolution
                         aggregateScores[name] = new Dictionary<string, float>();
                     }
                     var scoreData = scores[name];
-                    var cleanKills = comp.whoCleanShotWho.Values.Count(e => e == name);
-                    var missileKills = comp.whoCleanShotWhoWithMissiles.Values.Count(e => e == name);
-                    var ramKills = comp.whoCleanRammedWho.Values.Count(e => e == name);
-                    var kills = cleanKills + missileKills + ramKills;
+                    var kills = scores.Values.Count(e => specialKills.Contains(e.aliveState) && e.lastPersonWhoDamagedMe == name);
                     if( aggregateScores[name].ContainsKey("kills") )
                     {
                         aggregateScores[name]["kills"] += kills;

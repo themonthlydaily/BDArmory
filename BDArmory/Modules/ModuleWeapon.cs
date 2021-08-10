@@ -1244,7 +1244,7 @@ namespace BDArmory.Modules
                     userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) &&
                                   (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled &&
                                   !aiControlled);
-                    if ( (userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                    if ((userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
                         (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                     {
                         if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
@@ -1755,11 +1755,7 @@ namespace BDArmory.Modules
                         for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
                         {
                             timeFired = Time.time - iTime;
-                            if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                            {
-                                ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
-                            }
-                            BDACompetitionMode.Instance.Scores2.RegisterShot(aName);
+                            BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                             LaserBeam(aName);
                             if (hasFireAnimation)
                             {
@@ -1782,11 +1778,7 @@ namespace BDArmory.Modules
                         BeamTracker += 0.02f;
                         if (BeamTracker > beamScoreTime)
                         {
-                            if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                            {
-                                ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
-                            }
-                            BDACompetitionMode.Instance.Scores2.RegisterShot(aName);
+                            BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                         }
                         for (float iTime = TimeWarp.fixedDeltaTime; iTime >= 0; iTime -= timeGap)
                             timeFired = Time.time - iTime;
@@ -1963,49 +1955,12 @@ namespace BDArmory.Modules
 
                             var aName = vesselname;
                             var tName = p.vessel.GetName();
-                            BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, damage);
-                            if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
+                            if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
                             {
-                                // ScoreAccumulator = 0;
-                                BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, WeaponName, distance);
-                            }
-                            else
-                            {
-                                // ScoreAccumulator += TimeWarp.fixedDeltaTime;
-                            }
-                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                            {
-                                // Always score damage.
-                                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                {
-                                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
-                                }
-                                var tData = BDACompetitionMode.Instance.Scores[tName];
-                                if (tData.damageFromGuns.ContainsKey(aName))
-                                    tData.damageFromGuns[aName] += damage;
-                                else
-                                    tData.damageFromGuns.Add(aName, damage);
                                 if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
                                 {
                                     ScoreAccumulator = 0;
-                                    BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, WeaponName, distance);
-                                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                    {
-                                        BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
-                                    }
-                                    var aData = BDACompetitionMode.Instance.Scores[aName];
-                                    aData.Hits += 1;
-                                    if (p.vessel.GetName() == "Pinata")
-                                    {
-                                        aData.PinataHits++;
-                                    }
-                                    tData.lastPersonWhoHitMe = aName;
-                                    tData.lastHitTime = Planetarium.GetUniversalTime();
-                                    tData.everyoneWhoHitMe.Add(aName);
-                                    if (tData.hitCounts.ContainsKey(aName))
-                                        ++tData.hitCounts[aName];
-                                    else
-                                        tData.hitCounts.Add(aName, 1);
+                                    BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
                                 }
                                 else
                                 {

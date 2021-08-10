@@ -133,11 +133,8 @@ namespace BDArmory.Bullets
 
             if (this.sourceVessel)
             {
-                var aName = this.sourceVessel.GetName();
-                if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                    ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
-                sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
-                BDACompetitionMode.Instance.Scores2.RegisterShot(sourceVesselName);
+                sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the rocket hits.
+                BDACompetitionMode.Instance.Scores.RegisterShot(sourceVesselName);
             }
             else
             {
@@ -480,32 +477,7 @@ namespace BDArmory.Bullets
                             var aName = sourceVessel.GetName(); //proxi detonated rocket scoring
                             var tName = partHit.vessel.GetName();
 
-                            BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName, name, distanceFromStart);
-
-                            if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                            {
-                                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                {
-                                    BDAScoreService.Instance.TrackHit(aName, tName, name, distanceFromStart);
-                                }
-                                var aData = BDACompetitionMode.Instance.Scores[aName];
-                                aData.Hits += 1;
-                                if (partHit.vessel.GetName() == "Pinata")
-                                {
-                                    aData.PinataHits++;
-                                }
-
-                                var tData = BDACompetitionMode.Instance.Scores[tName];
-                                tData.lastPersonWhoHitMe = aName;
-                                tData.lastHitTime = Planetarium.GetUniversalTime();
-                                tData.everyoneWhoHitMe.Add(aName);
-
-                                if (tData.hitCounts.ContainsKey(aName))
-                                    ++tData.hitCounts[aName];
-                                else
-                                    tData.hitCounts.Add(aName, 1);
-
-                            }
+                            BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, name, distanceFromStart);
 
                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                 Debug.Log("[BDArmory.PooledRocket]: rocket proximity sphere hit | Distance overlap = " + detonationRange + "| Part name = " + partHit.name);

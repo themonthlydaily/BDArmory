@@ -314,38 +314,8 @@ namespace BDArmory.Modules
             {
                 var aName = SourceVessel;
                 var tName = part.vessel.GetName();
-                BDACompetitionMode.Instance.Scores2.RegisterBulletHit(aName, tName);
-                BDACompetitionMode.Instance.Scores2.RegisterBulletDamage(aName, tName, explDamage);
-
-                if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                {
-                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                    {
-                        BDAScoreService.Instance.TrackDamage(aName, tName, explDamage);
-                    }
-                    var aData = BDACompetitionMode.Instance.Scores[aName];
-                    aData.Hits += 1;
-
-                    if (part.vessel.GetName() == "Pinata")
-                    {
-                        aData.PinataHits++;
-                    }
-
-                    var tData = BDACompetitionMode.Instance.Scores[tName];
-                    tData.lastPersonWhoHitMe = aName;
-                    tData.lastHitTime = Planetarium.GetUniversalTime();
-                    tData.everyoneWhoHitMe.Add(aName);
-                    // Track hits
-                    if (tData.hitCounts.ContainsKey(aName))
-                        ++tData.hitCounts[aName];
-                    else
-                        tData.hitCounts.Add(aName, 1);
-                    // Track damage
-                    if (tData.damageFromGuns.ContainsKey(aName))
-                        tData.damageFromGuns[aName] += explDamage;
-                    else
-                        tData.damageFromGuns.Add(aName, explDamage);
-                }
+                BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName);
+                BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, explDamage);
             }
         }
 

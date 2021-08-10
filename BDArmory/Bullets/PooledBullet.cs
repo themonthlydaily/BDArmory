@@ -197,9 +197,7 @@ namespace BDArmory.Bullets
             if (this.sourceVessel)
             {
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the bullet hits.
-                if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(sourceVesselName))
-                    ++BDACompetitionMode.Instance.Scores[sourceVesselName].shotsFired;
-                BDACompetitionMode.Instance.Scores2.RegisterShot(sourceVesselName);
+                BDACompetitionMode.Instance.Scores.RegisterShot(sourceVesselName);
             }
             else
             {
