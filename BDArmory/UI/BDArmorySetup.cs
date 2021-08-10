@@ -110,6 +110,7 @@ namespace BDArmory.UI
         bool showWindowGPS;
         bool infoLinkEnabled;
         bool NumFieldsEnabled;
+        int numberOfButtons = 6; // 6 without evolution, will adjust automatically.
         private Vector2 scrollInfoVector;
         public Dictionary<string, NumericInputField> textNumFields;
 
@@ -650,7 +651,7 @@ namespace BDArmory.UI
 
         void VesselChange(Vessel v)
         {
-            if (v.isActiveVessel)
+            if (v != null && v.isActiveVessel)
             {
                 GetWeaponManager();
                 Instance.UpdateCursorState();
@@ -660,7 +661,8 @@ namespace BDArmory.UI
         void GetWeaponManager()
         {
             ActiveWeaponManager = VesselModuleRegistry.GetMissileFire(FlightGlobals.ActiveVessel, true);
-            ConfigTextFields();
+            if (ActiveWeaponManager != null)
+            { ConfigTextFields(); }
         }
         public void ConfigTextFields()
         {
@@ -800,21 +802,22 @@ namespace BDArmory.UI
             float entryHeight = 20;
             float _buttonSize = 26;
             float _windowMargin = 4;
+            int buttonNumber = 0;
 
-            GUI.DragWindow(new Rect(_windowMargin + _buttonSize, 0, columnWidth - 2 * _windowMargin - 6 * _buttonSize, _windowMargin + _buttonSize));
+            GUI.DragWindow(new Rect(_windowMargin + _buttonSize, 0, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize));
 
             line += 1.25f;
             line += 0.25f;
 
             //title
-            GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - 6 * _buttonSize, _windowMargin + _buttonSize), Localizer.Format("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
+            GUI.Label(new Rect(_windowMargin + _buttonSize, _windowMargin, columnWidth - 2 * _windowMargin - numberOfButtons * _buttonSize, _windowMargin + _buttonSize), Localizer.Format("#LOC_BDArmory_WMWindow_title") + "          ", kspTitleLabel);
 
             // Version.
-            GUI.Label(new Rect(columnWidth - _windowMargin - 4 * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
+            GUI.Label(new Rect(columnWidth - _windowMargin - (numberOfButtons - 1) * _buttonSize - 100, 23, 57, 10), Version, waterMarkStyle);
 
             //SETTINGS BUTTON
             if (!BDKeyBinder.current &&
-                GUI.Button(new Rect(columnWidth - _windowMargin - _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
+                GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), settingsIconTexture, BDGuiSkin.button))
             {
                 ToggleWindowSettings();
             }
@@ -823,7 +826,7 @@ namespace BDArmory.UI
             if (hasVesselSwitcher)
             {
                 GUIStyle vsStyle = showVesselSwitcherGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(columnWidth - _windowMargin - 2 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
+                if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "VS", vsStyle))
                 {
                     showVesselSwitcherGUI = !showVesselSwitcherGUI;
                 }
@@ -833,7 +836,7 @@ namespace BDArmory.UI
             if (hasVesselSpawner)
             {
                 GUIStyle vsStyle = showVesselSpawnerGUI ? BDGuiSkin.box : BDGuiSkin.button;
-                if (GUI.Button(new Rect(columnWidth - _windowMargin - 3 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
+                if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "Sp", vsStyle))
                 {
                     showVesselSpawnerGUI = !showVesselSpawnerGUI;
                     if (!showVesselSpawnerGUI)
@@ -841,16 +844,26 @@ namespace BDArmory.UI
                 }
             }
 
-            //inflolink
+            // evolution button
+            if (BDArmorySettings.EVOLUTION_ENABLED && hasEvolution)
+            {
+                var evolutionSkin = showEvolutionGUI ? BDGuiSkin.box : BDGuiSkin.button; ;
+                if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "EV", evolutionSkin))
+                {
+                    showEvolutionGUI = !showEvolutionGUI;
+                }
+            }
+
+            //infolink
             GUIStyle iStyle = infoLinkEnabled ? BDGuiSkin.box : BDGuiSkin.button;
-            if (GUI.Button(new Rect(columnWidth - _windowMargin - 4 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "i", iStyle))
+            if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "i", iStyle))
             {
                 infoLinkEnabled = !infoLinkEnabled;
             }
 
             //numeric fields
             GUIStyle nStyle = NumFieldsEnabled ? BDGuiSkin.box : BDGuiSkin.button;
-            if (GUI.Button(new Rect(columnWidth - _windowMargin - 5 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "#", nStyle))
+            if (GUI.Button(new Rect(columnWidth - _windowMargin - ++buttonNumber * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "#", nStyle))
             {
                 NumFieldsEnabled = !NumFieldsEnabled;
                 if (!NumFieldsEnabled)
@@ -900,16 +913,6 @@ namespace BDArmory.UI
                             catch (Exception e) { Debug.LogError($"[BDArmory.BDArmorySetup]: Failed to set current value of {field}: " + e.Message); }
                         }
                     }
-                }
-            }
-
-            // evolution button
-            if (hasEvolution)
-            {
-                var evolutionSkin = showEvolutionGUI ? BDGuiSkin.box : BDGuiSkin.button; ;
-                if (GUI.Button(new Rect(toolWindowWidth - _windowMargin - 4 * _buttonSize, _windowMargin, _buttonSize, _buttonSize), "EV", evolutionSkin))
-                {
-                    showEvolutionGUI = !showEvolutionGUI;
                 }
             }
 
@@ -1899,6 +1902,7 @@ namespace BDArmory.UI
             var previousWindowHeight = WindowRectToolbar.height;
             WindowRectToolbar.height = toolWindowHeight;
             WindowRectToolbar.width = toolWindowWidth;
+            numberOfButtons = buttonNumber + 1;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
             BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
