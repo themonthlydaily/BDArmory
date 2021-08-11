@@ -266,7 +266,8 @@ namespace BDArmory.UI
                     { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
                     { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
                     { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
-                    { "vesselCollisionAvoidancePeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidancePeriod, 0, 3) },
+                    { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
+                    { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 2) },
                     { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
                     { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
                     { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
@@ -1531,17 +1532,37 @@ namespace BDArmory.UI
                         }
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.vesselCollisionAvoidancePeriod =
+                            ActivePilot.vesselCollisionAvoidanceLookAheadPeriod =
                                 GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
-                                    ActivePilot.vesselCollisionAvoidancePeriod, 0, 3);
-                            ActivePilot.vesselCollisionAvoidancePeriod = Mathf.Round(ActivePilot.vesselCollisionAvoidancePeriod * 10f) / 10f;
+                                    ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3);
+                            ActivePilot.vesselCollisionAvoidanceLookAheadPeriod = Mathf.Round(ActivePilot.vesselCollisionAvoidanceLookAheadPeriod * 10f) / 10f;
                         }
                         else
                         {
-                            inputFields["vesselCollisionAvoidancePeriod"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselCollisionAvoidancePeriod"].possibleValue, 1));
-                            ActivePilot.vesselCollisionAvoidancePeriod = (float)inputFields["vesselCollisionAvoidancePeriod"].currentValue;
+                            inputFields["vesselCollisionAvoidanceLookAheadPeriod"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselCollisionAvoidanceLookAheadPeriod"].possibleValue, 1));
+                            ActivePilot.vesselCollisionAvoidanceLookAheadPeriod = (float)inputFields["vesselCollisionAvoidanceLookAheadPeriod"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidancePeriod") + " :" + ActivePilot.vesselCollisionAvoidancePeriod.ToString("0.0"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceLookAheadPeriod") + " :" + ActivePilot.vesselCollisionAvoidanceLookAheadPeriod.ToString("0.0"), Label);
+
+                        evadeLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ColDist"), contextLabel);//"dynamic damp min"
+                            evadeLines++;
+                        }
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.vesselCollisionAvoidanceStrength =
+                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
+                                    ActivePilot.vesselCollisionAvoidanceStrength, 0, 2);
+                            ActivePilot.vesselCollisionAvoidanceStrength = Mathf.Round(ActivePilot.vesselCollisionAvoidanceStrength * 10f) / 10f;
+                        }
+                        else
+                        {
+                            inputFields["vesselCollisionAvoidanceStrength"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselCollisionAvoidanceStrength"].possibleValue, 1));
+                            ActivePilot.vesselCollisionAvoidanceStrength = (float)inputFields["vesselCollisionAvoidanceStrength"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceStrength") + " :" + ActivePilot.vesselCollisionAvoidanceStrength.ToString("0.0"), Label);
 
                         evadeLines++;
                         if (contextTipsEnabled)
