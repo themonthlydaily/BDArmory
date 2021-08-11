@@ -226,8 +226,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
 
         // Scoring categories
-        [BDAPersistantSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-shot time limit
-        [BDAPersistantSettingsField] public static float SCORING_KILLSTEAL = 10;                   // Mercy-kill time limit
+        [BDAPersistantSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-Shot Time Limit
+        [BDAPersistantSettingsField] public static float SCORING_KILLSTEAL = 5;                   // Kill-Steal Time Limit
 
         // Evolution settings
         [BDAPersistantSettingsField] public static bool EVOLUTION_ENABLED = false;
