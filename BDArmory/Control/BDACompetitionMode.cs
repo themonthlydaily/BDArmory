@@ -18,9 +18,10 @@ namespace BDArmory.Control
     public class CompetitionScores
     {
         #region Public fields
-        public Dictionary<string, ScoringData> ScoreData;
+        public Dictionary<string, ScoringData> ScoreData = new Dictionary<string, ScoringData>();
         public Dictionary<string, ScoringData>.KeyCollection Players => ScoreData.Keys; // Convenience variable
         public int deathCount = 0;
+        public List<string> deathOrder = new List<string>(); // The names of dead players ordered by their death.
         public string currentlyIT = "";
         #endregion
 
@@ -39,6 +40,7 @@ namespace BDArmory.Control
                 ScoreData[vessel.vesselName].team = VesselModuleRegistry.GetMissileFire(vessel, true).Team.Name;
             }
             deathCount = 0;
+            deathOrder.Clear();
             currentlyIT = "";
         }
         /// <summary>
@@ -98,7 +100,7 @@ namespace BDArmory.Control
             if (victim == "pinata") ++ScoreData[attacker].PinataHits;
 
             // Victim stats.
-            if (ScoreData[victim].previousPersonWheDamagedMe != attacker)
+            if (ScoreData[victim].lastPersonWhoDamagedMe != attacker)
             {
                 ScoreData[victim].previousLastDamageTime = ScoreData[victim].lastDamageTime;
                 ScoreData[victim].previousPersonWheDamagedMe = ScoreData[victim].lastPersonWhoDamagedMe;
@@ -161,12 +163,12 @@ namespace BDArmory.Control
             ScoreData[attacker].totalDamagedPartsDueToRamming += partsLost;
 
             // Victim stats.
-            if (ScoreData[victim].lastDamageTime < timeOfCollision && ScoreData[victim].previousPersonWheDamagedMe != attacker)
+            if (ScoreData[victim].lastDamageTime < timeOfCollision && ScoreData[victim].lastPersonWhoDamagedMe != attacker)
             {
                 ScoreData[victim].previousLastDamageTime = ScoreData[victim].lastDamageTime;
                 ScoreData[victim].previousPersonWheDamagedMe = ScoreData[victim].lastPersonWhoDamagedMe;
             }
-            else if (ScoreData[victim].previousLastDamageTime < timeOfCollision && ScoreData[victim].lastPersonWhoDamagedMe != attacker) // Newer than the current previous last damage, but older than the most recent damage from someone else.
+            else if (ScoreData[victim].previousLastDamageTime < timeOfCollision && ScoreData[victim].previousPersonWheDamagedMe != attacker) // Newer than the current previous last damage, but older than the most recent damage from someone else.
             {
                 ScoreData[victim].previousLastDamageTime = timeOfCollision;
                 ScoreData[victim].previousPersonWheDamagedMe = attacker;
@@ -217,7 +219,7 @@ namespace BDArmory.Control
             ScoreData[attacker].totalDamagedPartsDueToMissiles += partsHit;
 
             // Victim stats.
-            if (ScoreData[victim].previousPersonWheDamagedMe != attacker)
+            if (ScoreData[victim].lastPersonWhoDamagedMe != attacker)
             {
                 ScoreData[victim].previousLastDamageTime = ScoreData[victim].lastDamageTime;
                 ScoreData[victim].previousPersonWheDamagedMe = ScoreData[victim].lastPersonWhoDamagedMe;
@@ -262,6 +264,7 @@ namespace BDArmory.Control
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
 
             var now = Planetarium.GetUniversalTime();
+            deathOrder.Add(vesselName);
             ScoreData[vesselName].deathOrder = deathCount++;
             ScoreData[vesselName].deathTime = now - BDACompetitionMode.Instance.competitionStartTime;
             ScoreData[vesselName].gmKillReason = gmKillReason;
@@ -289,7 +292,8 @@ namespace BDArmory.Control
             if (ScoreData[vesselName].lastDamageWasFrom == DamageFrom.None) // Died without being hit by anyone => Incompetence
             {
                 ScoreData[vesselName].aliveState = AliveState.Dead;
-                ScoreData[vesselName].lastDamageWasFrom = DamageFrom.Incompetence;
+                if (gmKillReason == GMKillReason.None)
+                { ScoreData[vesselName].lastDamageWasFrom = DamageFrom.Incompetence; }
                 return true;
             }
 
@@ -534,7 +538,7 @@ namespace BDArmory.Control
             // GM kill reasons
             foreach (var player in Players)
                 if (ScoreData[player].gmKillReason != GMKillReason.None)
-                    logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: OTHERKILL:" + player + ":" + ScoreData[player].gmKillReason);
+                    logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: GMKILL:" + player + ":" + ScoreData[player].gmKillReason);
 
             // Clean kills/rams/etc.
             var specialKills = new HashSet<AliveState> { AliveState.CleanKill, AliveState.HeadShot, AliveState.KillSteal };
@@ -583,7 +587,7 @@ namespace BDArmory.Control
             }
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
-            var fileName = Path.Combine(folder, CompetitionID.ToString() + (tag != "" ? "-" + tag : "") + ".log2");
+            var fileName = Path.Combine(folder, CompetitionID.ToString() + (tag != "" ? "-" + tag : "") + ".log");
             Debug.Log($"[BDArmory.BDACompetitionMode]: Dumping competition results to {fileName}");
             File.WriteAllLines(fileName, logStrings);
         }
@@ -962,6 +966,7 @@ namespace BDArmory.Control
             DoPreflightChecks();
             KillTimer.Clear();
             nonCompetitorsToRemove.Clear();
+            explodingWM.Clear();
             pilotActions.Clear(); // Clear the pilotActions, so we don't get "<pilot> is Dead" on the next round of the competition.
             rammingInformation = null; // Reset the ramming information.
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); RemoveDebrisNow(); }
@@ -1259,7 +1264,6 @@ namespace BDArmory.Control
 
         void OnCrewKilled(EventReport report)
         {
-            Debug.Log($"DEBUG a crew member on {report.origin} died: {report.msg}");
             if (report.origin != null && report.origin.vessel != null)
             {
                 OnVesselModified(report.origin.vessel);
@@ -1268,7 +1272,6 @@ namespace BDArmory.Control
 
         void OnCrewOnEVA(GameEvents.FromToAction<Part, Part> fromToAction)
         {
-            Debug.Log($"DEBUG Crew went on EVA from {fromToAction.from} to {fromToAction.to}");
             if (fromToAction.from.vessel != null)
             {
                 OnVesselModified(fromToAction.from.vessel);
@@ -1277,7 +1280,6 @@ namespace BDArmory.Control
 
         void OnPartLadderExit(KerbalEVA kerbalEVA, Part p)
         {
-            Debug.Log($"DEBUG {kerbalEVA.name} left part {p}");
             if (p != null)
             {
                 OnVesselModified(p.vessel);
@@ -1350,12 +1352,8 @@ namespace BDArmory.Control
         {
             if (vessel == null || vessel.vesselName == null) return;
             if (VesselModuleRegistry.GetModuleCount<MissileFire>(vessel) == 0) return; // The weapon managers are already dead.
-            // var debugmsg = $"DEBUG checking {vessel.vesselName} for control";
-            // if (VesselModuleRegistry.GetModuleCount<Kerbal>(vessel) > 0) { Debug.Log(debugmsg + ", found Kerbal"); return; } // Check for Kerbals on the inside.
-            // if (VesselModuleRegistry.GetModuleCount<KerbalEVA>(vessel) > 0) { Debug.Log(debugmsg + ", found Kerbal on EVA"); return; } // Check for Kerbals on the outside.
 
-            // Check for drones (actually, just check for partial or full control state)
-            // Update network status
+            // Check for partial or full control state.
             foreach (var moduleCommand in VesselModuleRegistry.GetModuleCommands(vessel)) { moduleCommand.UpdateNetwork(); }
             foreach (var kerbalSeat in VesselModuleRegistry.GetKerbalSeats(vessel)) { kerbalSeat.UpdateNetwork(); }
             // Check for any command modules with partial or full control state
@@ -1364,39 +1362,60 @@ namespace BDArmory.Control
                 && !VesselModuleRegistry.GetKerbalSeats(vessel).Any(c => (c.GetControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)
             )
             {
-                Debug.Log($"DEBUG {vessel.vesselName} has no control!");
                 StartCoroutine(DelayedExplodeWMs(vessel, 5f, UncontrolledReason.Uncontrolled)); // Uncontrolled vessel, destroy its weapon manager in 5s.
             }
-            else Debug.Log($"DEBUG {vessel.vesselName} has control states: " + string.Join(", ", VesselModuleRegistry.GetModuleCommands(vessel).Select(c => c.GetControlSourceState())));
             var craftbricked = VesselModuleRegistry.GetModule<ModuleDrainEC>(vessel);
             if (craftbricked != null && craftbricked.bricked)
             {
-                Debug.Log($"DEBUG {vessel.vesselName} is bricked!");
                 StartCoroutine(DelayedExplodeWMs(vessel, 2f, UncontrolledReason.Bricked)); // Vessel fried by EMP, destroy its weapon manager in 2s.
             }
         }
 
         enum UncontrolledReason { Uncontrolled, Bricked };
+        HashSet<Vessel> explodingWM = new HashSet<Vessel>();
         IEnumerator DelayedExplodeWMs(Vessel vessel, float delay = 1f, UncontrolledReason reason = UncontrolledReason.Uncontrolled)
         {
+            if (explodingWM.Contains(vessel)) yield break; // Already scheduled for exploding.
+            explodingWM.Add(vessel);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                switch (reason)
+                {
+                    case UncontrolledReason.Uncontrolled:
+                        Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} has no control!");
+                        break;
+                    case UncontrolledReason.Bricked:
+                        Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is bricked!");
+                        break;
+                }
+            }
             yield return new WaitForSeconds(delay);
-            if (vessel == null) yield break; // It's already dead.
+            if (vessel == null) // It's already dead.
+            {
+                explodingWM = explodingWM.Where(v => v != null).ToHashSet(); // Clean the hashset.
+                yield break;
+            }
+            bool stillValid = true;
             switch (reason) // Check that the reason for killing the WMs is still valid.
             {
                 case UncontrolledReason.Uncontrolled:
                     if (!VesselModuleRegistry.GetModules<ModuleCommand>(vessel).All(c => (c.GetControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)) // No longer uncontrolled.
-                    { yield break; }
+                    { stillValid = false; }
                     break;
                 case UncontrolledReason.Bricked:
                     var craftbricked = VesselModuleRegistry.GetModule<ModuleDrainEC>(vessel);
                     if (craftbricked == null || !craftbricked.bricked) // No longer bricked. (Can this actually happen?)
-                    { yield break; }
+                    { stillValid = false; }
                     break;
             }
-            // Kill off all the weapon managers.
-            Debug.Log("[BDArmory.BDACompetitionMode]: " + vessel.vesselName + " has no form of control, killing the weapon managers.");
-            foreach (var weaponManager in VesselModuleRegistry.GetMissileFires(vessel))
-            { PartExploderSystem.AddPartToExplode(weaponManager.part); }
+            if (stillValid)
+            {
+                // Kill off all the weapon managers.
+                Debug.Log("[BDArmory.BDACompetitionMode]: " + vessel.vesselName + " has no form of control, killing the weapon managers.");
+                foreach (var weaponManager in VesselModuleRegistry.GetMissileFires(vessel))
+                { PartExploderSystem.AddPartToExplode(weaponManager.part); }
+            }
+            explodingWM.Remove(vessel);
         }
 
         void CheckForBadlyNamedVessels()
@@ -2416,7 +2435,6 @@ namespace BDArmory.Control
                             if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
                             {
                                 vesselsToKill.Add(mf.vessel);
-                                competitionStatus.Add(vesselName + " landed too long.");
                             }
                         }
                         else if (KillTimer.ContainsKey(vesselName))
@@ -2476,8 +2494,10 @@ namespace BDArmory.Control
                                 statusMessage += " was rammed by ";
                                 break;
                             case DamageFrom.Incompetence:
+                                statusMessage += " CRASHED and BURNED.";
+                                break;
                             case DamageFrom.None:
-                                statusMessage += " crashed and burned.";
+                                statusMessage += $" {Scores.ScoreData[player].gmKillReason}";
                                 break;
                         }
                         switch (Scores.ScoreData[player].aliveState)
@@ -2493,7 +2513,7 @@ namespace BDArmory.Control
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).
                                 if (Scores.ScoreData[player].gmKillReason != GMKillReason.None) Scores.ScoreData[player].everyoneWhoDamagedMe.Add(Scores.ScoreData[player].gmKillReason.ToString());
-                                statusMessage += string.Join(", ", Scores.ScoreData[player].everyoneWhoDamagedMe) + "(" + string.Join(", ", Scores.ScoreData[player].damageTypesTaken) + ")";
+                                statusMessage += string.Join(", ", Scores.ScoreData[player].everyoneWhoDamagedMe) + " (" + string.Join(", ", Scores.ScoreData[player].damageTypesTaken) + ")";
                                 break;
                             case AliveState.Dead: // Suicide/Incompetance (never took damage from others).
                                 break;
@@ -2554,6 +2574,7 @@ namespace BDArmory.Control
                         killerName = "Landed Too Long";
                     }
                     Scores.RegisterDeath(vesselName, GMKillReason.LandedTooLong);
+                    competitionStatus.Add(vesselName + " was landed too long.");
                 }
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
                 if (KillTimer.ContainsKey(vesselName)) KillTimer.Remove(vesselName);

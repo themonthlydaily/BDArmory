@@ -4990,7 +4990,7 @@ namespace BDArmory.Modules
             }
             UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
             rangeEditor.maxValue = maxGunRange;
-            if (BDArmorySetup.Instance != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
+            if (BDArmorySetup.Instance.textNumFields != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + v.vesselName + " to " + gunRange + " of " + maxGunRange);
         }

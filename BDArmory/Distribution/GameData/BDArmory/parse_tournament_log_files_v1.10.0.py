@@ -61,7 +61,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 		if not args.current_dir and len(round.name) == 0:
 			continue
 		tournamentData[round.name] = {}
-		logFiles = sorted(round.glob("[0-9]*.log2"))
+		logFiles = sorted(round.glob("[0-9]*.log"))
 		for heat in logFiles if args.N == None else logFiles[:args.N]:
 			with open(heat, "r") as logFile:
 				tournamentData[round.name][heat.name] = {'result': None, 'duration': 0, 'craft': {}}
@@ -132,9 +132,9 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 					elif field.startswith('KILLSTEALRAMMING:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
-					elif field.startswith('OTHERKILL'):
+					elif field.startswith('GMKILL'):
 						_, craft, reason = field.split(':', 2)
-						tournamentData[round.name][heat.name]['craft'][craft].update({'otherKillReason': reason})
+						tournamentData[round.name][heat.name]['craft'][craft].update({'GMKillReason': reason})
 					elif field.startswith('HPLEFT:'):
 						_, craft, hp = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'HPremaining': float(hp)})
