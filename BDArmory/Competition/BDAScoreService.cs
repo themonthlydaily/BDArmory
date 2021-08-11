@@ -538,9 +538,9 @@ namespace BDArmory.Competition
         {
             double result = 0;
             var HPLeft = BDACompetitionMode.Instance.Scores;
-            if (HPLeft.ContainsKey(playerName))
+            if (HPLeft.Players.Contains(playerName))
             {
-                result = HPLeft[playerName].remainingHP;
+                result = HPLeft.ScoreData[playerName].remainingHP;
             }
             return result;
         }
@@ -564,11 +564,10 @@ namespace BDArmory.Competition
 
         private float ComputeDeathOrder(string playerName)
         {
-            var deathOrder = BDACompetitionMode.Instance.DeathOrder;
-            if (deathOrder.ContainsKey(playerName))
+            var scoreData = BDACompetitionMode.Instance.Scores.ScoreData;
+            if (scoreData.ContainsKey(playerName) && scoreData[playerName].aliveState != AliveState.Alive)
             {
-                var orderData = deathOrder[playerName];
-                return (float)orderData.Item1 / (float)activePlayers.Count;
+                return (float)scoreData[playerName].deathOrder / (float)activePlayers.Count;
             }
             else
             {
@@ -578,11 +577,10 @@ namespace BDArmory.Competition
 
         private float ComputeDeathTime(string playerName)
         {
-            var deathOrder = BDACompetitionMode.Instance.DeathOrder;
-            if (deathOrder.ContainsKey(playerName))
+            var scoreData = BDACompetitionMode.Instance.Scores.ScoreData;
+            if (scoreData.ContainsKey(playerName) && scoreData[playerName].aliveState != AliveState.Alive)
             {
-                var orderData = deathOrder[playerName];
-                return (float)orderData.Item2;
+                return (float)scoreData[playerName].deathTime;
             }
             else
             {

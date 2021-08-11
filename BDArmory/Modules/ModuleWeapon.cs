@@ -1244,12 +1244,15 @@ namespace BDArmory.Modules
                     userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) &&
                                   (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled &&
                                   !aiControlled);
-                    if ((userFiring || autoFire || agHoldFiring) &&
-                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue)))
+                    if ((userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                     {
-                        if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
+                        if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                         {
-                            StartCoroutine(IncrementRippleIndex(0));
+                            if (useRippleFire) //old method wouldn't catch non-ripple guns (i.e. Vulcan) trying to fire at targets beyond fire range
+                            {
+                                StartCoroutine(IncrementRippleIndex(0));
+                            }
                             finalFire = false;
                         }
                         else if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Rocket) //WeaponTypes.Cannon is deprecated
@@ -1330,12 +1333,15 @@ namespace BDArmory.Modules
 
                     if (eWeaponType == WeaponTypes.Laser)
                     {
-                        if ((userFiring || autoFire || agHoldFiring) &&
-                            (!turret || turret.TargetInRange(targetPosition, 10, float.MaxValue)))
+                        if ((userFiring || agHoldFiring) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
                         {
-                            if (useRippleFire && ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance)))// is weapon within set max range?
+                            if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
                             {
-                                StartCoroutine(IncrementRippleIndex(0));
+                                if (useRippleFire)
+                                {
+                                    StartCoroutine(IncrementRippleIndex(0));
+                                }
                                 finalFire = false;
                             }
                             else
@@ -1517,7 +1523,7 @@ namespace BDArmory.Modules
                 CheckLoadedAmmo();
                 //Transform[] fireTransforms = part.FindModelTransforms("fireTransform");
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
-                    for (int i = 0; i < fireTransforms.Length; i++) 
+                    for (int i = 0; i < fireTransforms.Length; i++)
                     {
                         if (CanFire(requestResourceAmount))
                         {
@@ -1749,10 +1755,7 @@ namespace BDArmory.Modules
                         for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
                         {
                             timeFired = Time.time - iTime;
-                            if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                            {
-                                ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
-                            }
+                            BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                             LaserBeam(aName);
                             if (hasFireAnimation)
                             {
@@ -1775,10 +1778,7 @@ namespace BDArmory.Modules
                         BeamTracker += 0.02f;
                         if (BeamTracker > beamScoreTime)
                         {
-                            if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                            {
-                                ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
-                            }
+                            BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                         }
                         for (float iTime = TimeWarp.fixedDeltaTime; iTime >= 0; iTime -= timeGap)
                             timeFired = Time.time - iTime;
@@ -1906,7 +1906,7 @@ namespace BDArmory.Modules
                                 {
                                     damage *= (1 - ((armor.Diffusivity * armor.ArmorThickness) / laserDamage)); //but this works for now
                                 }
-                                p.ReduceArmor(damage/10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
+                                p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
                                 p.AddDamage(damage);
                             }
                             if (HEpulses)
@@ -1955,38 +1955,12 @@ namespace BDArmory.Modules
 
                             var aName = vesselname;
                             var tName = p.vessel.GetName();
-                            if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                            if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
                             {
-                                // Always score damage.
-                                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                {
-                                    BDAScoreService.Instance.TrackDamage(aName, tName, damage);
-                                }
-                                var tData = BDACompetitionMode.Instance.Scores[tName];
-                                if (tData.damageFromBullets.ContainsKey(aName))
-                                    tData.damageFromBullets[aName] += damage;
-                                else
-                                    tData.damageFromBullets.Add(aName, damage);
                                 if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
                                 {
                                     ScoreAccumulator = 0;
-                                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                    {
-                                        BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
-                                    }
-                                    var aData = BDACompetitionMode.Instance.Scores[aName];
-                                    aData.Score += 1;
-                                    if (p.vessel.GetName() == "Pinata")
-                                    {
-                                        aData.PinataHits++;
-                                    }
-                                    tData.lastPersonWhoHitMe = aName;
-                                    tData.lastHitTime = Planetarium.GetUniversalTime();
-                                    tData.everyoneWhoHitMe.Add(aName);
-                                    if (tData.hitCounts.ContainsKey(aName))
-                                        ++tData.hitCounts[aName];
-                                    else
-                                        tData.hitCounts.Add(aName, 1);
+                                    BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
                                 }
                                 else
                                 {
@@ -3386,7 +3360,7 @@ namespace BDArmory.Modules
             }
             if (!hasReloadAnim && hasDeployAnim && (AnimTimer >= 1 && isReloading))
             {
-                if (rocketPod)
+                if (eWeaponType == WeaponTypes.Rocket && rocketPod)
                 {
                     RoundsRemaining = 0;
                     UpdateRocketScales();

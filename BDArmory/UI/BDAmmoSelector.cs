@@ -170,6 +170,7 @@ namespace BDArmory.UI
                 GUIstring = String.Empty;
                 countString = String.Empty;
                 labelLines = 1;
+                roundCounter = 1;
             }
             if (GUI.Button(new Rect(((margin * 5) + ((width - (10 * margin)) / 2)), (line + labelLines + ammolines) * buttonHeight, (width - (10 * margin)) / 2, buttonHeight), Localizer.Format("#LOC_BDArmory_save")))
             {

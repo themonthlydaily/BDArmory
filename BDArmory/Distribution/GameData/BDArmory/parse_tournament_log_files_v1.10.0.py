@@ -81,11 +81,11 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 					elif field.startswith('MIA:'):
 						state, craft = field.split(':', 1)
 						tournamentData[round.name][heat.name]['craft'][craft] = {'state': state}
-					elif field.startswith('WHOSHOTWHO:'):
+					elif field.startswith('WHOSHOTWHOWITHGUNS:'):
 						_, craft, shooters = field.split(':', 2)
 						data = shooters.split(':')
 						tournamentData[round.name][heat.name]['craft'][craft].update({'hitsBy': {player: int(hits) for player, hits in zip(data[1::2], data[::2])}})
-					elif field.startswith('WHODAMAGEDWHOWITHBULLETS:'):
+					elif field.startswith('WHODAMAGEDWHOWITHGUNS:'):
 						_, craft, shooters = field.split(':', 2)
 						data = shooters.split(':')
 						tournamentData[round.name][heat.name]['craft'][craft].update({'bulletDamageBy': {player: float(damage) for player, damage in zip(data[1::2], data[::2])}})
@@ -105,18 +105,36 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 						_, craft, rammers = field.split(':', 2)
 						data = rammers.split(':')
 						tournamentData[round.name][heat.name]['craft'][craft].update({'rammedPartsLostBy': {player: int(partsLost) for player, partsLost in zip(data[1::2], data[::2])}})
-					elif field.startswith('CLEANKILL:'):
+					elif field.startswith('CLEANKILLGUNS:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
-					elif field.startswith('CLEANMISSILEKILL:'):
+					elif field.startswith('CLEANKILLMISSILE:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
-					elif field.startswith('CLEANRAM:'):
+					elif field.startswith('CLEANKILLRAMMING:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
-					elif field.startswith('OTHERKILL'):
+					elif field.startswith('HEADSHOTGUNS:'): # FIXME make head-shots separate from clean-kills
+						_, craft, killer = field.split(':', 2)
+						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
+					elif field.startswith('HEADSHOTMISSILE:'):
+						_, craft, killer = field.split(':', 2)
+						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
+					elif field.startswith('HEADSHOTRAMMING:'):
+						_, craft, killer = field.split(':', 2)
+						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
+					elif field.startswith('KILLSTEALGUNS:'): # FIXME make kill-steals separate from clean-kills
+						_, craft, killer = field.split(':', 2)
+						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
+					elif field.startswith('KILLSTEALMISSILE:'):
+						_, craft, killer = field.split(':', 2)
+						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
+					elif field.startswith('KILLSTEALRAMMING:'):
+						_, craft, killer = field.split(':', 2)
+						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
+					elif field.startswith('GMKILL'):
 						_, craft, reason = field.split(':', 2)
-						tournamentData[round.name][heat.name]['craft'][craft].update({'otherKillReason': reason})
+						tournamentData[round.name][heat.name]['craft'][craft].update({'GMKillReason': reason})
 					elif field.startswith('HPLEFT:'):
 						_, craft, hp = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'HPremaining': float(hp)})
