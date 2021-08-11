@@ -890,9 +890,7 @@ namespace BDArmory.Control
                 RemoveDebrisNow();
                 GameEvents.onVesselPartCountChanged.Add(OnVesselModified);
                 GameEvents.onVesselCreate.Add(OnVesselModified);
-                GameEvents.onCrewKilled.Add(OnCrewKilled);
                 GameEvents.onCrewOnEva.Add(OnCrewOnEVA);
-                GameEvents.onPartLadderExit.Add(OnPartLadderExit);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
                 competitionStartFailureReason = CompetitionStartFailureReason.None;
@@ -931,9 +929,7 @@ namespace BDArmory.Control
             GameEvents.onCollision.Remove(AnalyseCollision);
             GameEvents.onVesselPartCountChanged.Remove(OnVesselModified);
             GameEvents.onVesselCreate.Remove(OnVesselModified);
-            GameEvents.onCrewKilled.Remove(OnCrewKilled);
             GameEvents.onCrewOnEva.Remove(OnCrewOnEVA);
-            GameEvents.onPartLadderExit.Remove(OnPartLadderExit);
             GameEvents.onVesselCreate.Remove(DebrisDelayedCleanUp);
             GameEvents.onCometSpawned.Remove(RemoveCometVessel);
             rammingInformation = null; // Reset the ramming information.
@@ -1262,27 +1258,12 @@ namespace BDArmory.Control
             return InvalidVesselReason.None;
         }
 
-        void OnCrewKilled(EventReport report)
-        {
-            if (report.origin != null && report.origin.vessel != null)
-            {
-                OnVesselModified(report.origin.vessel);
-            }
-        }
-
         void OnCrewOnEVA(GameEvents.FromToAction<Part, Part> fromToAction)
         {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDACompetitionMode]: {fromToAction.to} went on EVA from {fromToAction.from}");
             if (fromToAction.from.vessel != null)
             {
                 OnVesselModified(fromToAction.from.vessel);
-            }
-        }
-
-        void OnPartLadderExit(KerbalEVA kerbalEVA, Part p)
-        {
-            if (p != null)
-            {
-                OnVesselModified(p.vessel);
             }
         }
 
@@ -1357,10 +1338,8 @@ namespace BDArmory.Control
             foreach (var moduleCommand in VesselModuleRegistry.GetModuleCommands(vessel)) { moduleCommand.UpdateNetwork(); }
             foreach (var kerbalSeat in VesselModuleRegistry.GetKerbalSeats(vessel)) { kerbalSeat.UpdateNetwork(); }
             // Check for any command modules with partial or full control state
-            if (
-                !VesselModuleRegistry.GetModuleCommands(vessel).Any(c => (c.UpdateControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)
-                && !VesselModuleRegistry.GetKerbalSeats(vessel).Any(c => (c.GetControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)
-            )
+            if (!VesselModuleRegistry.GetModuleCommands(vessel).Any(c => (c.UpdateControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)
+                && !VesselModuleRegistry.GetKerbalSeats(vessel).Any(c => (c.GetControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None))
             {
                 StartCoroutine(DelayedExplodeWMs(vessel, 5f, UncontrolledReason.Uncontrolled)); // Uncontrolled vessel, destroy its weapon manager in 5s.
             }
@@ -1377,18 +1356,6 @@ namespace BDArmory.Control
         {
             if (explodingWM.Contains(vessel)) yield break; // Already scheduled for exploding.
             explodingWM.Add(vessel);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
-            {
-                switch (reason)
-                {
-                    case UncontrolledReason.Uncontrolled:
-                        Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} has no control!");
-                        break;
-                    case UncontrolledReason.Bricked:
-                        Debug.Log($"[BDArmory.BDACompetitionMode]: {vessel.vesselName} is bricked!");
-                        break;
-                }
-            }
             yield return new WaitForSeconds(delay);
             if (vessel == null) // It's already dead.
             {
@@ -1399,13 +1366,13 @@ namespace BDArmory.Control
             switch (reason) // Check that the reason for killing the WMs is still valid.
             {
                 case UncontrolledReason.Uncontrolled:
-                    if (!VesselModuleRegistry.GetModules<ModuleCommand>(vessel).All(c => (c.GetControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)) // No longer uncontrolled.
-                    { stillValid = false; }
+                    if (VesselModuleRegistry.GetModuleCommands(vessel).Any(c => (c.UpdateControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)
+                        || VesselModuleRegistry.GetKerbalSeats(vessel).Any(c => (c.GetControlSourceState() & (CommNet.VesselControlState.Partial | CommNet.VesselControlState.Full)) > CommNet.VesselControlState.None)) // No longer uncontrolled.
+                    {
+                        stillValid = false;
+                    }
                     break;
-                case UncontrolledReason.Bricked:
-                    var craftbricked = VesselModuleRegistry.GetModule<ModuleDrainEC>(vessel);
-                    if (craftbricked == null || !craftbricked.bricked) // No longer bricked. (Can this actually happen?)
-                    { stillValid = false; }
+                case UncontrolledReason.Bricked: // A craft can't recover from being bricked.
                     break;
             }
             if (stillValid)
