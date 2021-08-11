@@ -78,6 +78,7 @@ namespace BDArmory.Control
         public bool RegisterShot(string shooter)
         {
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
+            if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].shotsFired;
             return true;
         }
@@ -92,6 +93,7 @@ namespace BDArmory.Control
         public bool RegisterBulletHit(string attacker, string victim, string weaponName = "", double distanceTraveled = 0)
         {
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
             var now = Planetarium.GetUniversalTime();
 
@@ -139,6 +141,7 @@ namespace BDArmory.Control
         public bool RegisterBulletDamage(string attacker, string victim, float damage)
         {
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
             if (ScoreData[victim].damageFromGuns.ContainsKey(attacker)) { ScoreData[victim].damageFromGuns[attacker] += damage; }
             else { ScoreData[victim].damageFromGuns[attacker] = damage; }
@@ -158,6 +161,7 @@ namespace BDArmory.Control
         public bool RegisterRam(string attacker, string victim, double timeOfCollision, int partsLost)
         {
             if (partsLost <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore rams after the victim is dead.
 
             // Attacker stats.
             ScoreData[attacker].totalDamagedPartsDueToRamming += partsLost;
@@ -197,6 +201,7 @@ namespace BDArmory.Control
         public bool RegisterMissileStrike(string attacker, string victim)
         {
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
             if (ScoreData[victim].missileHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].missileHitCounts[attacker]; }
             else { ScoreData[victim].missileHitCounts[attacker] = 1; }
@@ -212,6 +217,7 @@ namespace BDArmory.Control
         public bool RegisterMissileHit(string attacker, string victim, int partsHit)
         {
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
             var now = Planetarium.GetUniversalTime();
 
@@ -246,6 +252,7 @@ namespace BDArmory.Control
         public bool RegisterMissileDamage(string attacker, string victim, float damage)
         {
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
             if (ScoreData[victim].damageFromMissiles.ContainsKey(attacker)) { ScoreData[victim].damageFromMissiles[attacker] += damage; }
             else { ScoreData[victim].damageFromMissiles[attacker] = damage; }
@@ -262,6 +269,7 @@ namespace BDArmory.Control
         public bool RegisterDeath(string vesselName, GMKillReason gmKillReason = GMKillReason.None)
         {
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
+            if (ScoreData[vesselName].aliveState != AliveState.Alive) return false; // They're already dead!
 
             var now = Planetarium.GetUniversalTime();
             deathOrder.Add(vesselName);
