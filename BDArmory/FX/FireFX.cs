@@ -33,7 +33,6 @@ namespace BDArmory.FX
         public float burnRate = 1;
         private float tntMassEquivilent = 0;
         public bool surfaceFire = false;
-        float ScoreAccumulator = 0;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
@@ -312,20 +311,7 @@ namespace BDArmory.FX
                     }
                     ////////////////////////////////////////////////
 
-                    var aName = SourceVessel;
-                    var tName = parentPart.vessel.GetName();
-                    if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE))
-                    {
-                        if (ScoreAccumulator >= 1) //could be reduced, gaining +1 hit per sec, per fire seems high
-                        {
-                            BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName);
-                            ScoreAccumulator = 0;
-                        }
-                        else
-                        {
-                            ScoreAccumulator += 1 * Time.deltaTime;
-                        }
-                    }
+                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel.GetName(), BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime, "fire");
                 }
             }
             if ((!hasFuel && disableTime < 0 && burnTime < 0) || (burnTime > 0 && disableTime < 0 && Time.time - startTime > burnTime))
@@ -443,8 +429,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
-                // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
+                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
                 gameObject.SetActive(false);
             }
         }

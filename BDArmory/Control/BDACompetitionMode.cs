@@ -98,7 +98,7 @@ namespace BDArmory.Control
             var now = Planetarium.GetUniversalTime();
 
             // Attacker stats.
-            ++ScoreData[attacker].Hits;
+            ++ScoreData[attacker].hits;
             if (victim == "pinata") ++ScoreData[attacker].PinataHits;
 
             // Victim stats.
@@ -151,6 +151,91 @@ namespace BDArmory.Control
             return true;
         }
         /// <summary>
+        /// Register individual rocket strikes.
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <param name="victim"></param>
+        /// <returns></returns>
+        public bool RegisterRocketStrike(string attacker, string victim)
+        {
+            if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
+
+            if (ScoreData[victim].rocketHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].rocketHitCounts[attacker]; }
+            else { ScoreData[victim].rocketHitCounts[attacker] = 1; }
+            return true;
+        }
+        /// <summary>
+        /// Register the number of parts on the victim that were damaged by the attacker's rocket.
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <param name="victim"></param>
+        /// <param name="partsHit"></param>
+        /// <returns></returns>
+        public bool RegisterRocketHit(string attacker, string victim, int partsHit = 1)
+        {
+            if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
+
+            var now = Planetarium.GetUniversalTime();
+
+            // Attacker stats.
+            ScoreData[attacker].totalDamagedPartsDueToRockets += partsHit;
+
+            // Victim stats.
+            if (ScoreData[victim].lastPersonWhoDamagedMe != attacker)
+            {
+                ScoreData[victim].previousLastDamageTime = ScoreData[victim].lastDamageTime;
+                ScoreData[victim].previousPersonWheDamagedMe = ScoreData[victim].lastPersonWhoDamagedMe;
+            }
+            if (ScoreData[victim].rocketPartDamageCounts.ContainsKey(attacker)) { ScoreData[victim].rocketPartDamageCounts[attacker] += partsHit; }
+            else { ScoreData[victim].rocketPartDamageCounts[attacker] = partsHit; }
+            ScoreData[victim].lastDamageTime = now;
+            ScoreData[victim].lastDamageWasFrom = DamageFrom.Rockets;
+            ScoreData[victim].lastPersonWhoDamagedMe = attacker;
+            ScoreData[victim].everyoneWhoDamagedMe.Add(attacker);
+            ScoreData[victim].damageTypesTaken.Add(DamageFrom.Rockets);
+
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); } // FIXME Add tracker for rockets.
+            return true;
+        }
+        /// <summary>
+        /// Register damage from rocket strikes.
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <param name="victim"></param>
+        /// <param name="damage"></param>
+        /// <returns></returns>
+        public bool RegisterRocketDamage(string attacker, string victim, float damage)
+        {
+            if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
+
+            if (ScoreData[victim].damageFromRockets.ContainsKey(attacker)) { ScoreData[victim].damageFromRockets[attacker] += damage; }
+            else { ScoreData[victim].damageFromRockets[attacker] = damage; }
+
+            return true;
+        }
+        /// <summary>
+        /// Register damage from Battle Damage.
+        /// </summary>
+        /// <param name="attacker"></param>
+        /// <param name="victim"></param>
+        /// <param name="damage"></param>
+        /// <returns></returns>
+        public bool RegisterBattleDamage(string attacker, string victim, float damage, string from)
+        {
+            if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
+            if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
+
+            //  Debug.Log($"DEBUG {victim} took {damage} {from} battle damage from {attacker}");
+            if (ScoreData[victim].battleDamageFrom.ContainsKey(attacker)) { ScoreData[victim].battleDamageFrom[attacker] += damage; }
+            else { ScoreData[victim].battleDamageFrom[attacker] = damage; }
+
+            return true;
+        }
+        /// <summary>
         /// Register parts lost due to ram.
         /// </summary>
         /// <param name="attacker"></param>
@@ -193,7 +278,7 @@ namespace BDArmory.Control
             return true;
         }
         /// <summary>
-        /// Register individual missile strikes
+        /// Register individual missile strikes.
         /// </summary>
         /// <param name="attacker">The vessel that launched the missile.</param>
         /// <param name="victim">The struck vessel.</param>
@@ -214,7 +299,7 @@ namespace BDArmory.Control
         /// <param name="victim">The struck vessel</param>
         /// <param name="partsHit">The number of parts hit (can be 1 at a time)</param>
         /// <returns>true if successfully registered, false otherwise</returns>
-        public bool RegisterMissileHit(string attacker, string victim, int partsHit)
+        public bool RegisterMissileHit(string attacker, string victim, int partsHit = 1)
         {
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
@@ -233,10 +318,10 @@ namespace BDArmory.Control
             if (ScoreData[victim].missilePartDamageCounts.ContainsKey(attacker)) { ScoreData[victim].missilePartDamageCounts[attacker] += partsHit; }
             else { ScoreData[victim].missilePartDamageCounts[attacker] = partsHit; }
             ScoreData[victim].lastDamageTime = now;
-            ScoreData[victim].lastDamageWasFrom = DamageFrom.Missile;
+            ScoreData[victim].lastDamageWasFrom = DamageFrom.Missiles;
             ScoreData[victim].lastPersonWhoDamagedMe = attacker;
             ScoreData[victim].everyoneWhoDamagedMe.Add(attacker);
-            ScoreData[victim].damageTypesTaken.Add(DamageFrom.Missile);
+            ScoreData[victim].damageTypesTaken.Add(DamageFrom.Missiles);
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
             { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); }
@@ -380,7 +465,6 @@ namespace BDArmory.Control
             return true;
         }
         #endregion
-        // FIXME individual last hit times aren't necessary with the above functions updating the overall last hit time, etc.
 
         public void LogResults(string CompetitionID, string message = "", string tag = "")
         {
@@ -503,6 +587,36 @@ namespace BDArmory.Control
                     logStrings.Add(whoDamagedMeWithGuns);
                 }
 
+            // Who hit who with rockets.
+            foreach (var player in Players)
+                if (ScoreData[player].rocketHitCounts.Count > 0)
+                {
+                    string whoHitMeWithRockets = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOHITWHOWITHROCKETS:" + player;
+                    foreach (var vesselName in ScoreData[player].rocketHitCounts.Keys)
+                        whoHitMeWithRockets += ":" + ScoreData[player].rocketHitCounts[vesselName] + ":" + vesselName;
+                    logStrings.Add(whoHitMeWithRockets);
+                }
+
+            // Who hit parts by who with rockets.
+            foreach (var player in Players)
+                if (ScoreData[player].rocketPartDamageCounts.Count > 0)
+                {
+                    string partHitCountsFromRockets = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOPARTSHITWHOWITHROCKETS:" + player;
+                    foreach (var vesselName in ScoreData[player].rocketPartDamageCounts.Keys)
+                        partHitCountsFromRockets += ":" + ScoreData[player].rocketPartDamageCounts[vesselName] + ":" + vesselName;
+                    logStrings.Add(partHitCountsFromRockets);
+                }
+
+            // Damage from rockets
+            foreach (var player in Players)
+                if (ScoreData[player].damageFromRockets.Count > 0)
+                {
+                    string whoDamagedMeWithRockets = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHODAMAGEDWHOWITHROCKETS:" + player;
+                    foreach (var vesselName in ScoreData[player].damageFromRockets.Keys)
+                        whoDamagedMeWithRockets += ":" + ScoreData[player].damageFromRockets[vesselName].ToString("0.0") + ":" + vesselName;
+                    logStrings.Add(whoDamagedMeWithRockets);
+                }
+
             // Who hit who with missiles.
             foreach (var player in Players)
                 if (ScoreData[player].missileHitCounts.Count > 0)
@@ -513,14 +627,14 @@ namespace BDArmory.Control
                     logStrings.Add(whoHitMeWithMissiles);
                 }
 
-            // Who shot who with missiles.
+            // Who hit parts by who with missiles.
             foreach (var player in Players)
                 if (ScoreData[player].missilePartDamageCounts.Count > 0)
                 {
-                    string whoShotMeWithMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOPARTSHITWHOWITHMISSILES:" + player;
+                    string partHitCountsFromMissiles = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOPARTSHITWHOWITHMISSILES:" + player;
                     foreach (var vesselName in ScoreData[player].missilePartDamageCounts.Keys)
-                        whoShotMeWithMissiles += ":" + ScoreData[player].missilePartDamageCounts[vesselName] + ":" + vesselName;
-                    logStrings.Add(whoShotMeWithMissiles);
+                        partHitCountsFromMissiles += ":" + ScoreData[player].missilePartDamageCounts[vesselName] + ":" + vesselName;
+                    logStrings.Add(partHitCountsFromMissiles);
                 }
 
             // Damage from missiles
@@ -541,6 +655,16 @@ namespace BDArmory.Control
                     foreach (var vesselName in ScoreData[player].rammingPartLossCounts.Keys)
                         whoRammedMe += ":" + ScoreData[player].rammingPartLossCounts[vesselName] + ":" + vesselName;
                     logStrings.Add(whoRammedMe);
+                }
+
+            // Battle Damage
+            foreach (var player in Players)
+                if (ScoreData[player].battleDamageFrom.Count > 0)
+                {
+                    string whoDamagedMeWithBattleDamages = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHODAMAGEDWHOWITHBATTLEDAMAGE:" + player;
+                    foreach (var vesselName in ScoreData[player].battleDamageFrom.Keys)
+                        whoDamagedMeWithBattleDamages += ":" + ScoreData[player].battleDamageFrom[vesselName].ToString("0.0") + ":" + vesselName;
+                    logStrings.Add(whoDamagedMeWithBattleDamages);
                 }
 
             // GM kill reasons
@@ -566,7 +690,7 @@ namespace BDArmory.Control
 
             // Accuracy
             foreach (var player in Players)
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: ACCURACY:" + player + ":" + ScoreData[player].Hits + "/" + ScoreData[player].shotsFired);
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: ACCURACY:" + player + ":" + ScoreData[player].hits + "/" + ScoreData[player].shotsFired);
 
             // Time "IT" and kills while "IT" logging
             if (BDArmorySettings.TAG_MODE)
@@ -607,11 +731,18 @@ namespace BDArmory.Control
         public string team; // The vessel's team.
 
         #region Guns
-        public int Hits; // Number of hits this vessel landed.
+        public int hits; // Number of hits this vessel landed.
         public int PinataHits; // Number of hits this vessel landed on the piñata (included in Hits).
         public int shotsFired = 0; // Number of shots fired by this vessel.
         public Dictionary<string, int> hitCounts = new Dictionary<string, int>(); // Hits taken from guns fired by other vessels.
         public Dictionary<string, float> damageFromGuns = new Dictionary<string, float>(); // Damage taken from guns fired by other vessels.
+        #endregion
+
+        #region Rockets
+        public int totalDamagedPartsDueToRockets = 0; // Number of other vessels' parts damaged by this vessel due to rocket strikes.
+        public Dictionary<string, float> damageFromRockets = new Dictionary<string, float>(); // Damage taken from rocket hits from other vessels.
+        public Dictionary<string, int> rocketPartDamageCounts = new Dictionary<string, int>(); // Number of parts damaged by rocket hits from other vessels.
+        public Dictionary<string, int> rocketHitCounts = new Dictionary<string, int>(); // Number of rocket strikes from other vessels.
         #endregion
 
         #region Ramming
@@ -624,6 +755,10 @@ namespace BDArmory.Control
         public Dictionary<string, float> damageFromMissiles = new Dictionary<string, float>(); // Damage taken from missile strikes from other vessels.
         public Dictionary<string, int> missilePartDamageCounts = new Dictionary<string, int>(); // Number of parts damaged by missile strikes from other vessels.
         public Dictionary<string, int> missileHitCounts = new Dictionary<string, int>(); // Number of missile strikes from other vessels.
+        #endregion
+
+        #region Battle Damage
+        public Dictionary<string, float> battleDamageFrom = new Dictionary<string, float>(); // Battle damage taken from others.
         #endregion
 
         #region GM
@@ -661,7 +796,7 @@ namespace BDArmory.Control
         public HashSet<string> everyoneWhoDamagedMe = new HashSet<string>(); // Every other vessel that damaged this vessel.
         #endregion
     }
-    public enum DamageFrom { None, Guns, Missile, Ramming, Incompetence };
+    public enum DamageFrom { None, Guns, Rockets, Missiles, Ramming, Incompetence };
     public enum AliveState { Alive, CleanKill, HeadShot, KillSteal, AssistedKill, Dead };
     public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton, LandedTooLong };
     public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared };
@@ -2462,7 +2597,10 @@ namespace BDArmory.Control
                             case DamageFrom.Guns:
                                 statusMessage += " was killed by ";
                                 break;
-                            case DamageFrom.Missile:
+                            case DamageFrom.Rockets:
+                                statusMessage += " was fragged by ";
+                                break;
+                            case DamageFrom.Missiles:
                                 statusMessage += " was exploded by ";
                                 break;
                             case DamageFrom.Ramming:

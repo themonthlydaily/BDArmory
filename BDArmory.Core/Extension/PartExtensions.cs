@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace BDArmory.Core.Extension
 {
-    public enum ExplosionSourceType { Other, Missile, Bullet };
+    public enum ExplosionSourceType { Other, Missile, Bullet, Rocket, BattleDamage };
     public static class PartExtensions
     {
         public static void AddDamage(this Part p, float damage)
@@ -47,8 +47,17 @@ namespace BDArmory.Core.Extension
                 case ExplosionSourceType.Missile:
                     damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage;
                     break;
-                default:
+                case ExplosionSourceType.Rocket:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * explosiveDamage;
+                    break;
+                case ExplosionSourceType.BattleDamage:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * explosiveDamage;
+                    break;
+                case ExplosionSourceType.Bullet:
                     damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * explosiveDamage;
+                    break;
+                default: // Other?
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * explosiveDamage;
                     break;
             }
 

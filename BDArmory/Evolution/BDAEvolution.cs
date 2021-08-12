@@ -417,11 +417,11 @@ namespace BDArmory.Evolution
                     }
                     if( aggregateScores[name].ContainsKey("hits") )
                     {
-                        aggregateScores[name]["hits"] += scoreData.Hits;
+                        aggregateScores[name]["hits"] += scoreData.hits;
                     }
                     else
                     {
-                        aggregateScores[name]["hits"] = scoreData.Hits;
+                        aggregateScores[name]["hits"] = scoreData.hits;
                     }
                     if( aggregateScores[name].ContainsKey("shots") )
                     {
@@ -431,7 +431,7 @@ namespace BDArmory.Evolution
                     {
                         aggregateScores[name]["shots"] = scoreData.shotsFired;
                     }
-                    Debug.Log(string.Format("Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, kills, scoreData.Hits, scoreData.shotsFired));
+                    Debug.Log(string.Format("Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, kills, scoreData.hits, scoreData.shotsFired));
                 }
             }
         }
