@@ -127,7 +127,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 					elif field.startswith('CLEANKILLROCKETS:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRocketKillBy': killer})
-					elif field.startswith('CLEANKILLMISSILE:'):
+					elif field.startswith('CLEANKILLMISSILES:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
 					elif field.startswith('CLEANKILLRAMMING:'):
