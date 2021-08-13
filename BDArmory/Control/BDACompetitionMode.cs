@@ -224,12 +224,11 @@ namespace BDArmory.Control
         /// <param name="victim"></param>
         /// <param name="damage"></param>
         /// <returns></returns>
-        public bool RegisterBattleDamage(string attacker, string victim, float damage, string from)
+        public bool RegisterBattleDamage(string attacker, string victim, float damage)
         {
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
-            //  Debug.Log($"DEBUG {victim} took {damage} {from} battle damage from {attacker}");
             if (ScoreData[victim].battleDamageFrom.ContainsKey(attacker)) { ScoreData[victim].battleDamageFrom[attacker] += damage; }
             else { ScoreData[victim].battleDamageFrom[attacker] = damage; }
 

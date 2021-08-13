@@ -520,7 +520,9 @@ namespace BDArmory.FX
                                 BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
                                 break;
                             case ExplosionSourceType.BattleDamage:
-                                BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, tName, damage, "explosion");
+                                BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, tName, damage);
+                                if (BDACompetitionMode.Instance.Scores.Players.Contains(tName))
+                                    Debug.Log($"DEBUG {damage} damage from {SourceWeaponName} on {tName} from {aName}");
                                 break;
                         }
                     }
@@ -602,7 +604,7 @@ namespace BDArmory.FX
             eFx.Position = position;
             eFx.Power = tntMassEquivalent;
             eFx.ExplosionSource = explosionSourceType;
-            eFx.SourceVesselName = sourceVesselName != null ? sourceVesselName : explosionSourceType == ExplosionSourceType.Missile ? (explosivePart != null && explosivePart.vessel != null ? explosivePart.vessel.GetName() : null) : null; // Use the sourceVesselName if specified, otherwise get the sourceVesselName from the missile if it is one.
+            eFx.SourceVesselName = !string.IsNullOrEmpty(sourceVesselName) ? sourceVesselName : explosionSourceType == ExplosionSourceType.Missile ? (explosivePart != null && explosivePart.vessel != null ? explosivePart.vessel.GetName() : null) : null; // Use the sourceVesselName if specified, otherwise get the sourceVesselName from the missile if it is one.
             eFx.SourceWeaponName = sourceWeaponName;
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;

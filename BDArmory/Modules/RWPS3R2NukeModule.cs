@@ -215,7 +215,7 @@ namespace BDArmory.Modules
                                         Debug.LogWarning("[BDArmory.NukeTest]: blast damage is NaN. distToG0: " + distToG0 + ", yield: " + yield + ", part: " + partHit + ", radiativeArea: " + radiativeArea);
                                         continue;
                                     }
-                                    p.AddExplosiveDamage(blastDamage, 100, ExplosionSourceType.Missile);
+                                    var damage = p.AddExplosiveDamage(blastDamage, 100, ExplosionSourceType.Missile);
 
                                     // Scoring
                                     var aName = Sourcevessel; // Attacker
@@ -226,8 +226,8 @@ namespace BDArmory.Modules
                                             ++vesselsHitByMissiles[tName];
                                         else
                                             vesselsHitByMissiles[tName] = 1;
-                                        BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, blastDamage);
-                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: " + aName + " did " + blastDamage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m");
+                                        BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
+                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: " + aName + " did " + damage + " blast damage to " + tName + " at " + distToG0.ToString("0.000") + "m");
                                     }
                                 }
                             }

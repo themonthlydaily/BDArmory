@@ -101,39 +101,41 @@ namespace BDArmory.Modules
             base.OnLoad(node);
 
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) return;
+            CASESetup(null, null);
 
-            if (part.partInfo != null)
-            {
-                if (HighLogic.LoadedSceneIsEditor)
-                {
-                    CASESetup(null, null);
-                }
-                else
-                {
-                    if (part.vessel != null)
-                    {
-                        var CASEString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleCASE", "CASELevel");
-                        if (!string.IsNullOrEmpty(CASEString))
-                        {
-                            try
-                            {
-                                CASELevel = float.Parse(CASEString);
-                                CASESetup(null, null);
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.LogError("[BDArmory.ModuleCASE]: Exception parsing CASELevel: " + e.Message);
-                            }
-                        }
-                        else
-                            CASELevel = 0f;
-                    }
-                    else // Don't.
-                    {
-                        enabled = false;
-                    }
-                }
-            }
+            // if (part.partInfo != null)
+            // {
+            //     if (HighLogic.LoadedSceneIsEditor)
+            //     {
+            //         CASESetup(null, null);
+            //     }
+            //     else
+            //     {
+            //         if (part.vessel != null)
+            //         {
+            //             var CASEString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleCASE", "CASELevel");
+            //             if (!string.IsNullOrEmpty(CASEString))
+            //             {
+            //                 try
+            //                 {
+            //                     CASELevel = float.Parse(CASEString);
+            //                     CASESetup(null, null);
+            //                     // Debug.Log($"DEBUG {part} on {vessel} has CASE level {CASELevel} (CASEString: {CASEString})");
+            //                 }
+            //                 catch (Exception e)
+            //                 {
+            //                     Debug.LogError("[BDArmory.ModuleCASE]: Exception parsing CASELevel: " + e.Message);
+            //                 }
+            //             }
+            //             else
+            //                 CASELevel = 0f;
+            //         }
+            //         else // Don't.
+            //         {
+            //             enabled = false;
+            //         }
+            //     }
+            // }
         }
 
         private List<PartResource> GetResources()
@@ -181,12 +183,12 @@ namespace BDArmory.Modules
                 GetBlastRadius();
                 if (CASELevel == 0) //a considerable quantity of explosives and propellants just detonated inside your ship
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield * BDArmorySettings.BD_AMMO_DMG_MULT, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, vesselName, null, direction);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield * BDArmorySettings.BD_AMMO_DMG_MULT, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-0", direction);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else if (CASELevel == 1) // the blast is reduced. Damage is severe, but (potentially) survivable
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, vesselName, null, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                     using (var blastHits = Physics.OverlapSphere(part.transform.position, blastRadius / 2, 9076737).AsEnumerable().GetEnumerator())
                     {
@@ -229,7 +231,7 @@ namespace BDArmory.Modules
                 }
                 else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, vesselName, null, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                     Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                     var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);
@@ -285,6 +287,7 @@ namespace BDArmory.Modules
             if (hitPart == null) return;
             if (hitPart.partInfo.name.Contains("Strut")) return;
             float explDamage = 0;
+            float damage = 0;
             if (BDArmorySettings.BULLET_HITS)
             {
                 BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, false, 200, 3, null);
@@ -293,7 +296,7 @@ namespace BDArmory.Modules
             {
                 explDamage = 100 * BDArmorySettings.BD_AMMO_DMG_MULT;
                 explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield * 10));
-                hitPart.AddDamage(explDamage);
+                damage = hitPart.AddExplosiveDamage(explDamage, 0, ExplosionSourceType.BattleDamage);
                 float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
                 hitPart.ReduceArmor(armorToReduce);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged, armor reduced by " + armorToReduce);
@@ -304,14 +307,16 @@ namespace BDArmory.Modules
                 explDamage *= BDArmorySettings.BD_AMMO_DMG_MULT;
                 explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield * 10)); //reduce damage done based on ammo remaining. almost empty ammo box should do much less damage than full one
                 explDamage *= Mathf.Clamp(distance, 0, 1);
-                hitPart.AddDamage(explDamage);
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged for " + explDamage);
+                damage = hitPart.AddExplosiveDamage(explDamage, 0, ExplosionSourceType.BattleDamage);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged for " + damage);
                 if (BDArmorySettings.BATTLEDAMAGE)
                 {
                     Misc.BattleDamageHandler.CheckDamageFX(hitPart, 200, 3, true, false, SourceVessel, hit);
                 }
             }
-            BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, hitPart.vessel.GetName(), explDamage, "CASE");
+            BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, hitPart.vessel.GetName(), damage);
+            if (BDACompetitionMode.Instance.Scores.Players.Contains(hitPart.vessel.vesselName))
+                Debug.Log($"DEBUG {damage} damage from CASE-{CASELevel} on {hitPart.vessel.vesselName} from {SourceVessel}");
         }
 
         void OnDestroy()

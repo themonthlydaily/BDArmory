@@ -311,7 +311,7 @@ namespace BDArmory.FX
                     }
                     ////////////////////////////////////////////////
 
-                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel.GetName(), BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime, "fire");
+                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel.GetName(), BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
             if ((!hasFuel && disableTime < 0 && burnTime < 0) || (burnTime > 0 && disableTime < 0 && Time.time - startTime > burnTime))
@@ -429,7 +429,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
+                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "fuel");
                 gameObject.SetActive(false);
             }
         }

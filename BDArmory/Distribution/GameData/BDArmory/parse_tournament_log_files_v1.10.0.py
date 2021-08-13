@@ -13,7 +13,7 @@ parser.add_argument('-q', '--quiet', action='store_true', help="Don't print resu
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1.5,1,2e-3,3,1,5e-3,1e-5,1,0.1,1e-5,0,0.5,0.01,1e-7,0,5e-2,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
+parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1.5,1,2e-3,3,1,5e-3,1e-5,1,0.01,1e-6,0,0.5,0.01,1e-7,0,5e-2,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
 args = parser.parse_args()
@@ -133,7 +133,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 					elif field.startswith('CLEANKILLRAMMING:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
-					elif field.startswith('HEADSHOTGUNS:'): # FIXME make head-shots separate from clean-kills
+					elif field.startswith('HEADSHOTGUNS:'):  # FIXME make head-shots separate from clean-kills
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
 					elif field.startswith('HEADSHOTROCKETS:'):
@@ -145,7 +145,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 					elif field.startswith('HEADSHOTRAMMING:'):
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
-					elif field.startswith('KILLSTEALGUNS:'): # FIXME make kill-steals separate from clean-kills
+					elif field.startswith('KILLSTEALGUNS:'):  # FIXME make kill-steals separate from clean-kills
 						_, craft, killer = field.split(':', 2)
 						tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
 					elif field.startswith('KILLSTEALROCKETS:'):
@@ -232,6 +232,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 				'missileDamage': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat['craft'].values() for field in ('missileDamageBy',) if field in data and craft in data[field]]),
 				'ramScore': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat['craft'].values() for field in ('rammedPartsLostBy',) if field in data and craft in data[field]]),
 				'battleDamage': sum([data[field][craft] for round in tournamentData.values() for heat in round.values() for data in heat['craft'].values() for field in ('battleDamageBy',) if field in data and craft in data[field]]),
+				'battleDamageTaken': sum([sum(heat['craft'][craft]['battleDamageBy'].values()) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'battleDamageBy' in heat['craft'][craft]]),
 				'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
 				'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
 			}
@@ -297,7 +298,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 		if not args.quiet:
 			# Write results to console
 			strings = []
-			headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD', 'Acc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
+			headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
 			if args.score:
 				headers.insert(1, 'Score')
 			summary_strings = {'header': {field: field for field in headers}}
@@ -326,7 +327,8 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 						'MisDmg': f"{tmp['missileDamage']:.0f}",
 						'HitByMis': f"{tmp['missileHitsTaken']}",
 						'Ram': f"{tmp['ramScore']}",
-						'BD': f"{tmp['battleDamage']:.0f}",
+						'BD dealt': f"{tmp['battleDamage']:.0f}",
+						'BD taken': f"{tmp['battleDamageTaken']:.0f}",
 						'Acc%': f"{tmp['accuracy']:.2f}",
 						'HP%': f"{tmp['HPremaining']:.2f}",
 						'Dmg/Hit': f"{tmp['damage/hit']:.1f}",
