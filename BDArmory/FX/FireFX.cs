@@ -372,6 +372,7 @@ namespace BDArmory.FX
                         excessFuel = true;
                     }
                 }
+                tntMassEquivilent /= 6; //make this not have a 1 to 1 ratio of fuelmass -> tntmass
                 PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                 if (ec != null)
                 {
@@ -381,7 +382,7 @@ namespace BDArmory.FX
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
                 }
-                tntMassEquivilent /= 6; //make this not have a 1 to 1 ratio of fuelmass -> tntmass
+
                 tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
