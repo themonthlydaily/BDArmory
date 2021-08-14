@@ -108,23 +108,28 @@ namespace BDArmory.Core.Extension
             //Hitpoints mult for scaling in settings
             //1e-4 constant for adjusting MegaJoules for gameplay
 
-            float damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
-                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
-
+            float damage_;
             switch (sourceType)
             {
                 case ExplosionSourceType.Rocket:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * damage_;
+                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
                     break;
                 case ExplosionSourceType.BattleDamage:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * damage_;
+                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * 1e-4f * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
                     break;
                 case ExplosionSourceType.Bullet:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * damage_;
+                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
                     break;
-                default: // Other?
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * damage_;
+                default: // Other?    
+                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
                     break;
             }
 
