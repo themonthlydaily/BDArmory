@@ -188,6 +188,7 @@ namespace BDArmory.FX
                                 {
                                     tntMassEquivalent += Mathf.Clamp((float)solid.amount, ((float)solid.maxAmount * 0.05f), ((float)solid.maxAmount * 0.2f));
                                     Detonate(); //casing's full of holes and SRB fuel's burnt to the point it can easily start venting through those holes
+                                    return;
                                 }
                             }
                         }
