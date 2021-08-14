@@ -404,7 +404,7 @@ namespace BDArmory.FX
                 }
 
                 tntMassEquivalent *= BDArmorySettings.BD_AMMO_DMG_MULT;
-                if ((true && tntMassEquivalent > 0) || BDArmorySettings.DRAW_DEBUG_LABELS)
+                if (BDArmorySettings.DRAW_DEBUG_LABELS && tntMassEquivalent > 0)
                 {
                     Debug.Log("[BDArmory.FireFX] Fuel Explosion in " + this.parentPart.name + ", TNT mass equivalent " + tntMassEquivalent + $" (Fuel: {tntFuel / 6f}, Ox: {tntOx / 6f}, MP: {tntMP / 6f}, EC: {tntEC})");
                 }
@@ -435,7 +435,7 @@ namespace BDArmory.FX
                                         if (p == partHit)
                                         {
                                             if (rb == null) return;
-                                            BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)));
+                                            BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
                                                 Debug.Log("[BDArmory.FireFX] " + this.parentPart.name + " hit by burning fuel");
@@ -478,7 +478,8 @@ namespace BDArmory.FX
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                Detonate();
+                if (!surfaceFire) Detonate();
+                else Deactivate();
             }
         }
 
@@ -486,8 +487,8 @@ namespace BDArmory.FX
         {
             if (gameObject.activeInHierarchy)
             {
-                parentPart = null; // Remove ourselves from the parent part so we don't get destroyed if it does.
-                transform.parent = null;
+                parentPart = null;
+                transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.
                 gameObject.SetActive(false);
             }
         }
