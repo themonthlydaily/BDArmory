@@ -384,7 +384,7 @@ namespace BDArmory.FX
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
                 }
 
-                tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT;
+                //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     Debug.Log("[BDArmory.FireFX] Fuel Explosion in " + this.parentPart.name + ", TNT mass equivilent " + tntMassEquivilent);
