@@ -313,7 +313,7 @@ namespace BDArmory.Modules
         [KSPField]
         public string fireAnimName = "fireAnim";
 
-        AnimationState[] fireState;
+        AnimationState[] fireState = new AnimationState[0];
         //private List<AnimationState> fireState;
 
         [KSPField]
