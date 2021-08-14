@@ -102,40 +102,6 @@ namespace BDArmory.Modules
 
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) return;
             CASESetup(null, null);
-
-            // if (part.partInfo != null)
-            // {
-            //     if (HighLogic.LoadedSceneIsEditor)
-            //     {
-            //         CASESetup(null, null);
-            //     }
-            //     else
-            //     {
-            //         if (part.vessel != null)
-            //         {
-            //             var CASEString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleCASE", "CASELevel");
-            //             if (!string.IsNullOrEmpty(CASEString))
-            //             {
-            //                 try
-            //                 {
-            //                     CASELevel = float.Parse(CASEString);
-            //                     CASESetup(null, null);
-            //                     // Debug.Log($"DEBUG {part} on {vessel} has CASE level {CASELevel} (CASEString: {CASEString})");
-            //                 }
-            //                 catch (Exception e)
-            //                 {
-            //                     Debug.LogError("[BDArmory.ModuleCASE]: Exception parsing CASELevel: " + e.Message);
-            //                 }
-            //             }
-            //             else
-            //                 CASELevel = 0f;
-            //         }
-            //         else // Don't.
-            //         {
-            //             enabled = false;
-            //         }
-            //     }
-            // }
         }
 
         private List<PartResource> GetResources()
@@ -196,7 +162,7 @@ namespace BDArmory.Modules
                 }
                 else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f * BDArmorySettings.BD_AMMO_DMG_MULT, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                     Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                     var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);
