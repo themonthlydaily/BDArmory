@@ -42,7 +42,7 @@ namespace BDArmory.FX
                     EffectBehaviour.AddParticleEmitter(pe.Current);
                 }
         }
-        void onDisable()
+        void OnDisable()
         {
             BDArmorySetup.numberOfParticleEmitters--;
             foreach (var pe in pEmitters)

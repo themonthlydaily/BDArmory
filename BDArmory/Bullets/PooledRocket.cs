@@ -145,7 +145,7 @@ namespace BDArmory.Bullets
             }
         }
 
-        void onDisable()
+        void OnDisable()
         {
             BDArmorySetup.OnVolumeChange -= UpdateVolume;
             BDArmorySetup.numberOfParticleEmitters--;

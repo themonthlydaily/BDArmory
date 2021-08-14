@@ -53,6 +53,7 @@ namespace BDArmory.FX
         internal static readonly float ExplosionVelocity = 422.75f;
 
         private float particlesMaxEnergy;
+        internal static HashSet<ExplosionSourceType> ignoreCasingFor = new HashSet<ExplosionSourceType> { ExplosionSourceType.Missile, ExplosionSourceType.Rocket };
 
         void Awake()
         {
@@ -334,8 +335,8 @@ namespace BDArmory.FX
                     }
                     if (partHit != part)
                     {
-                        // ignoring collisions against the explosive
-                        if (explosivePart != null && partHit.vessel == explosivePart.vessel)
+                        // ignoring collisions against the explosive, or explosive vessel for certain explosive types (e.g., missile/rocket casing)
+                        if (partHit == explosivePart || (explosivePart != null && ignoreCasingFor.Contains(ExplosionSource) && partHit.vessel == explosivePart.vessel))
                         {
                             continue;
                         }
@@ -447,9 +448,7 @@ namespace BDArmory.FX
 
             if (!eventToExecute.IsNegativePressure)
             {
-                BlastInfo blastInfo =
-                    BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance,
-                        part.vessel.totalMass * 1000f, Power, Range);
+                BlastInfo blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, part.vessel.totalMass * 1000f, Power, Range);
 
                 // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armour in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
                 // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
@@ -522,7 +521,7 @@ namespace BDArmory.FX
                             case ExplosionSourceType.BattleDamage:
                                 BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, tName, damage);
                                 if (BDACompetitionMode.Instance.Scores.Players.Contains(tName))
-                                    Debug.Log($"DEBUG {damage} damage from {SourceWeaponName} on {tName} from {aName}");
+                                    Debug.Log($"DEBUG {damage} damage from {SourceWeaponName} on part {part} of {tName} from {aName}");
                                 break;
                         }
                     }
