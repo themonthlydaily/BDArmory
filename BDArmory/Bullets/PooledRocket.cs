@@ -323,9 +323,10 @@ namespace BDArmory.Bullets
                                 ME.massMod += massMod;
                                 ME.duration += BDArmorySettings.WEAPON_FX_DURATION;
                             }
-                            if (concussion)
+                            if (concussion && hitPart.rb != null)
                             {
                                 hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
+                                BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName());
                                 Detonate(hit.point, false);
                                 hasDetonated = true;
                                 return; //impulse rounds shouldn't penetrate/do damage

@@ -95,21 +95,21 @@ namespace BDArmory.Misc
             // Debug.Log("DEBUG Ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
 
             // Update scoring structures
-            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, explosionSource);
+            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, explosionSource, true);
             StealResources(hitPart, sourceVessel);
         }
-        public static void ApplyScore(Part hitPart, string sourceVessel, double distanceTraveled, float damage, string name, ExplosionSourceType ExplosionSource)
+        public static void ApplyScore(Part hitPart, string sourceVessel, double distanceTraveled, float damage, string name, ExplosionSourceType ExplosionSource, bool newhit = false)
         {
             var aName = sourceVessel;//.GetName();
             var tName = hitPart.vessel.GetName();
             switch (ExplosionSource)
             {
                 case ExplosionSourceType.Bullet:
-                    BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, name, distanceTraveled);
+                    if (newhit) BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, name, distanceTraveled);
                     BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage);
                     break;
                 case ExplosionSourceType.Rocket:
-                    BDACompetitionMode.Instance.Scores.RegisterRocketStrike(aName, tName);
+                    if (newhit) BDACompetitionMode.Instance.Scores.RegisterRocketStrike(aName, tName);
                     BDACompetitionMode.Instance.Scores.RegisterRocketDamage(aName, tName, damage);
                     break;
                 case ExplosionSourceType.Missile:
