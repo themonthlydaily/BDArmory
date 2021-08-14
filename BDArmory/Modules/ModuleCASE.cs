@@ -185,12 +185,12 @@ namespace BDArmory.Modules
                 {
                     if (CASELevel == 0)
                     {
-                        ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield * BDArmorySettings.BD_AMMO_DMG_MULT, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-0", direction, false, part.mass);
+                        ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield * BDArmorySettings.BD_AMMO_DMG_MULT, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-0", direction, false, part.mass, 1200);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, false, part.mass);
+                        ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, false, part.mass, 600);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                     }                    
                 }
