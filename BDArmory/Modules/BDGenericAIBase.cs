@@ -275,6 +275,7 @@ namespace BDArmory.Modules
 
         protected void UpdateWeaponManager()
         {
+            VesselModuleRegistry.OnVesselModified(vessel);
             weaponManager = VesselModuleRegistry.GetModule<MissileFire>(vessel);
             if (weaponManager != null)
                 weaponManager.AI = this;

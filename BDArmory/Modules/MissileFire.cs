@@ -56,7 +56,7 @@ namespace BDArmory.Modules
         {
             get
             {
-                if (selectedWeapon != null)
+                if (rippleFire)
                 {
                     return rippleDictionary[selectedWeapon.GetShortName()].rpm;
                 }
@@ -67,20 +67,9 @@ namespace BDArmory.Modules
             }
             set
             {
-                if (selectedWeapon != null)
+                if (selectedWeapon != null && rippleDictionary.ContainsKey(selectedWeapon.GetShortName()))
                 {
-                    if (rippleDictionary.ContainsKey(selectedWeapon.GetShortName()))
-                    {
-                        rippleDictionary[selectedWeapon.GetShortName()].rpm = value;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                else
-                {
-                    return;
+                    rippleDictionary[selectedWeapon.GetShortName()].rpm = value;
                 }
             }
         }
@@ -968,6 +957,7 @@ namespace BDArmory.Modules
                 if (vessel.isActiveVessel)
                 {
                     BDArmorySetup.Instance.ActiveWeaponManager = this;
+                    BDArmorySetup.Instance.ConfigTextFields();
                 }
 
                 UpdateVolume();
@@ -3614,7 +3604,7 @@ namespace BDArmory.Modules
                         {
                             // For point defense, favor turrets and RoF
                             float candidateRocketAccel = (((ModuleWeapon)item.Current).thrust / ((ModuleWeapon)item.Current).rocketMass);
-                            float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute/2;
+                            float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute / 2;
                             bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
                             float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
@@ -3699,7 +3689,7 @@ namespace BDArmory.Modules
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                             bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
-                              float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
 
                             if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
@@ -4099,7 +4089,7 @@ namespace BDArmory.Modules
 
                         if (candidateRadius > 4) //smmall vees target with high-ROF weapons to improve hit chance, bigger stuff use bigger guns
                         {
-                            candidateRPM = candidateImpact*candidateRPM;
+                            candidateRPM = candidateImpact * candidateRPM;
                         }
                         if (candidateGimbal && candidateTraverse > 0)
                         {
@@ -4209,8 +4199,8 @@ namespace BDArmory.Modules
             if (engageableWeapon == null) return true;
             if (!engageableWeapon.engageEnabled) return true;
             //if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false; //covered in weapon select logic
-             //if (distanceToTarget > engageableWeapon.GetEngagementRangeMax()) return false;
-            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax()*1.1f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
+            //if (distanceToTarget > engageableWeapon.GetEngagementRangeMax()) return false;
+            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() * 1.1f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
 
             switch (weaponCandidate.GetWeaponClass())
             {
@@ -5000,6 +4990,7 @@ namespace BDArmory.Modules
             }
             UI_FloatRange rangeEditor = (UI_FloatRange)Fields["gunRange"].uiControlEditor;
             rangeEditor.maxValue = maxGunRange;
+            if (BDArmorySetup.Instance.textNumFields != null && BDArmorySetup.Instance.textNumFields.ContainsKey("gunRange")) { BDArmorySetup.Instance.textNumFields["gunRange"].maxValue = maxGunRange; }
             gunRange = Mathf.Min(gunRange, maxGunRange);
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: Updating gun range of " + v.vesselName + " to " + gunRange + " of " + maxGunRange);
         }

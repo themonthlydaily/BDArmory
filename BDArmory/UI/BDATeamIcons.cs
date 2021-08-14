@@ -361,10 +361,10 @@ namespace BDArmory.UI
                                                 BDArmory.Control.ScoringData scoreData = null;
                                                 int Score = 0;
 
-                                                if (BDACompetitionMode.Instance.Scores.ContainsKey(wm.Current.vessel.vesselName))
+                                                if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(wm.Current.vessel.vesselName))
                                                 {
-                                                    scoreData = BDACompetitionMode.Instance.Scores[wm.Current.vessel.vesselName];
-                                                    Score = scoreData.Score;
+                                                    scoreData = BDACompetitionMode.Instance.Scores.ScoreData[wm.Current.vessel.vesselName];
+                                                    Score = scoreData.Hits;
                                                 }
                                                 if (VesselSpawner.Instance.vesselsSpawningContinuously)
                                                 {
