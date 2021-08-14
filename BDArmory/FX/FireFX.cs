@@ -381,6 +381,7 @@ namespace BDArmory.FX
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
                 }
+                tntMassEquivilent /= 6; //make this not have a 1 to 1 ratio of fuelmass -> tntmass
                 tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
@@ -429,9 +430,13 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "fuel");
-                gameObject.SetActive(false);
+                if (tntMassEquivilent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
+                {
+                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
+                }
             }
+            tntMassEquivilent = 0;
+            gameObject.SetActive(false);
         }
 
         public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset, string sourcevessel, float burnTime = -1)
