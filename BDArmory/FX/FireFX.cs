@@ -344,6 +344,7 @@ namespace BDArmory.FX
 
         void Detonate()
         {
+            if (surfaceFire) return;
             if (!parentPart.partName.Contains("exploding"))
             {
                 bool excessFuel = false;
@@ -415,7 +416,7 @@ namespace BDArmory.FX
                                         if (p == partHit)
                                         {
                                             if (rb == null) return;
-                                            BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)));
+                                            BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
                                                 Debug.Log("[BDArmory.FireFX] " + this.parentPart.name + " hit by burning fuel");
@@ -433,7 +434,7 @@ namespace BDArmory.FX
                 }
                 if (tntMassEquivilent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
-                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
+                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
                 }
             }
             tntMassEquivilent = 0;

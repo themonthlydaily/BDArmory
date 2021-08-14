@@ -6,6 +6,7 @@ using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -34,7 +35,7 @@ namespace BDArmory.FX
         public Vector3 Direction { get; set; }
         public Part ExplosivePart { get; set; }
         public bool isFX { get; set; }
-
+        public float CASEClamp { get; set; }
         public float TimeIndex => Time.time - StartTime;
 
         private bool disabled = true;
@@ -283,7 +284,7 @@ namespace BDArmory.FX
                     }
                     if (ProjMass > 0)
                     {
-                        ProjectileUtils.CalculateShrapnelDamage(part, hit, 120, Power, distance, sourceVesselName, ProjMass); //part hit by shrapnel, but not pressure wave
+                        ProjectileUtils.CalculateShrapnelDamage(part, hit, 120, Power, distance, sourceVesselName, ExplosionSource, ProjMass); //part hit by shrapnel, but not pressure wave
                     }
                     partsAdded.Add(part);
                     return true;
@@ -458,6 +459,18 @@ namespace BDArmory.FX
                 var cumulativeArmourOfIntermediateParts = eventToExecute.IntermediateParts.Select(p => p.Item3).Sum();
                 blastInfo.Damage = Mathf.Max(0f, blastInfo.Damage - 0.5f * cumulativeHPOfIntermediateParts - cumulativeArmourOfIntermediateParts);
 
+                if (CASEClamp > 0)
+                {
+                    if (CASEClamp < 1000)
+                    {
+                        blastInfo.Damage = Mathf.Clamp(blastInfo.Damage, 0, Mathf.Min((part.Modules.GetModule<HitpointTracker>().GetMaxHitpoints() * 0.9f), CASEClamp));
+                    }
+                    else
+                    {
+                        blastInfo.Damage = Mathf.Clamp(blastInfo.Damage, 0, CASEClamp);
+                    }
+                }
+
                 if (blastInfo.Damage > 0)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -495,7 +508,7 @@ namespace BDArmory.FX
                             eventToExecute.HitPoint + rb.velocity * TimeIndex);
                     }
                     var damage = 0f;
-                    if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit)) //false = armor blowthrough
+                    if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
                     {
                         damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
                     }
@@ -583,7 +596,8 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType, float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), bool isfx = false, float projectilemass = 0)
+        public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType, 
+            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), bool isfx = false, float projectilemass = 0, float caseLimiter = -1)
         {
             CreateObjectPool(explModelPath, soundPath);
 
@@ -611,6 +625,7 @@ namespace BDArmory.FX
             eFx.Direction = direction;
             eFx.isFX = isfx;
             eFx.ProjMass = projectilemass;
+            eFx.CASEClamp = caseLimiter;
             eFx.pEmitters = newExplosion.GetComponentsInChildren<KSPParticleEmitter>();
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
             if (tntMassEquivalent <= 5)

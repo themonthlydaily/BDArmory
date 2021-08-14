@@ -97,7 +97,8 @@ namespace BDArmory.Core.Extension
                                                float multiplier,
                                                float penetrationfactor,
                                                float bulletDmgMult,
-                                               float impactVelocity)
+                                               float impactVelocity, 
+                                               ExplosionSourceType sourceType)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
 
@@ -110,6 +111,23 @@ namespace BDArmory.Core.Extension
             float damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
+
+            switch (sourceType)
+            {
+                case ExplosionSourceType.Rocket:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * damage_;
+                    break;
+                case ExplosionSourceType.BattleDamage:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * damage_;
+                    break;
+                case ExplosionSourceType.Bullet:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * damage_;
+                    break;
+                default: // Other?
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * damage_;
+                    break;
+            }
+
 
             var damage_before = damage_;
             //////////////////////////////////////////////////////////
@@ -424,6 +442,18 @@ namespace BDArmory.Core.Extension
             {
                 case ExplosionSourceType.Missile:
                     //damage *= Mathf.Clamp(-0.0005f * armor + 1.025f, 0f, 0.5f); // Cap damage reduction at 50% (armor = 1050)					
+                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                    {
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000));
+                        Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
+                    }
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
+
+                    break;
+
+                case ExplosionSourceType.BattleDamage:
+                    //identical to missile for now, since fuel/ammo explosions can be mitigated by armor mass			
                     if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
                         Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
