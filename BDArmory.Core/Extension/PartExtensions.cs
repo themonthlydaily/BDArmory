@@ -97,7 +97,7 @@ namespace BDArmory.Core.Extension
                                                float multiplier,
                                                float penetrationfactor,
                                                float bulletDmgMult,
-                                               float impactVelocity, 
+                                               float impactVelocity,
                                                ExplosionSourceType sourceType)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
@@ -112,24 +112,24 @@ namespace BDArmory.Core.Extension
             switch (sourceType)
             {
                 case ExplosionSourceType.Rocket:
-                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
-                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
                 case ExplosionSourceType.BattleDamage:
-                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
-                            * 1e-4f * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
+                            * 1e-4f * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
                     break;
                 case ExplosionSourceType.Bullet:
-                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
-                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
                 default: // Other?    
-                    damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
-                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
             }
 

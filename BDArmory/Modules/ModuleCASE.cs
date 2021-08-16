@@ -156,13 +156,13 @@ namespace BDArmory.Modules
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, false, part.mass, 600 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
+                        ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-1", direction, false, part.mass, 600 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                     }                    
                 }
                 else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f * BDArmorySettings.BD_AMMO_DMG_MULT, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, null, direction, true);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-2", direction, true);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                     Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                     var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);
@@ -221,7 +221,6 @@ namespace BDArmory.Modules
                                                 }
                                             }
                                         }
-
                                     }
                                     else
                                     {
@@ -250,7 +249,7 @@ namespace BDArmory.Modules
 
             explDamage = 100;
             explDamage = Mathf.Clamp(explDamage, 0, ((float)ammoExplosionYield * 10));
-            explDamage *= explDamage * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
+            explDamage *= BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
             hitPart.AddDamage(explDamage);
             float armorToReduce = hitPart.GetArmorThickness() * 0.25f;
             hitPart.ReduceArmor(armorToReduce);
