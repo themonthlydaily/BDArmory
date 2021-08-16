@@ -152,6 +152,7 @@ namespace BDArmory.Control
         }
         /// <summary>
         /// Register individual rocket strikes.
+        /// Note: this includes both kinetic and explosive strikes, so a single rocket may count for two strikes.
         /// </summary>
         /// <param name="attacker"></param>
         /// <param name="victim"></param>
