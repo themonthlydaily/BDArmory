@@ -533,8 +533,6 @@ namespace BDArmory.FX
                                 break;
                             case ExplosionSourceType.BattleDamage:
                                 BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, tName, damage);
-                                if (BDACompetitionMode.Instance.Scores.Players.Contains(tName))
-                                    Debug.Log($"DEBUG {damage} damage from {SourceWeaponName} on part {part} of {tName} from {aName}");
                                 break;
                         }
                     }

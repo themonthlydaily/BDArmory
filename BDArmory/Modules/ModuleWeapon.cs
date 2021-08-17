@@ -1596,7 +1596,7 @@ namespace BDArmory.Modules
                                     pBullet.bulletDmgMult = bulletDmgMult;
 
                                     //A = π x (Ø / 2)^2
-                                    bulletDragArea = Mathf.PI * ((caliber / 2f) * (caliber / 2f));
+                                    bulletDragArea = Mathf.PI * 0.25f * caliber * caliber;
 
                                     //Bc = m/Cd * A
                                     bulletBallisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2

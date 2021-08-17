@@ -257,8 +257,6 @@ namespace BDArmory.Modules
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged, armor reduced by " + armorToReduce);
 
             BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, hitPart.vessel.GetName(), explDamage);
-            if (BDACompetitionMode.Instance.Scores.Players.Contains(hitPart.vessel.vesselName))
-                Debug.Log($"DEBUG {explDamage} damage from CASE-{CASELevel} on {hitPart.vessel.vesselName} from {SourceVessel}");
         }
 
         void OnDestroy()
