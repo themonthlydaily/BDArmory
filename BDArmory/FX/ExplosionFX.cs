@@ -532,7 +532,7 @@ namespace BDArmory.FX
                                 BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
                                 break;
                             case ExplosionSourceType.BattleDamage:
-                                BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, tName, damage);
+                                BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, part.vessel, damage);
                                 break;
                         }
                     }
@@ -593,7 +593,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType, 
+        public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
             float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), bool isfx = false, float projectilemass = 0, float caseLimiter = -1)
         {
             CreateObjectPool(explModelPath, soundPath);

@@ -115,7 +115,7 @@ namespace BDArmory.Misc
                     BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
                     break;
                 case ExplosionSourceType.BattleDamage:
-                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, tName, damage);
+                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, hitPart.vessel, damage);
                     break;
             }
         }

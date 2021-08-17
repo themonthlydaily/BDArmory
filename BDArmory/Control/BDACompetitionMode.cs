@@ -225,10 +225,13 @@ namespace BDArmory.Control
         /// <param name="victim"></param>
         /// <param name="damage"></param>
         /// <returns></returns>
-        public bool RegisterBattleDamage(string attacker, string victim, float damage)
+        public bool RegisterBattleDamage(string attacker, Vessel victimVessel, float damage)
         {
+            if (victimVessel == null) return false;
+            var victim = victimVessel.vesselName;
             if (damage <= 0 || attacker == null || victim == null || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false; // Note: we allow attacker=victim here to track self damage.
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
+            if (VesselModuleRegistry.GetModuleCount<MissileFire>(victimVessel) == 0) return false; // The victim is dead, but hasn't been registered as such yet. We want to check this here as it's common for BD to occur as the vessel is killed.
 
             if (ScoreData[victim].battleDamageFrom.ContainsKey(attacker)) { ScoreData[victim].battleDamageFrom[attacker] += damage; }
             else { ScoreData[victim].battleDamageFrom[attacker] = damage; }
