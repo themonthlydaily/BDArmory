@@ -509,7 +509,7 @@ namespace BDArmory.Bullets
                             if (penTicker > 0) currentVelocity *= 0.55f; //implement armor density modifying this ar some point?
                             flightTimeElapsed -= period;
 
-                            float bulletDragArea = Mathf.PI * Mathf.Pow(caliber / 2f, 2f); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
+                            float bulletDragArea = Mathf.PI * ((caliber / 2f) * (caliber / 2f)); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
                             ballisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
                         }
                         if (penetrationFactor >= 2)

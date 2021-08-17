@@ -177,7 +177,8 @@ namespace BDArmory.Misc
                         caliberModifier = 2;
                     }
                     spallCaliber = caliber * (caliberModifier / 2);
-                    spallMass = Mathf.Pow(0.5f * spallCaliber, 2) * Mathf.PI / 1000 * thickness * (density / 1000000);
+                    //spallMass = Mathf.Pow(0.5f * spallCaliber) * Mathf.PI / 1000 * thickness * (density / 1000000);
+                    spallMass = ((0.5f * spallCaliber) * (0.5f * spallCaliber)) * Mathf.PI / 1000 * thickness * (density / 1000000);
                     if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
                         Debug.Log("[BDArmory.ProjectileUtils]: Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass + "g");
@@ -196,7 +197,7 @@ namespace BDArmory.Misc
                     {
                         if (ductility < 0.05f) //ceramics
                         {
-                            volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 50), 2) * (50 * 50) * (thickness / 10)); //cm3
+                            volumeToReduce = ((Mathf.CeilToInt(caliber / 50) * Mathf.CeilToInt(caliber / 50)) * (50 * 50) * (thickness / 10)); //cm3
                             //total failue of 10x10cm armor tile(s)
                             if (BDArmorySettings.DRAW_ARMOR_LABELS)
                             {
@@ -210,7 +211,9 @@ namespace BDArmory.Misc
                     }
                     if (penetrationFactor > 0.66 && penetrationFactor < 1)
                     {
-                        spallCaliber = ((1 - penetrationFactor) + 1) * (Mathf.Pow(0.5f * caliber, 2) * Mathf.PI / 100);
+                        //spallCaliber = ((1 - penetrationFactor) + 1) * Mathf.Pow(0.5f * caliber) * Mathf.PI / 100);
+                        spallCaliber = ((1 - penetrationFactor) + 1) * (((0.5f * caliber) * (0.5f * caliber)) * Mathf.PI / 100);
+                        
                         volumeToReduce = spallCaliber; //cm3
                         spallMass = spallCaliber * (density / 10000);
                         if (BDArmorySettings.DRAW_ARMOR_LABELS)
@@ -225,7 +228,8 @@ namespace BDArmory.Misc
 
             if (volumeToReduce < 0)
             {
-                volumeToReduce = Mathf.Pow((0.5f * caliber * caliberModifier), 2) * Mathf.PI / 100 * (thickness / 10); //cm3
+                //volumeToReduce = Mathf.Pow(0.5f * caliber * caliberModifier,2) * Mathf.PI / 100 * (thickness / 10); //cm3
+                volumeToReduce = ((0.5f * caliber * caliberModifier) * (0.5f * caliber * caliberModifier)) * Mathf.PI / 100 * (thickness / 10); //cm3
             }
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
@@ -278,14 +282,22 @@ namespace BDArmory.Misc
                 float frangibility = 5000 * HERatio;
                 float shrapnelThickness = ((.0075f * Mathf.Pow((HERatio * 100), 1.05f)) + .06f) * caliber; //min thickness of material for HE to blow caliber size hole in steel
                 shrapnelThickness *= (950 / Strength) * (8000 / Density) * (Mathf.Sqrt(1100 / hardness)); //adjusted min thickness after material hardness/strength/density
-                float shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * detonationDist * detonationDist)), 0, (frangibility * .4f)); //fragments/m2 FIXME this gives NaN if detonationDist is 0!
+                float shrapnelCount;
+                if (detonationDist > 0)
+                {
+                    shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * detonationDist * detonationDist)), 0, (frangibility * .4f)); //fragments/m2
+                }
+                else //srf detonation
+                {
+                    shrapnelCount = frangibility * 0.4f;
+                }
                 shrapnelCount *= (float)(hitPart.radiativeArea / 3); //shrapnelhits/part
                 float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
                 float damage;
                 // go through and make sure all unit conversions correct
                 if (penetrationFactor == -1) //airburst/parts caught in AoE
                 {
-                    if (detonationDist > (5 * caliber))
+                    if (detonationDist > (5 * (caliber/1000))) //caliber in mm, not m
                     {
                         if (thickness < shrapnelThickness && shrapnelCount > 0)
                         {
@@ -322,7 +334,8 @@ namespace BDArmory.Misc
                         {
                             if (thickness < (shrapnelThickness * 1.7))//armor cracks; 
                             {
-                                volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 50), 2) * (50 * 50) * (thickness / 10)); //cm3
+                                //volumeToReduce = (Mathf.Pow(Mathf.CeilToInt(caliber / 50), 2) * (50 * 50) * (thickness / 10)); //cm3
+                                volumeToReduce = (Mathf.CeilToInt(caliber / 50) * Mathf.CeilToInt(caliber / 50)) * (50 * 50) * (thickness / 10); //cm3
                                 hitPart.ReduceArmor(volumeToReduce);
                                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                                 {
@@ -429,7 +442,8 @@ namespace BDArmory.Misc
                         {
                             if (ductility < 0.05f) //ceramics
                             {
-                                hitPart.ReduceArmor((Mathf.Pow(Mathf.CeilToInt(spallCaliber / 50), 2) * (50 * 50) * (thickness / 10))); //cm3
+                                //hitPart.ReduceArmor((Mathf.Pow(Mathf.CeilToInt(spallCaliber / 50), 2) * (50 * 50) * (thickness / 10))); //cm3
+                                hitPart.ReduceArmor((Mathf.CeilToInt(spallCaliber / 50) * Mathf.CeilToInt(spallCaliber / 50)) * (50 * 50) * (thickness / 10)); //cm3
                                 //total failue of 10x10cm armor tile(s)
                                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                                 {
@@ -599,7 +613,7 @@ namespace BDArmory.Misc
             {
                 density = 19;
             }
-            float bulletLength = (projMass * 1000) / (Mathf.Pow(0.5f * newCaliber, 2) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+            float bulletLength = (projMass * 1000) / (((0.5f * newCaliber) * (0.5f * newCaliber)) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
                                                                                                                          //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
@@ -621,11 +635,11 @@ namespace BDArmory.Misc
             if (impactVel > 1500 && caliber < 30) //hypervelocity KE penetrators, for convenience, assume any round moving this fast is made of Tungsten/Depleted ranium
             {
                 //caliber in mm, converted to length in cm, converted to mm
-                float length = ((projMass * 1000) / (Mathf.PI * (Mathf.Pow(0.5f * newCaliber, 2)) / 100 * 19) + 10) * 10;
+                float length = ((projMass * 1000) / (Mathf.PI * ((0.5f * newCaliber) * (0.5f * newCaliber)) / 100 * 19) + 10) * 10;
                 penetration = length * Mathf.Sqrt(19000 / Density); //at hypervelocity, impacts are akin to fluid displacement 
                 //penetration in mm
             }
-            else
+            else 
             {
                 penetration = ((Energy / (Mathf.PI * Mathf.Pow(caliber / 2 + (newCaliber / 2 * (2 * Ductility * Ductility)), 2) / 100 * Strength * (Density / 7850) * thickness)) * thickness * APmod);
             } //penetration in mm
@@ -674,7 +688,7 @@ namespace BDArmory.Misc
 
             if (building != null && building.IsIntact)
             {
-                float damageToBuilding = ((0.5f * (projMass * Mathf.Pow(currentVelocity.magnitude, 2)))
+                float damageToBuilding = ((0.5f * (projMass * (currentVelocity.magnitude * currentVelocity.magnitude)))
                             * (BDArmorySettings.DMG_MULTIPLIER / 100) * DmgMult
                             * 1e-4f);
                 damageToBuilding /= 8f;
