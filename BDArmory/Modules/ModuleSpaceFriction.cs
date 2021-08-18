@@ -35,7 +35,6 @@ namespace BDArmory.Modules
         float vesselAlt = 25;
         //public float driftMult = 2; //additional drag multipler for cornering/decellerating so things don't take the same amount of time to decelerate as they do to accelerate
 
-        private bool BDAcraft = false; //check to see if craft is active BDA craft, if not, unaffected by countergrav so debris crashes, etc
         public static bool GameIsPaused
         {
             get { return PauseMenu.isOpen || Time.timeScale == 0; }
@@ -60,19 +59,28 @@ namespace BDArmory.Modules
                 return SAI;
             }
         }
+        ModuleEngines Engine;
+        public ModuleEngines foundEngine
+        {
+            get
+            {
+                if (Engine) return Engine;
+                Engine = VesselModuleRegistry.GetModuleEngines(vessel).FirstOrDefault();
+                return Engine;
+            }
+        }
+        MissileFire MF;
+        public MissileFire weaponManager
+        {
+            get
+            {
+                if (MF) return MF;
+                MF = VesselModuleRegistry.GetMissileFire(vessel, true);
+                return MF;
+            }
+        }
         void Start()
         {
-            /*
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                if (pilot != null)
-                {
-                    Fields["FrictionEnabled"].guiActive = false;
-                    Fields["FrictionEnabled"].guiActiveEditor = false;
-                    Fields["AntiGravEnabled"].guiActive = false;
-                    Fields["AntiGravEnabled"].guiActiveEditor = false;
-                }
-            }*/
             if (HighLogic.LoadedSceneIsFlight)
             {
                 using (var engine = VesselModuleRegistry.GetModules<ModuleEngines>(vessel).GetEnumerator())
@@ -82,18 +90,6 @@ namespace BDArmory.Modules
                             frictMult += (engine.Current.maxThrust * (engine.Current.thrustPercentage/100)); 
                         //have this called onvesselModified?
                     }
-                if (pilot != null || driver != null)
-                {
-                    BDAcraft = true;
-                    Debug.Log("[SpaceFriction] AI is: " + pilot + "; SAI is" + driver);
-                }
-
-                //add some additional code to pilot Ai so if in null atmo, can do broadside approach (steal from surfaceAI)?
-                //not sure how to implement it, since if this kicks on at runtime, and doesn't ahve user-accesible toggles...
-                //alt plan would be build a new Space AI class that has the frict module at its core, and is basically 90% pilotAi with some surface Ai stuff added
-                //if that route taken, would need to find everything that looks for AIs and add in the space AI so it's properly reconnized
-                //if (BDArmorySettings.DRAW_DEBUG_LABELS) 
-                //Debug.Log("[Spacehacks] frictMult for " + part.vessel.GetName() + " is " + frictMult.ToString("0.00"));
             }
         }
 
@@ -124,8 +120,7 @@ namespace BDArmory.Modules
                     }
                     if (BDArmorySettings.SF_GRAVITY || AntiGravOverride) //have this disabled if no engines left?
                     {
-                        if ((BDAcraft && (pilot != null || driver != null)) || //have pilotless craft fall
-                            (!BDAcraft))
+                        if (weaponManager != null && foundEngine != null) //have engineless craft fall
                         {
                             for (int i = 0; i < part.vessel.Parts.Count; i++)
                             {
@@ -141,9 +136,8 @@ namespace BDArmory.Modules
                 {
                     if (BDArmorySettings.SF_REPULSOR)
                     {
-                        if ((BDAcraft && (pilot != null || driver != null)) || //have pilotless craft fall
-                            (!BDAcraft))
-                        {
+                            if ((pilot != null || driver != null) && foundEngine != null)
+                            {
                             vesselAlt = 10;
                             if (AI != null)
                             {

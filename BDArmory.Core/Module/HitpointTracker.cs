@@ -109,8 +109,8 @@ namespace BDArmory.Core.Module
         AttachNode bottom;
         AttachNode top;
 
-        public string defaultShader;
-        public Color defaultColor;
+        public List<Shader> defaultShader;
+        public List<Color> defaultColor;
 
         #endregion KSP Fields
 
@@ -312,12 +312,14 @@ namespace BDArmory.Core.Module
             {
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship); //will error if called in flightscene
             }
-            var r = part.GetComponentInChildren<Renderer>();
-            if (r != null)
+            var r = part.GetComponentsInChildren<Renderer>();
             {
-                defaultShader = r.material.shader.name;
-                defaultColor = r.material.color;
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r.material.shader.name);
+                for (int i = 0; i < r.Length; i++)
+                {
+                    defaultShader.Add(r[i].material.shader);
+                    if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r[i].material.shader.name);
+                    defaultColor.Add(r[i].material.color);
+                }
             }
             if (HighLogic.LoadedSceneIsFlight)
             {

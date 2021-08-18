@@ -423,6 +423,7 @@ namespace BDArmory.UI
                             {
                                 for (int i = 0; i < r.Length; i++)
                                 {
+                                    if (r[i].material.shader.name.Contains("Alpha")) continue;
                                     r[i].material.shader = Shader.Find("KSP/Unlit");
                                     r[i].material.SetColor("_Color", VisualizerColor);
                                 }
@@ -441,8 +442,15 @@ namespace BDArmory.UI
                         {
                             for (int i = 0; i < r.Length; i++)
                             {
-                                r[i].material.shader = Shader.Find(armor.defaultShader);
-                                r[i].material.SetColor("_Color", armor.defaultColor);
+                                try
+                                {
+                                    r[i].material.shader = armor.defaultShader[i];
+                                    r[i].material.SetColor("_Color", armor.defaultColor[i]);
+                                }
+                                catch
+                                {
+                                    //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
+                                }
                             }
                         }
                     }

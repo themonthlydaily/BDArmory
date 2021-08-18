@@ -538,7 +538,7 @@ namespace BDArmory.Control
                 // Fix control point orientation by setting the reference transformation to that of the root part.
                 spawnedVessels[vesselName].Item1.SetReferenceTransform(spawnedVessels[vesselName].Item1.rootPart);
 
-                if (!spawnAirborne)
+                if (!spawnAirborne || BDArmorySettings.SF_GRAVITY) //spawn parallel to ground if surface or space spawning
                 {
                     vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal.
                     vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(shipFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
@@ -563,6 +563,14 @@ namespace BDArmory.Control
                     }
                 }
                 vessel.SetPosition(finalSpawnPositions[vesselName]);
+                if (BDArmorySettings.SPACE_HACKS)
+                {
+                    var SF = vessel.rootPart.FindModuleImplementing<ModuleSpaceFriction>();
+                    if (SF == null)
+                    {
+                        SF = (ModuleSpaceFriction)vessel.rootPart.AddModule("ModuleSpaceFriction");
+                    }
+                }
                 Debug.Log("[BDArmory.VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
             }
             #endregion
