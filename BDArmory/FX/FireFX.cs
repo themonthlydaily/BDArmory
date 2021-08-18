@@ -31,9 +31,8 @@ namespace BDArmory.FX
         private float startTime;
         public bool hasFuel = true;
         public float burnRate = 1;
-        private float tntMassEquivilent = 0;
+        private float tntMassEquivalent = 0;
         public bool surfaceFire = false;
-        float ScoreAccumulator = 0;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
@@ -46,7 +45,7 @@ namespace BDArmory.FX
 
         private KerbalSeat Seat;
         ModuleEngines engine;
-        bool lookedForEngine = false;
+        // bool lookedForEngine = false;
 
         KSPParticleEmitter[] pEmitters;
         void OnEnable()
@@ -57,6 +56,7 @@ namespace BDArmory.FX
                 return;
             }
             hasFuel = true;
+            tntMassEquivalent = 0;
             startTime = Time.time;
             engine = parentPart.FindModuleImplementing<ModuleEngines>();
             var leak = parentPart.FindModuleImplementing<ModuleDrainFuel>();
@@ -131,8 +131,9 @@ namespace BDArmory.FX
             }
         }
 
-        void onDisable()
+        void OnDisable()
         {
+            // Clean up emitters.
             BDArmorySetup.numberOfParticleEmitters--;
             foreach (var pe in pEmitters)
                 if (pe != null)
@@ -140,6 +141,15 @@ namespace BDArmory.FX
                     pe.emit = false;
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
+            // Clean up part and resource references.
+            parentPart = null;
+            Seat = null;
+            engine = null;
+            fuel = null;
+            solid = null;
+            ox = null;
+            ec = null;
+            mp = null;
         }
 
         void Update()
@@ -154,11 +164,11 @@ namespace BDArmory.FX
             {
                 if (!surfaceFire) //is fire inside tank, or an incendiary substance on the part's surface?
                 {
-                    if (!lookedForEngine)
-                    {
-                        engine = parentPart.FindModuleImplementing<ModuleEngines>();
-                        lookedForEngine = true; //have this only called once, not once per update tick
-                    }
+                    // if (!lookedForEngine) // This is done in OnEnable.
+                    // {
+                    //     engine = parentPart.FindModuleImplementing<ModuleEngines>();
+                    //     lookedForEngine = true; //have this only called once, not once per update tick
+                    // }
                     if (engine != null)
                     {
                         if (engine.throttleLocked && !engine.allowShutdown) //likely a SRB
@@ -176,8 +186,9 @@ namespace BDArmory.FX
                                 }
                                 if (solid.amount < solid.maxAmount * 0.15f)
                                 {
-                                    tntMassEquivilent += Mathf.Clamp((float)solid.amount, ((float)solid.maxAmount * 0.05f), ((float)solid.maxAmount * 0.2f));
+                                    tntMassEquivalent += Mathf.Clamp((float)solid.amount, ((float)solid.maxAmount * 0.05f), ((float)solid.maxAmount * 0.2f));
                                     Detonate(); //casing's full of holes and SRB fuel's burnt to the point it can easily start venting through those holes
+                                    return;
                                 }
                             }
                         }
@@ -214,6 +225,7 @@ namespace BDArmory.FX
                                 else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
                                 {
                                     Detonate();
+                                    return;
                                 }
                                 else
                                 {
@@ -247,6 +259,7 @@ namespace BDArmory.FX
                             else if (mp.amount < (mp.maxAmount * 0.15f) && mp.amount > (mp.maxAmount * 0.10f))
                             {
                                 Detonate();
+                                return;
                             }
                             else
                             {
@@ -274,6 +287,7 @@ namespace BDArmory.FX
                                 if ((Time.time - startTime > 30) && engine == null)
                                 {
                                     Detonate();
+                                    return;
                                 }
                             }
                         }
@@ -312,46 +326,7 @@ namespace BDArmory.FX
                     }
                     ////////////////////////////////////////////////
 
-                    ScoreAccumulator = 0;
-                    var aName = SourceVessel;
-                    var tName = parentPart.vessel.GetName();
-
-                    if (aName != null && tName != null && aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
-                    {
-                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                        {
-                            BDAScoreService.Instance.TrackDamage(aName, tName, BDArmorySettings.BD_FIRE_DAMAGE);
-                        }
-                        // Track damage. Moving this here to properly track damage per tick
-                        var tData = BDACompetitionMode.Instance.Scores[tName];
-                        if (tData.damageFromBullets.ContainsKey(aName))
-                            tData.damageFromBullets[aName] += BDArmorySettings.BD_FIRE_DAMAGE;
-                        else
-                            tData.damageFromBullets.Add(aName, BDArmorySettings.BD_FIRE_DAMAGE);
-
-                        if (ScoreAccumulator >= 1) //could be reduced, gaining +1 hit per sec, per fire seems high
-                        {
-                            var aData = BDACompetitionMode.Instance.Scores[aName];
-                            aData.Score += 1;
-
-                            if (parentPart.vessel.GetName() == "Pinata")
-                            {
-                                aData.PinataHits++;
-                            }
-                            tData.lastPersonWhoHitMe = aName;
-                            tData.lastHitTime = Planetarium.GetUniversalTime();
-                            tData.everyoneWhoHitMe.Add(aName);
-                            // Track hits
-                            if (tData.hitCounts.ContainsKey(aName))
-                                ++tData.hitCounts[aName];
-                            else
-                                tData.hitCounts.Add(aName, 1);
-                        }
-                    }
-                    else
-                    {
-                        ScoreAccumulator += 1 * Time.deltaTime;
-                    }
+                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
             if ((!hasFuel && disableTime < 0 && burnTime < 0) || (burnTime > 0 && disableTime < 0 && Time.time - startTime > burnTime))
@@ -371,7 +346,7 @@ namespace BDArmory.FX
             }
             if (disableTime > 0 && Time.time - disableTime > _highestEnergy) //wait until last emitted particle has finished
             {
-                gameObject.SetActive(false);
+                Deactivate();
             }
             if (engine != null && enginerestartTime > 0 && Time.time - 10 > enginerestartTime)
             {
@@ -384,19 +359,23 @@ namespace BDArmory.FX
 
         void Detonate()
         {
+            if (surfaceFire) return;
             if (!parentPart.partName.Contains("exploding"))
             {
                 bool excessFuel = false;
                 parentPart.partName += "exploding";
                 PartResource fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
+                float tntFuel = 0, tntOx = 0, tntMP = 0, tntEC = 0;
                 if (fuel != null)
                 {
-                    tntMassEquivilent += (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f)) / 2);
+                    tntFuel = (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f)) / 2);
+                    tntMassEquivalent += tntFuel;
                     if (fuel != null && ox != null)
                     {
-                        tntMassEquivilent += (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f)) / 2);
-                        tntMassEquivilent *= 1.3f;
+                        tntOx = (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f)) / 2);
+                        tntMassEquivalent += tntOx;
+                        tntMassEquivalent *= 1.3f;
                     }
                     if (fuel.amount > fuel.maxAmount * 0.3f)
                     {
@@ -406,29 +385,32 @@ namespace BDArmory.FX
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
                 if (mp != null)
                 {
-                    tntMassEquivilent += (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f)) / 3);
+                    tntMP = (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f)) / 3);
+                    tntMassEquivalent += tntMP;
                     if (mp.amount > mp.maxAmount * 0.3f)
                     {
                         excessFuel = true;
                     }
                 }
+                tntMassEquivalent /= 6f; //make this not have a 1 to 1 ratio of fuelmass -> tntmass
                 PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
                 if (ec != null)
                 {
-                    tntMassEquivilent += ((float)ec.maxAmount / 5000); //fix for cockpit batteries weighing a tonne+
+                    tntEC = ((float)ec.maxAmount / 5000); //fix for cockpit batteries weighing a tonne+
+                    tntMassEquivalent += tntEC;
                     ec.maxAmount = 0;
                     ec.isVisible = false;
                     parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
                 }
-                tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
+                if (BDArmorySettings.DRAW_DEBUG_LABELS && tntMassEquivalent > 0)
                 {
-                    Debug.Log("[BDArmory.FireFX] Fuel Explosion in " + this.parentPart.name + ", TNT mass equivilent " + tntMassEquivilent);
+                    Debug.Log("[BDArmory.FireFX] Fuel Explosion in " + this.parentPart.name + ", TNT mass equivalent " + tntMassEquivalent + $" (Fuel: {tntFuel / 6f}, Ox: {tntOx / 6f}, MP: {tntMP / 6f}, EC: {tntEC})");
                 }
                 if (excessFuel)
                 {
-                    float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivilent);
+                    float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivalent);
                     using (var blastHits = Physics.OverlapSphere(parentPart.transform.position, blastRadius, 9076737).AsEnumerable().GetEnumerator())
                     {
                         while (blastHits.MoveNext())
@@ -453,7 +435,7 @@ namespace BDArmory.FX
                                         if (p == partHit)
                                         {
                                             if (rb == null) return;
-                                            BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)));
+                                            BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
                                                 Debug.Log("[BDArmory.FireFX] " + this.parentPart.name + " hit by burning fuel");
@@ -469,14 +451,17 @@ namespace BDArmory.FX
                         }
                     }
                 }
-                ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivilent, explModelPath, explSoundPath, ExplosionSourceType.Bullet, 0, null, parentPart.vessel != null ? parentPart.vessel.name : null, null);
-                // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
-                gameObject.SetActive(false);
+                if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
+                {
+                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "fuel");
+                }
             }
+            Deactivate();
         }
 
         public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset, string sourcevessel, float burnTime = -1)
         {
+            if (hitPart == null) return;
             parentPart = hitPart;
             transform.SetParent(hitPart.transform);
             transform.position = hit.point + offset;
@@ -489,21 +474,23 @@ namespace BDArmory.FX
 
         public void OnParentDestroy()
         {
-            if (parentPart)
+            if (parentPart != null)
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                if (gameObject.activeInHierarchy)
-                    Detonate();
-                parentPart = null;
-                transform.parent = null;
-                gameObject.SetActive(false);
+                if (!surfaceFire) Detonate();
+                else Deactivate();
             }
         }
 
-        public void OnDestroy()
+        void Deactivate()
         {
-            OnParentDestroy();
+            if (gameObject.activeInHierarchy)
+            {
+                parentPart = null;
+                transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.
+                gameObject.SetActive(false);
+            }
         }
     }
 }

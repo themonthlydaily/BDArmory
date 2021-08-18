@@ -413,7 +413,6 @@ namespace BDArmory.FX
                 }
             }
         }
-        // FIXME Use an object pool for flames?          
 
         public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel)
 
