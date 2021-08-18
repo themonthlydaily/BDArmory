@@ -109,6 +109,9 @@ namespace BDArmory.Core.Module
         AttachNode bottom;
         AttachNode top;
 
+        public string defaultShader;
+        public Color defaultColor;
+
         #endregion KSP Fields
 
         #region Heart Bleed
@@ -307,8 +310,15 @@ namespace BDArmory.Core.Module
             HullSetup(null, null); //reaquire hull mass adjust for mass calcs
             if (HighLogic.LoadedSceneIsEditor)
             {
-                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship); //will error if called in flightscene
-            }           
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            }
+            var r = part.GetComponentInChildren<Renderer>();
+            if (r != null)
+            {
+                defaultShader = r.material.shader.name;
+                defaultColor = r.material.color;
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r.material.shader.name);
+            }
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part mass is: " + partMass + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
@@ -574,17 +584,13 @@ namespace BDArmory.Core.Module
         public void overrideArmorSetFromConfig()
         {
             ArmorSet = true;
-            if (ArmorThickness != 0)
+            if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
             {
+                startsArmored = true;
                 Armor = ArmorThickness;
-                maxSupportedArmor = ArmorThickness;
-                if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
-                {
-                    startsArmored = true;
-                    UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
-                    armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
-                    ArmorTypeNum = 2;
-                }
+                UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
+                armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
+                ArmorTypeNum = 2;
             }
             if (maxSupportedArmor < 0) //hasn't been set in cfg
             {
