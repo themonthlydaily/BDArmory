@@ -138,6 +138,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
+        [BDAPersistantSettingsField] public static bool MUTATOR_MODE = true;
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
@@ -211,6 +212,13 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SF_GRAVITY = false;
         [BDAPersistantSettingsField] public static bool SF_REPULSOR = false;
         [BDAPersistantSettingsField] public static float SF_DRAGMULT = 2f;
+
+        //Mutator Mode
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_GLOBAL = false;
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_KILL = false;
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_TIMER = false;
+        [BDAPersistantSettingsField] public static float MUTATOR_DURATION = 30;
+        [BDAPersistantSettingsField] public static string MUTATOR_LIST = "";
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.

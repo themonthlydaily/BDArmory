@@ -183,6 +183,7 @@
     <Compile Include="Modules\Animation\BDALookConstraintUp.cs" />
     <Compile Include="Modules\Animation\BDAScaleByDistance.cs" />
     <Compile Include="Modules\BDAdjustableRail.cs" />
+    <Compile Include="Modules\BDAMutator.cs" />
     <Compile Include="Modules\BDExplosivePart.cs" />
     <Compile Include="Modules\BDGenericAIBase.cs" />
     <Compile Include="Modules\BDMMLauncher.cs" />
