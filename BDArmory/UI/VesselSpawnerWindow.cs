@@ -11,64 +11,6 @@ namespace BDArmory.UI
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class VesselSpawnerWindow : MonoBehaviour
     {
-        private class SpawnField : MonoBehaviour
-        {
-            public SpawnField Initialise(double l, double v, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; currentValue = v; minValue = minV; maxValue = maxV; return this; }
-            public double lastUpdated;
-            public string possibleValue = string.Empty;
-            private double _value;
-            public double currentValue { get { return _value; } set { _value = value; possibleValue = _value.ToString("G6"); } }
-            private double minValue;
-            private double maxValue;
-            private bool coroutineRunning = false;
-            private Coroutine coroutine;
-
-            public void tryParseValue(string v)
-            {
-                if (v != possibleValue)
-                {
-                    lastUpdated = !string.IsNullOrEmpty(v) ? Time.time : Time.time + 0.5; // Give the empty string an extra 0.5s.
-                    possibleValue = v;
-                    if (!coroutineRunning)
-                    {
-                        coroutine = StartCoroutine(UpdateValueCoroutine());
-                    }
-                }
-            }
-
-            IEnumerator UpdateValueCoroutine()
-            {
-                coroutineRunning = true;
-                while (Time.time - lastUpdated < 0.5)
-                    yield return new WaitForFixedUpdate();
-                tryParseCurrentValue();
-                coroutineRunning = false;
-                yield return new WaitForFixedUpdate();
-            }
-
-            void tryParseCurrentValue()
-            {
-                double newValue;
-                if (double.TryParse(possibleValue, out newValue))
-                {
-                    currentValue = Math.Min(Math.Max(newValue, minValue), maxValue);
-                    lastUpdated = Time.time;
-                }
-                possibleValue = currentValue.ToString("G6");
-            }
-
-            // Parse the current possible value immediately.
-            public void tryParseValueNow()
-            {
-                tryParseCurrentValue();
-                if (coroutineRunning)
-                {
-                    StopCoroutine(coroutine);
-                    coroutineRunning = false;
-                }
-            }
-        }
-
         #region Fields
         public static VesselSpawnerWindow Instance;
         private int _guiCheckIndex;
@@ -79,14 +21,7 @@ namespace BDArmory.UI
         private float _windowWidth;
         public bool _ready = false;
         private bool _vesselsSpawned = false;
-        Dictionary<string, SpawnField> spawnFields;
-
-        // FIXME RUNWAY_PROJECT Round 3
-        // VesselSpawner.SpawnConfig targetSpawnConfig;
-        // static Dictionary<string, SpawnField> targetSpawnFields;
-        // static float competitionStartDelay = 15;
-        // FIXME Round 4
-        public bool round4running = false;
+        Dictionary<string, NumericInputField> spawnFields;
         #endregion
         #region GUI strings
         string tournamentStyle = "RNG";
@@ -174,31 +109,11 @@ namespace BDArmory.UI
             leftLabel.normal.textColor = Color.white;
 
             // Spawn fields
-            spawnFields = new Dictionary<string, SpawnField> {
-                { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, -90, 90) },
-                { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
-                { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE) },
+            spawnFields = new Dictionary<string, NumericInputField> {
+                { "lat", gameObject.AddComponent<NumericInputField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, -90, 90) },
+                { "lon", gameObject.AddComponent<NumericInputField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
+                { "alt", gameObject.AddComponent<NumericInputField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE) },
             };
-            // if (BDArmorySettings.RUNWAY_PROJECT)
-            // {
-            //     targetSpawnConfig = new VesselSpawner.SpawnConfig(
-            //         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-            //         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-            //         5000,
-            //         1000,
-            //         true,
-            //         BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-            //         true,
-            //         true,
-            //         "Targets"
-            //     );
-
-            //     targetSpawnFields = new Dictionary<string, SpawnField> {
-            //         { "lat", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.latitude + 1, -90, 90) },
-            //         { "lon", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.longitude, -180, 180) },
-            //         { "alt", gameObject.AddComponent<SpawnField>().Initialise(0, targetSpawnConfig.altitude, 0) },
-            //     };
-            // }
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -468,13 +383,6 @@ namespace BDArmory.UI
                         spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
                         spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
                         VesselSpawner.Instance.ShowSpawnPoint(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
-                        // if (BDArmorySettings.RUNWAY_PROJECT) // FIXME Round 3
-                        // {
-                        //     targetSpawnConfig.latitude = spawnLocation.location.x;
-                        //     targetSpawnConfig.longitude = spawnLocation.location.y;
-                        //     targetSpawnFields["lat"].currentValue = spawnLocation.location.x + 1;
-                        //     targetSpawnFields["lon"].currentValue = spawnLocation.location.y;
-                        // }
                     }
                 }
                 line += (i - 1) / 4;
@@ -575,50 +483,6 @@ namespace BDArmory.UI
                 }
             }
 
-            /*
-            // Special settings for season 2 round 3
-            if (BDArmorySettings.RUNWAY_PROJECT)
-            {
-                ++line;
-                if (GUI.Button(SLeftButtonRect(++line), Localizer.Format("Set target spawn here"), BDArmorySetup.BDGuiSkin.button)) //"Vessel Spawning Location"
-                {
-                    Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
-                    RaycastHit hit;
-                    if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
-                    {
-                        var geoCoords = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
-                        targetSpawnFields["lat"].currentValue = geoCoords.x;
-                        targetSpawnFields["lon"].currentValue = geoCoords.y;
-                    }
-                }
-                rects = SRight3Rects(line);
-                targetSpawnFields["lat"].tryParseValue(GUI.TextField(rects[0], targetSpawnFields["lat"].possibleValue, 8));
-                targetSpawnFields["lon"].tryParseValue(GUI.TextField(rects[1], targetSpawnFields["lon"].possibleValue, 8));
-                targetSpawnFields["alt"].tryParseValue(GUI.TextField(rects[2], targetSpawnFields["alt"].possibleValue, 8));
-
-                targetSpawnConfig.latitude = Math.Min(Math.Max(targetSpawnFields["lat"].currentValue, -90), 90);
-                targetSpawnConfig.longitude = Math.Min(Math.Max(targetSpawnFields["lon"].currentValue, -180), 180);
-                targetSpawnConfig.altitude = Math.Max(0, (float)targetSpawnFields["alt"].currentValue);
-                targetSpawnConfig.absDistanceOrFactor = GUI.Toggle(SLeftRect(++line), targetSpawnConfig.absDistanceOrFactor, Localizer.Format("Target distance: abs vs factor"));  // Toggle between distance factor and absolute distance.
-                if (targetSpawnConfig.absDistanceOrFactor)
-                { // Absolute distance
-                    var value = targetSpawnConfig.distance < 100 ? targetSpawnConfig.distance / 10 : targetSpawnConfig.distance < 1000 ? 9 + targetSpawnConfig.distance / 100 : targetSpawnConfig.distance < 10000 ? 18 + targetSpawnConfig.distance / 1000 : 26 + targetSpawnConfig.distance / 5000;
-                    var displayValue = targetSpawnConfig.distance < 1000 ? targetSpawnConfig.distance.ToString("0") + "m" : (targetSpawnConfig.distance / 1000).ToString("0") + "km";
-                    GUI.Label(SLeftSliderRect(++line), $"Target spawn distance:  ({displayValue})", leftLabel);//Spawn Distance
-                    value = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), value, 1f, 30f));
-                    targetSpawnConfig.distance = value < 10 ? 10 * value : value < 19 ? 100 * (value - 9) : value < 28 ? 1000 * (value - 18) : 5000 * (value - 26);
-                }
-                else
-                { // Distance factor
-                    GUI.Label(SLeftSliderRect(++line), $"Target spawn distance factor:  ({targetSpawnConfig.distance})", leftLabel);//Spawn Distance Factor
-                    targetSpawnConfig.distance = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetSpawnConfig.distance / 10f, 1f, 10f) * 10f);
-                }
-                // Countdown
-                GUI.Label(SLeftSliderRect(++line), $"Countdown:  ({competitionStartDelay}s)", leftLabel); // Countdown
-                competitionStartDelay = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), competitionStartDelay, 0f, 30f));
-            }
-            */
-
             ++line;
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_SingleSpawn"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
@@ -646,50 +510,7 @@ namespace BDArmory.UI
                     VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, true, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels continuously at 1km above terrain.
                 }
             }
-            /*
-            // Special buttons for special rounds.
-            if (BDArmorySettings.RUNWAY_PROJECT)
-            {
-                if (GUI.Button(SLineRect(++line), Localizer.Format("Runway Project Season 2 Round 3"), _vesselsSpawned ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)) // FIXME For round 3 only.
-                {
-                    BDATournament.Instance.StopTournament();
-                    if (!_vesselsSpawned && !VesselSpawner.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
-                    {
-                        Debug.Log("[BDArmory.VesselSpawnerWindow]: Spawning 'Round 3' configuration.");
-                        _vesselsSpawned = true;
-                        VesselSpawner.Instance.TeamSpawn(
-                            new List<VesselSpawner.SpawnConfig> {
-                                new VesselSpawner.SpawnConfig(
-                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                                    BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                                    BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                                    BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                                    true,
-                                    true,
-                                    ""
-                                ),
-                                targetSpawnConfig
-                            },
-                            true, // Start the competition.
-                            competitionStartDelay, // Wait for the target planes to get going first.
-                            true // Enable startCompetitionNow so the competition starts as soon as the missiles have launched.
-                        ); // FIXME, this is temporary
-                    }
-                }
-            }
-            */
-            /* 
-            if (BDArmorySettings.RUNWAY_PROJECT)
-            {
-                if (GUI.Button(SLineRect(++line), "Runway Project Season 2 Round 4", !(round4running && BDATournament.Instance.tournamentStatus != TournamentStatus.Completed) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
-                {
-                    round4running = true;
-                    BDATournament.Instance.RunTournament();
-                }
-            }
-            */
+
             if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || VesselSpawner.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
             {
                 if (_vesselsSpawned)
@@ -699,7 +520,6 @@ namespace BDArmory.UI
                     Debug.Log("[BDArmory.VesselSpawnerWindow]: Resetting continuous spawning button.");
                 BDATournament.Instance.StopTournament();
                 VesselSpawner.Instance.CancelVesselSpawn();
-                round4running = false; // FIXME Round 4
             }
 
             line += 1.25f; // Bottom internal margin

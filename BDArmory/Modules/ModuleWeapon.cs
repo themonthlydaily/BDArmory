@@ -313,7 +313,7 @@ namespace BDArmory.Modules
         [KSPField]
         public string fireAnimName = "fireAnim";
 
-        AnimationState[] fireState;
+        AnimationState[] fireState = new AnimationState[0];
         //private List<AnimationState> fireState;
 
         [KSPField]
@@ -1603,7 +1603,7 @@ namespace BDArmory.Modules
                                     pBullet.bulletDmgMult = bulletDmgMult;
 
                                     //A = π x (Ø / 2)^2
-                                    bulletDragArea = Mathf.PI * Mathf.Pow(caliber / 2f, 2f);
+                                    bulletDragArea = Mathf.PI * 0.25f * caliber * caliber;
 
                                     //Bc = m/Cd * A
                                     bulletBallisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
@@ -1804,10 +1804,7 @@ namespace BDArmory.Modules
                         for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
                         {
                             timeFired = Time.time - iTime;
-                            if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                            {
-                                ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
-                            }
+                            BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                             LaserBeam(aName);
                             if (hasFireAnimation)
                             {
@@ -1835,10 +1832,7 @@ namespace BDArmory.Modules
                         BeamTracker += 0.02f;
                         if (BeamTracker > beamScoreTime)
                         {
-                            if (BDACompetitionMode.Instance && BDACompetitionMode.Instance.Scores.ContainsKey(aName))
-                            {
-                                ++BDACompetitionMode.Instance.Scores[aName].shotsFired;
-                            }
+                            BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                         }
                         for (float iTime = TimeWarp.fixedDeltaTime; iTime >= 0; iTime -= timeGap)
                             timeFired = Time.time - iTime;
@@ -2017,52 +2011,25 @@ namespace BDArmory.Modules
 
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
-                                if (aName != tName && BDACompetitionMode.Instance.Scores.ContainsKey(aName) && BDACompetitionMode.Instance.Scores.ContainsKey(tName))
+                                if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
                                 {
-                                    // Always score damage.
-                                    if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                    {
-                                        BDAScoreService.Instance.TrackDamage(aName, tName, damage);
-                                    }
-                                    var tData = BDACompetitionMode.Instance.Scores[tName];
-                                    if (tData.damageFromBullets.ContainsKey(aName))
-                                        tData.damageFromBullets[aName] += damage;
-                                    else
-                                        tData.damageFromBullets.Add(aName, damage);
                                     if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
                                     {
                                         ScoreAccumulator = 0;
-                                        if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-                                        {
-                                            BDAScoreService.Instance.TrackHit(aName, tName, WeaponName, distance);
-                                        }
-                                        var aData = BDACompetitionMode.Instance.Scores[aName];
-                                        aData.Score += 1;
-                                        if (p.vessel.GetName() == "Pinata")
-                                        {
-                                            aData.PinataHits++;
-                                        }
-                                        tData.lastPersonWhoHitMe = aName;
-                                        tData.lastHitTime = Planetarium.GetUniversalTime();
-                                        tData.everyoneWhoHitMe.Add(aName);
-                                        if (tData.hitCounts.ContainsKey(aName))
-                                            ++tData.hitCounts[aName];
-                                        else
-                                            tData.hitCounts.Add(aName, 1);
+                                        BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
                                     }
                                     else
                                     {
                                         ScoreAccumulator += TimeWarp.fixedDeltaTime;
                                     }
                                 }
-                            }
 
-                            if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
-                            {
-                                BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0, weaponManager.Team.Name);
+                                if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
+                                {
+                                    BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0, weaponManager.Team.Name);
+                                }
                             }
                         }
-
                     }
                     else
                     {
@@ -2454,20 +2421,20 @@ namespace BDArmory.Modules
             for (int i = 0; i < muzzleFlashList.Count; i++)
             {
                 if ((!useRippleFire || fireState.Length == 1) || useRippleFire && i == barrelIndex)
-                //muzzle flash
-                using (List<KSPParticleEmitter>.Enumerator pEmitter = muzzleFlashList[i].GetEnumerator())
-                    while (pEmitter.MoveNext())
-                    {
-                        if (pEmitter.Current == null) continue;
-                        if (pEmitter.Current.useWorldSpace && !oneShotWorldParticles) continue;
-                        if (pEmitter.Current.maxEnergy < 0.5f)
+                    //muzzle flash
+                    using (List<KSPParticleEmitter>.Enumerator pEmitter = muzzleFlashList[i].GetEnumerator())
+                        while (pEmitter.MoveNext())
                         {
-                            float twoFrameTime = Mathf.Clamp(Time.deltaTime * 2f, 0.02f, 0.499f);
-                            pEmitter.Current.maxEnergy = twoFrameTime;
-                            pEmitter.Current.minEnergy = twoFrameTime / 3f;
+                            if (pEmitter.Current == null) continue;
+                            if (pEmitter.Current.useWorldSpace && !oneShotWorldParticles) continue;
+                            if (pEmitter.Current.maxEnergy < 0.5f)
+                            {
+                                float twoFrameTime = Mathf.Clamp(Time.deltaTime * 2f, 0.02f, 0.499f);
+                                pEmitter.Current.maxEnergy = twoFrameTime;
+                                pEmitter.Current.minEnergy = twoFrameTime / 3f;
+                            }
+                            pEmitter.Current.Emit();
                         }
-                        pEmitter.Current.Emit();
-                    }
                 using (List<BDAGaplessParticleEmitter>.Enumerator gpe = gaplessEmitters.GetEnumerator())
                     while (gpe.MoveNext())
                     {

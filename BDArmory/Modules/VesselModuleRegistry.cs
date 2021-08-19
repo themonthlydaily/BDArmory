@@ -138,7 +138,7 @@ namespace BDArmory.Modules
         /// <param name="vessel">The vessel that was modified.</param>
         public void OnVesselModifiedHandler(Vessel vessel)
         {
-            if (vessel == null || !vessel.loaded || vessel.packed) return;
+            if (vessel == null || !vessel.loaded) return;
             if (vesselPartCounts.ContainsKey(vessel) && vessel.Parts.Count == vesselPartCounts[vessel]) return; // Already done.
 
             var partsAdded = vesselPartCounts.ContainsKey(vessel) && vessel.Parts.Count > vesselPartCounts[vessel];
@@ -624,6 +624,28 @@ namespace BDArmory.Modules
                 Debug.Log($"DEBUG {FlightGlobals.ActiveVessel} has {count / iters} weapon managers, checked at {iters / (Time.realtimeSinceStartup - startTime)}/s via VesselModuleRegistry.GetMissileFire(vessel, true)");
             }
             BDACompetitionMode.Instance.competitionStatus.Add("VesselModuleRegistry performance test complete.");
+        }
+
+        public void DumpRegistriesFor(Vessel vessel)
+        {
+            if (registry.ContainsKey(vessel))
+            {
+                foreach (var type in registry[vessel].Keys)
+                    Debug.Log($"DEBUG {vessel.vesselName} has {registry[vessel][type].Count} {type} modules in the general registry");
+            }
+            else { Debug.Log($"DEBUG {vessel.vesselName} isn't in the general registry"); }
+
+            if (registryBDModulePilotAI.ContainsKey(vessel)) { var moduleCount = GetModuleCount<BDModulePilotAI>(vessel); var modules = vessel.FindPartModulesImplementing<BDModulePilotAI>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} BDModulePilotAI special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryBDModuleSurfaceAI.ContainsKey(vessel)) { var moduleCount = GetModuleCount<BDModuleSurfaceAI>(vessel); var modules = vessel.FindPartModulesImplementing<BDModuleSurfaceAI>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} BDModuleSurfaceAI special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryIBDAIControl.ContainsKey(vessel)) { var moduleCount = GetModuleCount<IBDAIControl>(vessel); var modules = vessel.FindPartModulesImplementing<IBDAIControl>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} IBDAIControl special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryIBDWeapon.ContainsKey(vessel)) { var moduleCount = GetModuleCount<IBDWeapon>(vessel); var modules = vessel.FindPartModulesImplementing<IBDWeapon>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} IBDWeapon special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryKerbalEVA.ContainsKey(vessel)) { var moduleCount = GetModuleCount<KerbalEVA>(vessel); var modules = vessel.FindPartModulesImplementing<KerbalEVA>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} KerbalEVA special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryKerbalSeat.ContainsKey(vessel)) { var moduleCount = GetModuleCount<KerbalSeat>(vessel); var modules = vessel.FindPartModulesImplementing<KerbalSeat>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} KerbalSeat special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryMissileBase.ContainsKey(vessel)) { var moduleCount = GetModuleCount<MissileBase>(vessel); var modules = vessel.FindPartModulesImplementing<MissileBase>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} MissileBase special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryMissileFire.ContainsKey(vessel)) { var moduleCount = GetModuleCount<MissileFire>(vessel); var modules = vessel.FindPartModulesImplementing<MissileFire>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} MissileFire special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryModuleCommand.ContainsKey(vessel)) { var moduleCount = GetModuleCount<ModuleCommand>(vessel); var modules = vessel.FindPartModulesImplementing<ModuleCommand>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} ModuleCommand special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryModuleEngines.ContainsKey(vessel)) { var moduleCount = GetModuleCount<ModuleEngines>(vessel); var modules = vessel.FindPartModulesImplementing<ModuleEngines>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} ModuleEngines special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
+            if (registryModuleWeapon.ContainsKey(vessel)) { var moduleCount = GetModuleCount<ModuleWeapon>(vessel); var modules = vessel.FindPartModulesImplementing<ModuleWeapon>(); Debug.Log($"DEBUG {vessel.vesselName} has {moduleCount} ModuleWeapon special registry modules" + (modules.Count != moduleCount ? $", but {modules.Count} modules found" : "")); }
         }
 #endif
         #endregion

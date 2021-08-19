@@ -24,6 +24,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
         [BDAPersistantSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
+        [BDAPersistantSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 225f;
 
         // General toggle settings
         [BDAPersistantSettingsField] public static bool AI_TOOLBAR_BUTTON = true;                 // Show or hide the BDA AI toolbar button.
@@ -94,8 +95,10 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float DMG_MULTIPLIER = 100f;
         [BDAPersistantSettingsField] public static float BALLISTIC_DMG_FACTOR = 1.55f;
         [BDAPersistantSettingsField] public static float HITPOINT_MULTIPLIER = 3.0f;
-        [BDAPersistantSettingsField] public static float EXP_DMG_MOD_BALLISTIC_NEW = 0.65f;
-        [BDAPersistantSettingsField] public static float EXP_DMG_MOD_MISSILE = 6.75f;
+        [BDAPersistantSettingsField] public static float EXP_DMG_MOD_BALLISTIC_NEW = 0.65f;     // HE bullet explosion damage multiplier
+        [BDAPersistantSettingsField] public static float EXP_DMG_MOD_MISSILE = 6.75f;           // Missile explosion damage multiplier
+        [BDAPersistantSettingsField] public static float EXP_DMG_MOD_ROCKET = 1f;               // Rocket explosion damage multiplier (FIXME needs tuning; Note: rockets used Ballistic mod before, but probably ought to be more like missiles)
+        [BDAPersistantSettingsField] public static float EXP_DMG_MOD_BATTLE_DAMAGE = 1f;        // Battle damage explosion damage multiplier (FIXME needs tuning; Note: CASE-0 explosions used Missile mod, while CASE-1, CASE-2 and fuel explosions used Ballistic mod)
         [BDAPersistantSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistantSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistantSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
@@ -149,7 +152,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
         [BDAPersistantSettingsField] public static bool BD_AMMOBINS = false;   //can ammo bins explode?
         [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
-        [BDAPersistantSettingsField] public static float BD_AMMO_DMG_MULT = 1; //ammosplosion damage
         [BDAPersistantSettingsField] public static bool BD_PROPULSION = false; //engine thrust reduction, fires
         [BDAPersistantSettingsField] public static float BD_PROP_FLOOR = 20; //minimum thrust% damaged engines produce
         [BDAPersistantSettingsField] public static float BD_PROP_FLAMEOUT = 25; //remaiing HP% engines flameout
@@ -230,6 +232,17 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
         [BDAPersistantSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
 
-        [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                  //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+        [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+
+        // Scoring categories
+        [BDAPersistantSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-Shot Time Limit
+        [BDAPersistantSettingsField] public static float SCORING_KILLSTEAL = 5;                   // Kill-Steal Time Limit
+
+        // Evolution settings
+        [BDAPersistantSettingsField] public static bool EVOLUTION_ENABLED = false;
+        [BDAPersistantSettingsField] public static bool SHOW_EVOLUTION_OPTIONS = false;
+        [BDAPersistantSettingsField] public static int EVOLUTION_ANTAGONISTS_PER_HEAT = 1;
+        [BDAPersistantSettingsField] public static int EVOLUTION_MUTATIONS_PER_HEAT = 1;
+        [BDAPersistantSettingsField] public static int EVOLUTION_HEATS_PER_GROUP = 1;
     }
 }

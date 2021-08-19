@@ -109,6 +109,9 @@ namespace BDArmory.Core.Module
         AttachNode bottom;
         AttachNode top;
 
+        public List<Shader> defaultShader;
+        public List<Color> defaultColor;
+
         #endregion KSP Fields
 
         #region Heart Bleed
@@ -308,7 +311,16 @@ namespace BDArmory.Core.Module
             if (HighLogic.LoadedSceneIsEditor)
             {
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship); //will error if called in flightscene
-            }           
+            }
+            var r = part.GetComponentsInChildren<Renderer>();
+            {
+                for (int i = 0; i < r.Length; i++)
+                {
+                    defaultShader.Add(r[i].material.shader);
+                    if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r[i].material.shader.name);
+                    defaultColor.Add(r[i].material.color);
+                }
+            }
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part mass is: " + partMass + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
@@ -435,9 +447,9 @@ namespace BDArmory.Core.Module
 
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: " + part.name + " structural Volume: " + structuralVolume + "; density: " + density);
                 //3. final calculations
-                hitpoints = structuralMass * hitpointMultiplier * 0.333f; 
+                hitpoints = structuralMass * hitpointMultiplier * 0.333f;
                 //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
-                
+
                 if (hitpoints > 10 * partMass * 1000f || hitpoints < 0.1f * partMass * 1000f)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
@@ -574,17 +586,13 @@ namespace BDArmory.Core.Module
         public void overrideArmorSetFromConfig()
         {
             ArmorSet = true;
-            if (ArmorThickness != 0)
+            if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
             {
+                startsArmored = true;
                 Armor = ArmorThickness;
-                maxSupportedArmor = ArmorThickness;
-                if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
-                {
-                    startsArmored = true;
-                    UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
-                    armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
-                    ArmorTypeNum = 2;
-                }
+                UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
+                armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
+                ArmorTypeNum = 2;
             }
             if (maxSupportedArmor < 0) //hasn't been set in cfg
             {
@@ -649,7 +657,7 @@ namespace BDArmory.Core.Module
             Hardness = armorInfo.Hardness;
             Strength = armorInfo.Strength;
             SafeUseTemp = armorInfo.SafeUseTemp;
-            Debug.Log(" armorType = " + ArmorTypeNum);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: armorType = " + ArmorTypeNum);
             SetArmor();
             armorMass = 0;
             armorCost = 0;
@@ -715,7 +723,7 @@ namespace BDArmory.Core.Module
                     }
                 }
             }
-            return result;           
+            return result;
         }
 
         public void HullSetup(BaseField field, object obj)

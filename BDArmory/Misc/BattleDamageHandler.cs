@@ -32,7 +32,7 @@ namespace BDArmory.Misc
                     if (penetrationFactor > 1.2)
                     {
                         if (alreadyburning != null)
-                        {                            
+                        {
                             BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
                         }
                         else
@@ -136,18 +136,18 @@ namespace BDArmory.Misc
                         if (engine.thrustPercentage > BDArmorySettings.BD_PROP_FLOOR) //engines take thrust damage per hit
                         {
                             //AP does bonus damage
-                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE)*10; //convert from damagepercent to thrustpercent
+                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE) * 10; //convert from damagepercent to thrustpercent
                             Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
                             engine.PlayFlameoutFX(true);
-                            
+
                             if (BDArmorySettings.BD_BALANCED_THRUST && !isSRB) //need to poke this more later, not working properly
                             {
                                 using (List<Part>.Enumerator pSym = part.vessel.Parts.GetEnumerator())
                                     while (pSym.MoveNext())
                                     {
                                         if (pSym.Current == null) continue;
-                                        if (pSym.Current != part) 
+                                        if (pSym.Current != part)
                                         {
                                             if (pSym.Current.isSymmetryCounterPart(part))
                                             {
@@ -159,7 +159,7 @@ namespace BDArmory.Misc
                                         }
                                     }
                             }
-                            
+
                         }
                         if (part.GetDamagePercentage() < 0.75f || (part.GetDamagePercentage() < 0.82f && penetrationFactor > 2))
                         {
@@ -187,7 +187,7 @@ namespace BDArmory.Misc
                                 }
                             }
                         }
-                        if (part.GetDamagePercentage() < (BDArmorySettings.BD_PROP_FLAMEOUT/100))
+                        if (part.GetDamagePercentage() < (BDArmorySettings.BD_PROP_FLAMEOUT / 100))
                         {
                             if (engine.EngineIgnited)
                             {
@@ -283,7 +283,7 @@ namespace BDArmory.Misc
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                 }
                 if (part.GetComponent<ModuleControlSurface>() != null && part.GetDamagePercentage() > 0.125f)
-                   //if ( part.isControlSurface(aileron))?
+                //if ( part.isControlSurface(aileron))?
                 {
                     ModuleControlSurface aileron;
                     aileron = part.GetComponent<ModuleControlSurface>();
