@@ -445,6 +445,7 @@ namespace BDArmory.Modules
         [KSPField]
         public float laserDamage = 10000; //base damage/second of lasers
         [KSPField] public bool pulseLaser = false; //pulse vs beam
+        private bool pulseInConfig = false; //record if pulse laser in config for resetting lasers post mutator
         [KSPField] public bool HEpulses = false; //do the pulses have blast damage
         [KSPField] public bool HeatRay = false; //conic AoE
         [KSPField] public bool electroLaser = false; //Drains EC from target/induces EMP effects
@@ -807,7 +808,7 @@ namespace BDArmory.Modules
 
             Events["HideUI"].active = false;
             Events["ShowUI"].active = true;
-            ParseWeaponType();
+            ParseWeaponType(weaponType);
 
             // extension for feature_engagementenvelope
             InitializeEngagementRange(0, maxEffectiveDistance);
@@ -890,6 +891,7 @@ namespace BDArmory.Modules
                     Fields["detonationRange"].guiActive = false;
                     Fields["detonationRange"].guiActiveEditor = false;
                 }
+                rocketPod = false;
             }
             if (eWeaponType == WeaponTypes.Rocket)
             {
@@ -914,6 +916,10 @@ namespace BDArmory.Modules
                 {
                     roundsPerMinute = 3000; //50 rounds/sec or 1 'round'/FixedUpdate
                 }
+                else
+                {
+                    pulseInConfig = true;
+                }
                 if (HEpulses)
                 {
                     pulseLaser = true;
@@ -924,6 +930,7 @@ namespace BDArmory.Modules
                     HEpulses = false;
                     electroLaser = false;
                 }
+                rocketPod = false;
                 //disable fuze GUI elements
                 Fields["maxAirDetonationRange"].guiActive = false;
                 Fields["maxAirDetonationRange"].guiActiveEditor = false;
@@ -1961,7 +1968,7 @@ namespace BDArmory.Modules
                                     {
                                         damage *= (1 - ((armor.Diffusivity * armor.ArmorThickness) / laserDamage)); //but this works for now
                                     }
-                                    p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
+                                    p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
                                     p.AddDamage(damage);
                                 }
                                 if (HEpulses)
@@ -2586,11 +2593,11 @@ namespace BDArmory.Modules
             }
         }
 
-        public void ParseWeaponType()
+        public void ParseWeaponType(string type)
         {
-            weaponType = weaponType.ToLower();
+            type = type.ToLower();
 
-            switch (weaponType)
+            switch (type)
             {
                 case "ballistic":
                     eWeaponType = WeaponTypes.Ballistic;
@@ -3920,6 +3927,7 @@ namespace BDArmory.Modules
 
         public void SetupBulletPool()
         {
+            if (bulletPool != null) return;
             GameObject templateBullet = new GameObject("Bullet");
             templateBullet.AddComponent<PooledBullet>();
             templateBullet.SetActive(false);
@@ -3962,6 +3970,10 @@ namespace BDArmory.Modules
                 ammoList = BDAcTools.ParseNames(bulletType);
                 currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
             }
+            ParseAmmoStats();
+        }
+        public void ParseAmmoStats()
+        {
             if (eWeaponType == WeaponTypes.Ballistic)
             {
                 bulletInfo = BulletInfo.bullets[currentType];

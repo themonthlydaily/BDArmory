@@ -140,6 +140,7 @@
     <Compile Include="Control\BDATournament.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
     <Compile Include="Control\IBDAIControl.cs" />
+    <Compile Include="Control\MutatorInfo.cs" />
     <Compile Include="Control\VesselSpawner.cs" />
     <Compile Include="Control\VesselSpawnerField.cs" />
     <Compile Include="CounterMeasure\CMChaff.cs" />

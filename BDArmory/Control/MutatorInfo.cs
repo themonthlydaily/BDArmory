@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
-namespace BDArmory.Misc
+namespace BDArmory.Control
 {
 	public class MutatorInfo
 	{
