@@ -2231,10 +2231,12 @@ namespace BDArmory.UI
                         VehiclePhysics.Gravity.Refresh();
                     }
                 }
+                var oldSpaceHacks = BDArmorySettings.SPACE_HACKS;
                 BDArmorySettings.SPACE_HACKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SPACE_HACKS, Localizer.Format("#LOC_BDArmory_Settings_SpaceHacks"));
                 {
                     if (BDArmorySettings.SPACE_HACKS)
                     {
+                        if (!oldSpaceHacks) ModuleSpaceFriction.AddSpaceFrictionToAllValidVessels(); // Add missing modules when Space Hacks is toggled.
                         BDArmorySettings.SF_FRICTION = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_FRICTION, Localizer.Format("#LOC_BDArmory_Settings_SpaceFriction"));
                         BDArmorySettings.SF_GRAVITY = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.SF_GRAVITY, Localizer.Format("#LOC_BDArmory_Settings_IgnoreGravity"));
                         GUI.Label(SLeftRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_SpaceFrictionMult")}:  ({BDArmorySettings.SF_DRAGMULT})", leftLabel);//Space Friction Mult
