@@ -40,14 +40,12 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true)]
         public float tntEquivilent = 500;
 
-        [KSPField(isPersistant = true)]
-        public float ADTimer = 20;
-
         private int FuelID;
         private bool hasDetonated = false;
         private bool goingCritical = false;
         private float lastValidAtmDensity = 0f;
         public string Sourcevessel;
+        public string reportingName = "Reactor Containment Failure";
         HashSet<Part> partsHit = new HashSet<Part>();
 
         public override void OnStart(StartState state)
@@ -87,7 +85,7 @@ namespace BDArmory.Modules
                         if (!hasDetonated && !goingCritical)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: nerva on " + Sourcevessel + " is out of fuel.");
-                            StartCoroutine(DelayedDetonation(0.5f)); //bingo fuel, detonate
+                            StartCoroutine(DelayedDetonation(2.5f)); //bingo fuel, detonate
                         }
                     }
                     var engine = part.FindModuleImplementing<ModuleEngines>();
@@ -251,16 +249,7 @@ namespace BDArmory.Modules
                     }
                 }
             }
-            if (vesselsHitByMissiles.Count > 0)
-            { // Note: This doesn't count as a missile strike.
-                string message = "";
-                foreach (var vesselName in vesselsHitByMissiles.Keys)
-                    message += (message == "" ? "" : " and ") + vesselName + " had " + vesselsHitByMissiles[vesselName];
-                message += " parts damaged (Blast Wave) by " + Sourcevessel + "'s exploding engine core.";
-                BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[BDArmory.NukeTest]: " + message);
-            }
-            ExplosionFx.CreateExplosion(part.transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, null, Sourcevessel, "Reactor Containment Failure");
+            ExplosionFx.CreateExplosion(part.transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Other, 0, null, Sourcevessel, reportingName);
             hasDetonated = true;
             if (part.vessel != null) // Already in the process of being destroyed.
                 part.Destroy();

@@ -267,6 +267,9 @@ namespace BDArmory.Modules
             return string.Empty;
         }
 
+        public bool resourceSteal = false;
+        public float strengthMutator = 1;
+
 #if DEBUG
         Vector3 debugTargetPosition;
         Vector3 debugLastTargetPosition;
@@ -350,7 +353,7 @@ namespace BDArmory.Modules
 
         [KSPField]
         public float maxDeviation = 1; //inaccuracy two standard deviations in degrees (two because backwards compatibility :)
-        private float baseDeviation = 1;
+        public float baseDeviation = 1;
 
         [KSPField]
         public float maxEffectiveDistance = 2500; //used by AI to select appropriate weapon
@@ -444,8 +447,9 @@ namespace BDArmory.Modules
         //laser info
         [KSPField]
         public float laserDamage = 10000; //base damage/second of lasers
+        public float baseLaserdamage;
         [KSPField] public bool pulseLaser = false; //pulse vs beam
-        private bool pulseInConfig = false; //record if pulse laser in config for resetting lasers post mutator
+        public bool pulseInConfig = false; //record if pulse laser in config for resetting lasers post mutator
         [KSPField] public bool HEpulses = false; //do the pulses have blast damage
         [KSPField] public bool HeatRay = false; //conic AoE
         [KSPField] public bool electroLaser = false; //Drains EC from target/induces EMP effects
@@ -973,7 +977,7 @@ namespace BDArmory.Modules
                     }
                     if (useCustomBelt)
                     {
-                        if (!string.IsNullOrEmpty(ammoBelt))
+                        if (!string.IsNullOrEmpty(ammoBelt) && ammoBelt != "def")
                         {
                             customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
                             baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
@@ -1056,6 +1060,7 @@ namespace BDArmory.Modules
                     {
                         maxEffectiveDistance = maxTargetingRange;
                     }
+                    baseLaserdamage = laserDamage;
                 }
                 if (crewserved)
                 {
@@ -1690,6 +1695,8 @@ namespace BDArmory.Modules
                                     }
 
                                     pBullet.bullet = BulletInfo.bullets[currentType];
+                                    pBullet.stealResources = resourceSteal;
+                                    pBullet.dmgMult = strengthMutator;
                                     pBullet.gameObject.SetActive(true);
 
                                     if (!pBullet.CheckBulletCollision(iTime, true)) // Check that the bullet won't immediately hit anything.
@@ -2144,6 +2151,8 @@ namespace BDArmory.Modules
                                 rocket.parentRB = part.rb;
                                 rocket.rocket = RocketInfo.rockets[currentType];
                                 rocket.rocketSoundPath = rocketSoundPath;
+                                rocket.thief = resourceSteal; //currently will only steal on direct hit
+                                rocket.dmgMult = strengthMutator;
                                 rocketObj.SetActive(true);
                             }
                             if (!BDArmorySettings.INFINITE_AMMO)
@@ -2212,6 +2221,8 @@ namespace BDArmory.Modules
                                             rocket.rocketName = GetShortName() + " rocket";
                                             rocket.team = weaponManager.Team.Name;
                                             rocket.rocketSoundPath = rocketSoundPath;
+                                            rocket.thief = resourceSteal;
+                                            rocket.dmgMult = strengthMutator;
                                             rocketObj.SetActive(true);
                                         }
                                         if (!BDArmorySettings.INFINITE_AMMO)

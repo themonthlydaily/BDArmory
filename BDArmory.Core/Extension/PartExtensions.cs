@@ -33,7 +33,8 @@ namespace BDArmory.Core.Extension
         public static float AddExplosiveDamage(this Part p,
                                                float explosiveDamage,
                                                float caliber,
-                                               ExplosionSourceType sourceType)
+                                               ExplosionSourceType sourceType,
+                                               float multiplier = 1)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
 
@@ -45,16 +46,16 @@ namespace BDArmory.Core.Extension
             switch (sourceType)
             {
                 case ExplosionSourceType.Missile:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage;
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage * multiplier;
                     break;
                 case ExplosionSourceType.Rocket:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * explosiveDamage;
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * explosiveDamage * multiplier;
                     break;
                 case ExplosionSourceType.BattleDamage:
                     damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * explosiveDamage;
                     break;
                 case ExplosionSourceType.Bullet:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * explosiveDamage;
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * explosiveDamage * multiplier;
                     break;
                 default: // Other?
                     damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * explosiveDamage;
@@ -113,22 +114,22 @@ namespace BDArmory.Core.Extension
             {
                 case ExplosionSourceType.Rocket:
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
                 case ExplosionSourceType.BattleDamage:
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
                     break;
                 case ExplosionSourceType.Bullet:
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
                 default: // Other?    
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
             }
@@ -178,7 +179,19 @@ namespace BDArmory.Core.Extension
                 Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + p.name + ": " + damage_);
             }
         }
-
+        public static void AddHealth(this Part p, float healing, bool overcharge = false)
+        {
+            if (p.GetComponent<KerbalEVA>() != null)
+            {
+                ApplyHitPoints(p.GetComponent<KerbalEVA>(), healing);
+            }
+            else
+            {
+                Dependencies.Get<DamageService>().AddHealthToPart_svc(p, healing, overcharge);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.PartExtensions]: Standard Hitpoints Restored : " + healing);
+            }
+        }
         /// <summary>
         /// Explosive Hitpoint Damage
         /// </summary>

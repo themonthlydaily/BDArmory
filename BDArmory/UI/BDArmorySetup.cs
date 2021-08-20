@@ -2250,6 +2250,59 @@ namespace BDArmory.UI
                         BDArmorySettings.SF_REPULSOR = false;
                     }
                 }
+                var oldMutators = BDArmorySettings.MUTATOR_MODE;
+                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.MUTATOR_MODE, Localizer.Format("#LOC_BDArmory_Settings_SpaceHacks"));
+                {
+                    if (BDArmorySettings.MUTATOR_MODE)
+                    {
+                        if (!oldMutators)  // Add missing modules when Space Hacks is toggled.
+                        {
+                            foreach (var vessel in FlightGlobals.Vessels)
+                            {
+                                if (VesselModuleRegistry.GetMissileFire(vessel, true) != null && vessel.rootPart.FindModuleImplementing<BDAMutator>() == null)
+                                {
+                                    vessel.rootPart.AddModule("BDAMutator");
+                                }
+                            }
+                        }
+                        //mutator select combobox code here
+                        BDArmorySettings.MUTATOR_APPLY_GLOBAL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_GLOBAL, Localizer.Format("#LOC_BDArmory_Settings_SpaceFriction"));
+                        if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //if more than 1 mutator selected, will shuffle each round
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_KILL = false;  
+                        }
+                        BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_KILL, Localizer.Format("#LOC_BDArmory_Settings_IgnoreGravity"));
+                        if (BDArmorySettings.MUTATOR_APPLY_KILL) // if more than 1 mutator selected, will randomly assign mutator on kill
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_GLOBAL = false;
+                            BDArmorySettings.MUTATOR_APPLY_TIMER = false;
+                        }
+                        List<string> mutators = new List<string>();
+                        mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
+                        if (mutators.Count > 1)
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_TIMER = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_TIMER, Localizer.Format("#LOC_BDArmory_Settings_Repulsor"));
+                            if (BDArmorySettings.MUTATOR_APPLY_TIMER) //only an option if more than one mutator selected
+                            {
+                                BDArmorySettings.MUTATOR_APPLY_KILL = false;
+                                //BDArmorySettings.MUTATOR_APPLY_GLOBAL = false; //global + timer causes a single globally appled mutator that shuffles, instead of chaos mode
+                            }
+                        }
+                        BDArmorySettings.MUTATOR_DURATION = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(++line), BDArmorySettings.MUTATOR_DURATION, 0f, 5)); //minutes, figure out rounding for 5 second blocks
+                        GUI.Label(SLeftRect(line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_SpaceFrictionMult")}:  ({BDArmorySettings.MUTATOR_DURATION})", leftLabel);//figure out how to have 0 = comp duration
+
+                    }
+                    else
+                    {
+                        List<string> mutators = new List<string>();
+                        mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
+                        if (mutators.Count < 1)
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_KILL = false;
+                        }
+                    }
+                }
+
                 // Heartbleed
                 BDArmorySettings.HEART_BLEED_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HEART_BLEED_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_HeartBleed"));//"Heart Bleed"
                 if (BDArmorySettings.HEART_BLEED_ENABLED)
@@ -2261,7 +2314,6 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedThreshold")}:  ({BDArmorySettings.HEART_BLEED_THRESHOLD})", leftLabel);//Heart Bleed Threshold
                     BDArmorySettings.HEART_BLEED_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f));
                 }
-
                 // Resource steal
                 BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
                 if (BDArmorySettings.RESOURCE_STEAL_ENABLED)

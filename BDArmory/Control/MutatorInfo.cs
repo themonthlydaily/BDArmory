@@ -14,12 +14,16 @@ namespace BDArmory.Control
         public int RoF { get; private set; }
         public float MaxDeviation { get; private set; }
         public float laserDamage { get; private set; }
-        public bool Vampirism { get; private set; }
+        public float Vampirism { get; private set; }
         public float Regen { get; private set; }
+        public float Strength { get; private set; }
+        public float Defense { get; private set; }
+        public bool Vengeance { get; private set; }
+        public float engineMult { get; private set; }
+        public float MassMod { get; private set; }
         public bool resourceSteal { get; private set; }
         public string resourceTax { get; private set; }
         public float resourceTaxRate { get; private set; }
-        public float engineMult { get; private set; }
         public string iconPath { get; private set; }
         public string iconColor{ get; private set; }
 
@@ -28,7 +32,7 @@ namespace BDArmory.Control
         public static MutatorInfo defaultMutator;
 
         public MutatorInfo(string name, bool weaponMod, string weaponType, string bulletType, int RoF, float MaxDeviation, float laserDamage,
-            bool Vampirism, float Regen, bool resourceSteal, string resourceTax, float resourceTaxRate, float engineMult, string iconPath, string iconColor)
+            float Vampirism, float Regen, float Strength, float Defense, bool Vengeance, float engineMult, float MassMod, bool resourceSteal, string resourceTax, float resourceTaxRate, string iconPath, string iconColor)
         {
             this.name = name;
             this.weaponMod = weaponMod;
@@ -39,10 +43,14 @@ namespace BDArmory.Control
             this.laserDamage = laserDamage;
             this.Vampirism = Vampirism;
             this.Regen = Regen;
+            this.Strength = Strength;
+            this.Defense = Defense;
+            this.Vengeance = Vengeance;
+            this.engineMult = engineMult;
+            this.MassMod = MassMod;
             this.resourceSteal = resourceSteal;
             this.resourceTax = resourceTax;
             this.resourceTaxRate = resourceTaxRate;
-            this.engineMult = engineMult;
             this.iconPath = iconPath;
             this.iconColor = iconColor;
         }
@@ -71,12 +79,16 @@ namespace BDArmory.Control
                         (int)ParseField(node, "RoF", typeof(int)),
                         (float)ParseField(node, "MaxDeviation", typeof(float)),
                         (float)ParseField(node, "laserDamage", typeof(float)),
-                        (bool)ParseField(node, "Vampirism", typeof(bool)),
+                        (float)ParseField(node, "Vampirism", typeof(float)),
                         (float)ParseField(node, "Regen", typeof(float)),
+                        (float)ParseField(node, "Strength", typeof(float)),
+                        (float)ParseField(node, "Defense", typeof(float)),
+                        (bool)ParseField(node, "Vengeance", typeof(bool)),
+                        (float)ParseField(node, "engineMult", typeof(float)),
+                        (float)ParseField(node, "MassMod", typeof(float)),
                         (bool)ParseField(node, "resourceSteal", typeof(bool)),
                         (string)ParseField(node, "resourceTax", typeof(string)),
                         (float)ParseField(node, "resourceTaxRate", typeof(float)),
-                        (float)ParseField(node, "engineMult", typeof(float)),
                         (string)ParseField(node, "iconPath", typeof(string)),
                         (string)ParseField(node, "iconColor", typeof(string))
                     );
@@ -110,12 +122,16 @@ namespace BDArmory.Control
                         (int)ParseField(node, "RoF", typeof(int)),
                         (float)ParseField(node, "MaxDeviation", typeof(float)),
                         (float)ParseField(node, "laserDamage", typeof(float)),
-                        (bool)ParseField(node, "Vampirism", typeof(bool)),
+                        (float)ParseField(node, "Vampirism", typeof(float)),
                         (float)ParseField(node, "Regen", typeof(float)),
+                        (float)ParseField(node, "Strength", typeof(float)),
+                        (float)ParseField(node, "Defense", typeof(float)),
+                        (bool)ParseField(node, "Vengeance", typeof(bool)),
+                        (float)ParseField(node, "engineMult", typeof(float)),
+                        (float)ParseField(node, "MassMod", typeof(float)),
                         (bool)ParseField(node, "resourceSteal", typeof(bool)),
                         (string)ParseField(node, "resourceTax", typeof(string)),
                         (float)ParseField(node, "resourceTaxRate", typeof(float)),
-                        (float)ParseField(node, "engineMult", typeof(float)),
                         (string)ParseField(node, "iconPath", typeof(string)),
                         (string)ParseField(node, "iconColor", typeof(string))
                         )
