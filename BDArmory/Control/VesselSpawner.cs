@@ -571,6 +571,14 @@ namespace BDArmory.Control
                         SF = (ModuleSpaceFriction)vessel.rootPart.AddModule("ModuleSpaceFriction");
                     }
                 }
+                if (BDArmorySettings.MUTATOR_MODE)
+                {
+                    var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                    if (MM == null)
+                    {
+                        MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
+                    }
+                }
                 Debug.Log("[BDArmory.VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
             }
             #endregion
@@ -1227,6 +1235,22 @@ namespace BDArmory.Control
                                 initialSpawn = false;
                                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel); // Update the camera.
                                 FlightCamera.fetch.SetDistance(50);
+                            }
+                        }
+                        if (BDArmorySettings.MUTATOR_MODE)
+                        {
+                            var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                            if (MM == null)
+                            {
+                                MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
+                            }
+                            if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //same mutator for all craft
+                            {
+                                MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
+                            }
+                            if (!BDArmorySettings.MUTATOR_APPLY_GLOBAL && BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
+                            {
+                                MM.EnableMutator(); //random mutator
                             }
                         }
                     }

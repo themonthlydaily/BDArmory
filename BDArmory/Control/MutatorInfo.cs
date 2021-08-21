@@ -24,6 +24,7 @@ namespace BDArmory.Control
         public bool resourceSteal { get; private set; }
         public string resourceTax { get; private set; }
         public float resourceTaxRate { get; private set; }
+        public bool instaGib { get; private set; }
         public string iconPath { get; private set; }
         public string iconColor{ get; private set; }
 
@@ -32,7 +33,7 @@ namespace BDArmory.Control
         public static MutatorInfo defaultMutator;
 
         public MutatorInfo(string name, bool weaponMod, string weaponType, string bulletType, int RoF, float MaxDeviation, float laserDamage,
-            float Vampirism, float Regen, float Strength, float Defense, bool Vengeance, float engineMult, float MassMod, bool resourceSteal, string resourceTax, float resourceTaxRate, string iconPath, string iconColor)
+            float Vampirism, float Regen, float Strength, float Defense, bool Vengeance, float engineMult, float MassMod, bool resourceSteal, string resourceTax, float resourceTaxRate, bool instGib, string iconPath, string iconColor)
         {
             this.name = name;
             this.weaponMod = weaponMod;
@@ -51,6 +52,7 @@ namespace BDArmory.Control
             this.resourceSteal = resourceSteal;
             this.resourceTax = resourceTax;
             this.resourceTaxRate = resourceTaxRate;
+            this.instaGib = instaGib;
             this.iconPath = iconPath;
             this.iconColor = iconColor;
         }
@@ -89,6 +91,7 @@ namespace BDArmory.Control
                         (bool)ParseField(node, "resourceSteal", typeof(bool)),
                         (string)ParseField(node, "resourceTax", typeof(string)),
                         (float)ParseField(node, "resourceTaxRate", typeof(float)),
+                        (bool)ParseField(node, "instaGib", typeof(bool)),
                         (string)ParseField(node, "iconPath", typeof(string)),
                         (string)ParseField(node, "iconColor", typeof(string))
                     );
@@ -132,6 +135,7 @@ namespace BDArmory.Control
                         (bool)ParseField(node, "resourceSteal", typeof(bool)),
                         (string)ParseField(node, "resourceTax", typeof(string)),
                         (float)ParseField(node, "resourceTaxRate", typeof(float)),
+                        (bool)ParseField(node, "instaGib", typeof(bool)),
                         (string)ParseField(node, "iconPath", typeof(string)),
                         (string)ParseField(node, "iconColor", typeof(string))
                         )
@@ -166,7 +170,8 @@ namespace BDArmory.Control
                     { throw new ArgumentException("Invalid type specified."); }
                 }
                 catch (Exception e)
-                { throw new ArgumentException("Field '" + field + "': '" + value + "' could not be parsed as '" + type.ToString() + "' | " + e.ToString(), field); }
+                { throw new ArgumentException("Field '" + field + "': '" + value + "' could not be parsed as '" + type.ToString() + "' | " + e.ToString(), field); 
+                }
             }
             catch (Exception e)
             {
@@ -174,7 +179,7 @@ namespace BDArmory.Control
                 {
                     // Give a warning about the missing or invalid value, then use the default value using reflection to find the field.
                     var defaultValue = typeof(MutatorInfo).GetProperty(field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultMutator);
-                    Debug.LogError("[BDArmory.RocketInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+                    //Debug.LogError("[BDArmory.RocketInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
                     return defaultValue;
                 }
                 else

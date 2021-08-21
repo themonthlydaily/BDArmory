@@ -34,6 +34,14 @@ namespace BDArmory.Modules
             }
             base.OnStart(state);
         }
+        public static string textureDir = "BDArmory/Textures/Mutators/";
+        string iconPath = "IconAttack";
+        private Texture2D icon;
+        public Texture2D mutatorIcon
+        {
+            get { return icon ? icon : icon = GameDatabase.Instance.GetTexture(textureDir + mutatorInfo.iconPath, false); }
+        }
+        public Material IconMat;
 
         public void EnableMutator(string name = "def")
         {
@@ -48,21 +56,44 @@ namespace BDArmory.Modules
                 name = MutatorInfo.mutators[mutators[i]].name;
             }
             mutatorInfo = MutatorInfo.mutators[name];
+            iconPath = mutatorInfo.iconPath;
             if (mutatorInfo.weaponMod)
             {
                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
                         if (weapon.Current == null) continue;
-                        weapon.Current.ParseWeaponType(mutatorInfo.weaponType);
-                        weapon.Current.bulletType = mutatorInfo.bulletType;
-                        weapon.Current.useCustomBelt = false;
-                        weapon.Current.roundsPerMinute = mutatorInfo.RoF;
-                        weapon.Current.maxDeviation = mutatorInfo.MaxDeviation;
-                        weapon.Current.laserDamage = mutatorInfo.laserDamage;
-                        weapon.Current.pulseLaser = true;
-                        weapon.Current.strengthMutator = Mathf.Clamp(Strength, 0.01f, 9999);
-                        weapon.Current.SetupBulletPool();
+                        if (mutatorInfo.weaponType != "def")
+                        {
+                            weapon.Current.ParseWeaponType(mutatorInfo.weaponType);
+                        }
+                        if (mutatorInfo.bulletType != "def")
+                        {
+                            weapon.Current.bulletType = mutatorInfo.bulletType;
+                            weapon.Current.useCustomBelt = false;
+                        }
+                        if (mutatorInfo.RoF > 0)
+                        {
+                            weapon.Current.roundsPerMinute = mutatorInfo.RoF;
+                        }
+                        if (mutatorInfo.MaxDeviation > 0)
+                        {
+                            weapon.Current.maxDeviation = mutatorInfo.MaxDeviation;
+                        }
+                        if (mutatorInfo.instaGib)
+                        {
+                            weapon.Current.instagib = mutatorInfo.instaGib;
+                        }
+                        else
+                        {
+                            if (mutatorInfo.laserDamage > 0)
+                            {
+                                weapon.Current.laserDamage = mutatorInfo.laserDamage;
+                            }
+                            weapon.Current.strengthMutator = Mathf.Clamp(Strength, 0.01f, 9999);
+                        }
+                            weapon.Current.pulseLaser = true;
+                            weapon.Current.SetupBulletPool();
                         weapon.Current.ParseAmmoStats();
                         if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                         {
@@ -71,24 +102,47 @@ namespace BDArmory.Modules
                         weapon.Current.resourceSteal = mutatorInfo.resourceSteal;
                     }
             }
-            using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
-                while (engine.MoveNext())
-                {
-                    engine.Current.thrustPercentage *= mutatorInfo.engineMult;
-                }
+            if (mutatorInfo.engineMult != 0)
+            {
+                using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
+                    while (engine.MoveNext())
+                    {
+                        engine.Current.thrustPercentage *= mutatorInfo.engineMult;
+                    }
+            }
             Vampirism = mutatorInfo.Vampirism;
             Regen = mutatorInfo.Regen;
-            Strength = mutatorInfo.Strength;
             Defense = mutatorInfo.Defense;
-            if (Defense != 0)
-            {
-                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                    while (part.MoveNext())
+
+            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                while (part.MoveNext())
+                {
+                    if (Defense != 0)
                     {
                         var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
                         HPT.defenseMutator = Mathf.Clamp(Defense, 0.01f, 9999);
                     }
-            }
+                    if (mutatorInfo.MassMod != 0)
+                    {
+                        var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
+                        if (MM == null)
+                        {
+                            MM = (ModuleMassAdjust)vessel.rootPart.AddModule("ModuleMassAdjust");
+                            if (BDArmorySettings.MUTATOR_DURATION > 0)
+                            {
+                                MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
+                            }
+                            else
+                            {
+                                MM.duration = BDArmorySettings.COMPETITION_DURATION;
+                            }
+                            MM.massMod = mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
+                        }
+                        part.Current.SetHighlightColor(Misc.Misc.ParseColor255(mutatorInfo.iconColor));
+                        part.Current.SetHighlight(true, false);
+                        part.Current.highlightType = Part.HighlightType.AlwaysOn;
+                    }
+                }
             Vengeance = mutatorInfo.Vengeance;
             if (Vengeance)
             {
@@ -99,29 +153,12 @@ namespace BDArmory.Modules
                     nuke.reportingName = "Vengeance";
                 }
             }
-            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                while (part.MoveNext())
-                {
-                    var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
-                    if (MM == null)
-                    {
-                        MM = (ModuleMassAdjust)vessel.rootPart.AddModule("ModuleMassAdjust");
-                        if (BDArmorySettings.MUTATOR_DURATION > 0)
-                        {
-                            MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
-                        }
-                        else
-                        {
-                            MM.duration = BDArmorySettings.COMPETITION_DURATION;
-                        }
-                        MM.massMod = mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
-                    }
-                }
+
             ResourceTax = BDAcTools.ParseNames(mutatorInfo.resourceTax);
             TaxRate = mutatorInfo.resourceTaxRate;
 
             startTime = Time.time;
-            mutatorEnabled = true; 
+            mutatorEnabled = true;
         }
 
         public void DisableMutator()
@@ -142,17 +179,21 @@ namespace BDArmory.Modules
                         weapon.Current.maxDeviation = weapon.Current.baseDeviation;
                         weapon.Current.laserDamage = weapon.Current.baseLaserdamage;
                         weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
+                        weapon.Current.instagib = false;
                         weapon.Current.strengthMutator = 1;
                         weapon.Current.SetupBulletPool();
                         weapon.Current.ParseAmmoStats();
                         weapon.Current.resourceSteal = false; ;
                     }
             }
-            using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
-                while (engine.MoveNext())
-                {
-                    engine.Current.thrustPercentage /= mutatorInfo.engineMult;
-                }
+            if (mutatorInfo.engineMult != 0)
+            {
+                using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
+                    while (engine.MoveNext())
+                    {
+                        engine.Current.thrustPercentage /= mutatorInfo.engineMult;
+                    }
+            }
             Vampirism = 0;
             Regen = 0;
             Strength = 0;
@@ -163,6 +204,10 @@ namespace BDArmory.Modules
                 {
                     var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
                     HPT.defenseMutator = Defense;
+
+                    part.Current.highlightType = Part.HighlightType.OnMouseOver;
+                    part.Current.SetHighlightColor(Part.defaultHighlightPart);
+                    part.Current.SetHighlight(false, false);
                 }
 
             Vengeance = false;
@@ -179,7 +224,7 @@ namespace BDArmory.Modules
             mutatorEnabled = false;
         }
 
-        public void Update()
+        void Update()
         {
             if (HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GameIsPaused && !vessel.packed)
             {
@@ -236,6 +281,37 @@ namespace BDArmory.Modules
                 }
             }
         }
+
+        void OnGUI()
+        {
+            if (mutatorEnabled)
+            {
+                bool offscreen = false;
+                Vector3 screenPos = BDGUIUtils.GetMainCamera().WorldToViewportPoint(vessel.CoM);
+                if (screenPos.z < 0)
+                {
+                    offscreen = true;
+                }
+                if (screenPos.x != Mathf.Clamp01(screenPos.x))
+                {
+                    offscreen = true;
+                }
+                if (screenPos.y != Mathf.Clamp01(screenPos.y))
+                {
+                    offscreen = true;
+                }
+                float xPos = (screenPos.x * Screen.width) - (0.5f * (60 * BDTISettings.ICONSCALE));
+                float yPos = ((1 - screenPos.y) * Screen.height) - (0.5f * (60 * BDTISettings.ICONSCALE));
+
+                if (!offscreen)
+                {
+                    IconMat.SetColor("_TintColor", Misc.Misc.ParseColor255(mutatorInfo.iconColor));
+                    IconMat.mainTexture = mutatorIcon;
+                    Rect iconRect = new Rect(xPos, yPos, (60 * BDTISettings.ICONSCALE), (60 * BDTISettings.ICONSCALE));
+                    Graphics.DrawTexture(iconRect, mutatorIcon, IconMat);
+                }                
+            }
+        }        
     }
 }
 

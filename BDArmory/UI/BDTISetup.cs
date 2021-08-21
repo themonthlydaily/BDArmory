@@ -295,7 +295,7 @@ namespace BDArmory.UI
             {
                 if (GameSettings.FLT_VESSEL_LABELS && !showPSA)
                 {
-                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_PSA"), 7.0f, ScreenMessageStyle.UPPER_CENTER);
+                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_PSA"), 20.0f, ScreenMessageStyle.UPPER_CENTER);
                     showPSA = true;
                 }
                 Rect IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 280);

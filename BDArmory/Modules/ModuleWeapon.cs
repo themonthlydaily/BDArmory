@@ -269,6 +269,7 @@ namespace BDArmory.Modules
 
         public bool resourceSteal = false;
         public float strengthMutator = 1;
+        public bool instagib = false;
 
 #if DEBUG
         Vector3 debugTargetPosition;
@@ -1697,6 +1698,7 @@ namespace BDArmory.Modules
                                     pBullet.bullet = BulletInfo.bullets[currentType];
                                     pBullet.stealResources = resourceSteal;
                                     pBullet.dmgMult = strengthMutator;
+                                    if (instagib) pBullet.dmgMult = -1;
                                     pBullet.gameObject.SetActive(true);
 
                                     if (!pBullet.CheckBulletCollision(iTime, true)) // Check that the bullet won't immediately hit anything.
@@ -2015,7 +2017,13 @@ namespace BDArmory.Modules
                                     }
                                 }
                                 if (BDArmorySettings.INSTAKILL) p.Destroy();
-
+                                if (instagib)
+                                {
+                                    p.AddInstagibDamage();
+                                    ExplosionFx.CreateExplosion(hit.point,
+                                                   (1),
+                                                   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+                                }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
                                 if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
@@ -2153,6 +2161,7 @@ namespace BDArmory.Modules
                                 rocket.rocketSoundPath = rocketSoundPath;
                                 rocket.thief = resourceSteal; //currently will only steal on direct hit
                                 rocket.dmgMult = strengthMutator;
+                                if (instagib) rocket.dmgMult = -1;
                                 rocketObj.SetActive(true);
                             }
                             if (!BDArmorySettings.INFINITE_AMMO)
@@ -2223,6 +2232,7 @@ namespace BDArmory.Modules
                                             rocket.rocketSoundPath = rocketSoundPath;
                                             rocket.thief = resourceSteal;
                                             rocket.dmgMult = strengthMutator;
+                                            if (instagib) rocket.dmgMult = -1;
                                             rocketObj.SetActive(true);
                                         }
                                         if (!BDArmorySettings.INFINITE_AMMO)

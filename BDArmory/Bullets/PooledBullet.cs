@@ -417,7 +417,14 @@ namespace BDArmory.Bullets
                             else
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
                             distanceTraveled += hit.distance;
-                            ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            if (dmgMult < 0)
+                            {
+                                hitPart.AddInstagibDamage();
+                            }
+                            else
+                            {
+                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            }
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
                             KillBullet(); // Kerbals are too thick-headed for penetration...
@@ -544,7 +551,14 @@ namespace BDArmory.Bullets
                         {
                             hasPenetrated = true;
                             bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
-                            ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            if (dmgMult < 0)
+                            {
+                                hitPart.AddInstagibDamage();
+                            }
+                            else
+                            {
+                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            }
                             penTicker += 1;
                             ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
                             ProjectileUtils.CheckPartForExplosion(hitPart);

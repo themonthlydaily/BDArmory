@@ -553,6 +553,10 @@ namespace BDArmory.Core.Module
         public void AddHealth(float partdamage, bool overcharge = false)
         {
             if (isAI) return;
+            if (Hitpoints + partdamage < BDArmorySettings.HEART_BLEED_THRESHOLD) //in case of negative regen value (for HP drain)
+            {
+                return;
+            }
             Hitpoints += partdamage; 
             Hitpoints = Mathf.Clamp(Hitpoints, -1, overcharge ? Mathf.Min(previousHitpoints * 2, previousHitpoints + 1000) : previousHitpoints); //Allow vampirism to overcharge HP
         }

@@ -498,6 +498,7 @@ namespace BDArmory.UI
             BulletInfo.Load();
             RocketInfo.Load();
             ArmorInfo.Load();
+            MutatorInfo.Load();
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
 
@@ -2117,6 +2118,10 @@ namespace BDArmory.UI
         float settingsLineHeight;
         float settingsMargin;
 
+        private Vector2 scrollViewVector;
+        private bool selectMutators = false;
+        public List<string> mutators;
+        float mutatorHeight = 25;
         bool editKeys;
 
         void SetupSettingsSize()
@@ -2251,7 +2256,7 @@ namespace BDArmory.UI
                     }
                 }
                 var oldMutators = BDArmorySettings.MUTATOR_MODE;
-                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SRightRect(line), BDArmorySettings.MUTATOR_MODE, Localizer.Format("#LOC_BDArmory_Settings_SpaceHacks"));
+                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SRightRect(++line), BDArmorySettings.MUTATOR_MODE, Localizer.Format("#LOC_BDArmory_Settings_Mutators"));
                 {
                     if (BDArmorySettings.MUTATOR_MODE)
                     {
@@ -2265,32 +2270,59 @@ namespace BDArmory.UI
                                 }
                             }
                         }
+                        selectMutators = GUI.Toggle(SLeftRect(++line, 1f), selectMutators, Localizer.Format("#LOC_BDArmory_MutatorSelect"));
+                        if (selectMutators)
+                        {
+                            ++line;
+                            scrollViewVector = GUI.BeginScrollView(new Rect(settingsMargin + 1 * settingsMargin, line * settingsLineHeight, settingsWidth - 2 * settingsMargin - 1 * settingsMargin, settingsLineHeight * 10.5f), scrollViewVector,
+                                               new Rect(0, 0, settingsWidth - 2 * settingsMargin - 2 * settingsMargin, mutatorHeight));
+
+                            GUI.BeginGroup(new Rect(0, 0, settingsWidth - 2 * settingsMargin - 2 * settingsMargin, mutatorHeight), GUIContent.none);
+                            int mutatorLine = 0;
+                            for (int i = 0; i < mutators.Count; i++)
+                            {
+                                Rect buttonRect = new Rect(0, (i * 25), (settingsWidth - 4 * settingsMargin) / 2, 20);
+                                if (GUI.Toggle(buttonRect, BDArmorySettings.MUTATOR_LIST.Contains(mutators[i]), mutators[i]))
+                                {
+                                    if (!BDArmorySettings.MUTATOR_LIST.Contains(mutators[i]))
+                                    {
+                                        BDArmorySettings.MUTATOR_LIST += mutators[i] + "; ";
+                                    }
+                                }
+                                mutatorLine++;
+                            }
+                            mutatorHeight = Mathf.Lerp(mutatorHeight, (mutatorLine * 25), 1);
+                            GUI.EndGroup();
+                            GUI.EndScrollView();
+                            line += 11;
+                            if (GUI.Button(SRightRect(++line), Localizer.Format("#LOC_BDArmory_reset")));
+                            {
+                                BDArmorySettings.MUTATOR_LIST = "";
+                            }
+                        }
                         //mutator select combobox code here
-                        BDArmorySettings.MUTATOR_APPLY_GLOBAL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_GLOBAL, Localizer.Format("#LOC_BDArmory_Settings_SpaceFriction"));
+                        BDArmorySettings.MUTATOR_APPLY_GLOBAL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_GLOBAL, Localizer.Format("#LOC_BDArmory_Settings_MutatorGlobal"));
                         if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //if more than 1 mutator selected, will shuffle each round
                         {
                             BDArmorySettings.MUTATOR_APPLY_KILL = false;  
                         }
-                        BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_KILL, Localizer.Format("#LOC_BDArmory_Settings_IgnoreGravity"));
+                        BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_KILL, Localizer.Format("#LOC_BDArmory_Settings_MutatorKill"));
                         if (BDArmorySettings.MUTATOR_APPLY_KILL) // if more than 1 mutator selected, will randomly assign mutator on kill
                         {
                             BDArmorySettings.MUTATOR_APPLY_GLOBAL = false;
                             BDArmorySettings.MUTATOR_APPLY_TIMER = false;
                         }
-                        List<string> mutators = new List<string>();
-                        mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
                         if (mutators.Count > 1)
                         {
-                            BDArmorySettings.MUTATOR_APPLY_TIMER = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_TIMER, Localizer.Format("#LOC_BDArmory_Settings_Repulsor"));
+                            BDArmorySettings.MUTATOR_APPLY_TIMER = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_TIMER, Localizer.Format("#LOC_BDArmory_Settings_MutatorTimed"));
                             if (BDArmorySettings.MUTATOR_APPLY_TIMER) //only an option if more than one mutator selected
                             {
                                 BDArmorySettings.MUTATOR_APPLY_KILL = false;
                                 //BDArmorySettings.MUTATOR_APPLY_GLOBAL = false; //global + timer causes a single globally appled mutator that shuffles, instead of chaos mode
                             }
                         }
-                        BDArmorySettings.MUTATOR_DURATION = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(++line), BDArmorySettings.MUTATOR_DURATION, 0f, 5)); //minutes, figure out rounding for 5 second blocks
-                        GUI.Label(SLeftRect(line, 1f), $"{Localizer.Format("#LOC_BDArmory_Settings_SpaceFrictionMult")}:  ({BDArmorySettings.MUTATOR_DURATION})", leftLabel);//figure out how to have 0 = comp duration
-
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MutatorDuration")}: ({(BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION + (BDArmorySettings.MUTATOR_DURATION > 1 ? " mins" : " min") : "Unlimited")})", leftLabel);
+                        BDArmorySettings.MUTATOR_DURATION = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MUTATOR_DURATION, 0f, BDArmorySettings.COMPETITION_DURATION * 2)) / 2;
                     }
                     else
                     {
@@ -2855,7 +2887,6 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
-
         internal static void ResizeRwrWindow(float rwrScale)
         {
             BDArmorySettings.RWR_WINDOW_SCALE = rwrScale;

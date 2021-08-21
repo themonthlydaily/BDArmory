@@ -30,6 +30,23 @@ namespace BDArmory.Core.Extension
             }
         }
 
+        public static void AddInstagibDamage(this Part p)
+        {
+            if (p.GetComponent<KerbalEVA>() != null)
+            {
+                p.Destroy();
+            }
+            else
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    p.vessel.rootPart.Destroy();
+                }
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.PartExtensions]: Instagib!");
+            }
+        }
+
         public static float AddExplosiveDamage(this Part p,
                                                float explosiveDamage,
                                                float caliber,
