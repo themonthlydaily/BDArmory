@@ -318,7 +318,10 @@ namespace BDArmory.Core.Module
                 {
                     defaultShader.Add(r[i].material.shader);
                     if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r[i].material.shader.name);
-                    defaultColor.Add(r[i].material.color);
+                    if (r[i].material.HasProperty("_Color"))
+                    {
+                        defaultColor.Add(r[i].material.color);
+                    }
                 }
             }
             if (HighLogic.LoadedSceneIsFlight)
