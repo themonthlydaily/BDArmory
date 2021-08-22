@@ -1259,7 +1259,19 @@ namespace BDArmory.Modules
         {
             maxAutoFireCosAngle = Mathf.Cos((FiringTolerance * Mathf.Deg2Rad));
         }
+        public string WeaponStatusdebug()
+        {
+            string status = "Weapon Type: ";
 
+            if (eWeaponType == WeaponTypes.Ballistic)
+                status += "Ballistic; BulletType: " + currentType;
+            if (eWeaponType == WeaponTypes.Rocket)
+                status += "Rocket; RocketType: " + currentType;
+            if (eWeaponType == WeaponTypes.Laser)
+                status += "Laser";
+            status += "; RoF: " + roundsPerMinute + "; deviation: " + maxDeviation + "; instagib = " + instagib;
+            return status;
+        }
         void Update()
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && vessel.IsControllable)
@@ -1698,7 +1710,10 @@ namespace BDArmory.Modules
                                     pBullet.bullet = BulletInfo.bullets[currentType];
                                     pBullet.stealResources = resourceSteal;
                                     pBullet.dmgMult = strengthMutator;
-                                    if (instagib) pBullet.dmgMult = -1;
+                                    if (instagib)
+                                    {
+                                        pBullet.dmgMult = -1;
+                                    }
                                     pBullet.gameObject.SetActive(true);
 
                                     if (!pBullet.CheckBulletCollision(iTime, true)) // Check that the bullet won't immediately hit anything.
@@ -2021,8 +2036,7 @@ namespace BDArmory.Modules
                                 {
                                     p.AddInstagibDamage();
                                     ExplosionFx.CreateExplosion(hit.point,
-                                                   (1),
-                                                   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+                                                   (1),"BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
                                 }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
@@ -3220,7 +3234,6 @@ namespace BDArmory.Modules
             //disable autofire after burst length
             if (BurstOverride)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
                 if (autoFire && autofireShotCount >= fireBurstLength)
                 {
                     autoFire = false;
@@ -4103,7 +4116,7 @@ namespace BDArmory.Modules
                 PAWRefresh();
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 SetInitialDetonationDistance();
-                SetupRocketPool(SelectedAmmoType, rocketModelPath);
+                SetupRocketPool(currentType, rocketModelPath);
             }
         }
         protected void SetInitialDetonationDistance()

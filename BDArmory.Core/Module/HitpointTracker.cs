@@ -320,7 +320,10 @@ namespace BDArmory.Core.Module
                 {
                     defaultShader.Add(r[i].material.shader);
                     if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r[i].material.shader.name);
-                    defaultColor.Add(r[i].material.color);
+                    if (r[i].material.HasProperty("_Color"))
+                    {
+                        defaultColor.Add(r[i].material.color);
+                    }
                 }
             }
             if (HighLogic.LoadedSceneIsFlight)
@@ -531,10 +534,11 @@ namespace BDArmory.Core.Module
 
         public void SetDamage(float partdamage)
         {
-            Hitpoints -= partdamage; //given the sole reference is from destroy, with damage = -1, shouldn't this be =, not -=?
+            Hitpoints = partdamage; //given the sole reference is from destroy, with damage = -1, shouldn't this be =, not -=?
 
             if (Hitpoints <= 0)
             {
+                Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
                 DestroyPart();
             }
         }

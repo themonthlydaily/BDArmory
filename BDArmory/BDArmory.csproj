@@ -159,6 +159,7 @@
     <Compile Include="FX\ExplosionFX.cs" />
     <Compile Include="FX\FireFX.cs" />
     <Compile Include="FX\FuelLeakFX.cs" />
+    <Compile Include="FX\NukeFX.cs" />
     <Compile Include="FX\ParticleTurbulence.cs" />
     <Compile Include="FX\ShellCasing.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
@@ -736,9 +737,7 @@
     <Content Include="Distribution\GameData\BDArmory\Textures\targetDirectionIndicator.png" />
     <Content Include="Distribution\GameData\BDArmory\Textures\whiteSquare.png" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Evolution\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <PostBuildEvent Condition="'$(OS)' == 'Windows_NT' ">
       @echo $(Targetname)

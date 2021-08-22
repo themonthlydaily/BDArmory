@@ -19,7 +19,7 @@ namespace BDArmory.Control
         public float Strength { get; private set; }
         public float Defense { get; private set; }
         public bool Vengeance { get; private set; }
-        public float engineMult { get; private set; }
+        public float EngineMult { get; private set; }
         public float MassMod { get; private set; }
         public bool resourceSteal { get; private set; }
         public string resourceTax { get; private set; }
@@ -33,7 +33,7 @@ namespace BDArmory.Control
         public static MutatorInfo defaultMutator;
 
         public MutatorInfo(string name, bool weaponMod, string weaponType, string bulletType, int RoF, float MaxDeviation, float laserDamage,
-            float Vampirism, float Regen, float Strength, float Defense, bool Vengeance, float engineMult, float MassMod, bool resourceSteal, string resourceTax, float resourceTaxRate, bool instGib, string iconPath, string iconColor)
+            float Vampirism, float Regen, float Strength, float Defense, bool Vengeance, float EngineMult, float MassMod, bool resourceSteal, string resourceTax, float resourceTaxRate, bool instaGib, string iconPath, string iconColor)
         {
             this.name = name;
             this.weaponMod = weaponMod;
@@ -47,7 +47,7 @@ namespace BDArmory.Control
             this.Strength = Strength;
             this.Defense = Defense;
             this.Vengeance = Vengeance;
-            this.engineMult = engineMult;
+            this.EngineMult = EngineMult;
             this.MassMod = MassMod;
             this.resourceSteal = resourceSteal;
             this.resourceTax = resourceTax;
@@ -86,7 +86,7 @@ namespace BDArmory.Control
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Defense", typeof(float)),
                         (bool)ParseField(node, "Vengeance", typeof(bool)),
-                        (float)ParseField(node, "engineMult", typeof(float)),
+                        (float)ParseField(node, "EngineMult", typeof(float)),
                         (float)ParseField(node, "MassMod", typeof(float)),
                         (bool)ParseField(node, "resourceSteal", typeof(bool)),
                         (string)ParseField(node, "resourceTax", typeof(string)),
@@ -130,7 +130,7 @@ namespace BDArmory.Control
                         (float)ParseField(node, "Strength", typeof(float)),
                         (float)ParseField(node, "Defense", typeof(float)),
                         (bool)ParseField(node, "Vengeance", typeof(bool)),
-                        (float)ParseField(node, "engineMult", typeof(float)),
+                        (float)ParseField(node, "EngineMult", typeof(float)),
                         (float)ParseField(node, "MassMod", typeof(float)),
                         (bool)ParseField(node, "resourceSteal", typeof(bool)),
                         (string)ParseField(node, "resourceTax", typeof(string)),
@@ -147,6 +147,9 @@ namespace BDArmory.Control
                     Debug.LogError("[BDArmory.MutatorInfo]: Error Loading Mutator Config '" + name_ + "' | " + e.ToString());
                 }
             }
+            //once mutators are loaded, remove the def mutator so it isn't found in later list parsings
+            mutators.Remove(defaultMutator);
+            mutatorNames.Remove("def");
         }
 
         private static object ParseField(ConfigNode node, string field, Type type)

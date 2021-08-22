@@ -626,7 +626,7 @@ namespace BDArmory.Bullets
                                         {
                                             MDEC = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
                                         }
-                                        MDEC.incomingDamage += ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
+                                        MDEC.incomingDamage = ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
                                         MDEC.softEMP = false; //can bypass EMP damage cap                                            
                                     }
                                     if (choker)

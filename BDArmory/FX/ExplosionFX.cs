@@ -519,6 +519,7 @@ namespace BDArmory.FX
                     if (dmgMult < 0)
                     {
                         part.AddInstagibDamage();
+                        //Debug.Log("[ExplosionFX] applying instagib!");
                     }
                     if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
                     {
