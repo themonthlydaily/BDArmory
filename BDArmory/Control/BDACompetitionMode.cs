@@ -12,6 +12,7 @@ using BDArmory.Competition;
 using BDArmory.Radar;
 using BDArmory.UI;
 using UnityEngine;
+using KSP.Localization;
 
 namespace BDArmory.Control
 {
@@ -821,6 +822,7 @@ namespace BDArmory.Control
         public int CompetitionID; // time competition was started
         bool competitionShouldBeRunning = false;
         public double competitionStartTime = -1;
+        public double MutatorResetTime = -1;
         public double competitionPreStartTime = -1;
         public double nextUpdateTick = -1;
         private double decisionTick = -1;
@@ -1123,6 +1125,9 @@ namespace BDArmory.Control
             if (VesselSpawner.Instance.originalTeams.Count == 0) VesselSpawner.Instance.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
         }
 
+        public List<string> mutators;
+        public string currentMutator = "def";
+
         IEnumerator DogfightCompetitionModeRoutine(float distance)
         {
             competitionStarting = true;
@@ -1149,7 +1154,23 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
                     readyToLaunch.Add(pilot);
                 }
-
+            if (BDArmorySettings.MUTATOR_MODE && !string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+            {
+                mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
+                if (mutators.Count > 0)
+                {
+                    int i = UnityEngine.Random.Range(0, mutators.Count);
+                    currentMutator = MutatorInfo.mutators[mutators[i]].name;
+                }
+                else
+                    currentMutator = mutators[0];
+                MutatorResetTime = Planetarium.GetUniversalTime();
+                if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+                {
+                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
+                }
+                //this is shrowing an NRE sometimes that prevent comp start. Possibly a mutator config with an error in it? Only NREs when trying to run a rocket arena mutator
+            }
             foreach (var pilot in readyToLaunch)
             {
                 pilot.vessel.ActionGroups.ToggleGroup(KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
@@ -1164,6 +1185,24 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
+                }
+                if (BDArmorySettings.MUTATOR_MODE && mutators.Count > 0)
+                {
+                    var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                    if (MM == null)
+                    {
+                        MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                    }
+                    if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+                    {
+                        MM.DisableMutator();
+                        MM.EnableMutator(currentMutator);
+                    }
+                    if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
+                    {
+                        MM.DisableMutator();
+                        MM.EnableMutator(); //random mutator
+                    }
                 }
             }
 
@@ -1830,6 +1869,10 @@ namespace BDArmory.Control
             double startTime = Planetarium.GetUniversalTime();
             double nextStep = startTime;
 
+            if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+            {
+                ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) +  " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
+            }
             foreach (var cmdEvent in commandSequence)
             {
                 // parse the event
@@ -1937,8 +1980,27 @@ namespace BDArmory.Control
                                 foreach (var pilot in pilots)
                                 {
                                     if (pilot.weaponManager != null) pilot.weaponManager.ToggleGuardMode();
+                                    if (BDArmorySettings.MUTATOR_MODE && !string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+                                    {
+                                        var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                                        if (MM == null)
+                                        {
+                                            MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                                        }
+                                        if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+                                        {
+                                            MM.DisableMutator();
+                                            MM.EnableMutator(currentMutator);
+                                        }
+                                        if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
+                                        {
+                                            MM.DisableMutator();
+                                            MM.EnableMutator(); //random mutator
+                                        }
+                                    }
                                 }
                             }
+
                             break;
                         }
                     case "SetThrottle":
@@ -2637,6 +2699,30 @@ namespace BDArmory.Control
                         competitionStatus.Add(statusMessage);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDACompetitionMode: {CompetitionID}]: " + statusMessage);
 
+                        if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
+                        {
+                            if (!string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+                            {
+                                using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
+                                    while (loadedVessels.MoveNext())
+                                    {
+                                        if (loadedVessels.Current.name == Scores.ScoreData[player].lastPersonWhoDamagedMe)
+                                        {
+                                            var MM = loadedVessels.Current.rootPart.FindModuleImplementing<BDAMutator>();
+                                            if (MM == null)
+                                            {
+                                                MM = (BDAMutator)loadedVessels.Current.rootPart.AddModule("BDAMutator");
+                                            }
+                                            MM.DisableMutator(); //random mutator
+                                            MM.EnableMutator(); //random mutator
+                                        }
+                                    }
+                            }
+                            else
+                            {
+                                Debug.Log($"[BDArmory.BDACompetitionMode: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
+                            }
+                        }
                     }
                     deadOrAliveString += " :" + player + ": ";
                 }
@@ -2711,6 +2797,49 @@ namespace BDArmory.Control
             {
                 LogResults("due to out-of-time");
                 StopCompetition();
+            }
+
+            if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_TIMER) && BDArmorySettings.MUTATOR_DURATION > 0 && now - MutatorResetTime >= BDArmorySettings.MUTATOR_DURATION * 60d)
+            {
+                if (mutators.Count > 0)
+                {
+                    int i = UnityEngine.Random.Range(0, mutators.Count);
+                    currentMutator = MutatorInfo.mutators[mutators[i]].name;
+                }
+                else
+                    currentMutator = mutators[0];
+                MutatorResetTime = Planetarium.GetUniversalTime();
+                if (BDArmorySettings.MUTATOR_APPLY_GLOBAL)
+                {
+                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorShuffle"), 5, ScreenMessageStyle.UPPER_CENTER);
+                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ": " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
+                }
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (vessel == null || !vessel.loaded || VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) // || vessel.packed) // Allow packed craft to avoid the packed craft being considered dead (e.g., when command seats spawn).
+                        continue;
+
+                    var mf = VesselModuleRegistry.GetModule<MissileFire>(vessel);
+
+                    if (mf != null)
+                    {
+                        var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                        if (MM == null)
+                        {
+                            MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
+                        }
+                        if (BDArmorySettings.MUTATOR_APPLY_GLOBAL)
+                        {
+                            MM.DisableMutator();
+                            MM.EnableMutator(currentMutator);
+                        }
+                        else
+                        {
+                            MM.DisableMutator();
+                            MM.EnableMutator();
+                        }
+                    }
+                }
             }
         }
 

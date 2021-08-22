@@ -53,6 +53,11 @@ namespace BDArmory.UI
         {
             get { return rit ? rit : rit = GameDatabase.Instance.GetTexture(textureDir + "rocketIcon", false); }
         }
+        private Texture2D vit;
+        public Texture2D TextureIconTarget
+        {
+            get { return vit ? vit : vit = GameDatabase.Instance.GetTexture(textureDir + "targetIcon", false); }
+        }
         private Texture2D ti7;
         public Texture2D TextureIconGeneric
         {
@@ -225,6 +230,7 @@ namespace BDArmory.UI
             else
             {
                 showTeamIconGUI = true;
+                showPSA = false;
                 LoadConfig();
             }
         }
@@ -281,7 +287,14 @@ namespace BDArmory.UI
             title.fontSize = 30;
             title.alignment = TextAnchor.MiddleLeft;
             title.wordWrap = false;
-
+            if (HighLogic.LoadedSceneIsFlight && BDTISettings.TEAMICONS)
+            {
+                if (GameSettings.FLT_VESSEL_LABELS && !showPSA)
+                {
+                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_PSA"), 20.0f, ScreenMessageStyle.UPPER_CENTER);
+                    showPSA = true;
+                }
+            }
         }
         public bool showTeamIconSelect = false;
         public bool showColorSelect = false;
@@ -293,12 +306,7 @@ namespace BDArmory.UI
             BDTISettings.TEAMICONS = GUI.Toggle(new Rect(5, 25, 300, 20), BDTISettings.TEAMICONS, Localizer.Format("#LOC_BDArmory_Enable_Icons"), BDArmorySetup.BDGuiSkin.toggle);
             if (BDTISettings.TEAMICONS)
             {
-                if (GameSettings.FLT_VESSEL_LABELS && !showPSA)
-                {
-                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_PSA"), 7.0f, ScreenMessageStyle.UPPER_CENTER);
-                    showPSA = true;
-                }
-                Rect IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 280);
+                Rect IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 290);
                 GUI.BeginGroup(IconOptionsGroup, GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                 BDTISettings.TEAMNAMES = GUI.Toggle(new Rect(15, line * 25, toolWindowWidth - 20, 20), BDTISettings.TEAMNAMES, Localizer.Format("#LOC_BDArmory_Icon_teams"), BDArmorySetup.BDGuiSkin.toggle);
                 line++;
@@ -326,7 +334,7 @@ namespace BDArmory.UI
                 line++;
                 GUI.EndGroup();
 
-                Rect TeamColorsGroup = new Rect(15, 365, toolWindowWidth - 20, teamWindowHeight);
+                Rect TeamColorsGroup = new Rect(15, 365, toolWindowWidth - 20, teamWindowHeight-5);
                 GUI.BeginGroup(TeamColorsGroup, GUIContent.none, BDArmorySetup.BDGuiSkin.box);
 
                 using (var teamManagers = weaponManagers.GetEnumerator())
