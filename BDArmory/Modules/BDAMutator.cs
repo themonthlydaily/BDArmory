@@ -37,7 +37,8 @@ namespace BDArmory.Modules
         private Texture2D icon;
         public Texture2D mutatorIcon
         {
-            get { return icon ? icon : icon = GameDatabase.Instance.GetTexture(textureDir + iconPath, false); }
+            //get { return icon ? icon : icon = GameDatabase.Instance.GetTexture(textureDir + iconPath, false); }
+            get { return icon ? icon : icon = GameDatabase.Instance.GetTexture(iconPath, false); }
         }
 
         public override void OnStart(StartState state)
@@ -90,6 +91,7 @@ namespace BDArmory.Modules
                             weapon.Current.SetupBulletPool();
                             weapon.Current.ParseAmmoStats();
                         }
+
                         if (mutatorInfo.RoF > 0)
                         {
                             weapon.Current.roundsPerMinute = mutatorInfo.RoF;
@@ -114,6 +116,11 @@ namespace BDArmory.Modules
                         if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                         {
                             weapon.Current.SetupLaserSpecifics();
+                        }
+                        if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Rocket && weapon.Current.weaponType != "rocket")
+                        {
+                            weapon.Current.rocketPod = false;
+                            weapon.Current.externalAmmo = true;
                         }
                         weapon.Current.resourceSteal = mutatorInfo.resourceSteal;
                         //Debug.Log("[MUTATOR] current weapon status: " + weapon.Current.WeaponStatusdebug());
@@ -203,7 +210,10 @@ namespace BDArmory.Modules
                         weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
                         weapon.Current.instagib = false;
                         weapon.Current.strengthMutator = 1;
-                        weapon.Current.SetupBulletPool();
+                        if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic)
+                        {
+                            weapon.Current.SetupBulletPool(); //unnecessary?
+                        }
                         weapon.Current.SetupAmmo(null, null);
                         if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                         {
@@ -363,10 +373,10 @@ namespace BDArmory.Modules
         void Detonate() 
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Mutator] triggering vengeance nuke");
-            //affect any nearby parts/vessels that aren't the source vessel
             NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "BDArmory/Models/explosion/explosion", "BDArmory/Sounds/explode1", 2.5f, 100, 500, 0.05f, 0.05f, true, "Vengeance Explosion");
         }
     }
 }
 //figure out why the icon isn't getting drawn  - What's NRE'ing?
+//figure out what's throwing an NRE when enabling a mutator with weaponType = rocket;
 

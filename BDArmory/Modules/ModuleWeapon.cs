@@ -1266,7 +1266,7 @@ namespace BDArmory.Modules
             if (eWeaponType == WeaponTypes.Ballistic)
                 status += "Ballistic; BulletType: " + currentType;
             if (eWeaponType == WeaponTypes.Rocket)
-                status += "Rocket; RocketType: " + currentType;
+                status += "Rocket; RocketType: " + currentType + "; " + rocketModelPath;
             if (eWeaponType == WeaponTypes.Laser)
                 status += "Laser";
             status += "; RoF: " + roundsPerMinute + "; deviation: " + maxDeviation + "; instagib = " + instagib;
@@ -4041,8 +4041,6 @@ namespace BDArmory.Modules
             }
             if (eWeaponType == WeaponTypes.Rocket)
             {
-                ammoList = BDAcTools.ParseNames(bulletType);
-                currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
                 rocketInfo = RocketInfo.rockets[currentType];
                 guiAmmoTypeString = ""; //reset name
                 rocketMass = rocketInfo.rocketMass;

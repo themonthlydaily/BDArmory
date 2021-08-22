@@ -2325,13 +2325,13 @@ namespace BDArmory.UI
                         {
                             BDArmorySettings.MUTATOR_APPLY_KILL = false;  
                         }
-                        BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_KILL, Localizer.Format("#LOC_BDArmory_Settings_MutatorKill"));
+                        BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SRightRect(line, 1f), BDArmorySettings.MUTATOR_APPLY_KILL, Localizer.Format("#LOC_BDArmory_Settings_MutatorKill"));
                         if (BDArmorySettings.MUTATOR_APPLY_KILL) // if more than 1 mutator selected, will randomly assign mutator on kill
                         {
                             BDArmorySettings.MUTATOR_APPLY_GLOBAL = false;
                             BDArmorySettings.MUTATOR_APPLY_TIMER = false;
                         }
-                        if (selectedMutators.Count > 1)
+                        if (selectedMutators.Count > 2)
                         {
                             BDArmorySettings.MUTATOR_APPLY_TIMER = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_TIMER, Localizer.Format("#LOC_BDArmory_Settings_MutatorTimed"));
                             if (BDArmorySettings.MUTATOR_APPLY_TIMER) //only an option if more than one mutator selected
