@@ -2339,7 +2339,11 @@ namespace BDArmory.UI
                                 BDArmorySettings.MUTATOR_APPLY_KILL = false;
                                 //BDArmorySettings.MUTATOR_APPLY_GLOBAL = false; //global + timer causes a single globally appled mutator that shuffles, instead of chaos mode
                             }
-                        }                        
+                        }
+                        else
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_TIMER = false;
+                        }
                         if (!BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_KILL) 
                         {
                             BDArmorySettings.MUTATOR_APPLY_GLOBAL = true;
