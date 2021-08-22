@@ -1154,9 +1154,9 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
                     readyToLaunch.Add(pilot);
                 }
-            if (BDArmorySettings.MUTATOR_MODE && !string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+            if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
             {
-                mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
+                mutators = BDArmorySettings.MUTATOR_LIST;
                 if (mutators.Count > 0)
                 {
                     int i = UnityEngine.Random.Range(0, mutators.Count);
@@ -1871,7 +1871,7 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
             {
-                ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) +  " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
             }
             foreach (var cmdEvent in commandSequence)
             {
@@ -1980,7 +1980,7 @@ namespace BDArmory.Control
                                 foreach (var pilot in pilots)
                                 {
                                     if (pilot.weaponManager != null) pilot.weaponManager.ToggleGuardMode();
-                                    if (BDArmorySettings.MUTATOR_MODE && !string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+                                    if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {
                                         var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
                                         if (MM == null)
@@ -2701,7 +2701,7 @@ namespace BDArmory.Control
 
                         if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
                         {
-                            if (!string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+                            if (BDArmorySettings.MUTATOR_LIST.Count > 0)
                             {
                                 using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
                                     while (loadedVessels.MoveNext())

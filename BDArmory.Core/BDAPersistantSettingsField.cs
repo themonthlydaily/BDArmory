@@ -31,10 +31,16 @@ namespace BDArmory.Core
 
                 var fieldValue = field.Current.GetValue(null);
                 if (fieldValue.GetType() == typeof(Vector2d))
+                {
                     settings.SetValue(field.Current.Name, ((Vector2d)fieldValue).ToString("G"), true);
+                }
+                else if (fieldValue.GetType() == typeof(List<string>))
+                {
+                    settings.SetValue(field.Current.Name, string.Join("; ", (List<string>)fieldValue), true);
+                }
                 else
                 {
-                    settings.SetValue(field.Current.Name, field.Current.GetValue(null).ToString(), true);
+                    settings.SetValue(field.Current.Name, fieldValue.ToString(), true);
                 }
             }
             field.Dispose();
@@ -116,6 +122,10 @@ namespace BDArmory.Core
                     double x = double.Parse(strings[0]);
                     double y = double.Parse(strings[1]);
                     return new Vector2d(x, y);
+                }
+                else if (type == typeof(List<string>))
+                {
+                    return value.Split(new string[] {"; "}, StringSplitOptions.RemoveEmptyEntries).ToList();
                 }
             }
             catch (Exception e)

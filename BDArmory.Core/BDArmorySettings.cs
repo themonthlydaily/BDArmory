@@ -1,6 +1,6 @@
 using UnityEngine;
 
-using System;
+using System.Collections.Generic;
 
 namespace BDArmory.Core
 {
@@ -220,7 +220,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_KILL = false;
         [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_TIMER = false;
         [BDAPersistantSettingsField] public static float MUTATOR_DURATION = 0.5f;
-        [BDAPersistantSettingsField] public static string MUTATOR_LIST = "";
+        [BDAPersistantSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.

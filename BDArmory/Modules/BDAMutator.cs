@@ -62,7 +62,7 @@ namespace BDArmory.Modules
             }
             if (name == "def") //mutator not specified, randomly choose from selected mutators
             {
-                mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
+                mutators = BDArmorySettings.MUTATOR_LIST;
                 int i = UnityEngine.Random.Range(0, mutators.Count);
                 name = MutatorInfo.mutators[mutators[i]].name;
             }
