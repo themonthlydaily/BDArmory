@@ -10,8 +10,8 @@ using BDArmory.FX;
 
 namespace BDArmory.Modules
 {
-	class BDAMutator : PartModule
-	{
+    class BDAMutator : PartModule
+    {
         float startTime;
         bool mutatorEnabled = false;
         public List<string> mutators;
@@ -56,7 +56,7 @@ namespace BDArmory.Modules
         {
             if (mutatorEnabled) //replace current mutator with new one
             {
-				DisableMutator(); //since weapons now only modify the scpecific fields needed for the mut, disable this and have mutators able to stack?
+                DisableMutator(); //since weapons now only modify the scpecific fields needed for the mut, disable this and have mutators able to stack?
                 //problem is that would only happen on timer/on kill mode, unless global is set to have a random (one at a time) and all (all selected mutators are loaded) modes
                 //Debug.Log("[MUTATOR]: found active mutator, disabling");
             }
@@ -69,9 +69,9 @@ namespace BDArmory.Modules
             mutatorInfo = MutatorInfo.mutators[name];
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MUTATOR]: initializing " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
             iconPath = mutatorInfo.iconPath;
-            icon = null; 
+            icon = null;
             icon = GameDatabase.Instance.GetTexture(textureDir + iconPath, false);
-            Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor),  out float H, out float S, out float V);
+            Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor), out float H, out float S, out float V);
             mutatorColor = Color.HSVToRGB(H, S, V);
 
             if (mutatorInfo.weaponMod)
@@ -219,7 +219,7 @@ namespace BDArmory.Modules
                         {
                             weapon.Current.SetupLaserSpecifics();
                         }
-                        weapon.Current.resourceSteal = false; ;
+                        weapon.Current.resourceSteal = false;
                     }
             }
 
@@ -279,7 +279,7 @@ namespace BDArmory.Modules
                 if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(vessel.vesselName))
                 {
                     if (BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].hits > oldScore) //apply HP gain every time a hit is scored
-                    {                        
+                    {
                         oldScore = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].hits;
                         applyVampirism = true;
                     }
@@ -370,7 +370,7 @@ namespace BDArmory.Modules
                 }
             }
         }
-        void Detonate() 
+        void Detonate()
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Mutator] triggering vengeance nuke");
             NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "BDArmory/Models/explosion/explosion", "BDArmory/Sounds/explode1", 2.5f, 100, 500, 0.05f, 0.05f, true, "Vengeance Explosion");

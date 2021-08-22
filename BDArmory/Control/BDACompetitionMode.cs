@@ -24,7 +24,6 @@ namespace BDArmory.Control
         public int deathCount = 0;
         public List<string> deathOrder = new List<string>(); // The names of dead players ordered by their death.
         public string currentlyIT = "";
-        public List<string> mutators;
         #endregion
 
         #region Helper functions for registering hits, etc.
