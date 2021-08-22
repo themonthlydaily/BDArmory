@@ -425,7 +425,10 @@ namespace BDArmory.UI
                                 {
                                     if (r[i].material.shader.name.Contains("Alpha")) continue;
                                     r[i].material.shader = Shader.Find("KSP/Unlit");
-                                    r[i].material.SetColor("_Color", VisualizerColor);
+                                    if (r[i].material.HasProperty("_Color"))
+                                    {
+                                        r[i].material.SetColor("_Color", VisualizerColor);
+                                    }
                                 }
                             }
                         }
