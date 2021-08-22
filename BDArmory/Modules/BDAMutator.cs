@@ -52,7 +52,10 @@ namespace BDArmory.Modules
         }
 
 
-        public void EnableMutator(string name = "def")
+        public void EnableMutator(string name = "def") //could add a apply x mutators slider, and have a for i ++ iterate through MUTATOR_LIST and add x mutators at random to currentMutator
+                                                    // then have enable parse currentMutator name and apply each via iteratint through parsed list.
+                                                    //one issue I can see is multi-mutator support would have to nix the mutator Icon/aura... actually, no. i would know how many mutators applid,  
+                                                    //so simple matter to hav each subsequent indicator icon shifted over 
         {
             if (mutatorEnabled) //replace current mutator with new one
             {
@@ -60,134 +63,149 @@ namespace BDArmory.Modules
                 //problem is that would only happen on timer/on kill mode, unless global is set to have a random (one at a time) and all (all selected mutators are loaded) modes
                 //Debug.Log("[MUTATOR]: found active mutator, disabling");
             }
-            if (name == "def") //mutator not specified, randomly choose from selected mutators
+            for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
+            {
+                if (name == "def") //mutator not specified, randomly choose from selected mutators
             {
                 mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
                 int i = UnityEngine.Random.Range(0, mutators.Count);
                 name = MutatorInfo.mutators[mutators[i]].name;
             }
-            mutatorInfo = MutatorInfo.mutators[name];
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MUTATOR]: initializing " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
-            iconPath = mutatorInfo.iconPath;
-            icon = null; 
-            icon = GameDatabase.Instance.GetTexture(textureDir + iconPath, false);
-            Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor),  out float H, out float S, out float V);
-            mutatorColor = Color.HSVToRGB(H, S, V);
-
-            if (mutatorInfo.weaponMod)
+            else
             {
-                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
-                    while (weapon.MoveNext())
-                    {
-                        if (weapon.Current == null) continue;
-                        if (mutatorInfo.weaponType != "def")
-                        {
-                            weapon.Current.ParseWeaponType(mutatorInfo.weaponType); //this is throwing an error with rockets?
-                        }
-                        if (mutatorInfo.bulletType != "def")
-                        {
-                            weapon.Current.currentType = mutatorInfo.bulletType;
-                            weapon.Current.useCustomBelt = false;
-                            weapon.Current.SetupBulletPool();
-                            weapon.Current.ParseAmmoStats();
-                        }
-
-                        if (mutatorInfo.RoF > 0)
-                        {
-                            weapon.Current.roundsPerMinute = mutatorInfo.RoF;
-                        }
-                        if (mutatorInfo.MaxDeviation > 0)
-                        {
-                            weapon.Current.maxDeviation = mutatorInfo.MaxDeviation;
-                        }
-                        if (mutatorInfo.laserDamage > 0)
-                        {
-                            weapon.Current.laserDamage = mutatorInfo.laserDamage;
-                        }
-                        if (mutatorInfo.instaGib)
-                        {
-                            weapon.Current.instagib = mutatorInfo.instaGib;
-                        }
-                        else
-                        {
-                            weapon.Current.strengthMutator = Mathf.Clamp(Strength, 0.01f, 9999);
-                        }
-                        weapon.Current.pulseLaser = true;
-                        if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
-                        {
-                            weapon.Current.SetupLaserSpecifics();
-                        }
-                        if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Rocket && weapon.Current.weaponType != "rocket")
-                        {
-                            weapon.Current.rocketPod = false;
-                            weapon.Current.externalAmmo = true;
-                        }
-                        weapon.Current.resourceSteal = mutatorInfo.resourceSteal;
-                        //Debug.Log("[MUTATOR] current weapon status: " + weapon.Current.WeaponStatusdebug());
-                    }
+                mutators = BDAcTools.ParseNames(name);
+                int i = UnityEngine.Random.Range(0, mutators.Count);
+                name = MutatorInfo.mutators[mutators[i]].name;
             }
+                mutatorInfo = MutatorInfo.mutators[name];
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MUTATOR]: initializing " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
+                iconPath = mutatorInfo.iconPath;
+                icon = null;
+                icon = GameDatabase.Instance.GetTexture(iconPath, false);
+                Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor), out float H, out float S, out float V);
+                mutatorColor = Color.HSVToRGB(H, S, V);
 
-            if (mutatorInfo.EngineMult != 0)
-            {
-                using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
-                    while (engine.MoveNext())
-                    {
-                        engine.Current.thrustPercentage *= mutatorInfo.EngineMult;
-                    }
-            }
-            Vampirism = mutatorInfo.Vampirism;
-            Regen = mutatorInfo.Regen;
-            Defense = Mathf.Clamp(mutatorInfo.Defense, 0.05f, 99999);
-
-            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                while (part.MoveNext())
+                if (mutatorInfo.weaponMod)
                 {
-                    if (Defense != 1)
-                    {
-                        var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
-                        HPT.defenseMutator = Defense;
-                    }
-                    if (mutatorInfo.MassMod != 0)
-                    {
-                        var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
-                        if (MM == null)
+                    using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                        while (weapon.MoveNext())
                         {
-                            MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
-                            if (BDArmorySettings.MUTATOR_DURATION > 0 && BDArmorySettings.MUTATOR_APPLY_TIMER)
+                            if (weapon.Current == null) continue;
+                            if (mutatorInfo.weaponType != "def")
                             {
-                                MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
+                                weapon.Current.ParseWeaponType(mutatorInfo.weaponType); //this is throwing an error with rockets?
+                            }
+                            if (mutatorInfo.bulletType != "def")
+                            {
+                                weapon.Current.currentType = mutatorInfo.bulletType;
+                                weapon.Current.useCustomBelt = false;
+                                weapon.Current.SetupBulletPool();
+                                weapon.Current.ParseAmmoStats();
+                            }
+
+                            if (mutatorInfo.RoF > 0)
+                            {
+                                weapon.Current.roundsPerMinute = mutatorInfo.RoF;
+                            }
+                            if (mutatorInfo.MaxDeviation > 0)
+                            {
+                                weapon.Current.maxDeviation = mutatorInfo.MaxDeviation;
+                            }
+                            if (mutatorInfo.laserDamage > 0)
+                            {
+                                weapon.Current.laserDamage = mutatorInfo.laserDamage;
+                            }
+                            if (mutatorInfo.instaGib)
+                            {
+                                weapon.Current.instagib = mutatorInfo.instaGib;
                             }
                             else
                             {
-                                MM.duration = BDArmorySettings.COMPETITION_DURATION;
+                                weapon.Current.strengthMutator = Mathf.Clamp(Strength, 0.01f, 9999);
                             }
-                            MM.massMod = mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
+                            weapon.Current.pulseLaser = true;
+                            if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
+                            {
+                                weapon.Current.SetupLaserSpecifics();
+                            }
+                            if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Rocket && weapon.Current.weaponType != "rocket")
+                            {
+                                weapon.Current.rocketPod = false;
+                                weapon.Current.externalAmmo = true;
+                            }
+                            weapon.Current.resourceSteal = mutatorInfo.resourceSteal;
+                            //Debug.Log("[MUTATOR] current weapon status: " + weapon.Current.WeaponStatusdebug());
                         }
-                    }
-                    part.Current.highlightType = Part.HighlightType.AlwaysOn;
-                    part.Current.SetHighlight(true, false);
-                    part.Current.SetHighlightColor(mutatorColor);
                 }
-            Vengeance = mutatorInfo.Vengeance;
-            if (Vengeance)
-            {
-                /*
-                var nuke = vessel.rootPart.FindModuleImplementing<RWPS3R2NukeModule>();
-                if (nuke == null)
+
+                if (mutatorInfo.EngineMult != 0)
                 {
-                    nuke = (RWPS3R2NukeModule)vessel.rootPart.AddModule("RWPS3R2NukeModule");
-                    nuke.reportingName = "Vengeance";
+                    using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
+                        while (engine.MoveNext())
+                        {
+                            engine.Current.thrustPercentage *= mutatorInfo.EngineMult;
+                        }
                 }
-                */
-                part.OnJustAboutToBeDestroyed += Detonate;
+                if (mutatorInfo.Vampirism > 0)
+                {
+                    Vampirism = mutatorInfo.Vampirism;
+                }
+                if (mutatorInfo.Regen != 0)
+                {
+                    Regen = mutatorInfo.Regen;
+                }
+                Defense = Mathf.Clamp(mutatorInfo.Defense, 0.05f, 99999);
+
+                using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                    while (part.MoveNext())
+                    {
+                        if (Defense != 1)
+                        {
+                            var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
+                            HPT.defenseMutator = Defense;
+                        }
+                        if (mutatorInfo.MassMod != 0)
+                        {
+                            var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
+                            if (MM == null)
+                            {
+                                MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
+                                if (BDArmorySettings.MUTATOR_DURATION > 0 && BDArmorySettings.MUTATOR_APPLY_TIMER)
+                                {
+                                    MM.duration = BDArmorySettings.MUTATOR_DURATION; //MMA will time out and remove itself when mutator expires
+                                }
+                                else
+                                {
+                                    MM.duration = BDArmorySettings.COMPETITION_DURATION;
+                                }
+                                MM.massMod = mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
+                            }
+                        }
+                        part.Current.highlightType = Part.HighlightType.AlwaysOn;
+                        part.Current.SetHighlight(true, false);
+                        part.Current.SetHighlightColor(mutatorColor);
+                    }
+                if (!Vengeance && mutatorInfo.Vengeance)
+                {
+                    Vengeance = mutatorInfo.Vengeance;
+                }
+                if (Vengeance)
+                {
+                    part.OnJustAboutToBeDestroyed += Detonate;
+                }
+                if (!string.IsNullOrEmpty(mutatorInfo.resourceTax))
+                {
+                    ResourceTax = BDAcTools.ParseNames(mutatorInfo.resourceTax);
+                }
+                if (mutatorInfo.resourceTaxRate != 0)
+                {
+                    TaxRate = mutatorInfo.resourceTaxRate;
+                }
             }
-
-            ResourceTax = BDAcTools.ParseNames(mutatorInfo.resourceTax);
-            TaxRate = mutatorInfo.resourceTaxRate;
-
             startTime = Time.time;
             mutatorEnabled = true;
         }
+
 
         public void DisableMutator()
         {
