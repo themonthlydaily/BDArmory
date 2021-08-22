@@ -1660,11 +1660,33 @@ namespace BDArmory.Modules
             }
             rollTarget = (targetPosition + (rollUp * upDirection)) - vesselTransform.position;
 
-            // Adjust roll target to avoid entering terrain avoidance
-            // if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(targetDirection, vessel.Velocity()) < 0) // FIXME WIP that wasn't meant to be commited yet
-            // {
-            //     // If we're not avoiding terrain and the target is behind us and the roll target is downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground
-            // }
+            // Adjust roll target to avoid triggering terrain avoidance
+            if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0)
+            {
+                // If we're not avoiding terrain and the roll target is behind us and the roll target is downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground
+                // The following calculates the altitude required to turn in the direction of the rollTarget based on the current velocity and turn radius.
+                var n = Vector3.Cross(vessel.srf_vel_direction, rollTarget).normalized;
+                var m = Vector3.Cross(n, upDirection).normalized;
+                if (m.magnitude < 0.1f) m = upDirection; // In case n and upDirection are colinear.
+                var a = Vector3.Dot(n, upDirection);
+                var b = Mathf.Sqrt(1f - a * a);
+                var r = turnRadius * turnRadiusTwiddleFactorMin;
+                var h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b;
+                if (vessel.radarAltitude < h) // Too low for this manoeuvre.
+                {
+                    Debug.Log($"DEBUG {vessel.vesselName} too low for rollTarget; v: {vessel.srf_vel_direction.ToString("G3")}, t: {rollTarget.ToString("G3")}, r: {r}, h: {h}, alt: {vessel.radarAltitude}, up: {upDirection.ToString("G3")}, phi: {Mathf.Rad2Deg * Mathf.Acos(b)}");
+                    // Rotate rollTarget around vessel.srf_vel_direction to be horizontal.
+                    rollTarget = Vector3.ProjectOnPlane(rollTarget, upDirection).normalized * 100;
+                    n = Vector3.Cross(vessel.srf_vel_direction, rollTarget).normalized;
+                    m = Vector3.Cross(n, upDirection).normalized;
+                    if (m.magnitude < 0.1f) m = upDirection; // In case n and upDirection are colinear.
+                    a = Vector3.Dot(n, upDirection);
+                    b = Mathf.Sqrt(1f - a * a);
+                    r = turnRadius * turnRadiusTwiddleFactorMin;
+                    h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b;
+                    Debug.Log($"DEBUG new rollTarget: {rollTarget.ToString("G3")} h': {h}");
+                }
+            }
 
             //test
             if (steerMode == SteerModes.Aiming && !belowMinAltitude)
