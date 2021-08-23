@@ -101,7 +101,11 @@ namespace BDArmory.Modules
             base.OnLoad(node);
 
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) return;
-            CASESetup(null, null);
+            var internalmag = part.FindModuleImplementing<ModuleWeapon>();
+            if (internalmag == null)
+            {
+                CASESetup(null, null); //don't apply mass/cost to weapons with integral ammo protection, assume it's baked into weapon mass/cost
+            }
         }
 
         private List<PartResource> GetResources()
