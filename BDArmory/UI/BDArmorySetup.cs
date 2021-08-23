@@ -140,7 +140,7 @@ namespace BDArmory.UI
         public static List<CMFlare> Flares = new List<CMFlare>();
 
         public List<string> mutators = new List<string>();
-
+        bool[] mutators_selected;
 
         //gui styles
         GUIStyle centerLabel;
@@ -511,6 +511,11 @@ namespace BDArmory.UI
             for (int i = 0; i < MutatorInfo.mutators.Count; i++)
             {
                 mutators.Add(MutatorInfo.mutators[i].name);
+            }
+            mutators_selected = new bool[mutators.Count];
+            for (int i = 0; i < mutators_selected.Length; ++i)
+            {
+                mutators_selected[i] = BDArmorySettings.MUTATOR_LIST.Contains(mutators[i]);
             }
         }
 
@@ -2282,7 +2287,6 @@ namespace BDArmory.UI
                         if (selectMutators)
                         {
                             ++line;
-                            selectedMutators.Clear();
                             scrollViewVector = GUI.BeginScrollView(new Rect(settingsMargin + 1 * settingsMargin, line * settingsLineHeight, settingsWidth - 2 * settingsMargin - 1 * settingsMargin, settingsLineHeight * 6f), scrollViewVector,
                                                new Rect(0, 0, settingsWidth - 2 * settingsMargin - 2 * settingsMargin, mutatorHeight));
                             GUI.BeginGroup(new Rect(0, 0, settingsWidth - 2 * settingsMargin - 2 * settingsMargin, mutatorHeight), GUIContent.none);
@@ -2290,11 +2294,15 @@ namespace BDArmory.UI
                             for (int i = 0; i < mutators.Count; i++)
                             {
                                 Rect buttonRect = new Rect(0, (i * 25), (settingsWidth - 4 * settingsMargin) / 2, 20);
-                                if (GUI.Toggle(buttonRect, BDArmorySettings.MUTATOR_LIST.Contains(mutators[i]), mutators[i]))
+                                if (mutators_selected[i] != (mutators_selected[i] = GUI.Toggle(buttonRect, mutators_selected[i], mutators[i])))
                                 {
-                                    if (!BDArmorySettings.MUTATOR_LIST.Contains(mutators[i]))
+                                    if (mutators_selected[i])
                                     {
-                                        BDArmorySettings.MUTATOR_LIST += mutators[i] + "; ";
+                                        BDArmorySettings.MUTATOR_LIST.Add(mutators[i]);
+                                    }
+                                    else
+                                    {
+                                        BDArmorySettings.MUTATOR_LIST.Remove(mutators[i]);
                                     }
                                 }
                                 mutatorLine++;
@@ -2310,11 +2318,12 @@ namespace BDArmory.UI
                                 switch (Event.current.button)
                                 {
                                     case 1: // right click
-                                        Debug.Log("[BDASetup] MutatorList: " + BDArmorySettings.MUTATOR_LIST);
+                                        Debug.Log("[BDArmory.BDArmorySetup]: MutatorList: " + string.Join("; ", BDArmorySettings.MUTATOR_LIST));
                                         break;
                                     default:
-                                        BDArmorySettings.MUTATOR_LIST = "";
-                                        Debug.Log("[BDASetup] resetting Mutator list");
+                                        BDArmorySettings.MUTATOR_LIST.Clear();
+                                        for (int i = 0; i < mutators_selected.Length; ++i) mutators_selected[i] = false;
+                                        Debug.Log("[BDArmory.BDArmorySetup]: Resetting Mutator list");
                                         break;
                                 }
                             }                            
@@ -2331,7 +2340,7 @@ namespace BDArmory.UI
                             BDArmorySettings.MUTATOR_APPLY_GLOBAL = false;
                             BDArmorySettings.MUTATOR_APPLY_TIMER = false;
                         }
-                        if (selectedMutators.Count > 2)
+                        if (BDArmorySettings.MUTATOR_LIST.Count > 2)
                         {
                             BDArmorySettings.MUTATOR_APPLY_TIMER = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_TIMER, Localizer.Format("#LOC_BDArmory_Settings_MutatorTimed"));
                             if (BDArmorySettings.MUTATOR_APPLY_TIMER) //only an option if more than one mutator selected
