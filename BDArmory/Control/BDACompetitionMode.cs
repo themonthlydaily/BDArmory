@@ -24,7 +24,6 @@ namespace BDArmory.Control
         public int deathCount = 0;
         public List<string> deathOrder = new List<string>(); // The names of dead players ordered by their death.
         public string currentlyIT = "";
-        public List<string> mutators;
         #endregion
 
         #region Helper functions for registering hits, etc.
@@ -1126,7 +1125,6 @@ namespace BDArmory.Control
             if (VesselSpawner.Instance.originalTeams.Count == 0) VesselSpawner.Instance.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
         }
 
-        public List<string> mutators;
         public string currentMutator = "def";
 
         IEnumerator DogfightCompetitionModeRoutine(float distance)
@@ -1155,16 +1153,18 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
                     readyToLaunch.Add(pilot);
                 }
-            if (BDArmorySettings.MUTATOR_MODE && !string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+            if (BDArmorySettings.MUTATOR_MODE)
             {
-                mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
-                if (mutators.Count > 0)
+                if (BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
-                    int i = UnityEngine.Random.Range(0, mutators.Count);
-                    currentMutator = MutatorInfo.mutators[mutators[i]].name;
+                    for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
+                    {
+                        int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
+                        currentMutator += MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name + "; ";
+                    }
                 }
                 else
-                    currentMutator = mutators[0];
+                    currentMutator = BDArmorySettings.MUTATOR_LIST[0];
                 MutatorResetTime = Planetarium.GetUniversalTime();
                 if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
                 {
@@ -1187,7 +1187,7 @@ namespace BDArmory.Control
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
                 }
-                if (BDArmorySettings.MUTATOR_MODE && mutators.Count > 0)
+                if (BDArmorySettings.MUTATOR_MODE)
                 {
                     var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
                     if (MM == null)
@@ -1872,7 +1872,7 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
             {
-                ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) +  " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorStart") + ": " + currentMutator + ". " + (BDArmorySettings.MUTATOR_APPLY_TIMER ? (BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION * 60 : BDArmorySettings.COMPETITION_DURATION * 60) + " seconds left" : ""), 5, ScreenMessageStyle.UPPER_CENTER);
             }
             foreach (var cmdEvent in commandSequence)
             {
@@ -1981,7 +1981,7 @@ namespace BDArmory.Control
                                 foreach (var pilot in pilots)
                                 {
                                     if (pilot.weaponManager != null) pilot.weaponManager.ToggleGuardMode();
-                                    if (BDArmorySettings.MUTATOR_MODE && !string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+                                    if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {
                                         var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
                                         if (MM == null)
@@ -2702,7 +2702,7 @@ namespace BDArmory.Control
 
                         if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_KILL)
                         {
-                            if (!string.IsNullOrEmpty(BDArmorySettings.MUTATOR_LIST))
+                            if (BDArmorySettings.MUTATOR_LIST.Count > 0)
                             {
                                 using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
                                     while (loadedVessels.MoveNext())
@@ -2802,14 +2802,19 @@ namespace BDArmory.Control
 
             if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_TIMER) && BDArmorySettings.MUTATOR_DURATION > 0 && now - MutatorResetTime >= BDArmorySettings.MUTATOR_DURATION * 60d)
             {
-                if (mutators.Count > 0)
+
+                if (BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
-                    int i = UnityEngine.Random.Range(0, mutators.Count);
-                    currentMutator = MutatorInfo.mutators[mutators[i]].name;
+                    for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
+                    {
+                        int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
+                        currentMutator += MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name + "; ";
+                    }
                 }
                 else
-                    currentMutator = mutators[0];
+                    currentMutator = BDArmorySettings.MUTATOR_LIST[0];
                 MutatorResetTime = Planetarium.GetUniversalTime();
+
                 if (BDArmorySettings.MUTATOR_APPLY_GLOBAL)
                 {
                     ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorShuffle"), 5, ScreenMessageStyle.UPPER_CENTER);

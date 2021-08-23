@@ -22,16 +22,16 @@ namespace BDArmory.FX
 
         HashSet<Part> partsHit = new HashSet<Part>();
 
-    public ExplosionSourceType ExplosionSource { get; set; }
-    public Vector3 Position { get; set; }
-    public Part ExplosivePart { get; set; }
-    public string Sourcevessel { get; set; }
-    public string reportingName { get; set; }
+        public ExplosionSourceType ExplosionSource { get; set; }
+        public Vector3 Position { get; set; }
+        public Part ExplosivePart { get; set; }
+        public string Sourcevessel { get; set; }
+        public string reportingName { get; set; }
         public float yield { get; set; } //kilotons
         public float thermalRadius { get; set; } //clamped blast range
         public float fluence { get; set; } //thermal magnitude
         public float detonationTimer { get; set; } //seconds to delay before detonation
-        public float tntmass { get; set; } 
+        public float tntmass { get; set; }
         public bool isEMP { get; set; } //do EMP effects?
         public string explModelPath { get; set; }
         public string explSoundPath { get; set; } //do EMP effects?
@@ -39,13 +39,13 @@ namespace BDArmory.FX
         void OnEnable()
         {
             if (HighLogic.LoadedSceneIsFlight)
-            {               
+            {
                 yieldCubeRoot = Mathf.Pow(yield, 1f / 3f);
                 startTime = Time.time;
                 if (FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
                                    FlightGlobals.getExternalTemperature(transform.position)) > 0)
-                lastValidAtmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
-                                   FlightGlobals.getExternalTemperature(transform.position));
+                    lastValidAtmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
+                                       FlightGlobals.getExternalTemperature(transform.position));
                 hasDetonated = false;
             }
         }
@@ -79,7 +79,7 @@ namespace BDArmory.FX
             }
             hasDetonated = true;
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-            Debug.Log("[BDArmory.NukeFX]: initiating Nuke explosion");
+                Debug.Log("[BDArmory.NukeFX]: initiating Nuke explosion");
             //affect any nearby parts/vessels that aren't the source vessel
 
             Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
@@ -113,7 +113,7 @@ namespace BDArmory.FX
                             {
                                 EMP = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
                             }
-                            EMP.incomingDamage = (((thermalRadius*2) - distToG0) * 1); //this way craft at edge of blast might only get disabled instead of bricked
+                            EMP.incomingDamage = (((thermalRadius * 2) - distToG0) * 1); //this way craft at edge of blast might only get disabled instead of bricked
                             EMP.softEMP = false; //can bypass EMP damage cap   
                         }
                         Ray LoSRay = new Ray(transform.position, partHit.transform.position - transform.position);
@@ -199,10 +199,9 @@ namespace BDArmory.FX
             nukePool = ObjectPool.CreateObjectPool(templateFX, 5, true, true);
         }
 
-        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float tntMassEquivalent = 100,
-    float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke")
+        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float tntMassEquivalent = 100, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke")
         {
-        SetupPool();
+            SetupPool();
             GameObject newExplosion = nukePool.GetPooledObject();
             newExplosion.transform.position = position;
             NukeFX eFx = newExplosion.GetComponent<NukeFX>();

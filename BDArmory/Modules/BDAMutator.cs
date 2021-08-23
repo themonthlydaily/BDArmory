@@ -10,8 +10,8 @@ using BDArmory.FX;
 
 namespace BDArmory.Modules
 {
-	class BDAMutator : PartModule
-	{
+    class BDAMutator : PartModule
+    {
         float startTime;
         bool mutatorEnabled = false;
         public List<string> mutators;
@@ -52,31 +52,24 @@ namespace BDArmory.Modules
         }
 
 
-        public void EnableMutator(string name = "def") //could add a apply x mutators slider, and have a for i ++ iterate through MUTATOR_LIST and add x mutators at random to currentMutator
-                                                    // then have enable parse currentMutator name and apply each via iteratint through parsed list.
-                                                    //one issue I can see is multi-mutator support would have to nix the mutator Icon/aura... actually, no. i would know how many mutators applid,  
-                                                    //so simple matter to hav each subsequent indicator icon shifted over 
+        public void EnableMutator(string name = "def")
         {
             if (mutatorEnabled) //replace current mutator with new one
             {
-				DisableMutator(); //since weapons now only modify the scpecific fields needed for the mut, disable this and have mutators able to stack?
-                //problem is that would only happen on timer/on kill mode, unless global is set to have a random (one at a time) and all (all selected mutators are loaded) modes
-                //Debug.Log("[MUTATOR]: found active mutator, disabling");
+                DisableMutator();
             }
             for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
             {
                 if (name == "def") //mutator not specified, randomly choose from selected mutators
-            {
-                mutators = BDAcTools.ParseNames(BDArmorySettings.MUTATOR_LIST);
-                int i = UnityEngine.Random.Range(0, mutators.Count);
-                name = MutatorInfo.mutators[mutators[i]].name;
-            }
-            else
-            {
-                mutators = BDAcTools.ParseNames(name);
-                int i = UnityEngine.Random.Range(0, mutators.Count);
-                name = MutatorInfo.mutators[mutators[i]].name;
-            }
+                {
+                    int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
+                    name = MutatorInfo.mutators[mutators[i]].name;
+                }
+                else
+                {
+                    mutators = BDAcTools.ParseNames(name);
+                    name = MutatorInfo.mutators[mutators[r]].name;
+                }
                 mutatorInfo = MutatorInfo.mutators[name];
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MUTATOR]: initializing " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
                 iconPath = mutatorInfo.iconPath;
@@ -191,6 +184,14 @@ namespace BDArmory.Modules
                 }
                 if (Vengeance)
                 {
+                    /*
+                    var nuke = vessel.rootPart.FindModuleImplementing<RWPS3R2NukeModule>();
+                    if (nuke == null)
+                    {
+                        nuke = (RWPS3R2NukeModule)vessel.rootPart.AddModule("RWPS3R2NukeModule");
+                        nuke.reportingName = "Vengeance";
+                    }
+                    */
                     part.OnJustAboutToBeDestroyed += Detonate;
                 }
                 if (!string.IsNullOrEmpty(mutatorInfo.resourceTax))
@@ -205,7 +206,6 @@ namespace BDArmory.Modules
             startTime = Time.time;
             mutatorEnabled = true;
         }
-
 
         public void DisableMutator()
         {
@@ -237,7 +237,7 @@ namespace BDArmory.Modules
                         {
                             weapon.Current.SetupLaserSpecifics();
                         }
-                        weapon.Current.resourceSteal = false; ;
+                        weapon.Current.resourceSteal = false;
                     }
             }
 
@@ -297,7 +297,7 @@ namespace BDArmory.Modules
                 if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(vessel.vesselName))
                 {
                     if (BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].hits > oldScore) //apply HP gain every time a hit is scored
-                    {                        
+                    {
                         oldScore = BDACompetitionMode.Instance.Scores.ScoreData[vessel.vesselName].hits;
                         applyVampirism = true;
                     }
@@ -388,7 +388,7 @@ namespace BDArmory.Modules
                 }
             }
         }
-        void Detonate() 
+        void Detonate()
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Mutator] triggering vengeance nuke");
             NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "BDArmory/Models/explosion/explosion", "BDArmory/Sounds/explode1", 2.5f, 100, 500, 0.05f, 0.05f, true, "Vengeance Explosion");

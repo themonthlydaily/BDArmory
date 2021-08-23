@@ -221,6 +221,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_TIMER = false;
         [BDAPersistantSettingsField] public static float MUTATOR_DURATION = 0.5f;
         [BDAPersistantSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
+        [BDAPersistantSettingsField] public static int MUTATOR_APPLY_NUM = 1;
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
