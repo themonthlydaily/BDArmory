@@ -50,8 +50,11 @@ namespace BDArmory.UI
         private float oldThickness = -1;
         private float maxThickness = 60;
         private bool Visualizer = false;
+        private bool HPvisualizer = false;
         private bool oldVisualizer = false;
+        private bool oldHPvisualizer = false;
         private bool refreshVisualizer = false;
+        private bool refreshHPvisualizer = false;
         private float updateTimer = 0;
         private bool isWood = false;
         private bool isSteel = false;
@@ -85,6 +88,7 @@ namespace BDArmory.UI
         {
             CalcArmor = true;
             refreshVisualizer = true;
+            refreshHPvisualizer = true;
         }
 
         private void OnDestroy()
@@ -159,7 +163,8 @@ namespace BDArmory.UI
             else
             {
                 Visualizer = false;
-                VisualizeArmor();
+                HPvisualizer = false;
+                Visualize();
             }
             PreventClickThrough();
         }
@@ -181,12 +186,26 @@ namespace BDArmory.UI
             float line = 1.5f;
 
             style.fontStyle = FontStyle.Normal;
+            HPvisualizer = GUI.Toggle(new Rect(10, line * lineHeight, 280, lineHeight), HPvisualizer, Localizer.Format("#LOC_BDArmory_ArmorHPVisualizer"), HPvisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+            line += 1.5f;
+
             Visualizer = GUI.Toggle(new Rect(10, line * lineHeight, 280, lineHeight), Visualizer, Localizer.Format("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-            if (refreshVisualizer || Visualizer != oldVisualizer)
-            {
-                VisualizeArmor();
-            }
             line += 2;
+            if (Visualizer && HPvisualizer && !oldVisualizer && oldHPvisualizer)
+            {
+                HPvisualizer = false;
+                oldHPvisualizer = false;
+            }
+            if (Visualizer && HPvisualizer && oldVisualizer && !oldHPvisualizer)
+            {
+                Visualizer = false;
+                oldVisualizer = false;
+            }
+            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer))
+            {
+                Visualize();
+            }
+
             GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
             line++;
             GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
@@ -197,13 +216,13 @@ namespace BDArmory.UI
             Thickness /= 5;
             Thickness = Mathf.Round(Thickness);
             Thickness *= 5;
-            line ++;
+            line++;
             if (Thickness != oldThickness)
             {
                 oldThickness = Thickness;
                 SetThickness = true;
                 maxThickness = 10;
-                CalculateArmorMass();                
+                CalculateArmorMass();
             }
             GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorSelect"), style);
             line++;
@@ -253,13 +272,13 @@ namespace BDArmory.UI
                     //StatLines++;
                     GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDensity") + " " + ArmorDensity + " kg/m3", style);
                     StatLines++;
-                    GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorCost") + " " + ArmorCost + "/m3", style);
+                    GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorCost") + " " + ArmorCost + "/m3", style);
                     StatLines++;
                 }
             }
             line += 0.5f;
             float HullLines = 0;
-            showHullMenu = GUI.Toggle(new Rect(10, (line + armorLines + StatLines) *lineHeight, 280, lineHeight),
+            showHullMenu = GUI.Toggle(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight),
                 showHullMenu, Localizer.Format("#LOC_BDArmory_Armor_HullMat"), showHullMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
             HullLines += 1.15f;
 
@@ -315,9 +334,6 @@ namespace BDArmory.UI
             if (EditorLogic.RootPart == null)
                 return;
 
-            // Encapsulate editor ShipConstruct into a vessel:
-            Vessel v = new Vessel();
-            v.parts = EditorLogic.fetch.ship.Parts;
             totalArmorMass = 0;
             totalArmorCost = 0;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
@@ -386,14 +402,11 @@ namespace BDArmory.UI
             ArmorStrength = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Strength;
             GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
-        void VisualizeArmor()
+        void Visualize()
         {
             if (EditorLogic.RootPart == null)
                 return;
-            // Encapsulate editor ShipConstruct into a vessel:
-            Vessel v = new Vessel();
-            v.parts = EditorLogic.fetch.ship.Parts;
-            if (Visualizer)
+            if (Visualizer || HPvisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
@@ -401,29 +414,56 @@ namespace BDArmory.UI
                         HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
                         if (a != null)
                         {
-                            parts.Current.SetHighlightColor(Color.HSVToRGB((a.ArmorTypeNum / (ArmorInfo.armors.Count + 1)), ((a.Armor / a.maxSupportedArmor) * 2), 1f));
-                            parts.Current.SetHighlight(true, false);
-                            parts.Current.highlightType = Part.HighlightType.AlwaysOn;
+                            Color VisualizerColor = Color.HSVToRGB((Mathf.Clamp(a.Hitpoints, 100, 1600) / 1600) / 3, 1, 1);
+                            if (Visualizer)
+                            {
+                                VisualizerColor = Color.HSVToRGB(a.ArmorTypeNum / (ArmorInfo.armors.Count + 1), (a.Armor / maxThickness), 1f);
+                            }
+                            var r = parts.Current.GetComponentsInChildren<Renderer>();
+                            {
+                                for (int i = 0; i < r.Length; i++)
+                                {
+                                    if (r[i].material.shader.name.Contains("Alpha")) continue;
+                                    r[i].material.shader = Shader.Find("KSP/Unlit");
+                                    if (r[i].material.HasProperty("_Color"))
+                                    {
+                                        r[i].material.SetColor("_Color", VisualizerColor);
+                                    }
+                                }
+                            }
                         }
                     }
             }
-            else
+            if (!Visualizer && !HPvisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
                     {
                         HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
-                        if (armor != null)
+
+                        var r = parts.Current.GetComponentsInChildren<Renderer>();
                         {
-                            parts.Current.highlightType = Part.HighlightType.OnMouseOver;
-                            parts.Current.SetHighlightColor(Part.defaultHighlightPart);
-                            parts.Current.SetHighlight(false, false);
+                            for (int i = 0; i < r.Length; i++)
+                            {
+                                try
+                                {
+                                    r[i].material.shader = armor.defaultShader[i];
+                                    r[i].material.SetColor("_Color", armor.defaultColor[i]);
+                                }
+                                catch
+                                {
+                                    //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
+                                }
+                            }
                         }
                     }
             }
             oldVisualizer = Visualizer;
+            oldHPvisualizer = HPvisualizer;
             refreshVisualizer = false;
+            refreshHPvisualizer = false;
         }
+
         /// <summary>
         /// Lock the model if our own window is shown and has cursor focus to prevent click-through.
         /// Code adapted from FAR Editor GUI
@@ -459,5 +499,5 @@ namespace BDArmory.UI
             mousePos.y = Screen.height - mousePos.y;
             return mousePos;
         }
-    } 
+    }
 }

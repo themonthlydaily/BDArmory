@@ -361,7 +361,7 @@ namespace BDArmory.Misc
             foreach (var missileFire in VesselModuleRegistry.GetModules<MissileFire>(v))
             {
                 PartExploderSystem.AddPartToExplode(missileFire.part);
-                ExplosionFx.CreateExplosion(missileFire.part.transform.position, 0.2f, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, missileFire.part);
+                ExplosionFx.CreateExplosion(missileFire.part.transform.position, 1f, explModelPath, explSoundPath, ExplosionSourceType.Other, 0, missileFire.part);
             }
         }
 
