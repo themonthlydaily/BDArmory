@@ -407,7 +407,7 @@ namespace BDArmory.Evolution
                     }
                     if (!scores.ContainsKey(name))
                     {
-                        Debug.LogWarning($"[BDArmory.BDAEvolution]: Variant {name} missing from scores! Valid names were " + string.Join("; ", scores.Keys));
+                        Debug.LogError($"[BDArmory.BDAEvolution]: Variant {name} missing from scores! Valid names were " + string.Join("; ", scores.Keys));
                         continue;
                     }
                     var scoreData = scores[name];
