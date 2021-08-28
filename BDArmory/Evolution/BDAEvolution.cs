@@ -436,7 +436,7 @@ namespace BDArmory.Evolution
                     {
                         aggregateScores[name]["shots"] = scoreData.shotsFired;
                     }
-                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, kills, scoreData.hits, scoreData.shotsFired));
+                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, aggregateScores[name]["kills"], aggregateScores[name]["hits"], aggregateScores[name]["shots"]));
                 }
             }
         }
