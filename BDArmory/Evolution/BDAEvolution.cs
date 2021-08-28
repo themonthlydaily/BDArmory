@@ -143,7 +143,7 @@ namespace BDArmory.Evolution
 
         public void StartEvolution()
         {
-            if( evoCoroutine != null )
+            if (evoCoroutine != null)
             {
                 Debug.Log("Evolution already running");
                 return;
@@ -165,7 +165,7 @@ namespace BDArmory.Evolution
 
         public void StopEvolution()
         {
-            if( evoCoroutine == null )
+            if (evoCoroutine == null)
             {
                 Debug.Log("Evolution not running");
                 return;
@@ -275,12 +275,12 @@ namespace BDArmory.Evolution
         {
             var info = new DirectoryInfo(adversaryDirectory);
             var adversaries = info.GetFiles("*.craft").ToList();
-            if( adversaries.Count == 0 )
+            if (adversaries.Count == 0)
             {
                 Debug.Log("Evolution no adversaries found");
                 return;
             }
-            else if( adversaries.Count < BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT )
+            else if (adversaries.Count < BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT)
             {
                 Debug.Log("Evolution using all available adversaries");
                 foreach (var a in adversaries)
@@ -292,7 +292,7 @@ namespace BDArmory.Evolution
             }
             else
             {
-                for (var k=0;k<BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT;k++)
+                for (var k = 0; k < BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT; k++)
                 {
                     var index = UnityEngine.Random.Range(0, adversaries.Count);
                     var randomAdversary = adversaries[index].Name;
@@ -317,7 +317,7 @@ namespace BDArmory.Evolution
         {
             evolutionState.groups.Add(group);
 
-            if( !config.HasNode("EVOLUTION") )
+            if (!config.HasNode("EVOLUTION"))
             {
                 config.AddNode("EVOLUTION");
             }
@@ -369,11 +369,10 @@ namespace BDArmory.Evolution
             aggregateScores.Clear();
 
             var comp = BDACompetitionMode.Instance;
-            var scores = comp.Scores.ScoreData;
             var specialKills = new HashSet<AliveState> { AliveState.CleanKill, AliveState.HeadShot, AliveState.KillSteal };
 
             // run N tournaments and aggregate their scores
-            for (var k=0; k<BDArmorySettings.EVOLUTION_HEATS_PER_GROUP; k++)
+            for (var k = 0; k < BDArmorySettings.EVOLUTION_HEATS_PER_GROUP; k++)
             {
                 spawner.SpawnAllVesselsOnce(spawnConfig);
                 while (spawner.vesselsSpawning)
@@ -395,6 +394,7 @@ namespace BDArmory.Evolution
                 }
 
                 // aggregate scores
+                var scores = comp.Scores.ScoreData;
                 var activeGroup = evolutionState.groups.Last();
                 List<string> playerNames = new List<string>();
                 playerNames.AddRange(activeGroup.variants.Select(e => e.name));
@@ -405,9 +405,14 @@ namespace BDArmory.Evolution
                     {
                         aggregateScores[name] = new Dictionary<string, float>();
                     }
+                    if (!scores.ContainsKey(name))
+                    {
+                        Debug.LogWarning($"[BDArmory.BDAEvolution]: Variant {name} missing from scores! Valid names were " + string.Join("; ", scores.Keys));
+                        continue;
+                    }
                     var scoreData = scores[name];
                     var kills = scores.Values.Count(e => specialKills.Contains(e.aliveState) && e.lastPersonWhoDamagedMe == name);
-                    if( aggregateScores[name].ContainsKey("kills") )
+                    if (aggregateScores[name].ContainsKey("kills"))
                     {
                         aggregateScores[name]["kills"] += kills;
                     }
@@ -415,7 +420,7 @@ namespace BDArmory.Evolution
                     {
                         aggregateScores[name]["kills"] = kills;
                     }
-                    if( aggregateScores[name].ContainsKey("hits") )
+                    if (aggregateScores[name].ContainsKey("hits"))
                     {
                         aggregateScores[name]["hits"] += scoreData.hits;
                     }
@@ -423,7 +428,7 @@ namespace BDArmory.Evolution
                     {
                         aggregateScores[name]["hits"] = scoreData.hits;
                     }
-                    if( aggregateScores[name].ContainsKey("shots") )
+                    if (aggregateScores[name].ContainsKey("shots"))
                     {
                         aggregateScores[name]["shots"] += scoreData.shotsFired;
                     }
@@ -447,7 +452,7 @@ namespace BDArmory.Evolution
             Debug.Log(string.Format("Evolution compute weighted centroid for {0}", activeGroup.id));
             var maxScore = activeGroup.variants.Select(e => scores[e.name]).Max();
             var referenceScore = scores[activeGroup.referenceName];
-            if ( maxScore > 0 && maxScore > referenceScore )
+            if (maxScore > 0 && maxScore > referenceScore)
             {
                 ConfigNode newCraft = craft.CreateCopy();
 
@@ -477,11 +482,11 @@ namespace BDArmory.Evolution
                         var partContribution = part.value - part.referenceValue;
                         var weightedContribution = partContribution * score;
                         Debug.Log(string.Format("Evolution variant {0} score: {1}, part: {2}, module: {3}, key: {4}, value: {5}, ref: {6}", variant.name, score, part.partName, part.moduleName, part.paramName, part.value, part.referenceValue));
-                        if ( agg.ContainsKey(part.partName) )
+                        if (agg.ContainsKey(part.partName))
                         {
-                            if( agg[part.partName].ContainsKey(part.moduleName) )
+                            if (agg[part.partName].ContainsKey(part.moduleName))
                             {
-                                if( agg[part.partName][part.moduleName].ContainsKey(part.paramName) )
+                                if (agg[part.partName][part.moduleName].ContainsKey(part.paramName))
                                 {
                                     agg[part.partName][part.moduleName][part.paramName] += weightedContribution;
                                 }
@@ -517,12 +522,12 @@ namespace BDArmory.Evolution
                 // compute feedback for each axis
                 foreach (var key in axisScores.Keys)
                 {
-                    if( axisScores[key].Count == 2 )
+                    if (axisScores[key].Count == 2)
                     {
                         // compute simple xor(negative < 0, positive > 0)
                         var negativeCondition = axisScores[key][-1] < 0;
                         var positiveCondition = axisScores[key][1] > 0;
-                        if( (negativeCondition && !positiveCondition) || (!negativeCondition && positiveCondition) )
+                        if ((negativeCondition && !positiveCondition) || (!negativeCondition && positiveCondition))
                         {
                             // confirmed linearity
                             engine.Feedback(key, 0.25f);
@@ -607,7 +612,7 @@ namespace BDArmory.Evolution
             // score is a combination of kills, shots on target, hits, and accuracy
             float[] weights = new float[] { 1f, 0.002f, 0.01f, 5f };
             float[] values = new float[] { kills, shots, hits, accuracy };
-            for (var k=0; k<weights.Length; k++)
+            for (var k = 0; k < weights.Length; k++)
             {
                 score += weights[k] * values[k];
             }
