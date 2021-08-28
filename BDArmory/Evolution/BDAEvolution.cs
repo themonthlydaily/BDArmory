@@ -126,7 +126,7 @@ namespace BDArmory.Evolution
 
         void Awake()
         {
-            Debug.Log("Evolution awake");
+            Debug.Log("[BDArmory.BDAEvolution]: Evolution awake");
             if (Instance)
             {
                 Destroy(Instance);
@@ -137,7 +137,7 @@ namespace BDArmory.Evolution
 
         private void Start()
         {
-            Debug.Log("Evolution start");
+            Debug.Log("[BDArmory.BDAEvolution]: Evolution start");
             engine = new VariantEngine();
         }
 
@@ -145,10 +145,10 @@ namespace BDArmory.Evolution
         {
             if (evoCoroutine != null)
             {
-                Debug.Log("Evolution already running");
+                Debug.Log("[BDArmory.BDAEvolution]: Evolution already running");
                 return;
             }
-            Debug.Log("Evolution starting");
+            Debug.Log("[BDArmory.BDAEvolution]: Evolution starting");
             status = EvolutionStatus.Preparing;
 
             // initialize evolution
@@ -167,10 +167,10 @@ namespace BDArmory.Evolution
         {
             if (evoCoroutine == null)
             {
-                Debug.Log("Evolution not running");
+                Debug.Log("[BDArmory.BDAEvolution]: Evolution not running");
                 return;
             }
-            Debug.Log("Evolution stopping");
+            Debug.Log("[BDArmory.BDAEvolution]: Evolution stopping");
             status = EvolutionStatus.Idle;
 
             StopCoroutine(evoCoroutine);
@@ -264,7 +264,7 @@ namespace BDArmory.Evolution
             var info = new DirectoryInfo(seedDirectory);
             var seeds = info.GetFiles("*.craft").ToList();
             var latestSeed = seeds.OrderBy(e => e.CreationTimeUtc).Last().Name;
-            Debug.Log(string.Format("Evolution using latest seed: {0}", latestSeed));
+            Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution using latest seed: {0}", latestSeed));
             ConfigNode node = ConfigNode.Load(string.Format("{0}/{1}", seedDirectory, latestSeed));
             this.craft = node;
             return latestSeed;
@@ -277,12 +277,12 @@ namespace BDArmory.Evolution
             var adversaries = info.GetFiles("*.craft").ToList();
             if (adversaries.Count == 0)
             {
-                Debug.Log("Evolution no adversaries found");
+                Debug.Log("[BDArmory.BDAEvolution]: Evolution no adversaries found");
                 return;
             }
             else if (adversaries.Count < BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT)
             {
-                Debug.Log("Evolution using all available adversaries");
+                Debug.Log("[BDArmory.BDAEvolution]: Evolution using all available adversaries");
                 foreach (var a in adversaries)
                 {
                     ConfigNode adversaryNode = ConfigNode.Load(string.Format("{0}/{1}", adversaryDirectory, a));
@@ -297,7 +297,7 @@ namespace BDArmory.Evolution
                     var index = UnityEngine.Random.Range(0, adversaries.Count);
                     var randomAdversary = adversaries[index].Name;
                     adversaries.RemoveAt(index);
-                    Debug.Log(string.Format("Evolution using random adversary: {0}", randomAdversary));
+                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution using random adversary: {0}", randomAdversary));
                     ConfigNode node = ConfigNode.Load(string.Format("{0}/{1}", adversaryDirectory, randomAdversary));
                     node.Save(string.Format("{0}/{1}", workingDirectory, randomAdversary));
                 }
@@ -379,7 +379,7 @@ namespace BDArmory.Evolution
                     yield return new WaitForFixedUpdate();
                 if (!spawner.vesselSpawnSuccess)
                 {
-                    Debug.Log("[Evolution] Vessel spawning failed.");
+                    Debug.Log("[BDArmory.BDAEvolution]: Vessel spawning failed.");
                     yield break;
                 }
                 yield return new WaitForFixedUpdate();
@@ -436,7 +436,7 @@ namespace BDArmory.Evolution
                     {
                         aggregateScores[name]["shots"] = scoreData.shotsFired;
                     }
-                    Debug.Log(string.Format("Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, kills, scoreData.hits, scoreData.shotsFired));
+                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, kills, scoreData.hits, scoreData.shotsFired));
                 }
             }
         }
@@ -445,11 +445,11 @@ namespace BDArmory.Evolution
         {
             // compute scores for the dipolar variants
             var activeGroup = evolutionState.groups.Last();
-            Debug.Log(string.Format("Evolution compute scores for {0}", activeGroup.id));
+            Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution compute scores for {0}", activeGroup.id));
             Dictionary<string, float> scores = ComputeScores(activeGroup);
 
             // compute weighted centroid from the dipolar variants
-            Debug.Log(string.Format("Evolution compute weighted centroid for {0}", activeGroup.id));
+            Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution compute weighted centroid for {0}", activeGroup.id));
             var maxScore = activeGroup.variants.Select(e => scores[e.name]).Max();
             var referenceScore = scores[activeGroup.referenceName];
             if (maxScore > 0 && maxScore > referenceScore)
@@ -481,7 +481,7 @@ namespace BDArmory.Evolution
                     {
                         var partContribution = part.value - part.referenceValue;
                         var weightedContribution = partContribution * score;
-                        Debug.Log(string.Format("Evolution variant {0} score: {1}, part: {2}, module: {3}, key: {4}, value: {5}, ref: {6}", variant.name, score, part.partName, part.moduleName, part.paramName, part.value, part.referenceValue));
+                        Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution variant {0} score: {1}, part: {2}, module: {3}, key: {4}, value: {5}, ref: {6}", variant.name, score, part.partName, part.moduleName, part.paramName, part.value, part.referenceValue));
                         if (agg.ContainsKey(part.partName))
                         {
                             if (agg[part.partName].ContainsKey(part.moduleName))
@@ -540,11 +540,11 @@ namespace BDArmory.Evolution
                     }
                     else
                     {
-                        Debug.Log(string.Format("Evolution wrong score count computing feedback for {0}", key));
+                        Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution wrong score count computing feedback for {0}", key));
                     }
                 }
 
-                Debug.Log(string.Format("Evolution synthesizing new generation from {0} parts", agg.Keys.Count));
+                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution synthesizing new generation from {0} parts", agg.Keys.Count));
                 foreach (var part in agg.Keys)
                 {
                     foreach (var module in agg[part].Keys)
@@ -558,29 +558,29 @@ namespace BDArmory.Evolution
                                 List<ConfigNode> moduleNodes = engine.FindModuleNodes(partNodes[0], module);
                                 if (moduleNodes.Count > 0)
                                 {
-                                    Debug.Log(string.Format("Evolution mutated part: {0}, module: {1}, key: {2}, value: {3}", part, module, param, newValue));
+                                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution mutated part: {0}, module: {1}, key: {2}, value: {3}", part, module, param, newValue));
                                     engine.MutateNode(moduleNodes[0], param, newValue);
                                 }
                                 else
                                 {
-                                    Debug.Log(string.Format("Evolution failed to find module {0}", module));
+                                    Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution failed to find module {0}", module));
                                 }
                             }
                             else
                             {
-                                Debug.Log(string.Format("Evolution failed to find part {0}", part));
+                                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution failed to find part {0}", part));
                             }
                         }
                     }
                 }
 
-                Debug.Log(string.Format("Evolution save result for {0}", activeGroup.id));
+                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution save result for {0}", activeGroup.id));
                 newCraft.Save(string.Format("{0}/G{1}.craft", seedDirectory, activeGroup.id));
             }
             else
             {
                 // all variants somehow worse; re-seed
-                Debug.Log(string.Format("Evolution bad seed for {0}", activeGroup.id));
+                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution bad seed for {0}", activeGroup.id));
                 // downvote all variant axes
                 foreach (var variant in activeGroup.variants)
                 {
@@ -616,7 +616,7 @@ namespace BDArmory.Evolution
             {
                 score += weights[k] * values[k];
             }
-            Debug.Log(string.Format("Evolution ScoreForPlayer({0} => {1}) raw: [{2}, {3}, {4}, {5}]", name, score, kills, shots, hits, accuracy));
+            Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution ScoreForPlayer({0} => {1}) raw: [{2}, {3}, {4}, {5}]", name, score, kills, shots, hits, accuracy));
             return score;
         }
 
@@ -625,7 +625,7 @@ namespace BDArmory.Evolution
             // TODO: evaluate stability and decide to continue or done
             // for now, just continue until manually canceled
             groupId += 1;
-            Debug.Log(string.Format("Evolution next group {0}", groupId));
+            Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution next group {0}", groupId));
             yield return ExecuteEvolution();
         }
     }
