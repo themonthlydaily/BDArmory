@@ -88,7 +88,7 @@ namespace BDArmory.Evolution
     {
         public static BDAModuleEvolution Instance;
 
-        private static string workingDirectory = "Autospawn";
+        private static string workingDirectory = "AutoSpawn";
         private static string configDirectory = string.Format("{0}/evolutions", workingDirectory);
         private static string seedDirectory = string.Format("{0}/seeds", configDirectory);
         private static string adversaryDirectory = string.Format("{0}/adversaries", configDirectory);
