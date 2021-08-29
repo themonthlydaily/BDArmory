@@ -126,7 +126,7 @@ namespace BDArmory.Evolution
 
         void Awake()
         {
-            Debug.Log("[BDArmory.BDAEvolution]: Evolution awake");
+            // Debug.Log("[BDArmory.BDAEvolution]: Evolution awake");
             if (Instance)
             {
                 Destroy(Instance);
@@ -137,7 +137,7 @@ namespace BDArmory.Evolution
 
         private void Start()
         {
-            Debug.Log("[BDArmory.BDAEvolution]: Evolution start");
+            // Debug.Log("[BDArmory.BDAEvolution]: Evolution start");
             engine = new VariantEngine();
         }
 
@@ -145,10 +145,10 @@ namespace BDArmory.Evolution
         {
             if (evoCoroutine != null)
             {
-                Debug.Log("[BDArmory.BDAEvolution]: Evolution already running");
+                // Debug.Log("[BDArmory.BDAEvolution]: Evolution already running");
                 return;
             }
-            Debug.Log("[BDArmory.BDAEvolution]: Evolution starting");
+            // Debug.Log("[BDArmory.BDAEvolution]: Evolution starting");
             status = EvolutionStatus.Preparing;
 
             // initialize evolution
@@ -167,10 +167,10 @@ namespace BDArmory.Evolution
         {
             if (evoCoroutine == null)
             {
-                Debug.Log("[BDArmory.BDAEvolution]: Evolution not running");
+                // Debug.Log("[BDArmory.BDAEvolution]: Evolution not running");
                 return;
             }
-            Debug.Log("[BDArmory.BDAEvolution]: Evolution stopping");
+            // Debug.Log("[BDArmory.BDAEvolution]: Evolution stopping");
             status = EvolutionStatus.Idle;
 
             StopCoroutine(evoCoroutine);
