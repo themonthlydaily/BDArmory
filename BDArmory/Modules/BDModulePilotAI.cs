@@ -552,6 +552,7 @@ namespace BDArmory.Modules
         LineRenderer lr;
         Vector3 flyingToPosition;
         Vector3 rollTarget;
+        Vector3 rollTarget_DEBUG;
         Vector3 angVelRollTarget;
 
         //speed controller
@@ -1664,7 +1665,20 @@ namespace BDArmory.Modules
             }
             rollTarget = (targetPosition + (rollUp * upDirection)) - vesselTransform.position;
 
+            //test
+            if (steerMode == SteerModes.Aiming && !belowMinAltitude)
+            {
+                angVelRollTarget = -140 * vesselTransform.TransformVector(Quaternion.AngleAxis(90f, Vector3.up) * localTargetAngVel);
+                rollTarget += angVelRollTarget;
+            }
+
+            if (command == PilotCommands.Follow && useRollHint)
+            {
+                rollTarget = -commandLeader.vessel.ReferenceTransform.forward;
+            }
+
             // Adjust roll target to avoid triggering terrain avoidance
+            rollTarget_DEBUG = Vector3.zero;
             if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0)
             {
                 // If we're not avoiding terrain and the roll target is behind us and the roll target is downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground
@@ -1679,7 +1693,7 @@ namespace BDArmory.Modules
                 if (vessel.radarAltitude < h) // Too low for this manoeuvre.
                 {
                     Debug.Log($"DEBUG {vessel.vesselName} too low for rollTarget; v: {vessel.srf_vel_direction.ToString("G3")}, t: {rollTarget.ToString("G3")}, r: {r}, h: {h}, alt: {vessel.radarAltitude}, up: {upDirection.ToString("G3")}, phi: {Mathf.Rad2Deg * Mathf.Acos(b)}");
-                    // Rotate rollTarget around vessel.srf_vel_direction to be horizontal.
+                    // Rotate rollTarget around vessel.srf_vel_direction to be horizontal. // FIXME this isn't working as the later projection takes it away from horizontal again.
                     rollTarget = Vector3.ProjectOnPlane(rollTarget, upDirection).normalized * 100;
                     n = Vector3.Cross(vessel.srf_vel_direction, rollTarget).normalized;
                     m = Vector3.Cross(n, upDirection).normalized;
@@ -1689,19 +1703,9 @@ namespace BDArmory.Modules
                     r = turnRadius * turnRadiusTwiddleFactorMin;
                     h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b;
                     Debug.Log($"DEBUG new rollTarget: {rollTarget.ToString("G3")} h': {h}");
+                    rollTarget_DEBUG = rollTarget;
+                    if (FlightGlobals.ActiveVessel != vessel) LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel);
                 }
-            }
-
-            //test
-            if (steerMode == SteerModes.Aiming && !belowMinAltitude)
-            {
-                angVelRollTarget = -140 * vesselTransform.TransformVector(Quaternion.AngleAxis(90f, Vector3.up) * localTargetAngVel);
-                rollTarget += angVelRollTarget;
-            }
-
-            if (command == PilotCommands.Follow && useRollHint)
-            {
-                rollTarget = -commandLeader.vessel.ReferenceTransform.forward;
             }
 
             //
@@ -2968,6 +2972,7 @@ namespace BDArmory.Modules
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vessel.Velocity().normalized * 100, 3, Color.magenta);
 
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget, 2, Color.blue);
+            BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget_DEBUG / 2f, 4, Color.cyan);
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right) + angVelRollTarget, 2, Color.green);
             if (avoidingTerrain)
             {
