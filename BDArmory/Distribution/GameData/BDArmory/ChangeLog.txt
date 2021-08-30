@@ -1,17 +1,76 @@
-﻿FIXES
-	- Don't trigger CASE ammo explosions on scene changes.
-	- Fix logic of which vessels to ignore in RCS snapshots.
+﻿v1.4.8.0
 IMPROVEMENTS
-	- Automatically create the AutoSpawn folder on entering flight mode if it doesn't already exist.
-	- Always show a clock during competitions and competition start for time synchronisation of video post-processing.
-	- Move toolbar button logic to BDArmorySetup.cs and enable toolbar button in SPH and VAB too for accessing BDA settings window.
-	- Add an Advanced Tweakables toggle to the BDArmory settings for easier access.
-	- Balance for 25mm round (tested in FJRT2).
-	- Track the current HP ignoring ignored parts as needed.
-	- Stand-off distance.
+	- General:
+		- Adds support for weapons with multiple fire animations or barrels (battleship guns/wirbelwinds/etc).
+		- Adds Sidam quad 25mm to demonstrate multi-fireanim/multi-barrel functionality, and the GAU-22 to provide a fixed 25mm weapon.
+		- Fix fuel fires/ammo explosions occasionally yielding larger than expected damage.
+		- Ammo explosion max damage now capped.
+		- Weapons with integral CASE will no longer add an additional 2000 funds to part cost on load.
+		- Add N-choose-K style tournament option.
+		- Variant engine for automated craft evolution.
+	- AI/WM:
+		- Added stand-off distance to try to avoid getting closer than this distance when tailing another craft.
+		- Improved vessel-vessel collision avoidance based on look-ahead and avoidance strength and only avoiding as long as necessary (note: this uses different settings in the pilot AI, so old craft may need re-tuning for this).
+		- Expand targeting logic for rockets.
+		- Adds AI GUI, available in both editors and in flight, with configurable hotkey (default 'Numpad /') and optional toolbar button.
+		- Expands Weapon Manager GUI, adds target priorities tab.
+		- Adds togglable context labels and infolinks to AI and WM GUIs for on-hand info about what each setting does.
+		- Ki improvements with 0.995 decay factor and fixed +1/-1 clamps.
+		- Update target priority to work for ground targets.
+	- Armor Overhaul:
+		- Armor now adds mass to craft, relative to thickness and part size.
+		- Can now select from multiple armor materials, each with their own strengths and weaknesses.
+		- Adds spalling damage from near-penetrating hits.
+		- Adds shrapnel damage from explosive detonations.
+		- Adds Armor tool to SHP/VAB editors for easy armor manipulation across a craft.
+		- Adds HP visualizer, to see HP of all parts across craft.
+	- GameModes:
+		- Adds Space Tools BDA setting.
+			- Adds Space Friction toggle for starwars-style space dogfights.
+			- Adds contragrav setting for atmospheric use for things that reasonably shouldn't fly - sky battleships/stock zeppelins/etc - or for null-atmo fights where wings can't generate lift.
+			- Adds repulsor setting for hover vehicles.
+		- Rework Tag mode to use the new scoring datastructure.
+	- Scoring:
+		- Rework the code interally for a more consistent approach.
+		- Sliders for controlling the time limits for head-shots and kill-steals.
+		- Head-shots are now separated into clean-kills (within the time limit and was the only plane to damage the target), head-shot (within the time limit, but not the only plane to damage the target) and kill-steals (within both time limits).
+		- Separate scoring categories for rockets and battle damage, giving: bullets, rockets, missiles, ramming and battle damage (including self-inflicted).
+		- Improve score-related UI messages.
+		- Updated parsing script to handle these new categories.
+		- Remote orchestration is not yet updated, so report rocket damage as missile damage to the remote orchestration for now.
+		- Fix bugs in continuous spawning and integrate it into the new scoring datastructure.
+	- UI:
+		- Always show a clock during competitions and competition start for time synchronisation of video post-processing.
+		- Add the AI/WM GUI toggle hotkeys into the hotkey settings so they can be set.
+		- Increase the default width of the vessel spawner window a bit to fit the tournament status for long tournaments. Automatically adjust existing window width if running a tournament with >99 heats.
+		- Extra damage sliders for rocket and battle damage multipliers.
+		- Add an Advanced Tweakables toggle to the BDArmory settings for easier access.
+		- Add a toggle for the BDA AI toolbar button.
+	- Internal stuff:
+		- Balance for 25mm round (tested in FJRT2).
+		- Adjustment of battle damage damage.
+		- Automatically create the AutoSpawn folder on entering flight mode if it doesn't already exist.
+		- Move toolbar button logic to BDArmorySetup.cs and enable toolbar button in SPH and VAB too for accessing BDA settings window.
+		- Move SpawnField class to BDArmory.UI.NumericInputField.
+		- Track the current HP ignoring ignored parts as needed.
+		- Deprecate BD_AMMO_DMG_MULT.
+		- CASE now uses EST.BattleDamage.
+		- Change competition update tick to 1s to match best precision of vessel state checks.
+		- Detection of crew being killed in 'uncontrolled' checks.
+FIXES
+	- Fix logic of which vessels to ignore in RCS snapshots.
+	- onDisable -> OnDisable. Deactivate FireFX properly such that the parentPart always gets cleared (also in FuelLeakFX.cs).
+	- Fix line-of-sight checks in ExplosionFX for exploding parts on vessels.
+	- Don't detonate for surface fires, excess fuel explosions cause surface fires.
+	- Don't trigger CASE ammo explosions on scene changes.
+	- Fix rippleRPM.
+	- Fixes to burstfire.
+	- Fix checks for uncontrolled vessels.
+	- Fix LangVersion in .csproj to build with later than C# 7.3.
+	- Fix missing team in summary when the team is only dead.
+	- Fix bug with 'dead teams' in tournament parser script.
+	- A variety of minor bug fixes and optimisations.
 
-	- SI's armour overhaul <- FIXME get changelog from SI.
-	- SI's space mode
 
 v1.4.7.1
 FIXES
