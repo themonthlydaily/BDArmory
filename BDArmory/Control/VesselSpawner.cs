@@ -1201,25 +1201,7 @@ namespace BDArmory.Control
                                 invalidVesselCount.Remove(craftURL);
                             // Update the ramming information for the new vessel.
                             if (BDACompetitionMode.Instance.rammingInformation != null)
-                            {
-                                if (!BDACompetitionMode.Instance.rammingInformation.ContainsKey(vessel.vesselName)) // Vessel information hasn't been added to rammingInformation datastructure yet.
-                                {
-                                    BDACompetitionMode.Instance.rammingInformation.Add(vessel.vesselName, new BDACompetitionMode.RammingInformation { vesselName = vessel.vesselName, targetInformation = new Dictionary<string, BDACompetitionMode.RammingTargetInformation>() });
-                                    foreach (var otherVesselName in BDACompetitionMode.Instance.rammingInformation.Keys)
-                                    {
-                                        if (otherVesselName == vessel.vesselName) continue;
-                                        BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].targetInformation.Add(otherVesselName, new BDACompetitionMode.RammingTargetInformation { vessel = BDACompetitionMode.Instance.rammingInformation[otherVesselName].vessel });
-                                    }
-                                }
-                                BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].vessel = vessel;
-                                BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].partCount = vessel.parts.Count;
-                                BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].radius = vessel.GetRadius();
-                                foreach (var otherVesselName in BDACompetitionMode.Instance.rammingInformation.Keys)
-                                {
-                                    if (otherVesselName == vessel.vesselName) continue;
-                                    BDACompetitionMode.Instance.rammingInformation[otherVesselName].targetInformation[vessel.vesselName] = new BDACompetitionMode.RammingTargetInformation { vessel = vessel };
-                                }
-                            }
+                            { BDACompetitionMode.Instance.AddPlayerToRammingInformation(vessel); }
                             vesselsToActivate.Remove(vessel);
                             RevertSpawnLocationCamera(true); // Undo the camera adjustment and reset the camera distance. This has an internal check so that it only occurs once.
                             if (initialSpawn || FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD)
