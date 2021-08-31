@@ -98,12 +98,15 @@ namespace BDArmory.Core.Module
         private bool startsArmored = false;
 
         //Part vars
+        private float partMass = 0f;
         public Vector3 partSize;
         [KSPField(isPersistant = true)]
         public float maxSupportedArmor = -1; //upper cap on armor per part, overridable in MM/.cfg
         [KSPField(isPersistant = true)]
         public float armorVolume = -1;
         private float sizeAdjust;
+        [KSPField(isPersistant = true)]
+        public bool IsTrangularPanel = false;
         AttachNode bottom;
         AttachNode top;
 
@@ -205,6 +208,7 @@ namespace BDArmory.Core.Module
             isEnabled = true;
 
             //if (part != null) _updateHitpoints = true; //this just calls Setupprefab, already directly called later in OnStart
+            partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
             HullmassAdjust = 0;
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -246,6 +250,12 @@ namespace BDArmory.Core.Module
                     Fields["guiHullTypeString"].guiActiveEditor = false;
                     IgnoreForArmorSetup = true;
                 }
+                if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
+                {
+                    startsArmored = true;
+                    Armor = ArmorThickness;
+                    ArmorTypeNum = 2;
+                }
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
             GameEvents.onPartDie.Add(OnPartDie);
@@ -282,13 +292,8 @@ namespace BDArmory.Core.Module
             {                                                                                               //Wings at least could use WingLiftArea as a workaround for approx. surface area...
                 sizeAdjust = 0.5f; //armor on one side, otherwise will have armor thickness on both sides of the panel, nonsensical + doiuble weight
             }
-            if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
-            {
-                startsArmored = true;
-                Armor = ArmorThickness;
-                ArmorTypeNum = 2;
-            }
             armorMass = 0;
+            partMass = part.mass;
             partSize = CalcPartBounds(this.part, this.transform).size;
             if (armorVolume < 0) //make this persistant to get around diffeences in part bounds between SPH/Flight. 
             {
@@ -300,6 +305,10 @@ namespace BDArmory.Core.Module
                 }
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
+            }
+            if (IsTrangularPanel)
+            {
+                armorVolume /= 2;
             }
             SetupPrefab();
             ArmorSetup(null, null);
@@ -449,7 +458,7 @@ namespace BDArmory.Core.Module
                 hitpoints = structuralMass * hitpointMultiplier * 0.333f;
                 //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
 
-                if (hitpoints > 10 * (part.mass - armorMass) * 1000f || hitpoints < 0.1f * (part.mass - armorMass) * 1000f)
+                if (hitpoints > 10 * (part.mass - armorMass) * 1000f  * hitpointMultiplier * 0.333f || hitpoints < 0.1f * (part.mass - armorMass) * 1000f * hitpointMultiplier * 0.333f)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
                     hitpoints = hitpointMultiplier * (part.mass - armorMass) * 333f;
@@ -460,7 +469,7 @@ namespace BDArmory.Core.Module
                 {
                     if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                     {
-                        hitpoints = ((part.mass - armorMass) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.                      
+                        hitpoints = ((part.mass - armorMass) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.     
                     }
                     else
                     {
@@ -542,13 +551,11 @@ namespace BDArmory.Core.Module
 
             partdamage = Mathf.Max(partdamage, 0f) * -1;
             Hitpoints += partdamage;
-
             if (Hitpoints <= 0)
             {
                 DestroyPart();
             }
         }
-
         public void AddDamageToKerbal(KerbalEVA kerbal, float damage)
         {
             damage = Mathf.Max(damage, 0f) * -1;
@@ -742,7 +749,7 @@ namespace BDArmory.Core.Module
             }
             else //hulltype 3
             {
-                HullmassAdjust = (part.mass - armorMass);
+                HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
                 part.maxTemp = 2000;
             }
