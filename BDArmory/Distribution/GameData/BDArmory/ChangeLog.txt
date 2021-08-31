@@ -1,4 +1,13 @@
-﻿v1.4.8.0
+﻿v1.4.8.1
+FIXES
+	- Fix (mostly) Pwing - HPVisualizer issue
+	- Fix burstfire
+	- Fix procwing HP bug
+IMPROVEMENTS
+	- Internal stuff:
+		- Implement the AddPlayerToRammingInformation and RemovePlayerFromRammingInformation functions (not used yet).
+
+v1.4.8.0
 IMPROVEMENTS
 	- General:
 		- Adds support for weapons with multiple fire animations or barrels (battleship guns/wirbelwinds/etc).

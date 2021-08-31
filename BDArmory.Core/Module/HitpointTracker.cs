@@ -15,7 +15,7 @@ namespace BDArmory.Core.Module
 
         public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
         public float GetModuleCost(float baseCost, ModifierStagingSituation situation) => armorCost;
-        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED
+        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
 
         [KSPField(isPersistant = false, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Hitpoints"),//Hitpoints
         UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.All, maxValue = 100000, minValue = 0, requireFullControl = false)]
