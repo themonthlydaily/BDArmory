@@ -1696,7 +1696,8 @@ namespace BDArmory.Modules
                                     RunTrajectorySimulation();
                                 }
                                 //heat
-                                heat += heatPerShot;
+                    
+                    heat += heatPerShot;
                                 //EC
                                 DrainECPerShot();
                                 RoundsRemaining++;
@@ -1718,7 +1719,7 @@ namespace BDArmory.Modules
                         }
                     }
 
-                if (useRippleFire)
+                if (useRippleFire && fireState.Length > 1)
                 {
                     barrelIndex++;
                     //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
@@ -1805,7 +1806,7 @@ namespace BDArmory.Modules
                             }
                         }
                         heat += heatPerShot;
-                        if (useRippleFire)
+                        if (useRippleFire && fireState.Length > 1)
                         {
                             barrelIndex++;
                             if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
@@ -2233,7 +2234,7 @@ namespace BDArmory.Modules
                     }
                 }
             }
-            if (useRippleFire)
+            if (useRippleFire && fireState.Length > 1)
             {
                 if (!rocketPod)
                 {
