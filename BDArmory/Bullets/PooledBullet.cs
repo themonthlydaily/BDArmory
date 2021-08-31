@@ -86,7 +86,7 @@ namespace BDArmory.Bullets
         public float caliber = 1;
         public float bulletVelocity; //muzzle velocity
         public bool explosive = false;
-		public bool incendiary;
+        public bool incendiary;
         public float apBulletMod = 0;
         public bool sabot = false;
         public float ballisticCoefficient;
@@ -108,19 +108,19 @@ namespace BDArmory.Bullets
 
         #endregion Declarations
 
-		static RaycastHit[] hits;
+        static RaycastHit[] hits;
         static RaycastHit[] reverseHits;
         private Vector3[] linePositions = new Vector3[2];
 
         private double distanceTraveled = 0;
         public double DistanceTraveled { get { return distanceTraveled; } }
 
-		void Awake()
+        void Awake()
         {
             if (hits == null) { hits = new RaycastHit[100]; }
             if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
         }
-		
+
         void OnEnable()
         {
             startPosition = transform.position;
@@ -509,7 +509,7 @@ namespace BDArmory.Bullets
                             if (penTicker > 0) currentVelocity *= 0.55f; //implement armor density modifying this ar some point?
                             flightTimeElapsed -= period;
 
-                            float bulletDragArea = Mathf.PI * ((caliber / 2f) * (caliber / 2f)); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
+                            float bulletDragArea = Mathf.PI * (caliber * caliber / 4f); //if bullet not killed by impact, possbily deformed from impact; grab new ballistic coeff for drag
                             ballisticCoefficient = bulletMass / ((bulletDragArea / 1000000f) * 0.295f); // mm^2 to m^2
                         }
                         if (penetrationFactor >= 2)
@@ -664,7 +664,7 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-            
+
             return detonate;
         }
 

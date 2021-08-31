@@ -980,6 +980,12 @@ namespace BDArmory.Modules
                 AI = VesselModuleRegistry.GetIBDAIControl(vessel, true);
 
                 RefreshModules();
+                var SF = vessel.rootPart.FindModuleImplementing<ModuleSpaceFriction>();
+                if (SF == null)
+                {
+                    SF = (ModuleSpaceFriction)vessel.rootPart.AddModule("ModuleSpaceFriction");
+                }
+                //either have this added on spawn to allow vessels to respond to space hack settings getting toggled, or have the Spacefriction module it's own separate part
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {

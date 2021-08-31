@@ -101,7 +101,11 @@ namespace BDArmory.Modules
             base.OnLoad(node);
 
             if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) return;
-            CASESetup(null, null);
+            var internalmag = part.FindModuleImplementing<ModuleWeapon>();
+            if (internalmag == null)
+            {
+                CASESetup(null, null); //don't apply mass/cost to weapons with integral ammo protection, assume it's baked into weapon mass/cost
+            }
         }
 
         private List<PartResource> GetResources()
@@ -256,9 +260,7 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE]" + hitPart.name + " damaged, armor reduced by " + armorToReduce);
 
-            BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, hitPart.vessel.GetName(), explDamage);
-            if (BDACompetitionMode.Instance.Scores.Players.Contains(hitPart.vessel.vesselName))
-                Debug.Log($"DEBUG {explDamage} damage from CASE-{CASELevel} on {hitPart.vessel.vesselName} from {SourceVessel}");
+            BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, hitPart.vessel, explDamage);
         }
 
         void OnDestroy()

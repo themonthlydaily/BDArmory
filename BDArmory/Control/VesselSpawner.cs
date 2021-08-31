@@ -538,7 +538,7 @@ namespace BDArmory.Control
                 // Fix control point orientation by setting the reference transformation to that of the root part.
                 spawnedVessels[vesselName].Item1.SetReferenceTransform(spawnedVessels[vesselName].Item1.rootPart);
 
-                if (!spawnAirborne)
+                if (!spawnAirborne || BDArmorySettings.SF_GRAVITY) //spawn parallel to ground if surface or space spawning
                 {
                     vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal.
                     vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(shipFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, direction, localSurfaceNormal), localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
@@ -563,6 +563,14 @@ namespace BDArmory.Control
                     }
                 }
                 vessel.SetPosition(finalSpawnPositions[vesselName]);
+                if (BDArmorySettings.SPACE_HACKS)
+                {
+                    var SF = vessel.rootPart.FindModuleImplementing<ModuleSpaceFriction>();
+                    if (SF == null)
+                    {
+                        SF = (ModuleSpaceFriction)vessel.rootPart.AddModule("ModuleSpaceFriction");
+                    }
+                }
                 Debug.Log("[BDArmory.VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
             }
             #endregion
@@ -1082,9 +1090,25 @@ namespace BDArmory.Control
                         while (vessel != null && vessel.rootPart != null && (vessel.ReferenceTransform == null || vessel.rootPart.GetReferenceTransform() == null) && ++count < 5) yield return new WaitForFixedUpdate();
                         if (vessel == null || vessel.rootPart == null) continue; // In case the vessel got destroyed in the mean time.
                         vessel.SetReferenceTransform(vessel.rootPart);
-                        vessel.SetRotation(Quaternion.FromToRotation(-vessel.ReferenceTransform.up, -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the local gravity direction.
-                        vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.ReferenceTransform.forward, vessel.transform.position - spawnPoint, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
-                        vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.ReferenceTransform.right) * vessel.transform.rotation); // Tilt 10° outwards.
+                        if (BDArmorySettings.SF_GRAVITY)
+                        {
+                            vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the gravity direction.
+                            vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(shipFacility == EditorFacility.SPH ? vessel.ReferenceTransform.up : -vessel.ReferenceTransform.forward, vessel.transform.position - spawnPoint, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the point outwards.
+                        }
+                        else
+                        {
+                            vessel.SetRotation(Quaternion.FromToRotation(-vessel.ReferenceTransform.up, -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the local gravity direction.
+                            vessel.SetRotation(Quaternion.AngleAxis(Vector3.SignedAngle(-vessel.ReferenceTransform.forward, vessel.transform.position - spawnPoint, -geeDirection), -geeDirection) * vessel.transform.rotation); // Re-orient the vessel to the right direction.
+                            vessel.SetRotation(Quaternion.AngleAxis(-10f, vessel.ReferenceTransform.right) * vessel.transform.rotation); // Tilt 10° outwards.
+                        }
+                        if (BDArmorySettings.SPACE_HACKS)
+                        {
+                            var SF = vessel.rootPart.FindModuleImplementing<ModuleSpaceFriction>();
+                            if (SF == null)
+                            {
+                                SF = (ModuleSpaceFriction)vessel.rootPart.AddModule("ModuleSpaceFriction");
+                            }
+                        }
                     }
                 }
                 // Activate the AI and fire up any new weapon managers that appeared.
@@ -1177,25 +1201,7 @@ namespace BDArmory.Control
                                 invalidVesselCount.Remove(craftURL);
                             // Update the ramming information for the new vessel.
                             if (BDACompetitionMode.Instance.rammingInformation != null)
-                            {
-                                if (!BDACompetitionMode.Instance.rammingInformation.ContainsKey(vessel.vesselName)) // Vessel information hasn't been added to rammingInformation datastructure yet.
-                                {
-                                    BDACompetitionMode.Instance.rammingInformation.Add(vessel.vesselName, new BDACompetitionMode.RammingInformation { vesselName = vessel.vesselName, targetInformation = new Dictionary<string, BDACompetitionMode.RammingTargetInformation>() });
-                                    foreach (var otherVesselName in BDACompetitionMode.Instance.rammingInformation.Keys)
-                                    {
-                                        if (otherVesselName == vessel.vesselName) continue;
-                                        BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].targetInformation.Add(otherVesselName, new BDACompetitionMode.RammingTargetInformation { vessel = BDACompetitionMode.Instance.rammingInformation[otherVesselName].vessel });
-                                    }
-                                }
-                                BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].vessel = vessel;
-                                BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].partCount = vessel.parts.Count;
-                                BDACompetitionMode.Instance.rammingInformation[vessel.vesselName].radius = vessel.GetRadius();
-                                foreach (var otherVesselName in BDACompetitionMode.Instance.rammingInformation.Keys)
-                                {
-                                    if (otherVesselName == vessel.vesselName) continue;
-                                    BDACompetitionMode.Instance.rammingInformation[otherVesselName].targetInformation[vessel.vesselName] = new BDACompetitionMode.RammingTargetInformation { vessel = vessel };
-                                }
-                            }
+                            { BDACompetitionMode.Instance.AddPlayerToRammingInformation(vessel); }
                             vesselsToActivate.Remove(vessel);
                             RevertSpawnLocationCamera(true); // Undo the camera adjustment and reset the camera distance. This has an internal check so that it only occurs once.
                             if (initialSpawn || FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD)

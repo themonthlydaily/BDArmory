@@ -326,7 +326,7 @@ namespace BDArmory.FX
                     }
                     ////////////////////////////////////////////////
 
-                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel.GetName(), BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
             if ((!hasFuel && disableTime < 0 && burnTime < 0) || (burnTime > 0 && disableTime < 0 && Time.time - startTime > burnTime))
@@ -354,7 +354,10 @@ namespace BDArmory.FX
                 enginerestartTime = -1;
             }
             ////////////////////////////////////////////
-
+            if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
+            {
+                gameObject.SetActive(false); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+            }
         }
 
         void Detonate()
