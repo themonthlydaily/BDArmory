@@ -196,6 +196,7 @@ namespace BDArmory.Core.Module
                 if (!ArmorSet) overrideArmorSetFromConfig();
 
                 previousHitpoints = maxHitPoints_;
+                part.RefreshAssociatedWindows();
             }
             else
             {
@@ -207,7 +208,7 @@ namespace BDArmory.Core.Module
         {
             isEnabled = true;
 
-            //if (part != null) _updateHitpoints = true; //this just calls Setupprefab, already directly called later in OnStart
+            if (part != null) _updateHitpoints = true; 
             partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
             HullmassAdjust = 0;
             if (HighLogic.LoadedSceneIsFlight)
