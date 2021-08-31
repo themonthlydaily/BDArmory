@@ -1677,9 +1677,16 @@ namespace BDArmory.Modules
                 rollTarget = -commandLeader.vessel.ReferenceTransform.forward;
             }
 
-            // Adjust roll target to avoid triggering terrain avoidance
-            rollTarget_DEBUG = Vector3.zero;
-            if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0)
+            rollTarget_DEBUG = Vector3.zero; // FIXME DEBUG, remove before merge
+            //
+            if (belowMinAltitude)
+            {
+                if (avoidingTerrain)
+                    rollTarget = terrainAlertNormal * 100;
+                else
+                    rollTarget = vessel.upAxis * 100;
+            }
+            else if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0) // Adjust roll target to avoid triggering terrain avoidance
             {
                 // If we're not avoiding terrain and the roll target is behind us and the roll target is downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground
                 // The following calculates the altitude required to turn in the direction of the rollTarget based on the current velocity and turn radius.
@@ -1706,15 +1713,6 @@ namespace BDArmory.Modules
                     rollTarget_DEBUG = rollTarget;
                     if (FlightGlobals.ActiveVessel != vessel) LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel);
                 }
-            }
-
-            //
-            if (belowMinAltitude)
-            {
-                if (avoidingTerrain)
-                    rollTarget = terrainAlertNormal * 100;
-                else
-                    rollTarget = vessel.upAxis * 100;
             }
             if (useVelRollTarget && !belowMinAltitude)
             {
