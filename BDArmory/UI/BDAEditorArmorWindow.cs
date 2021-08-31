@@ -86,9 +86,15 @@ namespace BDArmory.UI
 
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
-            CalcArmor = true;
-            refreshVisualizer = true;
-            refreshHPvisualizer = true;
+            if (showArmorWindow)
+            {
+                CalcArmor = true;
+                if (Visualizer || HPvisualizer)
+                {
+                    refreshVisualizer = true;
+                    refreshHPvisualizer = true;
+                }
+            }
         }
 
         private void OnDestroy()
@@ -135,6 +141,9 @@ namespace BDArmory.UI
         {
             showArmorWindow = false;
             CalcArmor = false;
+            Visualizer = false;
+            HPvisualizer = false;
+            Visualize();
         }
 
         void Dummy()
@@ -159,13 +168,7 @@ namespace BDArmory.UI
             if (showArmorWindow)
             {
                 windowRect = GUI.Window(this.GetInstanceID(), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
-            }
-            else
-            {
-                Visualizer = false;
-                HPvisualizer = false;
-                Visualize();
-            }
+            }            
             PreventClickThrough();
         }
 
@@ -387,7 +390,7 @@ namespace BDArmory.UI
                     }
                 }
             CalcArmor = false;
-            if (SetType || SetThickness)
+            if ((SetType || SetThickness) && (Visualizer || HPvisualizer))
             {
                 refreshVisualizer = true;
             }
@@ -419,16 +422,28 @@ namespace BDArmory.UI
                             {
                                 VisualizerColor = Color.HSVToRGB(a.ArmorTypeNum / (ArmorInfo.armors.Count + 1), (a.Armor / maxThickness), 1f);
                             }
-                            var r = parts.Current.GetComponentsInChildren<Renderer>();
+                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                             {
-                                for (int i = 0; i < r.Length; i++)
+                                parts.Current.highlightType = Part.HighlightType.AlwaysOn;
+                                parts.Current.SetHighlight(true, false);
+                                parts.Current.SetHighlightColor(VisualizerColor);
+                                //Debug.Log("VISUALIZER] initializing hilighter on " + parts.Current.name); 
+                            }
+                            else
+                            {
+                                var r = parts.Current.GetComponentsInChildren<Renderer>();
                                 {
-                                    if (r[i].material.shader.name.Contains("Alpha")) continue;
-                                    r[i].material.shader = Shader.Find("KSP/Unlit");
-                                    if (r[i].material.HasProperty("_Color"))
+                                    for (int i = 0; i < r.Length; i++)
                                     {
-                                        r[i].material.SetColor("_Color", VisualizerColor);
+                                        if (r[i].material.shader.name.Contains("Alpha")) continue;
+                                        r[i].material.shader = Shader.Find("KSP/Unlit");
+                                        if (r[i].material.HasProperty("_Color"))
+                                        {
+                                            r[i].material.SetColor("_Color", VisualizerColor);
+                                        }
                                     }
+                                    //Debug.Log("[VISUALIZER] modding shaders on " + parts.Current.name);//can confirm that procwings aren't getting shaders applied, yet they're still getting applied. 
+                                    //at least this fixes the procwings widgets getting colored
                                 }
                             }
                         }
@@ -441,18 +456,34 @@ namespace BDArmory.UI
                     {
                         HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
 
-                        var r = parts.Current.GetComponentsInChildren<Renderer>();
+                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                         {
-                            for (int i = 0; i < r.Length; i++)
+                            if (parts.Current.highlightType != Part.HighlightType.OnMouseOver)
                             {
-                                try
+                                parts.Current.highlightType = Part.HighlightType.OnMouseOver;
+                                parts.Current.SetHighlightColor(Part.defaultHighlightPart);
+                                parts.Current.SetHighlight(false, false);
+                            }
+                        }
+                        else
+                        {
+                            var r = parts.Current.GetComponentsInChildren<Renderer>();
+                            {
+                                Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
+                                for (int i = 0; i < r.Length; i++)
                                 {
-                                    r[i].material.shader = armor.defaultShader[i];
-                                    r[i].material.SetColor("_Color", armor.defaultColor[i]);
-                                }
-                                catch
-                                {
-                                    //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
+                                    try
+                                    {
+                                        if (r[i].material.shader != armor.defaultShader[i])
+                                        {
+                                            r[i].material.shader = armor.defaultShader[i];
+                                            r[i].material.SetColor("_Color", armor.defaultColor[i]);
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
+                                    }
                                 }
                             }
                         }
