@@ -208,7 +208,6 @@ namespace BDArmory.Core.Module
         public override void OnStart(StartState state)
         {
             isEnabled = true;
-
             //if (part != null) _updateHitpoints = true; 
             partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
             HullmassAdjust = 0;
