@@ -752,7 +752,7 @@ namespace BDArmory.Core.Module
         }
         IEnumerator WaitForProcWings()
         {
-            yield return new WaitForSeconds(0.2f); //wait for the IPartMassMod in Pwings to reset
+            yield return new WaitForSeconds(0.04f); //wait for the IPartMassMod in Pwings to reset
             partMass = ((part.mass - armorMass) - HullmassAdjust); 
             //Debug.Log("[HP]: zeroing values; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             SetHullMass();
