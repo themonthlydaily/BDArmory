@@ -44,6 +44,8 @@ namespace BDArmory.Core.Module
 
         private bool isAI = false;
 
+        private bool isProcWing = false;
+        private float procwingTimer = 0;
         private float OldArmorType = 1;
 
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorMass")]//armor mass
@@ -211,6 +213,10 @@ namespace BDArmory.Core.Module
             //if (part != null) _updateHitpoints = true; 
             partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
             HullmassAdjust = 0;
+            if (part.name.Contains("B9.Aero.Wing.Procedural"))
+            {
+                isProcWing = true;
+            }
             if (HighLogic.LoadedSceneIsFlight)
             {
                 UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
@@ -230,11 +236,21 @@ namespace BDArmory.Core.Module
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["armorCost"].guiActiveEditor = false;
+                    Fields["armorMass"].guiActiveEditor = false;
+                }
+                if (part.IsMissile())
+                {
+                    Fields["ArmorTypeNum"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["armorCost"].guiActiveEditor = false;
+                    Fields["armorMass"].guiActiveEditor = false;
                 }
                 UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
                 ATrangeEditor.onFieldChanged = ArmorSetup;
                 ATrangeEditor.maxValue = (float)typecount;
-                if (isAI)
+                if (isAI || part.IsMissile())
                 {
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     ATrangeEditor.maxValue = 1;
@@ -242,7 +258,7 @@ namespace BDArmory.Core.Module
                 UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
                 HTrangeEditor.onFieldChanged = HullSetup;
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || part.isEngine() || isAI)
+                if (part.IsMissile() || part.IsWeapon() || isAI)
                 {
                     HullTypeNum = 2;
                     HTrangeEditor.minValue = 2;
@@ -311,7 +327,10 @@ namespace BDArmory.Core.Module
             {
                 armorVolume /= 2;
             }
-            SetupPrefab();
+            if (!isProcWing)
+            {
+                SetupPrefab();
+            }
             ArmorSetup(null, null);
             HullSetup(null, null); //reaquire hull mass adjust for mass calcs
             if (HighLogic.LoadedSceneIsEditor)
@@ -372,6 +391,15 @@ namespace BDArmory.Core.Module
                 {
                     OldArmorType = ArmorTypeNum;
                     ArmorSetup(null, null);
+                }
+                if (isProcWing)
+                {
+                    procwingTimer -= Time.fixedDeltaTime;
+                    if (procwingTimer < 0)
+                    {
+                        HullSetup(null, null);
+                        procwingTimer = 0.5f;
+                    }
                 }
                 RefreshHitPoints();
             }
@@ -466,7 +494,7 @@ namespace BDArmory.Core.Module
                 }
 
                 // SuicidalInsanity B9 patch
-                if (part.name.Contains("B9.Aero.Wing.Procedural"))
+                if (isProcWing)
                 {
                     if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                     {
@@ -649,7 +677,7 @@ namespace BDArmory.Core.Module
                     ArmorTypeNum = 1; //reset to 'None'
                 }
             }
-            if (isAI)
+            if (isAI || part.IsMissile())
             {
                 ArmorTypeNum = 1; //reset to 'None'
             }
@@ -682,6 +710,7 @@ namespace BDArmory.Core.Module
         public void SetArmor()
         {
             if (isAI) return; //replace with newer implementation
+            if (part.IsMissile()) return;
             if (ArmorTypeNum > 1)
             {
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
@@ -739,8 +768,12 @@ namespace BDArmory.Core.Module
         public void HullSetup(BaseField field, object obj)
         {
             if (IgnoreForArmorSetup) return;
+            if (part.isEngine() && HullTypeNum < 2) //can armor engines, but not make them out of wood.
+            {
+                HullTypeNum = 2;
+            }
             HullmassAdjust = 0;
-            if (part.name.Contains("B9.Aero.Wing.Procedural"))
+            if (isProcWing)
             {
                 StartCoroutine(WaitForProcWings());
                 return;
@@ -752,8 +785,9 @@ namespace BDArmory.Core.Module
         }
         IEnumerator WaitForProcWings()
         {
-            yield return new WaitForSeconds(0.2f); //wait for the IPartMassMod in Pwings to reset
-            partMass = ((part.mass - armorMass) - HullmassAdjust); 
+            //yield return new WaitForSeconds(0.2f); //wait for the IPartMassMod in Pwings to reset
+            yield return null;
+            partMass = ((part.mass - armorMass) - HullmassAdjust);
             //Debug.Log("[HP]: zeroing values; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             SetHullMass();
         }
