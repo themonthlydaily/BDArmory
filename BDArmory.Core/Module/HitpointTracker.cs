@@ -755,7 +755,7 @@ namespace BDArmory.Core.Module
         {
             yield return new WaitForSeconds(0.2f); //wait for the IPartMassMod in Pwings to reset
             partMass = ((part.mass - armorMass) - HullmassAdjust); 
-            Debug.Log("[HP]: zeroing values; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
+            //Debug.Log("[HP]: zeroing values; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             SetHullMass();
         }
         void SetHullMass()
@@ -765,20 +765,20 @@ namespace BDArmory.Core.Module
                 HullmassAdjust = ((partMass) / 3) - (partMass);
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                Debug.Log("[HP]: setting wood; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
+                //Debug.Log("[HP]: setting wood; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             }
             else if (HullTypeNum == 2)
             {
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
                 part.maxTemp = 1000;
-                Debug.Log("[HP]: setting aluminium; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
+                //Debug.Log("[HP]: setting aluminium; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             }
             else //hulltype 3
             {
                 HullmassAdjust = (partMass);
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
                 part.maxTemp = 2000;
-                Debug.Log("[HP]: setting steel; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
+                //Debug.Log("[HP]: setting steel; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
