@@ -785,8 +785,7 @@ namespace BDArmory.Core.Module
         }
         IEnumerator WaitForProcWings()
         {
-            //yield return new WaitForSeconds(0.2f); //wait for the IPartMassMod in Pwings to reset
-            yield return null;
+            yield return null; //wait for the IPartMassMod in Pwings to reset
             partMass = ((part.mass - armorMass) - HullmassAdjust);
             //Debug.Log("[HP]: zeroing values; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             SetHullMass();
@@ -795,7 +794,7 @@ namespace BDArmory.Core.Module
         {
             if (HullTypeNum == 1)
             {
-                HullmassAdjust = ((partMass) / 3) - (partMass);
+                HullmassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
                 //Debug.Log("[HP]: setting wood; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
@@ -808,7 +807,7 @@ namespace BDArmory.Core.Module
             }
             else //hulltype 3
             {
-                HullmassAdjust = (partMass);
+                HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
                 part.maxTemp = 2000;
                 //Debug.Log("[HP]: setting steel; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
