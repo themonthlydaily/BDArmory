@@ -426,7 +426,7 @@ namespace BDArmory.Core.Module
             }
             if (massWasChanged)
             {
-                if (HighLogic.LoadedSceneIsFlight)
+                if (HighLogic.LoadedSceneIsEditor)
                 {
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
@@ -505,18 +505,18 @@ namespace BDArmory.Core.Module
                 // SuicidalInsanity B9 patch //should this come before the hp clamping?
                 if (isProcWing)
                 {
-					if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
-					{
-						//procwing hp already modified by mass, because it is mass
-						//so using base part mass is it can be properly modified my material HP mod below
-						hitpoints = ((part.mass - armorMass - HullmassAdjust) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.     
-					}
-					else
-					{
-						hitpoints = ((part.mass - armorMass - HullmassAdjust) * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                    if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
+                    {
+                        //procwing hp already modified by mass, because it is mass
+                        //so using base part mass is it can be properly modified my material HP mod below
+                        hitpoints = ((part.mass - armorMass - HullmassAdjust) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.     
+                    }
+                    else
+                    {
+                        hitpoints = ((part.mass - armorMass - HullmassAdjust) * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
                     } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
 
-                }       
+                }
                 if (HullTypeNum == 1)
                 {
                     hitpoints /= 4;
@@ -797,6 +797,7 @@ namespace BDArmory.Core.Module
         IEnumerator WaitForProcWings()
         {
             yield return null;
+            if (part == null) yield break; // The part disappeared!
 
             partMass = ((part.mass - armorMass) - HullmassAdjust);
             SetHullMass();
@@ -818,7 +819,7 @@ namespace BDArmory.Core.Module
             {
                 HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                part.maxTemp = 2000;                
+                part.maxTemp = 2000;
             }
             massWasChanged = true;
         }
