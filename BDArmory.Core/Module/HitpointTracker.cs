@@ -45,7 +45,7 @@ namespace BDArmory.Core.Module
         private bool isAI = false;
 
         private bool isProcWing = false;
-        private float procwingTimer = 0;
+        private bool massWasChanged = false;
         private float OldArmorType = 1;
 
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorMass")]//armor mass
@@ -115,6 +115,7 @@ namespace BDArmory.Core.Module
 
         public List<Shader> defaultShader;
         public List<Color> defaultColor;
+        public bool RegisterProcWingShader = false;
 
         #endregion KSP Fields
 
@@ -337,15 +338,18 @@ namespace BDArmory.Core.Module
             {
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship); //will error if called in flightscene
             }
-            var r = part.GetComponentsInChildren<Renderer>();
+            if (!isProcWing)
             {
-                for (int i = 0; i < r.Length; i++)
+                var r = part.GetComponentsInChildren<Renderer>();
                 {
-                    defaultShader.Add(r[i].material.shader);
-                    if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r[i].material.shader.name);
-                    if (r[i].material.HasProperty("_Color"))
+                    for (int i = 0; i < r.Length; i++)
                     {
-                        defaultColor.Add(r[i].material.color);
+                        defaultShader.Add(r[i].material.shader);
+                        if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part shader is " + r[i].material.shader.name);
+                        if (r[i].material.HasProperty("_Color"))
+                        {
+                            defaultColor.Add(r[i].material.color);
+                        }
                     }
                 }
             }
@@ -372,6 +376,15 @@ namespace BDArmory.Core.Module
         public void ShipModified(ShipConstruct data)
         {
             _updateHitpoints = true;
+
+            if (isProcWing)
+            {
+                if (!massWasChanged)
+                {
+                    HullSetup(null, null);
+                }
+            }
+            massWasChanged = false;
         }
 
         public override void OnUpdate()
@@ -392,15 +405,6 @@ namespace BDArmory.Core.Module
                     OldArmorType = ArmorTypeNum;
                     ArmorSetup(null, null);
                 }
-                if (isProcWing)
-                {
-                    procwingTimer -= Time.fixedDeltaTime;
-                    if (procwingTimer < 0)
-                    {
-                        HullSetup(null, null);
-                        procwingTimer = 0.5f;
-                    }
-                }
                 RefreshHitPoints();
             }
             if (HighLogic.LoadedSceneIsFlight)
@@ -416,9 +420,16 @@ namespace BDArmory.Core.Module
         {
             if (_updateHitpoints)
             {
-                SetupPrefab();
                 _updateHitpoints = false;
                 _forceUpdateHitpointsUI = false;
+                SetupPrefab();
+            }
+            if (massWasChanged)
+            {
+                if (HighLogic.LoadedSceneIsFlight)
+                {
+                    GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+                }
             }
         }
 
@@ -486,25 +497,26 @@ namespace BDArmory.Core.Module
                 //3. final calculations
                 hitpoints = structuralMass * hitpointMultiplier * 0.333f;
                 //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
-
-                if (hitpoints > 10 * partMass * 1000f  * hitpointMultiplier * 0.333f || hitpoints < 0.1f * partMass * 1000f * hitpointMultiplier * 0.333f)
+                if (hitpoints > 10 * partMass * 1000f * hitpointMultiplier * 0.333f || hitpoints < 0.1f * partMass * 1000f * hitpointMultiplier * 0.333f)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
-                    hitpoints = hitpointMultiplier * (part.mass - armorMass) * 333f;
+                    hitpoints = hitpointMultiplier * partMass * 333f;
                 }
-
-                // SuicidalInsanity B9 patch
+                // SuicidalInsanity B9 patch //should this come before the hp clamping?
                 if (isProcWing)
                 {
-                    if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
-                    {
-                        hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.     
-                    }
-                    else
-                    {
-                        hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
-                    } //breaks when pWings are made stupidly thick
-                }
+					if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
+					{
+						//procwing hp already modified by mass, because it is mass
+						//so using base part mass is it can be properly modified my material HP mod below
+						hitpoints = ((part.mass - armorMass - HullmassAdjust) * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.     
+					}
+					else
+					{
+						hitpoints = ((part.mass - armorMass - HullmassAdjust) * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                    } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
+
+                }       
                 if (HullTypeNum == 1)
                 {
                     hitpoints /= 4;
@@ -765,7 +777,7 @@ namespace BDArmory.Core.Module
             return result;
         }
 
-        public void HullSetup(BaseField field, object obj)
+        public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
             if (IgnoreForArmorSetup) return;
             if (part.isEngine() && HullTypeNum < 2) //can armor engines, but not make them out of wood.
@@ -776,7 +788,6 @@ namespace BDArmory.Core.Module
             if (isProcWing)
             {
                 StartCoroutine(WaitForProcWings());
-                return;
             }
             else
             {
@@ -785,10 +796,8 @@ namespace BDArmory.Core.Module
         }
         IEnumerator WaitForProcWings()
         {
-            //yield return new WaitForSeconds(0.2f); //wait for the IPartMassMod in Pwings to reset
             yield return null;
             partMass = ((part.mass - armorMass) - HullmassAdjust);
-            //Debug.Log("[HP]: zeroing values; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             SetHullMass();
         }
         void SetHullMass()
@@ -798,26 +807,19 @@ namespace BDArmory.Core.Module
                 HullmassAdjust = ((partMass) / 3) - (partMass);
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                //Debug.Log("[HP]: setting wood; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             }
             else if (HullTypeNum == 2)
             {
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
                 part.maxTemp = 1000;
-                //Debug.Log("[HP]: setting aluminium; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
             }
             else //hulltype 3
             {
                 HullmassAdjust = (partMass);
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                part.maxTemp = 2000;
-                //Debug.Log("[HP]: setting steel; " + part.name + "; PartMass= " + partMass + " armour mass= " + armorMass + "; hull mass adjust= " + HullmassAdjust + "; final part mass = " + part.mass);
+                part.maxTemp = 2000;                
             }
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-            }
-            SetupPrefab();
+            massWasChanged = true;
         }
         #endregion Armour
     }

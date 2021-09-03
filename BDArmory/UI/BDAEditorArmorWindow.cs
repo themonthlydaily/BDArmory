@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.Radar;
 using KSP.Localization;
 using KSP.UI.Screens;
 using UnityEngine;
@@ -34,6 +30,8 @@ namespace BDArmory.UI
         private float totalArmorMass;
         private float totalArmorCost;
         private bool CalcArmor = false;
+        private bool shipModifiedfromCalcArmor = false;
+        private bool waitforPwings = false;
         private bool SetType = false;
         private bool SetThickness = false;
         private string selectedArmor = "None";
@@ -55,7 +53,6 @@ namespace BDArmory.UI
         private bool oldHPvisualizer = false;
         private bool refreshVisualizer = false;
         private bool refreshHPvisualizer = false;
-        private float updateTimer = 0;
         private bool isWood = false;
         private bool isSteel = false;
         private bool isAluminium = true;
@@ -88,13 +85,31 @@ namespace BDArmory.UI
         {
             if (showArmorWindow)
             {
-                CalcArmor = true;
+                if (!shipModifiedfromCalcArmor)
+                {
+                    CalcArmor = true;
+                }
                 if (Visualizer || HPvisualizer)
                 {
                     refreshVisualizer = true;
                     refreshHPvisualizer = true;
                 }
+                shipModifiedfromCalcArmor = false;
             }
+            //can have multiple pwings, so do this here to trigger a single OnShipModify event instead of everal
+
+            if (!waitforPwings)
+            {
+                waitforPwings = true;
+                StartCoroutine(WaitForProcWings());
+            }         
+        }
+
+        IEnumerator WaitForProcWings()
+        {
+            yield return new WaitForSeconds(0.5f); //wait for the coroutines in hitpointTracker to finish, plus a margin
+            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            waitforPwings = false;
         }
 
         private void OnDestroy()
@@ -134,7 +149,6 @@ namespace BDArmory.UI
         public void ShowToolbarGUI()
         {
             showArmorWindow = true;
-            CalcArmor = true;
         }
 
         public void HideToolbarGUI()
@@ -148,20 +162,6 @@ namespace BDArmory.UI
 
         void Dummy()
         { }
-
-        private void Update()
-        {
-            if (showArmorWindow)
-            {
-                updateTimer -= Time.fixedDeltaTime;
-
-                if (updateTimer < 0)
-                {
-                    CalcArmor = true;
-                    updateTimer = 0.5f;    //next update in half a sec only
-                }
-            }
-        }
 
         void OnGUI()
         {
@@ -296,7 +296,6 @@ namespace BDArmory.UI
                     isAluminium = false;
                     hullmat = 3;
                     CalculateArmorMass(true);
-
                 }
                 isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight),
     isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
@@ -403,7 +402,9 @@ namespace BDArmory.UI
             ArmorHardness = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Hardness;
             ArmorMaxTemp = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].SafeUseTemp;
             ArmorStrength = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Strength;
+            shipModifiedfromCalcArmor = true;
             GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            //Debug.Log("[ArmorGUI] Calling onShipModified");
         }
         void Visualize()
         {
@@ -422,30 +423,36 @@ namespace BDArmory.UI
                             {
                                 VisualizerColor = Color.HSVToRGB(a.ArmorTypeNum / (ArmorInfo.armors.Count + 1), (a.Armor / maxThickness), 1f);
                             }
-                            if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                            var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {
-                                parts.Current.highlightType = Part.HighlightType.AlwaysOn;
-                                parts.Current.SetHighlight(true, false);
-                                parts.Current.SetHighlightColor(VisualizerColor);
-                                //Debug.Log("VISUALIZER] initializing hilighter on " + parts.Current.name); 
-                            }
-                            else
-                            {
-                                var r = parts.Current.GetComponentsInChildren<Renderer>();
+                                if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                                 {
-                                    for (int i = 0; i < r.Length; i++)
+                                    if (!a.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
                                     {
-                                        if (r[i].material.shader.name.Contains("Alpha")) continue;
-                                        r[i].material.shader = Shader.Find("KSP/Unlit");
-                                        if (r[i].material.HasProperty("_Color"))
+                                        for (int s = 0; s < r.Length; s++)
                                         {
-                                            r[i].material.SetColor("_Color", VisualizerColor);
+                                            a.defaultShader.Add(r[s].material.shader);
+                                            //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                            if (r[s].material.HasProperty("_Color"))
+                                            {
+                                                a.defaultColor.Add(r[s].material.color);
+                                            }
                                         }
+                                        a.RegisterProcWingShader = true;
                                     }
-                                    //Debug.Log("[VISUALIZER] modding shaders on " + parts.Current.name);//can confirm that procwings aren't getting shaders applied, yet they're still getting applied. 
-                                    //at least this fixes the procwings widgets getting colored
+                                }
+                                for (int i = 0; i < r.Length; i++)
+                                {
+                                    if (r[i].material.shader.name.Contains("Alpha")) continue;
+                                    r[i].material.shader = Shader.Find("KSP/Unlit");
+                                    if (r[i].material.HasProperty("_Color"))
+                                    {
+                                        r[i].material.SetColor("_Color", VisualizerColor);
+                                    }
                                 }
                             }
+                            //Debug.Log("[VISUALIZER] modding shaders on " + parts.Current.name);//can confirm that procwings aren't getting shaders applied, yet they're still getting applied. 
+                            //at least this fixes the procwings widgets getting colored
                         }
                     }
             }
@@ -456,38 +463,73 @@ namespace BDArmory.UI
                     {
                         HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
 
+                        //so, this gets called when GUI closed, without touching the hp/armor visualizer at all.
+                        //Now, on GUI close, it runs the latter half of visualize to shut off any visualizer effects and reset stuff.
+                        //Procs wings turn orange at this point... oh. That's why: The visualizer reset is grabbing a list of shaders and colors at *part spawn!*
+                        //pWings use dynamic shaders to paint themselves, so it's not reapplying the latest shader /color config, but the initial one, the one from the part icon  
+                        var r = parts.Current.GetComponentsInChildren<Renderer>();
                         if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                         {
-                            if (parts.Current.highlightType != Part.HighlightType.OnMouseOver)
+                            if (!armor.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
                             {
-                                parts.Current.highlightType = Part.HighlightType.OnMouseOver;
-                                parts.Current.SetHighlightColor(Part.defaultHighlightPart);
-                                parts.Current.SetHighlight(false, false);
-                            }
-                        }
-                        else
-                        {
-                            var r = parts.Current.GetComponentsInChildren<Renderer>();
-                            {
-                                Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
-                                for (int i = 0; i < r.Length; i++)
+                                for (int s = 0; s < r.Length; s++)
                                 {
-                                    try
+                                    armor.defaultShader.Add(r[s].material.shader);
+                                    //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                    if (r[s].material.HasProperty("_Color"))
                                     {
-                                        if (r[i].material.shader != armor.defaultShader[i])
+                                        armor.defaultColor.Add(r[s].material.color);
+                                    }
+                                }
+                                armor.RegisterProcWingShader = true;
+                            }
+                        }                        
+                       //Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
+                        for (int i = 0; i < r.Length; i++)
+                        {
+                            try
+                            {
+                                if (r[i].material.shader != armor.defaultShader[i])
+                                {
+                                    if (armor.defaultShader[i] != null)
+                                    {
+                                        r[i].material.shader = armor.defaultShader[i];
+                                    }
+                                    if (armor.defaultColor[i] != null)
+                                    {
+                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                                         {
-                                            r[i].material.shader = armor.defaultShader[i];
+                                            //r[i].material.SetColor("_Emissive", armor.defaultColor[i]); //?
+                                            r[i].material.SetColor("_MainTex", armor.defaultColor[i]); //this doesn't work either
+                                            //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
+                                            // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
+                                            //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
+                                        }
+                                        else
+                                        {
                                             r[i].material.SetColor("_Color", armor.defaultColor[i]);
                                         }
                                     }
-                                    catch
+                                    else
                                     {
-                                        //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
+                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                        {
+                                            //r[i].material.SetColor("_Emissive", Color.white);
+                                            r[i].material.SetColor("_MainTex", Color.white); 
+                                        }
+                                        else
+                                        {
+                                            r[i].material.SetColor("_Color", Color.white);
+                                        }
                                     }
                                 }
                             }
+                            catch
+                            {
+                                //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
+                            }
                         }
-                    }
+                    }              
             }
             oldVisualizer = Visualizer;
             oldHPvisualizer = HPvisualizer;
