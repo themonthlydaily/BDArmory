@@ -499,7 +499,7 @@ namespace BDArmory.Core.Module
                 //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
                 if (hitpoints > 10 * partMass * 1000f * hitpointMultiplier * 0.333f || hitpoints < 0.1f * partMass * 1000f * hitpointMultiplier * 0.333f)
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name}");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name} from {hitpoints} to {hitpointMultiplier * partMass * 333f}");
                     hitpoints = hitpointMultiplier * partMass * 333f;
                 }
                 // SuicidalInsanity B9 patch //should this come before the hp clamping?
