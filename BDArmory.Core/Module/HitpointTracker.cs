@@ -211,7 +211,7 @@ namespace BDArmory.Core.Module
         public override void OnStart(StartState state)
         {
             isEnabled = true;
-            //if (part != null) _updateHitpoints = true; 
+            if (part != null) _updateHitpoints = true;  // This is needed for proc wings (and any other mod that makes adjustments to part parameters after loading) to update their HP on the frame after loading.
             partMass = 0; //null these before part.mass is taken for HP calcs to ensure proper part mass recorded as original value
             HullmassAdjust = 0;
             if (part.name.Contains("B9.Aero.Wing.Procedural"))
@@ -426,7 +426,7 @@ namespace BDArmory.Core.Module
             }
             if (massWasChanged)
             {
-                if (HighLogic.LoadedSceneIsEditor)
+                if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null && EditorLogic.fetch.ship != null)
                 {
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
