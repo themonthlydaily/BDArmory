@@ -1,4 +1,28 @@
-﻿v1.4.8.0
+﻿v1.4.8.2
+FIXES
+	- Fixes armor panel settings not persisting from Editor to Flight.
+	- Fixes steel hull material massively increasing weight.
+	- Triangular armor panels/wings now properly have 1/2 armor mass of rectangular panels.
+	- Put the Gau-22 in the correct category in the SPH.
+	- Don't detonate CASE ammo on vessel packing or unloading.
+	- More fixes for proc-wings:
+		- HP is updated properly on vessel load.
+		- Mostly fixed interaction between the HP/Armor visualizer and proc wings shaders.
+
+KNOWN ISSUES
+	- Occassional graphical glitch for proc wings in the SPH/VAB due to HP/Armor visualizer. Doesn't affect flight mode and the color resets if the craft is reloaded or the proc wings color settings are nudged.
+	- Flickering of the RCS window, particularly when the Armor window is open. 
+
+v1.4.8.1
+FIXES
+	- Fix (mostly) Pwing - HPVisualizer issue
+	- Fix burstfire
+	- Fix procwing HP bug
+IMPROVEMENTS
+	- Internal stuff:
+		- Implement the AddPlayerToRammingInformation and RemovePlayerFromRammingInformation functions (not used yet).
+
+v1.4.8.0
 IMPROVEMENTS
 	- General:
 		- Adds support for weapons with multiple fire animations or barrels (battleship guns/wirbelwinds/etc).
@@ -70,7 +94,6 @@ FIXES
 	- Fix missing team in summary when the team is only dead.
 	- Fix bug with 'dead teams' in tournament parser script.
 	- A variety of minor bug fixes and optimisations.
-
 
 v1.4.7.1
 FIXES
