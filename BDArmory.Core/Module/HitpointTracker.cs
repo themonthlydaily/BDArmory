@@ -797,6 +797,7 @@ namespace BDArmory.Core.Module
         IEnumerator WaitForProcWings()
         {
             yield return null;
+
             partMass = ((part.mass - armorMass) - HullmassAdjust);
             SetHullMass();
         }
@@ -804,7 +805,7 @@ namespace BDArmory.Core.Module
         {
             if (HullTypeNum == 1)
             {
-                HullmassAdjust = ((partMass) / 3) - (partMass);
+                HullmassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
             }
@@ -815,7 +816,7 @@ namespace BDArmory.Core.Module
             }
             else //hulltype 3
             {
-                HullmassAdjust = (partMass);
+                HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
                 part.maxTemp = 2000;                
             }

@@ -1,4 +1,11 @@
-﻿v1.4.8.1
+﻿FIXES
+	- Fixes armor panel settings not persisting from Editor to Flight.
+	- Fixes steel hull material massively increasing weight.
+	- Triangular armor panels/wings now properly have 1/2 armor mass of rectangular panels.
+	- Put the Gau-22 in the correct category in the SPH.
+	- Don't detonate CASE ammo on vessel packing or unloading.
+
+v1.4.8.1
 FIXES
 	- Fix (mostly) Pwing - HPVisualizer issue
 	- Fix burstfire
@@ -79,7 +86,6 @@ FIXES
 	- Fix missing team in summary when the team is only dead.
 	- Fix bug with 'dead teams' in tournament parser script.
 	- A variety of minor bug fixes and optimisations.
-
 
 v1.4.7.1
 FIXES
