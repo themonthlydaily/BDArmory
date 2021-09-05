@@ -275,8 +275,16 @@ namespace BDArmory.Core.Module
                 if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
                 {
                     startsArmored = true;
-                    Armor = ArmorThickness;
-                    ArmorTypeNum = 2;
+                    if (Armor > 10 && Armor != ArmorThickness)
+                    {}
+                    else
+                    {
+                        Armor = ArmorThickness;
+                    }
+                    if (ArmorTypeNum == 1)
+                    {
+                        ArmorTypeNum = 2;
+                    }
                 }
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
@@ -687,10 +695,18 @@ namespace BDArmory.Core.Module
             if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
             {
                 startsArmored = true;
-                Armor = ArmorThickness;
+                if (Armor > 10 && Armor != ArmorThickness) //if settings modified and loading in from craft fiel
+                { }
+                else
+                {
+                    Armor = ArmorThickness;
+                }
                 UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
                 armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
-                ArmorTypeNum = 2;
+                if (ArmorTypeNum == 1)
+                {
+                    ArmorTypeNum = 2;
+                }
             }
             if (maxSupportedArmor < 0) //hasn't been set in cfg
             {
@@ -733,7 +749,10 @@ namespace BDArmory.Core.Module
                 {
                     if (startsArmored)
                     {
-                        ArmorTypeNum = 2; //part starts with armor
+                        if (ArmorTypeNum == 1)
+                        {
+                            ArmorTypeNum = 2; //part starts with armor
+                        }
                     }
                     else
                     {
