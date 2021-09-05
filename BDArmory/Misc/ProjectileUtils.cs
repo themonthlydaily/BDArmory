@@ -276,11 +276,11 @@ namespace BDArmory.Misc
                 //angle and impact vel have negligible impact on hole size
                 //if the round penetrates, increased damage; min thickness of .187 calibers to prevent armor cracking //is this per the 6% HE fraction above, or ? could just do the shrapnelfraction * 1.41/1.7
                 float HERatio = 0.06f;
-                if (projmass < 0)
+                if (projmass < HEmass)
                 {
                     projmass = HEmass * 1.25f; //sanity check in case this is 0
                 }
-                HERatio = HEmass / projmass;
+                HERatio = Mathf.Clamp(HEmass / projmass, 0.01f, 0.95f);
                 float frangibility = 5000 * HERatio;
                 float shrapnelThickness = ((.0075f * Mathf.Pow((HERatio * 100), 1.05f)) + .06f) * caliber; //min thickness of material for HE to blow caliber size hole in steel
                 shrapnelThickness *= (950 / Strength) * (8000 / Density) * (Mathf.Sqrt(1100 / hardness)); //adjusted min thickness after material hardness/strength/density
