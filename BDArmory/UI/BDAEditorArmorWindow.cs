@@ -346,6 +346,9 @@ namespace BDArmory.UI
             bool modified = false;
             totalArmorMass = 0;
             totalArmorCost = 0;
+            var selectedArmorIndex = ArmorInfo.armors.FindIndex(t => t.name == selectedArmor);
+            if (selectedArmorIndex < 0)
+                return;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                 while (parts.MoveNext())
                 {
@@ -370,7 +373,7 @@ namespace BDArmory.UI
                                 }
                                 if (SetType)
                                 {
-                                    armor.ArmorTypeNum = (ArmorInfo.armors.FindIndex(t => t.name == selectedArmor) + 1);
+                                    armor.ArmorTypeNum = selectedArmorIndex + 1;
                                     if (armor.ArmorThickness > 10)
                                     {
                                         if (armor.ArmorTypeNum < 2)
@@ -405,13 +408,13 @@ namespace BDArmory.UI
             }
             SetType = false;
             SetThickness = false;
-            ArmorCost = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Cost;
-            ArmorDensity = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Density;
-            ArmorDiffusivity = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Diffusivity;
-            ArmorDuctility = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Ductility;
-            ArmorHardness = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Hardness;
-            ArmorMaxTemp = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].SafeUseTemp;
-            ArmorStrength = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Strength;
+            ArmorCost = ArmorInfo.armors[selectedArmorIndex].Cost;
+            ArmorDensity = ArmorInfo.armors[selectedArmorIndex].Density;
+            ArmorDiffusivity = ArmorInfo.armors[selectedArmorIndex].Diffusivity;
+            ArmorDuctility = ArmorInfo.armors[selectedArmorIndex].Ductility;
+            ArmorHardness = ArmorInfo.armors[selectedArmorIndex].Hardness;
+            ArmorMaxTemp = ArmorInfo.armors[selectedArmorIndex].SafeUseTemp;
+            ArmorStrength = ArmorInfo.armors[selectedArmorIndex].Strength;
             if (modified)
             {
                 shipModifiedfromCalcArmor = true;

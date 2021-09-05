@@ -275,8 +275,16 @@ namespace BDArmory.Core.Module
                 if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
                 {
                     startsArmored = true;
-                    Armor = ArmorThickness;
-                    ArmorTypeNum = 2;
+                    if (Armor > 10 && Armor != ArmorThickness)
+                    {}
+                    else
+                    {
+                        Armor = ArmorThickness;
+                    }
+                    if (ArmorTypeNum == 1)
+                    {
+                        ArmorTypeNum = 2;
+                    }
                 }
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
@@ -523,8 +531,20 @@ namespace BDArmory.Core.Module
                 // var sphere = 4f / 3f * Mathf.PI * sphereRadius * sphereRadius * sphereRadius;
                 // var structuralVolume = Mathf.Max(sphere * 0.1f, 1e-6f); // Structural volume is 10% of actual volume.
                 //var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
+                bool clampHP = false;
 
                 var density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
+                if (density > 1e5f || density < 10)
+                {
+                    Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
+                    structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * 0.476f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
+                    density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
+                    if (density > 1e5f || density < 10)
+                    {
+                        Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
+                        clampHP = true;
+                    }
+                }
                 density = Mathf.Clamp(density, 1000, 10000);
                 //if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 //Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | structuralVolume : " + structuralVolume);
@@ -543,11 +563,11 @@ namespace BDArmory.Core.Module
                 //3. final calculations
                 hitpoints = structuralMass * hitpointMultiplier * 0.333f;
                 //hitpoints = (structuralVolume * Mathf.Pow(density, .333f) * Mathf.Clamp(80 - (structuralVolume / 2), 80 / 4, 80)) * hitpointMultiplier * 0.333f; //volume * cuberoot of density * HP mult scaled by size
-                // if (hitpoints > 10 * partMass * 1000f * hitpointMultiplier * 0.333f || hitpoints < 0.1f * partMass * 1000f * hitpointMultiplier * 0.333f) // FIXME This doesn't clamp, but rather resets the HP to some value. This is unnecessary anyway as the clamped density and sane structural volume take care of extreme values.
-                // {
-                //     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name} from {hitpoints} to {hitpointMultiplier * partMass * 333f}");
-                //     hitpoints = hitpointMultiplier * partMass * 333f;
-                // }
+                if (clampHP)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name} from {hitpoints} to {hitpointMultiplier * (partMass + HullmassAdjust) * 333f}");
+                    hitpoints = hitpointMultiplier * (partMass + HullmassAdjust) * 333f;
+                }
                 // SuicidalInsanity B9 patch //should this come before the hp clamping?
                 if (isProcWing)
                 {
@@ -563,13 +583,17 @@ namespace BDArmory.Core.Module
                     } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
 
                 }
-                if (HullTypeNum == 1) // FIXME Are these factors still correct? aluminium->steel gives x3.5 HP (x2 due to mass change and x1.75 due to factor), aluminium->wood gives /12 HP (/3 due to mass change and /4 due to factor) (when density doesn't interfere from clamping)
+                else
                 {
-                    hitpoints /= 4;
-                }
-                if (HullTypeNum == 3)
-                {
-                    hitpoints *= 1.75f;
+                    switch (HullTypeNum)
+                    {
+                        case 1:
+                            hitpoints /= 4;
+                            break;
+                        case 3:
+                            hitpoints *= 1.75f;
+                            break;
+                    }
                 }
                 hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                 if (hitpoints <= 0) hitpoints = HpRounding;
@@ -687,10 +711,18 @@ namespace BDArmory.Core.Module
             if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
             {
                 startsArmored = true;
-                Armor = ArmorThickness;
+                if (Armor > 10 && Armor != ArmorThickness) //if settings modified and loading in from craft fiel
+                { }
+                else
+                {
+                    Armor = ArmorThickness;
+                }
                 UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
                 armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
-                ArmorTypeNum = 2;
+                if (ArmorTypeNum == 1)
+                {
+                    ArmorTypeNum = 2;
+                }
             }
             if (maxSupportedArmor < 0) //hasn't been set in cfg
             {
@@ -733,7 +765,10 @@ namespace BDArmory.Core.Module
                 {
                     if (startsArmored)
                     {
-                        ArmorTypeNum = 2; //part starts with armor
+                        if (ArmorTypeNum == 1)
+                        {
+                            ArmorTypeNum = 2; //part starts with armor
+                        }
                     }
                     else
                     {
