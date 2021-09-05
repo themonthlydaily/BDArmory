@@ -23,7 +23,7 @@ namespace BDArmory.FX
         public float StartTime { get; set; }
         public AudioClip ExSound { get; set; }
         public AudioSource audioSource { get; set; }
-        private float MaxTime { get; set; }
+        //private float MaxTime { get; set; }
         public float Range { get; set; }
         public float Caliber { get; set; }
         public float ProjMass { get; set; }
@@ -69,7 +69,7 @@ namespace BDArmory.FX
         {
             StartTime = Time.time;
             disabled = false;
-            MaxTime = Mathf.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
+            //MaxTime = Mathf.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
             if (!isFX)
             {
                 CalculateBlastEvents();
@@ -91,7 +91,7 @@ namespace BDArmory.FX
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
+                Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + particlesMaxEnergy + "}");
             }
         }
 
@@ -407,7 +407,7 @@ namespace BDArmory.FX
                 }
             }
 
-            if (disabled && explosionEvents.Count == 0 && TimeIndex > MaxTime)
+            if (disabled && explosionEvents.Count == 0 && TimeIndex > particlesMaxEnergy)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {

@@ -29,7 +29,8 @@ namespace BDArmory.Modules
         bool applyVampirism = false;
         private float Accumulator;
 
-        private Color mutatorColor;
+        private List<Color> mutatorColor;
+        private int colorTicker;
         public Material IconMat;
 
         public static string textureDir = "BDArmory/Textures/Mutators/";
@@ -76,7 +77,7 @@ namespace BDArmory.Modules
                 icon = null;
                 icon = GameDatabase.Instance.GetTexture(iconPath, false);
                 Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor), out float H, out float S, out float V);
-                mutatorColor = Color.HSVToRGB(H, S, V);
+                mutatorColor.Add(Color.HSVToRGB(H, S, V));
 
                 if (mutatorInfo.weaponMod)
                 {
@@ -176,7 +177,7 @@ namespace BDArmory.Modules
                         }
                         part.Current.highlightType = Part.HighlightType.AlwaysOn;
                         part.Current.SetHighlight(true, false);
-                        part.Current.SetHighlightColor(mutatorColor);
+                        part.Current.SetHighlightColor(mutatorColor[0]);
                     }
                 if (!Vengeance && mutatorInfo.Vengeance)
                 {
@@ -204,6 +205,7 @@ namespace BDArmory.Modules
                 }
             }
             startTime = Time.time;
+            colorTicker = 0;
             mutatorEnabled = true;
         }
 
@@ -328,11 +330,28 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                if (Regen != 0 || TaxRate != 0)
+                if (Regen != 0 || TaxRate != 0 || mutatorColor.Count > 0)
                 {
                     if (Accumulator > 5)
                     {
                         Accumulator = 0;
+                        if (mutatorColor.Count > 0)
+                        {
+                            if (colorTicker > mutatorColor.Count)
+                            {
+                                colorTicker = 0;
+                            }
+                            else
+                            {
+                                colorTicker++;
+                            }
+                            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                                while (part.MoveNext())
+                                {
+                                    part.Current.SetHighlightColor(mutatorColor[colorTicker]);
+                                }
+                        }
+
                     }
                     else
                     {
@@ -341,8 +360,8 @@ namespace BDArmory.Modules
                 }
             }
         }
-
-        void OnGUI() //honestly, if this is more bonus functionality than anything, an extra way to show which mutator is active on a craft for Mutators on kill or chaos mode
+        /*
+        void OnGUI() //honestly, this is more bonus functionality than anything, an extra way to show which mutator is active on a craft for Mutators on kill or chaos mode
         {
             if ((HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.TEAMICONS) ||
                 HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.PERSISTANT && BDTISettings.TEAMICONS)
@@ -363,8 +382,7 @@ namespace BDArmory.Modules
                     {
                         offscreen = true;
                     }
-                    float xPos = (screenPos.x * Screen.width) - (0.5f * (20 * BDTISettings.ICONSCALE));
-                    float yPos = ((1 - screenPos.y) * Screen.height) - (0.5f * (20 * BDTISettings.ICONSCALE)) - (20 * BDTISettings.ICONSCALE);
+                    float yPos = ((1 - screenPos.y) * Screen.height) - (0.5f * (30 * BDTISettings.ICONSCALE)) - (30 * BDTISettings.ICONSCALE);
 
                     if (!offscreen)
                     {
@@ -373,21 +391,26 @@ namespace BDArmory.Modules
                             IconMat = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
                             Debug.Log("[BDArmory.Mutator]: IconMat didn't get initialized on Start. initializing");
                         }
-                        IconMat.SetColor("_TintColor", mutatorColor);
-                        if (mutatorIcon != null)
+                        for (int i = 0; i < BDArmorySettings.MUTATOR_APPLY_NUM; i++)
                         {
-                            IconMat.mainTexture = mutatorIcon;
+                            float xPos = (screenPos.x * Screen.width) - (0.5f * (30 * BDTISettings.ICONSCALE)) - ((i * 1.5f) *  ((30 * BDTISettings.ICONSCALE)));
+                            IconMat.SetColor("_TintColor", mutatorColor[i]);
+                            if (mutatorIcon != null)
+                            {
+                                IconMat.mainTexture = mutatorIcon;
+                            }
+                            else
+                            {
+                                IconMat.mainTexture = BDTISetup.Instance.TextureIconGeneric; //nope, still returning a missing texture error. Debug 
+                            }
+                            Rect iconRect = new Rect(xPos + (i * ((30 * BDTISettings.ICONSCALE) + 10)), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
+                            Graphics.DrawTexture(iconRect, mutatorIcon, IconMat);
                         }
-                        else
-                        {
-                            IconMat.mainTexture = BDTISetup.Instance.TextureIconGeneric; //nope, still returning a missing texture error. Debug 
-                        }
-                        Rect iconRect = new Rect(xPos, yPos, (60 * BDTISettings.ICONSCALE), (60 * BDTISettings.ICONSCALE));
-                        Graphics.DrawTexture(iconRect, mutatorIcon, IconMat);
                     }
                 }
             }
         }
+        */
         void Detonate()
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Mutator] triggering vengeance nuke");
@@ -396,5 +419,4 @@ namespace BDArmory.Modules
     }
 }
 //figure out why the icon isn't getting drawn  - What's NRE'ing?
-//figure out what's throwing an NRE when enabling a mutator with weaponType = rocket;
 
