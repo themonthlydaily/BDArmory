@@ -13,7 +13,7 @@ IMPROVEMENTS
 	- Add a slider for controlling the distance threshold of showing team icons.
 
 KNOWN ISSUES
-	- Occassional graphical glitch for proc wings in the SPH/VAB due to HP/Armor visualizer. Doesn't affect flight mode and the color resets if the craft is reloaded or the proc wings color settings are nudged.
+	- Occasional graphical glitch for proc wings in the SPH/VAB due to HP/Armor visualizer. Doesn't affect flight mode and the color resets if the craft is reloaded or the proc wings color settings are nudged.
 	- Flickering of the RCS window, particularly when the Armor window is open. 
 	- Tweakscale HP is misbehaving beyond certain size changes.
 
