@@ -158,7 +158,7 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                ApplyHitPoints(p, damage_, caliber, mass, mass, impactVelocity, penetrationfactor);
+                ApplyHitPoints(p, damage_, caliber, mass, multiplier, impactVelocity, penetrationfactor);
             }
             return damage_;
         }
