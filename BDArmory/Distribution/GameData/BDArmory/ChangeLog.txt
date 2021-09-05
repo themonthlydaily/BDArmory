@@ -1,9 +1,21 @@
-﻿FIXES
+﻿v1.4.8.2
+FIXES
 	- Fixes armor panel settings not persisting from Editor to Flight.
 	- Fixes steel hull material massively increasing weight.
 	- Triangular armor panels/wings now properly have 1/2 armor mass of rectangular panels.
 	- Put the Gau-22 in the correct category in the SPH.
+	- Fix minor mesh errors on the Sidam.
 	- Don't detonate CASE ammo on vessel packing or unloading.
+	- More fixes for proc-wings:
+		- HP is updated properly on vessel load.
+		- Mostly fixed interaction between the HP/Armor visualizer and proc wings shaders.
+IMPROVEMENTS
+	- Add a slider for controlling the distance threshold of showing team icons.
+
+KNOWN ISSUES
+	- Occasional graphical glitch for proc wings in the SPH/VAB due to HP/Armor visualizer. Doesn't affect flight mode and the color resets if the craft is reloaded or the proc wings color settings are nudged.
+	- Flickering of the RCS window, particularly when the Armor window is open. 
+	- Tweakscale HP is misbehaving beyond certain size changes.
 
 v1.4.8.1
 FIXES
@@ -15,6 +27,19 @@ IMPROVEMENTS
 		- Implement the AddPlayerToRammingInformation and RemovePlayerFromRammingInformation functions (not used yet).
 
 v1.4.8.0
+FIXES
+	- Fix logic of which vessels to ignore in RCS snapshots.
+	- onDisable -> OnDisable. Deactivate FireFX properly such that the parentPart always gets cleared (also in FuelLeakFX.cs).
+	- Fix line-of-sight checks in ExplosionFX for exploding parts on vessels.
+	- Don't detonate for surface fires, excess fuel explosions cause surface fires.
+	- Don't trigger CASE ammo explosions on scene changes.
+	- Fix rippleRPM.
+	- Fixes to burstfire.
+	- Fix checks for uncontrolled vessels.
+	- Fix LangVersion in .csproj to build with later than C# 7.3.
+	- Fix missing team in summary when the team is only dead.
+	- Fix bug with 'dead teams' in tournament parser script.
+	- A variety of minor bug fixes and optimisations.
 IMPROVEMENTS
 	- General:
 		- Adds support for weapons with multiple fire animations or barrels (battleship guns/wirbelwinds/etc).
@@ -73,19 +98,6 @@ IMPROVEMENTS
 		- CASE now uses EST.BattleDamage.
 		- Change competition update tick to 1s to match best precision of vessel state checks.
 		- Detection of crew being killed in 'uncontrolled' checks.
-FIXES
-	- Fix logic of which vessels to ignore in RCS snapshots.
-	- onDisable -> OnDisable. Deactivate FireFX properly such that the parentPart always gets cleared (also in FuelLeakFX.cs).
-	- Fix line-of-sight checks in ExplosionFX for exploding parts on vessels.
-	- Don't detonate for surface fires, excess fuel explosions cause surface fires.
-	- Don't trigger CASE ammo explosions on scene changes.
-	- Fix rippleRPM.
-	- Fixes to burstfire.
-	- Fix checks for uncontrolled vessels.
-	- Fix LangVersion in .csproj to build with later than C# 7.3.
-	- Fix missing team in summary when the team is only dead.
-	- Fix bug with 'dead teams' in tournament parser script.
-	- A variety of minor bug fixes and optimisations.
 
 v1.4.7.1
 FIXES
