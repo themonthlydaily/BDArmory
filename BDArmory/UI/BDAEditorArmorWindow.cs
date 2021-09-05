@@ -31,7 +31,6 @@ namespace BDArmory.UI
         private float totalArmorCost;
         private bool CalcArmor = false;
         private bool shipModifiedfromCalcArmor = false;
-        private bool waitforPwings = false;
         private bool SetType = false;
         private bool SetThickness = false;
         private string selectedArmor = "None";
@@ -83,6 +82,24 @@ namespace BDArmory.UI
 
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
+            delayedRefreshVisuals = true;
+            if (!delayedRefreshVisualsInProgress)
+                StartCoroutine(DelayedRefreshVisuals());
+        }
+
+        private bool delayedRefreshVisuals = false;
+        private bool delayedRefreshVisualsInProgress = false;
+        IEnumerator DelayedRefreshVisuals()
+        {
+            delayedRefreshVisualsInProgress = true;
+            while (delayedRefreshVisuals) // Wait until ship modified events stop coming.
+            {
+                delayedRefreshVisuals = false;
+                yield return null;
+                yield return null; // Two yield nulls to wait for HP changes to delayed ship modified events in HitpointTracker
+            }
+            delayedRefreshVisualsInProgress = false;
+
             if (showArmorWindow)
             {
                 if (!shipModifiedfromCalcArmor)
@@ -96,20 +113,6 @@ namespace BDArmory.UI
                 }
                 shipModifiedfromCalcArmor = false;
             }
-            //can have multiple pwings, so do this here to trigger a single OnShipModify event instead of everal
-
-            if (!waitforPwings)
-            {
-                waitforPwings = true;
-                StartCoroutine(WaitForProcWings());
-            }         
-        }
-
-        IEnumerator WaitForProcWings()
-        {
-            yield return new WaitForSeconds(0.5f); //wait for the coroutines in hitpointTracker to finish, plus a margin
-            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-            waitforPwings = false;
         }
 
         private void OnDestroy()
@@ -168,7 +171,7 @@ namespace BDArmory.UI
             if (showArmorWindow)
             {
                 windowRect = GUI.Window(this.GetInstanceID(), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
-            }            
+            }
             PreventClickThrough();
         }
 
@@ -181,6 +184,7 @@ namespace BDArmory.UI
 
             if (CalcArmor)
             {
+                CalcArmor = false;
                 SetType = false;
                 CalculateArmorMass();
             }
@@ -253,8 +257,8 @@ namespace BDArmory.UI
                     SetType = true;
                     CalculateArmorMass();
                 }
+                previous_index = selected_index;
             }
-            previous_index = selected_index;
             line += 0.5f;
             float StatLines = 0;
             if (GameSettings.ADVANCED_TWEAKABLES)
@@ -287,36 +291,39 @@ namespace BDArmory.UI
 
             if (showHullMenu)
             {
-                isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight),
-    isSteel, Localizer.Format("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-                HullLines += 1.15f;
-                if (isSteel)
+                if (isSteel != (isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isSteel, Localizer.Format("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                 {
-                    isWood = false;
-                    isAluminium = false;
-                    hullmat = 3;
-                    CalculateArmorMass(true);
+                    if (isSteel)
+                    {
+                        isWood = false;
+                        isAluminium = false;
+                        hullmat = 3;
+                        CalculateArmorMass(true);
+                    }
                 }
-                isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight),
-    isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                 HullLines += 1.15f;
-                if (isWood)
+                if (isWood != (isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                 {
-                    isAluminium = false;
-                    isSteel = false;
-                    hullmat = 1;
-                    CalculateArmorMass(true);
+                    if (isWood)
+                    {
+                        isAluminium = false;
+                        isSteel = false;
+                        hullmat = 1;
+                        CalculateArmorMass(true);
+                    }
                 }
-                isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight),
-    isAluminium, Localizer.Format("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                 HullLines += 1.15f;
-                if (isAluminium)
+                if (isAluminium != (isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isAluminium, Localizer.Format("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                 {
-                    isWood = false;
-                    isSteel = false;
-                    hullmat = 2;
-                    CalculateArmorMass(true);
+                    if (isAluminium)
+                    {
+                        isWood = false;
+                        isSteel = false;
+                        hullmat = 2;
+                        CalculateArmorMass(true);
+                    }
                 }
+                HullLines += 1.15f;
                 if (!isSteel && !isWood && !isAluminium)
                 {
                     isAluminium = true;
@@ -336,8 +343,12 @@ namespace BDArmory.UI
             if (EditorLogic.RootPart == null)
                 return;
 
+            bool modified = false;
             totalArmorMass = 0;
             totalArmorCost = 0;
+            var selectedArmorIndex = ArmorInfo.armors.FindIndex(t => t.name == selectedArmor);
+            if (selectedArmorIndex < 0)
+                return;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                 while (parts.MoveNext())
                 {
@@ -362,7 +373,7 @@ namespace BDArmory.UI
                                 }
                                 if (SetType)
                                 {
-                                    armor.ArmorTypeNum = (ArmorInfo.armors.FindIndex(t => t.name == selectedArmor) + 1);
+                                    armor.ArmorTypeNum = selectedArmorIndex + 1;
                                     if (armor.ArmorThickness > 10)
                                     {
                                         if (armor.ArmorTypeNum < 2)
@@ -375,7 +386,8 @@ namespace BDArmory.UI
                                         }
                                     }
                                 }
-                                armor.ArmorSetup(null, null);
+                                armor.ArmorModified(null, null);
+                                modified = true;
                             }
                             totalArmorMass += armor.armorMass;
                             totalArmorCost += armor.armorCost;
@@ -383,7 +395,8 @@ namespace BDArmory.UI
                         else
                         {
                             armor.HullTypeNum = hullmat;
-                            armor.HullSetup(null, null);
+                            armor.HullModified(null, null);
+                            modified = true;
                         }
 
                     }
@@ -395,16 +408,18 @@ namespace BDArmory.UI
             }
             SetType = false;
             SetThickness = false;
-            ArmorCost = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Cost;
-            ArmorDensity = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Density;
-            ArmorDiffusivity = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Diffusivity;
-            ArmorDuctility = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Ductility;
-            ArmorHardness = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Hardness;
-            ArmorMaxTemp = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].SafeUseTemp;
-            ArmorStrength = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Strength;
-            shipModifiedfromCalcArmor = true;
-            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-            //Debug.Log("[ArmorGUI] Calling onShipModified");
+            ArmorCost = ArmorInfo.armors[selectedArmorIndex].Cost;
+            ArmorDensity = ArmorInfo.armors[selectedArmorIndex].Density;
+            ArmorDiffusivity = ArmorInfo.armors[selectedArmorIndex].Diffusivity;
+            ArmorDuctility = ArmorInfo.armors[selectedArmorIndex].Ductility;
+            ArmorHardness = ArmorInfo.armors[selectedArmorIndex].Hardness;
+            ArmorMaxTemp = ArmorInfo.armors[selectedArmorIndex].SafeUseTemp;
+            ArmorStrength = ArmorInfo.armors[selectedArmorIndex].Strength;
+            if (modified)
+            {
+                shipModifiedfromCalcArmor = true;
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            }
         }
         void Visualize()
         {
@@ -483,8 +498,8 @@ namespace BDArmory.UI
                                 }
                                 armor.RegisterProcWingShader = true;
                             }
-                        }                        
-                       //Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
+                        }
+                        //Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
                         for (int i = 0; i < r.Length; i++)
                         {
                             try
@@ -515,7 +530,7 @@ namespace BDArmory.UI
                                         if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                                         {
                                             //r[i].material.SetColor("_Emissive", Color.white);
-                                            r[i].material.SetColor("_MainTex", Color.white); 
+                                            r[i].material.SetColor("_MainTex", Color.white);
                                         }
                                         else
                                         {
@@ -529,7 +544,7 @@ namespace BDArmory.UI
                                 //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
                             }
                         }
-                    }              
+                    }
             }
             oldVisualizer = Visualizer;
             oldHPvisualizer = HPvisualizer;
