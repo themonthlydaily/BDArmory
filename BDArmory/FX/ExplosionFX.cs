@@ -446,10 +446,12 @@ namespace BDArmory.FX
             Part part = eventToExecute.Part;
             Rigidbody rb = part.Rigidbody;
             var realDistance = eventToExecute.Distance;
+            var vesselMass = part.vessel.totalMass;
+            if (vesselMass == 0) vesselMass = part.mass; // Sometimes if the root part is the only part of the vessel, then part.vessel.totalMass is 0, despite the part.mass not being 0.
 
             if (!eventToExecute.IsNegativePressure)
             {
-                BlastInfo blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, part.vessel.totalMass * 1000f, Power, Range);
+                BlastInfo blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, vesselMass * 1000f, Power, Range);
 
                 // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armour in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
                 // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
@@ -482,7 +484,7 @@ namespace BDArmory.FX
                             " Damage: {" + blastInfo.Damage + "} (reduced from " + damageWithoutIntermediateParts + " by " + eventToExecute.IntermediateParts.Count + " parts)," +
                             " EffectiveArea: {" + blastInfo.EffectivePartArea + "}," +
                             " Positive Phase duration: {" + blastInfo.PositivePhaseDuration + "}," +
-                            " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
+                            " Vessel mass: {" + Math.Round(vesselMass * 1000f) + "}," +
                             " TimeIndex: {" + TimeIndex + "}," +
                             " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
                             " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
@@ -550,7 +552,7 @@ namespace BDArmory.FX
                         "[BDArmory.ExplosionFX]: Executing blast event Part: {" + part.name + "}, " +
                         " VelocityChange: {" + eventToExecute.NegativeForce + "}," +
                         " Distance: {" + realDistance + "}," +
-                        " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
+                        " Vessel mass: {" + Math.Round(vesselMass * 1000f) + "}," +
                         " TimeIndex: {" + TimeIndex + "}," +
                         " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
                         " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");

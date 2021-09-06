@@ -133,6 +133,10 @@ namespace BDArmory.Core.Module
         private bool _updateMass = false;
         private bool _armorModified = false;
         private bool _hullModified = false;
+        private bool _armorConfigured = false;
+        private bool _hullConfigured = false;
+        private bool _hpConfigured = false;
+        private bool _finished_setting_up = false;
 
         public override void OnLoad(ConfigNode node)
         {
@@ -178,7 +182,7 @@ namespace BDArmory.Core.Module
                     }
                     else // Don't.
                     {
-                        enabled = false;
+                        // enabled = false; // We'll disable this later once things are set up.
                     }
                 }
             }
@@ -276,7 +280,7 @@ namespace BDArmory.Core.Module
                 {
                     startsArmored = true;
                     if (Armor > 10 && Armor != ArmorThickness)
-                    {}
+                    { }
                     else
                     {
                         Armor = ArmorThickness;
@@ -339,7 +343,7 @@ namespace BDArmory.Core.Module
                 armorVolume /= 2;
             }
             SetupPrefab();
-            if (!isProcWing)
+            if (HighLogic.LoadedSceneIsEditor && !isProcWing)
             {
                 var r = part.GetComponentsInChildren<Renderer>();
                 {
@@ -417,16 +421,21 @@ namespace BDArmory.Core.Module
         public void ArmorModified(BaseField field, object obj) { _armorModified = true; }
         public void HullModified(BaseField field, object obj) { _hullModified = true; }
 
-        public override void OnUpdate()
+        public override void OnUpdate() // This only runs in flight mode.
         {
+            if (!_finished_setting_up) return;
             RefreshHitPoints();
             if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
             {
                 HeartBleed();
             }
+            if (part.skinTemperature > SafeUseTemp * 1.5f)
+            {
+                ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+            }
         }
 
-        void Update()
+        void Update() // This stops running once things are set up.
         {
             if (HighLogic.LoadedSceneIsEditor || HighLogic.LoadedSceneIsFlight) // Also needed in flight mode for initial setup of mass, hull and HP, but shouldn't be triggered afterwards as ShipModified is only for the editor.
             {
@@ -442,17 +451,15 @@ namespace BDArmory.Core.Module
                 }
                 if (!_updateMass) // Wait for the mass to update first.
                     RefreshHitPoints();
-            }
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                if (HighLogic.LoadedSceneIsFlight && _armorConfigured && _hullConfigured && _hpConfigured) // No more changes, we're done.
                 {
-                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    _finished_setting_up = true;
+                    enabled = false;
                 }
             }
         }
 
-        void FixedUpdate()
+        void FixedUpdate() // This stops running once things are set up.
         {
             if (_updateMass)
             {
@@ -623,6 +630,7 @@ namespace BDArmory.Core.Module
             }
 
             if (hitpoints <= 0) hitpoints = HpRounding;
+            if (!_finished_setting_up && _armorConfigured && _hullConfigured) _hpConfigured = true;
             return hitpoints;
         }
 
@@ -814,6 +822,7 @@ namespace BDArmory.Core.Module
                 if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
+            _armorConfigured = true;
         }
 
         public void SetArmor()
@@ -930,6 +939,7 @@ namespace BDArmory.Core.Module
                 if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
+            _hullConfigured = true;
         }
         #endregion Armour
     }
