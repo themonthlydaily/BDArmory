@@ -131,6 +131,7 @@ namespace BDArmory.Radar
         {
             foreach (var vessel in (vessels == null ? BDATargetManager.LoadedVessels : vessels))
             {
+                if (vessel == null) continue;
                 GetVesselRadarCrossSection(vessel, true);
             }
         }
