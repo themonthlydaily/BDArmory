@@ -1772,7 +1772,11 @@ namespace BDArmory.Modules
             {
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
-            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            float timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            if (useRippleFire)
+            {
+                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
+            }
             beamDuration = Math.Min(timeGap * 0.8f, 0.1f);
             if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
                 && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
@@ -2100,6 +2104,13 @@ namespace BDArmory.Modules
             int rocketsLeft;
 
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            if (!rocketPod)
+            
+            timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            if (useRippleFire)
+            {
+                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
+            }
 
             if (Time.time - timeFired > timeGap && !isReloading || !pointingAtSelf && (aiControlled || !Misc.Misc.CheckMouseIsOnGui()) && WMgrAuthorized())
             {// fixes rocket ripple code for proper rippling
