@@ -129,10 +129,10 @@ namespace BDArmory.Evolution
                 mutationsPerHeat = (int)GUI.HorizontalSlider(SRightSliderRect(line), mutationsPerHeat, 1, 10);
                 BDArmorySettings.EVOLUTION_MUTATIONS_PER_HEAT = mutationsPerHeat;
 
-                int adversariesPerHeat = BDArmorySettings.EVOLUTION_MUTATIONS_PER_HEAT;
-                var aphDisplayValue = BDArmorySettings.EVOLUTION_MUTATIONS_PER_HEAT.ToString("0");
+                int adversariesPerHeat = BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT;
+                var aphDisplayValue = BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT.ToString("0");
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Evolution_AdversariesPerHeat")}:  ({aphDisplayValue})", leftLabel);//Adversaries Per Heat
-                adversariesPerHeat = (int)GUI.HorizontalSlider(SRightSliderRect(line), adversariesPerHeat, 1, 10);
+                adversariesPerHeat = (int)GUI.HorizontalSlider(SRightSliderRect(line), adversariesPerHeat, 0, 10);
                 BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT = adversariesPerHeat;
 
                 int heatsPerGroup = BDArmorySettings.EVOLUTION_HEATS_PER_GROUP;
