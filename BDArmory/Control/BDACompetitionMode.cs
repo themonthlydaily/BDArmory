@@ -804,7 +804,7 @@ namespace BDArmory.Control
     public enum DamageFrom { None, Guns, Rockets, Missiles, Ramming, Incompetence };
     public enum AliveState { Alive, CleanKill, HeadShot, KillSteal, AssistedKill, Dead };
     public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton, LandedTooLong };
-    public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared };
+    public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared, Other };
 
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -1337,7 +1337,20 @@ namespace BDArmory.Control
                     }
             }
             if (BDATargetManager.LoadedVessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)).Any(v => VesselModuleRegistry.GetModuleCount<ModuleRadar>(v) > 0)) // Update RCS if any vessels have radars.
-            { RadarUtils.ForceUpdateRadarCrossSections(); }
+            {
+                try
+                {
+                    RadarUtils.ForceUpdateRadarCrossSections();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message);
+                    competitionStatus.Set("Failed to update radar cross sections, aborting.");
+                    competitionStartFailureReason = CompetitionStartFailureReason.Other;
+                    StopCompetition();
+                    yield break;
+                }
+            }
             foreach (var teamPilots in pilots)
                 foreach (var pilot in teamPilots.Value)
                 {
