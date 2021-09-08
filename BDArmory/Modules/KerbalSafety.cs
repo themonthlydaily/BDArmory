@@ -559,7 +559,7 @@ namespace BDArmory.Modules
             {
                 if (kerbalEVA != null)
                 {
-                    if (kerbalEVA.isActiveAndEnabled)
+                    if (kerbalEVA.isActiveAndEnabled && gameObject.activeSelf) // We can't start coroutines if the gameObect isn't active.
                     {
                         if (vessel.parts.Count == 1) // It's a falling kerbal.
                         {
