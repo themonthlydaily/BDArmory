@@ -505,7 +505,8 @@ namespace BDArmory.Bullets
                         }
                         if (penetrationFactor > 1)
                         {
-                            currentVelocity = currentVelocity * (float)Math.Sqrt(thickness / penetration);
+                            //currentVelocity = currentVelocity * (float)Math.Sqrt(thickness / penetration); this needs to be inverted, else thinner armor yields greater velocity reduction
+                            currentVelocity = currentVelocity * (1-(float)Math.Sqrt(thickness / penetration));
                             if (penTicker > 0) currentVelocity *= 0.55f; //implement armor density modifying this ar some point?
                             flightTimeElapsed -= period;
 
