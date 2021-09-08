@@ -943,7 +943,7 @@ namespace BDArmory.Core.Module
             _hullConfigured = true;
         }
         #endregion Armour
-        public override string GetInfo() 
+        public override string GetInfo()
         {
             StringBuilder output = new StringBuilder();
             output.Append(Environment.NewLine);
