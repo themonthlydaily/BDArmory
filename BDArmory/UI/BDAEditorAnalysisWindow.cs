@@ -72,6 +72,23 @@ namespace BDArmory.UI
 
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
+            delayedTakeSnapShot = true;
+            if (!delayedTakeSnapShotInProgress)
+                StartCoroutine(DelayedTakeSnapShot());
+        }
+
+        private bool delayedTakeSnapShot = false;
+        private bool delayedTakeSnapShotInProgress = false;
+        IEnumerator DelayedTakeSnapShot()
+        {
+            delayedTakeSnapShotInProgress = true;
+            while (delayedTakeSnapShot) // Wait until ship modified events stop coming.
+            {
+                delayedTakeSnapShot = false;
+                yield return null;
+                yield return null; // Two yield nulls to wait for HP changes to delayed ship modified events in HitpointTracker
+            }
+            delayedTakeSnapShotInProgress = false;
             takeSnapshot = true;
             previous_index = -1;
         }

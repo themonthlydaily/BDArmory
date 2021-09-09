@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.Radar;
 using KSP.Localization;
 using KSP.UI.Screens;
 using UnityEngine;
@@ -34,6 +30,7 @@ namespace BDArmory.UI
         private float totalArmorMass;
         private float totalArmorCost;
         private bool CalcArmor = false;
+        private bool shipModifiedfromCalcArmor = false;
         private bool SetType = false;
         private bool SetThickness = false;
         private string selectedArmor = "None";
@@ -55,7 +52,6 @@ namespace BDArmory.UI
         private bool oldHPvisualizer = false;
         private bool refreshVisualizer = false;
         private bool refreshHPvisualizer = false;
-        private float updateTimer = 0;
         private bool isWood = false;
         private bool isSteel = false;
         private bool isAluminium = true;
@@ -86,9 +82,37 @@ namespace BDArmory.UI
 
         private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
-            CalcArmor = true;
-            refreshVisualizer = true;
-            refreshHPvisualizer = true;
+            delayedRefreshVisuals = true;
+            if (!delayedRefreshVisualsInProgress)
+                StartCoroutine(DelayedRefreshVisuals());
+        }
+
+        private bool delayedRefreshVisuals = false;
+        private bool delayedRefreshVisualsInProgress = false;
+        IEnumerator DelayedRefreshVisuals()
+        {
+            delayedRefreshVisualsInProgress = true;
+            while (delayedRefreshVisuals) // Wait until ship modified events stop coming.
+            {
+                delayedRefreshVisuals = false;
+                yield return null;
+                yield return null; // Two yield nulls to wait for HP changes to delayed ship modified events in HitpointTracker
+            }
+            delayedRefreshVisualsInProgress = false;
+
+            if (showArmorWindow)
+            {
+                if (!shipModifiedfromCalcArmor)
+                {
+                    CalcArmor = true;
+                }
+                if (Visualizer || HPvisualizer)
+                {
+                    refreshVisualizer = true;
+                    refreshHPvisualizer = true;
+                }
+                shipModifiedfromCalcArmor = false;
+            }
         }
 
         private void OnDestroy()
@@ -128,43 +152,25 @@ namespace BDArmory.UI
         public void ShowToolbarGUI()
         {
             showArmorWindow = true;
-            CalcArmor = true;
         }
 
         public void HideToolbarGUI()
         {
             showArmorWindow = false;
             CalcArmor = false;
+            Visualizer = false;
+            HPvisualizer = false;
+            Visualize();
         }
 
         void Dummy()
         { }
-
-        private void Update()
-        {
-            if (showArmorWindow)
-            {
-                updateTimer -= Time.fixedDeltaTime;
-
-                if (updateTimer < 0)
-                {
-                    CalcArmor = true;
-                    updateTimer = 0.5f;    //next update in half a sec only
-                }
-            }
-        }
 
         void OnGUI()
         {
             if (showArmorWindow)
             {
                 windowRect = GUI.Window(this.GetInstanceID(), windowRect, WindowArmor, windowTitle, BDArmorySetup.BDGuiSkin.window);
-            }
-            else
-            {
-                Visualizer = false;
-                HPvisualizer = false;
-                Visualize();
             }
             PreventClickThrough();
         }
@@ -178,6 +184,7 @@ namespace BDArmory.UI
 
             if (CalcArmor)
             {
+                CalcArmor = false;
                 SetType = false;
                 CalculateArmorMass();
             }
@@ -250,8 +257,8 @@ namespace BDArmory.UI
                     SetType = true;
                     CalculateArmorMass();
                 }
+                previous_index = selected_index;
             }
-            previous_index = selected_index;
             line += 0.5f;
             float StatLines = 0;
             if (GameSettings.ADVANCED_TWEAKABLES)
@@ -284,37 +291,39 @@ namespace BDArmory.UI
 
             if (showHullMenu)
             {
-                isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight),
-    isSteel, Localizer.Format("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-                HullLines += 1.15f;
-                if (isSteel)
+                if (isSteel != (isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isSteel, Localizer.Format("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                 {
-                    isWood = false;
-                    isAluminium = false;
-                    hullmat = 3;
-                    CalculateArmorMass(true);
-
+                    if (isSteel)
+                    {
+                        isWood = false;
+                        isAluminium = false;
+                        hullmat = 3;
+                        CalculateArmorMass(true);
+                    }
                 }
-                isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight),
-    isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                 HullLines += 1.15f;
-                if (isWood)
+                if (isWood != (isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                 {
-                    isAluminium = false;
-                    isSteel = false;
-                    hullmat = 1;
-                    CalculateArmorMass(true);
+                    if (isWood)
+                    {
+                        isAluminium = false;
+                        isSteel = false;
+                        hullmat = 1;
+                        CalculateArmorMass(true);
+                    }
                 }
-                isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight),
-    isAluminium, Localizer.Format("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                 HullLines += 1.15f;
-                if (isAluminium)
+                if (isAluminium != (isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isAluminium, Localizer.Format("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                 {
-                    isWood = false;
-                    isSteel = false;
-                    hullmat = 2;
-                    CalculateArmorMass(true);
+                    if (isAluminium)
+                    {
+                        isWood = false;
+                        isSteel = false;
+                        hullmat = 2;
+                        CalculateArmorMass(true);
+                    }
                 }
+                HullLines += 1.15f;
                 if (!isSteel && !isWood && !isAluminium)
                 {
                     isAluminium = true;
@@ -334,8 +343,12 @@ namespace BDArmory.UI
             if (EditorLogic.RootPart == null)
                 return;
 
+            bool modified = false;
             totalArmorMass = 0;
             totalArmorCost = 0;
+            var selectedArmorIndex = ArmorInfo.armors.FindIndex(t => t.name == selectedArmor);
+            if (selectedArmorIndex < 0)
+                return;
             using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                 while (parts.MoveNext())
                 {
@@ -360,7 +373,7 @@ namespace BDArmory.UI
                                 }
                                 if (SetType)
                                 {
-                                    armor.ArmorTypeNum = (ArmorInfo.armors.FindIndex(t => t.name == selectedArmor) + 1);
+                                    armor.ArmorTypeNum = selectedArmorIndex + 1;
                                     if (armor.ArmorThickness > 10)
                                     {
                                         if (armor.ArmorTypeNum < 2)
@@ -373,7 +386,8 @@ namespace BDArmory.UI
                                         }
                                     }
                                 }
-                                armor.ArmorSetup(null, null);
+                                armor.ArmorModified(null, null);
+                                modified = true;
                             }
                             totalArmorMass += armor.armorMass;
                             totalArmorCost += armor.armorCost;
@@ -381,26 +395,31 @@ namespace BDArmory.UI
                         else
                         {
                             armor.HullTypeNum = hullmat;
-                            armor.HullSetup(null, null);
+                            armor.HullModified(null, null);
+                            modified = true;
                         }
 
                     }
                 }
             CalcArmor = false;
-            if (SetType || SetThickness)
+            if ((SetType || SetThickness) && (Visualizer || HPvisualizer))
             {
                 refreshVisualizer = true;
             }
             SetType = false;
             SetThickness = false;
-            ArmorCost = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Cost;
-            ArmorDensity = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Density;
-            ArmorDiffusivity = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Diffusivity;
-            ArmorDuctility = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Ductility;
-            ArmorHardness = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Hardness;
-            ArmorMaxTemp = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].SafeUseTemp;
-            ArmorStrength = ArmorInfo.armors[(ArmorInfo.armors.FindIndex(t => t.name == selectedArmor))].Strength;
-            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            ArmorCost = ArmorInfo.armors[selectedArmorIndex].Cost;
+            ArmorDensity = ArmorInfo.armors[selectedArmorIndex].Density;
+            ArmorDiffusivity = ArmorInfo.armors[selectedArmorIndex].Diffusivity;
+            ArmorDuctility = ArmorInfo.armors[selectedArmorIndex].Ductility;
+            ArmorHardness = ArmorInfo.armors[selectedArmorIndex].Hardness;
+            ArmorMaxTemp = ArmorInfo.armors[selectedArmorIndex].SafeUseTemp;
+            ArmorStrength = ArmorInfo.armors[selectedArmorIndex].Strength;
+            if (modified)
+            {
+                shipModifiedfromCalcArmor = true;
+                GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            }
         }
         void Visualize()
         {
@@ -411,6 +430,7 @@ namespace BDArmory.UI
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
                     {
+                        if (parts.Current.name.Contains("conformaldecals")) continue;
                         HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
                         if (a != null)
                         {
@@ -421,6 +441,22 @@ namespace BDArmory.UI
                             }
                             var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {
+                                if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                {
+                                    if (!a.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
+                                    {
+                                        for (int s = 0; s < r.Length; s++)
+                                        {
+                                            a.defaultShader.Add(r[s].material.shader);
+                                            //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                            if (r[s].material.HasProperty("_Color"))
+                                            {
+                                                a.defaultColor.Add(r[s].material.color);
+                                            }
+                                        }
+                                        a.RegisterProcWingShader = true;
+                                    }
+                                }
                                 for (int i = 0; i < r.Length; i++)
                                 {
                                     if (r[i].material.shader.name.Contains("Alpha")) continue;
@@ -431,6 +467,8 @@ namespace BDArmory.UI
                                     }
                                 }
                             }
+                            //Debug.Log("[VISUALIZER] modding shaders on " + parts.Current.name);//can confirm that procwings aren't getting shaders applied, yet they're still getting applied. 
+                            //at least this fixes the procwings widgets getting colored
                         }
                     }
             }
@@ -440,20 +478,71 @@ namespace BDArmory.UI
                     while (parts.MoveNext())
                     {
                         HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
-
+                        if (parts.Current.name.Contains("conformaldecals")) continue;
+                        //so, this gets called when GUI closed, without touching the hp/armor visualizer at all.
+                        //Now, on GUI close, it runs the latter half of visualize to shut off any visualizer effects and reset stuff.
+                        //Procs wings turn orange at this point... oh. That's why: The visualizer reset is grabbing a list of shaders and colors at *part spawn!*
+                        //pWings use dynamic shaders to paint themselves, so it's not reapplying the latest shader /color config, but the initial one, the one from the part icon  
                         var r = parts.Current.GetComponentsInChildren<Renderer>();
+                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
                         {
-                            for (int i = 0; i < r.Length; i++)
+                            if (!armor.RegisterProcWingShader) //procwing defaultshader left null on start so current shader setup can be grabbed at visualizer runtime
                             {
-                                try
+                                for (int s = 0; s < r.Length; s++)
                                 {
-                                    r[i].material.shader = armor.defaultShader[i];
-                                    r[i].material.SetColor("_Color", armor.defaultColor[i]);
+                                    armor.defaultShader.Add(r[s].material.shader);
+                                    //Debug.Log("[Visualizer] " + parts.Current.name + " shader is " + r[s].material.shader.name);
+                                    if (r[s].material.HasProperty("_Color"))
+                                    {
+                                        armor.defaultColor.Add(r[s].material.color);
+                                    }
                                 }
-                                catch
+                                armor.RegisterProcWingShader = true;
+                            }
+                        }
+                        //Debug.Log("[VISUALIZER] applying shader to " + parts.Current.name);
+                        for (int i = 0; i < r.Length; i++)
+                        {
+                            try
+                            {
+                                if (r[i].material.shader != armor.defaultShader[i])
                                 {
-                                    //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
+                                    if (armor.defaultShader[i] != null)
+                                    {
+                                        r[i].material.shader = armor.defaultShader[i];
+                                    }
+                                    if (armor.defaultColor[i] != null)
+                                    {
+                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                        {
+                                            //r[i].material.SetColor("_Emissive", armor.defaultColor[i]); //?
+                                            r[i].material.SetColor("_MainTex", armor.defaultColor[i]); //this doesn't work either
+                                            //LayeredSpecular has _MainTex, _Emissive, _SpecColor,_RimColor, _TemperatureColor, and _BurnColor
+                                            // source: https://github.com/tetraflon/B9-PWings-Modified/blob/master/B9%20PWings%20Fork/shaders/SpecularLayered.shader
+                                            //This works.. occasionally. Sometimes it will properly reset pwing tex/color, most of the time it doesn't. need to test later
+                                        }
+                                        else
+                                        {
+                                            r[i].material.SetColor("_Color", armor.defaultColor[i]);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (parts.Current.name.Contains("B9.Aero.Wing.Procedural"))
+                                        {
+                                            //r[i].material.SetColor("_Emissive", Color.white);
+                                            r[i].material.SetColor("_MainTex", Color.white);
+                                        }
+                                        else
+                                        {
+                                            r[i].material.SetColor("_Color", Color.white);
+                                        }
+                                    }
                                 }
+                            }
+                            catch
+                            {
+                                //Debug.Log("[BDAEditorArmorWindow]: material on " + parts.Current.name + "could not find default shader/color");
                             }
                         }
                     }

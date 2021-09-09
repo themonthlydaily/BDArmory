@@ -207,7 +207,7 @@ namespace BDArmory.UI
                                         Vector2 guiPos;
                                         string UIdist;
                                         string UoM;
-                                        if (Dist.magnitude > 100)
+                                        if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
                                         {
                                             if ((Dist.magnitude / 1000) >= 1)
                                             {
@@ -238,7 +238,7 @@ namespace BDArmory.UI
                                 Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
                                 Vector3 tPos = v.Current.vesselTransform.position;
                                 Vector3 Dist = (tPos - sPos);
-                                if (Dist.magnitude > 100)
+                                if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
                                 {
                                     BDGUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
                                 }
@@ -264,7 +264,7 @@ namespace BDArmory.UI
                                         Vector3 sPos = FlightGlobals.ActiveVessel.CoM;
                                         Vector3 tPos = (wm.Current.currentTarget.Vessel.CoM);
                                         Vector3 RelPos = (tPos - sPos);
-                                        if (RelPos.magnitude >= 100)
+                                        if (RelPos.magnitude >= BDTISettings.DISTANCE_THRESHOLD)
                                         {
                                             DrawThreatIndicator(wm.Current.vessel.CoM, wm.Current.currentTarget.Vessel.CoM, Teamcolor);
                                         }
@@ -284,7 +284,7 @@ namespace BDArmory.UI
                                     string selectedWeapon = String.Empty;
                                     string AIstate = String.Empty;
                                     distance = targetRelPos.magnitude;
-                                    if (distance >= 100)
+                                    if (distance >= BDTISettings.DISTANCE_THRESHOLD)
                                     {
                                         if ((distance / 1000) >= 1)
                                         {

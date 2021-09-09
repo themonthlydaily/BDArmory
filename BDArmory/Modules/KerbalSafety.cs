@@ -244,7 +244,8 @@ namespace BDArmory.Modules
                     }
                 }
             }
-            ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+            if (vessel.protoVessel != null)
+            { ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true); }
         }
 
         void EatenByTheKraken(GameEvents.HostedFromToAction<Vessel, CelestialBody> fromTo)
@@ -558,7 +559,7 @@ namespace BDArmory.Modules
             {
                 if (kerbalEVA != null)
                 {
-                    if (kerbalEVA.isActiveAndEnabled)
+                    if (kerbalEVA.isActiveAndEnabled && gameObject.activeSelf) // We can't start coroutines if the gameObect isn't active.
                     {
                         if (vessel.parts.Count == 1) // It's a falling kerbal.
                         {

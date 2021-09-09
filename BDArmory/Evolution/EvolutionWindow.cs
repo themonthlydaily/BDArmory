@@ -43,7 +43,7 @@ namespace BDArmory.Evolution
 
         private void Awake()
         {
-            Debug.Log("EvolutionWindow awake");
+            // Debug.Log("EvolutionWindow awake");
             if (Instance)
                 Destroy(this);
             Instance = this;
@@ -51,7 +51,7 @@ namespace BDArmory.Evolution
 
         private void Start()
         {
-            Debug.Log("EvolutionWindow start");
+            // Debug.Log("EvolutionWindow start");
             leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
@@ -105,7 +105,7 @@ namespace BDArmory.Evolution
             }
             evolution = BDAModuleEvolution.Instance;
 
-            Debug.Log("EvolutionWindow ready");
+            // Debug.Log("EvolutionWindow ready");
             BDArmorySetup.Instance.hasEvolution = true;
             ready = true;
             _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
@@ -129,10 +129,10 @@ namespace BDArmory.Evolution
                 mutationsPerHeat = (int)GUI.HorizontalSlider(SRightSliderRect(line), mutationsPerHeat, 1, 10);
                 BDArmorySettings.EVOLUTION_MUTATIONS_PER_HEAT = mutationsPerHeat;
 
-                int adversariesPerHeat = BDArmorySettings.EVOLUTION_MUTATIONS_PER_HEAT;
-                var aphDisplayValue = BDArmorySettings.EVOLUTION_MUTATIONS_PER_HEAT.ToString("0");
+                int adversariesPerHeat = BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT;
+                var aphDisplayValue = BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT.ToString("0");
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Evolution_AdversariesPerHeat")}:  ({aphDisplayValue})", leftLabel);//Adversaries Per Heat
-                adversariesPerHeat = (int)GUI.HorizontalSlider(SRightSliderRect(line), adversariesPerHeat, 1, 10);
+                adversariesPerHeat = (int)GUI.HorizontalSlider(SRightSliderRect(line), adversariesPerHeat, 0, 10);
                 BDArmorySettings.EVOLUTION_ANTAGONISTS_PER_HEAT = adversariesPerHeat;
 
                 int heatsPerGroup = BDArmorySettings.EVOLUTION_HEATS_PER_GROUP;
@@ -175,7 +175,7 @@ namespace BDArmory.Evolution
             }
             if (GUI.Button(new Rect(_margin, offset, nextButton ? 2 * _windowWidth / 3 - _margin : _windowWidth - 2 * _margin, _lineHeight), buttonText, BDArmorySetup.BDGuiSkin.button))
             {
-                Debug.Log("EvolutionWindow buttonClicked");
+                // Debug.Log("EvolutionWindow buttonClicked");
                 switch (status)
                 {
                     case EvolutionStatus.Idle:

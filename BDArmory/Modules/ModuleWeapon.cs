@@ -1539,10 +1539,10 @@ namespace BDArmory.Modules
                 return;
             }
 
-            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            float timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
             if (useRippleFire)
             {
-                timeGap = ((60 / roundsPerMinute) / fireTransforms.Length) * TimeWarp.CurrentRate; //to maintain RPM if only firing one barrel at a time
+                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
             }
             if (Time.time - timeFired > timeGap
                 && !isOverheated
@@ -1696,7 +1696,8 @@ namespace BDArmory.Modules
                                     RunTrajectorySimulation();
                                 }
                                 //heat
-                                heat += heatPerShot;
+                    
+                    heat += heatPerShot;
                                 //EC
                                 DrainECPerShot();
                                 RoundsRemaining++;
@@ -1720,15 +1721,25 @@ namespace BDArmory.Modules
 
                 if (useRippleFire)
                 {
-                    barrelIndex++;
-                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
-                    if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
+                    if (fireState.Length > 1) //need to add clause for singlebarrel guns
                     {
-                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-                        if (barrelIndex + 1 > fireTransforms.Length)
+                        barrelIndex++;
+                        //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                        if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                         {
-                            barrelIndex = 0;
-                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                            StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                            if (barrelIndex + 1 > fireTransforms.Length)
+                            {
+                                barrelIndex = 0;
+                                //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                        {
+                            StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
                         }
                     }
                 }
@@ -1761,7 +1772,11 @@ namespace BDArmory.Modules
             {
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
-            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            float timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            if (useRippleFire)
+            {
+                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
+            }
             beamDuration = Math.Min(timeGap * 0.8f, 0.1f);
             if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
                 && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
@@ -1807,13 +1822,25 @@ namespace BDArmory.Modules
                         heat += heatPerShot;
                         if (useRippleFire)
                         {
-                            barrelIndex++;
-                            if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
+                            if (fireState.Length > 1) //need to add clause for singlebarrel guns
                             {
-                                StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-                                if (barrelIndex + 1 > fireTransforms.Length)
+                                barrelIndex++;
+                                //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                                if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                                 {
-                                    barrelIndex = 0;
+                                    StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                                    if (barrelIndex + 1 > fireTransforms.Length)
+                                    {
+                                        barrelIndex = 0;
+                                        //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                                {
+                                    StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
                                 }
                             }
                         }
@@ -1929,6 +1956,10 @@ namespace BDArmory.Modules
                                     if (!pulseLaser)
                                     {
                                         damage = Impulse * TimeWarp.fixedDeltaTime;
+                                    }
+                                    else
+                                    {
+                                        damage = Impulse;
                                     }
                                     if (p.rb != null && p.rb.mass > 0)
                                     {
@@ -2073,6 +2104,13 @@ namespace BDArmory.Modules
             int rocketsLeft;
 
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            if (!rocketPod)
+            
+            timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            if (useRippleFire)
+            {
+                timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
+            }
 
             if (Time.time - timeFired > timeGap && !isReloading || !pointingAtSelf && (aiControlled || !Misc.Misc.CheckMouseIsOnGui()) && WMgrAuthorized())
             {// fixes rocket ripple code for proper rippling
@@ -2235,16 +2273,25 @@ namespace BDArmory.Modules
             }
             if (useRippleFire)
             {
-                if (!rocketPod)
+                if (fireState.Length > 1) //need to add clause for singlebarrel guns
                 {
                     barrelIndex++;
-                }
-                if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
-                {
-                    StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-                    if (barrelIndex + 1 > fireTransforms.Length)
+                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                    if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                     {
-                        barrelIndex = 0;
+                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                        if (barrelIndex + 1 > fireTransforms.Length)
+                        {
+                            barrelIndex = 0;
+                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                        }
+                    }
+                }
+                else
+                {
+                    if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                    {
+                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
                     }
                 }
             }
