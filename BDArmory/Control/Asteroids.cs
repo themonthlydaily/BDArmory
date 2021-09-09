@@ -641,7 +641,8 @@ namespace BDArmory.Control
             if (asteroids != null)
             {
                 foreach (var asteroid in asteroids)
-                { if (asteroid != null) Destroy(asteroid); }
+                { if (asteroid != null) asteroid.Die(); }
+                asteroids = null;
             }
             UpdateAsteroidNames();
         }
@@ -704,22 +705,14 @@ namespace BDArmory.Control
         /// <summary>
         /// Apply random torques to the asteroids to spin them up a bit. 
         /// </summary>
-        IEnumerator InitialRotation()
+        void SetInitialRotation()
         {
-            var wait = new WaitForFixedUpdate();
-            var startTime = Time.time;
-            Vector3d torque;
-            while (Time.time - startTime < 10f) // Apply small random torques for 10s.
+            // Apply a gaussian random torque to each asteroid.
+            for (int i = 0; i < asteroids.Length; ++i)
             {
-                for (int i = 0; i < asteroids.Length; ++i)
-                {
-                    if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
-                    torque.x = RNG.NextDouble() - 0.5d;
-                    torque.y = RNG.NextDouble() - 0.5d;
-                    torque.z = RNG.NextDouble() - 0.5d;
-                    asteroids[i].rootPart.Rigidbody.AddTorque(torque * 5f, ForceMode.Acceleration);
-                }
-                yield return wait;
+                if (asteroids[i] == null) continue;
+                asteroids[i].rootPart.Rigidbody.angularVelocity = Vector3.zero;
+                asteroids[i].rootPart.Rigidbody.AddTorque(Misc.VectorUtils.GaussianVector3d(Vector3d.zero, 300 * Vector3d.one), ForceMode.Acceleration);
             }
         }
 
@@ -730,14 +723,15 @@ namespace BDArmory.Control
         IEnumerator CleanOutAsteroids()
         {
             var wait = new WaitForFixedUpdate();
-            while (asteroids.Any(a => a != null && (a.packed || !a.loaded))) yield return wait;
+            var startTime = Time.time;
+            while (asteroids.Any(a => a != null && Time.time - startTime < 10 && (a.packed || !a.loaded || a.rootPart.GetColliderBounds().Length < 2))) yield return wait; // Wait up to 10s for the asteroid to get set up.
             for (int i = 0; i < asteroids.Length; ++i)
             {
                 if (asteroids[i] == null) continue;
                 AsteroidUtils.CleanOutAsteroid(asteroids[i]);
             }
 
-            yield return InitialRotation();
+            SetInitialRotation();
         }
 
         void UpdateAsteroidNames()
@@ -754,9 +748,10 @@ namespace BDArmory.Control
 
         public void CheckAsteroids()
         {
-            foreach (var asteroid in asteroids)
+            for (int i = 0; i < asteroids.Length; ++i)
             {
-                Debug.Log($"DEBUG {asteroid.vesselName} collider active? {asteroid.rootPart.collider.enabled}, #bounds: {asteroid.rootPart.GetColliderBounds().Length}");
+                if (asteroids[i] == null) { Debug.Log($"DEBUG asteroid at position {i} is null"); continue; }
+                Debug.Log($"DEBUG {asteroids[i].vesselName} collider active? {asteroids[i].rootPart.collider.enabled}, #bounds: {asteroids[i].rootPart.GetColliderBounds().Length}");
             }
         }
     }
