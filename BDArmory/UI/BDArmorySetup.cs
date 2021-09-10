@@ -2309,7 +2309,16 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldRadius")}:  ({BDArmorySettings.ASTEROID_FIELD_RADIUS}km)", leftLabel);
                     BDArmorySettings.ASTEROID_FIELD_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_RADIUS, 1f, 10f)); // Asteroid Field Radius
                     line -= 0.25f;
-                    // BDArmorySettings.ASTEROID_FIELD_VESSEL_ATTRACTION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD_VESSEL_ATTRACTION, Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldVesselAttraction")); // Vessel attraction. FIXME Add this when ready.
+                    if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION != (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION, Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldAnomalousAttraction")))) // Vessel attraction.
+                    {
+                        if (!BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION && AsteroidField.Instance != null)
+                        { AsteroidField.Instance.anomalousAttraction = Vector3d.zero; }
+                    }
+                    if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION)
+                    {
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldAnomalousAttractionStrength")}:  ({BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH}m/s² @ 100m)", leftLabel);
+                        BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH / 10f, 1f, 50f)) * 10f; // Asteroid Field Anomalous Attraction Strength
+                    }
                 }
                 if (BDArmorySettings.ASTEROID_RAIN != (BDArmorySettings.ASTEROID_RAIN = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_RAIN, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRain")))) // Asteroid Rain
                 {

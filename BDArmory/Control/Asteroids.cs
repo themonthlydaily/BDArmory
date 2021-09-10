@@ -624,6 +624,7 @@ namespace BDArmory.Control
         int cleaningInProgress;
         bool floating;
         Coroutine floatingCoroutine;
+        public Vector3d anomalousAttraction = Vector3d.zero;
         System.Random RNG;
 
         // Pooling of asteroids
@@ -733,13 +734,25 @@ namespace BDArmory.Control
         {
             var wait = new WaitForFixedUpdate();
             floating = true;
+            Vector3d offset;
             while (floating)
             {
                 for (int i = 0; i < asteroids.Length; ++i)
                 {
                     if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
                     var nudge = new Vector3d(RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5) * 500;
-                    asteroids[i].rootPart.Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity + nudge) * TimeWarp.CurrentRate, ForceMode.Acceleration); // Float and reduce motion.
+                    if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION)
+                    {
+                        anomalousAttraction = Vector3d.zero;
+                        foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value))
+                        {
+                            if (weaponManager == null) continue;
+                            offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
+                            anomalousAttraction += offset / offset.sqrMagnitude; // 1/r attraction.
+                        }
+                        anomalousAttraction *= BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH * TimeWarp.fixedDeltaTime;
+                    }
+                    asteroids[i].rootPart.Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity + nudge + anomalousAttraction) * TimeWarp.CurrentRate, ForceMode.Acceleration); // Float and reduce motion.
                 }
                 yield return wait;
             }
