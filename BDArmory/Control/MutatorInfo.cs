@@ -25,7 +25,7 @@ namespace BDArmory.Control
         public string resourceTax { get; private set; }
         public float resourceTaxRate { get; private set; }
         public bool instaGib { get; private set; }
-        public string iconPath { get; private set; }
+        public string icon { get; private set; }
         public string iconColor { get; private set; }
 
         public static MutatorInfos mutators;
@@ -33,7 +33,7 @@ namespace BDArmory.Control
         public static MutatorInfo defaultMutator;
 
         public MutatorInfo(string name, bool weaponMod, string weaponType, string bulletType, int RoF, float MaxDeviation, float laserDamage,
-            float Vampirism, float Regen, float Strength, float Defense, bool Vengeance, float EngineMult, float MassMod, bool resourceSteal, string resourceTax, float resourceTaxRate, bool instaGib, string iconPath, string iconColor)
+            float Vampirism, float Regen, float Strength, float Defense, bool Vengeance, float EngineMult, float MassMod, bool resourceSteal, string resourceTax, float resourceTaxRate, bool instaGib, string icon, string iconColor)
         {
             this.name = name;
             this.weaponMod = weaponMod;
@@ -53,7 +53,7 @@ namespace BDArmory.Control
             this.resourceTax = resourceTax;
             this.resourceTaxRate = resourceTaxRate;
             this.instaGib = instaGib;
-            this.iconPath = iconPath;
+            this.icon = icon;
             this.iconColor = iconColor;
         }
 
@@ -92,7 +92,7 @@ namespace BDArmory.Control
                         (string)ParseField(node, "resourceTax", typeof(string)),
                         (float)ParseField(node, "resourceTaxRate", typeof(float)),
                         (bool)ParseField(node, "instaGib", typeof(bool)),
-                        (string)ParseField(node, "iconPath", typeof(string)),
+                        (string)ParseField(node, "icon", typeof(string)),
                         (string)ParseField(node, "iconColor", typeof(string))
                     );
                     mutators.Add(defaultMutator);
@@ -136,7 +136,7 @@ namespace BDArmory.Control
                         (string)ParseField(node, "resourceTax", typeof(string)),
                         (float)ParseField(node, "resourceTaxRate", typeof(float)),
                         (bool)ParseField(node, "instaGib", typeof(bool)),
-                        (string)ParseField(node, "iconPath", typeof(string)),
+                        (string)ParseField(node, "icon", typeof(string)),
                         (string)ParseField(node, "iconColor", typeof(string))
                         )
                     );

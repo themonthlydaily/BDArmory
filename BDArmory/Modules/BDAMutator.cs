@@ -15,12 +15,13 @@ namespace BDArmory.Modules
         float startTime;
         bool mutatorEnabled = false;
         public List<string> mutators;
-
+        private bool random = true;
         private MutatorInfo mutatorInfo;
         private float Vampirism = 0;
         private float Regen = 0;
         private float Strength = 1;
         private float Defense = 1;
+        private float engineMult;
         private bool Vengeance = false;
         private List<string> ResourceTax;
         private double TaxRate = 0;
@@ -29,22 +30,11 @@ namespace BDArmory.Modules
         bool applyVampirism = false;
         private float Accumulator;
 
-        private List<Color> mutatorColor;
-        private int colorTicker;
-        public Material IconMat;
-
-        public static string textureDir = "BDArmory/Textures/Mutators/";
-        string iconPath = "IconAttack";
+        private string iconPath;
         private Texture2D icon;
-        public Texture2D mutatorIcon
-        {
-            //get { return icon ? icon : icon = GameDatabase.Instance.GetTexture(textureDir + iconPath, false); }
-            get { return icon ? icon : icon = GameDatabase.Instance.GetTexture(iconPath, false); }
-        }
 
         public override void OnStart(StartState state)
         {
-            IconMat = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
@@ -53,32 +43,35 @@ namespace BDArmory.Modules
         }
 
 
-        public void EnableMutator(string name = "def")
+        public void EnableMutator(string name = "def") //FIXME - when using apply on timer and !apply global, this NREs
         {
             if (mutatorEnabled) //replace current mutator with new one
             {
                 DisableMutator();
             }
+            if (name != "def")
+            {
+                mutators = BDAcTools.ParseNames(name);
+                random = false;
+            }
+            Debug.Log("[ModuleMutator] EnableMutator name = " + name);
             for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
             {
-                if (name == "def") //mutator not specified, randomly choose from selected mutators
+                if (random) //mutator not specified, randomly choose from selected mutators
                 {
                     int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
                     name = MutatorInfo.mutators[mutators[i]].name;
                 }
                 else
                 {
-                    mutators = BDAcTools.ParseNames(name);
                     name = MutatorInfo.mutators[mutators[r]].name;
                 }
+                Debug.Log("[ModuleMutator] current name( " + r + ") = " + name);
                 mutatorInfo = MutatorInfo.mutators[name];
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[MUTATOR]: initializing " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
-                iconPath = mutatorInfo.iconPath;
-                icon = null;
-                icon = GameDatabase.Instance.GetTexture(iconPath, false);
-                Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor), out float H, out float S, out float V);
-                mutatorColor.Add(Color.HSVToRGB(H, S, V));
-
+                
+                //Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor), out float H, out float S, out float V);
+                //mutatorColor.Add(Color.HSVToRGB(H, S, V));
+                Debug.Log("[ModuleMutator] beginning mutator initialization of " + name + " on " + part.vessel.name);
                 if (mutatorInfo.weaponMod)
                 {
                     using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
@@ -87,7 +80,7 @@ namespace BDArmory.Modules
                             if (weapon.Current == null) continue;
                             if (mutatorInfo.weaponType != "def")
                             {
-                                weapon.Current.ParseWeaponType(mutatorInfo.weaponType); //this is throwing an error with rockets?
+                                weapon.Current.ParseWeaponType(mutatorInfo.weaponType);
                             }
                             if (mutatorInfo.bulletType != "def")
                             {
@@ -139,6 +132,7 @@ namespace BDArmory.Modules
                         {
                             engine.Current.thrustPercentage *= mutatorInfo.EngineMult;
                         }
+                    engineMult = mutatorInfo.EngineMult;
                 }
                 if (mutatorInfo.Vampirism > 0)
                 {
@@ -175,9 +169,9 @@ namespace BDArmory.Modules
                                 MM.massMod = mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
                             }
                         }
-                        part.Current.highlightType = Part.HighlightType.AlwaysOn;
-                        part.Current.SetHighlight(true, false);
-                        part.Current.SetHighlightColor(mutatorColor[0]);
+                        //part.Current.highlightType = Part.HighlightType.AlwaysOn;
+                        //part.Current.SetHighlight(true, false);
+                        //part.Current.SetHighlightColor(mutatorColor[0]);
                     }
                 if (!Vengeance && mutatorInfo.Vengeance)
                 {
@@ -205,7 +199,7 @@ namespace BDArmory.Modules
                 }
             }
             startTime = Time.time;
-            colorTicker = 0;
+            //colorTicker = 0;
             mutatorEnabled = true;
         }
 
@@ -213,8 +207,7 @@ namespace BDArmory.Modules
         {
             if (!mutatorEnabled) return;
             //Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
-            if (mutatorInfo.weaponMod)
-            {
+
                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                     while (weapon.MoveNext())
                     {
@@ -241,14 +234,13 @@ namespace BDArmory.Modules
                         }
                         weapon.Current.resourceSteal = false;
                     }
-            }
 
-            if (mutatorInfo.EngineMult != 0)
+            if (engineMult != 0)
             {
                 using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                     while (engine.MoveNext())
                     {
-                        engine.Current.thrustPercentage /= mutatorInfo.EngineMult;
+                        engine.Current.thrustPercentage /= engineMult;
                     }
             }
             Vampirism = 0;
@@ -262,25 +254,15 @@ namespace BDArmory.Modules
                     var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
                     HPT.defenseMutator = Defense;
 
-                    part.Current.highlightType = Part.HighlightType.OnMouseOver;
-                    part.Current.SetHighlightColor(Part.defaultHighlightPart);
-                    part.Current.SetHighlight(false, false);
+                    //part.Current.highlightType = Part.HighlightType.OnMouseOver;
+                    //part.Current.SetHighlightColor(Part.defaultHighlightPart);
+                    //part.Current.SetHighlight(false, false);
                 }
             if (Vengeance)
             {
                 Vengeance = false;
                 part.OnJustAboutToBeDestroyed -= Detonate;
             }
-            /*
-            if (Vengeance)
-            {
-                var nuke = vessel.rootPart.FindModuleImplementing<RWPS3R2NukeModule>();
-                if (nuke != null)
-                {
-                    vessel.rootPart.RemoveModule(nuke);
-                }
-            }
-            */
             ResourceTax.Clear();
             TaxRate = 0;
             mutatorEnabled = false;
@@ -294,7 +276,7 @@ namespace BDArmory.Modules
                 if ((BDArmorySettings.MUTATOR_DURATION > 0 && Time.time - startTime > BDArmorySettings.MUTATOR_DURATION * 60) && BDArmorySettings.MUTATOR_APPLY_TIMER)
                 {
                     DisableMutator();
-                    //Debug.Log("[Mutator]: mutator expired, disabling");
+                    Debug.Log("[Mutator]: mutator expired, disabling");
                 }
                 if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(vessel.vesselName))
                 {
@@ -329,29 +311,12 @@ namespace BDArmory.Modules
                             part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
                         }
                     }
-                }
-                if (Regen != 0 || TaxRate != 0 || mutatorColor.Count > 0)
+                } 
+                if (Regen != 0 || TaxRate != 0)
                 {
                     if (Accumulator > 5)
                     {
-                        Accumulator = 0;
-                        if (mutatorColor.Count > 0)
-                        {
-                            if (colorTicker > mutatorColor.Count)
-                            {
-                                colorTicker = 0;
-                            }
-                            else
-                            {
-                                colorTicker++;
-                            }
-                            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
-                                while (part.MoveNext())
-                                {
-                                    part.Current.SetHighlightColor(mutatorColor[colorTicker]);
-                                }
-                        }
-
+                        Accumulator = 0;                        
                     }
                     else
                     {
@@ -359,58 +324,81 @@ namespace BDArmory.Modules
                     }
                 }
             }
-        }
-        /*
+        }        
         void OnGUI() //honestly, this is more bonus functionality than anything, an extra way to show which mutator is active on a craft for Mutators on kill or chaos mode
         {
-            if ((HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.TEAMICONS) ||
-                HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.PERSISTANT && BDTISettings.TEAMICONS)
+            if (HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDArmorySettings.MUTATOR_ICONS)
             {
                 if (mutatorEnabled)
                 {
-                    bool offscreen = false;
                     Vector3 screenPos = BDGUIUtils.GetMainCamera().WorldToViewportPoint(vessel.CoM);
-                    if (screenPos.z < 0)
-                    {
-                        offscreen = true;
-                    }
-                    if (screenPos.x != Mathf.Clamp01(screenPos.x))
-                    {
-                        offscreen = true;
-                    }
-                    if (screenPos.y != Mathf.Clamp01(screenPos.y))
-                    {
-                        offscreen = true;
-                    }
+                    if (screenPos.z < 0) return; //dont draw if point is behind camera
+                    if (screenPos.x != Mathf.Clamp01(screenPos.x)) return; //dont draw if off screen
+                    if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
                     float yPos = ((1 - screenPos.y) * Screen.height) - (0.5f * (30 * BDTISettings.ICONSCALE)) - (30 * BDTISettings.ICONSCALE);
 
-                    if (!offscreen)
+                    for (int i = 0; i < BDArmorySettings.MUTATOR_APPLY_NUM; i++)
                     {
-                        if (IconMat == null)
+                        float xPos = (screenPos.x * Screen.width) - (0.5f * (30 * BDTISettings.ICONSCALE)) - ((i * 1.5f) * ((30 * BDTISettings.ICONSCALE)));
+                        Rect iconRect = new Rect(xPos + (i * ((30 * BDTISettings.ICONSCALE) + 10)), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
+                        //FIXME - need to fix offset for multiple icons                       
+                        iconPath = MutatorInfo.mutators[mutators[i]].icon;
+                        switch (iconPath)
                         {
-                            IconMat = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
-                            Debug.Log("[BDArmory.Mutator]: IconMat didn't get initialized on Start. initializing");
+                            case "IconAccuracy":
+                                icon = BDTISetup.Instance.MutatorIconAcc;
+                                break;
+                            case "IconAttack":
+                                icon = BDTISetup.Instance.MutatorIconAtk;
+                                break;
+                            case "IconAttack2":
+                                icon = BDTISetup.Instance.MutatorIconAtk2;
+                                break;
+                            case "IconBallistic":
+                                icon = BDTISetup.Instance.MutatorIconBullet;
+                                break;
+                            case "IconDefense":
+                                icon = BDTISetup.Instance.MutatorIconDefense;
+                                break;
+                            case "IconLaser":
+                                icon = BDTISetup.Instance.MutatorIconLaser;
+                                break;
+                            case "IconMass":
+                                icon = BDTISetup.Instance.MutatorIconMass;
+                                break;
+                            case "IconRegen":
+                                icon = BDTISetup.Instance.MutatorIconRegen;
+                                break;
+                            case "IconRocket":
+                                icon = BDTISetup.Instance.MutatorIconRocket;
+                                break;
+                            case "IconSkull":
+                                icon = BDTISetup.Instance.MutatorIconDoom;
+                                break;
+                            case "IconSpeed":
+                                icon = BDTISetup.Instance.MutatorIconSpeed;
+                                break;
+                            case "IconTarget":
+                                icon = BDTISetup.Instance.MutatorIconTarget;
+                                break;
+                            case "IconVampire":
+                                icon = BDTISetup.Instance.MutatorIconVampire;
+                                break;
+                            case "IconUnknown":
+                                icon = BDTISetup.Instance.MutatorIconNull;
+                                break;
+                            default: // Other?
+                                icon = BDTISetup.Instance.MutatorIconNull;
+                                break;
                         }
-                        for (int i = 0; i < BDArmorySettings.MUTATOR_APPLY_NUM; i++)
+                        if (icon != null)
                         {
-                            float xPos = (screenPos.x * Screen.width) - (0.5f * (30 * BDTISettings.ICONSCALE)) - ((i * 1.5f) *  ((30 * BDTISettings.ICONSCALE)));
-                            IconMat.SetColor("_TintColor", mutatorColor[i]);
-                            if (mutatorIcon != null)
-                            {
-                                IconMat.mainTexture = mutatorIcon;
-                            }
-                            else
-                            {
-                                IconMat.mainTexture = BDTISetup.Instance.TextureIconGeneric; //nope, still returning a missing texture error. Debug 
-                            }
-                            Rect iconRect = new Rect(xPos + (i * ((30 * BDTISettings.ICONSCALE) + 10)), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
-                            Graphics.DrawTexture(iconRect, mutatorIcon, IconMat);
+                            GUI.DrawTexture(iconRect, icon);
                         }
                     }
                 }
             }
         }
-        */
         void Detonate()
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Mutator] triggering vengeance nuke");
@@ -418,5 +406,4 @@ namespace BDArmory.Modules
         }
     }
 }
-//figure out why the icon isn't getting drawn  - What's NRE'ing?
 

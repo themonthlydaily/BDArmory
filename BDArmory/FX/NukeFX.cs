@@ -226,7 +226,7 @@ namespace BDArmory.FX
             {
                 if ((transform.position - FlightGlobals.ActiveVessel.CoM).magnitude > 100)
                 {
-                    BDGUIUtils.DrawTextureOnWorldPos(transform.position, BDTISetup.Instance.TextureIconTarget, new Vector2(40, 40), 0);
+                    BDGUIUtils.DrawTextureOnWorldPos(transform.position, BDTISetup.Instance.MutatorIconDoom, new Vector2(40, 40), 0);
                 }
             }
         }

@@ -2361,8 +2361,9 @@ namespace BDArmory.UI
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MutatorDuration")}: ({(BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION + (BDArmorySettings.MUTATOR_DURATION > 1 ? " mins" : " min") : "Unlimited")})", leftLabel);
                         BDArmorySettings.MUTATOR_DURATION = (float)Math.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MUTATOR_DURATION, 0f, BDArmorySettings.COMPETITION_DURATION), 1);
 
-                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MutatorNUM")}:  ({BDArmorySettings.MUTATOR_DURATION})", leftLabel);//Number of active mutators
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MutatorNum")}:  ({BDArmorySettings.MUTATOR_APPLY_NUM})", leftLabel);//Number of active mutators
                         BDArmorySettings.MUTATOR_APPLY_NUM = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MUTATOR_APPLY_NUM, 1f, BDArmorySettings.MUTATOR_LIST.Count));
+                        BDArmorySettings.MUTATOR_ICONS = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_ICONS, Localizer.Format("#LOC_BDArmory_Settings_MutatorIcons"));
                     }
                 }
 
