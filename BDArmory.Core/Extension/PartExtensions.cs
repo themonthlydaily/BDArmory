@@ -350,7 +350,7 @@ namespace BDArmory.Core.Extension
             var meshFilter = part.GetComponentInChildren<MeshFilter>();
             if (meshFilter == null)
             {
-                Debug.LogWarning($"[BDArmory.PartExtension]: {part.name} has no MeshFilter!");
+                Debug.LogWarning($"[BDArmory.PartExtension]: {part.name} has no MeshFilter! Returning zero size.");
                 return Vector3.zero;
             }
             var size = meshFilter.mesh.bounds.size;
