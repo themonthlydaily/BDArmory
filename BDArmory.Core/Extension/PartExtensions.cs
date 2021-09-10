@@ -500,7 +500,7 @@ namespace BDArmory.Core.Extension
                             Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage *= Mathf.Clamp01((113f - _damageReduction) / 100f)));
                         }
 
-                        damage *= Mathf.Clamp01((113f - _damageReduction) / 100f); ;
+                        damage *= Mathf.Clamp01((113f - _damageReduction) / 100f);
                     }
                     break;
             }
