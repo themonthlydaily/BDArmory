@@ -347,7 +347,13 @@ namespace BDArmory.Core.Extension
 
         public static Vector3 GetSize(this Part part)
         {
-            var size = part.GetComponentInChildren<MeshFilter>().mesh.bounds.size;
+            var meshFilter = part.GetComponentInChildren<MeshFilter>();
+            if (meshFilter == null)
+            {
+                Debug.LogWarning($"[BDArmory.PartExtension]: {part.name} has no MeshFilter! Returning zero size.");
+                return Vector3.zero;
+            }
+            var size = meshFilter.mesh.bounds.size;
 
             // if (part.name.Contains("B9.Aero.Wing.Procedural")) // Covered by SuicidalInsanity's patch.
             // {
