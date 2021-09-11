@@ -931,7 +931,7 @@ namespace BDArmory.Control
             attractionFactors.Clear();
             foreach (var asteroid in asteroidPool)
             {
-                attractionFactors[asteroid.vesselName] = 20f * Mathf.Clamp(2f / Mathf.Log(asteroid.GetRadius() + 1f) - 1f, 0.1f, 2f);
+                attractionFactors[asteroid.vesselName] = 30f * Mathf.Clamp(2f / Mathf.Log(asteroid.GetRadius() + 1f) - 1f, 0.1f, 2f);
             }
         }
 
