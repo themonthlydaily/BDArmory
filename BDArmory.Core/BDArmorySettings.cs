@@ -134,7 +134,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_FIELD_ANOMALOUS_ATTRACTION = false; // Asteroids are attracted to vessels.
-        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = 100f; // 1m/s^2 at 100m.
+        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = 0.25f; // Strength of the effect.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN = false;
         [BDAPersistantSettingsField] public static int ASTEROID_RAIN_NUMBER = 100; // Number of asteroids
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.

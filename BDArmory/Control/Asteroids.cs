@@ -628,9 +628,10 @@ namespace BDArmory.Control
         System.Random RNG;
 
         // Pooling of asteroids
-        List<Vessel> asteroidPool;
+        List<Vessel> asteroidPool = new List<Vessel>();
         int lastPoolIndex = 0;
         HashSet<string> asteroidNames = new HashSet<string>();
+        Dictionary<string, float> attractionFactors = new Dictionary<string, float>();
         #endregion
 
         void Awake()
@@ -720,6 +721,7 @@ namespace BDArmory.Control
                 {
                     asteroid.gameObject.SetActive(true);
                     asteroid.SetPosition(position);
+                    asteroid.SetWorldVelocity(Vector3d.zero);
                     StartCoroutine(SetInitialRotation(asteroid));
                     asteroids[i] = asteroid;
                 }
@@ -735,12 +737,13 @@ namespace BDArmory.Control
             var wait = new WaitForFixedUpdate();
             floating = true;
             Vector3d offset;
+            float factor = 0;
             while (floating)
             {
                 for (int i = 0; i < asteroids.Length; ++i)
                 {
                     if (asteroids[i] == null || asteroids[i].packed || !asteroids[i].loaded || asteroids[i].rootPart.Rigidbody == null) continue;
-                    var nudge = new Vector3d(RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5) * 500;
+                    var nudge = new Vector3d(RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5, RNG.NextDouble() - 0.5) * 100;
                     if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION)
                     {
                         anomalousAttraction = Vector3d.zero;
@@ -748,11 +751,12 @@ namespace BDArmory.Control
                         {
                             if (weaponManager == null) continue;
                             offset = weaponManager.vessel.transform.position - asteroids[i].transform.position;
-                            anomalousAttraction += offset / offset.sqrMagnitude; // 1/r attraction.
+                            factor = (1f - (float)offset.sqrMagnitude / 1e6f); // 1-(r/1000)^2 attraction. I.e., asteroids within 1km.
+                            if (factor > 0) anomalousAttraction += offset.normalized * factor * attractionFactors[asteroids[i].vesselName];
                         }
-                        anomalousAttraction *= BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH * TimeWarp.fixedDeltaTime;
+                        anomalousAttraction *= BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH;
                     }
-                    asteroids[i].rootPart.Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity + nudge + anomalousAttraction) * TimeWarp.CurrentRate, ForceMode.Acceleration); // Float and reduce motion.
+                    asteroids[i].rootPart.Rigidbody.AddForce((-FlightGlobals.getGeeForceAtPosition(asteroids[i].transform.position) - asteroids[i].srf_velocity / 10f + nudge + anomalousAttraction) * TimeWarp.CurrentRate, ForceMode.Acceleration); // Float and reduce motion.
                 }
                 yield return wait;
             }
@@ -769,7 +773,7 @@ namespace BDArmory.Control
             if (asteroid != null && asteroid.gameObject.activeInHierarchy)
             {
                 asteroid.rootPart.Rigidbody.angularVelocity = Vector3.zero;
-                asteroid.rootPart.Rigidbody.AddTorque(Misc.VectorUtils.GaussianVector3d(Vector3d.zero, 100 * Vector3d.one), ForceMode.Acceleration); // Apply a gaussian random torque to each asteroid.
+                asteroid.rootPart.Rigidbody.AddTorque(Misc.VectorUtils.GaussianVector3d(Vector3d.zero, 50 * Vector3d.one), ForceMode.Acceleration); // Apply a gaussian random torque to each asteroid.
             }
         }
 
@@ -800,8 +804,7 @@ namespace BDArmory.Control
         /// <param name="count">The minimum number of asteroids in the pool.</param>
         void SetupAsteroidPool(int count)
         {
-            if (asteroidPool == null) { asteroidPool = new List<Vessel>(); }
-            else { asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < 9e4f).ToList(); }
+            asteroidPool = asteroidPool.Where(a => a != null && a.transform.position.magnitude < 9e4f).ToList();
             foreach (var asteroid in asteroidPool)
             {
                 if (asteroid.FindPartModuleImplementing<ModuleAsteroid>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidInfo>() != null || asteroid.FindPartModuleImplementing<ModuleAsteroidResource>() != null) // We don't use the VesselModuleRegistry here as we'd need to force update it for each asteroid anyway.
@@ -906,8 +909,8 @@ namespace BDArmory.Control
         /// </summary>
         void UpdatePooledAsteroidNames()
         {
-            if (asteroidPool == null) asteroidNames.Clear();
-            else asteroidNames = asteroidPool.Select(a => a.vesselName).ToHashSet();
+            asteroidNames = asteroidPool.Select(a => a.vesselName).ToHashSet();
+            UpdateAttractionFactors();
         }
 
         /// <summary>
@@ -921,11 +924,22 @@ namespace BDArmory.Control
         }
 
         /// <summary>
+        /// Update the attraction factors for the asteroids.
+        /// </summary>
+        void UpdateAttractionFactors()
+        {
+            attractionFactors.Clear();
+            foreach (var asteroid in asteroidPool)
+            {
+                attractionFactors[asteroid.vesselName] = 20f * Mathf.Clamp(2f / Mathf.Log(asteroid.GetRadius() + 1f) - 1f, 0.1f, 2f);
+            }
+        }
+
+        /// <summary>
         /// Run some debugging checks on the pooled asteroids.
         /// </summary>
         public void CheckPooledAsteroids()
         {
-            if (asteroidPool == null) { Debug.Log("DEBUG Asteroid pool is not set up yet."); return; }
             int activeCount = 0;
             int withModulesCount = 0;
             int withCollidersCount = 0;
