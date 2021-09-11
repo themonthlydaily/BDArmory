@@ -176,7 +176,7 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                ApplyHitPoints(p, damage_, caliber, mass, mass, impactVelocity, penetrationfactor);
+                ApplyHitPoints(p, damage_, caliber, mass, multiplier, impactVelocity, penetrationfactor);
             }
             return damage_;
         }
@@ -375,17 +375,29 @@ namespace BDArmory.Core.Extension
             return volume;
         }
 
-        private static bool tweakScaleChecked = false;
-        private static bool tweakScaleInstalled = false;
         public static Vector3 GetSize(this Part part)
         {
-            var size = part.GetComponentInChildren<MeshFilter>().mesh.bounds.size;
+            var meshFilter = part.GetComponentInChildren<MeshFilter>();
+            if (meshFilter == null)
+            {
+                Debug.LogWarning($"[BDArmory.PartExtension]: {part.name} has no MeshFilter! Returning zero size.");
+                return Vector3.zero;
+            }
+            var size = meshFilter.mesh.bounds.size;
 
             // if (part.name.Contains("B9.Aero.Wing.Procedural")) // Covered by SuicidalInsanity's patch.
             // {
             //     size = size * 0.1f;
             // }
 
+            float scaleMultiplier = part.GetTweakScaleMultiplier();
+            return size * scaleMultiplier;
+        }
+
+        private static bool tweakScaleChecked = false;
+        private static bool tweakScaleInstalled = false;
+        public static float GetTweakScaleMultiplier(this Part part)
+        {
             float scaleMultiplier = 1f;
             if (!tweakScaleChecked)
             {
@@ -400,8 +412,7 @@ namespace BDArmory.Core.Extension
                 scaleMultiplier = tweakScaleModule.Fields["currentScale"].GetValue<float>(tweakScaleModule) /
                                   tweakScaleModule.Fields["defaultScale"].GetValue<float>(tweakScaleModule);
             }
-
-            return size * scaleMultiplier;
+            return scaleMultiplier;
         }
 
         public static bool IsAero(this Part part)

@@ -199,7 +199,7 @@ namespace BDArmory.Control
             ScoreData[victim].damageTypesTaken.Add(DamageFrom.Rockets);
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); } // FIXME Add tracker for rockets.
+            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); } // FIXME Add tracker for rocket hits.
             return true;
         }
         /// <summary>
@@ -217,6 +217,8 @@ namespace BDArmory.Control
             if (ScoreData[victim].damageFromRockets.ContainsKey(attacker)) { ScoreData[victim].damageFromRockets[attacker] += damage; }
             else { ScoreData[victim].damageFromRockets[attacker] = damage; }
 
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackMissileDamage(attacker, victim, damage); } // FIXME Add tracker for rocket damage.
             return true;
         }
         /// <summary>
@@ -803,7 +805,7 @@ namespace BDArmory.Control
     public enum DamageFrom { None, Guns, Rockets, Missiles, Ramming, Incompetence };
     public enum AliveState { Alive, CleanKill, HeadShot, KillSteal, AssistedKill, Dead };
     public enum GMKillReason { None, GM, OutOfAmmo, BigRedButton, LandedTooLong };
-    public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared };
+    public enum CompetitionStartFailureReason { None, OnlyOneTeam, TeamsChanged, TeamLeaderDisappeared, PilotDisappeared, Other };
 
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -1226,7 +1228,9 @@ namespace BDArmory.Control
                 {
                     if (pilotList.Current.Value == null)
                     {
-                        competitionStatus.Set("Competition: Teams got adjusted during competition start-up, aborting.");
+                        var message = "Teams got adjusted during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
                         StopCompetition();
                         yield break;
@@ -1238,7 +1242,9 @@ namespace BDArmory.Control
                 yield return new WaitForFixedUpdate();
                 if (leaders.Any(leader => leader == null || leader.weaponManager == null))
                 {
-                    competitionStatus.Set("Competition: One of the team leaders disappeared during start-up, aborting.");
+                    var message = "One of the team leaders disappeared during start-up, aborting.";
+                    competitionStatus.Set("Competition: " + message);
+                    Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                     StopCompetition();
                     yield break;
@@ -1266,7 +1272,9 @@ namespace BDArmory.Control
                 while (leader.MoveNext())
                     if (leader.Current == null)
                     {
-                        competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                        var message = "A leader vessel has disappeared during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                         StopCompetition();
                         yield break;
@@ -1304,7 +1312,9 @@ namespace BDArmory.Control
                 foreach (var leader in leaders)
                     if (leader == null)
                     {
-                        competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                        var message = "A leader vessel has disappeared during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                         StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
                         yield break;
@@ -1335,7 +1345,9 @@ namespace BDArmory.Control
                     // Increase the distance for large teams
                     if (!pilots.ContainsKey(leader.weaponManager.Team))
                     {
-                        competitionStatus.Set("Competition: The teams were changed during competition start-up, aborting.");
+                        var message = "The teams were changed during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                         StopCompetition();
                         yield break;
@@ -1359,7 +1371,9 @@ namespace BDArmory.Control
             {
                 if (teamPilots == null)
                 {
-                    competitionStatus.Set("Competition: Teams have been changed during competition start-up, aborting.");
+                    var message = "Teams have been changed during competition start-up, aborting.";
+                    competitionStatus.Set("Competition: " + message);
+                    Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                     StopCompetition();
                     yield break;
@@ -1367,14 +1381,29 @@ namespace BDArmory.Control
                 foreach (var pilot in teamPilots)
                     if (pilot == null)
                     {
-                        competitionStatus.Set("Competition: A pilot has disappeared from team during competition start-up, aborting.");
+                        var message = "A pilot has disappeared from team during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.PilotDisappeared;
                         StopCompetition(); // Check that the team pilots haven't been changed during the competition startup.
                         yield break;
                     }
             }
             if (BDATargetManager.LoadedVessels.Where(v => !VesselModuleRegistry.ignoredVesselTypes.Contains(v.vesselType)).Any(v => VesselModuleRegistry.GetModuleCount<ModuleRadar>(v) > 0)) // Update RCS if any vessels have radars.
-            { RadarUtils.ForceUpdateRadarCrossSections(); }
+            {
+                try
+                {
+                    RadarUtils.ForceUpdateRadarCrossSections();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message);
+                    competitionStatus.Set("Failed to update radar cross sections, aborting.");
+                    competitionStartFailureReason = CompetitionStartFailureReason.Other;
+                    StopCompetition();
+                    yield break;
+                }
+            }
             foreach (var teamPilots in pilots)
                 foreach (var pilot in teamPilots.Value)
                 {
@@ -2924,7 +2953,26 @@ namespace BDArmory.Control
         /// <param name="vessel"></param>
         public void AddPlayerToRammingInformation(Vessel vessel)
         {
-            // FIXME Not implemented yet.
+            if (!rammingInformation.ContainsKey(vessel.vesselName)) // Vessel information hasn't been added to rammingInformation datastructure yet.
+            {
+                rammingInformation.Add(vessel.vesselName, new RammingInformation { vesselName = vessel.vesselName, targetInformation = new Dictionary<string, RammingTargetInformation>() });
+                foreach (var otherVesselName in rammingInformation.Keys)
+                {
+                    if (otherVesselName == vessel.vesselName) continue;
+                    rammingInformation[vessel.vesselName].targetInformation.Add(otherVesselName, new RammingTargetInformation { vessel = rammingInformation[otherVesselName].vessel });
+                }
+            }
+            // Create or update ramming information for the vesselName.
+            rammingInformation[vessel.vesselName].vessel = vessel;
+            rammingInformation[vessel.vesselName].partCount = vessel.parts.Count;
+            rammingInformation[vessel.vesselName].radius = vessel.GetRadius();
+            // Update each of the other vesselNames in the rammingInformation.
+            foreach (var otherVesselName in rammingInformation.Keys)
+            {
+                if (otherVesselName == vessel.vesselName) continue;
+                rammingInformation[otherVesselName].targetInformation[vessel.vesselName] = new RammingTargetInformation { vessel = vessel };
+            }
+
         }
         /// <summary>
         /// Remove a vessel from the rammingInformation datastructure after a competition has started.
@@ -2932,7 +2980,13 @@ namespace BDArmory.Control
         /// <param name="player"></param>
         public void RemovePlayerFromRammingInformation(string player)
         {
-            // FIXME Not implemented yet.
+            if (!rammingInformation.ContainsKey(player)) return; // Player isn't in the ramming information
+            rammingInformation.Remove(player); // Remove the player.
+            foreach (var otherVesselName in rammingInformation.Keys) // Remove the player's target information from the other players.
+            {
+                if (rammingInformation[otherVesselName].targetInformation.ContainsKey(player)) // It should unless something has gone wrong.
+                { rammingInformation[otherVesselName].targetInformation.Remove(player); }
+            }
         }
 
         // Update the ramming information dictionary with expected times to closest point of approach.

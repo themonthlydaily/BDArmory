@@ -922,7 +922,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
-                    if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
+                    if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
                     {
                         float targetScore = (target.Current == mf.currentTarget ? mf.targetBias : 1f) * (
                             1f +

@@ -35,7 +35,7 @@ namespace BDArmory.Modules
 
         public void Start()
         {
-            Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and enabled." : ", but currently disabled."));
+            Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and " + (BDArmorySettings.KERBAL_SAFETY > 1 ? "fully" : "partially") + " enabled." : ", but currently disabled."));
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
             evaKerbalsToMonitor = new List<KerbalEVA>();
             if (BDArmorySettings.KERBAL_SAFETY > 0)
@@ -244,7 +244,8 @@ namespace BDArmory.Modules
                     }
                 }
             }
-            ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
+            if (vessel.protoVessel != null)
+            { ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true); }
         }
 
         void EatenByTheKraken(GameEvents.HostedFromToAction<Vessel, CelestialBody> fromTo)
@@ -558,7 +559,7 @@ namespace BDArmory.Modules
             {
                 if (kerbalEVA != null)
                 {
-                    if (kerbalEVA.isActiveAndEnabled)
+                    if (kerbalEVA.isActiveAndEnabled && gameObject.activeSelf) // We can't start coroutines if the gameObect isn't active.
                     {
                         if (vessel.parts.Count == 1) // It's a falling kerbal.
                         {

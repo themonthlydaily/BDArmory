@@ -187,27 +187,40 @@ namespace BDArmory.UI
         }
         private void OnEditorPartPlacedEvent(Part p)
         {
-            if (ActivePilot == null && p != null)
+            if (p == null) return;
+
+            // Prioritise Pilot AIs
+            if (ActivePilot == null)
             {
                 var AI = p.FindModuleImplementing<BDModulePilotAI>();
                 if (AI != null)
                 {
                     ActivePilot = AI;
+                    inputFields = null; // Reset the input fields.
+                    SetInputFields(ActivePilot.GetType());
+                    return;
                 }
             }
-            if (ActiveDriver == null && p != null)
+            else return; // A Pilot AI is already active.
+
+            // No Pilot AIs, check for Surface AIs.
+            if (ActiveDriver == null)
             {
                 var DAI = p.FindModuleImplementing<BDModuleSurfaceAI>();
                 if (DAI != null)
                 {
                     ActiveDriver = DAI;
+                    inputFields = null; // Reset the input fields
+                    SetInputFields(ActiveDriver.GetType());
+                    return;
                 }
             }
+            else return; // A Surface AI is already active.
         }
 
         private void OnEditorPartDeletedEvent(Part p)
         {
-            if (ActivePilot != null || ActiveDriver != null)
+            if (ActivePilot != null || ActiveDriver != null) // If we had an active AI, we need to check to see if it's disappeared.
             {
                 GetAIEditor(); // We can't just check the part as it's now null.
             }
@@ -222,99 +235,189 @@ namespace BDArmory.UI
             }
             if (ActivePilot != null)
             {
-                oldClamp = ActivePilot.UpToEleven;
-                inputFields = new Dictionary<string, NumericInputField> {
-                    { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerMult, 0.1, 20) },
-                    { "steerKiAdjust", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerKiAdjust, 0.01, 1) },
-                    { "steerDamping", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerDamping, 1, 8) },
-
-                    { "DynamicDampingMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingMin, 1, 8) },
-                    { "DynamicDampingMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingMax, 1, 8) },
-                    { "dynamicSteerDampingFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingFactor, 1, 10) },
-
-                    { "DynamicDampingPitchMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingPitchMin, 1, 8) },
-                    { "DynamicDampingPitchMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingPitchMax, 1, 8) },
-                    { "dynamicSteerDampingPitchFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingPitchFactor, 1, 10) },
-
-                    { "DynamicDampingYawMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingYawMin, 1, 8) },
-                    { "DynamicDampingYawMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingYawMax, 1, 8) },
-                    { "dynamicSteerDampingYawFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingYawFactor, 1, 10) },
-
-                    { "DynamicDampingRollMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
-                    { "DynamicDampingRollMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
-                    { "dynamicSteerDampingRollFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingRollFactor, 1, 10) },
-
-                    { "defaultAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.defaultAltitude, 100, 15000) },
-                    { "minAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minAltitude, 25, 6000) },
-                    { "maxAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAltitude, 100, 15000) },
-
-                    { "maxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSpeed, 20, 800) },
-                    { "takeOffSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.takeOffSpeed, 10, 200) },
-                    { "minSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minSpeed, 10, 200) },
-                    { "strafingSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.strafingSpeed, 10, 200) },
-                    { "idleSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.idleSpeed, 10, 200) },
-
-                    { "maxSteer", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteer, 0.1, 1) },
-                    { "lowSpeedSwitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.lowSpeedSwitch, 10, 500) },
-                    { "maxSteerAtMaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteerAtMaxSpeed, 0.1, 1) },
-                    { "cornerSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.cornerSpeed, 10, 500) },
-                    { "maxBank", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxBank, 10, 180) },
-                    { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
-                    { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
-
-                    { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
-                    { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
-                    { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
-                    { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
-                    { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
-                    { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 2) },
-                    { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
-                    { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
-                    { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
-                    { "extendTargetAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetAngle, 0, 180) },
-                    { "extendTargetDist", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetDist, 0, 5000) },
-
-                    { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 1, 5) },
-                    { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 1, 5) },
-
-                    { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
-                };
+                SetInputFields(ActivePilot.GetType());
             }
             else if (ActiveDriver != null)
             {
-                oldClamp = ActiveDriver.UpToEleven;
-                inputFields = new Dictionary<string, NumericInputField> {
-                    { "MaxSlopeAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 1, 30) },
-                    { "CruiseSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, 5, 60) },
-                    { "MaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 5,  80) },
-                    { "MaxDrift", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxDrift, 1, 180) },
-                    { "TargetPitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, -10, 10) },
-                    { "BankAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, -45, 45) },
-                    { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 0.2,  20) },
-                    { "MinEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MinEngagementRange, 0, 6000) },
-                    { "MaxEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxEngagementRange, 0, 8000) },
-                    { "AvoidMass", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.AvoidMass, 0, 100) },
-                };
+                SetInputFields(ActiveDriver.GetType());
             }
         }
         void GetAIEditor()
         {
             if (EditorLogic.fetch.ship == null) return;
-            ActivePilot = null;
-            ActiveDriver = null;
-            foreach (var p in EditorLogic.fetch.ship.Parts)
+            foreach (var p in EditorLogic.fetch.ship.Parts) // Take the AIs in the order they were placed on the ship.
             {
                 foreach (var AI in p.FindModulesImplementing<BDModulePilotAI>())
                 {
                     if (AI == null) continue;
+                    if (AI == ActivePilot) return; // We found the current ActivePilot!
                     ActivePilot = AI;
+                    inputFields = null; // Reset the input fields to the current AI.
+                    SetInputFields(ActivePilot.GetType());
                     return;
                 }
                 foreach (var AI in p.FindModulesImplementing<BDModuleSurfaceAI>())
                 {
                     if (AI == null) continue;
+                    if (AI == ActiveDriver) return; // We found the current ActiveDriver!
                     ActiveDriver = AI;
+                    inputFields = null; // Reset the input fields to the current AI.
+                    SetInputFields(ActiveDriver.GetType());
                     return;
+                }
+            }
+            // No AIs were found, clear everything.
+            ActivePilot = null;
+            ActiveDriver = null;
+            inputFields = null;
+        }
+
+        void SetInputFields(Type AIType)
+        {
+            // Clear other Active AIs.
+            if (AIType != typeof(BDModulePilotAI)) ActivePilot = null;
+            if (AIType != typeof(BDModuleSurfaceAI)) ActiveDriver = null;
+
+            if (inputFields == null) // Initialise the input fields if they're not initialised.
+            {
+                oldClamp = false;
+                if (AIType == typeof(BDModulePilotAI))
+                {
+                    inputFields = new Dictionary<string, NumericInputField> {
+                        { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerMult, 0.1, 20) },
+                        { "steerKiAdjust", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerKiAdjust, 0.01, 1) },
+                        { "steerDamping", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.steerDamping, 1, 8) },
+
+                        { "DynamicDampingMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingMin, 1, 8) },
+                        { "DynamicDampingMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingMax, 1, 8) },
+                        { "dynamicSteerDampingFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingFactor, 1, 10) },
+
+                        { "DynamicDampingPitchMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingPitchMin, 1, 8) },
+                        { "DynamicDampingPitchMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingPitchMax, 1, 8) },
+                        { "dynamicSteerDampingPitchFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingPitchFactor, 1, 10) },
+
+                        { "DynamicDampingYawMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingYawMin, 1, 8) },
+                        { "DynamicDampingYawMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingYawMax, 1, 8) },
+                        { "dynamicSteerDampingYawFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingYawFactor, 1, 10) },
+
+                        { "DynamicDampingRollMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
+                        { "DynamicDampingRollMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.DynamicDampingRollMax, 1, 8) },
+                        { "dynamicSteerDampingRollFactor", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.dynamicSteerDampingRollFactor, 1, 10) },
+
+                        { "defaultAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.defaultAltitude, 100, 15000) },
+                        { "minAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minAltitude, 25, 6000) },
+                        { "maxAltitude", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAltitude, 100, 15000) },
+
+                        { "maxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSpeed, 20, 800) },
+                        { "takeOffSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.takeOffSpeed, 10, 200) },
+                        { "minSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minSpeed, 10, 200) },
+                        { "strafingSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.strafingSpeed, 10, 200) },
+                        { "idleSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.idleSpeed, 10, 200) },
+
+                        { "maxSteer", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteer, 0.1, 1) },
+                        { "lowSpeedSwitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.lowSpeedSwitch, 10, 500) },
+                        { "maxSteerAtMaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteerAtMaxSpeed, 0.1, 1) },
+                        { "cornerSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.cornerSpeed, 10, 500) },
+                        { "maxBank", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxBank, 10, 180) },
+                        { "maxAllowedGForce", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedGForce, 2, 45) },
+                        { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
+
+                        { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
+                        { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
+                        { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
+                        { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
+                        { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
+                        { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 2) },
+                        { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
+                        { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
+                        { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
+                        { "extendTargetAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetAngle, 0, 180) },
+                        { "extendTargetDist", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetDist, 0, 5000) },
+
+                        { "turnRadiusTwiddleFactorMin", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMin, 1, 5) },
+                        { "turnRadiusTwiddleFactorMax", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.turnRadiusTwiddleFactorMax, 1, 5) },
+
+                        { "controlSurfaceLag", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.controlSurfaceLag, 0, 0.2) },
+                    };
+                }
+                else if (AIType == typeof(BDModuleSurfaceAI))
+                {
+                    inputFields = new Dictionary<string, NumericInputField> {
+                        { "MaxSlopeAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 1, 30) },
+                        { "CruiseSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, 5, 60) },
+                        { "MaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 5,  80) },
+                        { "MaxDrift", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxDrift, 1, 180) },
+                        { "TargetPitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, -10, 10) },
+                        { "BankAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, -45, 45) },
+                        { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 0.2,  20) },
+                        { "steerDamping", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.steerDamping, 0.1, 10) },
+                        { "MinEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MinEngagementRange, 0, 6000) },
+                        { "MaxEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxEngagementRange, 0, 8000) },
+                        { "AvoidMass", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.AvoidMass, 0, 100) },
+                    };
+                }
+            }
+
+            if (AIType == typeof(BDModulePilotAI))
+            {
+                if (oldClamp != ActivePilot.UpToEleven)
+                {
+                    oldClamp = ActivePilot.UpToEleven;
+
+                    inputFields["steerMult"].maxValue = ActivePilot.UpToEleven ? 200 : 20;
+                    inputFields["steerKiAdjust"].maxValue = ActivePilot.UpToEleven ? 20 : 1;
+                    inputFields["steerDamping"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+
+                    inputFields["DynamicDampingMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["DynamicDampingMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["dynamicSteerDampingFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
+                    inputFields["DynamicDampingPitchMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["DynamicDampingPitchMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["dynamicSteerDampingPitchFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
+                    inputFields["DynamicDampingYawMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["DynamicDampingYawMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["dynamicSteerDampingYawFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
+                    inputFields["DynamicDampingRollMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["DynamicDampingRollMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
+                    inputFields["dynamicSteerDampingRollFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
+
+                    inputFields["defaultAltitude"].maxValue = ActivePilot.UpToEleven ? 100000 : 15000;
+                    inputFields["minAltitude"].maxValue = ActivePilot.UpToEleven ? 60000 : 6000;
+                    inputFields["maxAltitude"].maxValue = ActivePilot.UpToEleven ? 100000 : 15000;
+
+                    inputFields["maxSpeed"].maxValue = ActivePilot.UpToEleven ? 3000 : 800;
+                    inputFields["takeOffSpeed"].maxValue = ActivePilot.UpToEleven ? 2000 : 200;
+                    inputFields["minSpeed"].maxValue = ActivePilot.UpToEleven ? 2000 : 200;
+                    inputFields["idleSpeed"].maxValue = ActivePilot.UpToEleven ? 3000 : 200;
+
+                    inputFields["maxAllowedGForce"].maxValue = ActivePilot.UpToEleven ? 1000 : 45;
+                    inputFields["maxAllowedAoA"].maxValue = ActivePilot.UpToEleven ? 180 : 85;
+
+                    inputFields["minEvasionTime"].maxValue = ActivePilot.UpToEleven ? 10 : 1;
+                    inputFields["evasionThreshold"].maxValue = ActivePilot.UpToEleven ? 300 : 100;
+                    inputFields["evasionTimeThreshold"].maxValue = ActivePilot.UpToEleven ? 1 : 3;
+                    inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
+                    inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
+
+                    inputFields["turnRadiusTwiddleFactorMin"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
+                    inputFields["turnRadiusTwiddleFactorMax"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
+                    inputFields["controlSurfaceLag"].maxValue = ActivePilot.UpToEleven ? 1 : 0.2f;
+                }
+            }
+            else if (AIType == typeof(BDModuleSurfaceAI))
+            {
+                if (oldClamp != ActiveDriver.UpToEleven)
+                {
+                    oldClamp = ActiveDriver.UpToEleven;
+
+                    inputFields["MaxSlopeAngle"].maxValue = ActiveDriver.UpToEleven ? 90 : 30;
+                    inputFields["CruiseSpeed"].maxValue = ActiveDriver.UpToEleven ? 300 : 60;
+                    inputFields["MaxSpeed"].maxValue = ActiveDriver.UpToEleven ? 400 : 80;
+                    inputFields["steerMult"].maxValue = ActiveDriver.UpToEleven ? 200 : 20;
+                    inputFields["steerDamping"].maxValue = ActiveDriver.UpToEleven ? 100 : 10;
+                    inputFields["MinEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 20000 : 6000;
+                    inputFields["MaxEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 30000 : 8000;
+                    inputFields["AvoidMass"].maxValue = ActiveDriver.UpToEleven ? 1000000 : 100;
                 }
             }
         }
@@ -560,46 +663,7 @@ namespace BDArmory.UI
                         ActivePilot.UpToEleven, ActivePilot.UpToEleven ? Localizer.Format("#LOC_BDArmory_UnclampTuning_enabledText") : Localizer.Format("#LOC_BDArmory_UnclampTuning_disabledText"), ActivePilot.UpToEleven ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Misc"  
                     if (ActivePilot.UpToEleven != oldClamp)
                     {
-                        inputFields["steerMult"].maxValue = ActivePilot.UpToEleven ? 200 : 20;
-                        inputFields["steerKiAdjust"].maxValue = ActivePilot.UpToEleven ? 20 : 1;
-                        inputFields["steerDamping"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-
-                        inputFields["DynamicDampingMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["DynamicDampingMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["dynamicSteerDampingFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
-                        inputFields["DynamicDampingPitchMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["DynamicDampingPitchMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["dynamicSteerDampingPitchFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
-                        inputFields["DynamicDampingYawMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["DynamicDampingYawMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["dynamicSteerDampingYawFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
-                        inputFields["DynamicDampingRollMin"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["DynamicDampingRollMax"].maxValue = ActivePilot.UpToEleven ? 100 : 8;
-                        inputFields["dynamicSteerDampingRollFactor"].maxValue = ActivePilot.UpToEleven ? 100 : 10;
-
-                        inputFields["defaultAltitude"].maxValue = ActivePilot.UpToEleven ? 100000 : 15000;
-                        inputFields["minAltitude"].maxValue = ActivePilot.UpToEleven ? 60000 : 6000;
-                        inputFields["maxAltitude"].maxValue = ActivePilot.UpToEleven ? 100000 : 15000;
-
-                        inputFields["maxSpeed"].maxValue = ActivePilot.UpToEleven ? 3000 : 800;
-                        inputFields["takeOffSpeed"].maxValue = ActivePilot.UpToEleven ? 2000 : 200;
-                        inputFields["minSpeed"].maxValue = ActivePilot.UpToEleven ? 2000 : 200;
-                        inputFields["idleSpeed"].maxValue = ActivePilot.UpToEleven ? 3000 : 200;
-
-                        inputFields["maxAllowedGForce"].maxValue = ActivePilot.UpToEleven ? 1000 : 45;
-                        inputFields["maxAllowedAoA"].maxValue = ActivePilot.UpToEleven ? 180 : 85;
-
-                        inputFields["minEvasionTime"].maxValue = ActivePilot.UpToEleven ? 10 : 1;
-                        inputFields["evasionThreshold"].maxValue = ActivePilot.UpToEleven ? 300 : 100;
-                        inputFields["evasionTimeThreshold"].maxValue = ActivePilot.UpToEleven ? 1 : 3;
-                        inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
-                        inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
-
-                        inputFields["turnRadiusTwiddleFactorMin"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
-                        inputFields["turnRadiusTwiddleFactorMax"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
-                        inputFields["controlSurfaceLag"].maxValue = ActivePilot.UpToEleven ? 1 : 0.2f;
-
-                        oldClamp = ActivePilot.UpToEleven;
+                        SetInputFields(ActivePilot.GetType());
                     }
                     line += 5;
 
@@ -1839,16 +1903,7 @@ namespace BDArmory.UI
                         ActiveDriver.UpToEleven, ActiveDriver.UpToEleven ? Localizer.Format("#LOC_BDArmory_UnclampTuning_enabledText") : Localizer.Format("#LOC_BDArmory_UnclampTuning_disabledText"), ActiveDriver.UpToEleven ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Misc"  
                     if (ActiveDriver.UpToEleven != oldClamp)
                     {
-                        inputFields["MaxSlopeAngle"].maxValue = ActiveDriver.UpToEleven ? 90 : 30;
-                        inputFields["CruiseSpeed"].maxValue = ActiveDriver.UpToEleven ? 300 : 60;
-                        inputFields["MaxSpeed"].maxValue = ActiveDriver.UpToEleven ? 400 : 80;
-                        inputFields["steerMult"].maxValue = ActiveDriver.UpToEleven ? 200 : 20;
-                        inputFields["steerDamping"].maxValue = ActiveDriver.UpToEleven ? 100 : 10;
-                        inputFields["MinEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 20000 : 6000;
-                        inputFields["MaxEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 30000 : 8000;
-                        inputFields["AvoidMass"].maxValue = ActiveDriver.UpToEleven ? 1000000 : 100;
-
-                        oldClamp = ActiveDriver.UpToEleven;
+                        SetInputFields(ActiveDriver.GetType());
                     }
                     line += 12;
 

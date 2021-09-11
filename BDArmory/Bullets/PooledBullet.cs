@@ -293,7 +293,7 @@ namespace BDArmory.Bullets
             if (ProximityAirDetonation((float)distanceTraveled))
             {
                 //detonate
-                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity, false, bulletMass);
+                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity, -1, false, bulletMass);
                 KillBullet();
 
                 return;
@@ -517,7 +517,8 @@ namespace BDArmory.Bullets
                         }
                         if (penetrationFactor > 1)
                         {
-                            currentVelocity = currentVelocity * (float)Math.Sqrt(thickness / penetration);
+                            //currentVelocity = currentVelocity * (float)Math.Sqrt(thickness / penetration); this needs to be inverted, else thinner armor yields greater velocity reduction
+                            currentVelocity = currentVelocity * (1-(float)Math.Sqrt(thickness / penetration));
                             if (penTicker > 0) currentVelocity *= 0.55f; //implement armor density modifying this ar some point?
                             flightTimeElapsed -= period;
 
@@ -731,11 +732,11 @@ namespace BDArmory.Bullets
 
                     if (airDetonation)
                     {
-                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass, -1, dmgMult);
+                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass, -1, dmgMult);
+                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
                     }
 
                     KillBullet();

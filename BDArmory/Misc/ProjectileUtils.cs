@@ -251,7 +251,7 @@ namespace BDArmory.Misc
                 ApplyScore(hitPart, sourceVesselName, 0, damage, "Spalling", explosionSource);
             }
         }
-        public static void CalculateShrapnelDamage(Part hitPart, RaycastHit hit, float caliber, float HEmass, float detonationDist, string sourceVesselName, ExplosionSourceType explosionSource, float projmass = 0, float penetrationFactor = -1)
+        public static void CalculateShrapnelDamage(Part hitPart, RaycastHit hit, float caliber, float HEmass, float detonationDist, string sourceVesselName, ExplosionSourceType explosionSource, float projmass = -1, float penetrationFactor = -1)
         {
             /// <summary>
             /// Calculates damage from flak/shrapnel, based on HEmass and projMass, of both contact and airburst detoantions.
@@ -276,24 +276,25 @@ namespace BDArmory.Misc
                 //angle and impact vel have negligible impact on hole size
                 //if the round penetrates, increased damage; min thickness of .187 calibers to prevent armor cracking //is this per the 6% HE fraction above, or ? could just do the shrapnelfraction * 1.41/1.7
                 float HERatio = 0.06f;
-                if (projmass > 0)
+                if (projmass < HEmass)
                 {
-                    HERatio = HEmass / projmass;
+                    projmass = HEmass * 1.25f; //sanity check in case this is 0
                 }
+                HERatio = Mathf.Clamp(HEmass / projmass, 0.01f, 0.95f);
                 float frangibility = 5000 * HERatio;
                 float shrapnelThickness = ((.0075f * Mathf.Pow((HERatio * 100), 1.05f)) + .06f) * caliber; //min thickness of material for HE to blow caliber size hole in steel
                 shrapnelThickness *= (950 / Strength) * (8000 / Density) * (Mathf.Sqrt(1100 / hardness)); //adjusted min thickness after material hardness/strength/density
                 float shrapnelCount;
+                float radiativeArea = !double.IsNaN(hitPart.radiativeArea) ? (float)hitPart.radiativeArea : hitPart.GetArea();
                 if (detonationDist > 0)
                 {
-                    shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * detonationDist * detonationDist)), 0, (frangibility * .4f)); //fragments/m2
+                    shrapnelCount = Mathf.Clamp((frangibility / (4 * Mathf.PI * detonationDist * detonationDist)) * (float)(radiativeArea / 3), 0, (frangibility * .4f)); //fragments/m2
                 }
                 else //srf detonation
                 {
                     shrapnelCount = frangibility * 0.4f;
-                }
-                float radiativeArea = !double.IsNaN(hitPart.radiativeArea) ? (float)hitPart.radiativeArea : hitPart.GetArea();
-                shrapnelCount *= (float)(radiativeArea / 3); //shrapnelhits/part
+                }                
+                //shrapnelCount *= (float)(radiativeArea / 3); //shrapnelhits/part
                 float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
                 float damage;
                 // go through and make sure all unit conversions correct
@@ -318,30 +319,33 @@ namespace BDArmory.Misc
                     }
                     else //within 5 calibers of detonation
                     {
-                        if (thickness < (shrapnelThickness * 1.41f))
+                        if (shrapnelCount > 0)
                         {
-                            //armor breach
-                            volumeToReduce = ((caliber * thickness * (caliber * 4)) / 1000); //cm3
-                            hitPart.ReduceArmor(volumeToReduce);
-                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            if (thickness < (shrapnelThickness * 1.41f))
                             {
-                                Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration on " + hitPart.name + ",  " + hitPart.vessel.GetName() + "; " + +shrapnelCount + " hits; Armor damage: " + volumeToReduce + "; part damage: ");
-                            }
-                            damage = hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430, explosionSource); //within 5 calibers shrapnel still getting pushed/accelerated by blast
-                            ApplyScore(hitPart, sourceVesselName, 0, damage, "Shrapnel", explosionSource);
-                            CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber * 0.4f), hardness, Ductility, Density, 430, sourceVesselName, explosionSource);
-                            BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), true, false, sourceVesselName, hit);
-                        }
-                        else
-                        {
-                            if (thickness < (shrapnelThickness * 1.7))//armor cracks; 
-                            {
-                                var modifiedCaliber = Mathf.CeilToInt(caliber / 50) * 50;
-                                volumeToReduce = modifiedCaliber * modifiedCaliber * (thickness / 10); //cm3
+                                //armor breach
+                                volumeToReduce = ((caliber * thickness * (caliber * 4)) / 1000); //cm3
                                 hitPart.ReduceArmor(volumeToReduce);
                                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                                 {
-                                    Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor failure; Armor damage: " + volumeToReduce + " on " + hitPart.name + ", " + hitPart.vessel.GetName());
+                                    Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration on " + hitPart.name + ",  " + hitPart.vessel.GetName() + "; " + +shrapnelCount + " hits; Armor damage: " + volumeToReduce + "; part damage: ");
+                                }
+                                damage = hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430, explosionSource); //within 5 calibers shrapnel still getting pushed/accelerated by blast
+                                ApplyScore(hitPart, sourceVesselName, 0, damage, "Shrapnel", explosionSource);
+                                CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber * 0.4f), hardness, Ductility, Density, 430, sourceVesselName, explosionSource);
+                                BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), true, false, sourceVesselName, hit);
+                            }
+                            else
+                            {
+                                if (thickness < (shrapnelThickness * 1.7))//armor cracks; 
+                                {
+                                    var modifiedCaliber = Mathf.CeilToInt(caliber / 50) * 50;
+                                    volumeToReduce = modifiedCaliber * modifiedCaliber * (thickness / 10); //cm3
+                                    hitPart.ReduceArmor(volumeToReduce);
+                                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                                    {
+                                        Debug.Log("[BDArmory.ProjectileUtils]: Explosive Armor failure; Armor damage: " + volumeToReduce + " on " + hitPart.name + ", " + hitPart.vessel.GetName());
+                                    }
                                 }
                             }
                         }
@@ -361,7 +365,7 @@ namespace BDArmory.Misc
                             {
                                 Debug.Log("[BDArmory.ProjectileUtils]: Shrapnel penetration from in-armor detonation, " + hitPart.name + ",  " + hitPart.vessel.GetName() + "; Armor damage: " + volumeToReduce + "; part damage: ");
                             }
-                            damage = hitPart.AddBallisticDamage(shrapnelMass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430, explosionSource); //within 5 calibers shrapnel still getting pushed/accelerated by blast
+                            damage = hitPart.AddBallisticDamage(projmass - HEmass, 0.1f, 1, (shrapnelThickness / thickness), 1, 430, explosionSource); //within 5 calibers shrapnel still getting pushed/accelerated by blast
                             ApplyScore(hitPart, sourceVesselName, 0, damage, "Shrapnel", explosionSource);
                             CalculateArmorDamage(hitPart, (shrapnelThickness / thickness), (caliber * 1.4f), hardness, Ductility, Density, 430, sourceVesselName, explosionSource);
                             BattleDamageHandler.CheckDamageFX(hitPart, caliber, (shrapnelThickness / thickness), true, false, sourceVesselName, hit);

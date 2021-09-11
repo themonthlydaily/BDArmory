@@ -24,7 +24,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistantSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
         [BDAPersistantSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
-        [BDAPersistantSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 225f;
+        [BDAPersistantSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 350f;
 
         // General toggle settings
         [BDAPersistantSettingsField] public static bool AI_TOOLBAR_BUTTON = true;                 // Show or hide the BDA AI toolbar button.
