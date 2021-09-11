@@ -21,6 +21,7 @@ IMPROVEMENTS
 	- Armor:
 		- Add attach node sizes to armor panels.
 		- Add Editor RMB context info for armor panels to inform players of panel armor mass.
+	- Allow collision avoidance detection from vessels approaching from behind.
 	- Add Asteroid Field game mode, with anomalous attraction option.
 
 v1.4.8.2
