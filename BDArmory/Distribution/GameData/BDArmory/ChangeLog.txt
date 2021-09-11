@@ -13,6 +13,7 @@
 	- Fix penetration velocity reduction.
 	- Fix barrage mode not cycling through singlebarrel weapons.
 	- Fix RPM for multibarrel weapons, actual RPM is now listed RPM, not listed RPM * num of barrels.
+	- Fix occasional NRE in AnalyseCollision.
 IMPROVEMENTS
 	- Internal:
 		- Add angle parameter for creating directed explosions (defaults to 100°).
@@ -20,6 +21,7 @@ IMPROVEMENTS
 	- Armor:
 		- Add attach node sizes to armor panels.
 		- Add Editor RMB context info for armor panels to inform players of panel armor mass.
+	- Add Asteroid Field game mode, with anomalous attraction option.
 
 v1.4.8.2
 FIXES
