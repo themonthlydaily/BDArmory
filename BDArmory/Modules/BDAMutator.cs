@@ -15,7 +15,6 @@ namespace BDArmory.Modules
         float startTime;
         bool mutatorEnabled = false;
         public List<string> mutators;
-        private bool random = false;
         private MutatorInfo mutatorInfo;
         private float Vampirism = 0;
         private float Regen = 0;
@@ -31,7 +30,10 @@ namespace BDArmory.Modules
         private float Accumulator;
 
         private string iconPath;
+        private string iconcolor;
+        private Color iconColor;
         private Texture2D icon;
+        public Material IconMat;
 
         public override void OnStart(StartState state)
         {
@@ -47,18 +49,21 @@ namespace BDArmory.Modules
         {
             if (mutatorEnabled) //replace current mutator with new one
             {
+                Debug.Log("[ModuleMutator] starting Enable() running disable()");
                 DisableMutator();
             }
+            Debug.Log("[ModuleMutator] beginning Enable; name = " + name);
             if (name == "def") //mutator not specified, randomly choose from selected mutators
             {
                 if (BDArmorySettings.MUTATOR_LIST.Count > 0)
-                {                    
+                {
+                    name = string.Empty;
                     for (int d = 0; d < BDArmorySettings.MUTATOR_APPLY_NUM; d++)
                     {
                         int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
-                        if (!mutators.Contains(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name))
+                        if (!name.Contains(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name))
                         {
-                            mutators.Add(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name + "; ");
+                            name +=(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name + "; ");
                         }
                         else
                         {
@@ -69,12 +74,12 @@ namespace BDArmory.Modules
                         }
                     }
                 }
+                Debug.Log("[ModuleMutator] random mutator list built: " + name + " on " + part.vessel.name);
             }
             mutators = BDAcTools.ParseNames(name);
             for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
             {
                 name = MutatorInfo.mutators[mutators[r]].name;
-                Debug.Log("[ModuleMutator] current name( " + r + ") = " + name);
                 mutatorInfo = MutatorInfo.mutators[name];
                 
                 Debug.Log("[ModuleMutator] beginning mutator initialization of " + name + " on " + part.vessel.name);
@@ -175,9 +180,6 @@ namespace BDArmory.Modules
                                 MM.massMod = mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
                             }
                         }
-                        //part.Current.highlightType = Part.HighlightType.AlwaysOn;
-                        //part.Current.SetHighlight(true, false);
-                        //part.Current.SetHighlightColor(mutatorColor[0]);
                     }
                 if (!Vengeance && mutatorInfo.Vengeance)
                 {
@@ -185,14 +187,6 @@ namespace BDArmory.Modules
                 }
                 if (Vengeance)
                 {
-                    /*
-                    var nuke = vessel.rootPart.FindModuleImplementing<RWPS3R2NukeModule>();
-                    if (nuke == null)
-                    {
-                        nuke = (RWPS3R2NukeModule)vessel.rootPart.AddModule("RWPS3R2NukeModule");
-                        nuke.reportingName = "Vengeance";
-                    }
-                    */
                     part.OnJustAboutToBeDestroyed += Detonate;
                 }
                 if (!string.IsNullOrEmpty(mutatorInfo.resourceTax))
@@ -205,13 +199,17 @@ namespace BDArmory.Modules
                 }
             }
             startTime = Time.time;
-            //colorTicker = 0;
+            if (IconMat == null)
+            {
+                IconMat = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
+            }
             mutatorEnabled = true;
         }
 
         public void DisableMutator()
         {
             if (!mutatorEnabled) return;
+            mutatorEnabled = false;
             Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
 
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
@@ -240,7 +238,6 @@ namespace BDArmory.Modules
                     }
                     weapon.Current.resourceSteal = false;
                 }
-            Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "... Weapons reset");
             if (engineMult != 0)
             {
                 using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
@@ -259,21 +256,15 @@ namespace BDArmory.Modules
                 {
                     var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
                     HPT.defenseMutator = Defense;
-
-                    //part.Current.highlightType = Part.HighlightType.OnMouseOver;
-                    //part.Current.SetHighlightColor(Part.defaultHighlightPart);
-                    //part.Current.SetHighlight(false, false);
                 }
-            Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "... relicMutations reset");
             if (Vengeance)
             {
                 Vengeance = false;
-                //part.OnJustAboutToBeDestroyed -= Detonate; //throwing an NRE?
+                part.OnJustAboutToBeDestroyed -= Detonate;
             }
-            ResourceTax.Clear();
+            //ResourceTax.Clear(); //why is this NRE'ing?
+            List<string> ResourceTax = new List<string>();
             TaxRate = 0;
-            mutatorEnabled = false;
-            Debug.Log("[MUTATOR]: " + mutatorInfo.name + "disabled");
         }
 
         void Update()
@@ -284,7 +275,7 @@ namespace BDArmory.Modules
                 if ((BDArmorySettings.MUTATOR_DURATION > 0 && Time.time - startTime > BDArmorySettings.MUTATOR_DURATION * 60) && BDArmorySettings.MUTATOR_APPLY_TIMER)
                 {
                     DisableMutator();
-                    Debug.Log("[Mutator]: mutator expired, disabling");
+                    //Debug.Log("[Mutator]: mutator expired, disabling");
                 }
                 if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(vessel.vesselName))
                 {
@@ -310,6 +301,7 @@ namespace BDArmory.Modules
                         }
                 }
                 applyVampirism = false;
+                ///////////////////////// something in this block is throwing NRE's Not sure why, didn't change anything and it was working earler. FIXME for later
                 if (ResourceTax.Count > 0 && TaxRate != 0)
                 {
                     if (TaxRate != 0 && Accumulator > 5) //Apply resource tax every 5 seconds
@@ -319,89 +311,100 @@ namespace BDArmory.Modules
                             part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
                         }
                     }
-                } 
+                }   
+                ////////////////
                 if (Regen != 0 || TaxRate != 0)
                 {
                     if (Accumulator > 5)
                     {
-                        Accumulator = 0;                        
+                        Accumulator = 0;
                     }
                     else
                     {
                         Accumulator += TimeWarp.fixedDeltaTime;
                     }
                 }
+                
             }
-        }        
+        }
         void OnGUI() 
         {
-            if (HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDArmorySettings.MUTATOR_ICONS)
+            if (Event.current.type.Equals(EventType.Repaint))
             {
-                if (mutatorEnabled)
+                if (HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDArmorySettings.MUTATOR_ICONS)
                 {
-                    Vector3 screenPos = BDGUIUtils.GetMainCamera().WorldToViewportPoint(vessel.CoM);
-                    if (screenPos.z < 0) return; //dont draw if point is behind camera
-                    if (screenPos.x != Mathf.Clamp01(screenPos.x)) return; //dont draw if off screen
-                    if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
-                    float yPos = ((1 - screenPos.y) * Screen.height) - (0.5f * (30 * BDTISettings.ICONSCALE)) - (30 * BDTISettings.ICONSCALE);
-
-                    for (int i = 0; i < BDArmorySettings.MUTATOR_APPLY_NUM; i++)
+                    if (mutatorEnabled)
                     {
-                        float xPos = (screenPos.x * Screen.width) - (0.5f * 30 * BDTISettings.ICONSCALE) - ((BDArmorySettings.MUTATOR_APPLY_NUM-1) * 0.5f * 30 * BDTISettings.ICONSCALE);
-                        Rect iconRect = new Rect(xPos + (i * 30 * BDTISettings.ICONSCALE), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
-                                               
-                        iconPath = MutatorInfo.mutators[mutators[i]].icon;
-                        switch (iconPath)
+                        Vector3 screenPos = BDGUIUtils.GetMainCamera().WorldToViewportPoint(vessel.CoM);
+                        if (screenPos.z < 0) return; //dont draw if point is behind camera
+                        if (screenPos.x != Mathf.Clamp01(screenPos.x)) return; //dont draw if off screen
+                        if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
+                        float yPos = ((1 - screenPos.y) * Screen.height) - (0.5f * (30 * BDTISettings.ICONSCALE)) - (30 * BDTISettings.ICONSCALE);
+
+                        for (int i = 0; i < BDArmorySettings.MUTATOR_APPLY_NUM; i++)
                         {
-                            case "IconAccuracy":
-                                icon = BDTISetup.Instance.MutatorIconAcc;
-                                break;
-                            case "IconAttack":
-                                icon = BDTISetup.Instance.MutatorIconAtk;
-                                break;
-                            case "IconAttack2":
-                                icon = BDTISetup.Instance.MutatorIconAtk2;
-                                break;
-                            case "IconBallistic":
-                                icon = BDTISetup.Instance.MutatorIconBullet;
-                                break;
-                            case "IconDefense":
-                                icon = BDTISetup.Instance.MutatorIconDefense;
-                                break;
-                            case "IconLaser":
-                                icon = BDTISetup.Instance.MutatorIconLaser;
-                                break;
-                            case "IconMass":
-                                icon = BDTISetup.Instance.MutatorIconMass;
-                                break;
-                            case "IconRegen":
-                                icon = BDTISetup.Instance.MutatorIconRegen;
-                                break;
-                            case "IconRocket":
-                                icon = BDTISetup.Instance.MutatorIconRocket;
-                                break;
-                            case "IconSkull":
-                                icon = BDTISetup.Instance.MutatorIconDoom;
-                                break;
-                            case "IconSpeed":
-                                icon = BDTISetup.Instance.MutatorIconSpeed;
-                                break;
-                            case "IconTarget":
-                                icon = BDTISetup.Instance.MutatorIconTarget;
-                                break;
-                            case "IconVampire":
-                                icon = BDTISetup.Instance.MutatorIconVampire;
-                                break;
-                            case "IconUnknown":
-                                icon = BDTISetup.Instance.MutatorIconNull;
-                                break;
-                            default: // Other?
-                                icon = BDTISetup.Instance.MutatorIconNull;
-                                break;
-                        }
-                        if (icon != null)
-                        {
-                            GUI.DrawTexture(iconRect, icon);
+                            float xPos = (screenPos.x * Screen.width) - (0.5f * 30 * BDTISettings.ICONSCALE) - ((BDArmorySettings.MUTATOR_APPLY_NUM - 1) * 0.5f * 30 * BDTISettings.ICONSCALE);
+                            Rect iconRect = new Rect(xPos + (i * 30 * BDTISettings.ICONSCALE), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
+
+                            iconPath = MutatorInfo.mutators[mutators[i]].icon;
+                            iconcolor = MutatorInfo.mutators[mutators[i]].iconColor;
+                            iconColor = Misc.Misc.ParseColor255(iconcolor);
+                            switch (iconPath)
+                            {
+                                case "IconAccuracy":
+                                    icon = BDTISetup.Instance.MutatorIconAcc;
+                                    break;
+                                case "IconAttack":
+                                    icon = BDTISetup.Instance.MutatorIconAtk;
+                                    break;
+                                case "IconAttack2":
+                                    icon = BDTISetup.Instance.MutatorIconAtk2;
+                                    break;
+                                case "IconBallistic":
+                                    icon = BDTISetup.Instance.MutatorIconBullet;
+                                    break;
+                                case "IconDefense":
+                                    icon = BDTISetup.Instance.MutatorIconDefense;
+                                    break;
+                                case "IconLaser":
+                                    icon = BDTISetup.Instance.MutatorIconLaser;
+                                    break;
+                                case "IconMass":
+                                    icon = BDTISetup.Instance.MutatorIconMass;
+                                    break;
+                                case "IconRegen":
+                                    icon = BDTISetup.Instance.MutatorIconRegen;
+                                    break;
+                                case "IconRocket":
+                                    icon = BDTISetup.Instance.MutatorIconRocket;
+                                    break;
+                                case "IconSkull":
+                                    icon = BDTISetup.Instance.MutatorIconDoom;
+                                    break;
+                                case "IconSpeed":
+                                    icon = BDTISetup.Instance.MutatorIconSpeed;
+                                    break;
+                                case "IconTarget":
+                                    icon = BDTISetup.Instance.MutatorIconTarget;
+                                    break;
+                                case "IconVampire":
+                                    icon = BDTISetup.Instance.MutatorIconVampire;
+                                    break;
+                                case "IconUnknown":
+                                    icon = BDTISetup.Instance.MutatorIconNull;
+                                    break;
+                                default: // Other?
+                                    icon = BDTISetup.Instance.MutatorIconNull;
+                                    break;
+                            }
+                            if (icon != null)
+                            {
+                                //GUI.DrawTexture(iconRect, icon);
+
+                                IconMat.SetColor("_TintColor", iconColor);
+                                IconMat.mainTexture = icon;
+                                Graphics.DrawTexture(iconRect, icon, IconMat);
+                            }
                         }
                     }
                 }

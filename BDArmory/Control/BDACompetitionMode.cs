@@ -1212,12 +1212,10 @@ namespace BDArmory.Control
                     }
                     if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
                     {
-                        MM.DisableMutator();
                         MM.EnableMutator(currentMutator);
                     }
                     if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
                     {
-                        MM.DisableMutator();
 						MM.EnableMutator(); //random mutator
                         //FIXME - EnableMutator throsw NRE when attempting to use random selection instead of CurrentMutator
                         //worst case scenerio, could always dupe the currentMutator string generator code in the if name == def area of EnableMutator
@@ -2008,12 +2006,10 @@ namespace BDArmory.Control
                                         }
                                         if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
                                         {
-                                            MM.DisableMutator();
                                             MM.EnableMutator(currentMutator);
                                         }
                                         if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
                                         {
-                                            MM.DisableMutator();
                                             MM.EnableMutator(); //random mutator
                                         }
                                     }
@@ -2732,13 +2728,12 @@ namespace BDArmory.Control
                                     {
                                         if (loadedVessels.Current.name != Scores.ScoreData[player].lastPersonWhoDamagedMe) continue;
                                         Debug.Log("[MutatorModeDebug]: Needs '" + Scores.ScoreData[player].lastPersonWhoDamagedMe + "', found: " + loadedVessels.Current.name);
+                                        //this debug message never occuring, NRE occurs before it, need different method to get killer craft? FIXME 
                                         var MM = loadedVessels.Current.rootPart.FindModuleImplementing<BDAMutator>(); //replace with vesselregistry?
                                         if (MM == null)
                                         {
                                             MM = (BDAMutator)loadedVessels.Current.rootPart.AddModule("BDAMutator");
                                         }
-                                        Debug.Log("[MutatorModeDebug]: Assigning On Kill mutator; disabling current mutators");
-                                        MM.DisableMutator(); //random mutator
                                         Debug.Log("[MutatorModeDebug]: Activating on Kill mutator");
                                         MM.EnableMutator(); //random mutator
                                     }
@@ -2827,7 +2822,7 @@ namespace BDArmory.Control
 
             if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_TIMER) && BDArmorySettings.MUTATOR_DURATION > 0 && now - MutatorResetTime >= BDArmorySettings.MUTATOR_DURATION * 60d)
             {
-
+                currentMutator = string.Empty;
                 if (BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
                     for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
@@ -2839,7 +2834,7 @@ namespace BDArmory.Control
                 else
                     currentMutator = BDArmorySettings.MUTATOR_LIST[0];
                 MutatorResetTime = Planetarium.GetUniversalTime();
-
+                Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Shuffling Mutators");
                 if (BDArmorySettings.MUTATOR_APPLY_GLOBAL)
                 {
                     ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorShuffle"), 5, ScreenMessageStyle.UPPER_CENTER);
@@ -2861,12 +2856,10 @@ namespace BDArmory.Control
                         }
                         if (BDArmorySettings.MUTATOR_APPLY_GLOBAL)
                         {
-                            MM.DisableMutator();
                             MM.EnableMutator(currentMutator);
                         }
                         else
                         {
-                            MM.DisableMutator();
                             MM.EnableMutator();
                         }
                     }

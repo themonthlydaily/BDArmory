@@ -1246,12 +1246,10 @@ namespace BDArmory.Control
                             }
                             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //same mutator for all craft
                             {
-                                MM.DisableMutator();
                                 MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
                             }
                             if (!BDArmorySettings.MUTATOR_APPLY_GLOBAL && BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
                             {
-                                MM.DisableMutator();
                                 MM.EnableMutator(); //random mutator
                             }
                         }
