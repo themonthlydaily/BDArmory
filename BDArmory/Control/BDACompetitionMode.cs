@@ -1153,10 +1153,12 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
                     readyToLaunch.Add(pilot);
                 }
+
             if (BDArmorySettings.MUTATOR_MODE)
             {
                 currentMutator = string.Empty;
                 if (BDArmorySettings.MUTATOR_LIST.Count > 0)
+
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MutatorMode enabled; Mutator count = " + BDArmorySettings.MUTATOR_LIST.Count);
                     for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
