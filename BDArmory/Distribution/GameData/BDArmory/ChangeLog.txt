@@ -1,4 +1,27 @@
-﻿v1.4.8.2
+﻿FIXES
+	- Fixes an NRE in PartExtension.GetSize that was causing KSP to crash when deploying a flag.
+	- Properly reset the AIGUI input fields when adding and removing multiple AIs.
+	- Add missing field to surface AI input fields.
+	- Fix Evolution UI bug and allow 0 adversaries.
+	- Make the CASE-I explosion directed in the up direction of the part.
+	- Check for null vessels in ForceUpdateRadarCrossSections (fixes competitions not starting due to this exception).
+	- When setting HP of parts, use an alternate approach to getting volume based on partSize when GetAverageBoundSize gives ridiculous results. Failing that, just base it on mass. (Fixes HP on TweakScale and AP+ parts.)
+	- Actually run the armour and hull setup functions in flight mode.
+	- Add conformal decal exception to HP/Armor visualizer.
+	- Make rendering of RCS snapshots and HP/Armour visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
+	- Various fixes for shrapnel damage.
+	- Fix penetration velocity reduction.
+	- Fix barrage mode not cycling through singlebarrel weapons.
+	- Fix RPM for multibarrel weapons, actual RPM is now listed RPM, not listed RPM * num of barrels.
+IMPROVEMENTS
+	- Internal:
+		- Add angle parameter for creating directed explosions (defaults to 100°).
+		- Log 'StopCompetition' events to the log as well as the screen.
+	- Armor:
+		- Add attach node sizes to armor panels.
+		- Add Editor RMB context info for armor panels to inform players of panel armor mass.
+
+v1.4.8.2
 FIXES
 	- Fixes armor panel settings not persisting from Editor to Flight.
 	- Fixes steel hull material massively increasing weight.
