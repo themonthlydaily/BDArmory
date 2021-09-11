@@ -309,7 +309,7 @@ namespace BDArmory.Modules
                     direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
                 }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1);
                 hasDetonated = true;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
             }

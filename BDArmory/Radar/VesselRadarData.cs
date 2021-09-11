@@ -618,7 +618,7 @@ namespace BDArmory.Radar
             }
 
             UpdateLockedTargets();
-            if (gameObject != null) // Don't trigger if the gameObject was just destroyed.
+            if (this != null) // Don't trigger if the gameObject was just destroyed.
                 StartCoroutine(UpdateLocksAfterFrame());
             return false;
         }
@@ -1177,7 +1177,7 @@ namespace BDArmory.Radar
 
         private void UnlinkVRD(VesselRadarData vrd)
         {
-            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Unlinking VRD: " + vrd.vessel.vesselName);
             externalVRDs.Remove(vrd);
 
             List<ModuleRadar> radarsToUnlink = new List<ModuleRadar>();
@@ -1197,7 +1197,7 @@ namespace BDArmory.Radar
             while (mr.MoveNext())
             {
                 if (mr.Current == null) continue;
-                if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]:  - Unlinking radar: " + mr.Current.radarName);
                 UnlinkRadar(mr.Current);
             }
             mr.Dispose();
@@ -1309,8 +1309,8 @@ namespace BDArmory.Radar
                 yield return null;
             }
             LinkVRD(vrd);
-            if(BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
-                      vrd.vessel.vesselName);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselRadarData]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
+                       vrd.vessel.vesselName);
         }
 
         public void UnlinkAllExternalRadars()
