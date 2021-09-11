@@ -15,7 +15,7 @@ namespace BDArmory.Modules
         float startTime;
         bool mutatorEnabled = false;
         public List<string> mutators;
-        private bool random = true;
+        private bool random = false;
         private MutatorInfo mutatorInfo;
         private float Vampirism = 0;
         private float Regen = 0;
@@ -49,28 +49,34 @@ namespace BDArmory.Modules
             {
                 DisableMutator();
             }
-            if (name != "def")
+            if (name == "def") //mutator not specified, randomly choose from selected mutators
             {
-                mutators = BDAcTools.ParseNames(name);
-                random = false;
+                if (BDArmorySettings.MUTATOR_LIST.Count > 0)
+                {                    
+                    for (int d = 0; d < BDArmorySettings.MUTATOR_APPLY_NUM; d++)
+                    {
+                        int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
+                        if (!mutators.Contains(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name))
+                        {
+                            mutators.Add(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name + "; ");
+                        }
+                        else
+                        {
+                            if (d != 0)
+                            {
+                                d--;
+                            }
+                        }
+                    }
+                }
             }
-            Debug.Log("[ModuleMutator] EnableMutator name = " + name);
+            mutators = BDAcTools.ParseNames(name);
             for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
             {
-                if (random) //mutator not specified, randomly choose from selected mutators
-                {
-                    int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
-                    name = MutatorInfo.mutators[mutators[i]].name;
-                }
-                else
-                {
-                    name = MutatorInfo.mutators[mutators[r]].name;
-                }
+                name = MutatorInfo.mutators[mutators[r]].name;
                 Debug.Log("[ModuleMutator] current name( " + r + ") = " + name);
                 mutatorInfo = MutatorInfo.mutators[name];
                 
-                //Color.RGBToHSV(Misc.Misc.ParseColor255(mutatorInfo.iconColor), out float H, out float S, out float V);
-                //mutatorColor.Add(Color.HSVToRGB(H, S, V));
                 Debug.Log("[ModuleMutator] beginning mutator initialization of " + name + " on " + part.vessel.name);
                 if (mutatorInfo.weaponMod)
                 {
@@ -206,35 +212,35 @@ namespace BDArmory.Modules
         public void DisableMutator()
         {
             if (!mutatorEnabled) return;
-            //Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
+            Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
 
-                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
-                    while (weapon.MoveNext())
+            using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                while (weapon.MoveNext())
+                {
+                    if (weapon.Current == null) continue;
+                    weapon.Current.ParseWeaponType(weapon.Current.weaponType);
+                    if (!string.IsNullOrEmpty(weapon.Current.ammoBelt) && weapon.Current.ammoBelt != "def")
                     {
-                        if (weapon.Current == null) continue;
-                        weapon.Current.ParseWeaponType(weapon.Current.weaponType);
-                        if (!string.IsNullOrEmpty(weapon.Current.ammoBelt) && weapon.Current.ammoBelt != "def")
-                        {
-                            weapon.Current.useCustomBelt = true;
-                        }
-                        weapon.Current.roundsPerMinute = weapon.Current.baseRPM;
-                        weapon.Current.maxDeviation = weapon.Current.baseDeviation;
-                        weapon.Current.laserDamage = weapon.Current.baseLaserdamage;
-                        weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
-                        weapon.Current.instagib = false;
-                        weapon.Current.strengthMutator = 1;
-                        if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic)
-                        {
-                            weapon.Current.SetupBulletPool(); //unnecessary?
-                        }
-                        weapon.Current.SetupAmmo(null, null);
-                        if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
-                        {
-                            weapon.Current.SetupLaserSpecifics();
-                        }
-                        weapon.Current.resourceSteal = false;
+                        weapon.Current.useCustomBelt = true;
                     }
-
+                    weapon.Current.roundsPerMinute = weapon.Current.baseRPM;
+                    weapon.Current.maxDeviation = weapon.Current.baseDeviation;
+                    weapon.Current.laserDamage = weapon.Current.baseLaserdamage;
+                    weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
+                    weapon.Current.instagib = false;
+                    weapon.Current.strengthMutator = 1;
+                    if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic)
+                    {
+                        weapon.Current.SetupBulletPool(); //unnecessary?
+                    }
+                    weapon.Current.SetupAmmo(null, null);
+                    if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
+                    {
+                        weapon.Current.SetupLaserSpecifics();
+                    }
+                    weapon.Current.resourceSteal = false;
+                }
+            Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "... Weapons reset");
             if (engineMult != 0)
             {
                 using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
@@ -258,14 +264,16 @@ namespace BDArmory.Modules
                     //part.Current.SetHighlightColor(Part.defaultHighlightPart);
                     //part.Current.SetHighlight(false, false);
                 }
+            Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "... relicMutations reset");
             if (Vengeance)
             {
                 Vengeance = false;
-                part.OnJustAboutToBeDestroyed -= Detonate;
+                //part.OnJustAboutToBeDestroyed -= Detonate; //throwing an NRE?
             }
             ResourceTax.Clear();
             TaxRate = 0;
             mutatorEnabled = false;
+            Debug.Log("[MUTATOR]: " + mutatorInfo.name + "disabled");
         }
 
         void Update()
@@ -325,7 +333,7 @@ namespace BDArmory.Modules
                 }
             }
         }        
-        void OnGUI() //honestly, this is more bonus functionality than anything, an extra way to show which mutator is active on a craft for Mutators on kill or chaos mode
+        void OnGUI() 
         {
             if (HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDArmorySettings.MUTATOR_ICONS)
             {
@@ -339,9 +347,9 @@ namespace BDArmory.Modules
 
                     for (int i = 0; i < BDArmorySettings.MUTATOR_APPLY_NUM; i++)
                     {
-                        float xPos = (screenPos.x * Screen.width) - (0.5f * (30 * BDTISettings.ICONSCALE)) - ((i * 1.5f) * ((30 * BDTISettings.ICONSCALE)));
-                        Rect iconRect = new Rect(xPos + (i * ((30 * BDTISettings.ICONSCALE) + 10)), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
-                        //FIXME - need to fix offset for multiple icons                       
+                        float xPos = (screenPos.x * Screen.width) - (0.5f * 30 * BDTISettings.ICONSCALE) - ((BDArmorySettings.MUTATOR_APPLY_NUM-1) * 0.5f * 30 * BDTISettings.ICONSCALE);
+                        Rect iconRect = new Rect(xPos + (i * 30 * BDTISettings.ICONSCALE), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
+                                               
                         iconPath = MutatorInfo.mutators[mutators[i]].icon;
                         switch (iconPath)
                         {
@@ -401,6 +409,7 @@ namespace BDArmory.Modules
         }
         void Detonate()
         {
+            if (!Vengeance) return;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Mutator] triggering vengeance nuke");
             NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "BDArmory/Models/explosion/explosion", "BDArmory/Sounds/explode1", 2.5f, 100, 500, 0.05f, 0.05f, true, "Vengeance Explosion");
         }

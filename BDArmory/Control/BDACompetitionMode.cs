@@ -1163,8 +1163,12 @@ namespace BDArmory.Control
                     {
                         int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
                         if (!currentMutator.Contains(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name))
-                        {
-                            currentMutator += MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name + "; ";
+                        { 
+                            currentMutator += MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name;
+                            if (r < BDArmorySettings.MUTATOR_APPLY_NUM - 1 && BDArmorySettings.MUTATOR_LIST.Count > 1)
+                            {
+                                currentMutator += "; ";
+                            }
                         }
                         else
                         {
@@ -2727,7 +2731,7 @@ namespace BDArmory.Control
                                     while (loadedVessels.MoveNext())
                                     {
                                         if (loadedVessels.Current.name != Scores.ScoreData[player].lastPersonWhoDamagedMe) continue;
-
+                                        Debug.Log("[MutatorModeDebug]: Needs '" + Scores.ScoreData[player].lastPersonWhoDamagedMe + "', found: " + loadedVessels.Current.name);
                                         var MM = loadedVessels.Current.rootPart.FindModuleImplementing<BDAMutator>(); //replace with vesselregistry?
                                         if (MM == null)
                                         {
