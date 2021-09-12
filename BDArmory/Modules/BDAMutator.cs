@@ -16,10 +16,12 @@ namespace BDArmory.Modules
         bool mutatorEnabled = false;
         public List<string> mutators;
         private MutatorInfo mutatorInfo;
+
         public string mutatorName;
         private float Vampirism = 0;
         private float Regen = 0;
         private float engineMult = -1;
+
         private bool Vengeance = false;
         private List<string> ResourceTax;
         private double TaxRate = 0;
@@ -33,6 +35,7 @@ namespace BDArmory.Modules
         private Color iconColor;
         private Texture2D icon;
         public Material IconMat;
+
         private int ActiveMutators;
 
         public override void OnStart(StartState state)
@@ -80,8 +83,8 @@ namespace BDArmory.Modules
             {
                 name = MutatorInfo.mutators[mutators[r]].name;
                 mutatorInfo = MutatorInfo.mutators[name];
-
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator] beginning mutator initialization of " + name + " on " + part.vessel.GetName());
+
                 if (mutatorInfo.weaponMod)
                 {
                     using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
@@ -140,6 +143,7 @@ namespace BDArmory.Modules
                 if (mutatorInfo.EngineMult > 0)
                 {
                     engineMult = mutatorInfo.EngineMult;
+
                     using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                         while (engine.MoveNext())
                         {
@@ -211,7 +215,6 @@ namespace BDArmory.Modules
             if (!mutatorEnabled) return;
             mutatorEnabled = false;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
-
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
                 {
@@ -227,15 +230,7 @@ namespace BDArmory.Modules
                     weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
                     weapon.Current.instagib = false;
                     weapon.Current.strengthMutator = 1;
-                    if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic)
-                    {
-                        //weapon.Current.SetupBulletPool(); //unnecessary?
-                    }
                     weapon.Current.SetupAmmo(null, null);
-                    if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
-                    {
-                        //weapon.Current.SetupLaserSpecifics(); //unnecessary?
-                    }
                     weapon.Current.resourceSteal = false;
                 }
             if (engineMult > 0)
@@ -249,7 +244,6 @@ namespace BDArmory.Modules
             engineMult = -1;
             Vampirism = 0;
             Regen = 0;
-
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {
@@ -270,6 +264,7 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GameIsPaused && !vessel.packed)
             {
                 if (!mutatorEnabled) return;
+
                 if ((BDArmorySettings.MUTATOR_DURATION > 0 && Time.time - startTime > BDArmorySettings.MUTATOR_DURATION * 60) && (BDArmorySettings.MUTATOR_APPLY_TIMER || BDArmorySettings.MUTATOR_APPLY_KILL))
                 {
                     DisableMutator();
@@ -415,7 +410,7 @@ namespace BDArmory.Modules
                 }
             }
         }
-        void Detonate() ///need to not have this called when unloading craft for next round of tourney
+        void Detonate() 
         {
             if (!Vengeance) return;
             if (!BDACompetitionMode.Instance.competitionIsActive) return;

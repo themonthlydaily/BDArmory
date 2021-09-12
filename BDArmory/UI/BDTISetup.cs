@@ -198,7 +198,7 @@ namespace BDArmory.UI
             TILabel.font = BDArmorySetup.BDGuiSkin.window.font;
             TILabel.fontSize = BDArmorySetup.BDGuiSkin.window.fontSize;
             TILabel.fontStyle = BDArmorySetup.BDGuiSkin.window.fontStyle;
-            IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 280);
+            IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 290);
             TeamColorsGroup = new Rect(15, IconOptionsGroup.height, toolWindowWidth - 20, 25);
         }
 

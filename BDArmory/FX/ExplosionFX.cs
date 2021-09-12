@@ -23,7 +23,7 @@ namespace BDArmory.FX
         public float StartTime { get; set; }
         public AudioClip ExSound { get; set; }
         public AudioSource audioSource { get; set; }
-        private float MaxTime { get; set; }
+        //private float MaxTime { get; set; }
         public float Range { get; set; }
         public float Caliber { get; set; }
         public float ProjMass { get; set; }
@@ -33,6 +33,7 @@ namespace BDArmory.FX
         public float Power { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Direction { get; set; }
+        public float AngleOfEffect { get; set; }
         public Part ExplosivePart { get; set; }
         public bool isFX { get; set; }
         public float CASEClamp { get; set; }
@@ -69,7 +70,7 @@ namespace BDArmory.FX
         {
             StartTime = Time.time;
             disabled = false;
-            MaxTime = Mathf.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
+            //MaxTime = Mathf.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
             if (!isFX)
             {
                 CalculateBlastEvents();
@@ -91,7 +92,7 @@ namespace BDArmory.FX
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
+                Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + particlesMaxEnergy + "}");
             }
         }
 
@@ -310,7 +311,7 @@ namespace BDArmory.FX
                 return true;
             }
 
-            return Vector3.Angle(direction, (hit.point - Position).normalized) < 100f;
+            return Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect;
         }
 
         /// <summary>
@@ -407,7 +408,7 @@ namespace BDArmory.FX
                 }
             }
 
-            if (disabled && explosionEvents.Count == 0 && TimeIndex > MaxTime)
+            if (disabled && explosionEvents.Count == 0 && TimeIndex > particlesMaxEnergy)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
@@ -455,10 +456,12 @@ namespace BDArmory.FX
             Part part = eventToExecute.Part;
             Rigidbody rb = part.Rigidbody;
             var realDistance = eventToExecute.Distance;
+            var vesselMass = part.vessel.totalMass;
+            if (vesselMass == 0) vesselMass = part.mass; // Sometimes if the root part is the only part of the vessel, then part.vessel.totalMass is 0, despite the part.mass not being 0.
 
             if (!eventToExecute.IsNegativePressure)
             {
-                BlastInfo blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, part.vessel.totalMass * 1000f, Power, Range);
+                BlastInfo blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, vesselMass * 1000f, Power, Range);
 
                 // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armour in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
                 // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
@@ -491,7 +494,7 @@ namespace BDArmory.FX
                             " Damage: {" + blastInfo.Damage + "} (reduced from " + damageWithoutIntermediateParts + " by " + eventToExecute.IntermediateParts.Count + " parts)," +
                             " EffectiveArea: {" + blastInfo.EffectivePartArea + "}," +
                             " Positive Phase duration: {" + blastInfo.PositivePhaseDuration + "}," +
-                            " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
+                            " Vessel mass: {" + Math.Round(vesselMass * 1000f) + "}," +
                             " TimeIndex: {" + TimeIndex + "}," +
                             " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
                             " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
@@ -564,7 +567,7 @@ namespace BDArmory.FX
                         "[BDArmory.ExplosionFX]: Executing blast event Part: {" + part.name + "}, " +
                         " VelocityChange: {" + eventToExecute.NegativeForce + "}," +
                         " Distance: {" + realDistance + "}," +
-                        " Vessel mass: {" + Math.Round(part.vessel.totalMass * 1000f) + "}," +
+                        " Vessel mass: {" + Math.Round(vesselMass * 1000f) + "}," +
                         " TimeIndex: {" + TimeIndex + "}," +
                         " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
                         " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
@@ -608,7 +611,7 @@ namespace BDArmory.FX
         }
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
-            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1)
+            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1)
         {
             CreateObjectPool(explModelPath, soundPath);
 
@@ -634,6 +637,7 @@ namespace BDArmory.FX
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;
+            eFx.AngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
             eFx.isFX = isfx;
             eFx.ProjMass = projectilemass;
             eFx.CASEClamp = caseLimiter;

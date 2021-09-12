@@ -114,7 +114,7 @@ namespace BDArmory.FX
                                 EMP = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
                             }
                             EMP.incomingDamage = (((thermalRadius * 2) - distToG0) * 1); //this way craft at edge of blast might only get disabled instead of bricked
-                            EMP.softEMP = true; 
+                            EMP.softEMP = true;  
                         }
                         Ray LoSRay = new Ray(transform.position, partHit.transform.position - transform.position);
                         RaycastHit hit;
@@ -189,7 +189,6 @@ namespace BDArmory.FX
             ExplosionFx.CreateExplosion(transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Other, 0, null, Sourcevessel, reportingName);
             gameObject.SetActive(false);
         }
-
         static void SetupPool(string ModelPath)
         {
             var key = ModelPath;
@@ -231,6 +230,6 @@ namespace BDArmory.FX
             eFx.detonationTimer = delay;
             eFx.tntmass = tntMassEquivalent;
             newExplosion.SetActive(true);
-        }        
+        }     
     }
 }
