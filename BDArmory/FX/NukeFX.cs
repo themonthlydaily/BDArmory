@@ -208,7 +208,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float tntMassEquivalent = 100, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke", string ModelPath = "BDArmory/Models/explosion/explosion")
+        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float tntMassEquivalent = 100, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke", string ModelPath = "BDArmory/Models/Mutators/NukeCore")
         {
             SetupPool(ModelPath);
 
