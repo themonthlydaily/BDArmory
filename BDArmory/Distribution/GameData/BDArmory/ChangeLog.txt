@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.9.0
+FIXES
 	- Fixes an NRE in PartExtension.GetSize that was causing KSP to crash when deploying a flag.
 	- Properly reset the AIGUI input fields when adding and removing multiple AIs.
 	- Add missing field to surface AI input fields.
@@ -28,8 +29,10 @@ IMPROVEMENTS
 	- Game modes:
 		- Add Asteroid Field game mode, with anomalous attraction option.
 		- Add Mutator mode:
-			- Select one or more mutators to change up how weapons and craft behave for the round
-			- Mutators can be applied globally, per vessel, or on kill
+			- Select one or more mutators to change up how weapons and craft behave for the round.
+			- Mutators can be applied globally, per vessel, or on kill.
+KNOWN ISSUES
+	- Occasional graphical glitch for proc wings in the SPH/VAB due to HP/Armor visualizer. Doesn't affect flight mode and the color resets if the craft is reloaded or the proc wings color settings are nudged.
 
 v1.4.8.2
 FIXES
