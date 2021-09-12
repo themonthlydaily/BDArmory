@@ -1282,7 +1282,7 @@ namespace BDArmory.Modules
             {
                 var radius = v.GetRadius();
                 threshold += radius;
-                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2f;
+                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax);
             }
 
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
@@ -2308,7 +2308,7 @@ namespace BDArmory.Modules
                     while (vs.MoveNext())
                     {
                         if (vs.Current == null) continue;
-                        if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
+                        if (vs.Current == vessel || vs.Current.Landed) continue; // || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
                         if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out collisionAvoidDirection)) continue;
                         if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
                         {

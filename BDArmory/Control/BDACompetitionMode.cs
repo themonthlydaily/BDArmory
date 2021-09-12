@@ -1189,7 +1189,9 @@ namespace BDArmory.Control
                 {
                     if (pilotList.Current.Value == null)
                     {
-                        competitionStatus.Set("Competition: Teams got adjusted during competition start-up, aborting.");
+                        var message = "Teams got adjusted during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.OnlyOneTeam;
                         StopCompetition();
                         yield break;
@@ -1201,7 +1203,9 @@ namespace BDArmory.Control
                 yield return new WaitForFixedUpdate();
                 if (leaders.Any(leader => leader == null || leader.weaponManager == null))
                 {
-                    competitionStatus.Set("Competition: One of the team leaders disappeared during start-up, aborting.");
+                    var message = "One of the team leaders disappeared during start-up, aborting.";
+                    competitionStatus.Set("Competition: " + message);
+                    Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                     StopCompetition();
                     yield break;
@@ -1229,13 +1233,15 @@ namespace BDArmory.Control
                 while (leader.MoveNext())
                     if (leader.Current == null)
                     {
-                        competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                        var message = "A leader vessel has disappeared during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                         StopCompetition();
                         yield break;
                     }
 
-            // if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
+            if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
 
             competitionStatus.Add("Competition: Sending pilots to start position.");
@@ -1267,7 +1273,9 @@ namespace BDArmory.Control
                 foreach (var leader in leaders)
                     if (leader == null)
                     {
-                        competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                        var message = "A leader vessel has disappeared during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                         StopCompetition(); // A yield has occurred, check that the leaders list hasn't changed in the meantime.
                         yield break;
@@ -1298,7 +1306,9 @@ namespace BDArmory.Control
                     // Increase the distance for large teams
                     if (!pilots.ContainsKey(leader.weaponManager.Team))
                     {
-                        competitionStatus.Set("Competition: The teams were changed during competition start-up, aborting.");
+                        var message = "The teams were changed during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                         StopCompetition();
                         yield break;
@@ -1322,7 +1332,9 @@ namespace BDArmory.Control
             {
                 if (teamPilots == null)
                 {
-                    competitionStatus.Set("Competition: Teams have been changed during competition start-up, aborting.");
+                    var message = "Teams have been changed during competition start-up, aborting.";
+                    competitionStatus.Set("Competition: " + message);
+                    Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamsChanged;
                     StopCompetition();
                     yield break;
@@ -1330,7 +1342,9 @@ namespace BDArmory.Control
                 foreach (var pilot in teamPilots)
                     if (pilot == null)
                     {
-                        competitionStatus.Set("Competition: A pilot has disappeared from team during competition start-up, aborting.");
+                        var message = "A pilot has disappeared from team during competition start-up, aborting.";
+                        competitionStatus.Set("Competition: " + message);
+                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
                         competitionStartFailureReason = CompetitionStartFailureReason.PilotDisappeared;
                         StopCompetition(); // Check that the team pilots haven't been changed during the competition startup.
                         yield break;
@@ -3004,6 +3018,7 @@ namespace BDArmory.Control
         // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
         private void AnalyseCollision(EventReport data)
         {
+            if (rammingInformation == null) return; // Ramming information hasn't been set up yet (e.g., between competitions).
             if (data.origin == null) return; // The part is gone. Nothing much we can do about it.
             double currentTime = Planetarium.GetUniversalTime();
             float collisionMargin = 2f; // Compare the separation to this factor times the sum of radii to account for inaccuracies in the vessels size and position. Hopefully, this won't include other nearby vessels.

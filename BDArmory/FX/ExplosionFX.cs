@@ -33,6 +33,7 @@ namespace BDArmory.FX
         public float Power { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Direction { get; set; }
+        public float AngleOfEffect { get; set; }
         public Part ExplosivePart { get; set; }
         public bool isFX { get; set; }
         public float CASEClamp { get; set; }
@@ -301,7 +302,7 @@ namespace BDArmory.FX
                 return true;
             }
 
-            return Vector3.Angle(direction, (hit.point - Position).normalized) < 100f;
+            return Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect;
         }
 
         /// <summary>
@@ -596,7 +597,7 @@ namespace BDArmory.FX
         }
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
-            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), bool isfx = false, float projectilemass = 0, float caseLimiter = -1)
+            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1)
         {
             CreateObjectPool(explModelPath, soundPath);
 
@@ -622,6 +623,7 @@ namespace BDArmory.FX
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;
+            eFx.AngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
             eFx.isFX = isfx;
             eFx.ProjMass = projectilemass;
             eFx.CASEClamp = caseLimiter;

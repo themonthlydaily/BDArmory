@@ -430,6 +430,7 @@ namespace BDArmory.UI
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
                     {
+                        if (parts.Current.name.Contains("conformaldecals")) continue;
                         HitpointTracker a = parts.Current.GetComponent<HitpointTracker>();
                         if (a != null)
                         {
@@ -477,7 +478,7 @@ namespace BDArmory.UI
                     while (parts.MoveNext())
                     {
                         HitpointTracker armor = parts.Current.GetComponent<HitpointTracker>();
-
+                        if (parts.Current.name.Contains("conformaldecals")) continue;
                         //so, this gets called when GUI closed, without touching the hp/armor visualizer at all.
                         //Now, on GUI close, it runs the latter half of visualize to shut off any visualizer effects and reset stuff.
                         //Procs wings turn orange at this point... oh. That's why: The visualizer reset is grabbing a list of shaders and colors at *part spawn!*

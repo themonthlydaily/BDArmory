@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using KSP.Localization;
@@ -942,5 +943,16 @@ namespace BDArmory.Core.Module
             _hullConfigured = true;
         }
         #endregion Armour
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+            output.Append(Environment.NewLine);
+            if (startsArmored)
+            {
+                output.AppendLine($"Starts Armoured");
+                output.AppendLine($" - Armor Mass: {armorMass}");
+            }
+            return output.ToString();
+        }
     }
 }
