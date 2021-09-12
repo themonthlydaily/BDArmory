@@ -2751,7 +2751,7 @@ namespace BDArmory.Control
                                                 MM = (BDAMutator)loadedVessels.Current.rootPart.AddModule("BDAMutator");
                                             }
                                             MM.EnableMutator(); //random mutator    
-                                            competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + "seconds!" : "!"));
+                                            competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + " seconds!" : "!"));
                                             
                                         }
                                     }
