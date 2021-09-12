@@ -199,7 +199,7 @@ namespace BDArmory.Control
             ScoreData[victim].damageTypesTaken.Add(DamageFrom.Rockets);
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); } // FIXME Add tracker for rockets.
+            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); } // FIXME Add tracker for rocket hits.
             return true;
         }
         /// <summary>
@@ -217,6 +217,8 @@ namespace BDArmory.Control
             if (ScoreData[victim].damageFromRockets.ContainsKey(attacker)) { ScoreData[victim].damageFromRockets[attacker] += damage; }
             else { ScoreData[victim].damageFromRockets[attacker] = damage; }
 
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackMissileDamage(attacker, victim, damage); } // FIXME Add tracker for rocket damage.
             return true;
         }
         /// <summary>
@@ -2941,7 +2943,26 @@ namespace BDArmory.Control
         /// <param name="vessel"></param>
         public void AddPlayerToRammingInformation(Vessel vessel)
         {
-            // FIXME Not implemented yet.
+            if (!rammingInformation.ContainsKey(vessel.vesselName)) // Vessel information hasn't been added to rammingInformation datastructure yet.
+            {
+                rammingInformation.Add(vessel.vesselName, new RammingInformation { vesselName = vessel.vesselName, targetInformation = new Dictionary<string, RammingTargetInformation>() });
+                foreach (var otherVesselName in rammingInformation.Keys)
+                {
+                    if (otherVesselName == vessel.vesselName) continue;
+                    rammingInformation[vessel.vesselName].targetInformation.Add(otherVesselName, new RammingTargetInformation { vessel = rammingInformation[otherVesselName].vessel });
+                }
+            }
+            // Create or update ramming information for the vesselName.
+            rammingInformation[vessel.vesselName].vessel = vessel;
+            rammingInformation[vessel.vesselName].partCount = vessel.parts.Count;
+            rammingInformation[vessel.vesselName].radius = vessel.GetRadius();
+            // Update each of the other vesselNames in the rammingInformation.
+            foreach (var otherVesselName in rammingInformation.Keys)
+            {
+                if (otherVesselName == vessel.vesselName) continue;
+                rammingInformation[otherVesselName].targetInformation[vessel.vesselName] = new RammingTargetInformation { vessel = vessel };
+            }
+
         }
         /// <summary>
         /// Remove a vessel from the rammingInformation datastructure after a competition has started.
@@ -2949,7 +2970,13 @@ namespace BDArmory.Control
         /// <param name="player"></param>
         public void RemovePlayerFromRammingInformation(string player)
         {
-            // FIXME Not implemented yet.
+            if (!rammingInformation.ContainsKey(player)) return; // Player isn't in the ramming information
+            rammingInformation.Remove(player); // Remove the player.
+            foreach (var otherVesselName in rammingInformation.Keys) // Remove the player's target information from the other players.
+            {
+                if (rammingInformation[otherVesselName].targetInformation.ContainsKey(player)) // It should unless something has gone wrong.
+                { rammingInformation[otherVesselName].targetInformation.Remove(player); }
+            }
         }
 
         // Update the ramming information dictionary with expected times to closest point of approach.
