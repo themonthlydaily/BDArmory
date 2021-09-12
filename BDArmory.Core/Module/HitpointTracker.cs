@@ -687,21 +687,13 @@ namespace BDArmory.Core.Module
         public void AddHealth(float partheal, bool overcharge = false)
         {
             if (isAI) return;
-            double delta;
             if (Hitpoints + partheal < BDArmorySettings.HEART_BLEED_THRESHOLD) //in case of negative regen value (for HP drain)
             {
                 return;
             }
-            if (Hitpoints < (overcharge ? Mathf.Min(previousHitpoints * 2, previousHitpoints + 1000) : previousHitpoints)) //Allow vampirism to overcharge HP
-            {
-                Hitpoints += partheal;
-                if (Hitpoints > (overcharge ? Mathf.Min(previousHitpoints * 2, previousHitpoints + 1000) : previousHitpoints))
-                {
-                    delta = Hitpoints - (overcharge ? Mathf.Min(previousHitpoints * 2, previousHitpoints + 1000) : previousHitpoints);
-                    Hitpoints -= (float)delta; //workaround to clamp HP without resetting HP if regenning after being overcharged from a previous mutator when using Apply_Timer or Apply_kill
-                }
-            }
-            //Hitpoints = Mathf.Clamp(Hitpoints, -1, overcharge ? Mathf.Min(previousHitpoints * 2, previousHitpoints + 1000) : previousHitpoints); //Allow vampirism to overcharge HP
+            Hitpoints += partheal;
+
+            Hitpoints = Mathf.Clamp(Hitpoints, -1, overcharge ? Mathf.Min(previousHitpoints * 2, previousHitpoints + 1000) : previousHitpoints); //Allow vampirism to overcharge HP
         }
 
         public void AddDamageToKerbal(KerbalEVA kerbal, float damage)
