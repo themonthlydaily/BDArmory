@@ -13,7 +13,7 @@ namespace BDArmory.FX
 {
     public class NukeFX : MonoBehaviour
     {
-        public static ObjectPool nukePool;
+        public static Dictionary<string, ObjectPool> nukePool = new Dictionary<string, ObjectPool>();
 
         private bool hasDetonated = false;
         private float startTime;
@@ -114,7 +114,7 @@ namespace BDArmory.FX
                                 EMP = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
                             }
                             EMP.incomingDamage = (((thermalRadius * 2) - distToG0) * 1); //this way craft at edge of blast might only get disabled instead of bricked
-                            EMP.softEMP = false; //can bypass EMP damage cap   
+                            EMP.softEMP = true; 
                         }
                         Ray LoSRay = new Ray(transform.position, partHit.transform.position - transform.position);
                         RaycastHit hit;
@@ -190,21 +190,33 @@ namespace BDArmory.FX
             gameObject.SetActive(false);
         }
 
-        static void SetupPool()
+        static void SetupPool(string ModelPath)
         {
-            if (nukePool != null) return;
-            GameObject templateFX = new GameObject("NukeFX");
-            templateFX.AddComponent<NukeFX>();
-            templateFX.SetActive(false);
-            nukePool = ObjectPool.CreateObjectPool(templateFX, 5, true, true);
+            var key = ModelPath;
+            if (!nukePool.ContainsKey(key) || nukePool[key] == null)
+            {
+                var templateFX = GameDatabase.Instance.GetModel(ModelPath);
+                if (templateFX == null)
+                {
+                    templateFX = new GameObject("NukeFX");
+                    Debug.LogError("[BDArmory.NukeFX]: " + ModelPath + " was not found.");
+                }
+                var eFx = templateFX.AddComponent<NukeFX>();
+
+                templateFX.SetActive(false);
+                nukePool[key] = ObjectPool.CreateObjectPool(templateFX, 5, true, true);
+            }
         }
 
-        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float tntMassEquivalent = 100, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke")
+        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float tntMassEquivalent = 100, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke", string ModelPath = "BDArmory/Models/explosion/explosion")
         {
-            SetupPool();
-            GameObject newExplosion = nukePool.GetPooledObject();
-            newExplosion.transform.position = position;
+            SetupPool(ModelPath);
+
+            Quaternion rotation;
+            rotation = Quaternion.LookRotation(VectorUtils.GetUpDirection(position));
+            GameObject newExplosion = nukePool[ModelPath].GetPooledObject();
             NukeFX eFx = newExplosion.GetComponent<NukeFX>();
+            newExplosion.transform.SetPositionAndRotation(position, rotation);
 
             eFx.Position = position;
             eFx.ExplosionSource = explosionSourceType;
@@ -219,16 +231,6 @@ namespace BDArmory.FX
             eFx.detonationTimer = delay;
             eFx.tntmass = tntMassEquivalent;
             newExplosion.SetActive(true);
-        }
-        void OnGUI()
-        {
-            if (((HighLogic.LoadedSceneIsFlight && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.TEAMICONS) || HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled && BDTISettings.TEAMICONS && BDTISettings.PERSISTANT) && BDTISettings.MISSILES)
-            {
-                if ((transform.position - FlightGlobals.ActiveVessel.CoM).magnitude > 100)
-                {
-                    BDGUIUtils.DrawTextureOnWorldPos(transform.position, BDTISetup.Instance.MutatorIconDoom, new Vector2(40, 40), 0);
-                }
-            }
-        }
+        }        
     }
 }

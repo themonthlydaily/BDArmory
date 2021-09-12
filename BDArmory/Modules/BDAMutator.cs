@@ -16,11 +16,10 @@ namespace BDArmory.Modules
         bool mutatorEnabled = false;
         public List<string> mutators;
         private MutatorInfo mutatorInfo;
+        public string mutatorName;
         private float Vampirism = 0;
         private float Regen = 0;
-        private float Strength = 1;
-        private float Defense = 1;
-        private float engineMult;
+        private float engineMult = -1;
         private bool Vengeance = false;
         private List<string> ResourceTax;
         private double TaxRate = 0;
@@ -34,6 +33,7 @@ namespace BDArmory.Modules
         private Color iconColor;
         private Texture2D icon;
         public Material IconMat;
+        private int ActiveMutators;
 
         public override void OnStart(StartState state)
         {
@@ -49,10 +49,8 @@ namespace BDArmory.Modules
         {
             if (mutatorEnabled) //replace current mutator with new one
             {
-                Debug.Log("[ModuleMutator] starting Enable() running disable()");
                 DisableMutator();
             }
-            Debug.Log("[ModuleMutator] beginning Enable; name = " + name);
             if (name == "def") //mutator not specified, randomly choose from selected mutators
             {
                 if (BDArmorySettings.MUTATOR_LIST.Count > 0)
@@ -74,15 +72,16 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                Debug.Log("[ModuleMutator] random mutator list built: " + name + " on " + part.vessel.name);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator] random mutator list built: " + name + " on " + part.vessel.GetName());
             }
+            mutatorName = name;
             mutators = BDAcTools.ParseNames(name);
             for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
             {
                 name = MutatorInfo.mutators[mutators[r]].name;
                 mutatorInfo = MutatorInfo.mutators[name];
-                
-                Debug.Log("[ModuleMutator] beginning mutator initialization of " + name + " on " + part.vessel.name);
+
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator] beginning mutator initialization of " + name + " on " + part.vessel.GetName());
                 if (mutatorInfo.weaponMod)
                 {
                     using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
@@ -119,12 +118,15 @@ namespace BDArmory.Modules
                             }
                             else
                             {
-                                weapon.Current.strengthMutator = Mathf.Clamp(Strength, 0.01f, 9999);
+                                if (weapon.Current.strengthMutator > 0)
+                                {
+                                    weapon.Current.strengthMutator = weapon.Current.strengthMutator;
+                                }
                             }
-                            weapon.Current.pulseLaser = true;
                             if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                             {
                                 weapon.Current.SetupLaserSpecifics();
+                                weapon.Current.pulseLaser = true;
                             }
                             if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Rocket && weapon.Current.weaponType != "rocket")
                             {
@@ -135,15 +137,14 @@ namespace BDArmory.Modules
                             //Debug.Log("[MUTATOR] current weapon status: " + weapon.Current.WeaponStatusdebug());
                         }
                 }
-
-                if (mutatorInfo.EngineMult != 0)
+                if (mutatorInfo.EngineMult > 0)
                 {
+                    engineMult = mutatorInfo.EngineMult;
                     using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                         while (engine.MoveNext())
                         {
                             engine.Current.thrustPercentage *= mutatorInfo.EngineMult;
                         }
-                    engineMult = mutatorInfo.EngineMult;
                 }
                 if (mutatorInfo.Vampirism > 0)
                 {
@@ -153,15 +154,13 @@ namespace BDArmory.Modules
                 {
                     Regen = mutatorInfo.Regen;
                 }
-                Defense = Mathf.Clamp(mutatorInfo.Defense, 0.05f, 99999);
-
                 using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                     while (part.MoveNext())
                     {
-                        if (Defense != 1)
+                        if (mutatorInfo.Defense > 0)
                         {
                             var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
-                            HPT.defenseMutator = Defense;
+                            HPT.defenseMutator = mutatorInfo.Defense;
                         }
                         if (mutatorInfo.MassMod != 0)
                         {
@@ -203,6 +202,7 @@ namespace BDArmory.Modules
             {
                 IconMat = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
             }
+            ActiveMutators = BDArmorySettings.MUTATOR_APPLY_NUM;
             mutatorEnabled = true;
         }
 
@@ -210,7 +210,7 @@ namespace BDArmory.Modules
         {
             if (!mutatorEnabled) return;
             mutatorEnabled = false;
-            Debug.Log("[MUTATOR]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator]: Disabling " + mutatorInfo.name + "Mutator on " + part.vessel.vesselName);
 
             using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
@@ -229,16 +229,16 @@ namespace BDArmory.Modules
                     weapon.Current.strengthMutator = 1;
                     if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Ballistic)
                     {
-                        weapon.Current.SetupBulletPool(); //unnecessary?
+                        //weapon.Current.SetupBulletPool(); //unnecessary?
                     }
                     weapon.Current.SetupAmmo(null, null);
                     if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                     {
-                        weapon.Current.SetupLaserSpecifics();
+                        //weapon.Current.SetupLaserSpecifics(); //unnecessary?
                     }
                     weapon.Current.resourceSteal = false;
                 }
-            if (engineMult != 0)
+            if (engineMult > 0)
             {
                 using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                     while (engine.MoveNext())
@@ -246,23 +246,21 @@ namespace BDArmory.Modules
                         engine.Current.thrustPercentage /= engineMult;
                     }
             }
+            engineMult = -1;
             Vampirism = 0;
             Regen = 0;
-            Strength = 1;
-            Defense = 1;
 
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                 while (part.MoveNext())
                 {
                     var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
-                    HPT.defenseMutator = Defense;
+                    HPT.defenseMutator = 1;
                 }
             if (Vengeance)
             {
                 Vengeance = false;
                 part.OnJustAboutToBeDestroyed -= Detonate;
             }
-            //ResourceTax.Clear(); //why is this NRE'ing?
             List<string> ResourceTax = new List<string>();
             TaxRate = 0;
         }
@@ -272,10 +270,9 @@ namespace BDArmory.Modules
             if (HighLogic.LoadedSceneIsFlight && !BDArmorySetup.GameIsPaused && !vessel.packed)
             {
                 if (!mutatorEnabled) return;
-                if ((BDArmorySettings.MUTATOR_DURATION > 0 && Time.time - startTime > BDArmorySettings.MUTATOR_DURATION * 60) && BDArmorySettings.MUTATOR_APPLY_TIMER)
+                if ((BDArmorySettings.MUTATOR_DURATION > 0 && Time.time - startTime > BDArmorySettings.MUTATOR_DURATION * 60) && (BDArmorySettings.MUTATOR_APPLY_TIMER || BDArmorySettings.MUTATOR_APPLY_KILL))
                 {
                     DisableMutator();
-                    //Debug.Log("[Mutator]: mutator expired, disabling");
                 }
                 if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(vessel.vesselName))
                 {
@@ -301,18 +298,26 @@ namespace BDArmory.Modules
                         }
                 }
                 applyVampirism = false;
-                ///////////////////////// something in this block is throwing NRE's Not sure why, didn't change anything and it was working earler. FIXME for later
-                if (ResourceTax.Count > 0 && TaxRate != 0)
+                if (TaxRate != 0)
                 {
-                    if (TaxRate != 0 && Accumulator > 5) //Apply resource tax every 5 seconds
+                    if (Accumulator > 5) //Apply resource tax every 5 seconds
                     {
-                        for (int i = 0; i < ResourceTax.Count; i++)
+                        try
                         {
-                            part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
+                            if (ResourceTax.Count >= 1)
+                            {
+                                for (int i = 0; i < ResourceTax.Count; i++)
+                                {
+                                    part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
+                                }
+                            }
+                        }
+                        catch
+                        {
+                            Debug.Log("[BDAMutator] mutator not configured correctly. Set ResourceTaxRate to 0 or add resource to ResourceTax");
                         }
                     }
                 }   
-                ////////////////
                 if (Regen != 0 || TaxRate != 0)
                 {
                     if (Accumulator > 5)
@@ -341,9 +346,9 @@ namespace BDArmory.Modules
                         if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
                         float yPos = ((1 - screenPos.y) * Screen.height) - (0.5f * (30 * BDTISettings.ICONSCALE)) - (30 * BDTISettings.ICONSCALE);
 
-                        for (int i = 0; i < BDArmorySettings.MUTATOR_APPLY_NUM; i++)
+                        for (int i = 0; i < ActiveMutators; i++)
                         {
-                            float xPos = (screenPos.x * Screen.width) - (0.5f * 30 * BDTISettings.ICONSCALE) - ((BDArmorySettings.MUTATOR_APPLY_NUM - 1) * 0.5f * 30 * BDTISettings.ICONSCALE);
+                            float xPos = (screenPos.x * Screen.width) - (0.5f * 30 * BDTISettings.ICONSCALE) - ((ActiveMutators - 1) * 0.5f * 30 * BDTISettings.ICONSCALE);
                             Rect iconRect = new Rect(xPos + (i * 30 * BDTISettings.ICONSCALE), yPos, (30 * BDTISettings.ICONSCALE), (30 * BDTISettings.ICONSCALE));
 
                             iconPath = MutatorInfo.mutators[mutators[i]].icon;
@@ -410,11 +415,12 @@ namespace BDArmory.Modules
                 }
             }
         }
-        void Detonate()
+        void Detonate() ///need to not have this called when unloading craft for next round of tourney
         {
             if (!Vengeance) return;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.Mutator] triggering vengeance nuke");
-            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "BDArmory/Models/explosion/explosion", "BDArmory/Sounds/explode1", 2.5f, 100, 500, 0.05f, 0.05f, true, "Vengeance Explosion");
+            if (!BDACompetitionMode.Instance.competitionIsActive) return;
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator] triggering vengeance nuke");
+            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "BDArmory/Models/explosion/explosion", "BDArmory/Sounds/explode1", 2.5f, 100, 500, 0.05f, 0.05f, true, "Vengeance Explosion", "BDArmory/Models/Mutators/Vengence");
         }
     }
 }

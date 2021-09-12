@@ -2075,13 +2075,14 @@ namespace BDArmory.Modules
             {
                 audioSource.clip = fireSound;
             }
-
-            laserRenderers = new LineRenderer[fireTransforms.Length];
-
+            if (laserRenderers == null)
+            {
+                laserRenderers = new LineRenderer[fireTransforms.Length];
+            }
             for (int i = 0; i < fireTransforms.Length; i++)
             {
                 Transform tf = fireTransforms[i];
-                laserRenderers[i] = tf.gameObject.AddComponent<LineRenderer>();
+                laserRenderers[i] = tf.gameObject.AddOrGetComponent<LineRenderer>();
                 Color laserColor = Misc.Misc.ParseColor255(projectileColor);
                 laserColor.a = laserColor.a / 2;
                 laserRenderers[i].material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
