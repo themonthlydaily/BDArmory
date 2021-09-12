@@ -1127,8 +1127,6 @@ namespace BDArmory.Control
             if (VesselSpawner.Instance.originalTeams.Count == 0) VesselSpawner.Instance.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
         }
 
-        public string currentMutator;
-
         IEnumerator DogfightCompetitionModeRoutine(float distance)
         {
             competitionStarting = true;
