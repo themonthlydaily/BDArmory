@@ -2314,7 +2314,7 @@ namespace BDArmory.UI
                             GUI.EndScrollView();
                             line += 6.5f;
 
-                            if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_reset")))
+                            if (GUI.Button(SRightRect(++line), Localizer.Format("#LOC_BDArmory_reset")))
                             {
                                 switch (Event.current.button)
                                 {

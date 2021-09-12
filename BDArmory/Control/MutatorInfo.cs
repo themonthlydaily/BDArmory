@@ -184,6 +184,7 @@ namespace BDArmory.Control
                     // Give a warning about the missing or invalid value, then use the default value using reflection to find the field.
                     var defaultValue = typeof(MutatorInfo).GetProperty(field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultMutator);
                     Debug.LogError("[BDArmory.MutatorInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+
                     return defaultValue;
                 }
                 else

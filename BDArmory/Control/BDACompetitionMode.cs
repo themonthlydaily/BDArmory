@@ -1151,6 +1151,7 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adding Pilot " + pilot.vessel.GetName());
                     readyToLaunch.Add(pilot);
                 }
+
             if (BDArmorySettings.MUTATOR_MODE)
             {
                 ConfigureMutator();
