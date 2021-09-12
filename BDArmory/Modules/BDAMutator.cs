@@ -8,6 +8,7 @@ using BDArmory.Core.Module;
 using BDArmory.UI;
 using BDArmory.FX;
 using System.Linq;
+using BDArmory.Bullets;
 
 namespace BDArmory.Modules
 {
@@ -113,6 +114,7 @@ namespace BDArmory.Modules
                             }
                             if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                             {
+                                weapon.Current.projectileColor = BulletInfo.bullets[mutatorInfo.bulletType].projectileColor;
                                 weapon.Current.SetupLaserSpecifics();
                                 weapon.Current.pulseLaser = true;
                             }
