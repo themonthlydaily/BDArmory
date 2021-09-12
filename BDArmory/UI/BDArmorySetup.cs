@@ -2379,6 +2379,10 @@ namespace BDArmory.UI
                         {
                             BDArmorySettings.MUTATOR_APPLY_NUM = BDArmorySettings.MUTATOR_LIST.Count;
                         }
+                        if (BDArmorySettings.MUTATOR_LIST.Count > 0 && BDArmorySettings.MUTATOR_APPLY_NUM < 1)
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_NUM = 1;
+                        }
                         BDArmorySettings.MUTATOR_ICONS = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_ICONS, Localizer.Format("#LOC_BDArmory_Settings_MutatorIcons"));
                     }
                 }
