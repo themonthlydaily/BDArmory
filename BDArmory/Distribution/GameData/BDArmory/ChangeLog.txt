@@ -21,8 +21,15 @@ IMPROVEMENTS
 	- Armor:
 		- Add attach node sizes to armor panels.
 		- Add Editor RMB context info for armor panels to inform players of panel armor mass.
-	- Allow collision avoidance detection from vessels approaching from behind.
-	- Add Asteroid Field game mode, with anomalous attraction option.
+	- AI:
+		- Allow collision avoidance detection from vessels approaching from behind.
+		- Don't apply premature dive fix when evading.
+		- Add an option to ignore gunfire from the current target for evasion purposes. (I.e., don't trigger evasion when jousting, only from other sources.)
+	- Game modes:
+		- Add Asteroid Field game mode, with anomalous attraction option.
+		- Add Mutator mode:
+			- Select one or more mutators to change up how weapons and craft behave for the round
+			- Mutators can be applied globally, per vessel, or on kill
 
 v1.4.8.2
 FIXES
