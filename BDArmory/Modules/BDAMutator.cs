@@ -36,7 +36,7 @@ namespace BDArmory.Modules
         private Texture2D icon;
         public Material IconMat;
 
-        private int ActiveMutators;
+        private int ActiveMutators = 1;
 
         public override void OnStart(StartState state)
         {
@@ -207,6 +207,10 @@ namespace BDArmory.Modules
                 IconMat = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
             }
             ActiveMutators = BDArmorySettings.MUTATOR_APPLY_NUM;
+            if (ActiveMutators < 1)
+            {
+                ActiveMutators = 1;
+            }
             mutatorEnabled = true;
         }
 
