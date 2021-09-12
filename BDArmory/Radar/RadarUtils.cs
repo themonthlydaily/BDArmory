@@ -1230,6 +1230,8 @@ namespace BDArmory.Radar
             Vector3 forwardVector = referenceTransform.forward;
             Vector3 upVector = referenceTransform.up;
             Vector3 lookDirection = -forwardVector;
+            var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(myWpnManager.vessel, true);
+            var ignoreMyTargetTargetingMe = pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe;
 
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
@@ -1296,6 +1298,7 @@ namespace BDArmory.Radar
                                     while (weapon.MoveNext())
                                     {
                                         if (weapon.Current == null || weapon.Current.weaponManager == null) continue;
+                                        if (ignoreMyTargetTargetingMe && myWpnManager.currentTarget != null && weapon.Current.weaponManager.vessel == myWpnManager.currentTarget.Vessel) continue;
                                         // If we're being targeted, calculate a miss distance
                                         if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel)
                                         {
