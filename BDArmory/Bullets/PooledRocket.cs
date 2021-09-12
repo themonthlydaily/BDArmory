@@ -36,6 +36,7 @@ namespace BDArmory.Bullets
         public bool gravitic;
         public bool EMP;
         public bool choker;
+        public bool thief;
         public float massMod = 0;
         public float impulse = 0;
         public bool incendiary;
@@ -43,6 +44,7 @@ namespace BDArmory.Bullets
         public float tntMass;
         bool explosive = true;
         public float bulletDmgMult = 1;
+        public float dmgMult = 1;
         public float blastRadius = 0;
         public float randomThrustDeviation = 0.05f;
         public float massScalar = 0.012f;
@@ -290,7 +292,15 @@ namespace BDArmory.Bullets
                                     impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
                                 else
                                     impactVelocity = rb.velocity.magnitude;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                if (dmgMult < 0)
+                                {
+                                    hitPart.AddInstagibDamage();
+                                }
+                                else
+                                {
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                }
+                                ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
                                 Detonate(hit.point, false);
                                 return;
                             }
@@ -374,7 +384,15 @@ namespace BDArmory.Bullets
                                 hasPenetrated = true;
 
                                 bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass * 1000, caliber);
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                if (dmgMult < 0)
+                                {
+                                    hitPart.AddInstagibDamage();
+                                }
+                                else
+                                {
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                }
+                                ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
                                 ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Rocket, (rocketMass * 1000), penetrationFactor);
 
                                 penTicker += 1;
@@ -608,7 +626,7 @@ namespace BDArmory.Bullets
                                         {
                                             MDEC = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
                                         }
-                                        MDEC.incomingDamage += ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
+                                        MDEC.incomingDamage = ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
                                         MDEC.softEMP = false; //can bypass EMP damage cap                                            
                                     }
                                     if (choker)
@@ -623,15 +641,14 @@ namespace BDArmory.Bullets
                                 }
                             }
                         }
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, true);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, true);
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass*1000, -1, dmgMult);
                     }
-
                 }
-            } // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
+            } 
             gameObject.SetActive(false);
         }
 

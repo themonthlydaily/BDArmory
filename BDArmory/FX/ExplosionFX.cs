@@ -33,9 +33,11 @@ namespace BDArmory.FX
         public float Power { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Direction { get; set; }
+        public float AngleOfEffect { get; set; }
         public Part ExplosivePart { get; set; }
         public bool isFX { get; set; }
         public float CASEClamp { get; set; }
+        public float dmgMult { get; set; }
         public float TimeIndex => Time.time - StartTime;
 
         private bool disabled = true;
@@ -215,12 +217,20 @@ namespace BDArmory.FX
             }
             if (explosionEventsVesselsHit.Count > 0)
             {
-                if (ExplosionSource == ExplosionSourceType.Missile)
+                if (ExplosionSource != ExplosionSourceType.Bullet || ExplosionSource != ExplosionSourceType.Rocket)
                 {
                     string message = "";
                     foreach (var vesselName in explosionEventsVesselsHit.Keys)
                         message += (message == "" ? "" : " and ") + vesselName + " had " + explosionEventsVesselsHit[vesselName];
-                    message += " parts damaged due to missile strike" + (SourceWeaponName != null ? " (" + SourceWeaponName + ")" : "") + (sourceVesselName != null ? " from " + sourceVesselName : "") + ".";
+                    if (ExplosionSource == ExplosionSourceType.Missile)
+                    {
+                        message += " parts damaged due to missile strike";
+                    }
+                    else //ExplosionType BattleDamage || Other
+                    {
+                        message += " parts damaged due to explosion";
+                    }
+                    message += (SourceWeaponName != null ? " (" + SourceWeaponName + ")" : "") + (sourceVesselName != null ? " from " + sourceVesselName : "") + ".";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                 }
                 // Note: damage hasn't actually been applied to the parts yet, just assigned as events, so we can't know if they survived.
@@ -301,7 +311,7 @@ namespace BDArmory.FX
                 return true;
             }
 
-            return Vector3.Angle(direction, (hit.point - Position).normalized) < 100f;
+            return Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect;
         }
 
         /// <summary>
@@ -509,9 +519,14 @@ namespace BDArmory.FX
                             eventToExecute.HitPoint + rb.velocity * TimeIndex);
                     }
                     var damage = 0f;
+                    if (dmgMult < 0)
+                    {
+                        part.AddInstagibDamage();
+                        //Debug.Log("[ExplosionFX] applying instagib!");
+                    }
                     if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
                     {
-                        damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource);
+                        damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
                     }
                     if (damage > 0) //else damage from spalling done in CalcExplArmorDamage
                     {
@@ -596,7 +611,7 @@ namespace BDArmory.FX
         }
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
-            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), bool isfx = false, float projectilemass = 0, float caseLimiter = -1)
+            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1)
         {
             CreateObjectPool(explModelPath, soundPath);
 
@@ -622,9 +637,11 @@ namespace BDArmory.FX
             eFx.Caliber = caliber;
             eFx.ExplosivePart = explosivePart;
             eFx.Direction = direction;
+            eFx.AngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
             eFx.isFX = isfx;
             eFx.ProjMass = projectilemass;
             eFx.CASEClamp = caseLimiter;
+            eFx.dmgMult = dmgMutator;
             eFx.pEmitters = newExplosion.GetComponentsInChildren<KSPParticleEmitter>();
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
             if (tntMassEquivalent <= 5)

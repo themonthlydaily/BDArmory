@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
 using KSP.Localization;
@@ -117,6 +118,8 @@ namespace BDArmory.Core.Module
         public List<Shader> defaultShader;
         public List<Color> defaultColor;
         public bool RegisterProcWingShader = false;
+
+        public float defenseMutator = 1;
 
         #endregion KSP Fields
 
@@ -660,25 +663,39 @@ namespace BDArmory.Core.Module
 
         public void SetDamage(float partdamage)
         {
-            Hitpoints -= partdamage;
+            Hitpoints = partdamage; //given the sole reference is from destroy, with damage = -1, shouldn't this be =, not -=?
 
             if (Hitpoints <= 0)
             {
+                Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
                 DestroyPart();
             }
         }
 
-        public void AddDamage(float partdamage)
+        public void AddDamage(float partdamage, bool overcharge = false)
         {
             if (isAI) return;
 
             partdamage = Mathf.Max(partdamage, 0f) * -1;
-            Hitpoints += partdamage;
+            Hitpoints += (partdamage / defenseMutator); //why not just go -= partdamage?
             if (Hitpoints <= 0)
             {
                 DestroyPart();
             }
         }
+
+        public void AddHealth(float partheal, bool overcharge = false)
+        {
+            if (isAI) return;
+            if (Hitpoints + partheal < BDArmorySettings.HEART_BLEED_THRESHOLD) //in case of negative regen value (for HP drain)
+            {
+                return;
+            }
+            Hitpoints += partheal;
+
+            Hitpoints = Mathf.Clamp(Hitpoints, -1, overcharge ? Mathf.Min(previousHitpoints * 2, previousHitpoints + 1000) : previousHitpoints); //Allow vampirism to overcharge HP
+        }
+
         public void AddDamageToKerbal(KerbalEVA kerbal, float damage)
         {
             damage = Mathf.Max(damage, 0f) * -1;
@@ -942,5 +959,16 @@ namespace BDArmory.Core.Module
             _hullConfigured = true;
         }
         #endregion Armour
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+            output.Append(Environment.NewLine);
+            if (startsArmored)
+            {
+                output.AppendLine($"Starts Armoured");
+                output.AppendLine($" - Armor Mass: {armorMass}");
+            }
+            return output.ToString();
+        }
     }
 }

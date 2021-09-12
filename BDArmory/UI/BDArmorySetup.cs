@@ -139,6 +139,10 @@ namespace BDArmory.UI
 
         public static List<CMFlare> Flares = new List<CMFlare>();
 
+        public List<string> mutators = new List<string>();
+        bool[] mutators_selected;
+
+
         //gui styles
         GUIStyle centerLabel;
         GUIStyle centerLabelRed;
@@ -506,11 +510,22 @@ namespace BDArmory.UI
             BulletInfo.Load();
             RocketInfo.Load();
             ArmorInfo.Load();
+            MutatorInfo.Load();
 
             compDistGui = BDArmorySettings.COMPETITION_DISTANCE.ToString();
 
             if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             { StartCoroutine(ToolbarButtonRoutine()); }
+
+            for (int i = 0; i < MutatorInfo.mutators.Count; i++)
+            {
+                mutators.Add(MutatorInfo.mutators[i].name);
+            }
+            mutators_selected = new bool[mutators.Count];
+            for (int i = 0; i < mutators_selected.Length; ++i)
+            {
+                mutators_selected[i] = BDArmorySettings.MUTATOR_LIST.Contains(mutators[i]);
+            }
         }
 
         IEnumerator ToolbarButtonRoutine()
@@ -2126,6 +2141,10 @@ namespace BDArmory.UI
         float settingsLineHeight;
         float settingsMargin;
 
+        private Vector2 scrollViewVector;
+        private bool selectMutators = false;
+        public List<string> selectedMutators;
+        float mutatorHeight = 25;
         bool editKeys;
 
         void SetupSettingsSize()
@@ -2259,6 +2278,115 @@ namespace BDArmory.UI
                         BDArmorySettings.SF_REPULSOR = false;
                     }
                 }
+                var oldMutators = BDArmorySettings.MUTATOR_MODE;
+                BDArmorySettings.MUTATOR_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.MUTATOR_MODE, Localizer.Format("#LOC_BDArmory_Settings_Mutators"));
+                {
+                    if (BDArmorySettings.MUTATOR_MODE)
+                    {
+                        if (!oldMutators)  // Add missing modules when Space Hacks is toggled.
+                        {
+                            foreach (var vessel in FlightGlobals.Vessels)
+                            {
+                                if (VesselModuleRegistry.GetMissileFire(vessel, true) != null && vessel.rootPart.FindModuleImplementing<BDAMutator>() == null)
+                                {
+                                    vessel.rootPart.AddModule("BDAMutator");
+                                }
+                            }
+                        }
+                        selectMutators = GUI.Toggle(SLeftRect(++line, 1f), selectMutators, Localizer.Format("#LOC_BDArmory_MutatorSelect"));
+                        if (selectMutators)
+                        {
+                            ++line;
+                            scrollViewVector = GUI.BeginScrollView(new Rect(settingsMargin + 1 * settingsMargin, line * settingsLineHeight, settingsWidth - 2 * settingsMargin - 1 * settingsMargin, settingsLineHeight * 6f), scrollViewVector,
+                                               new Rect(0, 0, settingsWidth - 2 * settingsMargin - 2 * settingsMargin, mutatorHeight));
+                            GUI.BeginGroup(new Rect(0, 0, settingsWidth - 2 * settingsMargin - 2 * settingsMargin, mutatorHeight), GUIContent.none);
+                            int mutatorLine = 0;
+                            for (int i = 0; i < mutators.Count; i++)
+                            {
+                                Rect buttonRect = new Rect(0, (i * 25), (settingsWidth - 4 * settingsMargin) / 2, 20);
+                                if (mutators_selected[i] != (mutators_selected[i] = GUI.Toggle(buttonRect, mutators_selected[i], mutators[i])))
+                                {
+                                    if (mutators_selected[i])
+                                    {
+                                        BDArmorySettings.MUTATOR_LIST.Add(mutators[i]);
+                                    }
+                                    else
+                                    {
+                                        BDArmorySettings.MUTATOR_LIST.Remove(mutators[i]);
+                                    }
+                                }
+                                mutatorLine++;
+                            }
+
+                            mutatorHeight = Mathf.Lerp(mutatorHeight, (mutatorLine * 25), 1);
+                            GUI.EndGroup();
+                            GUI.EndScrollView();
+                            line += 6.5f;
+
+                            if (GUI.Button(SRightRect(line), Localizer.Format("#LOC_BDArmory_reset")))
+                            {
+                                switch (Event.current.button)
+                                {
+                                    case 1: // right click
+                                        Debug.Log("[BDArmory.BDArmorySetup]: MutatorList: " + string.Join("; ", BDArmorySettings.MUTATOR_LIST));
+                                        break;
+                                    default:
+                                        BDArmorySettings.MUTATOR_LIST.Clear();
+                                        for (int i = 0; i < mutators_selected.Length; ++i) mutators_selected[i] = false;
+                                        Debug.Log("[BDArmory.BDArmorySetup]: Resetting Mutator list");
+                                        break;
+                                }
+                            }
+                            line += .2f;
+                        }
+                        BDArmorySettings.MUTATOR_APPLY_GLOBAL = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_GLOBAL, Localizer.Format("#LOC_BDArmory_Settings_MutatorGlobal"));
+                        if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //if more than 1 mutator selected, will shuffle each round
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_KILL = false;
+                        }
+                        BDArmorySettings.MUTATOR_APPLY_KILL = GUI.Toggle(SRightRect(line, 1f), BDArmorySettings.MUTATOR_APPLY_KILL, Localizer.Format("#LOC_BDArmory_Settings_MutatorKill"));
+                        if (BDArmorySettings.MUTATOR_APPLY_KILL) // if more than 1 mutator selected, will randomly assign mutator on kill
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_GLOBAL = false;
+                            BDArmorySettings.MUTATOR_APPLY_TIMER = false;
+                        }
+
+                        if (BDArmorySettings.MUTATOR_LIST.Count > 1)
+
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_TIMER = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_APPLY_TIMER, Localizer.Format("#LOC_BDArmory_Settings_MutatorTimed"));
+                            if (BDArmorySettings.MUTATOR_APPLY_TIMER) //only an option if more than one mutator selected
+                            {
+                                BDArmorySettings.MUTATOR_APPLY_KILL = false;
+                                //BDArmorySettings.MUTATOR_APPLY_GLOBAL = false; //global + timer causes a single globally appled mutator that shuffles, instead of chaos mode
+                            }
+                        }
+                        else
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_TIMER = false;
+                        }
+                        if (!BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_KILL)
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_GLOBAL = true;
+                        }
+
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MutatorDuration")}: ({(BDArmorySettings.MUTATOR_DURATION > 0 ? BDArmorySettings.MUTATOR_DURATION + (BDArmorySettings.MUTATOR_DURATION > 1 ? " mins" : " min") : "Unlimited")})", leftLabel);
+                        BDArmorySettings.MUTATOR_DURATION = (float)Math.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MUTATOR_DURATION, 0f, BDArmorySettings.COMPETITION_DURATION), 1);
+
+                        GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_MutatorNum")}:  ({BDArmorySettings.MUTATOR_APPLY_NUM})", leftLabel);//Number of active mutators
+                        BDArmorySettings.MUTATOR_APPLY_NUM = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.MUTATOR_APPLY_NUM, 1f, BDArmorySettings.MUTATOR_LIST.Count));
+                        if (BDArmorySettings.MUTATOR_LIST.Count < BDArmorySettings.MUTATOR_APPLY_NUM)
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_NUM = BDArmorySettings.MUTATOR_LIST.Count;
+                        }
+                        if (BDArmorySettings.MUTATOR_LIST.Count > 0 && BDArmorySettings.MUTATOR_APPLY_NUM < 1)
+                        {
+                            BDArmorySettings.MUTATOR_APPLY_NUM = 1;
+                        }
+                        BDArmorySettings.MUTATOR_ICONS = GUI.Toggle(SLeftRect(++line, 1f), BDArmorySettings.MUTATOR_ICONS, Localizer.Format("#LOC_BDArmory_Settings_MutatorIcons"));
+                    }
+                }
+
                 // Heartbleed
                 BDArmorySettings.HEART_BLEED_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HEART_BLEED_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_HeartBleed"));//"Heart Bleed"
                 if (BDArmorySettings.HEART_BLEED_ENABLED)
@@ -2270,7 +2398,6 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_HeartBleedThreshold")}:  ({BDArmorySettings.HEART_BLEED_THRESHOLD})", leftLabel);//Heart Bleed Threshold
                     BDArmorySettings.HEART_BLEED_THRESHOLD = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.HEART_BLEED_THRESHOLD, 1f, 100f));
                 }
-
                 // Resource steal
                 BDArmorySettings.RESOURCE_STEAL_ENABLED = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESOURCE_STEAL_ENABLED, Localizer.Format("#LOC_BDArmory_Settings_ResourceSteal"));//"Resource Steal"
                 if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
@@ -2284,34 +2411,41 @@ namespace BDArmory.UI
                 }
 
                 // Asteroids
-                // FIXME Uncomment when ready
-                // if (BDArmorySettings.ASTEROID_FIELD != (BDArmorySettings.ASTEROID_FIELD = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidField")))) // Asteroid Field
-                // {
-                //     if (!BDArmorySettings.ASTEROID_FIELD) AsteroidField.Instance.Reset();
-                // }
-                // if (BDArmorySettings.ASTEROID_FIELD)
-                // {
-                //     if (GUI.Button(SRightButtonRect(line), "Spawn Field Now"))//"Spawn Field Now"))
-                //     {
-                //         if (Event.current.button == 1)
-                //             AsteroidField.Instance.Reset();
-                //         else if (Event.current.button == 2)
-                //             // AsteroidUtils.CheckOrbit();
-                //             AsteroidField.Instance.CheckAsteroids();
-                //         else
-                //             AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
-                //     }
-                //     line += 0.25f;
-                //     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldNumber")}:  ({BDArmorySettings.ASTEROID_FIELD_NUMBER})", leftLabel);
-                //     BDArmorySettings.ASTEROID_FIELD_NUMBER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), Mathf.Round(BDArmorySettings.ASTEROID_FIELD_NUMBER / 10f), 1f, 100f) * 10f); // Asteroid Field Number
-                //     var altitudeString = BDArmorySettings.ASTEROID_FIELD_ALTITUDE < 10f ? $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE * 100f:F0}m" : $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE / 10f:F1}km";
-                //     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldAltitude")}:  ({altitudeString})", leftLabel);
-                //     BDArmorySettings.ASTEROID_FIELD_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_ALTITUDE, 1f, 200f)); // Asteroid Field Altitude
-                //     GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldRadius")}:  ({BDArmorySettings.ASTEROID_FIELD_RADIUS}km)", leftLabel);
-                //     BDArmorySettings.ASTEROID_FIELD_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_RADIUS, 1f, 10f)); // Asteroid Field Radius
-                //     line -= 0.25f;
-                //     BDArmorySettings.ASTEROID_FIELD_VESSEL_ATTRACTION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD_VESSEL_ATTRACTION, Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldVesselAttraction")); // Vessel attraction. 
-                // }
+                if (BDArmorySettings.ASTEROID_FIELD != (BDArmorySettings.ASTEROID_FIELD = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD, Localizer.Format("#LOC_BDArmory_Settings_AsteroidField")))) // Asteroid Field
+                {
+                    if (!BDArmorySettings.ASTEROID_FIELD) AsteroidField.Instance.Reset(true);
+                }
+                if (BDArmorySettings.ASTEROID_FIELD)
+                {
+                    if (GUI.Button(SRightButtonRect(line), "Spawn Field Now"))//"Spawn Field Now"))
+                    {
+                        if (Event.current.button == 1)
+                            AsteroidField.Instance.Reset();
+                        else if (Event.current.button == 2) // Middle click
+                            // AsteroidUtils.CheckOrbit();
+                            AsteroidField.Instance.CheckPooledAsteroids();
+                        else
+                            AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS);
+                    }
+                    line += 0.25f;
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldNumber")}:  ({BDArmorySettings.ASTEROID_FIELD_NUMBER})", leftLabel);
+                    BDArmorySettings.ASTEROID_FIELD_NUMBER = Mathf.RoundToInt(GUI.HorizontalSlider(SRightRect(line), Mathf.Round(BDArmorySettings.ASTEROID_FIELD_NUMBER / 10f), 1f, 200f) * 10f); // Asteroid Field Number
+                    var altitudeString = BDArmorySettings.ASTEROID_FIELD_ALTITUDE < 10f ? $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE * 100f:F0}m" : $"{BDArmorySettings.ASTEROID_FIELD_ALTITUDE / 10f:F1}km";
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldAltitude")}:  ({altitudeString})", leftLabel);
+                    BDArmorySettings.ASTEROID_FIELD_ALTITUDE = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_ALTITUDE, 1f, 200f)); // Asteroid Field Altitude
+                    GUI.Label(SLeftRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldRadius")}:  ({BDArmorySettings.ASTEROID_FIELD_RADIUS}km)", leftLabel);
+                    BDArmorySettings.ASTEROID_FIELD_RADIUS = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_RADIUS, 1f, 10f)); // Asteroid Field Radius
+                    line -= 0.25f;
+                    if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION != (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION, BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION ? $"{Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldAnomalousAttraction")}:  ({BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH:G2})" : Localizer.Format("#LOC_BDArmory_Settings_AsteroidFieldAnomalousAttraction")))) // Anomalous Attraction
+                    {
+                        if (!BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION && AsteroidField.Instance != null)
+                        { AsteroidField.Instance.anomalousAttraction = Vector3d.zero; }
+                    }
+                    if (BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION)
+                    {
+                        BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = Mathf.Round(GUI.HorizontalSlider(SRightRect(line), BDArmorySettings.ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH * 20f, 1f, 20f)) / 20f; // Asteroid Field Anomalous Attraction Strength
+                    }
+                }
                 if (BDArmorySettings.ASTEROID_RAIN != (BDArmorySettings.ASTEROID_RAIN = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ASTEROID_RAIN, Localizer.Format("#LOC_BDArmory_Settings_AsteroidRain")))) // Asteroid Rain
                 {
                     if (!BDArmorySettings.ASTEROID_RAIN) AsteroidRain.Instance.Reset();
@@ -2812,7 +2946,6 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
-
         internal static void ResizeRwrWindow(float rwrScale)
         {
             BDArmorySettings.RWR_WINDOW_SCALE = rwrScale;
