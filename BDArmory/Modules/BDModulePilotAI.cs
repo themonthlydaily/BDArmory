@@ -1727,7 +1727,7 @@ namespace BDArmory.Modules
             steerRoll -= rollDamping;
             steerRoll *= dynamicAdjustment;
 
-            if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or avoiding other vessels as we need a quick reaction
+            if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && evasiveTimer == 0 && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or evading or avoiding other vessels as we need a quick reaction
             {
                 //premature dive fix
                 pitchError = pitchError * Mathf.Clamp01((21 - Mathf.Exp(Mathf.Abs(rollError) / 30)) / 20);
@@ -2041,8 +2041,7 @@ namespace BDArmory.Modules
             Vector3 target = (vessel.srfSpeed < 200) ? FlightPosition(vessel.transform.position, minAltitude) : vesselTransform.position;
             float angleOff = Mathf.Sin(Time.time * 0.75f) * 180;
             angleOff = Mathf.Clamp(angleOff, -45, 45);
-            target +=
-                (Quaternion.AngleAxis(angleOff, upDirection) * Vector3.ProjectOnPlane(vesselTransform.up * 500, upDirection));
+            target += (Quaternion.AngleAxis(angleOff, upDirection) * Vector3.ProjectOnPlane(vesselTransform.up * 500, upDirection));
             //+ (Mathf.Sin (Time.time/3) * upDirection * minAltitude/3);
             debugString.AppendLine($"Evading unknown attacker");
             FlyToPosition(s, target);
