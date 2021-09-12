@@ -1154,7 +1154,7 @@ namespace BDArmory.Control
                     readyToLaunch.Add(pilot);
                 }
 
-            if (BDArmorySettings.MUTATOR_MODE)
+            if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
             {
                 ConfigureMutator();
             }
@@ -1186,7 +1186,7 @@ namespace BDArmory.Control
                     }
                     if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
                     {
-						      MM.EnableMutator(); //random mutator
+                        MM.EnableMutator(); //random mutator
                     }
                 }
             }
@@ -1443,31 +1443,12 @@ namespace BDArmory.Control
         public void ConfigureMutator()
         {
             currentMutator = string.Empty;
-            if (BDArmorySettings.MUTATOR_LIST.Count > 0)
-            {
+
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MutatorMode enabled; Mutator count = " + BDArmorySettings.MUTATOR_LIST.Count);
-                for (int r = 0; r < BDArmorySettings.MUTATOR_APPLY_NUM; r++)
-                {
-                    int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
-                    if (!currentMutator.Contains(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name))
-                    {
-                        currentMutator += MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name;
-                        if (r < BDArmorySettings.MUTATOR_APPLY_NUM - 1 && BDArmorySettings.MUTATOR_LIST.Count > 1)
-                        {
-                            currentMutator += "; ";
-                        }
-                    }
-                    else
-                    {
-                        if (r != 0)
-                        {
-                            r--;
-                        }
-                    }
-                }
-            }
-            else
-                currentMutator = BDArmorySettings.MUTATOR_LIST[0];
+                var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
+                indices.Shuffle();
+                currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
+
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: current mutators: " + currentMutator);
             MutatorResetTime = Planetarium.GetUniversalTime();
             if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
@@ -1919,7 +1900,7 @@ namespace BDArmory.Control
             double startTime = Planetarium.GetUniversalTime();
             double nextStep = startTime;
 
-            if (BDArmorySettings.MUTATOR_MODE)
+            if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
             {
                 ConfigureMutator();
             }
@@ -2857,7 +2838,7 @@ namespace BDArmory.Control
                 StopCompetition();
             }
 
-            if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_TIMER) && BDArmorySettings.MUTATOR_DURATION > 0 && now - MutatorResetTime >= BDArmorySettings.MUTATOR_DURATION * 60d)
+            if ((BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_APPLY_TIMER) && BDArmorySettings.MUTATOR_DURATION > 0 && now - MutatorResetTime >= BDArmorySettings.MUTATOR_DURATION * 60d && BDArmorySettings.MUTATOR_LIST.Count > 0)
             {
 
                 ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_UI_MutatorShuffle"), 5, ScreenMessageStyle.UPPER_CENTER);

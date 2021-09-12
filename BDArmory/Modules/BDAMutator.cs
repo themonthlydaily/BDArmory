@@ -7,6 +7,7 @@ using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.UI;
 using BDArmory.FX;
+using System.Linq;
 
 namespace BDArmory.Modules
 {
@@ -56,25 +57,9 @@ namespace BDArmory.Modules
             }
             if (name == "def") //mutator not specified, randomly choose from selected mutators
             {
-                if (BDArmorySettings.MUTATOR_LIST.Count > 0)
-                {
-                    name = string.Empty;
-                    for (int d = 0; d < BDArmorySettings.MUTATOR_APPLY_NUM; d++)
-                    {
-                        int i = UnityEngine.Random.Range(0, BDArmorySettings.MUTATOR_LIST.Count);
-                        if (!name.Contains(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name))
-                        {
-                            name +=(MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name + "; ");
-                        }
-                        else
-                        {
-                            if (d != 0)
-                            {
-                                d--;
-                            }
-                        }
-                    }
-                }
+                var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
+                indices.Shuffle();
+                name = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator] random mutator list built: " + name + " on " + part.vessel.GetName());
             }
             mutatorName = name;
