@@ -22,12 +22,12 @@ namespace BDArmory.Modules
         public string mutatorName;
         private float Vampirism = 0;
         private float Regen = 0;
-        private float engineMult = -1;
+        private float engineMult;
 
         private bool Vengeance = false;
         private List<string> ResourceTax;
         private double TaxRate = 0;
-
+        private bool hasTaxes;
         private int oldScore = 0;
         bool applyVampirism = false;
         private float Accumulator;
@@ -114,7 +114,14 @@ namespace BDArmory.Modules
                             }
                             if (weapon.Current.eWeaponType == ModuleWeapon.WeaponTypes.Laser)
                             {
-                                weapon.Current.projectileColor = BulletInfo.bullets[mutatorInfo.bulletType].projectileColor;
+                                if (!string.IsNullOrEmpty(mutatorInfo.bulletType) || mutatorInfo.bulletType != "def")
+                                {
+                                    weapon.Current.projectileColor = BulletInfo.bullets[mutatorInfo.bulletType].projectileColor;
+                                }
+                                else
+                                {
+                                    weapon.Current.projectileColor = mutatorInfo.iconColor;
+                                }
                                 weapon.Current.SetupLaserSpecifics();
                                 weapon.Current.pulseLaser = true;
                             }
@@ -129,13 +136,7 @@ namespace BDArmory.Modules
                 }
                 if (mutatorInfo.EngineMult > 0)
                 {
-                    engineMult = mutatorInfo.EngineMult;
-
-                    using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
-                        while (engine.MoveNext())
-                        {
-                            engine.Current.thrustPercentage *= mutatorInfo.EngineMult;
-                        }
+                    engineMult *= mutatorInfo.EngineMult;
                 }
                 if (mutatorInfo.Vampirism > 0)
                 {
@@ -181,13 +182,14 @@ namespace BDArmory.Modules
                 }
                 if (!string.IsNullOrEmpty(mutatorInfo.resourceTax))
                 {
-                    ResourceTax = BDAcTools.ParseNames(mutatorInfo.resourceTax);
-                }
-                if (mutatorInfo.resourceTaxRate != 0)
-                {
-                    TaxRate = mutatorInfo.resourceTaxRate;
+                    hasTaxes = true;
                 }
             }
+            using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
+                while (engine.MoveNext())
+                {
+                    engine.Current.thrustPercentage *= engineMult;
+                }
             startTime = Time.time;
             if (IconMat == null)
             {
@@ -232,7 +234,7 @@ namespace BDArmory.Modules
                         engine.Current.thrustPercentage /= engineMult;
                     }
             }
-            engineMult = -1;
+            engineMult = 0;
             Vampirism = 0;
             Regen = 0;
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
@@ -248,6 +250,7 @@ namespace BDArmory.Modules
             }
             List<string> ResourceTax = new List<string>();
             TaxRate = 0;
+            hasTaxes = false;
         }
 
         void Update()
@@ -284,26 +287,33 @@ namespace BDArmory.Modules
                         }
                 }
                 applyVampirism = false;
-                if (TaxRate != 0)
+                //To allow multiple tax mutators, but have it so resources are taxed per mutator - i.e. Mut1 has ammo regen, mut2 has fueltax, and both proc
+                if (hasTaxes && Accumulator > 5) //Apply resource tax once every 5 seconds)
                 {
-                    if (Accumulator > 5) //Apply resource tax every 5 seconds
+                    for (int r = 0; r < ActiveMutators; r++)
                     {
-                        try
+                        TaxRate = MutatorInfo.mutators[mutators[r]].resourceTaxRate;
+                        if (TaxRate != 0)
                         {
-                            if (ResourceTax.Count >= 1)
+                            try
                             {
-                                for (int i = 0; i < ResourceTax.Count; i++)
+                                ResourceTax = BDAcTools.ParseNames(MutatorInfo.mutators[mutators[r]].resourceTax);
+                                int Tax = ResourceTax.Count;
+                                if (Tax >= 1)
                                 {
-                                    part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
+                                    for (int i = 0; i < Tax; i++)
+                                    {
+                                        part.RequestResource(ResourceTax[i], TaxRate, ResourceFlowMode.ALL_VESSEL);
+                                    }
                                 }
                             }
-                        }
-                        catch
-                        {
-                            Debug.Log("[BDAMutator] mutator not configured correctly. Set ResourceTaxRate to 0 or add resource to ResourceTax");
+                            catch
+                            {
+                                Debug.Log("[BDAMutator] mutator not configured correctly. Set ResourceTaxRate to 0 or add resource to ResourceTax");
+                            }
                         }
                     }
-                }   
+                }
                 if (Regen != 0 || TaxRate != 0)
                 {
                     if (Accumulator > 5)
