@@ -273,7 +273,7 @@ namespace BDArmory.Modules
                         {
                             if (Regen != 0 && Accumulator > 5) //Add regen HP every 5 seconds
                             {
-                                part.Current.AddHealth(Regen);
+                                part.Current.AddHealth(Regen, Vampirism > 0); //don't clamp HP to default if vampirism also enabled to prevent regen resetting gained HP from vampirism
                             }
                             if (Vampirism > 0 && applyVampirism)
                             {
