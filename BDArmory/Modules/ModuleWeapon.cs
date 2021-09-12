@@ -267,6 +267,10 @@ namespace BDArmory.Modules
             return string.Empty;
         }
 
+        public bool resourceSteal = false;
+        public float strengthMutator = 1;
+        public bool instagib = false;
+
 #if DEBUG
         Vector3 debugTargetPosition;
         Vector3 debugLastTargetPosition;
@@ -350,7 +354,7 @@ namespace BDArmory.Modules
 
         [KSPField]
         public float maxDeviation = 1; //inaccuracy two standard deviations in degrees (two because backwards compatibility :)
-        private float baseDeviation = 1;
+        public float baseDeviation = 1;
 
         [KSPField]
         public float maxEffectiveDistance = 2500; //used by AI to select appropriate weapon
@@ -444,7 +448,9 @@ namespace BDArmory.Modules
         //laser info
         [KSPField]
         public float laserDamage = 10000; //base damage/second of lasers
+        public float baseLaserdamage;
         [KSPField] public bool pulseLaser = false; //pulse vs beam
+        public bool pulseInConfig = false; //record if pulse laser in config for resetting lasers post mutator
         [KSPField] public bool HEpulses = false; //do the pulses have blast damage
         [KSPField] public bool HeatRay = false; //conic AoE
         [KSPField] public bool electroLaser = false; //Drains EC from target/induces EMP effects
@@ -807,7 +813,7 @@ namespace BDArmory.Modules
 
             Events["HideUI"].active = false;
             Events["ShowUI"].active = true;
-            ParseWeaponType();
+            ParseWeaponType(weaponType);
 
             // extension for feature_engagementenvelope
             InitializeEngagementRange(0, maxEffectiveDistance);
@@ -890,6 +896,7 @@ namespace BDArmory.Modules
                     Fields["detonationRange"].guiActive = false;
                     Fields["detonationRange"].guiActiveEditor = false;
                 }
+                rocketPod = false;
             }
             if (eWeaponType == WeaponTypes.Rocket)
             {
@@ -914,6 +921,10 @@ namespace BDArmory.Modules
                 {
                     roundsPerMinute = 3000; //50 rounds/sec or 1 'round'/FixedUpdate
                 }
+                else
+                {
+                    pulseInConfig = true;
+                }
                 if (HEpulses)
                 {
                     pulseLaser = true;
@@ -924,6 +935,7 @@ namespace BDArmory.Modules
                     HEpulses = false;
                     electroLaser = false;
                 }
+                rocketPod = false;
                 //disable fuze GUI elements
                 Fields["maxAirDetonationRange"].guiActive = false;
                 Fields["maxAirDetonationRange"].guiActiveEditor = false;
@@ -966,7 +978,7 @@ namespace BDArmory.Modules
                     }
                     if (useCustomBelt)
                     {
-                        if (!string.IsNullOrEmpty(ammoBelt))
+                        if (!string.IsNullOrEmpty(ammoBelt) && ammoBelt != "def")
                         {
                             customAmmoBelt = BDAcTools.ParseNames(ammoBelt);
                             baseBulletVelocity = BulletInfo.bullets[customAmmoBelt[0].ToString()].bulletVelocity;
@@ -1049,6 +1061,7 @@ namespace BDArmory.Modules
                     {
                         maxEffectiveDistance = maxTargetingRange;
                     }
+                    baseLaserdamage = laserDamage;
                 }
                 if (crewserved)
                 {
@@ -1246,7 +1259,19 @@ namespace BDArmory.Modules
         {
             maxAutoFireCosAngle = Mathf.Cos((FiringTolerance * Mathf.Deg2Rad));
         }
+        public string WeaponStatusdebug()
+        {
+            string status = "Weapon Type: ";
 
+            if (eWeaponType == WeaponTypes.Ballistic)
+                status += "Ballistic; BulletType: " + currentType;
+            if (eWeaponType == WeaponTypes.Rocket)
+                status += "Rocket; RocketType: " + currentType + "; " + rocketModelPath;
+            if (eWeaponType == WeaponTypes.Laser)
+                status += "Laser";
+            status += "; RoF: " + roundsPerMinute + "; deviation: " + maxDeviation + "; instagib = " + instagib;
+            return status;
+        }
         void Update()
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && vessel.IsControllable)
@@ -1683,6 +1708,12 @@ namespace BDArmory.Modules
                                     }
 
                                     pBullet.bullet = BulletInfo.bullets[currentType];
+                                    pBullet.stealResources = resourceSteal;
+                                    pBullet.dmgMult = strengthMutator;
+                                    if (instagib)
+                                    {
+                                        pBullet.dmgMult = -1;
+                                    }
                                     pBullet.gameObject.SetActive(true);
 
                                     if (!pBullet.CheckBulletCollision(iTime, true)) // Check that the bullet won't immediately hit anything.
@@ -1986,7 +2017,7 @@ namespace BDArmory.Modules
                                     {
                                         damage *= (1 - ((armor.Diffusivity * armor.ArmorThickness) / laserDamage)); //but this works for now
                                     }
-                                    p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away. Review later
+                                    p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
                                     p.AddDamage(damage);
                                 }
                                 if (HEpulses)
@@ -2032,7 +2063,12 @@ namespace BDArmory.Modules
                                     }
                                 }
                                 if (BDArmorySettings.INSTAKILL) p.Destroy();
-
+                                if (instagib)
+                                {
+                                    p.AddInstagibDamage();
+                                    ExplosionFx.CreateExplosion(hit.point,
+                                                   (1),"BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
+                                }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
                                 if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
@@ -2070,13 +2106,14 @@ namespace BDArmory.Modules
             {
                 audioSource.clip = fireSound;
             }
-
-            laserRenderers = new LineRenderer[fireTransforms.Length];
-
+            if (laserRenderers == null)
+            {
+                laserRenderers = new LineRenderer[fireTransforms.Length];
+            }
             for (int i = 0; i < fireTransforms.Length; i++)
             {
                 Transform tf = fireTransforms[i];
-                laserRenderers[i] = tf.gameObject.AddComponent<LineRenderer>();
+                laserRenderers[i] = tf.gameObject.AddOrGetComponent<LineRenderer>();
                 Color laserColor = Misc.Misc.ParseColor255(projectileColor);
                 laserColor.a = laserColor.a / 2;
                 laserRenderers[i].material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
@@ -2175,6 +2212,9 @@ namespace BDArmory.Modules
                                 rocket.parentRB = part.rb;
                                 rocket.rocket = RocketInfo.rockets[currentType];
                                 rocket.rocketSoundPath = rocketSoundPath;
+                                rocket.thief = resourceSteal; //currently will only steal on direct hit
+                                rocket.dmgMult = strengthMutator;
+                                if (instagib) rocket.dmgMult = -1;
                                 rocketObj.SetActive(true);
                             }
                             if (!BDArmorySettings.INFINITE_AMMO)
@@ -2243,6 +2283,9 @@ namespace BDArmory.Modules
                                             rocket.rocketName = GetShortName() + " rocket";
                                             rocket.team = weaponManager.Team.Name;
                                             rocket.rocketSoundPath = rocketSoundPath;
+                                            rocket.thief = resourceSteal;
+                                            rocket.dmgMult = strengthMutator;
+                                            if (instagib) rocket.dmgMult = -1;
                                             rocketObj.SetActive(true);
                                         }
                                         if (!BDArmorySettings.INFINITE_AMMO)
@@ -2600,11 +2643,11 @@ namespace BDArmory.Modules
             }
         }
 
-        public void ParseWeaponType()
+        public void ParseWeaponType(string type)
         {
-            weaponType = weaponType.ToLower();
+            type = type.ToLower();
 
-            switch (weaponType)
+            switch (type)
             {
                 case "ballistic":
                     eWeaponType = WeaponTypes.Ballistic;
@@ -3239,7 +3282,6 @@ namespace BDArmory.Modules
             //disable autofire after burst length
             if (BurstOverride)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: AutoFire length: " + autofireShotCount);
                 if (autoFire && autofireShotCount >= fireBurstLength)
                 {
                     autoFire = false;
@@ -3934,6 +3976,7 @@ namespace BDArmory.Modules
 
         public void SetupBulletPool()
         {
+            if (bulletPool != null) return;
             GameObject templateBullet = new GameObject("Bullet");
             templateBullet.AddComponent<PooledBullet>();
             templateBullet.SetActive(false);
@@ -3976,6 +4019,10 @@ namespace BDArmory.Modules
                 ammoList = BDAcTools.ParseNames(bulletType);
                 currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
             }
+            ParseAmmoStats();
+        }
+        public void ParseAmmoStats()
+        {
             if (eWeaponType == WeaponTypes.Ballistic)
             {
                 bulletInfo = BulletInfo.bullets[currentType];
@@ -4042,8 +4089,6 @@ namespace BDArmory.Modules
             }
             if (eWeaponType == WeaponTypes.Rocket)
             {
-                ammoList = BDAcTools.ParseNames(bulletType);
-                currentType = ammoList[(int)AmmoTypeNum - 1].ToString();
                 rocketInfo = RocketInfo.rockets[currentType];
                 guiAmmoTypeString = ""; //reset name
                 rocketMass = rocketInfo.rocketMass;
@@ -4117,7 +4162,7 @@ namespace BDArmory.Modules
                 PAWRefresh();
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 SetInitialDetonationDistance();
-                SetupRocketPool(SelectedAmmoType, rocketModelPath);
+                SetupRocketPool(currentType, rocketModelPath);
             }
         }
         protected void SetInitialDetonationDistance()

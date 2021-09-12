@@ -171,7 +171,6 @@ namespace BDArmory.Modules
                 if (hits.Length > 0)
                 {
                     var orderedHits = hits.OrderBy(x => x.distance);
-
                     using (var hitsEnu = orderedHits.GetEnumerator())
                     {
                         while (hitsEnu.MoveNext())

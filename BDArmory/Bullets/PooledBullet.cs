@@ -70,6 +70,10 @@ namespace BDArmory.Bullets
         public float impulse = 0;
         public float massMod = 0;
 
+        //mutator Param
+        public bool stealResources;
+        public float dmgMult = 1;
+
         Vector3 startPosition;
         public bool airDetonation = false;
         public bool proximityDetonation = false;
@@ -413,8 +417,16 @@ namespace BDArmory.Bullets
                             else
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
                             distanceTraveled += hit.distance;
-                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            if (dmgMult < 0)
+                            {
+                                hitPart.AddInstagibDamage();
+                            }
+                            else
+                            {
+                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactVelocity, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            }
                             ExplosiveDetonation(hitPart, hit, bulletRay);
+                            ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
                             KillBullet(); // Kerbals are too thick-headed for penetration...
                             return true;
                         }
@@ -540,8 +552,16 @@ namespace BDArmory.Bullets
                         {
                             hasPenetrated = true;
                             bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
-                            ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            if (dmgMult < 0)
+                            {
+                                hitPart.AddInstagibDamage();
+                            }
+                            else
+                            {
+                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                            }
                             penTicker += 1;
+                            ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
                             ProjectileUtils.CheckPartForExplosion(hitPart);
 
                             //Explosive bullets that penetrate should explode shortly after
@@ -712,11 +732,11 @@ namespace BDArmory.Bullets
 
                     if (airDetonation)
                     {
-                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass);
+                        ExplosionFx.CreateExplosion(hit.point, GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass, -1, dmgMult);
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass);
+                        ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, false, bulletMass, -1, dmgMult);
                     }
 
                     KillBullet();
