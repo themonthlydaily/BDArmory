@@ -2015,7 +2015,7 @@ namespace BDArmory.Modules
                                     }
                                     if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
                                     {
-                                        damage *= (1 - ((armor.Diffusivity * armor.ArmorThickness) / laserDamage)); //but this works for now
+                                        damage *= Mathf.Clamp((1 - (Mathf.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / laserDamage), 0.025f, 1); //old calc lacked a clamp, could potentially become negative damage
                                     }
                                     p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
                                     p.AddDamage(damage);
