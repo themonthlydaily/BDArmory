@@ -234,7 +234,8 @@ namespace BDArmory.Modules
         public void ChooseOptionsUpdated(BaseField field, object obj)
         {
             this.part.RefreshAssociatedWindows();
-            if (BDArmoryAIGUI.Instance!=null){
+            if (BDArmoryAIGUI.Instance != null)
+            {
                 BDArmoryAIGUI.Instance.SetChooseOptionSliders();
             }
         }
@@ -243,7 +244,7 @@ namespace BDArmory.Modules
         {
             if (!orbitDirections.Contains(direction)) return;
             OrbitDirectionName = direction;
-            sideSlipDirection = 1 - orbitDirections.IndexOf(OrbitDirectionName);
+            sideSlipDirection = orbitDirections.IndexOf(OrbitDirectionName) - 1;
             if (sideSlipDirection == 0)
                 sideSlipDirection = UnityEngine.Random.value > 0.5f ? 1 : -1;
         }

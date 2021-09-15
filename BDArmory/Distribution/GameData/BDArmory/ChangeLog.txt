@@ -1,5 +1,6 @@
 ﻿FIXES
 	- Fix various fields in the AI GUI for surface AIs.
+	- Fix broadside direction to not be reversed.
 	- Add missing checks for empty mutator list.
 
 v1.4.9.0
