@@ -1959,15 +1959,15 @@ namespace BDArmory.UI
                     Drivertype = Mathf.Round(Drivertype);
                     if (Drivertype == 0)
                     {
-                        ActiveDriver.SurfaceTypeName = "Land";
+                        ActiveDriver.SurfaceTypeName = ": Land";
                     }
                     else if (Drivertype == 1)
                     {
-                        ActiveDriver.SurfaceTypeName = "Amphibious";
+                        ActiveDriver.SurfaceTypeName = ": Amphibious";
                     }
                     else
                     {
-                        ActiveDriver.SurfaceTypeName = "Water";
+                        ActiveDriver.SurfaceTypeName = ": Water";
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_VehicleType") + ActiveDriver.SurfaceTypeName, Label);//"Wobbly"
 
@@ -2009,7 +2009,7 @@ namespace BDArmory.UI
                         inputFields["CruiseSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["CruiseSpeed"].possibleValue, 3));
                         ActiveDriver.CruiseSpeed = (float)inputFields["CruiseSpeed"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_CruiseSpeed") + " :" + ActiveDriver.steerDamping.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_CruiseSpeed") + " :" + ActiveDriver.CruiseSpeed.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2216,19 +2216,19 @@ namespace BDArmory.UI
                         driverLines++;
                     }
 
-                    broadsideDir = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), Drivertype, 0, 2);
+                    broadsideDir = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), broadsideDir, 0, 2);
                     broadsideDir = Mathf.Round(broadsideDir);
                     if (broadsideDir == 0)
                     {
-                        ActiveDriver.OrbitDirectionName = "Starboard";
+                        ActiveDriver.OrbitDirectionName = ": Starboard";
                     }
                     else if (broadsideDir == 1)
                     {
-                        ActiveDriver.OrbitDirectionName = "Whatever";
+                        ActiveDriver.OrbitDirectionName = ": Whatever";
                     }
                     else
                     {
-                        ActiveDriver.OrbitDirectionName = "Port";
+                        ActiveDriver.OrbitDirectionName = "" Port";
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_PreferredBroadsideDirection") + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
 
