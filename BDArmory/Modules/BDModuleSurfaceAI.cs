@@ -55,7 +55,7 @@ namespace BDArmory.Modules
 
         //settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_VehicleType"),//Vehicle type
-            UI_ChooseOption(options = new string[3] { "Land", "Amphibious", "Water" })]
+            UI_ChooseOption(options = new string[4] { "Stationary", "Land", "Water", "Amphibious" })]
         public string SurfaceTypeName = "Land";
 
         public AIUtils.VehicleMovementType SurfaceType
@@ -118,7 +118,7 @@ namespace BDArmory.Modules
         public float AvoidMass = 0f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
-            UI_ChooseOption(options = new string[3] { "Starboard", "Whatever", "Port" }, scene = UI_Scene.All),]
+            UI_ChooseOption(options = new string[3] { "Port", "Whatever", "Starboard" }, scene = UI_Scene.All),]
         public string OrbitDirectionName = "Whatever";
         public readonly string[] orbitDirections = new string[3] { "Port", "Whatever", "Starboard" };
 
@@ -181,11 +181,11 @@ namespace BDArmory.Modules
 
         #region events
 
-		public override void OnStart(StartState state)
-		{
-            SetChooseOptions();
+        public override void OnStart(StartState state)
+        {
             base.OnStart(state);
-		}
+            SetChooseOptions();
+        }
 
         public override void ActivatePilot()
         {
@@ -234,8 +234,11 @@ namespace BDArmory.Modules
         public void ChooseOptionsUpdated(BaseField field, object obj)
         {
             this.part.RefreshAssociatedWindows();
+            if (BDArmoryAIGUI.Instance!=null){
+                BDArmoryAIGUI.Instance.SetChooseOptionSliders();
+            }
         }
-        
+
         public void SetBroadsideDirection(string direction)
         {
             if (!orbitDirections.Contains(direction)) return;

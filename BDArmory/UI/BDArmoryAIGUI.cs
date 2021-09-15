@@ -41,9 +41,7 @@ namespace BDArmory.UI
         bool showMisc;
 
         int Drivertype = 0;
-        int OldDrivertype = 0;
         int broadsideDir = 0;
-        int OldbroadsideDir = 0;
         bool oldClamp;
         public AIUtils.VehicleMovementType[] VehicleMovementTypes = (AIUtils.VehicleMovementType[])Enum.GetValues(typeof(AIUtils.VehicleMovementType)); // Get the VehicleMovementType as an array of enum values.
 
@@ -245,8 +243,7 @@ namespace BDArmory.UI
             else if (ActiveDriver != null)
             {
                 SetInputFields(ActiveDriver.GetType());
-                Drivertype = VehicleMovementTypes.IndexOf(ActiveDriver.SurfaceType);
-                broadsideDir = ActiveDriver.orbitDirections.IndexOf(ActiveDriver.OrbitDirectionName);
+                SetChooseOptionSliders();
             }
         }
         void GetAIEditor()
@@ -426,6 +423,15 @@ namespace BDArmory.UI
                     inputFields["MaxEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 30000 : 8000;
                     inputFields["AvoidMass"].maxValue = ActiveDriver.UpToEleven ? 1000000 : 100;
                 }
+            }
+        }
+
+        public void SetChooseOptionSliders()
+        {
+            if (ActiveDriver != null)
+            {
+                Drivertype = VehicleMovementTypes.IndexOf(ActiveDriver.SurfaceType);
+                broadsideDir = ActiveDriver.orbitDirections.IndexOf(ActiveDriver.OrbitDirectionName);
             }
         }
 
