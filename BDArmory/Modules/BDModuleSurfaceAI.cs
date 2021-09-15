@@ -118,7 +118,7 @@ namespace BDArmory.Modules
         public float AvoidMass = 0f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
-            UI_ChooseOption(options = new string[3] { "Port", "Whatever", "Starboard" }, scene = UI_Scene.All),]
+            UI_ChooseOption(options = new string[3] { "Starboard", "Whatever", "Port" }, scene = UI_Scene.All),]
         public string OrbitDirectionName = "Whatever";
         public readonly string[] orbitDirections = new string[3] { "Port", "Whatever", "Starboard" };
 
