@@ -120,7 +120,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
             UI_ChooseOption(options = new string[3] { "Port", "Whatever", "Starboard" }, scene = UI_Scene.All),]
         public string OrbitDirectionName = "Whatever";
-        readonly string[] orbitDirections = new string[3] { "Port", "Whatever", "Starboard" };
+        public readonly string[] orbitDirections = new string[3] { "Port", "Whatever", "Starboard" };
 
         [KSPField(isPersistant = true)]
         int sideSlipDirection = 0;
@@ -183,7 +183,7 @@ namespace BDArmory.Modules
 
 		public override void OnStart(StartState state)
 		{
-            SetBroadside();
+            SetChooseOptions();
             base.OnStart(state);
 		}
 
@@ -202,9 +202,7 @@ namespace BDArmory.Modules
 
             if (BroadsideAttack && sideSlipDirection == 0)
             {
-                sideSlipDirection = orbitDirections.IndexOf(OrbitDirectionName);
-                if (sideSlipDirection == 0)
-                    sideSlipDirection = UnityEngine.Random.Range(0, 2) > 1 ? 1 : -1;
+                SetBroadsideDirection(OrbitDirectionName);
             }
 
             leftPath = true;
@@ -221,7 +219,7 @@ namespace BDArmory.Modules
                 motorControl.Deactivate();
         }
 
-        public void SetBroadside()
+        public void SetChooseOptions()
         {
             UI_ChooseOption broadisdeEditor = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlEditor;
             UI_ChooseOption broadisdeFlight = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlFlight;
@@ -236,6 +234,15 @@ namespace BDArmory.Modules
         public void ChooseOptionsUpdated(BaseField field, object obj)
         {
             this.part.RefreshAssociatedWindows();
+        }
+        
+        public void SetBroadsideDirection(string direction)
+        {
+            if (!orbitDirections.Contains(direction)) return;
+            OrbitDirectionName = direction;
+            sideSlipDirection = 1 - orbitDirections.IndexOf(OrbitDirectionName);
+            if (sideSlipDirection == 0)
+                sideSlipDirection = UnityEngine.Random.value > 0.5f ? 1 : -1;
         }
 
         void Update()
@@ -527,7 +534,7 @@ namespace BDArmory.Modules
 
         bool PanicModes()
         {
-            if (!vessel.LandedOrSplashed && !BDArmorySettings.SF_REPULSOR) 
+            if (!vessel.LandedOrSplashed && !BDArmorySettings.SF_REPULSOR)
             {
                 targetVelocity = 0;
                 targetDirection = Vector3.ProjectOnPlane(vessel.srf_velocity, upDir);

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-using System;
+using System.Collections.Generic;
 
 namespace BDArmory.Core
 {
@@ -142,6 +142,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
+        [BDAPersistantSettingsField] public static bool MUTATOR_MODE = false;
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
@@ -214,6 +215,15 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SF_GRAVITY = false;
         [BDAPersistantSettingsField] public static bool SF_REPULSOR = false;
         [BDAPersistantSettingsField] public static float SF_DRAGMULT = 2f;
+
+        //Mutator Mode
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_GLOBAL = false;
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_KILL = false;
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_TIMER = false;
+        [BDAPersistantSettingsField] public static float MUTATOR_DURATION = 0.5f;
+        [BDAPersistantSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
+        [BDAPersistantSettingsField] public static int MUTATOR_APPLY_NUM = 1;
+        [BDAPersistantSettingsField] public static bool MUTATOR_ICONS = false;
 
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.

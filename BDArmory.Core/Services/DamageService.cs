@@ -10,6 +10,8 @@ namespace BDArmory.Core.Services
 
         public abstract void AddDamageToPart_svc(Part p, float damage);
 
+        public abstract void AddHealthToPart_svc(Part p, float damage, bool overcharge = false);
+
         public abstract void AddDamageToKerbal_svc(KerbalEVA kerbal, float damage);
 
         public abstract float GetPartDamage_svc(Part p);

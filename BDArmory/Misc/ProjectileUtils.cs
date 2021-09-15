@@ -119,10 +119,10 @@ namespace BDArmory.Misc
                     break;
             }
         }
-        public static void StealResources(Part hitPart, Vessel sourceVessel)
+        public static void StealResources(Part hitPart, Vessel sourceVessel, bool thiefWeapon = false)
         {
             // steal resources if enabled
-            if (BDArmorySettings.RESOURCE_STEAL_ENABLED)
+            if (BDArmorySettings.RESOURCE_STEAL_ENABLED || thiefWeapon)
             {
                 if (BDArmorySettings.RESOURCE_STEAL_FUEL_RATION > 0f) StealResource(hitPart.vessel, sourceVessel, FuelResources, BDArmorySettings.RESOURCE_STEAL_FUEL_RATION);
                 if (BDArmorySettings.RESOURCE_STEAL_AMMO_RATION > 0f) StealResource(hitPart.vessel, sourceVessel, AmmoResources, BDArmorySettings.RESOURCE_STEAL_AMMO_RATION, true);

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using BDArmory.Core;
+using BDArmory.Control;
 using BDArmory.Modules;
 using UnityEngine;
 using KSP.Localization;
@@ -38,11 +39,13 @@ namespace BDArmory.UI
         bool showTerrain;
         bool showRam;
         bool showMisc;
-        float Drivertype = 0;
-        float OldDrivertype = 0;
-        float broadsideDir = 0;
-        float OldbroadsideDir = 0;
+
+        int Drivertype = 0;
+        int OldDrivertype = 0;
+        int broadsideDir = 0;
+        int OldbroadsideDir = 0;
         bool oldClamp;
+        public AIUtils.VehicleMovementType[] VehicleMovementTypes = (AIUtils.VehicleMovementType[])Enum.GetValues(typeof(AIUtils.VehicleMovementType)); // Get the VehicleMovementType as an array of enum values.
 
         private Vector2 scrollViewVector;
         private Vector2 scrollViewSAIVector;
@@ -242,6 +245,8 @@ namespace BDArmory.UI
             else if (ActiveDriver != null)
             {
                 SetInputFields(ActiveDriver.GetType());
+                Drivertype = VehicleMovementTypes.IndexOf(ActiveDriver.SurfaceType);
+                broadsideDir = ActiveDriver.orbitDirections.IndexOf(ActiveDriver.OrbitDirectionName);
             }
         }
         void GetAIEditor()
@@ -1571,6 +1576,9 @@ namespace BDArmory.UI
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionTimeThreshold") + " :" + ActivePilot.evasionTimeThreshold.ToString("0.00"), Label);//"dynamic damping min"
 
                         evadeLines++;
+                        ActivePilot.evasionIgnoreMyTargetTargetingMe = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionIgnoreMyTargetTargetingMe, Localizer.Format("#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe"), ActivePilot.evasionIgnoreMyTargetTargetingMe ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+
+                        evadeLines++;
                         if (contextTipsEnabled)
                         {
                             GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_evadetimeDist"), contextLabel);//"dynamic damp min"
@@ -1739,8 +1747,7 @@ namespace BDArmory.UI
                                 evadeLines++;
                             }
                         }
-                        ActivePilot.canExtend = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth),
-    ActivePilot.canExtend, Localizer.Format("#LOC_BDArmory_ExtendToggle"), ActivePilot.canExtend ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
+                        ActivePilot.canExtend = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth), ActivePilot.canExtend, Localizer.Format("#LOC_BDArmory_ExtendToggle"), ActivePilot.canExtend ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);//"Dynamic pid"
                         evadeLines++;
 
                         GUI.EndGroup();
@@ -1956,36 +1963,9 @@ namespace BDArmory.UI
                         GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                     driverLines += 0.25f;
 
-
-                    switch (ActiveDriver.SurfaceTypeName)
+                    if (Drivertype != (Drivertype = Mathf.RoundToInt(GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), Drivertype, 0, VehicleMovementTypes.Length - 1))))
                     {
-                        case "Land":
-                            Drivertype = 0;
-                            break;
-                        case "Amphibious":
-                            Drivertype = 1;
-                            break;
-                        case "Water":
-                            Drivertype = 2;
-                            break;
-                    }                    
-                    Drivertype = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), Drivertype, 0, 2);
-                    Drivertype = Mathf.Round(Drivertype);
-                    if (Drivertype == 0)
-                    {
-                        ActiveDriver.SurfaceTypeName = "Land";
-                    }
-                    else if (Drivertype == 1)
-                    {
-                        ActiveDriver.SurfaceTypeName = "Amphibious";
-                    }
-                    else
-                    {
-                        ActiveDriver.SurfaceTypeName = "Water";
-                    }
-                    if (OldDrivertype != Drivertype)
-                    {
-                        OldDrivertype = Drivertype;
+                        ActiveDriver.SurfaceTypeName = VehicleMovementTypes[Drivertype].ToString();
                         ActiveDriver.ChooseOptionsUpdated(null, null);
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_VehicleType") + ": " + ActiveDriver.SurfaceTypeName, Label);//"Wobbly"
@@ -2234,35 +2214,10 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_DriverAI_Mass"), contextLabel);//"Wobbly"
                         driverLines++;
                     }
-                    switch (ActiveDriver.OrbitDirectionName)
+
+                    if (broadsideDir != (broadsideDir = Mathf.RoundToInt(GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), broadsideDir, 0, ActiveDriver.orbitDirections.Length - 1))))
                     {
-                        case "Port":
-                            broadsideDir = 0;
-                            break;
-                        case "Whatever":
-                            broadsideDir = 1;
-                            break;
-                        case "Starboard":
-                            broadsideDir = 2;
-                            break;
-                    }
-                    broadsideDir = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), broadsideDir, 0, 2);
-                    broadsideDir = Mathf.Round(broadsideDir);
-                    if (broadsideDir == 0)
-                    {
-                        ActiveDriver.OrbitDirectionName = "Port";
-                    }
-                    else if (broadsideDir == 1)
-                    {
-                        ActiveDriver.OrbitDirectionName = "Whatever";
-                    }
-                    else
-                    {
-                        ActiveDriver.OrbitDirectionName = "Starboard";
-                    }
-                    if (OldbroadsideDir != broadsideDir)
-                    {
-                        OldbroadsideDir = broadsideDir;
+                        ActiveDriver.SetBroadsideDirection(ActiveDriver.orbitDirections[broadsideDir]);
                         ActiveDriver.ChooseOptionsUpdated(null, null);
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_PreferredBroadsideDirection") + ": " + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
