@@ -39,7 +39,9 @@ namespace BDArmory.UI
         bool showRam;
         bool showMisc;
         float Drivertype = 0;
+        float OldDrivertype = 0;
         float broadsideDir = 0;
+        float OldbroadsideDir = 0;
         bool oldClamp;
 
         private Vector2 scrollViewVector;
@@ -1954,22 +1956,39 @@ namespace BDArmory.UI
                         GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                     driverLines += 0.25f;
 
-                    Drivertype = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                                Drivertype, 0, 2);
+
+                    switch (ActiveDriver.SurfaceTypeName)
+                    {
+                        case "Land":
+                            Drivertype = 0;
+                            break;
+                        case "Amphibious":
+                            Drivertype = 1;
+                            break;
+                        case "Water":
+                            Drivertype = 2;
+                            break;
+                    }                    
+                    Drivertype = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), Drivertype, 0, 2);
                     Drivertype = Mathf.Round(Drivertype);
                     if (Drivertype == 0)
                     {
-                        ActiveDriver.SurfaceTypeName = ": Land";
+                        ActiveDriver.SurfaceTypeName = "Land";
                     }
                     else if (Drivertype == 1)
                     {
-                        ActiveDriver.SurfaceTypeName = ": Amphibious";
+                        ActiveDriver.SurfaceTypeName = "Amphibious";
                     }
                     else
                     {
-                        ActiveDriver.SurfaceTypeName = ": Water";
+                        ActiveDriver.SurfaceTypeName = "Water";
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_VehicleType") + ActiveDriver.SurfaceTypeName, Label);//"Wobbly"
+                    if (OldDrivertype != Drivertype)
+                    {
+                        OldDrivertype = Drivertype;
+                        ActiveDriver.ChooseOptionsUpdated(null, null);
+                    }
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_VehicleType") + ": " + ActiveDriver.SurfaceTypeName, Label);//"Wobbly"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2215,22 +2234,38 @@ namespace BDArmory.UI
                         GUI.Label(ContextLabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_DriverAI_Mass"), contextLabel);//"Wobbly"
                         driverLines++;
                     }
-
+                    switch (ActiveDriver.OrbitDirectionName)
+                    {
+                        case "Port":
+                            broadsideDir = 0;
+                            break;
+                        case "Whatever":
+                            broadsideDir = 1;
+                            break;
+                        case "Starboard":
+                            broadsideDir = 2;
+                            break;
+                    }
                     broadsideDir = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), broadsideDir, 0, 2);
                     broadsideDir = Mathf.Round(broadsideDir);
                     if (broadsideDir == 0)
                     {
-                        ActiveDriver.OrbitDirectionName = ": Starboard";
+                        ActiveDriver.OrbitDirectionName = "Port";
                     }
                     else if (broadsideDir == 1)
                     {
-                        ActiveDriver.OrbitDirectionName = ": Whatever";
+                        ActiveDriver.OrbitDirectionName = "Whatever";
                     }
                     else
                     {
-                        ActiveDriver.OrbitDirectionName = "" Port";
+                        ActiveDriver.OrbitDirectionName = "Starboard";
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_PreferredBroadsideDirection") + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
+                    if (OldbroadsideDir != broadsideDir)
+                    {
+                        OldbroadsideDir = broadsideDir;
+                        ActiveDriver.ChooseOptionsUpdated(null, null);
+                    }
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_PreferredBroadsideDirection") + ": " + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
 
                     driverLines++;
                     if (contextTipsEnabled)
