@@ -1,4 +1,8 @@
-﻿v1.4.9.0
+﻿FIXES
+	- Fix various fields in the AI GUI for surface AIs.
+	- Add missing checks for empty mutator list.
+
+v1.4.9.0
 FIXES
 	- Fixes an NRE in PartExtension.GetSize that was causing KSP to crash when deploying a flag.
 	- Properly reset the AIGUI input fields when adding and removing multiple AIs.
