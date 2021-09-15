@@ -2230,7 +2230,7 @@ namespace BDArmory.UI
                     }
                     else
                     {
-                        ActiveDriver.OrbitDirectionName = "" Port";
+                        ActiveDriver.OrbitDirectionName = ": Port";
                     }
                     GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_PreferredBroadsideDirection") + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
 
