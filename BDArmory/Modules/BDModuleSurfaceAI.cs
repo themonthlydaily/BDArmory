@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using BDArmory.Control;
 using BDArmory.Core;
+using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.UI;
 using UnityEngine;
@@ -116,10 +117,10 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All),]
         public float AvoidMass = 0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
-            UI_ChooseOption(options = new string[3] { "Starboard", "Whatever", "Port" }, scene = UI_Scene.All),]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
+            UI_ChooseOption(options = new string[3] { "Port", "Whatever", "Starboard" }, scene = UI_Scene.All),]
         public string OrbitDirectionName = "Whatever";
-        readonly string[] orbitDirections = new string[3] { "Starboard", "Whatever", "Port" };
+        readonly string[] orbitDirections = new string[3] { "Port", "Whatever", "Starboard" };
 
         [KSPField(isPersistant = true)]
         int sideSlipDirection = 0;
@@ -180,6 +181,12 @@ namespace BDArmory.Modules
 
         #region events
 
+		public override void OnStart(StartState state)
+		{
+            SetBroadside();
+            base.OnStart(state);
+		}
+
         public override void ActivatePilot()
         {
             base.ActivatePilot();
@@ -212,6 +219,23 @@ namespace BDArmory.Modules
 
             if (motorControl)
                 motorControl.Deactivate();
+        }
+
+        public void SetBroadside()
+        {
+            UI_ChooseOption broadisdeEditor = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlEditor;
+            UI_ChooseOption broadisdeFlight = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlFlight;
+            UI_ChooseOption SurfaceEditor = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlEditor;
+            UI_ChooseOption SurfaceFlight = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlFlight;
+            broadisdeEditor.onFieldChanged = ChooseOptionsUpdated;
+            broadisdeFlight.onFieldChanged = ChooseOptionsUpdated;
+            SurfaceEditor.onFieldChanged = ChooseOptionsUpdated;
+            SurfaceFlight.onFieldChanged = ChooseOptionsUpdated;
+        }
+
+        public void ChooseOptionsUpdated(BaseField field, object obj)
+        {
+            this.part.RefreshAssociatedWindows();
         }
 
         void Update()
