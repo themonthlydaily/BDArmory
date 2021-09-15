@@ -1226,13 +1226,16 @@ namespace BDArmory.Control
                             {
                                 MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
                             }
-                            if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //same mutator for all craft
+                            if (BDArmorySettings.MUTATOR_LIST.Count > 0)
                             {
-                                MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
-                            }
-                            if (!BDArmorySettings.MUTATOR_APPLY_GLOBAL && BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
-                            {
-                                MM.EnableMutator(); //random mutator
+                                if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //same mutator for all craft
+                                {
+                                    MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
+                                }
+                                if (!BDArmorySettings.MUTATOR_APPLY_GLOBAL && BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
+                                {
+                                    MM.EnableMutator(); //random mutator
+                                }
                             }
                         }
                     }

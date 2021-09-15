@@ -1173,7 +1173,7 @@ namespace BDArmory.Control
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
                 }
-                if (BDArmorySettings.MUTATOR_MODE)
+                if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
                     var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
                     if (MM == null)
@@ -2759,7 +2759,7 @@ namespace BDArmory.Control
                             }
                             else
                             {
-                                Debug.Log($"[BDArmory.BDACompetitionMode: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
+                                Debug.Log($"[BDArmory.BDACompetitionMode]: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
                             }
                         }
                     }
