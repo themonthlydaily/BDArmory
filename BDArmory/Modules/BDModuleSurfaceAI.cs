@@ -119,7 +119,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
             UI_ChooseOption(options = new string[3] { "Starboard", "Whatever", "Port" }, scene = UI_Scene.All),]
         public string OrbitDirectionName = "Whatever";
-        readonly string[] orbitDirections = new string[3] { "Starboard", "Whatever", "Port" };
+        public readonly string[] orbitDirections = new string[3] { "Starboard", "Whatever", "Port" };
 
         [KSPField(isPersistant = true)]
         int sideSlipDirection = 0;
@@ -195,9 +195,7 @@ namespace BDArmory.Modules
 
             if (BroadsideAttack && sideSlipDirection == 0)
             {
-                sideSlipDirection = orbitDirections.IndexOf(OrbitDirectionName);
-                if (sideSlipDirection == 0)
-                    sideSlipDirection = UnityEngine.Random.Range(0, 2) > 1 ? 1 : -1;
+                SetBroadsideDirection(OrbitDirectionName);
             }
 
             leftPath = true;
@@ -212,6 +210,15 @@ namespace BDArmory.Modules
 
             if (motorControl)
                 motorControl.Deactivate();
+        }
+
+        public void SetBroadsideDirection(string direction)
+        {
+            if (!orbitDirections.Contains(direction)) return;
+            OrbitDirectionName = direction;
+            sideSlipDirection = 1 - orbitDirections.IndexOf(OrbitDirectionName);
+            if (sideSlipDirection == 0)
+                sideSlipDirection = UnityEngine.Random.value > 0.5f ? 1 : -1;
         }
 
         void Update()
@@ -503,7 +510,7 @@ namespace BDArmory.Modules
 
         bool PanicModes()
         {
-            if (!vessel.LandedOrSplashed && !BDArmorySettings.SF_REPULSOR) 
+            if (!vessel.LandedOrSplashed && !BDArmorySettings.SF_REPULSOR)
             {
                 targetVelocity = 0;
                 targetDirection = Vector3.ProjectOnPlane(vessel.srf_velocity, upDir);
