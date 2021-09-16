@@ -1,7 +1,10 @@
-﻿FIXES
+﻿v1.4.9.1
+FIXES
 	- Fix various fields in the AI GUI for surface AIs.
 	- Fix broadside direction to not be reversed.
-	- Add missing checks for empty mutator list.
+	- Set default mutator mode (for new installs) to false.
+	- Add missing checks for empty mutator list (was causing competitions to fail to start).
+	- Fix laser damage calculation.
 
 v1.4.9.0
 FIXES
