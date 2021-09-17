@@ -1,4 +1,7 @@
-﻿v1.4.9.1
+﻿FIXES
+	- Consider 'splashed' vessels as 'landed' when spawning.
+
+v1.4.9.1
 FIXES
 	- Fix various fields in the AI GUI for surface AIs.
 	- Fix broadside direction to not be reversed.
