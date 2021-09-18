@@ -119,6 +119,7 @@ namespace BDArmory.UI
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
+                GetAIEditor();
                 GameEvents.onEditorPartPlaced.Add(OnEditorPartPlacedEvent); //do per part placement instead of calling a findModule call every time *anything* changes on thevessel
                 GameEvents.onEditorPartDeleted.Add(OnEditorPartDeletedEvent);
             }
@@ -2258,6 +2259,7 @@ namespace BDArmory.UI
         internal void OnDestroy()
         {
             GameEvents.onVesselChange.Remove(VesselChange);
+            GameEvents.onEditorLoad.Remove(OnEditorLoad);
             GameEvents.onEditorPartPlaced.Remove(OnEditorPartPlacedEvent);
             GameEvents.onEditorPartDeleted.Remove(OnEditorPartDeletedEvent);
         }
