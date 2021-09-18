@@ -680,6 +680,10 @@ namespace BDArmory.Control
                         yield return new WaitForFixedUpdate();
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
+                            if (spawnedVessels[vesselName].Item1.LandedOrSplashed)
+                            {
+                                vesselsHaveLanded[vesselName] = 2;
+                            }
                             if (vesselsHaveLanded[vesselName] == 0 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, radialUnitVector) < 0) // Check that vessel has started moving.
                                 vesselsHaveLanded[vesselName] = 1;
                             if (vesselsHaveLanded[vesselName] == 1 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, radialUnitVector) >= 0) // Check if the vessel has landed.
@@ -1226,13 +1230,16 @@ namespace BDArmory.Control
                             {
                                 MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
                             }
-                            if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //same mutator for all craft
+                            if (BDArmorySettings.MUTATOR_LIST.Count > 0)
                             {
-                                MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
-                            }
-                            if (!BDArmorySettings.MUTATOR_APPLY_GLOBAL && BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
-                            {
-                                MM.EnableMutator(); //random mutator
+                                if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //same mutator for all craft
+                                {
+                                    MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
+                                }
+                                if (!BDArmorySettings.MUTATOR_APPLY_GLOBAL && BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
+                                {
+                                    MM.EnableMutator(); //random mutator
+                                }
                             }
                         }
                     }

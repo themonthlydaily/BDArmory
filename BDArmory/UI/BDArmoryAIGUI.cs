@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using BDArmory.Core;
+using BDArmory.Control;
 using BDArmory.Modules;
 using UnityEngine;
 using KSP.Localization;
@@ -38,9 +39,11 @@ namespace BDArmory.UI
         bool showTerrain;
         bool showRam;
         bool showMisc;
-        float Drivertype = 0;
-        float broadsideDir = 0;
+
+        int Drivertype = 0;
+        int broadsideDir = 0;
         bool oldClamp;
+        public AIUtils.VehicleMovementType[] VehicleMovementTypes = (AIUtils.VehicleMovementType[])Enum.GetValues(typeof(AIUtils.VehicleMovementType)); // Get the VehicleMovementType as an array of enum values.
 
         private Vector2 scrollViewVector;
         private Vector2 scrollViewSAIVector;
@@ -116,6 +119,7 @@ namespace BDArmory.UI
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
+                GetAIEditor();
                 GameEvents.onEditorPartPlaced.Add(OnEditorPartPlacedEvent); //do per part placement instead of calling a findModule call every time *anything* changes on thevessel
                 GameEvents.onEditorPartDeleted.Add(OnEditorPartDeletedEvent);
             }
@@ -240,6 +244,7 @@ namespace BDArmory.UI
             else if (ActiveDriver != null)
             {
                 SetInputFields(ActiveDriver.GetType());
+                SetChooseOptionSliders();
             }
         }
         void GetAIEditor()
@@ -419,6 +424,15 @@ namespace BDArmory.UI
                     inputFields["MaxEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 30000 : 8000;
                     inputFields["AvoidMass"].maxValue = ActiveDriver.UpToEleven ? 1000000 : 100;
                 }
+            }
+        }
+
+        public void SetChooseOptionSliders()
+        {
+            if (ActiveDriver != null)
+            {
+                Drivertype = VehicleMovementTypes.IndexOf(ActiveDriver.SurfaceType);
+                broadsideDir = ActiveDriver.orbitDirections.IndexOf(ActiveDriver.OrbitDirectionName);
             }
         }
 
@@ -1956,22 +1970,12 @@ namespace BDArmory.UI
                         GUIContent.none, BDArmorySetup.BDGuiSkin.box);
                     driverLines += 0.25f;
 
-                    Drivertype = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth),
-                                Drivertype, 0, 2);
-                    Drivertype = Mathf.Round(Drivertype);
-                    if (Drivertype == 0)
+                    if (Drivertype != (Drivertype = Mathf.RoundToInt(GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), Drivertype, 0, VehicleMovementTypes.Length - 1))))
                     {
-                        ActiveDriver.SurfaceTypeName = "Land";
+                        ActiveDriver.SurfaceTypeName = VehicleMovementTypes[Drivertype].ToString();
+                        ActiveDriver.ChooseOptionsUpdated(null, null);
                     }
-                    else if (Drivertype == 1)
-                    {
-                        ActiveDriver.SurfaceTypeName = "Amphibious";
-                    }
-                    else
-                    {
-                        ActiveDriver.SurfaceTypeName = "Water";
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_VehicleType") + ActiveDriver.SurfaceTypeName, Label);//"Wobbly"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_VehicleType") + ": " + ActiveDriver.SurfaceTypeName, Label);//"Wobbly"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2011,7 +2015,7 @@ namespace BDArmory.UI
                         inputFields["CruiseSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["CruiseSpeed"].possibleValue, 3));
                         ActiveDriver.CruiseSpeed = (float)inputFields["CruiseSpeed"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_CruiseSpeed") + " :" + ActiveDriver.steerDamping.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_CruiseSpeed") + " :" + ActiveDriver.CruiseSpeed.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2218,21 +2222,12 @@ namespace BDArmory.UI
                         driverLines++;
                     }
 
-                    broadsideDir = GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), Drivertype, 0, 2);
-                    broadsideDir = Mathf.Round(broadsideDir);
-                    if (broadsideDir == 0)
+                    if (broadsideDir != (broadsideDir = Mathf.RoundToInt(GUI.HorizontalSlider(SettingSliderRect(leftIndent, driverLines, contentWidth), broadsideDir, 0, ActiveDriver.orbitDirections.Length - 1))))
                     {
-                        ActiveDriver.OrbitDirectionName = "Starboard";
+                        ActiveDriver.SetBroadsideDirection(ActiveDriver.orbitDirections[broadsideDir]);
+                        ActiveDriver.ChooseOptionsUpdated(null, null);
                     }
-                    else if (broadsideDir == 1)
-                    {
-                        ActiveDriver.OrbitDirectionName = "Whatever";
-                    }
-                    else
-                    {
-                        ActiveDriver.OrbitDirectionName = "Port";
-                    }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_PreferredBroadsideDirection") + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_PreferredBroadsideDirection") + ": " + ActiveDriver.OrbitDirectionName, Label);//"Wobbly"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2264,6 +2259,7 @@ namespace BDArmory.UI
         internal void OnDestroy()
         {
             GameEvents.onVesselChange.Remove(VesselChange);
+            GameEvents.onEditorLoad.Remove(OnEditorLoad);
             GameEvents.onEditorPartPlaced.Remove(OnEditorPartPlacedEvent);
             GameEvents.onEditorPartDeleted.Remove(OnEditorPartDeletedEvent);
         }

@@ -1,4 +1,15 @@
-﻿v1.4.9.0
+﻿FIXES
+	- Consider 'splashed' vessels as 'landed' when spawning.
+
+v1.4.9.1
+FIXES
+	- Fix various fields in the AI GUI for surface AIs.
+	- Fix broadside direction to not be reversed.
+	- Set default mutator mode (for new installs) to false.
+	- Add missing checks for empty mutator list (was causing competitions to fail to start).
+	- Fix laser damage calculation.
+
+v1.4.9.0
 FIXES
 	- Fixes an NRE in PartExtension.GetSize that was causing KSP to crash when deploying a flag.
 	- Properly reset the AIGUI input fields when adding and removing multiple AIs.

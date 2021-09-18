@@ -142,7 +142,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
-        [BDAPersistantSettingsField] public static bool MUTATOR_MODE = true;
+        [BDAPersistantSettingsField] public static bool MUTATOR_MODE = false;
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
