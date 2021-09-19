@@ -1,5 +1,7 @@
 ﻿FIXES
 	- Consider 'splashed' vessels as 'landed' when spawning.
+	- Get the AI on the initial load when reverting to the editor.
+	- Fix the AI GUI updating the values when switching vessels when using numeric fields.
 
 v1.4.9.1
 FIXES
