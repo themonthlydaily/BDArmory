@@ -28,6 +28,7 @@ namespace BDArmory.Bullets
         public float caliber;
         public float thrust;
         private Vector3 thrustVector;
+        private Vector3 dragVector;
         public float thrustTime;
         public bool shaped;
         public float maxAirDetonationRange;
@@ -60,6 +61,7 @@ namespace BDArmory.Bullets
         Vector3 prevPosition;
         Vector3 currPosition;
         Vector3 startPosition;
+        bool startUnderwater = false;
         Ray RocketRay;
         private float impactVelocity;
 
@@ -118,7 +120,12 @@ namespace BDArmory.Bullets
             currPosition = transform.position;
             startPosition = transform.position;
             startTime = Time.time;
-
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
+            {
+                startUnderwater = true;
+            }
+            else
+                startUnderwater = false;
             massScalar = 0.012f / rocketMass;
 
             rb.mass = rocketMass;
@@ -130,7 +137,7 @@ namespace BDArmory.Bullets
 
             randThrustSeed = UnityEngine.Random.Range(0f, 100f);
             thrustVector = new Vector3(0, 0, thrust);
-
+            dragVector = new Vector3();
             SetupAudio();
 
             if (this.sourceVessel)
@@ -208,15 +215,13 @@ namespace BDArmory.Bullets
 
                 //guidance and attitude stabilisation scales to atmospheric density.
                 float atmosMultiplier =
-                    Mathf.Clamp01(2.5f *
-                                  (float)
-                                  FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
+                    Mathf.Clamp01((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
                                       FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody));
 
                 //model transform. always points prograde
                 transform.rotation = Quaternion.RotateTowards(transform.rotation,
                     Quaternion.LookRotation(rb.velocity + Krakensbane.GetFrameVelocity(), transform.up),
-                    atmosMultiplier * (0.5f * (Time.time - startTime)) * 50 * Time.fixedDeltaTime);
+                    Mathf.Clamp01(atmosMultiplier * 2.5f) * (0.5f * (Time.time - startTime)) * 50 * Time.fixedDeltaTime);
 
 
                 if (Time.time - startTime < thrustTime && Time.time - startTime > stayTime)
@@ -225,6 +230,18 @@ namespace BDArmory.Bullets
                     thrustVector.y = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
                     rb.AddRelativeForce(thrustVector);
                 }//0.012/rocketmass - use .012 as baseline, it's the mass of the hydra, which the randomTurstdeviation was originally calibrated for
+                if (BDArmorySettings.BULLET_WATER_DRAG)
+                {
+                    if (FlightGlobals.getAltitudeAtPos(currPosition) < 0)
+                    {
+                        //atmosMultiplier *= 83.33f;
+                        dragVector.z = -(0.5f * 1 * (rb.velocity.magnitude * rb.velocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * TimeWarp.fixedDeltaTime;
+                        rb.AddRelativeForce(dragVector); //this is going to throw off aiming code, but you aren't going to hit anything with rockets underwater anyway
+                    }
+                    //dragVector.z = -(0.5f * (atmosMultiplier * 0.012f) * (rb.velocity.magnitude * rb.velocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000))*TimeWarp.fixedDeltaTime;
+                    //rb.AddRelativeForce(dragVector);
+                    //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
+                }
             }
 
             if (Time.time - startTime > thrustTime)
@@ -451,9 +468,9 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-            else if (FlightGlobals.getAltitudeAtPos(currPosition) <= 0)
+            if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !startUnderwater)
             {
-                Detonate(currPosition, false);
+                Detonate(transform.position, false);
             }
             prevPosition = currPosition;
 
@@ -641,7 +658,7 @@ namespace BDArmory.Bullets
                                 }
                             }
                         }
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, true);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction,-1, true);
                     }
                     else
                     {

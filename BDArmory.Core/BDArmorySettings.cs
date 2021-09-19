@@ -59,6 +59,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
         [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
+        [BDAPersistantSettingsField] public static bool BULLET_WATER_DRAG = true;
 
         // General slider settings
         [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -133,7 +134,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int ASTEROID_FIELD_NUMBER = 100; // Number of asteroids
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
-        // [BDAPersistantSettingsField] public static bool ASTEROID_FIELD_VESSEL_ATTRACTION = false; // Asteroids are attracted to vessels.
+        [BDAPersistantSettingsField] public static bool ASTEROID_FIELD_ANOMALOUS_ATTRACTION = false; // Asteroids are attracted to vessels.
+        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = 0.2f; // Strength of the effect.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN = false;
         [BDAPersistantSettingsField] public static int ASTEROID_RAIN_NUMBER = 100; // Number of asteroids
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.
@@ -141,7 +143,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
-        [BDAPersistantSettingsField] public static bool MUTATOR_MODE = true;
+        [BDAPersistantSettingsField] public static bool MUTATOR_MODE = false;
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;

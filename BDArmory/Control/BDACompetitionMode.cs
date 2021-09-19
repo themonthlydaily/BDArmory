@@ -1173,7 +1173,7 @@ namespace BDArmory.Control
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
                 }
-                if (BDArmorySettings.MUTATOR_MODE)
+                if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
                     var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
                     if (MM == null)
@@ -1263,7 +1263,7 @@ namespace BDArmory.Control
                         yield break;
                     }
 
-            // if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
+            if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
 
             competitionStatus.Add("Competition: Sending pilots to start position.");
@@ -1444,10 +1444,10 @@ namespace BDArmory.Control
         {
             currentMutator = string.Empty;
 
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MutatorMode enabled; Mutator count = " + BDArmorySettings.MUTATOR_LIST.Count);
-                var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
-                indices.Shuffle();
-                currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: MutatorMode enabled; Mutator count = " + BDArmorySettings.MUTATOR_LIST.Count);
+            var indices = Enumerable.Range(0, BDArmorySettings.MUTATOR_LIST.Count).ToList();
+            indices.Shuffle();
+            currentMutator = string.Join("; ", indices.Take(BDArmorySettings.MUTATOR_APPLY_NUM).Select(i => MutatorInfo.mutators[BDArmorySettings.MUTATOR_LIST[i]].name));
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: current mutators: " + currentMutator);
             MutatorResetTime = Planetarium.GetUniversalTime();
@@ -2752,14 +2752,14 @@ namespace BDArmory.Control
                                             }
                                             MM.EnableMutator(); //random mutator    
                                             competitionStatus.Add(Scores.ScoreData[player].lastPersonWhoDamagedMe + " gains " + MM.mutatorName + (BDArmorySettings.MUTATOR_DURATION > 0 ? " for " + BDArmorySettings.MUTATOR_DURATION * 60 + " seconds!" : "!"));
-                                            
+
                                         }
                                     }
 
                             }
                             else
                             {
-                                Debug.Log($"[BDArmory.BDACompetitionMode: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
+                                Debug.Log($"[BDArmory.BDACompetitionMode]: Mutator mode, but no assigned mutators! Can't apply mutator on Kill!");
                             }
                         }
                     }
@@ -3145,6 +3145,7 @@ namespace BDArmory.Control
         // Analyse a collision to figure out if someone rammed someone else and who should get awarded for it.
         private void AnalyseCollision(EventReport data)
         {
+            if (rammingInformation == null) return; // Ramming information hasn't been set up yet (e.g., between competitions).
             if (data.origin == null) return; // The part is gone. Nothing much we can do about it.
             double currentTime = Planetarium.GetUniversalTime();
             float collisionMargin = 2f; // Compare the separation to this factor times the sum of radii to account for inaccuracies in the vessels size and position. Hopefully, this won't include other nearby vessels.

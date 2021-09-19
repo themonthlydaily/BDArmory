@@ -310,6 +310,11 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = 0.01f, scene = UI_Scene.All)]
         public float evasionTimeThreshold = 0f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe", advancedTweakable = true,//Ignore my target targeting me
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_Toggle(enabledText = "#LOC_BDArmory_Enabled", disabledText = "#LOC_BDArmory_Disabled", scene = UI_Scene.All),]
+        public bool evasionIgnoreMyTargetTargetingMe = false;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CollisionAvoidanceThreshold", advancedTweakable = true, //Vessel collision avoidance threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 50f, stepIncrement = 1f, scene = UI_Scene.All)]
@@ -1282,7 +1287,7 @@ namespace BDArmory.Modules
             {
                 var radius = v.GetRadius();
                 threshold += radius;
-                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax) / 2f;
+                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax);
             }
 
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
@@ -1727,7 +1732,7 @@ namespace BDArmory.Modules
             steerRoll -= rollDamping;
             steerRoll *= dynamicAdjustment;
 
-            if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or avoiding other vessels as we need a quick reaction
+            if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && evasiveTimer == 0 && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or evading or avoiding other vessels as we need a quick reaction
             {
                 //premature dive fix
                 pitchError = pitchError * Mathf.Clamp01((21 - Mathf.Exp(Mathf.Abs(rollError) / 30)) / 20);
@@ -2041,8 +2046,7 @@ namespace BDArmory.Modules
             Vector3 target = (vessel.srfSpeed < 200) ? FlightPosition(vessel.transform.position, minAltitude) : vesselTransform.position;
             float angleOff = Mathf.Sin(Time.time * 0.75f) * 180;
             angleOff = Mathf.Clamp(angleOff, -45, 45);
-            target +=
-                (Quaternion.AngleAxis(angleOff, upDirection) * Vector3.ProjectOnPlane(vesselTransform.up * 500, upDirection));
+            target += (Quaternion.AngleAxis(angleOff, upDirection) * Vector3.ProjectOnPlane(vesselTransform.up * 500, upDirection));
             //+ (Mathf.Sin (Time.time/3) * upDirection * minAltitude/3);
             debugString.AppendLine($"Evading unknown attacker");
             FlyToPosition(s, target);
@@ -2308,7 +2312,7 @@ namespace BDArmory.Modules
                     while (vs.MoveNext())
                     {
                         if (vs.Current == null) continue;
-                        if (vs.Current == vessel || vs.Current.Landed || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
+                        if (vs.Current == vessel || vs.Current.Landed) continue; // || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
                         if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out collisionAvoidDirection)) continue;
                         if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
                         {

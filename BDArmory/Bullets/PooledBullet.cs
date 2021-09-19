@@ -54,7 +54,7 @@ namespace BDArmory.Bullets
         public float tracerDeltaFactor = 1.35f;
         public float tracerLuminance = 1;
         public float initialSpeed;
-
+        bool startsUnderwater = false;
         public Vector3 currPosition;
 
         //explosive parameters
@@ -140,6 +140,10 @@ namespace BDArmory.Bullets
                 //projectileColor.a = projectileColor.a/2;
                 //startColor.a = startColor.a/2;
             }
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)            
+                startsUnderwater = true;            
+            else
+                startsUnderwater = false;
 
             projectileColor.a = Mathf.Clamp(projectileColor.a, 0.25f, 1f);
             startColor.a = Mathf.Clamp(startColor.a, 0.25f, 1f);
@@ -285,7 +289,15 @@ namespace BDArmory.Bullets
                 return;
 
             MoveBullet(Time.fixedDeltaTime);
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0 && !startsUnderwater)
+            {
+                if (explosive)
+                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                    hasDetonated = true;
 
+                KillBullet();
+                return;
+            }
             //////////////////////////////////////////////////
             //Flak Explosion (air detonation/proximity fuse)
             //////////////////////////////////////////////////
@@ -293,7 +305,7 @@ namespace BDArmory.Bullets
             if (ProximityAirDetonation((float)distanceTraveled))
             {
                 //detonate
-                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity, -1, false, bulletMass);
+                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, currentVelocity, -1, false, bulletMass, -1, dmgMult);
                 KillBullet();
 
                 return;
@@ -333,8 +345,16 @@ namespace BDArmory.Bullets
             }
 
             //move bullet
-            transform.position += currentVelocity * period;
 
+            if (BDArmorySettings.BULLET_WATER_DRAG)
+            {
+                if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
+                {
+                    currentVelocity *= dragVelocityFactor; //If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
+                }
+                //Debug.Log("[BULLETDRAG] current vel: " + currentVelocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVelocityFactor.ToString("0.00"));
+            }
+            transform.position += currentVelocity * period;
             if (bulletDrop)
                 currentVelocity += 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position);
         }
@@ -414,8 +434,10 @@ namespace BDArmory.Bullets
                             // relative velocity, separate from the below statement, because the hitpart might be assigned only above
                             if (hitPart.rb != null)
                                 impactVelocity = (currentVelocity * dragVelocityFactor - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
+                                //impactVelocity = (currentVelocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude; //use this one if actively applying drag
                             else
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
+                                //impactVelocity = currentVelocity.magnitude; //use this one if applying drag as bullet flies
                             distanceTraveled += hit.distance;
                             if (dmgMult < 0)
                             {
@@ -705,13 +727,20 @@ namespace BDArmory.Bullets
         private void CalculateDragAnalyticEstimate()
         {
             float analyticDragVelAdjustment = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currPosition), FlightGlobals.getExternalTemperature(currPosition));
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
+            {
+                analyticDragVelAdjustment *= 83.33f; //water is 83.33x denser than air
+            }
             analyticDragVelAdjustment *= flightTimeElapsed * initialSpeed;
+            //analyticDragVelAdjustment *= TimeWarp.fixedDeltaTime * initialSpeed; //use this one if applying drag during flighttime
             analyticDragVelAdjustment += 2 * ballisticCoefficient;
 
             analyticDragVelAdjustment = 2 * ballisticCoefficient * initialSpeed / analyticDragVelAdjustment;
             //velocity as a function of time under the assumption of a projectile only acted upon by drag with a constant drag area
 
             dragVelocityFactor = analyticDragVelAdjustment / initialSpeed;
+
+            //Force Drag = 1/2 atmdensity*velocity^2 * drag coeff * area
         }
 
         private bool ExplosiveDetonation(Part hitPart, RaycastHit hit, Ray ray, bool airDetonation = false)
