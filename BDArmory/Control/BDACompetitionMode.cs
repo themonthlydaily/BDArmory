@@ -900,7 +900,7 @@ namespace BDArmory.Control
             if (BDArmorySettings.DISPLAY_COMPETITION_STATUS)
             {
                 // Clock
-                if (competitionIsActive || competitionStarting)
+                if (competitionIsActive || competitionStarting) // Show a competition clock (for post-processing synchronisation).
                 {
                     var gTime = (float)(Planetarium.GetUniversalTime() - (competitionIsActive ? competitionStartTime : competitionPreStartTime));
                     var minutes = Mathf.FloorToInt(gTime / 60);
@@ -912,7 +912,7 @@ namespace BDArmory.Control
 
                 // Messages
                 guiStatusString = competitionStatus.ToString();
-                if (BDArmorySetup.GAME_UI_ENABLED)
+                if (BDArmorySetup.GAME_UI_ENABLED || BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI) // Append current pilot action to guiStatusString.
                 {
                     if (competitionStarting || competitionStartTime > 0)
                     {
@@ -936,9 +936,16 @@ namespace BDArmory.Control
                         guiStatusString += (string.IsNullOrEmpty(guiStatusString) ? "" : "\n") + currentVesselStatus;
                     }
                 }
-                else
+                if (!BDArmorySetup.GAME_UI_ENABLED)
                 {
-                    guiStatusString = deadOrAlive;
+                    if (BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI)
+                    {
+                        guiStatusString = deadOrAlive + "\n" + guiStatusString;
+                    }
+                    else
+                    {
+                        guiStatusString = deadOrAlive;
+                    }
                 }
                 GUI.Label(statusRectShadow, guiStatusString, statusStyleShadow);
                 GUI.Label(statusRect, guiStatusString, statusStyle);
@@ -963,7 +970,7 @@ namespace BDArmory.Control
             else
             {
                 clockRect = new Rect(10, 6, 80, 20);
-                statusRect = new Rect(80, 6, Screen.width - 80, 100);
+                statusRect = new Rect(80, 6, Screen.width - 80, Mathf.FloorToInt(Screen.height / 2));
                 statusStyle.fontSize = 14;
             }
             clockRectShadow = new Rect(clockRect);
