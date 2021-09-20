@@ -58,8 +58,9 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
         [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users
-        [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             // Display competition status
+        [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
+        [BDAPersistantSettingsField] public static bool BULLET_WATER_DRAG = true;
 
         // General slider settings
         [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
