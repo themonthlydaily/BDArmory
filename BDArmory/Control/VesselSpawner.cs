@@ -655,7 +655,7 @@ namespace BDArmory.Control
                     } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
                     if (!allWeaponManagersAssigned && spawnFailureReason == SpawnFailureReason.None)
                     {
-                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for weapon managers to be appear in the Vessel Switcher.");
+                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for weapon managers to appear in the Vessel Switcher.");
                         spawnFailureReason = SpawnFailureReason.TimedOut;
                     }
                 }
