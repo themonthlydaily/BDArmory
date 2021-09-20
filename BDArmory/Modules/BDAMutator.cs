@@ -185,11 +185,14 @@ namespace BDArmory.Modules
                     hasTaxes = true;
                 }
             }
-            using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
-                while (engine.MoveNext())
-                {
-                    engine.Current.thrustPercentage *= engineMult;
-                }
+            if (engineMult > 0)
+            {
+                using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
+                    while (engine.MoveNext())
+                    {
+                        engine.Current.thrustPercentage /= engineMult;
+                    }
+            }
             startTime = Time.time;
             if (IconMat == null)
             {
