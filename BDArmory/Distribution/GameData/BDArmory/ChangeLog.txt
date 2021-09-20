@@ -1,4 +1,12 @@
-﻿v1.4.9.1
+﻿FIXES
+	- Consider 'splashed' vessels as 'landed' when spawning.
+	- Get the AI on the initial load when reverting to the editor.
+	- Fix the AI GUI updating the values when switching vessels when using numeric fields.
+	- Fix some surface AI values being initialised from the wrong variables in the AI GUI.
+IMPROVEMENTS
+	- Add a toggle for showing the competition status messages with the UI hidden.
+
+v1.4.9.1
 FIXES
 	- Fix various fields in the AI GUI for surface AIs.
 	- Fix broadside direction to not be reversed.
