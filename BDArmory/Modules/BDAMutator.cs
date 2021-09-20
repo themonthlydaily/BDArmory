@@ -190,7 +190,7 @@ namespace BDArmory.Modules
                 using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                     while (engine.MoveNext())
                     {
-                        engine.Current.thrustPercentage /= engineMult;
+                        engine.Current.thrustPercentage *= engineMult;
                     }
             }
             startTime = Time.time;
