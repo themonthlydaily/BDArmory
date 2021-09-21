@@ -22,7 +22,7 @@ namespace BDArmory.Modules
         public string mutatorName;
         private float Vampirism = 0;
         private float Regen = 0;
-        private float engineMult;
+        private float engineMult = 1;
 
         private bool Vengeance = false;
         private List<string> ResourceTax;
@@ -185,11 +185,14 @@ namespace BDArmory.Modules
                     hasTaxes = true;
                 }
             }
-            using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
-                while (engine.MoveNext())
-                {
-                    engine.Current.thrustPercentage *= engineMult;
-                }
+            if (engineMult != 1)
+            {
+                using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
+                    while (engine.MoveNext())
+                    {
+                        engine.Current.thrustPercentage *= engineMult;
+                    }
+            }
             startTime = Time.time;
             if (IconMat == null)
             {
@@ -226,7 +229,7 @@ namespace BDArmory.Modules
                     weapon.Current.SetupAmmo(null, null);
                     weapon.Current.resourceSteal = false;
                 }
-            if (engineMult > 0)
+            if (engineMult != 1)
             {
                 using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                     while (engine.MoveNext())
@@ -234,7 +237,7 @@ namespace BDArmory.Modules
                         engine.Current.thrustPercentage /= engineMult;
                     }
             }
-            engineMult = 0;
+            engineMult = 1;
             Vampirism = 0;
             Regen = 0;
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
