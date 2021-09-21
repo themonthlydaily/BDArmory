@@ -289,14 +289,17 @@ namespace BDArmory.Bullets
                 return;
 
             MoveBullet(Time.fixedDeltaTime);
-            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0 && !startsUnderwater)
+            if (BDArmorySettings.BULLET_WATER_DRAG)
             {
-                if (explosive)
-                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
-                    hasDetonated = true;
+                if (FlightGlobals.getAltitudeAtPos(transform.position) < 0 && !startsUnderwater)
+                {
+                    if (explosive)
+                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                        hasDetonated = true;
 
-                KillBullet();
-                return;
+                    KillBullet();
+                    return;
+                }
             }
             //////////////////////////////////////////////////
             //Flak Explosion (air detonation/proximity fuse)
