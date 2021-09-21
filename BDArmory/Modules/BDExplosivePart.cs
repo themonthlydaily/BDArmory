@@ -219,6 +219,8 @@ namespace BDArmory.Modules
                 Fields["guiIFFString"].guiActive = false;
                 Fields["detonationRange"].guiActiveEditor = false;
                 Fields["detonationRange"].guiActive = false;
+                Fields["detonateAtMinimumDistance"].guiActiveEditor = false;
+                Fields["detonateAtMinimumDistance"].guiActive = false;
             }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
