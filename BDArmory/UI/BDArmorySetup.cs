@@ -2213,7 +2213,7 @@ namespace BDArmory.UI
                 BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = GUI.Toggle(SRightRect(line), BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI, Localizer.Format("#LOC_BDArmory_Settings_DisplayCompetitionStatusHiddenUI"));
                 BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
                 BDArmorySettings.BULLET_WATER_DRAG = GUI.Toggle(SRightRect(line), BDArmorySettings.BULLET_WATER_DRAG, Localizer.Format("#LOC_BDArmory_Settings_waterDrag"));// Underwater bullet drag
-                //BDArmorySettings.LEGACY_ARMOR = GUI.Toggle(SRightRect(++line), BDArmorySettings.LEGACY_ARMOR, Localizer.Format("#LOC_BDArmory_Settings_legacyArmor"));// Use legacy Armor
+                // BDArmorySettings.LEGACY_ARMOR = GUI.Toggle(SLeftRect(++line), BDArmorySettings.LEGACY_ARMOR, Localizer.Format("#LOC_BDArmory_Settings_legacyArmor"));// Use legacy Armor
 
                 if (HighLogic.LoadedSceneIsEditor)
                 {
@@ -2490,7 +2490,7 @@ namespace BDArmory.UI
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 {
                     GUI.Label(SLeftRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRate")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE})", leftLabel);//Fire Rate Override
-                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300));
+                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300f));
                 }
                 line++;
 
