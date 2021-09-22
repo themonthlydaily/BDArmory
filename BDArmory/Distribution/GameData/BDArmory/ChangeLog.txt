@@ -3,8 +3,11 @@
 	- Get the AI on the initial load when reverting to the editor.
 	- Fix the AI GUI updating the values when switching vessels when using numeric fields.
 	- Fix some surface AI values being initialised from the wrong variables in the AI GUI.
+	- Fix for engine thrust being set wrongly when mutators game mode is active.
 IMPROVEMENTS
 	- Add a toggle for showing the competition status messages with the UI hidden.
+	- Add option for bullets and rockets to have considerable drag when in water. Explosive types explode when hitting water.
+	- Add S4R1 RWP option for adjusting the firing rate of weapons in-game.
 
 v1.4.9.1
 FIXES
