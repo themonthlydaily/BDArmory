@@ -479,6 +479,8 @@ namespace BDArmory.Modules
         public float tntMass = 0;
 
         public bool incendiary;
+        public bool ImpulseInConfig = false; //record if impulse weapon in config for resetting weapons post mutator
+        public bool GraviticInConfig = false; //record if gravitic weapon in config for resetting weapons post mutator
 
         [KSPField]
         public bool impulseWeapon = false;
@@ -1144,6 +1146,14 @@ namespace BDArmory.Modules
                 }
             }
 
+            if (graviticWeapon)
+            {
+                GraviticInConfig = true;
+            }
+            if (impulseWeapon)
+            {
+                ImpulseInConfig = true;
+            }
             if (eWeaponType != WeaponTypes.Laser)
             {
                 SetupAmmo(null, null);

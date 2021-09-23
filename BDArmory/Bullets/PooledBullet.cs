@@ -289,12 +289,16 @@ namespace BDArmory.Bullets
                 return;
 
             MoveBullet(Time.fixedDeltaTime);
+            if (FlightGlobals.getAltitudeAtPos(transform.position) > 0 && startsUnderwater)
+            {
+                startsUnderwater = false;
+            }
             if (FlightGlobals.getAltitudeAtPos(transform.position) < 0 && !startsUnderwater)
             {
                 if (explosive)
                     ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
-                    hasDetonated = true;
 
+                hasDetonated = true;
                 KillBullet();
                 return;
             }
@@ -352,7 +356,7 @@ namespace BDArmory.Bullets
                 {
                     currentVelocity *= dragVelocityFactor; //If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
                 }
-                //Debug.Log("[BULLETDRAG] current vel: " + currentVelocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVelocityFactor.ToString("0.00"));
+                Debug.Log("[BULLETDRAG] current vel: " + currentVelocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVelocityFactor.ToString("0.00"));
             }
             transform.position += currentVelocity * period;
             if (bulletDrop)
@@ -729,18 +733,20 @@ namespace BDArmory.Bullets
             float analyticDragVelAdjustment = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currPosition), FlightGlobals.getExternalTemperature(currPosition));
             if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
             {
-                analyticDragVelAdjustment *= 83.33f; //water is 83.33x denser than air
+                //analyticDragVelAdjustment *= 83.33f; //water is 83.33x denser than air
+                dragVelocityFactor = (currentVelocity.magnitude - (0.5f * 1 * (currentVelocity.magnitude * currentVelocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * TimeWarp.fixedDeltaTime) / currentVelocity.magnitude;
             }
-            analyticDragVelAdjustment *= flightTimeElapsed * initialSpeed;
-            //analyticDragVelAdjustment *= TimeWarp.fixedDeltaTime * initialSpeed; //use this one if applying drag during flighttime
-            analyticDragVelAdjustment += 2 * ballisticCoefficient;
+            else
+            {
+                analyticDragVelAdjustment *= flightTimeElapsed * initialSpeed;
+                //analyticDragVelAdjustment *= TimeWarp.fixedDeltaTime * initialSpeed; //use this one if applying drag during flighttime
+                analyticDragVelAdjustment += 2 * ballisticCoefficient;
 
-            analyticDragVelAdjustment = 2 * ballisticCoefficient * initialSpeed / analyticDragVelAdjustment;
-            //velocity as a function of time under the assumption of a projectile only acted upon by drag with a constant drag area
+                analyticDragVelAdjustment = 2 * ballisticCoefficient * initialSpeed / analyticDragVelAdjustment;
+                //velocity as a function of time under the assumption of a projectile only acted upon by drag with a constant drag area
 
-            dragVelocityFactor = analyticDragVelAdjustment / initialSpeed;
-
-            //Force Drag = 1/2 atmdensity*velocity^2 * drag coeff * area
+                dragVelocityFactor = analyticDragVelAdjustment / initialSpeed;
+            }
         }
 
         private bool ExplosiveDetonation(Part hitPart, RaycastHit hit, Ray ray, bool airDetonation = false)

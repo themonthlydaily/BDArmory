@@ -468,6 +468,10 @@ namespace BDArmory.Bullets
                     }
                 }
             }
+            if (FlightGlobals.getAltitudeAtPos(transform.position) > 0 && startUnderwater)
+            {
+                startUnderwater = false;
+            }
             if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !startUnderwater)
             {
                 Detonate(transform.position, false);
