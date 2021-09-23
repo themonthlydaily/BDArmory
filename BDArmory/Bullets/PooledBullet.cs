@@ -734,7 +734,7 @@ namespace BDArmory.Bullets
             if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
             {
                 //analyticDragVelAdjustment *= 83.33f; //water is 83.33x denser than air
-                dragVelocityFactor = (currentVelocity.magnitude - (0.5f * 1 * (currentVelocity.magnitude * currentVelocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * TimeWarp.fixedDeltaTime) / currentVelocity.magnitude;
+                dragVelocityFactor = (currentVelocity.magnitude - (0.5f * 83.33f * (currentVelocity.magnitude * currentVelocity.magnitude) * 0.25f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * TimeWarp.fixedDeltaTime) / currentVelocity.magnitude;
             }
             else
             {
