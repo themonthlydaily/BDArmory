@@ -356,7 +356,7 @@ namespace BDArmory.Bullets
                 {
                     currentVelocity *= dragVelocityFactor; //If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
                 }
-                Debug.Log("[BULLETDRAG] current vel: " + currentVelocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVelocityFactor.ToString("0.00"));
+                //Debug.Log("[BULLETDRAG] current vel: " + currentVelocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVelocityFactor.ToString("0.00"));
             }
             transform.position += currentVelocity * period;
             if (bulletDrop)
