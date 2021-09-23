@@ -243,7 +243,7 @@ namespace BDArmory.Core.Module
                 {
                     typecount++;
                 }
-                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "bdPilotAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR)
+                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR)
                 {
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
@@ -820,7 +820,7 @@ namespace BDArmory.Core.Module
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
                 SetArmor();
-                
+
                 if (BDArmorySettings.LEGACY_ARMOR)
                 {
                     guiArmorTypeString = "Steel";
@@ -832,7 +832,7 @@ namespace BDArmory.Core.Module
                     Strength = 940;
                     SafeUseTemp = 2500;
                 }
-                
+
             }
             var oldArmorMass = armorMass;
             armorMass = 0;

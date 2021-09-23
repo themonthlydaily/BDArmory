@@ -74,7 +74,7 @@ namespace BDArmory.UI
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                GameEvents.onVesselChange.Add(VesselChange);
+                GameEvents.onVesselChange.Add(OnVesselChange);
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -119,6 +119,7 @@ namespace BDArmory.UI
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
+                GetAIEditor();
                 GameEvents.onEditorPartPlaced.Add(OnEditorPartPlacedEvent); //do per part placement instead of calling a findModule call every time *anything* changes on thevessel
                 GameEvents.onEditorPartDeleted.Add(OnEditorPartDeletedEvent);
             }
@@ -177,8 +178,9 @@ namespace BDArmory.UI
             }
         }
 
-        void VesselChange(Vessel v)
+        void OnVesselChange(Vessel v)
         {
+            if (v == null) return;
             if (v.isActiveVessel)
             {
                 GetAI();
@@ -231,6 +233,14 @@ namespace BDArmory.UI
 
         void GetAI()
         {
+            // Make sure we're synced between the sliders and input fields in case something changed just before the switch.
+            SyncInputFieldsNow(!NumFieldsEnabled);
+            // Then, reset all the fields as this is only occurring on vessel change, so they need resetting anyway.
+            ActivePilot = null;
+            ActiveDriver = null;
+            inputFields = null;
+            if (FlightGlobals.ActiveVessel == null) return;
+            // Now, get the new AI and update stuff.
             ActivePilot = VesselModuleRegistry.GetBDModulePilotAI(FlightGlobals.ActiveVessel, true);
             if (ActivePilot == null)
             {
@@ -239,6 +249,7 @@ namespace BDArmory.UI
             if (ActivePilot != null)
             {
                 SetInputFields(ActivePilot.GetType());
+                SetChooseOptionSliders(); // For later, if we want to add similar things to the pilot AI.
             }
             else if (ActiveDriver != null)
             {
@@ -349,11 +360,11 @@ namespace BDArmory.UI
                     inputFields = new Dictionary<string, NumericInputField> {
                         { "MaxSlopeAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 1, 30) },
                         { "CruiseSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, 5, 60) },
-                        { "MaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 5,  80) },
+                        { "MaxSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSpeed, 5,  80) },
                         { "MaxDrift", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxDrift, 1, 180) },
-                        { "TargetPitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, -10, 10) },
-                        { "BankAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.CruiseSpeed, -45, 45) },
-                        { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxSlopeAngle, 0.2,  20) },
+                        { "TargetPitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.TargetPitch, -10, 10) },
+                        { "BankAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.BankAngle, -45, 45) },
+                        { "steerMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.steerMult, 0.2,  20) },
                         { "steerDamping", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.steerDamping, 0.1, 10) },
                         { "MinEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MinEngagementRange, 0, 6000) },
                         { "MaxEngagementRange", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveDriver.MaxEngagementRange, 0, 8000) },
@@ -422,6 +433,95 @@ namespace BDArmory.UI
                     inputFields["MinEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 20000 : 6000;
                     inputFields["MaxEngagementRange"].maxValue = ActiveDriver.UpToEleven ? 30000 : 8000;
                     inputFields["AvoidMass"].maxValue = ActiveDriver.UpToEleven ? 1000000 : 100;
+                }
+            }
+        }
+
+        public void SyncInputFieldsNow(bool fromInputFields)
+        {
+            if (inputFields == null) return;
+            if (fromInputFields)
+            {
+                // Try to parse all the fields immediately so that they're up to date.
+                foreach (var field in inputFields.Keys)
+                { inputFields[field].tryParseValueNow(); }
+                if (ActivePilot != null)
+                {
+                    foreach (var field in inputFields.Keys)
+                    {
+                        try
+                        {
+                            var fieldInfo = typeof(BDModulePilotAI).GetField(field);
+                            if (fieldInfo != null)
+                            { fieldInfo.SetValue(ActivePilot, Convert.ChangeType(inputFields[field].currentValue, fieldInfo.FieldType)); }
+                            else // Check if it's a property instead of a field.
+                            {
+                                var propInfo = typeof(BDModulePilotAI).GetProperty(field);
+                                propInfo.SetValue(ActivePilot, Convert.ChangeType(inputFields[field].currentValue, propInfo.PropertyType));
+                            }
+                        }
+                        catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
+                    }
+                }
+                else if (ActiveDriver != null)
+                {
+                    foreach (var field in inputFields.Keys)
+                    {
+                        try
+                        {
+                            var fieldInfo = typeof(BDModuleSurfaceAI).GetField(field);
+                            if (fieldInfo != null)
+                            { fieldInfo.SetValue(ActiveDriver, Convert.ChangeType(inputFields[field].currentValue, fieldInfo.FieldType)); }
+                            else // Check if it's a property instead of a field.
+                            {
+                                var propInfo = typeof(BDModuleSurfaceAI).GetProperty(field);
+                                propInfo.SetValue(ActiveDriver, Convert.ChangeType(inputFields[field].currentValue, propInfo.PropertyType));
+                            }
+                        }
+                        catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
+                    }
+                }
+                // Then make any special conversions here.
+            }
+            else // Set the input fields to their current values.
+            {
+                // Make any special conversions first.
+                // Then set each of the field values to the current slider value.
+                if (ActivePilot != null)
+                {
+                    foreach (var field in inputFields.Keys)
+                    {
+                        try
+                        {
+                            var fieldInfo = typeof(BDModulePilotAI).GetField(field);
+                            if (fieldInfo != null)
+                            { inputFields[field].currentValue = Convert.ToDouble(fieldInfo.GetValue(ActivePilot)); }
+                            else // Check if it's a property instead of a field.
+                            {
+                                var propInfo = typeof(BDModulePilotAI).GetProperty(field);
+                                inputFields[field].currentValue = Convert.ToDouble(propInfo.GetValue(ActivePilot));
+                            }
+                        }
+                        catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message + "\n" + e.StackTrace); }
+                    }
+                }
+                else if (ActiveDriver != null)
+                {
+                    foreach (var field in inputFields.Keys)
+                    {
+                        try
+                        {
+                            var fieldInfo = typeof(BDModuleSurfaceAI).GetField(field);
+                            if (fieldInfo != null)
+                            { inputFields[field].currentValue = Convert.ToDouble(fieldInfo.GetValue(ActiveDriver)); }
+                            else // Check if it's a property instead of a field.
+                            {
+                                var propInfo = typeof(BDModuleSurfaceAI).GetProperty(field);
+                                inputFields[field].currentValue = Convert.ToDouble(propInfo.GetValue(ActiveDriver));
+                            }
+                        }
+                        catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
+                    }
                 }
             }
         }
@@ -529,90 +629,7 @@ namespace BDArmory.UI
             if (GUI.Button(TitleButtonRect(4), "#", buttonStyle))
             {
                 NumFieldsEnabled = !NumFieldsEnabled;
-                if (!NumFieldsEnabled)
-                {
-                    // Try to parse all the fields immediately so that they're up to date.
-                    foreach (var field in inputFields.Keys)
-                    { inputFields[field].tryParseValueNow(); }
-                    if (ActivePilot != null)
-                    {
-                        foreach (var field in inputFields.Keys)
-                        {
-                            try
-                            {
-                                var fieldInfo = typeof(BDModulePilotAI).GetField(field);
-                                if (fieldInfo != null)
-                                { fieldInfo.SetValue(ActivePilot, Convert.ChangeType(inputFields[field].currentValue, fieldInfo.FieldType)); }
-                                else // Check if it's a property instead of a field.
-                                {
-                                    var propInfo = typeof(BDModulePilotAI).GetProperty(field);
-                                    propInfo.SetValue(ActivePilot, Convert.ChangeType(inputFields[field].currentValue, propInfo.PropertyType));
-                                }
-                            }
-                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
-                        }
-                    }
-                    else if (ActiveDriver != null)
-                    {
-                        foreach (var field in inputFields.Keys)
-                        {
-                            try
-                            {
-                                var fieldInfo = typeof(BDModuleSurfaceAI).GetField(field);
-                                if (fieldInfo != null)
-                                { fieldInfo.SetValue(ActiveDriver, Convert.ChangeType(inputFields[field].currentValue, fieldInfo.FieldType)); }
-                                else // Check if it's a property instead of a field.
-                                {
-                                    var propInfo = typeof(BDModuleSurfaceAI).GetProperty(field);
-                                    propInfo.SetValue(ActiveDriver, Convert.ChangeType(inputFields[field].currentValue, propInfo.PropertyType));
-                                }
-                            }
-                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
-                        }
-                    }
-                    // Then make any special conversions here.
-                }
-                else // Set the input fields to their current values.
-                {
-                    // Make any special conversions first.
-                    // Then set each of the field values to the current slider value.   
-                    if (ActivePilot != null)
-                    {
-                        foreach (var field in inputFields.Keys)
-                        {
-                            try
-                            {
-                                var fieldInfo = typeof(BDModulePilotAI).GetField(field);
-                                if (fieldInfo != null)
-                                { inputFields[field].currentValue = Convert.ToDouble(fieldInfo.GetValue(ActivePilot)); }
-                                else // Check if it's a property instead of a field.
-                                {
-                                    var propInfo = typeof(BDModulePilotAI).GetProperty(field);
-                                    inputFields[field].currentValue = Convert.ToDouble(propInfo.GetValue(ActivePilot));
-                                }
-                            }
-                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message + "\n" + e.StackTrace); }
-                        }
-                    }
-                    else if (ActiveDriver != null)
-                    {
-                        foreach (var field in inputFields.Keys)
-                        {
-                            try
-                            {
-                                var fieldInfo = typeof(BDModuleSurfaceAI).GetField(field);
-                                if (fieldInfo != null)
-                                { inputFields[field].currentValue = Convert.ToDouble(fieldInfo.GetValue(ActiveDriver)); }
-                                else // Check if it's a property instead of a field.
-                                {
-                                    var propInfo = typeof(BDModuleSurfaceAI).GetProperty(field);
-                                    inputFields[field].currentValue = Convert.ToDouble(propInfo.GetValue(ActiveDriver));
-                                }
-                            }
-                            catch (Exception e) { Debug.LogError($"[BDArmory.BDArmoryAIGUI]: Failed to set current value of {field}: " + e.Message); }
-                        }
-                    }
-                }
+                SyncInputFieldsNow(!NumFieldsEnabled);
             }
 
             if (ActivePilot == null && ActiveDriver == null)
@@ -2257,7 +2274,8 @@ namespace BDArmory.UI
 
         internal void OnDestroy()
         {
-            GameEvents.onVesselChange.Remove(VesselChange);
+            GameEvents.onVesselChange.Remove(OnVesselChange);
+            GameEvents.onEditorLoad.Remove(OnEditorLoad);
             GameEvents.onEditorPartPlaced.Remove(OnEditorPartPlacedEvent);
             GameEvents.onEditorPartDeleted.Remove(OnEditorPartDeletedEvent);
         }

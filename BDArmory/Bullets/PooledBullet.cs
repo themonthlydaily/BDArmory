@@ -140,8 +140,8 @@ namespace BDArmory.Bullets
                 //projectileColor.a = projectileColor.a/2;
                 //startColor.a = startColor.a/2;
             }
-            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)            
-                startsUnderwater = true;            
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
+                startsUnderwater = true;
             else
                 startsUnderwater = false;
 
@@ -289,18 +289,22 @@ namespace BDArmory.Bullets
                 return;
 
             MoveBullet(Time.fixedDeltaTime);
-            if (FlightGlobals.getAltitudeAtPos(transform.position) > 0 && startsUnderwater)
-            {
-                startsUnderwater = false;
-            }
-            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0 && !startsUnderwater)
-            {
-                if (explosive)
-                    ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
 
-                hasDetonated = true;
-                KillBullet();
-                return;
+            if (BDArmorySettings.BULLET_WATER_DRAG)
+            {
+                if (FlightGlobals.getAltitudeAtPos(transform.position) > 0 && startsUnderwater)
+                {
+                    startsUnderwater = false;
+                }
+                if (FlightGlobals.getAltitudeAtPos(transform.position) < 0 && !startsUnderwater)
+                {
+                    if (explosive)
+                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                    hasDetonated = true;
+
+                    KillBullet();
+                    return;
+                }
             }
             //////////////////////////////////////////////////
             //Flak Explosion (air detonation/proximity fuse)
@@ -319,6 +323,7 @@ namespace BDArmory.Bullets
         /// <summary>
         /// Move the bullet for the period of time, tracking distance traveled and accounting for drag and gravity.
         /// This is now done using the second order symplectic leapfrog method.
+        /// Note: water drag on bullets breaks the symplectic nature of the integrator (since it's modifying the Hamiltonian), which isn't accounted for during aiming.
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
         public void MoveBullet(float period)
@@ -438,10 +443,10 @@ namespace BDArmory.Bullets
                             // relative velocity, separate from the below statement, because the hitpart might be assigned only above
                             if (hitPart.rb != null)
                                 impactVelocity = (currentVelocity * dragVelocityFactor - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
-                                //impactVelocity = (currentVelocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude; //use this one if actively applying drag
+                            //impactVelocity = (currentVelocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude; //use this one if actively applying drag
                             else
                                 impactVelocity = currentVelocity.magnitude * dragVelocityFactor;
-                                //impactVelocity = currentVelocity.magnitude; //use this one if applying drag as bullet flies
+                            //impactVelocity = currentVelocity.magnitude; //use this one if applying drag as bullet flies
                             distanceTraveled += hit.distance;
                             if (dmgMult < 0)
                             {
@@ -544,7 +549,7 @@ namespace BDArmory.Bullets
                         if (penetrationFactor > 1)
                         {
                             //currentVelocity = currentVelocity * (float)Math.Sqrt(thickness / penetration); this needs to be inverted, else thinner armor yields greater velocity reduction
-                            currentVelocity = currentVelocity * (1-(float)Math.Sqrt(thickness / penetration));
+                            currentVelocity = currentVelocity * (1 - (float)Math.Sqrt(thickness / penetration));
                             if (penTicker > 0) currentVelocity *= 0.55f; //implement armor density modifying this ar some point?
                             flightTimeElapsed -= period;
 

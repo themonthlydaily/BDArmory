@@ -241,7 +241,7 @@ namespace BDArmory.Modules
                         engine.Current.thrustPercentage /= engineMult;
                     }
             }
-            engineMult = 1;
+            engineMult = 1; //changing this to 1 from 0, this makes sure that there isn't a multiply by 0 issue with if later calling EnableMutator on a mutator with an engine mult
             Vampirism = 0;
             Regen = 0;
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
