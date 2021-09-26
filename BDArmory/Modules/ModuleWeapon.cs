@@ -1636,7 +1636,7 @@ namespace BDArmory.Modules
 
                                     pBullet.ballisticCoefficient = bulletBallisticCoefficient;
 
-                                    pBullet.flightTimeElapsed = iTime;
+                                    pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = iTime;
                                     // measure bullet lifetime in time rather than in distance, because distances get very relative in orbit
                                     pBullet.timeToLiveUntil = Mathf.Max(maxTargetingRange, maxEffectiveDistance) / bulletVelocity * 1.1f + Time.time;
 
