@@ -95,7 +95,7 @@ namespace BDArmory.Bullets
         float currentSpeed; // Current speed of the bullet, for drag purposes.
         public float timeElapsedSinceCurrentSpeedWasAdjusted; // Time since the current speed was adjusted, to allow tracking speed changes of the bullet in air and water.
         bool underWater = false;
-        public float underwaterVelocityThresholdSqr = float.MaxValue; // Velocity threshold for which explosive bullets detonate when underwater due to drag force triggering detonation trigger.
+        public float underwaterVelocityThreshold = float.MaxValue; // Velocity threshold for which explosive bullets detonate when underwater due to drag force triggering detonation trigger.
         public static Shader bulletShader;
         public static bool shaderInitialized;
         private float impactSpeed;
@@ -287,7 +287,7 @@ namespace BDArmory.Bullets
                 return;
 
             MoveBullet(Time.fixedDeltaTime);
-            if (BDArmorySettings.BULLET_WATER_DRAG && explosive && underWater && currentVelocity.sqrMagnitude > underwaterVelocityThresholdSqr) // Explosive bullets that are travelling underwater at greater than their trigger threshold detonate. Others just get slowed down.
+            if (BDArmorySettings.BULLET_WATER_DRAG && explosive && underWater && currentSpeed > underwaterVelocityThreshold) // Explosive bullets that are travelling underwater at greater than their trigger threshold detonate. Others just get slowed down.
             {
                 ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
                 hasDetonated = true;
