@@ -94,8 +94,8 @@ namespace BDArmory.Bullets
         public float ballisticCoefficient;
         float currentSpeed; // Current speed of the bullet, for drag purposes.
         public float timeElapsedSinceCurrentSpeedWasAdjusted; // Time since the current speed was adjusted, to allow tracking speed changes of the bullet in air and water.
-        bool underWater = false;
-        public float underwaterVelocityThreshold = float.MaxValue; // Velocity threshold for which explosive bullets detonate when underwater due to drag force triggering detonation trigger.
+        bool underwater = false;
+        bool startsUnderwater = false;
         public static Shader bulletShader;
         public static bool shaderInitialized;
         private float impactSpeed;
@@ -141,7 +141,8 @@ namespace BDArmory.Bullets
                 //projectileColor.a = projectileColor.a/2;
                 //startColor.a = startColor.a/2;
             }
-            underWater = FlightGlobals.getAltitudeAtPos(transform.position) < 0;
+            startsUnderwater = FlightGlobals.getAltitudeAtPos(transform.position) < 0;
+            underwater = startsUnderwater;
 
             projectileColor.a = Mathf.Clamp(projectileColor.a, 0.25f, 1f);
             startColor.a = Mathf.Clamp(startColor.a, 0.25f, 1f);
@@ -287,13 +288,21 @@ namespace BDArmory.Bullets
                 return;
 
             MoveBullet(Time.fixedDeltaTime);
-            if (BDArmorySettings.BULLET_WATER_DRAG && explosive && underWater && currentSpeed > underwaterVelocityThreshold) // Explosive bullets that are travelling underwater at greater than their trigger threshold detonate. Others just get slowed down.
+            if (BDArmorySettings.BULLET_WATER_DRAG)
             {
-                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
-                hasDetonated = true;
+                if (startsUnderwater && !underwater) // Bullets that start underwater can exit the water if fired close enough to the surface.
+                {
+                    startsUnderwater = false;
+                }
+                if (!startsUnderwater && underwater) // Bullets entering water from air either disintegrate or don't penetrate far enough to bother about.
+                {
+                    if (explosive)
+                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                    hasDetonated = true;
 
-                KillBullet();
-                return;
+                    KillBullet();
+                    return;
+                }
             }
             //////////////////////////////////////////////////
             //Flak Explosion (air detonation/proximity fuse)
@@ -324,9 +333,7 @@ namespace BDArmory.Bullets
             transform.position += currentVelocity * period; //move bullet
             distanceTraveled += currentVelocity.magnitude * period; // calculate flight distance for achievement purposes
             if (BDArmorySettings.BULLET_WATER_DRAG) // Check if the bullet is now underwater.
-            {
-                underWater = FlightGlobals.getAltitudeAtPos(transform.position) < 0;
-            }
+                underwater = FlightGlobals.getAltitudeAtPos(transform.position) < 0;
 
             // Second half-timestep velocity change (leapfrog integrator) (should be identical code-wise to the initial half-step)
             LeapfrogVelocityHalfStep(0.5f * period);
@@ -336,7 +343,7 @@ namespace BDArmory.Bullets
         {
             timeElapsedSinceCurrentSpeedWasAdjusted += period; // Track flight time for drag purposes
             UpdateDragEstimate(); // Update the drag estimate, accounting for water/air environment changes. Note: changes due to bulletDrop aren't being applied to the drag.
-            if (underWater)
+            if (underwater)
             {
                 currentVelocity *= dragVelocityFactor; // Note: If applied to aerial flight, this screws up targeting, because the weapon's aim code doesn't know how to account for drag. Only have it apply when underwater for now. Review later?
                 currentSpeed = currentVelocity.magnitude;
@@ -743,9 +750,9 @@ namespace BDArmory.Bullets
         private void CalculateDragAnalyticEstimate(float initialSpeed, float timeElapsed)
         {
             float atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currPosition), FlightGlobals.getExternalTemperature(currPosition));
-            if (underWater)
+            if (underwater)
             {
-                atmDensity *= 83.33f; //water is 83.33x denser than air (actually it's around 830 times denser, but then bullets will hardly penetrate water at all)
+                atmDensity *= 830f; //water is around 830 times denser than air
             }
 
             dragVelocityFactor = 2f * ballisticCoefficient / (timeElapsed * initialSpeed * atmDensity + 2f * ballisticCoefficient);
