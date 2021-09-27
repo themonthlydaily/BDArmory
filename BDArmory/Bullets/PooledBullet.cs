@@ -294,7 +294,7 @@ namespace BDArmory.Bullets
                 {
                     startsUnderwater = false;
                 }
-                if (!startsUnderwater && underwater) // Bullets entering water from air either disintegrate or don't penetrate far enough to bother about.
+                if (!startsUnderwater && underwater && caliber < 75f) // Bullets entering water from air either disintegrate or don't penetrate far enough to bother about. Except large caliber naval shells.
                 {
                     if (explosive)
                         ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
@@ -333,7 +333,7 @@ namespace BDArmory.Bullets
             transform.position += currentVelocity * period; //move bullet
             distanceTraveled += currentVelocity.magnitude * period; // calculate flight distance for achievement purposes
             if (BDArmorySettings.BULLET_WATER_DRAG) // Check if the bullet is now underwater.
-                underwater = FlightGlobals.getAltitudeAtPos(transform.position) < 0;
+                underwater = FlightGlobals.getAltitudeAtPos(transform.position) <= 0;
 
             // Second half-timestep velocity change (leapfrog integrator) (should be identical code-wise to the initial half-step)
             LeapfrogVelocityHalfStep(0.5f * period);
