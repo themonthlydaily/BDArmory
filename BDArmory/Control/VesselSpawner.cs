@@ -38,8 +38,6 @@ namespace BDArmory.Control
             spawnLocationCamera = new GameObject("StationaryCameraParent");
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn")) // Ensure AutoSpawn folder exists.
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
         }
 
         void OnDestroy()
