@@ -288,6 +288,7 @@ namespace BDArmory.Bullets
                 return;
 
             MoveBullet(Time.fixedDeltaTime);
+
             if (BDArmorySettings.BULLET_WATER_DRAG)
             {
                 if (startsUnderwater && !underwater) // Bullets that start underwater can exit the water if fired close enough to the surface.

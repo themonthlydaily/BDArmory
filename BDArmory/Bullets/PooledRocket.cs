@@ -470,6 +470,10 @@ namespace BDArmory.Bullets
             }
             if (BDArmorySettings.BULLET_WATER_DRAG)
             {
+                if (FlightGlobals.getAltitudeAtPos(transform.position) > 0 && startUnderwater)
+                {
+                    startUnderwater = false;
+                }
                 if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !startUnderwater)
                 {
                     Detonate(transform.position, false);
