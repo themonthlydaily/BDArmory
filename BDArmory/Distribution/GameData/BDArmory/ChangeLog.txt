@@ -3,7 +3,7 @@
 	- Get the AI on the initial load when reverting to the editor.
 	- Fix the AI GUI updating the values when switching vessels when using numeric fields.
 	- Fix some surface AI values being initialised from the wrong variables in the AI GUI.
-	- Fix for engine thrust being set wrongly when mutators game mode is active.
+	- Fix speed mutators from setting engine throttle to 0.
 IMPROVEMENTS
 	- Add a toggle for showing the competition status messages with the UI hidden.
 	- Add option for bullets and rockets to have considerable drag when in water (if fired from underwater). Bullets and rockets fired from above water stop when entering water and explode if they're explosive.
