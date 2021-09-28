@@ -12,6 +12,7 @@ IMPROVEMENTS
 	- Adjust armor panel buoyancy, armor panels will float again when at max thickness.
 	- Adjust camera weights for picking a better vessel to switch to.
 	- Add option to TimeWarp between tournament rounds (not heats) on planets with a solid surface (due to a technical constraint).
+	- Automatically create a AutoSpawn/Flags directory for standardising the location of flags for BDArmory competitions.
 
 v1.4.9.1
 FIXES
