@@ -238,7 +238,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int TOURNAMENT_TEAMS_PER_HEAT = 2;              // Teams Per Heat
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
         [BDAPersistantSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
-        [BDAPersistantSettingsField] public static float TOURNAMENT_TIMEWARP_BETWEEN_HEATS = 60;   // Timewarp between heats in minutes.
+        [BDAPersistantSettingsField] public static float TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS = 0;   // Timewarp between rounds in minutes.
 
         [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
 
