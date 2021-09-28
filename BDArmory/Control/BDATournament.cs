@@ -725,12 +725,17 @@ namespace BDArmory.Control
 
                     if (heatsRemaining > 0)
                     {
+                        if (BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_HEATS > 0)
+                        {
+                            BDACompetitionMode.Instance.competitionStatus.Add($"Warping ahead {BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_HEATS} mins, then running the next heat.");
+                            yield return WarpAhead(BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_HEATS * 60);
+                        }
                         // Wait a bit for any user action
                         tournamentStatus = TournamentStatus.Waiting;
                         double startTime = Planetarium.GetUniversalTime();
                         while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
                         {
-                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running next heat.");
+                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running the next heat.");
                             yield return new WaitForSeconds(1);
                         }
                     }
@@ -792,6 +797,21 @@ namespace BDArmory.Control
             competitionStarted = true;
             while (BDACompetitionMode.Instance.competitionIsActive) // Wait for the competition to finish.
                 yield return new WaitForSeconds(1);
+        }
+
+        IEnumerator WarpAhead(double warpTimeBetweenHeats)
+        {
+            foreach (var vessel in FlightGlobals.Vessels.ToList())
+            {
+                if (vessel != null && vessel.loaded && !vessel.packed)
+                    VesselSpawner.Instance.RemoveVessel(vessel);
+            }
+            while (VesselSpawner.Instance.removeVesselsPending > 0) yield return null;
+            yield return null; // Wait a frame to make sure the vessels have been removed.
+            var startTime = Time.time;
+            TimeWarp.fetch.WarpTo(Planetarium.GetUniversalTime() + warpTimeBetweenHeats); // FIXME Wait for warp mode to become high before triggering warp?
+            while (TimeWarp.CurrentRate < 2 && Time.time - startTime < 1) yield return null; // Give it a second to get going.
+            while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
         }
     }
 }

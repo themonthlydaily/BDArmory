@@ -1505,7 +1505,7 @@ namespace BDArmory.Control
             return spawnProbe;
         }
 
-        private int removeVesselsPending = 0;
+        public int removeVesselsPending = 0;
         // Remove a vessel and clean up any remaining parts. This fixes the case where the currently focussed vessel refuses to die properly.
         public void RemoveVessel(Vessel vessel)
         {
