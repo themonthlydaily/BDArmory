@@ -750,11 +750,11 @@ namespace BDArmory.Bullets
 
         private void CalculateDragAnalyticEstimate(float initialSpeed, float timeElapsed)
         {
-            float atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currPosition), FlightGlobals.getExternalTemperature(currPosition));
+            float atmDensity;
             if (underwater)
-            {
-                atmDensity *= 830f; //water is around 830 times denser than air
-            }
+                atmDensity = 1030f; // Sea water (3% salt) has a density of 1030kg/m^3 at 4°C at sea level. https://en.wikipedia.org/wiki/Density#Various_materials
+            else
+                atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(currPosition), FlightGlobals.getExternalTemperature(currPosition));
 
             dragVelocityFactor = 2f * ballisticCoefficient / (timeElapsed * initialSpeed * atmDensity + 2f * ballisticCoefficient);
 
