@@ -311,10 +311,13 @@ namespace BDArmory.Parts
         {
             ReadyForUse = false;
             GameEvents.onVesselChange.Remove(VesselChange);
-            foreach (var camera in cameras)
+            if (cameras != null)
             {
-                if (camera != null && camera.gameObject != null)
-                { Destroy(camera.gameObject); }
+                foreach (var camera in cameras)
+                {
+                    if (camera != null && camera.gameObject != null)
+                    { Destroy(camera.gameObject); }
+                }
             }
         }
 
