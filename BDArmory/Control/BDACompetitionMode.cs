@@ -515,7 +515,7 @@ namespace BDArmory.Control
                         int engineOut = 0;
                         foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
                         {
-                            if (!engine.EngineIgnited || engine == null)
+                            if (engine == null || engine.flameout || engine.finalThrust <= 0)
                                 engineOut++;
                         }
                         WreckFactor += (engineOut / VesselModuleRegistry.GetModuleCount<ModuleEngines>(vessel)) / 2;
