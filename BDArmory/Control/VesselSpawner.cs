@@ -38,8 +38,6 @@ namespace BDArmory.Control
             spawnLocationCamera = new GameObject("StationaryCameraParent");
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn")) // Ensure AutoSpawn folder exists.
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
         }
 
         void OnDestroy()
@@ -655,7 +653,7 @@ namespace BDArmory.Control
                     } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
                     if (!allWeaponManagersAssigned && spawnFailureReason == SpawnFailureReason.None)
                     {
-                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for weapon managers to be appear in the Vessel Switcher.");
+                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for weapon managers to appear in the Vessel Switcher.");
                         spawnFailureReason = SpawnFailureReason.TimedOut;
                     }
                 }
@@ -680,6 +678,10 @@ namespace BDArmory.Control
                         yield return new WaitForFixedUpdate();
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
+                            if (spawnedVessels[vesselName].Item1.LandedOrSplashed)
+                            {
+                                vesselsHaveLanded[vesselName] = 2;
+                            }
                             if (vesselsHaveLanded[vesselName] == 0 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, radialUnitVector) < 0) // Check that vessel has started moving.
                                 vesselsHaveLanded[vesselName] = 1;
                             if (vesselsHaveLanded[vesselName] == 1 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, radialUnitVector) >= 0) // Check if the vessel has landed.

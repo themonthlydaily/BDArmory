@@ -2616,7 +2616,14 @@ namespace BDArmory.Modules
                     {
                         if (weapCnt.Current == null) continue;
                         if (selectedWeapon.GetShortName() != weapCnt.Current.GetShortName()) continue;
-                        weaponRpm = weapCnt.Current.roundsPerMinute;
+                        if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                        {
+                            weaponRpm = BDArmorySettings.FIRE_RATE_OVERRIDE;
+                        }
+                        else
+                        {
+                            weaponRpm = weapCnt.Current.roundsPerMinute;
+                        }
                         rippleWeapons.Add(weapCnt.Current);
                         counter += weaponRpm; // grab sum of weapons rpm
                     }
@@ -3591,6 +3598,10 @@ namespace BDArmory.Modules
                             float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                            {
+                                candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
+                            }
                             if (targetWeapon != null && (candidateYTraverse > 0 || candidatePTraverse > 0))
                             {
                                 candidateRPM *= 2.0f; // weight selection towards turrets
@@ -3615,6 +3626,10 @@ namespace BDArmory.Modules
                             float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                            {
+                                candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE/2;
+                            }
                             bool compareRocketRPM = false;
 
                             if (targetWeapon != null && (candidateYTraverse > 0 || candidatePTraverse > 0))
@@ -3697,6 +3712,10 @@ namespace BDArmory.Modules
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                            {
+                                candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
+                            }
 
                             if ((targetWeapon != null) && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
                                 continue; //dont replace missiles within their engage range
@@ -3753,6 +3772,10 @@ namespace BDArmory.Modules
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             float candidateRadius = ((ModuleWeapon)item.Current).targetRadius;
                             float candidateCaliber = ((ModuleWeapon)item.Current).caliber;
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                            {
+                                candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
+                            }
 
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
                             Vector3 aimDirection = fireTransform.forward;
@@ -3841,6 +3864,10 @@ namespace BDArmory.Modules
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
                             bool pulseLaser = ((ModuleWeapon)item.Current).pulseLaser;
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                            {
+                                candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
+                            }
 
                             bool compareProjectileRPM = false;
 
@@ -4089,6 +4116,10 @@ namespace BDArmory.Modules
                         float candidateTraverse = ((ModuleWeapon)item.Current).yawRange * ((ModuleWeapon)item.Current).maxPitch;
                         float candidateRadius = ((ModuleWeapon)item.Current).targetRadius;
                         float candidateCaliber = ((ModuleWeapon)item.Current).caliber;
+                        if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                        {
+                            candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
+                        }
 
                         if (targetWeaponPriority > candidatePriority)
                             continue; //dont replace better guns or missiles within their engage range

@@ -22,7 +22,7 @@ namespace BDArmory.Modules
         public string mutatorName;
         private float Vampirism = 0;
         private float Regen = 0;
-        private float engineMult;
+        private float engineMult = 1;
 
         private bool Vengeance = false;
         private List<string> ResourceTax;
@@ -131,6 +131,8 @@ namespace BDArmory.Modules
                                 weapon.Current.externalAmmo = true;
                             }
                             weapon.Current.resourceSteal = mutatorInfo.resourceSteal;
+                            weapon.Current.impulseWeapon = false;
+                            weapon.Current.graviticWeapon = false;
                             //Debug.Log("[MUTATOR] current weapon status: " + weapon.Current.WeaponStatusdebug());
                         }
                 }
@@ -185,11 +187,14 @@ namespace BDArmory.Modules
                     hasTaxes = true;
                 }
             }
-            using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
-                while (engine.MoveNext())
-                {
-                    engine.Current.thrustPercentage *= engineMult;
-                }
+            if (engineMult != 1)
+            {
+                using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
+                    while (engine.MoveNext())
+                    {
+                        engine.Current.thrustPercentage *= engineMult;
+                    }
+            }
             startTime = Time.time;
             if (IconMat == null)
             {
@@ -221,12 +226,14 @@ namespace BDArmory.Modules
                     weapon.Current.maxDeviation = weapon.Current.baseDeviation;
                     weapon.Current.laserDamage = weapon.Current.baseLaserdamage;
                     weapon.Current.pulseLaser = weapon.Current.pulseInConfig;
+                    weapon.Current.impulseWeapon = weapon.Current.ImpulseInConfig;
+                    weapon.Current.graviticWeapon = weapon.Current.GraviticInConfig;
                     weapon.Current.instagib = false;
                     weapon.Current.strengthMutator = 1;
                     weapon.Current.SetupAmmo(null, null);
                     weapon.Current.resourceSteal = false;
                 }
-            if (engineMult > 0)
+            if (engineMult != 1)
             {
                 using (var engine = VesselModuleRegistry.GetModuleEngines(vessel).GetEnumerator())
                     while (engine.MoveNext())
@@ -234,7 +241,7 @@ namespace BDArmory.Modules
                         engine.Current.thrustPercentage /= engineMult;
                     }
             }
-            engineMult = 0;
+            engineMult = 1; //changing this to 1 from 0, this makes sure that there isn't a multiply by 0 issue with if later calling EnableMutator on a mutator with an engine mult
             Vampirism = 0;
             Regen = 0;
             using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())

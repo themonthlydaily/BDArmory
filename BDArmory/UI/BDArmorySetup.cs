@@ -362,6 +362,13 @@ namespace BDArmory.UI
 
             // Load settings
             LoadConfig();
+
+            // Ensure AutoSpawn folder exists.
+            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn"))
+            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
+            // Ensure AutoSpawn/Flags folder exists.
+            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn/Flags"))
+            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn/Flags"); }
         }
 
         void Start()
@@ -2204,15 +2211,17 @@ namespace BDArmory.UI
                 BDArmorySettings.DEFAULT_FFA_TARGETING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DEFAULT_FFA_TARGETING, Localizer.Format("#LOC_BDArmory_Settings_DefaultFFATargeting"));// Free-for-all combat style
                 BDArmorySettings.EXTRA_DAMAGE_SLIDERS = GUI.Toggle(SRightRect(line), BDArmorySettings.EXTRA_DAMAGE_SLIDERS, Localizer.Format("#LOC_BDArmory_Settings_ExtraDamageSliders"));
                 BDArmorySettings.PERFORMANCE_LOGGING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.PERFORMANCE_LOGGING, Localizer.Format("#LOC_BDArmory_Settings_PerformanceLogging"));//"Performance Logging"
-                BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SRightRect(line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
+                BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS = GUI.Toggle(SRightRect(line), BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS, Localizer.Format("#LOC_BDArmory_Settings_TraceVessels"));// Trace Vessels
                 BDArmorySettings.DESTROY_UNCONTROLLED_WMS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DESTROY_UNCONTROLLED_WMS, Localizer.Format("#LOC_BDArmory_Settings_DestroyWMWhenNotControlled"));
                 BDArmorySettings.AUTONOMOUS_COMBAT_SEATS = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTONOMOUS_COMBAT_SEATS, Localizer.Format("#LOC_BDArmory_Settings_AutonomousCombatSeats"));
                 BDArmorySettings.RESET_HP = GUI.Toggle(SLeftRect(++line), BDArmorySettings.RESET_HP, Localizer.Format("#LOC_BDArmory_Settings_ResetHP"));
                 BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING, Localizer.Format("#LOC_BDArmory_Settings_AutoEnableVesselSwitching"));
                 BDArmorySettings.DISPLAY_COMPETITION_STATUS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DISPLAY_COMPETITION_STATUS, Localizer.Format("#LOC_BDArmory_Settings_DisplayCompetitionStatus"));
                 BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = GUI.Toggle(SRightRect(line), BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI, Localizer.Format("#LOC_BDArmory_Settings_DisplayCompetitionStatusHiddenUI"));
-                BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS, Localizer.Format("#LOC_BDArmory_Settings_TraceVessels"));// Trace Vessels
-                BDArmorySettings.BULLET_WATER_DRAG = GUI.Toggle(SRightRect(line), BDArmorySettings.BULLET_WATER_DRAG, Localizer.Format("#LOC_BDArmory_Settings_waterDrag"));// TUnderwater bullet drag
+                BDArmorySettings.STRICT_WINDOW_BOUNDARIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.STRICT_WINDOW_BOUNDARIES, Localizer.Format("#LOC_BDArmory_Settings_StrictWindowBoundaries"));//"Strict Window Boundaries"
+                BDArmorySettings.BULLET_WATER_DRAG = GUI.Toggle(SRightRect(line), BDArmorySettings.BULLET_WATER_DRAG, Localizer.Format("#LOC_BDArmory_Settings_waterDrag"));// Underwater bullet drag
+                // BDArmorySettings.LEGACY_ARMOR = GUI.Toggle(SLeftRect(++line), BDArmorySettings.LEGACY_ARMOR, Localizer.Format("#LOC_BDArmory_Settings_legacyArmor"));// Use legacy Armor
+
                 if (HighLogic.LoadedSceneIsEditor)
                 {
                     if (BDArmorySettings.SHOW_CATEGORIES != (BDArmorySettings.SHOW_CATEGORIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_CATEGORIES, Localizer.Format("#LOC_BDArmory_Settings_ShowEditorSubcategories"))))//"Show Editor Subcategories"
@@ -2484,8 +2493,14 @@ namespace BDArmory.UI
                     }
                     line -= 0.25f;
                 }
-
                 ++line;
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                {
+                    GUI.Label(SLeftRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRate")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE})", leftLabel);//Fire Rate Override
+                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300f));
+                }
+                line++;
+
             }
 
             if (BDArmorySettings.BATTLEDAMAGE)
@@ -2716,7 +2731,7 @@ namespace BDArmory.UI
                                                                                                                                                                                                       // BDACompetitionMode.Instance.killerGMenabled = !(BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60);
 
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_RunwayProjectRound")}: ({(BDArmorySettings.RUNWAY_PROJECT_ROUND > 10 ? $"S{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) / 10}R{(BDArmorySettings.RUNWAY_PROJECT_ROUND - 1) % 10 + 1}" : "—")})", leftLabel); // RWP round
-                    BDArmorySettings.RUNWAY_PROJECT_ROUND = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RUNWAY_PROJECT_ROUND, 10f, 40f));
+                    BDArmorySettings.RUNWAY_PROJECT_ROUND = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.RUNWAY_PROJECT_ROUND, 10f, 50f));
                 }
 
                 ++line;

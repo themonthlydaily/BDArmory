@@ -243,12 +243,12 @@ namespace BDArmory.Core.Module
                 {
                     typecount++;
                 }
-                if (part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "bdPilotAI" || part.name == "missileController" || part.name == "bdammGuidanceModule")
+                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR)
                 {
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
-                    Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActive = false;
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
                 }
@@ -820,11 +820,24 @@ namespace BDArmory.Core.Module
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
                 SetArmor();
+
+                if (BDArmorySettings.LEGACY_ARMOR)
+                {
+                    guiArmorTypeString = "Steel";
+                    SelectedArmorType = "Legacy Armor";
+                    Density = 7850;
+                    Diffusivity = 48.5f;
+                    Ductility = 0.15f;
+                    Hardness = 1176;
+                    Strength = 940;
+                    SafeUseTemp = 2500;
+                }
+
             }
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
-            if (ArmorTypeNum > 1) //don't apply cost/mass to None armor type
+            if (ArmorTypeNum > 1 && !BDArmorySettings.LEGACY_ARMOR) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
