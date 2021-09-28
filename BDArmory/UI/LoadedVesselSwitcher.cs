@@ -979,6 +979,7 @@ namespace BDArmory.UI
                     {
                         if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
                         if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                        if ((v.Current.GetCrewCapacity()) > 0 && (v.Current.GetCrewCount() == 0)) continue; //They're dead, Jim
                         using (var wms = VesselModuleRegistry.GetModules<MissileFire>(v.Current).GetEnumerator())
                             while (wms.MoveNext())
                                 if (wms.Current != null && wms.Current.vessel != null)
@@ -1012,20 +1013,67 @@ namespace BDArmory.UI
                                         }
                                     }
                                     vesselScore = Math.Abs(vesselScore);
+                                    float HP = 0;
+                                    float WreckFactor = 0;
+                                    var AI = VesselModuleRegistry.GetBDModulePilotAI(v.Current, true);
 
+                                    HP = (wms.Current.currentHP / wms.Current.totalHP) * 100;
+                                    if (HP < 100)
+                                    {
+                                        WreckFactor += (100 - HP) / 100; //the less plane remaining, the greater the chance it's a wreck
+                                    }
+                                    if (v.Current.verticalSpeed < -30) //falling out of the sky? Could be an intact plane diving to default alt, could be a cockpit
+                                    {
+                                        WreckFactor += 0.5f;
+                                        if (AI == null || v.Current.radarAltitude < AI.defaultAltitude) //craft is uncontrollably diving, not returning from high alt to cruising alt
+                                        {
+                                            WreckFactor += 0.5f;
+                                        }
+                                    }
+                                    if (VesselModuleRegistry.GetModuleCount<ModuleEngines>(v.Current) > 0)
+                                    {
+                                        int engineOut = 0;
+                                        foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(v.Current))
+                                        {
+                                            if (engine == null || engine.flameout || engine.finalThrust <= 0)
+                                                engineOut++;
+                                        }
+                                        WreckFactor += (engineOut / VesselModuleRegistry.GetModuleCount<ModuleEngines>(v.Current)) / 2;
+                                    }
+                                    else
+                                    {
+                                        WreckFactor += 0.5f; //could be a glider, could be missing engines
+                                    }
+                                    if (WreckFactor > 1f) // 'wrecked' requires some combination of diving, no engines, and missing parts
+                                    {
+                                        WreckFactor *= 2;
+                                        vesselScore *= WreckFactor; //disincentivise switching to wrecks
+                                    }
                                     if (!recentlyLanded && v.Current.verticalSpeed < -15) // Vessels gently floating to the ground aren't interesting
                                     {
                                         crashTime = (float)(-Math.Abs(v.Current.radarAltitude) / v.Current.verticalSpeed);
                                     }
-                                    if (wms.Current.currentTarget != null)
-                                    {
-                                        targetDistance = Vector3.Distance(wms.Current.vessel.GetWorldPos3D(), wms.Current.currentTarget.position);
-                                    }
-                                    vesselScore *= 0.031623f * Mathf.Sqrt(targetDistance); // Equal to 1 at 1000m
                                     if (crashTime < 30)
                                     {
                                         vesselScore *= crashTime / 30;
                                     }
+                                    if (wms.Current.currentTarget != null)
+                                    {
+                                        targetDistance = Vector3.Distance(wms.Current.vessel.GetWorldPos3D(), wms.Current.currentTarget.position);
+                                        if (!wms.Current.HasWeaponsAndAmmo()) // no remaining weapons
+                                        {
+                                            if (AI.allowRamming) //ramming's fun to watch
+                                            {
+                                                vesselScore *= (0.031623f * Mathf.Sqrt(targetDistance) / 2);
+                                            }
+                                            else
+                                            {
+                                                vesselScore *= 3; //ramming disabled. Boring!
+                                            }
+                                        }
+                                        //else got weapons and engaging
+                                    }
+                                    vesselScore *= 0.031623f * Mathf.Sqrt(targetDistance); // Equal to 1 at 1000m
                                     if (wms.Current.currentGun != null)
                                     {
                                         if (wms.Current.currentGun.recentlyFiring)
@@ -1069,7 +1117,12 @@ namespace BDArmory.UI
                                     }
                                     if (!recentlyLanded && wms.Current.vessel.LandedOrSplashed)
                                     {
-                                        vesselScore *= 3; // not interesting.
+                                        if (v.Current.srfSpeed > 2) //margin for physics jitter
+                                        {
+                                            vesselScore *= Mathf.Min(((80 / (float)v.Current.srfSpeed) / 2), 4); //srf Ai driven stuff thats still mobile
+                                        }
+                                        else
+                                            vesselScore *= 4; // not interesting.
                                     }
                                     // if we're the active vessel add a penalty over time to force it to switch away eventually
                                     if (wms.Current.vessel.isActiveVessel)
