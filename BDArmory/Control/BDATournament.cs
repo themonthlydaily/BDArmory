@@ -675,6 +675,7 @@ namespace BDArmory.Control
 
         IEnumerator RunTournamentCoroutine()
         {
+            bool firstRun = true; // Whether a heat has been run yet (particularly for loading partway through a tournament).
             yield return new WaitForFixedUpdate();
             foreach (var roundIndex in tournamentState.rounds.Keys)
             {
@@ -716,6 +717,7 @@ namespace BDArmory.Control
                         tournamentStatus = TournamentStatus.Stopped;
                         yield break;
                     }
+                    firstRun = false;
 
                     // Register the heat as completed.
                     if (!tournamentState.completed.ContainsKey(roundIndex)) tournamentState.completed.Add(roundIndex, new HashSet<int>());
@@ -723,21 +725,43 @@ namespace BDArmory.Control
                     SaveTournamentState();
                     heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
 
-                    if (heatsRemaining > 0)
+                    if (tournamentState.completed[roundIndex].Count < tournamentState.rounds[roundIndex].Count)
                     {
                         // Wait a bit for any user action
                         tournamentStatus = TournamentStatus.Waiting;
                         double startTime = Planetarium.GetUniversalTime();
                         while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
                         {
-                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running next heat.");
+                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running the next heat.");
                             yield return new WaitForSeconds(1);
                         }
                     }
                 }
-                message = "All heats in round " + roundIndex + " have been run.";
-                BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[BDArmory.BDATournament]: " + message);
+                if (!firstRun)
+                {
+                    message = "All heats in round " + roundIndex + " have been run.";
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (heatsRemaining > 0)
+                    {
+                        if (BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS > 0)
+                        {
+                            BDACompetitionMode.Instance.competitionStatus.Add($"Warping ahead {BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS} mins, then running the next round.");
+                            yield return WarpAhead(BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS * 60);
+                        }
+                        else
+                        {
+                            // Wait a bit for any user action
+                            tournamentStatus = TournamentStatus.Waiting;
+                            double startTime = Planetarium.GetUniversalTime();
+                            while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
+                            {
+                                BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running the next round.");
+                                yield return new WaitForSeconds(1);
+                            }
+                        }
+                    }
+                }
             }
             message = "All rounds in tournament " + tournamentState.tournamentID + " have been run.";
             BDACompetitionMode.Instance.competitionStatus.Add(message);
@@ -792,6 +816,39 @@ namespace BDArmory.Control
             competitionStarted = true;
             while (BDACompetitionMode.Instance.competitionIsActive) // Wait for the competition to finish.
                 yield return new WaitForSeconds(1);
+        }
+
+        IEnumerator WarpAhead(double warpTimeBetweenHeats)
+        {
+            if (!FlightGlobals.currentMainBody.hasSolidSurface)
+            {
+                message = "Sorry, unable to TimeWarp without a solid surface to place the spawn probe on.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[BDArmory.BDATournament]: " + message);
+                yield return new WaitForSeconds(5f);
+                yield break;
+            }
+            var vesselsToKill = FlightGlobals.Vessels.ToList();
+            var spawnProbe = VesselSpawner.Instance.SpawnSpawnProbe();
+            yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
+            while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+            {
+                LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
+                yield return new WaitForFixedUpdate();
+            }
+            spawnProbe.SetPosition(spawnProbe.transform.position + spawnProbe.GetHeightFromSurface() * FlightGlobals.getGeeForceAtPosition(spawnProbe.transform.position).normalized);
+            spawnProbe.Landed = true;
+            // Kill all other vessels (including debris).
+            foreach (var vessel in vesselsToKill)
+                VesselSpawner.Instance.RemoveVessel(vessel);
+
+            while (VesselSpawner.Instance.removeVesselsPending > 0) yield return null;
+            var startTime = Time.time;
+            while (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && Time.time - startTime < 1) yield return null; // Give it a second to switch to high warp mode.
+            TimeWarp.fetch.WarpTo(Planetarium.GetUniversalTime() + warpTimeBetweenHeats);
+            startTime = Time.time;
+            while (TimeWarp.CurrentRate < 2 && Time.time - startTime < 1) yield return null; // Give it a second to get going.
+            while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
         }
     }
 }

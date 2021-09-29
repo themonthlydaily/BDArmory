@@ -3595,7 +3595,7 @@ namespace BDArmory.Modules
                                 targetWeapon = item.Current; // then any laser
                                 break;
                             }
-
+                            
                             if (candidateClass == WeaponClasses.Gun)
                             {
                                 // For point defense, favor turrets and RoF
@@ -3742,7 +3742,6 @@ namespace BDArmory.Modules
                                 {
                                     candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
                                 }
-
                                 if (targetWeapon != null && (targetWeapon.GetWeaponClass() == WeaponClasses.Missile) && (targetWeaponTDPS > 0))
                                     continue; //dont replace missiles within their engage range
 
@@ -3795,6 +3794,7 @@ namespace BDArmory.Modules
                                     }
                                 }
                             }
+
                             //Guns have higher priority than rockets; selected gun will override rocket selection
                             if (candidateClass == WeaponClasses.Gun)
                             {
@@ -3817,7 +3817,6 @@ namespace BDArmory.Modules
                                 {
                                     candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
                                 }
-
                                 Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
                                 Vector3 aimDirection = fireTransform.forward;
                                 float targetCosAngle = ((ModuleWeapon)item.Current).FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)((ModuleWeapon)item.Current).FiringSolutionVector) : Vector3.Dot(aimDirection, (vessel.vesselTransform.position - fireTransform.position).normalized);
@@ -4004,7 +4003,6 @@ namespace BDArmory.Modules
                             {
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
                             }
-
                             if (targetWeaponPriority > candidatePriority)
                                 continue; //dont replace better guns or missiles within their engage range
 

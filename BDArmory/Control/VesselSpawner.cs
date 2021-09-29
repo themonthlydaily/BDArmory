@@ -1487,12 +1487,12 @@ namespace BDArmory.Control
             return optimisedSlots;
         }
 
-        public Vessel SpawnSpawnProbe(Vector2d geoCoords, float altitude)
+        public Vessel SpawnSpawnProbe()
         {
             // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
             var dummyVar = EditorFacility.None;
             Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + altitude * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
             if (!File.Exists($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft"))
             {
                 message = "GameData/BDArmory/craft/SpawnProbe.craft is missing. Please create the craft (a simple octo2 probe core will do).";
@@ -1501,11 +1501,10 @@ namespace BDArmory.Control
                 return null;
             }
             Vessel spawnProbe = SpawnVesselFromCraftFile($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft", dummySpawnCoords, 0, 0f, out dummyVar);
-            spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
             return spawnProbe;
         }
 
-        private int removeVesselsPending = 0;
+        public int removeVesselsPending = 0;
         // Remove a vessel and clean up any remaining parts. This fixes the case where the currently focussed vessel refuses to die properly.
         public void RemoveVessel(Vessel vessel)
         {
