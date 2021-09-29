@@ -594,6 +594,14 @@ namespace BDArmory.Modules
                 activeRadarLockTrackCurve.Add(activeRadarRange, RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);           // TODO: tune & balance constants!
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileLauncher]: OnStart missile " + shortName + ": setting default locktrackcurve with maxrange/minrcs: " + activeRadarLockTrackCurve.maxTime + "/" + RadarUtils.MISSILE_DEFAULT_LOCKABLE_RCS);
             }
+            List<ClusterBomb>.Enumerator cluster = part.FindModulesImplementing<ClusterBomb>().GetEnumerator();
+            while (cluster.MoveNext())
+            {
+                if (cluster.Current == null) continue;
+                clusterbomb = cluster.Current.submunitions.Count;
+                break;
+            }
+            cluster.Dispose();
         }
 
         /// <summary>

@@ -1293,7 +1293,7 @@ namespace BDArmory.Modules
             debugSphere.transform.position = groundTargetPosition;
         }
 
-        void GroundStabilize()
+        public void GroundStabilize()
         {
             if (vessel.packed) return;
             StopResetting();

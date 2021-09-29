@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
+using BDArmory.UI;
 
 namespace BDArmory.Modules
 {
@@ -67,6 +68,10 @@ namespace BDArmory.Modules
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_FB_Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
         public float FBRemaining;
 
+        PartResource fuel;
+        PartResource solid;
+        public bool isOnFire = false;
+
         public void Start()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -76,10 +81,17 @@ namespace BDArmory.Modules
                 origMass = part.mass;
                 FBSetup(null, null);
             }
+            fuel = part.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
+            solid = part.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
+
             var engine = part.FindModuleImplementing<ModuleEngines>();
             if (engine != null)
             {
                 Events["ToggleTankOption"].guiActiveEditor = false;
+                if (solid != null && engine.throttleLocked && !engine.allowShutdown)
+                {
+                    part.RemoveModule(this); //don't add firebottles to SRBs
+                }
             }
         }
         public override void OnLoad(ConfigNode node)
@@ -148,12 +160,11 @@ namespace BDArmory.Modules
         }
         void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && vessel != null && !vessel.packed)
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && vessel != null && !vessel.packed && !BDArmorySetup.GameIsPaused)
             {
-                if (this.part.temperature > 493) //autoignition temp of kerosene is 220 c
+                if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
                 {
-                    var isOnFire = part.GetComponentInChildren<FireFX>();
-                    if (isOnFire == null)
+                    if (!isOnFire)
                     {
                         string fireStarter;
                         var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
@@ -168,11 +179,12 @@ namespace BDArmory.Modules
                         Vector3 firePosition = part.transform.up * 10;
                         Ray LoSRay = new Ray(transform.position, (transform.position + firePosition) - transform.position);
                         RaycastHit hit;
-                        if (Physics.Raycast(LoSRay, out hit, 10, 9076737)) // only add fires to parts in LoS of blast
+                        if (Physics.Raycast(LoSRay, out hit, 10, 9076737)) 
                         {
                             BulletHitFX.AttachFire(hit, part, 50, fireStarter);
                         }
-                        Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire!");
+                        //Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire!");
+                        isOnFire = true;
                     }
                 }
             }

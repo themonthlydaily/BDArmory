@@ -141,6 +141,13 @@ namespace BDArmory.Core.Module
         private bool _hpConfigured = false;
         private bool _finished_setting_up = false;
 
+        public bool isOnFire = false;
+
+        public static bool GameIsPaused
+        {
+            get { return PauseMenu.isOpen || Time.timeScale == 0; }
+        }
+
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
@@ -428,13 +435,16 @@ namespace BDArmory.Core.Module
         {
             if (!_finished_setting_up) return;
             RefreshHitPoints();
-            if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
             {
-                HeartBleed();
-            }
-            if (part.skinTemperature > SafeUseTemp * 1.5f)
-            {
-                ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+                {
+                    HeartBleed();
+                }
+                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                {
+                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                }              
             }
         }
 

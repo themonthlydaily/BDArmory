@@ -186,6 +186,8 @@ namespace BDArmory.Modules
 
         public bool HasExploded { get; set; } = false;
 
+        public int clusterbomb { get; set; } = 1;
+
         protected IGuidance _guidance;
 
         private double _lastVerticalSpeed;

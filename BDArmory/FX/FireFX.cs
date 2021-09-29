@@ -1,5 +1,4 @@
 ﻿using System;
-using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
@@ -112,7 +111,7 @@ namespace BDArmory.FX
                         }
                         burnTime = 10;
                         Misc.Misc.RefreshAssociatedWindows(parentPart);
-                        Debug.Log("[FireFX] firebottles remianing in " + parentPart.name + ": " + FBX.FireBottles);
+                        Debug.Log("[FireFX] firebottles remaining in " + parentPart.name + ": " + FBX.FireBottles);
                     }
                     else
                     {
@@ -490,6 +489,11 @@ namespace BDArmory.FX
         {
             if (gameObject.activeInHierarchy)
             {
+                var SST = parentPart.FindModuleImplementing<ModuleSelfSealingTank>();
+                if (SST != null)
+                {
+                    SST.isOnFire = false;
+                }
                 parentPart = null;
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.
                 gameObject.SetActive(false);

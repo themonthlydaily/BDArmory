@@ -10,7 +10,7 @@ namespace BDArmory.Modules
 {
     public class ClusterBomb : PartModule
     {
-        List<GameObject> submunitions;
+        public List<GameObject> submunitions;
         List<GameObject> fairings;
         MissileLauncher missileLauncher;
 
