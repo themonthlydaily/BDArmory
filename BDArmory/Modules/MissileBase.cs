@@ -573,7 +573,12 @@ namespace BDArmory.Modules
                         {
                             TargetAcquired = true;
                             radarTarget = t;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition;
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
                             _radarFailTimer = 0;
@@ -597,7 +602,12 @@ namespace BDArmory.Modules
                                 _radarFailTimer += Time.fixedDeltaTime;
                                 radarTarget.timeAcquired = Time.time;
                                 radarTarget.position = radarTarget.predictedPosition;
-                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                                if (weaponClass == WeaponClasses.SLW)
+                                {
+                                    TargetPosition = radarTarget.predictedPosition;
+                                }
+                                else
+                                    TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                                 TargetVelocity = radarTarget.velocity;
                                 TargetAcceleration = Vector3.zero;
                                 TargetAcquired = true;
@@ -662,7 +672,13 @@ namespace BDArmory.Modules
                                         radarTarget = scannedTargets[i];
                                         TargetAcquired = true;
                                         radarLOALSearching = false;
-                                        TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                                        if (weaponClass == WeaponClasses.SLW)
+                                        {
+                                            TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                                        }
+                                        else
+                                            TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+
                                         TargetVelocity = radarTarget.velocity;
                                         TargetAcceleration = radarTarget.acceleration;
                                         _radarFailTimer = 0;
@@ -697,8 +713,14 @@ namespace BDArmory.Modules
                         if (radarLOAL)
                         {
                             radarLOALSearching = true;
-                            TargetAcquired = true;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                            TargetAcquired = true;    
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = Vector3.zero;
                             ActiveRadar = false;
@@ -768,7 +790,12 @@ namespace BDArmory.Modules
                     radarTarget = lockedTarget;
                     TargetAcquired = true;
                     radarLOALSearching = false;
-                    TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                    if (weaponClass == WeaponClasses.SLW)
+                    {
+                        TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                    }
+                    else
+                        TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
                     TargetVelocity = radarTarget.velocity;
                     TargetAcceleration = radarTarget.acceleration;
 

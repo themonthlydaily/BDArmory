@@ -1219,7 +1219,12 @@ namespace BDArmory.Modules
                         {
                             radarTarget = lockedTarget;
                             TargetAcquired = true;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition;
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
                             targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(TargetPosition, vessel.mainBody);

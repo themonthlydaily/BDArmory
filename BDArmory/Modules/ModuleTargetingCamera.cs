@@ -1389,7 +1389,7 @@ namespace BDArmory.Modules
                     {
                         KerbalEVA hitEVA = rayHit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                         Part p = hitEVA ? hitEVA.part : rayHit.collider.GetComponentInParent<Part>();
-                        if (p && p.vessel && p.vessel.Landed)
+                        if (p && p.vessel)
                         {
                             groundTargetPosition = p.vessel.CoM;
                         }

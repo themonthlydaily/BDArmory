@@ -1750,26 +1750,26 @@ namespace BDArmory.Modules
                             {
                                 if (tgp.Current == null) continue;
                                 tgp.Current.EnableCamera();
+                                tgp.Current.CoMLock = true;
                                 yield return StartCoroutine(tgp.Current.PointToPositionRoutine(guardTarget.CoM));
                                 //if (tgp.Current.groundStabilized && (tgp.Current.GroundtargetPosition - guardTarget.transform.position).sqrMagnitude < 20 * 20) 
-                                if ((tgp.Current.targetPointPosition - guardTarget.transform.position).sqrMagnitude < 20 * 20) 
-                                {
-                                    tgp.Current.CoMLock = true; // make the designator continue to paint target
-                                    tgp.Current.GroundStabilize();
-                                    break;
-                                }
+                                //if ((tgp.Current.groundTargetPosition - guardTarget.transform.position).sqrMagnitude < 10 * 10) 
+                                //{
+                                //    tgp.Current.CoMLock = true; // make the designator continue to paint target
+                                //    break;
+                                //}
                             }
                     }
 
                     //search for a laser point that corresponds with target vessel
                     float attemptStartTime = Time.time;
                     float attemptDuration = targetScanInterval * 0.75f;
-                    while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.targetPointPosition - guardTarget.CoM).sqrMagnitude > 20 * 20))) //was foundcam.groundtargetposition
+                    while (Time.time - attemptStartTime < attemptDuration && (!laserPointDetected || (foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude > 10 * 10)))
                     {
                         yield return new WaitForFixedUpdate();
                     }
 
-                    if (ml && laserPointDetected && foundCam && (foundCam.targetPointPosition - guardTarget.CoM).sqrMagnitude < 20 * 20) //was foundcam.groundtargetposition
+                    if (ml && laserPointDetected && foundCam && (foundCam.groundTargetPosition - guardTarget.CoM).sqrMagnitude < 10 * 10)
                     {
                         FireCurrentMissile(true);
                         //StartCoroutine(MissileAwayRoutine(ml));
@@ -3843,7 +3843,7 @@ namespace BDArmory.Modules
                                     {
                                         candidateCaliber *= .01f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                                     }
-                                    candidateRPM = candidateCaliber*10;
+                                    candidateRPM = candidateCaliber * 10;
                                 }
                                 else //weight selection towards RoF, modified by turrets/fuzes/shot quantity/range
                                 {
