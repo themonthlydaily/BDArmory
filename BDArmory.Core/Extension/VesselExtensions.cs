@@ -28,6 +28,12 @@ namespace BDArmory.Core.Extension
             return v.atmDensity <= 0.001f;
         }
 
+        public static bool IsUnderwater(this Vessel v)
+        {
+            if (!v) return false;
+            return v.altitude < -20; //some boats sit slightly underwater, this is only for submersibles
+        }
+
         public static Vector3d Velocity(this Vessel v)
         {
             try
