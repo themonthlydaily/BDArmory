@@ -1330,6 +1330,7 @@ namespace BDArmory.Radar
 
         public static bool MissileIsThreat(MissileBase missile, MissileFire mf, bool threatToMeOnly = true)
         {
+            if (missile == null || missile.part == null) return false;
             if (threatToMeOnly)
             {
                 Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;
