@@ -4,6 +4,7 @@ using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Control;
 using BDArmory.Core;
+using BDArmory.Core.Extension;
 using UnityEngine;
 using KSP.Localization;
 using KSP.UI.Screens;
@@ -684,7 +685,7 @@ namespace BDArmory.UI
             }
             */
 
-            if (GUI.Button(buttonRect, status + vesselName + postStatus, vButtonStyle))
+            if (GUI.Button(buttonRect, vesselName + status + postStatus, vButtonStyle))
                 ForceSwitchVessel(wm.vessel);
 
             // selects current target
@@ -801,10 +802,13 @@ namespace BDArmory.UI
             string status = "";
             if (wm.vessel.LandedOrSplashed)
             {
+                status = " ";
                 if (wm.vessel.Landed)
-                    status = Localizer.Format("#LOC_BDArmory_VesselStatus_Landed");//"(Landed)"
+                    status += Localizer.Format("#LOC_BDArmory_VesselStatus_Landed");//"(Landed)"
+                else if (wm.vessel.IsUnderwater())
+                    status += Localizer.Format("#LOC_BDArmory_VesselStatus_Underwater"); // "(Underwater)"
                 else
-                    status = Localizer.Format("#LOC_BDArmory_VesselStatus_Splashed");//"(Splashed)"
+                    status += Localizer.Format("#LOC_BDArmory_VesselStatus_Splashed");//"(Splashed)"
                 vButtonStyle.fontStyle = FontStyle.Italic;
             }
             else
