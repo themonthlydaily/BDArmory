@@ -1062,7 +1062,7 @@ namespace BDArmory.UI
                                         targetDistance = Vector3.Distance(wms.Current.vessel.GetWorldPos3D(), wms.Current.currentTarget.position);
                                         if (!wms.Current.HasWeaponsAndAmmo()) // no remaining weapons
                                         {
-                                            if (AI.allowRamming) //ramming's fun to watch
+                                            if (!BDArmorySettings.DISABLE_RAMMING && AI != null && AI.allowRamming) //ramming's fun to watch
                                             {
                                                 vesselScore *= (0.031623f * Mathf.Sqrt(targetDistance) / 2);
                                             }
