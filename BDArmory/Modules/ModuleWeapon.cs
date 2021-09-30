@@ -2859,7 +2859,16 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-
+                if (BDArmorySettings.BULLET_WATER_DRAG)
+                {
+                    if ((FlightGlobals.getAltitudeAtPos(targetPosition) < 0) && (FlightGlobals.getAltitudeAtPos(targetPosition) + targetRadius >0)) //vessel not completely submerged
+                        {
+                        if (caliber < 75)
+                        {
+                            targetPosition += (VectorUtils.GetUpDirection(targetPosition) * Mathf.Abs(FlightGlobals.getAltitudeAtPos(targetPosition))); //set targetposition to surface directly above target
+                        }
+                    }
+                }
                 //aim assist
                 Vector3 originalTarget = targetPosition;
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
