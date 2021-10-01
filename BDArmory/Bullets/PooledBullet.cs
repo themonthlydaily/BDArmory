@@ -333,9 +333,12 @@ namespace BDArmory.Bullets
             // Full-timestep position change (leapfrog integrator)
             transform.position += currentVelocity * period; //move bullet
             distanceTraveled += currentVelocity.magnitude * period; // calculate flight distance for achievement purposes
-            if (BDArmorySettings.BULLET_WATER_DRAG) // Check if the bullet is now underwater.
-                underwater = FlightGlobals.getAltitudeAtPos(transform.position) <= 0;
-
+            //if (BDArmorySettings.BULLET_WATER_DRAG) // Check if the bullet is now underwater.
+            if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !underwater)
+            {
+                underwater = true;
+                FXMonger.Splash(transform.position, caliber);
+            }
             // Second half-timestep velocity change (leapfrog integrator) (should be identical code-wise to the initial half-step)
             LeapfrogVelocityHalfStep(0.5f * period);
         }

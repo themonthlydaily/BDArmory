@@ -3904,7 +3904,6 @@ namespace BDArmory.Modules
                         if (candidateClass == WeaponClasses.DefenseLaser)
                         {
                             // For AA, favour higher power/turreted
-                            float candidatePower = ((ModuleWeapon)item.Current).laserDamage;
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                             bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
                             float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
@@ -3912,6 +3911,7 @@ namespace BDArmory.Modules
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
                             bool pulseLaser = ((ModuleWeapon)item.Current).pulseLaser;
+                            float candidatePower = electrolaser ? ((ModuleWeapon)item.Current).ECPerShot / (pulseLaser ? 50 : 1) : ((ModuleWeapon)item.Current).laserDamage / (pulseLaser ? 50 : 1);
 
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
@@ -3926,19 +3926,16 @@ namespace BDArmory.Modules
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
 
-                            if (!pulseLaser) //if beamlaser, compare power instead
-                            {
-                                candidateRPM = candidatePower;
-                            }
+                            candidateRPM *= candidatePower;
+
                             if (candidateGimbal = true && candidateTraverse > 0)
                             {
                                 candidateRPM *= 1.5f; // weight selection towards turreted lasers
                             }
                             if (candidateMinrange > distance)
                             {
-                                candidateRPM *= .001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
                             }
-                            candidateRPM *= 2; //weight against rockets/guns
                             if (targetWeaponPriority < candidatePriority) //use priority gun
                             {
                                 targetWeapon = item.Current;
@@ -4073,7 +4070,7 @@ namespace BDArmory.Modules
 
                             if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < -0 && BDArmorySettings.BULLET_WATER_DRAG))
                             {
-                                if ((distance > 100 * CandidateEndurance) && (targetWeapon != null)) continue;
+                                if (distance > 100 * CandidateEndurance) continue;
                             }
 
                             if (targetWeaponPriority > candidateRanking)
@@ -4275,7 +4272,7 @@ namespace BDArmory.Modules
                             {
                                 if (BDArmorySettings.BULLET_WATER_DRAG)
                                 {
-                                    if ((distance > 100 * CandidateEndurance) && (targetWeapon != null)) continue;
+                                    if ((distance > 100 * CandidateEndurance)) continue;
                                 }
                                 if (targetWeaponPriority > candidateRanking)
                                     continue; //don't select a lower priority weapon over a higher priority one
@@ -4299,7 +4296,65 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                    }
+                        if (candidateClass == WeaponClasses.DefenseLaser)
+                        {
+                            // For STS, favour higher power/turreted
+                            float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
+                            bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
+                            float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
+                            float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
+                            float candidateMaxrange = ((EngageableWeapon)item.Current).engageRangeMax;
+                            int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
+                            bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
+                            bool pulseLaser = ((ModuleWeapon)item.Current).pulseLaser;
+                            float candidatePower = electrolaser ? ((ModuleWeapon)item.Current).ECPerShot / (pulseLaser ? 50 : 1) : ((ModuleWeapon)item.Current).laserDamage / (pulseLaser ? 50 : 1);
+
+                            Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
+
+                            if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)//if underwater, lasers should work, at close range
+                            {
+                                if (BDArmorySettings.BULLET_WATER_DRAG)
+                                {
+                                    if (distance > candidateMaxrange/10) continue;
+                                }
+                                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                                {
+                                    candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
+                                }
+
+                                if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabled
+
+                                if (targetWeapon != null && targetWeaponPriority > candidatePriority)
+                                    continue; //keep higher priority weapon
+
+                                candidateRPM *= candidatePower;
+
+                                if (candidateGimbal = true && candidateTraverse > 0)
+                                {
+                                    candidateRPM *= 1.5f; // weight selection towards turreted lasers
+                                }
+                                if (candidateMinrange > distance)
+                                {
+                                    candidateRPM *= .00001f; //if within min range massively negatively weight weapon - allows weapon to still be selected if all others lost/out of ammo
+                                }
+                                if (targetWeaponPriority < candidatePriority) //use priority gun
+                                {
+                                    targetWeapon = item.Current;
+                                    targetWeaponRPM = candidateRPM;
+                                    targetWeaponPriority = candidatePriority;
+                                }
+                                else //if equal priority, use standard weighting
+                                {
+                                    if (targetWeaponRPM < candidateRPM)
+                                    {
+                                        targetWeapon = item.Current;
+                                        targetWeaponRPM = candidateRPM;
+                                        targetWeaponPriority = candidatePriority;
+                                    }
+                                }
+                            }
+                        }
+                    } //add waterspray FX for bullets hitting water - will need to build waterspray .mu, and make a short waterhitFX class (unless bullethit already covers this?) to run the anim and delete when done
             }
 
             // return result of weapon selection
