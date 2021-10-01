@@ -4322,7 +4322,7 @@ namespace BDArmory.Modules
                                     candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
                                 }
 
-                                if (electrolaser = true && target.isDebilitated) continue; // don't select EMP weapons if craft already disabled
+                                if (electrolaser) continue; // don't use lightning guns underwater
 
                                 if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                     continue; //keep higher priority weapon
