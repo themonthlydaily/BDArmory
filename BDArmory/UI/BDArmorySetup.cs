@@ -366,9 +366,9 @@ namespace BDArmory.UI
             // Ensure AutoSpawn folder exists.
             if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn"))
             { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
-            // Ensure AutoSpawn/Flags folder exists.
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn/Flags"))
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn/Flags"); }
+            // Ensure GameData/Custom/Flags folder exists.
+            if (!Directory.Exists(Environment.CurrentDirectory + "/GameData/Custom/Flags"))
+            { Directory.CreateDirectory(Environment.CurrentDirectory + "/GameData/Custom/Flags"); }
         }
 
         void Start()

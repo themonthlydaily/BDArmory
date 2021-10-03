@@ -519,7 +519,7 @@ namespace BDArmory.Modules
 
                     if (locked)
                     {
-                        for (int i = 0; i < lockedTargets.Count; i++)
+                        for (int i = lockedTargets.Count - 1; i >= 0; --i) // We need to iterate backwards as UnlockTargetAt (in UpdateLock) can remove items from the lockedTargets list.
                         {
                             UpdateLock(i);
                         }
