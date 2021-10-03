@@ -188,6 +188,8 @@ namespace BDArmory.Modules
 
         public int clusterbomb { get; set; } = 1;
 
+        public bool EMP { get; set; } = false;
+
         protected IGuidance _guidance;
 
         private double _lastVerticalSpeed;
@@ -324,10 +326,11 @@ namespace BDArmory.Modules
             var explosive = p.FindModuleImplementing<BDExplosivePart>();
             if (explosive != null)
             {
-                p.FindModuleImplementing<BDExplosivePart>().Armed = true;
+                explosive.Armed = true;
+                explosive.detonateAtMinimumDistance = DetonateAtMinimumDistance;
                 if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
                 {
-                    p.FindModuleImplementing<BDExplosivePart>().Shaped = true;
+                    explosive.Shaped = true;
                 }
             }
         }

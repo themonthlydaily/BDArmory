@@ -336,7 +336,24 @@ namespace BDArmory.Bullets
             //if (BDArmorySettings.BULLET_WATER_DRAG) // Check if the bullet is now underwater.
             if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !underwater)
             {
-                underwater = true;
+                float hitAngle = Vector3.Angle(GetDragAdjustedVelocity(), -VectorUtils.GetUpDirection(transform.position));
+                if (RicochetScenery(hitAngle))
+                {
+                    tracerStartWidth /= 2;
+                    tracerEndWidth /= 2;
+
+                    currentVelocity = Vector3.Reflect(currentVelocity, VectorUtils.GetUpDirection(transform.position));
+                    currentVelocity = (hitAngle / 150) * currentVelocity * 0.65f;
+
+                    Vector3 randomDirection = UnityEngine.Random.rotation * Vector3.one;
+
+                    currentVelocity = Vector3.RotateTowards(currentVelocity, randomDirection,
+                        UnityEngine.Random.Range(0f, 5f) * Mathf.Deg2Rad, 0);
+                }
+                else
+                {
+                    underwater = true;
+                }
                 FXMonger.Splash(transform.position, caliber);
             }
             // Second half-timestep velocity change (leapfrog integrator) (should be identical code-wise to the initial half-step)

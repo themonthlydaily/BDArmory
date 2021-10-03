@@ -602,6 +602,14 @@ namespace BDArmory.Modules
                 break;
             }
             cluster.Dispose();
+            List<ModuleEMP>.Enumerator emp = part.FindModulesImplementing<ModuleEMP>().GetEnumerator();
+            while (emp.MoveNext())
+            {
+                if (emp.Current == null) continue;
+                EMP = emp.Current;
+                break;
+            }
+            emp.Dispose();
         }
 
         /// <summary>

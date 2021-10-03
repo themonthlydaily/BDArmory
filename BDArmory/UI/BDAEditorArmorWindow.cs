@@ -44,7 +44,7 @@ namespace BDArmory.UI
         private float ArmorCost = 0;
         private bool armorslist = false;
         private float Thickness = 10;
-        private float oldThickness = -1;
+        private float oldThickness = 10;
         private float maxThickness = 60;
         private bool Visualizer = false;
         private bool HPvisualizer = false;
@@ -152,6 +152,7 @@ namespace BDArmory.UI
         public void ShowToolbarGUI()
         {
             showArmorWindow = true;
+            CalculateArmorMass();
         }
 
         public void HideToolbarGUI()
@@ -358,6 +359,10 @@ namespace BDArmory.UI
                     {
                         if (!vesselmass)
                         {
+                            if (armor.maxSupportedArmor > maxThickness)
+                            {
+                                maxThickness = armor.maxSupportedArmor;
+                            }
                             if (SetType || SetThickness)
                             {
                                 if (SetThickness)
@@ -365,10 +370,6 @@ namespace BDArmory.UI
                                     if (armor.ArmorTypeNum > 1)
                                     {
                                         armor.Armor = Mathf.Clamp(Thickness, 0, armor.maxSupportedArmor);
-                                        if (armor.maxSupportedArmor > maxThickness)
-                                        {
-                                            maxThickness = armor.maxSupportedArmor;
-                                        }
                                     }
                                 }
                                 if (SetType)

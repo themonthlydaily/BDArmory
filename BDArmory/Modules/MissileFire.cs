@@ -3955,6 +3955,8 @@ namespace BDArmory.Modules
                         //projectile weapon selected, any missiles that take precedence?
                         if (candidateClass != WeaponClasses.Missile) continue;
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
+                        bool EMP = ((MissileLauncher)item.Current).EMP;
+                        if (EMP && target.isDebilitated) continue;
 
                         if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
                         float candidateTDPS = 0f;
