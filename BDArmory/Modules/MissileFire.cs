@@ -3571,7 +3571,7 @@ namespace BDArmory.Modules
                 using (List<IBDWeapon>.Enumerator item = weaponTypesMissile.GetEnumerator())
                     while (item.MoveNext())
                     {
-                        if (item.Current == null) continue;                        
+                        if (item.Current == null) continue;
                         // candidate, check engagement envelope
                         if (!CheckEngagementEnvelope(item.Current, distance)) continue;
                         // weapon usable, if missile continue looking for lasers/guns, else take it
@@ -3584,7 +3584,7 @@ namespace BDArmory.Modules
                             bool electrolaser = ((ModuleWeapon)item.Current).electroLaser;
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
-                            if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
 
                             if (electrolaser) continue; //electrolasers useless against missiles
 
@@ -3610,7 +3610,7 @@ namespace BDArmory.Modules
 
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
-                            if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
@@ -3650,7 +3650,7 @@ namespace BDArmory.Modules
 
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
-                            if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE / 2;
@@ -3691,7 +3691,7 @@ namespace BDArmory.Modules
                         // TODO: for AA, favour higher thrust+turnDPS
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
 
-                        if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -2 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                        if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < -2)) continue;
                         float candidateTDPS = 0f;
 
                         if (mlauncher != null)
@@ -3723,7 +3723,7 @@ namespace BDArmory.Modules
                 using (List<IBDWeapon>.Enumerator item = weaponTypesAir.GetEnumerator())
                     while (item.MoveNext())
                     {
-                        if (item.Current == null) continue;                        
+                        if (item.Current == null) continue;
 
                         // candidate, check engagement envelope
                         if (!CheckEngagementEnvelope(item.Current, distance)) continue;
@@ -3743,7 +3743,7 @@ namespace BDArmory.Modules
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
-                            if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
 
                             Vector3 aimDirection = fireTransform.forward;
                             float targetCosAngle = ((ModuleWeapon)item.Current).FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)((ModuleWeapon)item.Current).FiringSolutionVector) : Vector3.Dot(aimDirection, (vessel.vesselTransform.position - fireTransform.position).normalized);
@@ -3830,7 +3830,7 @@ namespace BDArmory.Modules
                             }
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
-                            if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
 
                             Vector3 aimDirection = fireTransform.forward;
                             float targetCosAngle = ((ModuleWeapon)item.Current).FiringSolutionVector != null ? Vector3.Dot(aimDirection, (Vector3)((ModuleWeapon)item.Current).FiringSolutionVector) : Vector3.Dot(aimDirection, (vessel.vesselTransform.position - fireTransform.position).normalized);
@@ -3915,7 +3915,7 @@ namespace BDArmory.Modules
 
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
-                            if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < 0)) continue;
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                             {
                                 candidateRPM = BDArmorySettings.FIRE_RATE_OVERRIDE;
@@ -3956,7 +3956,7 @@ namespace BDArmory.Modules
                         if (candidateClass != WeaponClasses.Missile) continue;
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
 
-                        if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                        if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                         float candidateTDPS = 0f;
 
                         if (mlauncher != null)
@@ -4068,7 +4068,7 @@ namespace BDArmory.Modules
                             int candidateRanking = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
 
-                            if (vessel.Splashed && (FlightGlobals.getAltitudeAtPos(fireTransform.position) < -0 && BDArmorySettings.BULLET_WATER_DRAG))
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(fireTransform.position) < -0))
                             {
                                 if (distance > 100 * CandidateEndurance) continue;
                             }
@@ -4142,7 +4142,7 @@ namespace BDArmory.Modules
                         if (candidateClass == WeaponClasses.Missile && (!vessel.Splashed || (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) > -5))) //don't use missiles underwater. That's what torpedoes are for
                         {
 
-                            if (!vessel.Splashed || (FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) > -2 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
+                            if (!vessel.Splashed || (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) > -2)) continue;
                             // Priority Sequence:
                             // - Antiradiation
                             // - guided missiles
@@ -4315,7 +4315,7 @@ namespace BDArmory.Modules
                             {
                                 if (BDArmorySettings.BULLET_WATER_DRAG)
                                 {
-                                    if (distance > candidateMaxrange/10) continue;
+                                    if (distance > candidateMaxrange / 10) continue;
                                 }
                                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                                 {
