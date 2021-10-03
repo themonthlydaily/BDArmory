@@ -2230,9 +2230,15 @@ namespace BDArmory.Control
                     }
                 }
             }
-            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -1) // Kill off those flying too low.
+            if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW > -39f) // Kill off those flying too low.
             {
-                var limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW / 10f : BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f ? BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f : (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) * 1000f;
+                float limit;
+                if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < -28f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW + 28f) * 1000f; // -10km — -1km @ 1km
+                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < -19f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW + 19f) * 100f; // -900m — -100m @ 100m
+                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 0f) limit = BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 5f; // -95m — -5m  @ 5m
+                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 20f) limit = BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW * 100f; // 0m — 1900m @ 100m
+                else if (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW < 39f) limit = (BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 18f) * 1000f; // 2km — 20km @ 1km
+                else limit = ((BDArmorySettings.COMPETITION_ALTITUDE_LIMIT_LOW - 38f) * 5f + 20f) * 1000f; // 25km — 50km @ 5km
                 foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
                 {
                     if (alive.Contains(weaponManager.vessel.vesselName) && weaponManager.vessel.radarAltitude < limit)
