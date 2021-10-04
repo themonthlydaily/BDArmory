@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine;
 using BDArmory.Core;
 using BDArmory.UI;
+using BDArmory.Misc;
 
 namespace BDArmory.Control
 {
@@ -560,6 +561,7 @@ namespace BDArmory.Control
         public int vesselsPerTeam = 0;
         public bool fullTeams = false;
         bool competitionStarted = false;
+        public bool warpingInProgress = false;
         #endregion
 
         void Awake()
@@ -818,6 +820,7 @@ namespace BDArmory.Control
                 yield return new WaitForSeconds(1);
         }
 
+        GameObject warpCamera;
         IEnumerator WarpAhead(double warpTimeBetweenHeats)
         {
             if (!FlightGlobals.currentMainBody.hasSolidSurface)
@@ -828,27 +831,85 @@ namespace BDArmory.Control
                 yield return new WaitForSeconds(5f);
                 yield break;
             }
+            warpingInProgress = true;
+            Vessel spawnProbe;
             var vesselsToKill = FlightGlobals.Vessels.ToList();
-            var spawnProbe = VesselSpawner.Instance.SpawnSpawnProbe();
-            yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
-            while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+            int tries = 0;
+            do
             {
-                LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
-                yield return new WaitForFixedUpdate();
+                spawnProbe = VesselSpawner.Instance.SpawnSpawnProbe();
+                yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
+                while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+                {
+                    LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
+                    yield return null;
+                }
+            } while (++tries < 3 && spawnProbe == null);
+            if (spawnProbe == null)
+            {
+                message = "Failed to spawn spawnProbe, aborting warp.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogWarning("[BDArmory.BDATournament]: " + message);
+                yield break;
             }
-            spawnProbe.SetPosition(spawnProbe.transform.position + spawnProbe.GetHeightFromSurface() * FlightGlobals.getGeeForceAtPosition(spawnProbe.transform.position).normalized);
-            spawnProbe.Landed = true;
+            var up = VectorUtils.GetUpDirection(spawnProbe.transform.position);
+            var refDirection = Math.Abs(Vector3.Dot(Vector3.up, up)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
+            spawnProbe.SetPosition(spawnProbe.transform.position - Misc.Misc.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+            if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
+            else spawnProbe.Splashed = true;
+            spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
             // Kill all other vessels (including debris).
             foreach (var vessel in vesselsToKill)
                 VesselSpawner.Instance.RemoveVessel(vessel);
-
             while (VesselSpawner.Instance.removeVesselsPending > 0) yield return null;
+
+            // Adjust the camera for a nice view.
+            if (warpCamera == null) warpCamera = new GameObject("WarpCamera");
+            var cameraLocalPosition = 3f * Vector3.Cross(up, refDirection).normalized + up;
+            warpCamera.SetActive(true);
+            warpCamera.transform.position = spawnProbe.transform.position;
+            warpCamera.transform.rotation = Quaternion.LookRotation(-cameraLocalPosition, up);
+            var flightCamera = FlightCamera.fetch;
+            var originalCameraParentTransform = flightCamera.transform.parent;
+            var originalCameraNearClipPlane = flightCamera.mainCamera.nearClipPlane;
+            flightCamera.SetTargetNone();
+            flightCamera.transform.parent = warpCamera.transform;
+            flightCamera.transform.localPosition = cameraLocalPosition;
+            flightCamera.transform.localRotation = Quaternion.identity;
+            flightCamera.SetDistance(3000f);
+
+            var warpTo = Planetarium.GetUniversalTime() + warpTimeBetweenHeats;
             var startTime = Time.time;
-            while (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && Time.time - startTime < 1) yield return null; // Give it a second to switch to high warp mode.
-            TimeWarp.fetch.WarpTo(Planetarium.GetUniversalTime() + warpTimeBetweenHeats);
-            startTime = Time.time;
-            while (TimeWarp.CurrentRate < 2 && Time.time - startTime < 1) yield return null; // Give it a second to get going.
+            do
+            {
+                if (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && TimeWarp.CurrentRate > 1) // Warping in low mode, abort.
+                {
+                    TimeWarp.fetch.CancelAutoWarp();
+                    TimeWarp.SetRate(0, true, false);
+                    while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
+                    spawnProbe.SetPosition(spawnProbe.transform.position - Misc.Misc.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+                    if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
+                    else spawnProbe.Splashed = true;
+                    spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
+                }
+                startTime = Time.time;
+                while (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && Time.time - startTime < 3)
+                {
+                    spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
+                    yield return null; // Give it a second to switch to high warp mode.
+                }
+                TimeWarp.fetch.WarpTo(warpTo);
+                startTime = Time.time;
+                while (TimeWarp.CurrentRate < 2 && Time.time - startTime < 1) yield return null; // Give it a second to get going.
+            } while (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && TimeWarp.CurrentRate > 1); // Warping, but not high warp, bugger. Try again. FIXME KSP isn't the focused app, it doesn't want to go into high warp!
             while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
+
+            // Put the camera parent back.
+            flightCamera.transform.parent = originalCameraParentTransform;
+            flightCamera.mainCamera.nearClipPlane = originalCameraNearClipPlane;
+            warpCamera.SetActive(false);
+
+            warpingInProgress = false;
         }
     }
 }
