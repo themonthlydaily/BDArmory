@@ -8,6 +8,7 @@ using UnityEngine;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.UI;
+using BDArmory.Core;
 
 namespace BDArmory.Modules
 {
@@ -162,29 +163,26 @@ namespace BDArmory.Modules
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && vessel != null && !vessel.packed && !BDArmorySetup.GameIsPaused)
             {
-                if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
+                if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
                 {
-                    if (!isOnFire)
+                    if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
                     {
-                        string fireStarter;
-                        var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
-                        if (vesselFire != null)
+                        if (!isOnFire)
                         {
-                            fireStarter = vesselFire.SourceVessel;
+                            string fireStarter;
+                            var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
+                            if (vesselFire != null)
+                            {
+                                fireStarter = vesselFire.SourceVessel;
+                            }
+                            else
+                            {
+                                fireStarter = part.vessel.GetName();
+                            }
+                            BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
+                            Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
+                            isOnFire = true;
                         }
-                        else
-                        {
-                            fireStarter = part.vessel.GetName();
-                        }
-                        Vector3 firePosition = part.transform.up * 10;
-                        Ray LoSRay = new Ray(transform.position, (transform.position + firePosition) - transform.position);
-                        RaycastHit hit;
-                        if (Physics.Raycast(LoSRay, out hit, 10, 9076737)) 
-                        {
-                            BulletHitFX.AttachFire(hit, part, 50, fireStarter);
-                        }
-                        //Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire!");
-                        isOnFire = true;
                     }
                 }
             }

@@ -33,7 +33,7 @@ namespace BDArmory.Misc
                     {
                         if (alreadyburning != null)
                         {
-                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                         }
                         else
                         {
@@ -61,7 +61,7 @@ namespace BDArmory.Misc
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Battery Dice Roll: " + Diceroll);
                         if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
                         {
-                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                         }
                     }
                 }
@@ -76,7 +76,7 @@ namespace BDArmory.Misc
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Wooded part Dice Roll: " + Diceroll);
                             if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
                             {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 90);
+                                BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 90);
                             }
                         }
                     }
@@ -176,14 +176,14 @@ namespace BDArmory.Misc
                             {
                                 if ((explosivedamage || incendiary) && SRBFuelled)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                                 }
                             }
                             else
                             {
                                 if (alreadyburning == null)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, -1, 1, true);
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1, true);
                                 }
                             }
                         }
@@ -254,7 +254,7 @@ namespace BDArmory.Misc
                             gimbal.gimbalRange = 0;
                             if (incendiary)
                             {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 20);
+                                BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 20);
                             }
                         }
                     }
@@ -309,7 +309,7 @@ namespace BDArmory.Misc
                             aileron.ctrlSurfaceRange = 0;
                             if (incendiary)
                             {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 10);
+                                BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 10);
                             }
                         }
                     }
@@ -387,7 +387,7 @@ namespace BDArmory.Misc
                     {
                         if (incendiary)
                         {
-                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 20);
+                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 20);
                         }
                     }
                 }

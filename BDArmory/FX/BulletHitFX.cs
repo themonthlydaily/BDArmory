@@ -456,7 +456,7 @@ namespace BDArmory.FX
                                 leakcount++;
                             }
                             leak.drainDuration = 0;
-                            AttachFire(hit, hitPart, caliber, sourcevessel, -1, leakcount);
+                            AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
                         }
                     }
                     else
@@ -486,7 +486,7 @@ namespace BDArmory.FX
                 fuelLeak.SetActive(true);
             }
         }
-        public static void AttachFire(RaycastHit hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false, bool surfaceFire = false)
+        public static void AttachFire(Vector3 hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false, bool surfaceFire = false)
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED)
             {

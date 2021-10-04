@@ -437,7 +437,7 @@ namespace BDArmory.FX
                                         if (p == partHit)
                                         {
                                             if (rb == null) return;
-                                            BulletHitFX.AttachFire(hit, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
+                                            BulletHitFX.AttachFire(hit.point, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
                                                 Debug.Log("[BDArmory.FireFX] " + this.parentPart.name + " hit by burning fuel");
@@ -456,17 +456,18 @@ namespace BDArmory.FX
                 if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
                     ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "Fuel");
+                    if (tntFuel > 0 || tntMP > 0) parentPart.Destroy();
                 }
             }
             Deactivate();
         }
 
-        public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset, string sourcevessel, float burnTime = -1)
+        public void AttachAt(Part hitPart, Vector3 hit, Vector3 offset, string sourcevessel, float burnTime = -1)
         {
             if (hitPart == null) return;
             parentPart = hitPart;
             transform.SetParent(hitPart.transform);
-            transform.position = hit.point + offset;
+            transform.position = hit + offset;
             transform.rotation = Quaternion.FromToRotation(Vector3.up, -FlightGlobals.getGeeForceAtPosition(transform.position));
             parentPart.OnJustAboutToDie += OnParentDestroy;
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
@@ -494,6 +495,7 @@ namespace BDArmory.FX
                 {
                     SST.isOnFire = false;
                 }
+                disableTime = -1;
                 parentPart = null;
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.
                 gameObject.SetActive(false);
