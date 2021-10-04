@@ -1579,7 +1579,7 @@ namespace BDArmory.Modules
             float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
-                
+
             if (useRippleFire)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
@@ -1742,8 +1742,8 @@ namespace BDArmory.Modules
                                     RunTrajectorySimulation();
                                 }
                                 //heat
-                    
-                    heat += heatPerShot;
+
+                                heat += heatPerShot;
                                 //EC
                                 DrainECPerShot();
                                 RoundsRemaining++;
@@ -1801,7 +1801,7 @@ namespace BDArmory.Modules
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = (60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * TimeWarp.CurrentRate;
-            
+
             if (timeGap <= weaponManager.targetScanInterval)
                 return true;
             else
@@ -1822,7 +1822,7 @@ namespace BDArmory.Modules
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
 
-             float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
 
@@ -2093,7 +2093,7 @@ namespace BDArmory.Modules
                                 {
                                     p.AddInstagibDamage();
                                     ExplosionFx.CreateExplosion(hit.point,
-                                                   (1),"BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
+                                                   (1), "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
                                 }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
@@ -2861,8 +2861,8 @@ namespace BDArmory.Modules
                 }
                 if (BDArmorySettings.BULLET_WATER_DRAG)
                 {
-                    if ((FlightGlobals.getAltitudeAtPos(targetPosition) < 0) && (FlightGlobals.getAltitudeAtPos(targetPosition) + targetRadius >0)) //vessel not completely submerged
-                        {
+                    if ((FlightGlobals.getAltitudeAtPos(targetPosition) < 0) && (FlightGlobals.getAltitudeAtPos(targetPosition) + targetRadius > 0)) //vessel not completely submerged
+                    {
                         if (caliber < 75)
                         {
                             targetPosition += (VectorUtils.GetUpDirection(targetPosition) * Mathf.Abs(FlightGlobals.getAltitudeAtPos(targetPosition))); //set targetposition to surface directly above target
