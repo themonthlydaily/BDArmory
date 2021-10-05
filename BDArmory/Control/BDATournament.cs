@@ -715,7 +715,9 @@ namespace BDArmory.Control
                     }
                     if (!competitionStarted)
                     {
-                        Debug.Log("[BDArmory.BDATournament]: Failed to run heat, failure reasons: " + VesselSpawner.Instance.spawnFailureReason + ", " + BDACompetitionMode.Instance.competitionStartFailureReason);
+                        message = "Failed to run heat after 3 spawning attempts, failure reasons: " + VesselSpawner.Instance.spawnFailureReason + ", " + BDACompetitionMode.Instance.competitionStartFailureReason + ". Stopping tournament. Please fix the failure reason before continuing the tournament.";
+                        Debug.Log("[BDArmory.BDATournament]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
                         tournamentStatus = TournamentStatus.Stopped;
                         yield break;
                     }
