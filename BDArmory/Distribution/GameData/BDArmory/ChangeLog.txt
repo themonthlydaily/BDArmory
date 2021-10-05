@@ -8,6 +8,16 @@
 	- Fix some weapon selection criteria.
 	- Fix lasers doing negative damage.
 	- Fix exception in updating radar locked targets.
+	- Heartbleed/Armor melting no longer occurs when game is paused
+	- Adds check so empty fuel tanks will no longer catch fire if part temp exceeds fuel ignition point.
+	- Autoigniting fuel tanks will only add a single fire.
+	- Removes ability to add firebottles to SRBs.
+	- Fixes issue where AI would sometimes select rockets over guns for AtA when gun was superior option.
+	- AI should now select best, rather than first, bomb available when attacking ground targets.
+	- Fixes some typos in Stingray.cfg.
+	- Adds support for beam-guided AtA missiles.
+	- Torpedoes are no longer affected by Chaff.
+	- Beam-guided munitions can now properly target splashed targets.
 IMPROVEMENTS
 	- Added an "Underwater Bullet Drag" option for bullets and rockets to have considerable drag when in water. When enabled, the following applies:
 		- Bullets with caliber < 75 and rockets fired from above water stop when entering water and explode if they're explosive.
@@ -22,10 +32,13 @@ IMPROVEMENTS
 		- Add option to TimeWarp between tournament rounds (not heats) on planets with a solid surface (due to a technical constraint).
 		- Add Underwater vessel status to LoadedVesselSwitcher window and put the status after the vessel name.
 		- Expand the low altitude GM kill limit to depths of -10km.
+		- A clearer message when a tournament stops due to spawning/competition start failures.
 	- Internal:
 		- Adjust camera weights for picking a better vessel to switch to.
 		- Add a IsUnderwater vessel extension.
 	- Price rebalance.
+	- Adds clusterbombs to weapon selection logic.
+	- Selection logic now weights cluster ammo for missile interception.
 
 v1.4.9.1
 FIXES
