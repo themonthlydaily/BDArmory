@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.10.0
+FIXES
 	- General:
 		- Consider 'splashed' vessels as 'landed' when spawning.
 		- Symmetric parts are updated when armour type or hull material is adjusted in the editor.
@@ -46,12 +47,16 @@ IMPROVEMENTS
 			- AI will no longer select guns when underwater.
 	- UI:
 		- Add a toggle for showing the competition status messages with the UI hidden.
-		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
 		- Add option to TimeWarp between tournament rounds (not heats) on planets with a solid surface (due to a technical constraint).
 		- Add Underwater vessel status to LoadedVesselSwitcher window and put the status after the vessel name.
 		- Expand the low altitude GM kill limit to depths of -10km.
 		- A clearer message when a tournament stops due to spawning/competition start failures.
-		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles
+		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles.
+	- RWP:
+		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
+		- Add S4R2 RWP option Zombie Mode where only root part takes damage.
+			- Add non-headshot dmg multiplier slider to adjust how much damage non-root parts take.
+			- Add toggle to allow battledamage to occur on non-root parts.
 	- Internal:
 		- Adjust camera weights for picking a better vessel to switch to.
 		- Add a IsUnderwater vessel extension.
