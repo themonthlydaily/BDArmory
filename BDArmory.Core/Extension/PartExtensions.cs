@@ -17,8 +17,10 @@ namespace BDArmory.Core.Extension
             {
                 if (p.vessel.rootPart != null)
                 {
-                    //if (p != p.vessel.rootPart) return;
-                    damage *= BDArmorySettings.S4R2_DMG_MULT;
+                    if (p != p.vessel.rootPart)
+                    {
+                        damage *= BDArmorySettings.S4R2_DMG_MULT;
+                    }
                 }
             }
             //////////////////////////////////////////////////////////
@@ -123,7 +125,10 @@ namespace BDArmory.Core.Extension
                 {
                     if (p.vessel.rootPart != null)
                     {
-                        damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                        if (p != p.vessel.rootPart)
+                        {
+                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                        }
                     }
                 }
                 ApplyHitPoints(p, damage_);
@@ -210,7 +215,10 @@ namespace BDArmory.Core.Extension
                 {
                     if (p.vessel.rootPart != null)
                     {
-                        damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                        if (p != p.vessel.rootPart)
+                        {
+                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                        }
                     }
                 }
                 ApplyHitPoints(p, damage_, caliber, mass, multiplier, impactVelocity, penetrationfactor);
