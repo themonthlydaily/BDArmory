@@ -428,8 +428,26 @@ namespace BDArmory.Core.Module
             _updateMass = true;
         }
 
-        public void ArmorModified(BaseField field, object obj) { _armorModified = true; }
-        public void HullModified(BaseField field, object obj) { _hullModified = true; }
+        public void ArmorModified(BaseField field, object obj)
+        {
+            _armorModified = true;
+            foreach (var p in part.symmetryCounterparts)
+            {
+                var hp = p.GetComponent<HitpointTracker>();
+                if (hp == null) continue;
+                hp._armorModified = true;
+            }
+        }
+        public void HullModified(BaseField field, object obj)
+        {
+            _hullModified = true;
+            foreach (var p in part.symmetryCounterparts)
+            {
+                var hp = p.GetComponent<HitpointTracker>();
+                if (hp == null) continue;
+                hp._hullModified = true;
+            }
+        }
 
         public override void OnUpdate() // This only runs in flight mode.
         {
