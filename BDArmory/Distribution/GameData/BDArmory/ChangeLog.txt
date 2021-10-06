@@ -1,18 +1,65 @@
 ﻿FIXES
-	- Consider 'splashed' vessels as 'landed' when spawning.
-	- Get the AI on the initial load when reverting to the editor.
-	- Fix the AI GUI updating the values when switching vessels when using numeric fields.
-	- Fix some surface AI values being initialised from the wrong variables in the AI GUI.
-	- Fix speed mutators from setting engine throttle to 0.
-	- Fix mutator mode interaction with weapon arenas and impulse weapons (gravity gun).
+	- General:
+		- Consider 'splashed' vessels as 'landed' when spawning.
+		- Symmetric parts are updated when armour type or hull material is adjusted in the editor.
+		- Fix exception in updating radar locked targets.
+		- Remove duplicate 'Detonate At Minimum Distance' toggle from non-modular missiles.
+	- AI GUI:
+		- Get the AI on the initial load when reverting to the editor.
+		- Fix the AI GUI updating the values when switching vessels when using numeric fields.
+		- Fix some surface AI values being initialised from the wrong variables in the AI GUI.
+	- Mutators:
+		- Fix speed mutators from setting engine throttle to 0.
+		- Fix mutator mode interaction with weapon arenas and impulse weapons (gravity gun).
+	- Weapons:
+		- Fix some weapon selection criteria.
+		- Fix lasers doing negative damage.
+		- Fixes issue where AI would sometimes select rockets over guns for AtA when gun was superior option.
+		- Fixes some typos in Stingray.cfg.
+		- Torpedoes are no longer affected by Chaff.
+		- Beam-guided munitions can now properly target splashed targets.
+	- Battle Damage:
+		- Heartbleed/Armor melting no longer occurs when game is paused
+		- Adds check so empty fuel tanks will no longer catch fire if part temp exceeds fuel ignition point.
+		- Autoigniting fuel tanks will only add a single fire.
+		- Removes ability to add firebottles to SRBs.
+		- Fuel Tanks/Ammo Boxes now require 'Fires' and 'Fires Add Heat' enabled in Battle Damage settings to catch fire if too hot.
+		- Burning Fuel tanks now properly destroy the part if they explode.
+	- SPH/VAB
+		- The Armor Tool GUI will no longer reset armor thickness of all parts to 10 when opened.
 IMPROVEMENTS
-	- Add a toggle for showing the competition status messages with the UI hidden.
-	- Add option for bullets and rockets to have considerable drag when in water (if fired from underwater). Bullets and rockets fired from above water stop when entering water and explode if they're explosive.
-	- Add S4R1 RWP option for adjusting the firing rate of weapons in-game.
-	- Adjust armor panel buoyancy, armor panels will float again when at max thickness.
-	- Adjust camera weights for picking a better vessel to switch to.
-	- Add option to TimeWarp between tournament rounds (not heats) on planets with a solid surface (due to a technical constraint).
-	- Automatically create a AutoSpawn/Flags directory for standardising the location of flags for BDArmory competitions.
+	- Weapons:
+		- Adds clusterbombs to weapon selection logic.
+		- Adds support for beam-guided AtA missiles.
+		- AI should now select best, rather than first, bomb available when attacking ground targets.
+		- Selection logic now weights cluster ammo for missile interception.
+		- AI will can now select rockets/lasers to use at close range against underwater targets.
+		- AI can now target flying targets with laser-guided munitions.
+		- AI will not use EMP missiles against targets that are currently EMP'ed.
+		- Adds water splash FX for bullets hitting water.
+		- Bullets can now ricochet off water.
+		- Added an "Underwater Bullet Drag" option for bullets and rockets to have considerable drag when in water. When enabled, the following applies:
+			- Bullets with caliber < 75 and rockets fired from above water stop when entering water and explode if they're explosive.
+			- Rockets with sufficient thrust duration can be fired from underwater at splashed/submerged targets that are close enough.
+			- Weapons targeting nearly fully submerged targets will target the water surface immediately above the target.
+			- Weapon selection updated to reflect the above changes.
+			- AI will no longer select guns when underwater.
+	- UI:
+		- Add a toggle for showing the competition status messages with the UI hidden.
+		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
+		- Add option to TimeWarp between tournament rounds (not heats) on planets with a solid surface (due to a technical constraint).
+		- Add Underwater vessel status to LoadedVesselSwitcher window and put the status after the vessel name.
+		- Expand the low altitude GM kill limit to depths of -10km.
+		- A clearer message when a tournament stops due to spawning/competition start failures.
+		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles
+	- Internal:
+		- Adjust camera weights for picking a better vessel to switch to.
+		- Add a IsUnderwater vessel extension.
+		- Adds hidden legacy armor toggle to disable armor overhaul changes (armor types/hull material) accessible via editing settings.cfg.
+	- General:
+		- Adjust armor panel buoyancy, armor panels will float again when at max thickness.
+		- Automatically create a GameData/Custom/Flags directory for standardising the location of flags for BDArmory competitions.
+		- Price rebalance.
 
 v1.4.9.1
 FIXES
