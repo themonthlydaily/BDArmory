@@ -52,11 +52,6 @@ IMPROVEMENTS
 		- Expand the low altitude GM kill limit to depths of -10km.
 		- A clearer message when a tournament stops due to spawning/competition start failures.
 		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles.
-	- RWP:
-		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
-		- Add S4R2 RWP option Zombie Mode where only root part takes damage.
-			- Add non-headshot dmg multiplier slider to adjust how much damage non-root parts take.
-			- Add toggle to allow battledamage to occur on non-root parts.
 	- Internal:
 		- Adjust camera weights for picking a better vessel to switch to.
 		- Add a IsUnderwater vessel extension.
@@ -65,6 +60,7 @@ IMPROVEMENTS
 		- Adjust armor panel buoyancy, armor panels will float again when at max thickness.
 		- Automatically create a GameData/Custom/Flags directory for standardising the location of flags for BDArmory competitions.
 		- Price rebalance.
+		- Some RWP specific options (to be decalred once the rounds have been run).
 
 v1.4.9.1
 FIXES
