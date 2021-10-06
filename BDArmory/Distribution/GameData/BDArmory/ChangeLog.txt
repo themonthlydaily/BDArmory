@@ -34,7 +34,7 @@ IMPROVEMENTS
 		- AI should now select best, rather than first, bomb available when attacking ground targets.
 		- Selection logic now weights cluster ammo for missile interception.
 		- AI will can now select rockets/lasers to use at close range against underwater targets.
-		- AI can now target splashed/flying targets with laser-guided munitions.
+		- AI can now target flying targets with laser-guided munitions.
 		- AI will not use EMP missiles against targets that are currently EMP'ed.
 		- Adds water splash FX for bullets hitting water.
 		- Bullets can now ricochet off water.
