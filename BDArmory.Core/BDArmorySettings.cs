@@ -106,6 +106,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistantSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistantSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
+        [BDAPersistantSettingsField] public static float S4R2_DMG_MULT = 0.1f;
 
         // FX
         [BDAPersistantSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
@@ -173,6 +174,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = false; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
         [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = true; //do fires add heat to parts?
+        [BDAPersistantSettingsField] public static bool ALLOW_S4R2_BD = false; //allow battle damage to proc when using zombie mode?
 
         // Remote logging
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle

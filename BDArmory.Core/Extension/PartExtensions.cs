@@ -13,7 +13,14 @@ namespace BDArmory.Core.Extension
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
-
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    //if (p != p.vessel.rootPart) return;
+                    damage *= BDArmorySettings.S4R2_DMG_MULT;
+                }
+            }
             //////////////////////////////////////////////////////////
             // Basic Add Hitpoints for compatibility (only used by lasers & fires)
             //////////////////////////////////////////////////////////
@@ -54,7 +61,15 @@ namespace BDArmory.Core.Extension
                                                float multiplier = 1)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
-
+            /*
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    //if (p != p.vessel.rootPart) return 0f;
+                }
+            }
+            */
             float damage_ = 0f;
             //////////////////////////////////////////////////////////
             // Explosive Hitpoints
@@ -104,6 +119,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                {
+                    if (p.vessel.rootPart != null)
+                    {
+                        damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                    }
+                }
                 ApplyHitPoints(p, damage_);
             }
             return damage_;
@@ -119,7 +141,15 @@ namespace BDArmory.Core.Extension
                                                ExplosionSourceType sourceType)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
-
+            /*
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    if (p != p.vessel.rootPart) return 0f;
+                }
+            }
+            */
             //////////////////////////////////////////////////////////
             // Basic Kinetic Formula
             //////////////////////////////////////////////////////////
@@ -176,6 +206,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                {
+                    if (p.vessel.rootPart != null)
+                    {
+                        damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                    }
+                }
                 ApplyHitPoints(p, damage_, caliber, mass, multiplier, impactVelocity, penetrationfactor);
             }
             return damage_;

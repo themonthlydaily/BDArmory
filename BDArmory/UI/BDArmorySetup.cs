@@ -2499,6 +2499,13 @@ namespace BDArmory.UI
                     GUI.Label(SLeftRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRate")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE})", leftLabel);//Fire Rate Override
                     BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300f));
                 }
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                {
+                    GUI.Label(SLeftRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.S4R2_DMG_MULT})", leftLabel);//"S4R2 Non-headshot Dmg Mult"
+                    BDArmorySettings.S4R2_DMG_MULT = (Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.S4R2_DMG_MULT, 1f, 19.5f))/20);
+
+                    BDArmorySettings.ALLOW_S4R2_BD = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ALLOW_S4R2_BD, Localizer.Format("#LOC_BDArmory_Settings_BD_ZombieMode"));//"Allow battle Damage"
+                }
                 line++;
 
             }

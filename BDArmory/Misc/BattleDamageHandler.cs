@@ -15,6 +15,16 @@ namespace BDArmory.Misc
         public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc)
         {
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (!BDArmorySettings.ALLOW_S4R2_BD)
+                {
+                    if (part.vessel.rootPart != null)
+                    {
+                        if (part != part.vessel.rootPart) return;
+                    }
+                }
+            }
             if (ProjectileUtils.IsIgnoredPart(part)) return; // Ignore ignored parts.
 
             double damageChance = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE * ((1 - part.GetDamagePercentage()) * 10) * (penetrationFactor / 2)), 0, 100); //more heavily damaged parts more likely to take battledamage

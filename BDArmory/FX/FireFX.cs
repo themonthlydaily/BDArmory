@@ -456,7 +456,10 @@ namespace BDArmory.FX
                 if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
                     ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "Fuel");
-                    if (tntFuel > 0 || tntMP > 0) parentPart.Destroy();
+                    if (BDArmorySettings.RUNWAY_PROJECT_ROUND != 42)
+                    {
+                        if (tntFuel > 0 || tntMP > 0) parentPart.Destroy();
+                    }
                 }
             }
             Deactivate();
