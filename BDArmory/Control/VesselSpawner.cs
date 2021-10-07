@@ -615,6 +615,7 @@ namespace BDArmory.Control
                     do
                     {
                         yield return new WaitForFixedUpdate();
+                        CheckForRenamedVessels(spawnedVessels);
 
                         // Check that none of the vessels have lost parts.
                         if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
@@ -759,6 +760,7 @@ namespace BDArmory.Control
             }
             else
             {
+                CheckForRenamedVessels(spawnedVessels);
                 if (spawnConfig.assignTeams)
                 {
                     // Assign the vessels to teams.
@@ -845,6 +847,23 @@ namespace BDArmory.Control
                 }
             }
             vesselsSpawningOnceContinuously = false; // For when VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING gets toggled.
+        }
+
+        /// <summary>
+        /// If the VESSELNAMING tag exists in the craft file, then KSP renames the vessel at some point after spawning.
+        /// This function checks for renamed vessels and sets the name back to what it was.
+        /// This must be called once after a yield, before using vessel.vesselName as an index in spawnedVessels.Keys.
+        /// </summary>
+        /// <param name="spawnedVessels"></param>
+        void CheckForRenamedVessels(Dictionary<string, Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>> spawnedVessels)
+        {
+            foreach (var vesselName in spawnedVessels.Keys.ToList())
+            {
+                if (vesselName != spawnedVessels[vesselName].Item1.vesselName)
+                {
+                    spawnedVessels[vesselName].Item1.vesselName = vesselName;
+                }
+            }
         }
         #endregion
 
