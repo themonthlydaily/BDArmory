@@ -141,6 +141,13 @@ namespace BDArmory.Core.Module
         private bool _hpConfigured = false;
         private bool _finished_setting_up = false;
 
+        public bool isOnFire = false;
+
+        public static bool GameIsPaused
+        {
+            get { return PauseMenu.isOpen || Time.timeScale == 0; }
+        }
+
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
@@ -243,12 +250,12 @@ namespace BDArmory.Core.Module
                 {
                     typecount++;
                 }
-                if (part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "bdPilotAI" || part.name == "missileController" || part.name == "bdammGuidanceModule")
+                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR)
                 {
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
-                    Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActive = false;
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
                 }
@@ -421,20 +428,41 @@ namespace BDArmory.Core.Module
             _updateMass = true;
         }
 
-        public void ArmorModified(BaseField field, object obj) { _armorModified = true; }
-        public void HullModified(BaseField field, object obj) { _hullModified = true; }
+        public void ArmorModified(BaseField field, object obj)
+        {
+            _armorModified = true;
+            foreach (var p in part.symmetryCounterparts)
+            {
+                var hp = p.GetComponent<HitpointTracker>();
+                if (hp == null) continue;
+                hp._armorModified = true;
+            }
+        }
+        public void HullModified(BaseField field, object obj)
+        {
+            _hullModified = true;
+            foreach (var p in part.symmetryCounterparts)
+            {
+                var hp = p.GetComponent<HitpointTracker>();
+                if (hp == null) continue;
+                hp._hullModified = true;
+            }
+        }
 
         public override void OnUpdate() // This only runs in flight mode.
         {
             if (!_finished_setting_up) return;
             RefreshHitPoints();
-            if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+            if (HighLogic.LoadedSceneIsFlight && !GameIsPaused)
             {
-                HeartBleed();
-            }
-            if (part.skinTemperature > SafeUseTemp * 1.5f)
-            {
-                ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                if (BDArmorySettings.HEART_BLEED_ENABLED && ShouldHeartBleed())
+                {
+                    HeartBleed();
+                }
+                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                {
+                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                }
             }
         }
 
@@ -546,12 +574,12 @@ namespace BDArmory.Core.Module
                 var density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
                 if (density > 1e5f || density < 10)
                 {
-                    Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
                     structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
                     density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
                     if (density > 1e5f || density < 10)
                     {
-                        Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
                         clampHP = true;
                     }
                 }
@@ -667,7 +695,7 @@ namespace BDArmory.Core.Module
 
             if (Hitpoints <= 0)
             {
-                Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
                 DestroyPart();
             }
         }
@@ -820,11 +848,24 @@ namespace BDArmory.Core.Module
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
                 SetArmor();
+
+                if (BDArmorySettings.LEGACY_ARMOR)
+                {
+                    guiArmorTypeString = "Steel";
+                    SelectedArmorType = "Legacy Armor";
+                    Density = 7850;
+                    Diffusivity = 48.5f;
+                    Ductility = 0.15f;
+                    Hardness = 1176;
+                    Strength = 940;
+                    SafeUseTemp = 2500;
+                }
+
             }
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
-            if (ArmorTypeNum > 1) //don't apply cost/mass to None armor type
+            if (ArmorTypeNum > 1 && !BDArmorySettings.LEGACY_ARMOR) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons

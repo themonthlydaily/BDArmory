@@ -291,9 +291,12 @@ namespace BDArmory.Modules
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
             {
-                if (this.part.temperature > 900) //ammo cooks off, part is too hot
+                if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
                 {
-                    DetonateIfPossible();
+                    if (this.part.temperature > 900) //ammo cooks off, part is too hot
+                    {
+                        DetonateIfPossible();
+                    }
                 }
             }
         }

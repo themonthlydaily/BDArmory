@@ -421,7 +421,7 @@ namespace BDArmory.UI
                 GUI.EndGroup();
                 TeamColorsGroup.height = Mathf.Lerp(TeamColorsGroup.height, (line * 25) + 5, 0.35f);
             }
-            toolWindowHeight = Mathf.Lerp(toolWindowHeight, (50 + IconOptionsGroup.height + TeamColorsGroup.height) + 15, 0.35f);
+            toolWindowHeight = Mathf.Lerp(toolWindowHeight, (50 + (BDTISettings.TEAMICONS ? IconOptionsGroup.height + TeamColorsGroup.height : 0)) + 15, 0.35f);
             WindowRectGUI.height = toolWindowHeight + 10;
         }
     }

@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine;
 using BDArmory.Core;
 using BDArmory.UI;
+using BDArmory.Misc;
 
 namespace BDArmory.Control
 {
@@ -560,6 +561,7 @@ namespace BDArmory.Control
         public int vesselsPerTeam = 0;
         public bool fullTeams = false;
         bool competitionStarted = false;
+        public bool warpingInProgress = false;
         #endregion
 
         void Awake()
@@ -675,6 +677,7 @@ namespace BDArmory.Control
 
         IEnumerator RunTournamentCoroutine()
         {
+            bool firstRun = true; // Whether a heat has been run yet (particularly for loading partway through a tournament).
             yield return new WaitForFixedUpdate();
             foreach (var roundIndex in tournamentState.rounds.Keys)
             {
@@ -712,10 +715,13 @@ namespace BDArmory.Control
                     }
                     if (!competitionStarted)
                     {
-                        Debug.Log("[BDArmory.BDATournament]: Failed to run heat, failure reasons: " + VesselSpawner.Instance.spawnFailureReason + ", " + BDACompetitionMode.Instance.competitionStartFailureReason);
+                        message = "Failed to run heat after 3 spawning attempts, failure reasons: " + VesselSpawner.Instance.spawnFailureReason + ", " + BDACompetitionMode.Instance.competitionStartFailureReason + ". Stopping tournament. Please fix the failure reason before continuing the tournament.";
+                        Debug.Log("[BDArmory.BDATournament]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
                         tournamentStatus = TournamentStatus.Stopped;
                         yield break;
                     }
+                    firstRun = false;
 
                     // Register the heat as completed.
                     if (!tournamentState.completed.ContainsKey(roundIndex)) tournamentState.completed.Add(roundIndex, new HashSet<int>());
@@ -723,21 +729,43 @@ namespace BDArmory.Control
                     SaveTournamentState();
                     heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
 
-                    if (heatsRemaining > 0)
+                    if (tournamentState.completed[roundIndex].Count < tournamentState.rounds[roundIndex].Count)
                     {
                         // Wait a bit for any user action
                         tournamentStatus = TournamentStatus.Waiting;
                         double startTime = Planetarium.GetUniversalTime();
                         while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
                         {
-                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running next heat.");
+                            BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running the next heat.");
                             yield return new WaitForSeconds(1);
                         }
                     }
                 }
-                message = "All heats in round " + roundIndex + " have been run.";
-                BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[BDArmory.BDATournament]: " + message);
+                if (!firstRun)
+                {
+                    message = "All heats in round " + roundIndex + " have been run.";
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    Debug.Log("[BDArmory.BDATournament]: " + message);
+                    if (heatsRemaining > 0)
+                    {
+                        if (BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS > 0)
+                        {
+                            BDACompetitionMode.Instance.competitionStatus.Add($"Warping ahead {BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS} mins, then running the next round.");
+                            yield return WarpAhead(BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS * 60);
+                        }
+                        else
+                        {
+                            // Wait a bit for any user action
+                            tournamentStatus = TournamentStatus.Waiting;
+                            double startTime = Planetarium.GetUniversalTime();
+                            while ((Planetarium.GetUniversalTime() - startTime) < BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS)
+                            {
+                                BDACompetitionMode.Instance.competitionStatus.Add("Waiting " + (BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS - (Planetarium.GetUniversalTime() - startTime)).ToString("0") + "s, then running the next round.");
+                                yield return new WaitForSeconds(1);
+                            }
+                        }
+                    }
+                }
             }
             message = "All rounds in tournament " + tournamentState.tournamentID + " have been run.";
             BDACompetitionMode.Instance.competitionStatus.Add(message);
@@ -792,6 +820,98 @@ namespace BDArmory.Control
             competitionStarted = true;
             while (BDACompetitionMode.Instance.competitionIsActive) // Wait for the competition to finish.
                 yield return new WaitForSeconds(1);
+        }
+
+        GameObject warpCamera;
+        IEnumerator WarpAhead(double warpTimeBetweenHeats)
+        {
+            if (!FlightGlobals.currentMainBody.hasSolidSurface)
+            {
+                message = "Sorry, unable to TimeWarp without a solid surface to place the spawn probe on.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[BDArmory.BDATournament]: " + message);
+                yield return new WaitForSeconds(5f);
+                yield break;
+            }
+            warpingInProgress = true;
+            Vessel spawnProbe;
+            var vesselsToKill = FlightGlobals.Vessels.ToList();
+            int tries = 0;
+            do
+            {
+                spawnProbe = VesselSpawner.Instance.SpawnSpawnProbe();
+                yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
+                while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+                {
+                    LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
+                    yield return null;
+                }
+            } while (++tries < 3 && spawnProbe == null);
+            if (spawnProbe == null)
+            {
+                message = "Failed to spawn spawnProbe, aborting warp.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogWarning("[BDArmory.BDATournament]: " + message);
+                yield break;
+            }
+            var up = VectorUtils.GetUpDirection(spawnProbe.transform.position);
+            var refDirection = Math.Abs(Vector3.Dot(Vector3.up, up)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
+            spawnProbe.SetPosition(spawnProbe.transform.position - Misc.Misc.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+            if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
+            else spawnProbe.Splashed = true;
+            spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
+            // Kill all other vessels (including debris).
+            foreach (var vessel in vesselsToKill)
+                VesselSpawner.Instance.RemoveVessel(vessel);
+            while (VesselSpawner.Instance.removeVesselsPending > 0) yield return null;
+
+            // Adjust the camera for a nice view.
+            if (warpCamera == null) warpCamera = new GameObject("WarpCamera");
+            var cameraLocalPosition = 3f * Vector3.Cross(up, refDirection).normalized + up;
+            warpCamera.SetActive(true);
+            warpCamera.transform.position = spawnProbe.transform.position;
+            warpCamera.transform.rotation = Quaternion.LookRotation(-cameraLocalPosition, up);
+            var flightCamera = FlightCamera.fetch;
+            var originalCameraParentTransform = flightCamera.transform.parent;
+            var originalCameraNearClipPlane = flightCamera.mainCamera.nearClipPlane;
+            flightCamera.SetTargetNone();
+            flightCamera.transform.parent = warpCamera.transform;
+            flightCamera.transform.localPosition = cameraLocalPosition;
+            flightCamera.transform.localRotation = Quaternion.identity;
+            flightCamera.SetDistance(3000f);
+
+            var warpTo = Planetarium.GetUniversalTime() + warpTimeBetweenHeats;
+            var startTime = Time.time;
+            do
+            {
+                if (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && TimeWarp.CurrentRate > 1) // Warping in low mode, abort.
+                {
+                    TimeWarp.fetch.CancelAutoWarp();
+                    TimeWarp.SetRate(0, true, false);
+                    while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
+                    spawnProbe.SetPosition(spawnProbe.transform.position - Misc.Misc.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+                    if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
+                    else spawnProbe.Splashed = true;
+                    spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
+                }
+                startTime = Time.time;
+                while (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && Time.time - startTime < 3)
+                {
+                    spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
+                    yield return null; // Give it a second to switch to high warp mode.
+                }
+                TimeWarp.fetch.WarpTo(warpTo);
+                startTime = Time.time;
+                while (TimeWarp.CurrentRate < 2 && Time.time - startTime < 1) yield return null; // Give it a second to get going.
+            } while (TimeWarp.WarpMode != TimeWarp.Modes.HIGH && TimeWarp.CurrentRate > 1); // Warping, but not high warp, bugger. Try again. FIXME KSP isn't the focused app, it doesn't want to go into high warp!
+            while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
+
+            // Put the camera parent back.
+            flightCamera.transform.parent = originalCameraParentTransform;
+            flightCamera.mainCamera.nearClipPlane = originalCameraNearClipPlane;
+            warpCamera.SetActive(false);
+
+            warpingInProgress = false;
         }
     }
 }

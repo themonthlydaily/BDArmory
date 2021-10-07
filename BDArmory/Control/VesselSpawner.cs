@@ -38,8 +38,6 @@ namespace BDArmory.Control
             spawnLocationCamera = new GameObject("StationaryCameraParent");
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn")) // Ensure AutoSpawn folder exists.
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
         }
 
         void OnDestroy()
@@ -617,6 +615,7 @@ namespace BDArmory.Control
                     do
                     {
                         yield return new WaitForFixedUpdate();
+                        CheckForRenamedVessels(spawnedVessels);
 
                         // Check that none of the vessels have lost parts.
                         if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
@@ -761,6 +760,7 @@ namespace BDArmory.Control
             }
             else
             {
+                CheckForRenamedVessels(spawnedVessels);
                 if (spawnConfig.assignTeams)
                 {
                     // Assign the vessels to teams.
@@ -847,6 +847,23 @@ namespace BDArmory.Control
                 }
             }
             vesselsSpawningOnceContinuously = false; // For when VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING gets toggled.
+        }
+
+        /// <summary>
+        /// If the VESSELNAMING tag exists in the craft file, then KSP renames the vessel at some point after spawning.
+        /// This function checks for renamed vessels and sets the name back to what it was.
+        /// This must be called once after a yield, before using vessel.vesselName as an index in spawnedVessels.Keys.
+        /// </summary>
+        /// <param name="spawnedVessels"></param>
+        void CheckForRenamedVessels(Dictionary<string, Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>> spawnedVessels)
+        {
+            foreach (var vesselName in spawnedVessels.Keys.ToList())
+            {
+                if (vesselName != spawnedVessels[vesselName].Item1.vesselName)
+                {
+                    spawnedVessels[vesselName].Item1.vesselName = vesselName;
+                }
+            }
         }
         #endregion
 
@@ -1489,12 +1506,12 @@ namespace BDArmory.Control
             return optimisedSlots;
         }
 
-        public Vessel SpawnSpawnProbe(Vector2d geoCoords, float altitude)
+        public Vessel SpawnSpawnProbe()
         {
             // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
             var dummyVar = EditorFacility.None;
             Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + altitude * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
             if (!File.Exists($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft"))
             {
                 message = "GameData/BDArmory/craft/SpawnProbe.craft is missing. Please create the craft (a simple octo2 probe core will do).";
@@ -1503,11 +1520,10 @@ namespace BDArmory.Control
                 return null;
             }
             Vessel spawnProbe = SpawnVesselFromCraftFile($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft", dummySpawnCoords, 0, 0f, out dummyVar);
-            spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
             return spawnProbe;
         }
 
-        private int removeVesselsPending = 0;
+        public int removeVesselsPending = 0;
         // Remove a vessel and clean up any remaining parts. This fixes the case where the currently focussed vessel refuses to die properly.
         public void RemoveVessel(Vessel vessel)
         {

@@ -1293,7 +1293,7 @@ namespace BDArmory.Modules
             debugSphere.transform.position = groundTargetPosition;
         }
 
-        void GroundStabilize()
+        public void GroundStabilize()
         {
             if (vessel.packed) return;
             StopResetting();
@@ -1389,7 +1389,7 @@ namespace BDArmory.Modules
                     {
                         KerbalEVA hitEVA = rayHit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                         Part p = hitEVA ? hitEVA.part : rayHit.collider.GetComponentInParent<Part>();
-                        if (p && p.vessel && p.vessel.Landed)
+                        if (p && p.vessel)
                         {
                             groundTargetPosition = p.vessel.CoM;
                         }
@@ -1475,6 +1475,7 @@ namespace BDArmory.Modules
             radarLock = false;
             StopResetting();
             ClearTarget();
+            if (cameraParentTransform == null) yield break;
             while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, position - (cameraParentTransform.transform.position)) > 0.1f)
             {
                 Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.transform.forward, position - cameraParentTransform.transform.position, 90 * Mathf.Deg2Rad * Time.fixedDeltaTime, 0);

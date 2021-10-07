@@ -479,6 +479,8 @@ namespace BDArmory.Modules
         public float tntMass = 0;
 
         public bool incendiary;
+        public bool ImpulseInConfig = false; //record if impulse weapon in config for resetting weapons post mutator
+        public bool GraviticInConfig = false; //record if gravitic weapon in config for resetting weapons post mutator
 
         [KSPField]
         public bool impulseWeapon = false;
@@ -1144,6 +1146,14 @@ namespace BDArmory.Modules
                 }
             }
 
+            if (graviticWeapon)
+            {
+                GraviticInConfig = true;
+            }
+            if (impulseWeapon)
+            {
+                ImpulseInConfig = true;
+            }
             if (eWeaponType != WeaponTypes.Laser)
             {
                 SetupAmmo(null, null);
@@ -1356,7 +1366,10 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-                            gauge.UpdateReloadMeter((Time.time - timeFired) * roundsPerMinute / 60);
+                            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                                gauge.UpdateReloadMeter((Time.time - timeFired) * BDArmorySettings.FIRE_RATE_OVERRIDE / 60);
+                            else
+                                gauge.UpdateReloadMeter((Time.time - timeFired) * roundsPerMinute / 60);
                         }
                     }
                     gauge.UpdateHeatMeter(heat / maxHeat);
@@ -1563,8 +1576,10 @@ namespace BDArmory.Modules
                 }
                 return;
             }
+            float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
 
-            float timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
             if (useRippleFire)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
@@ -1631,7 +1646,7 @@ namespace BDArmory.Modules
 
                                     pBullet.ballisticCoefficient = bulletBallisticCoefficient;
 
-                                    pBullet.flightTimeElapsed = iTime;
+                                    pBullet.timeElapsedSinceCurrentSpeedWasAdjusted = iTime;
                                     // measure bullet lifetime in time rather than in distance, because distances get very relative in orbit
                                     pBullet.timeToLiveUntil = Mathf.Max(maxTargetingRange, maxEffectiveDistance) / bulletVelocity * 1.1f + Time.time;
 
@@ -1727,8 +1742,8 @@ namespace BDArmory.Modules
                                     RunTrajectorySimulation();
                                 }
                                 //heat
-                    
-                    heat += heatPerShot;
+
+                                heat += heatPerShot;
                                 //EC
                                 DrainECPerShot();
                                 RoundsRemaining++;
@@ -1784,6 +1799,9 @@ namespace BDArmory.Modules
         public bool CanFireSoon()
         {
             float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                timeGap = (60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * TimeWarp.CurrentRate;
+
             if (timeGap <= weaponManager.targetScanInterval)
                 return true;
             else
@@ -1803,7 +1821,11 @@ namespace BDArmory.Modules
             {
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
-            float timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+
+            float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
+
             if (useRippleFire)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
@@ -2071,7 +2093,7 @@ namespace BDArmory.Modules
                                 {
                                     p.AddInstagibDamage();
                                     ExplosionFx.CreateExplosion(hit.point,
-                                                   (1),"BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
+                                                   (1), "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
                                 }
                                 var aName = vesselname;
                                 var tName = p.vessel.GetName();
@@ -2144,10 +2166,12 @@ namespace BDArmory.Modules
         {
             int rocketsLeft;
 
-            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate;
+            float timeGap = (60 / roundsPerMinute) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                timeGap = (60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * TimeWarp.CurrentRate;
             if (!rocketPod)
-            
-            timeGap = timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
+                timeGap *= fireTransforms.Length;
+
             if (useRippleFire)
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
@@ -2456,6 +2480,9 @@ namespace BDArmory.Modules
                 if ((!useRippleFire) || (useRippleFire && i == barrelIndex))
                 {
                     float unclampedSpeed = (roundsPerMinute * fireState[i].length) / 60f;
+                    if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                        unclampedSpeed = (BDArmorySettings.FIRE_RATE_OVERRIDE * fireState[i].length) / 60f;
+
                     float lowFramerateFix = 1;
                     if (roundsPerMinute > 500f)
                     {
@@ -2743,10 +2770,21 @@ namespace BDArmory.Modules
             //AI control
             if (aiControlled && !slaved)
             {
-                if (!targetAcquired && (!weaponManager || Time.time - lastGoodTargetTime > Mathf.Max(60f / roundsPerMinute, weaponManager.targetScanInterval)))
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 {
-                    autoFire = false;
-                    return;
+                    if (!targetAcquired && (!weaponManager || Time.time - lastGoodTargetTime > Mathf.Max(60f / BDArmorySettings.FIRE_RATE_OVERRIDE, weaponManager.targetScanInterval)))
+                    {
+                        autoFire = false;
+                        return;
+                    }
+                }
+                else
+                {
+                    if (!targetAcquired && (!weaponManager || Time.time - lastGoodTargetTime > Mathf.Max(60f / roundsPerMinute, weaponManager.targetScanInterval)))
+                    {
+                        autoFire = false;
+                        return;
+                    }
                 }
             }
 
@@ -2821,7 +2859,16 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-
+                if (BDArmorySettings.BULLET_WATER_DRAG)
+                {
+                    if ((FlightGlobals.getAltitudeAtPos(targetPosition) < 0) && (FlightGlobals.getAltitudeAtPos(targetPosition) + targetRadius > 0)) //vessel not completely submerged
+                    {
+                        if (caliber < 75)
+                        {
+                            targetPosition += (VectorUtils.GetUpDirection(targetPosition) * Mathf.Abs(FlightGlobals.getAltitudeAtPos(targetPosition))); //set targetposition to surface directly above target
+                        }
+                    }
+                }
                 //aim assist
                 Vector3 originalTarget = targetPosition;
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
@@ -3564,9 +3611,20 @@ namespace BDArmory.Modules
             bool atprWasAcquired = atprAcquired;
             atprAcquired = false;
             lastTargetAcquisitionType = targetAcquisitionType;
-            if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
+
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
             {
-                targetAcquisitionType = TargetAcquisitionType.None;
+                if (Time.time - lastGoodTargetTime > Mathf.Max(BDArmorySettings.FIRE_RATE_OVERRIDE / 60f, weaponManager.targetScanInterval))
+                {
+                    targetAcquisitionType = TargetAcquisitionType.None;
+                }
+            }
+            else
+            {
+                if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
+                {
+                    targetAcquisitionType = TargetAcquisitionType.None;
+                }
             }
             lastVisualTargetVessel = visualTargetVessel;
 
