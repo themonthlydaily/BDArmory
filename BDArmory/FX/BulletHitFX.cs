@@ -508,7 +508,13 @@ namespace BDArmory.FX
         {
             if (!CanFlamesBeAttached(hitPart)) return;
 
+            if (flameFXPool == null) SetupBulletHitFXPool();
             var flameObject = flameFXPool.GetPooledObject();
+            if (flameObject == null)
+            {
+                Debug.LogError("[BDArmory.BulletHitFX]: flameFXPool gave a null flameObject!");
+                return;
+            }
             flameObject.transform.SetParent(hitPart.transform);
             flameObject.SetActive(true);
         }
