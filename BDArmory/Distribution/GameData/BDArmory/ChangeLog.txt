@@ -1,4 +1,8 @@
-﻿v1.4.10.0
+﻿FIXES
+	- Fix some exceptions related to flames.
+	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
+
+v1.4.10.0
 FIXES
 	- General:
 		- Consider 'splashed' vessels as 'landed' when spawning.
