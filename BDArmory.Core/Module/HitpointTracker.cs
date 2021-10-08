@@ -428,8 +428,26 @@ namespace BDArmory.Core.Module
             _updateMass = true;
         }
 
-        public void ArmorModified(BaseField field, object obj) { _armorModified = true; }
-        public void HullModified(BaseField field, object obj) { _hullModified = true; }
+        public void ArmorModified(BaseField field, object obj)
+        {
+            _armorModified = true;
+            foreach (var p in part.symmetryCounterparts)
+            {
+                var hp = p.GetComponent<HitpointTracker>();
+                if (hp == null) continue;
+                hp._armorModified = true;
+            }
+        }
+        public void HullModified(BaseField field, object obj)
+        {
+            _hullModified = true;
+            foreach (var p in part.symmetryCounterparts)
+            {
+                var hp = p.GetComponent<HitpointTracker>();
+                if (hp == null) continue;
+                hp._hullModified = true;
+            }
+        }
 
         public override void OnUpdate() // This only runs in flight mode.
         {
@@ -444,7 +462,7 @@ namespace BDArmory.Core.Module
                 if (part.skinTemperature > SafeUseTemp * 1.5f)
                 {
                     ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
-                }              
+                }
             }
         }
 
@@ -556,12 +574,12 @@ namespace BDArmory.Core.Module
                 var density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
                 if (density > 1e5f || density < 10)
                 {
-                    Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
                     structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
                     density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
                     if (density > 1e5f || density < 10)
                     {
-                        Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
                         clampHP = true;
                     }
                 }
@@ -677,7 +695,7 @@ namespace BDArmory.Core.Module
 
             if (Hitpoints <= 0)
             {
-                Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitPointTracker] Setting HP to " + Hitpoints + ", destroying");
                 DestroyPart();
             }
         }
