@@ -4141,14 +4141,14 @@ namespace BDArmory.Modules
                         if ((candidateClass == WeaponClasses.Missile || candidateClass == WeaponClasses.SLW) && (missilesAway >= maxMissilesOnTarget)) //change this out for a string,int dictionary of available targets and missiles fired at them
                             continue; // Max missiles are fired, try another weapon
                         //Missiles are the preferred method of ground attack. use if available over other options
-                        if (candidateClass == WeaponClasses.Missile && (!vessel.Splashed || (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) > -5))) //don't use missiles underwater. That's what torpedoes are for
+                        if (candidateClass == WeaponClasses.Missile) //don't use missiles underwater. That's what torpedoes are for
                         {
-
-                            if (!vessel.Splashed || (FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) > -2 && BDArmorySettings.BULLET_WATER_DRAG)) continue;
                             // Priority Sequence:
                             // - Antiradiation
                             // - guided missiles
                             // - by blast strength
+                            if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
+
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
                             bool candidateAGM = false;
