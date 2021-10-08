@@ -231,7 +231,7 @@ namespace BDArmory.FX
 
         private static bool CanFlamesBeAttached(Part hitPart)
         {
-            if (hitPart == null) return false;
+            if (hitPart == null || hitPart.vessel == null) return false;
             if (!BDArmorySettings.FIRE_FX_IN_FLIGHT && !hitPart.vessel.LandedOrSplashed || !hitPart.HasFuel())
                 return false;
 
