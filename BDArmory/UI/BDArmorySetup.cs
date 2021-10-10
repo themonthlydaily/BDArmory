@@ -2859,7 +2859,7 @@ namespace BDArmory.UI
 
                 if (BDArmorySettings.REMOTE_LOGGING_VISIBLE)
                 {
-                    if (GUI.Button(SLineRect(++line), Localizer.Format(BDArmorySettings.REMOTE_LOGGING_ENABLED ? "#LOC_BDArmory_Disable" : "#LOC_BDArmory_Enable") + " " + Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging")))
+                    if (GUI.Button(SLineRect(++line, 1, true), Localizer.Format(BDArmorySettings.REMOTE_LOGGING_ENABLED ? "#LOC_BDArmory_Disable" : "#LOC_BDArmory_Enable") + " " + Localizer.Format("#LOC_BDArmory_Settings_RemoteLogging")))
                     {
                         BDArmorySettings.REMOTE_LOGGING_ENABLED = !BDArmorySettings.REMOTE_LOGGING_ENABLED;
                     }
