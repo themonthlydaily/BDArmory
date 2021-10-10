@@ -616,7 +616,7 @@ namespace BDArmory.Bullets
                             //if penetration is very great, they will have moved on
                             //checking velocity as they would not be able to come out the other side
                             //if (explosive && penetrationFactor < 3 || currentVelocity.magnitude <= 800f)
-                            if (explosive || !viableBullet)
+                            if (explosive && penetrationFactor < 4 || !viableBullet) //bullets punching straight through very weak materials probably won't trip explosive fuzes, this way things like flags are no longer effective armor against HE rounds
                             {
                                 //move bullet
                                 transform.position += (currentVelocity * period) / 3;
