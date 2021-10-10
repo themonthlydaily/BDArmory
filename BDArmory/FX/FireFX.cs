@@ -3,6 +3,7 @@ using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
+using BDArmory.Core.Module;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
@@ -32,6 +33,7 @@ namespace BDArmory.FX
         public float burnRate = 1;
         private float tntMassEquivalent = 0;
         public bool surfaceFire = false;
+        private bool woodenPart = false;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
@@ -67,7 +69,11 @@ namespace BDArmory.FX
             {
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
-
+            var hullmat = parentPart.FindModuleImplementing<HitpointTracker>();
+            if (hullmat != null)
+            {
+                if (hullmat.HullTypeNum == 1) woodenPart = true;
+            }
             BDArmorySetup.numberOfParticleEmitters++;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
 
@@ -149,6 +155,7 @@ namespace BDArmory.FX
             ox = null;
             ec = null;
             mp = null;
+            woodenPart = false;
         }
 
         void Update()
@@ -314,14 +321,14 @@ namespace BDArmory.FX
                 {
                     if (BDArmorySettings.BD_FIRE_HEATDMG)
                     {
-                        if (parentPart.temperature > 1000)
+                        if (parentPart.temperature > (woodenPart ? 500 : 1000)) //so wood takes fire damage before it reaches destroy temp of 770;
                         {
                             parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                         }
                     }
                     else
                     {
-                        parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        parentPart.AddDamage(burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
                     ////////////////////////////////////////////////
 

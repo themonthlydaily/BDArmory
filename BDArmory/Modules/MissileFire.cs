@@ -4100,6 +4100,7 @@ namespace BDArmory.Modules
                         if (candidateClass == WeaponClasses.Bomb && (!vessel.Splashed || (vessel.Splashed && vessel.altitude > currentTarget.Vessel.altitude))) //I guess depth charges would sorta apply here, but those are SLW instead
                         {
                             if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Missile) continue;
+                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             // only useful if we are flying
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             int candidateCluster = ((MissileBase)item.Current).clusterbomb;
@@ -4138,8 +4139,6 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                        if ((candidateClass == WeaponClasses.Missile || candidateClass == WeaponClasses.SLW) && (missilesAway >= maxMissilesOnTarget)) //change this out for a string,int dictionary of available targets and missiles fired at them
-                            continue; // Max missiles are fired, try another weapon
                         //Missiles are the preferred method of ground attack. use if available over other options
                         if (candidateClass == WeaponClasses.Missile) //don't use missiles underwater. That's what torpedoes are for
                         {
@@ -4148,7 +4147,7 @@ namespace BDArmory.Modules
                             // - guided missiles
                             // - by blast strength
                             if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
-
+                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
                             bool candidateAGM = false;
@@ -4215,6 +4214,7 @@ namespace BDArmory.Modules
                         // almost as good as STS missiles, which we don't have.
                         if (candidateClass == WeaponClasses.SLW && target.isSplashed)
                         {
+                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             // not sure on the desired selection priority algorithm, so placeholder By Yield for now
                             float droptime = ((MissileBase)item.Current).dropTime;
@@ -4259,6 +4259,7 @@ namespace BDArmory.Modules
                             {
                                 if (item.Current.GetMissileType().ToLower() != "torpedo") continue;
                                 if (distance < candidateYield) continue; //don't use explosives within their blast radius
+                                if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 targetWeapon = item.Current;
                                 break;
                             }
