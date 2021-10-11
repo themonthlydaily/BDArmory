@@ -130,10 +130,12 @@ namespace BDArmory.Bullets
         {
             startPosition = transform.position;
             currentSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
-            if (currentSpeed > 1500 && caliber < 30)
+
+            if ((((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19) + 1) / (caliber / 10)) > 4)
             {
-                sabot = true; //assume anyround moving more that 1500m/s is a sabot round
+                sabot = true; //assume any round more than 4 calibers long is a sabot round; using DU as density as this give a minimum possible length, and any round more than 4 calibers assuming Du is likely a sabot
             }
+
             distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
 
             if (!wasInitiated)
@@ -547,9 +549,9 @@ namespace BDArmory.Bullets
                             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
                             float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                             //calculate bullet deformation
-                            float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, apBulletMod, Density);
+                            float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, apBulletMod, Density, sabot);
                             //calculate penetration
-                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod);
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                             penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
                             ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactSpeed, sourceVesselName, ExplosionSourceType.Bullet);

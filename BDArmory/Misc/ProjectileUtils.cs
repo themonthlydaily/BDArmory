@@ -584,7 +584,7 @@ namespace BDArmory.Misc
             return yieldStrength;
         }
 
-        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float apBulletMod, float Density)
+        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float apBulletMod, float Density, bool isSabot)
         {
             if (bulletEnergy < yieldStrength) return caliber; //armor stops the round, but calc armor damage
             else //bullet penetrates. Calculate what happens to the bullet
@@ -598,7 +598,7 @@ namespace BDArmory.Misc
                 }
                 float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * Mathf.Sqrt(Density / 1000))) / impactVel) / apBulletMod); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
                 newCaliber = Mathf.Clamp(newCaliber, 1f, 5f);
-                if (impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU hypervelocity penetrators
+                if (impactVel > 1250 && !isSabot) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
                 {
                     newCaliber *= (impactVel / 1000);
                 }
@@ -624,7 +624,7 @@ namespace BDArmory.Misc
             {
                 density = 19;
             }
-            float bulletLength = (projMass * 1000) / (((0.5f * newCaliber) * (0.5f * newCaliber)) * Mathf.PI / 1000 * density) + 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+            float bulletLength = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * 19) + 1) * 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
                                                                                                                                      //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
@@ -637,16 +637,17 @@ namespace BDArmory.Misc
             else return true;
         }
 
-        public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness, float APmod)
+        public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness, float APmod, bool isSabot)
         {
             float Energy = CalculateProjectileEnergy(projMass, impactVel);
             //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
             float penetration;
             //bullet's deformed, penetration using larger crosssection  
-            if (impactVel > 1500 && caliber < 30) //hypervelocity KE penetrators, for convenience, assume any round moving this fast is made of Tungsten/Depleted ranium
+            //if (impactVel > 1500 && caliber < 30) //hypervelocity KE penetrators, for convenience, assume any round moving this fast is made of Tungsten/Depleted ranium
+            if (isSabot) //FIXME for later - add cross-section and/or length check in here somewhere, allows for future expansion into REA/Active Protection Systems that deflect/shatter penetrators
             {
-                //caliber in mm, converted to length in cm, converted to mm
-                float length = ((projMass * 1000) / (Mathf.PI * ((0.5f * newCaliber) * (0.5f * newCaliber)) / 100 * 19) + 10) * 10;
+                //caliber in mm, converted to length in cm, converted to mm                
+                float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * 19) + 1) * 10;
                 penetration = length * Mathf.Sqrt(19000 / Density); //at hypervelocity, impacts are akin to fluid displacement 
                 //penetration in mm
             }
