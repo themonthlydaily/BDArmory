@@ -58,6 +58,7 @@ namespace BDArmory.Control
     public class TournamentState
     {
         public uint tournamentID;
+        public string savegame;
         private List<string> craftFiles; // For FFA style tournaments.
         private List<List<string>> teamFiles; // For teams style tournaments.
         public int vesselCount;
@@ -434,6 +435,7 @@ namespace BDArmory.Control
                 var strings = File.ReadAllLines(stateFile);
                 var data = JsonUtility.FromJson<TournamentState>(strings[0]);
                 tournamentID = data.tournamentID;
+                savegame = data.savegame;
                 vesselCount = data.vesselCount;
                 teamCount = data.teamCount;
                 teamsPerHeat = data.teamsPerHeat;
@@ -544,7 +546,8 @@ namespace BDArmory.Control
 
         #region Flags and Variables
         TournamentState tournamentState;
-        string stateFile = "GameData/BDArmory/PluginData/tournament.state";
+        public const string defaultStateFile = "GameData/BDArmory/PluginData/tournament.state";
+        string stateFile = defaultStateFile;//"GameData/BDArmory/PluginData/tournament.state";
         string message;
         private Coroutine runTournamentCoroutine;
         public TournamentStatus tournamentStatus = TournamentStatus.Stopped;
@@ -658,6 +661,7 @@ namespace BDArmory.Control
 
         public void RunTournament()
         {
+            tournamentState.savegame = HighLogic.SaveFolder;
             BDACompetitionMode.Instance.StopCompetition();
             VesselSpawner.Instance.CancelVesselSpawn();
             if (runTournamentCoroutine != null)
@@ -912,6 +916,107 @@ namespace BDArmory.Control
             warpCamera.SetActive(false);
 
             warpingInProgress = false;
+        }
+    }
+
+    /// <summary>
+    /// A class to automatically load and resume a tournament upon starting KSP.
+    /// Borrows heavily from the AutoLoadGame mod. 
+    /// </summary>
+    [KSPAddon(KSPAddon.Startup.MainMenu, false)]
+    public class TournamentAutoResume : MonoBehaviour
+    {
+        public static TournamentAutoResume Instance;
+        public static bool firstRun = true;
+        string savesDir;
+        string savegame;
+        string save = "persistent";
+        string game;
+
+        void Awake()
+        {
+            if (Instance != null || !firstRun) // Only the first loaded instance gets to run.
+            {
+                Debug.Log($"DEBUG TournamentAutoResume firstRun: {firstRun}");
+                Destroy(this);
+                return;
+            }
+            Instance = this;
+            firstRun = false;
+            GameEvents.onLevelWasLoadedGUIReady.Add(onLevelWasLoaded);
+            savesDir = Path.Combine(KSPUtil.ApplicationRootPath, "saves");
+        }
+
+        void OnDestroy()
+        {
+            GameEvents.onLevelWasLoadedGUIReady.Remove(onLevelWasLoaded);
+        }
+
+        void onLevelWasLoaded(GameScenes scene)
+        {
+            if (scene != GameScenes.MAINMENU) return;
+            if (!firstRun) return;
+            StartCoroutine(WaitForSettings());
+        }
+
+        IEnumerator WaitForSettings()
+        {
+            var tic = Time.realtimeSinceStartup;
+            yield return new WaitUntil(() => (BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 10)); // Wait until the settings are ready or timed out.
+            if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
+            { yield return StartCoroutine(AutoResumeTournament()); }
+        }
+
+        IEnumerator AutoResumeTournament()
+        {
+            // Check that there is an incomplete tournament, otherwise abort.
+            bool incompleteTournament = false;
+            if (File.Exists(BDATournament.defaultStateFile)) // Tournament state file exists.
+            {
+                var tournamentState = new TournamentState();
+                tournamentState.LoadState(BDATournament.defaultStateFile);
+                savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
+                if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
+                {
+                    incompleteTournament = true;
+                    game = tournamentState.savegame;
+                }
+            }
+            if (!incompleteTournament) { Debug.Log($"DEBUG No incomplete tournament to run"); yield break; }
+            // Load saved game.
+            if (!LoadGame()) { Debug.Log($"DEBUG Failed to load game"); yield break; }
+            // Resume the tournament.
+            var tic = Time.time;
+            yield return new WaitWhile(() => (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0 || Time.time - tic > 10)); // Wait for the tournament to be loaded or time out.
+            if (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) { Debug.Log($"DEBUG BDATournament instance is null or tournamentID is 0"); ; yield break; }
+            BDATournament.Instance.RunTournament();
+        }
+
+        bool LoadGame()
+        {
+            var gameNode = GamePersistence.LoadSFSFile(save, game);
+            if (gameNode == null)
+            {
+                Debug.LogWarning($"[BDArmory.BDATournament]: Unable to load the save game: {savegame}");
+                return false;
+            }
+            KSPUpgradePipeline.Process(gameNode, game, SaveUpgradePipeline.LoadContext.SFS, OnLoadDialogPiplelineFinished, (opt, n) => Debug.LogWarning($"[BDArmory.BDATournament]: KSPUpgradePipeline finished with error: {savegame}"));
+            return true;
+        }
+
+        void OnLoadDialogPiplelineFinished(ConfigNode node)
+        {
+            HighLogic.CurrentGame = GamePersistence.LoadGameCfg(node, game, true, false);
+            if (HighLogic.CurrentGame == null) return;
+            if (GamePersistence.UpdateScenarioModules(HighLogic.CurrentGame))
+            {
+                if (node != null)
+                { GameEvents.onGameStatePostLoad.Fire(node); }
+                GamePersistence.SaveGame(HighLogic.CurrentGame, save, game, SaveMode.OVERWRITE);
+                HighLogic.CurrentGame.startScene = GameScenes.FLIGHT;
+                HighLogic.SaveFolder = game;
+                HighLogic.CurrentGame.Start();
+            }
         }
     }
 }

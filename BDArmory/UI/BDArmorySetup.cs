@@ -730,6 +730,7 @@ namespace BDArmory.UI
 
                 BDAPersistantSettingsField.Load();
                 BDInputSettingsFields.LoadSettings();
+                BDArmorySettings.ready = true;
             }
             catch (NullReferenceException e)
             {
