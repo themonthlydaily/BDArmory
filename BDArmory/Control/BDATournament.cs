@@ -7,6 +7,7 @@ using UnityEngine;
 using BDArmory.Core;
 using BDArmory.UI;
 using BDArmory.Misc;
+using KSP.Localization;
 
 namespace BDArmory.Control
 {
@@ -932,17 +933,17 @@ namespace BDArmory.Control
         string savegame;
         string save = "persistent";
         string game;
+        bool sceneLoaded = false;
 
         void Awake()
         {
             if (Instance != null || !firstRun) // Only the first loaded instance gets to run.
             {
-                Debug.Log($"DEBUG TournamentAutoResume firstRun: {firstRun}");
                 Destroy(this);
                 return;
             }
             Instance = this;
-            firstRun = false;
+            DontDestroyOnLoad(this);
             GameEvents.onLevelWasLoadedGUIReady.Add(onLevelWasLoaded);
             savesDir = Path.Combine(KSPUtil.ApplicationRootPath, "saves");
         }
@@ -954,13 +955,16 @@ namespace BDArmory.Control
 
         void onLevelWasLoaded(GameScenes scene)
         {
+            sceneLoaded = true;
             if (scene != GameScenes.MAINMENU) return;
             if (!firstRun) return;
+            firstRun = false;
             StartCoroutine(WaitForSettings());
         }
 
         IEnumerator WaitForSettings()
         {
+            yield return new WaitForSeconds(1);
             var tic = Time.realtimeSinceStartup;
             yield return new WaitUntil(() => (BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 10)); // Wait until the settings are ready or timed out.
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
@@ -982,13 +986,27 @@ namespace BDArmory.Control
                     game = tournamentState.savegame;
                 }
             }
-            if (!incompleteTournament) { Debug.Log($"DEBUG No incomplete tournament to run"); yield break; }
+            if (!incompleteTournament) yield break;
             // Load saved game.
-            if (!LoadGame()) { Debug.Log($"DEBUG Failed to load game"); yield break; }
-            // Resume the tournament.
             var tic = Time.time;
-            yield return new WaitWhile(() => (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0 || Time.time - tic > 10)); // Wait for the tournament to be loaded or time out.
-            if (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) { Debug.Log($"DEBUG BDATournament instance is null or tournamentID is 0"); ; yield break; }
+            sceneLoaded = false;
+            if (!LoadGame()) yield break;
+            yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
+            if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load space center scene."); yield break; }
+            // Switch to flight mode.
+            sceneLoaded = false;
+            FlightDriver.StartWithNewLaunch("GameData/BDArmory/craft/SpawnProbe.craft", "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
+            tic = Time.time;
+            yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
+            if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load flight scene."); yield break; }
+            // Resume the tournament.
+            yield return new WaitForSeconds(1);
+            tic = Time.time;
+            yield return new WaitWhile(() => ((BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
+            if (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) yield break;
+            BDArmorySetup.windowBDAToolBarEnabled = true;
+            BDArmorySetup.Instance.showVesselSwitcherGUI = true;
+            BDArmorySetup.Instance.showVesselSpawnerGUI = true;
             BDATournament.Instance.RunTournament();
         }
 
@@ -1013,10 +1031,10 @@ namespace BDArmory.Control
                 if (node != null)
                 { GameEvents.onGameStatePostLoad.Fire(node); }
                 GamePersistence.SaveGame(HighLogic.CurrentGame, save, game, SaveMode.OVERWRITE);
-                HighLogic.CurrentGame.startScene = GameScenes.FLIGHT;
-                HighLogic.SaveFolder = game;
-                HighLogic.CurrentGame.Start();
             }
+            HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
+            HighLogic.SaveFolder = game;
+            HighLogic.CurrentGame.Start();
         }
     }
 }
