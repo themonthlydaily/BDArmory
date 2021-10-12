@@ -2646,7 +2646,7 @@ namespace BDArmory.Control
                         vData.AverageSpeed += vessel.srfSpeed;
                         vData.AverageAltitude += vessel.altitude;
                         vData.averageCount++;
-                        if (vData.landedState && BDArmorySettings.COMPETITION_KILL_TIMER < 1)
+                        if (vData.landedState && BDArmorySettings.COMPETITION_KILL_TIMER > 0)
                         {
                             KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
                             if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
