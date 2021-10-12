@@ -2942,14 +2942,6 @@ namespace BDArmory.UI
 
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_CompetitionKillTimer")}: (" + (BDArmorySettings.COMPETITION_KILL_TIMER > 0 ? (BDArmorySettings.COMPETITION_KILL_TIMER + "s") : "Off") + ")", leftLabel); // FIXME the toggle and this slider could be merged
                 BDArmorySettings.COMPETITION_KILL_TIMER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.COMPETITION_KILL_TIMER, 0, 60f));
-                if (BDArmorySettings.COMPETITION_KILL_TIMER < 1)
-                {
-                    BDArmorySettings.DISABLE_KILL_TIMER = true;
-                }
-                else
-                {
-                    BDArmorySettings.DISABLE_KILL_TIMER = false;
-                }
 
                 GUI.Label(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CompetitionDistance"));//"Competition Distance"
                 float cDist;
