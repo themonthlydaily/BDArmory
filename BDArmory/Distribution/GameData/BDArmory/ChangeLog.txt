@@ -1,4 +1,10 @@
-﻿v1.4.10.0
+﻿FIXES
+	- Fix some exceptions related to flames.
+	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- None
+
+v1.4.10.0
 FIXES
 	- General:
 		- Consider 'splashed' vessels as 'landed' when spawning.
@@ -61,6 +67,11 @@ IMPROVEMENTS
 		- Automatically create a GameData/Custom/Flags directory for standardising the location of flags for BDArmory competitions.
 		- Price rebalance.
 		- Some RWP specific options (to be decalred once the rounds have been run).
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Low altitude kill limit expanded and "Off" value changed.
+	- Legacy armour option added (config file only).
+	- Competition status messages with hidden UI option added.
+	- Underwater bullet drag option added.
 
 v1.4.9.1
 FIXES
