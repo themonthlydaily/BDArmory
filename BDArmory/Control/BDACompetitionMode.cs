@@ -1063,11 +1063,9 @@ namespace BDArmory.Control
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
-                if (BDArmorySettings.VESSEL_SPAWN_ALTITUDE < 5)
-                {
-                    isUsingKillTimer = BDArmorySettings.COMPETITION_KILL_TIMER; //grab kill timer status so it can be reenabled once stuff's launched
-                    BDArmorySettings.COMPETITION_KILL_TIMER = 0;
-                }
+
+                isUsingKillTimer = BDArmorySettings.COMPETITION_KILL_TIMER; //grab kill timer status so it can be reenabled once stuff's launched
+                BDArmorySettings.COMPETITION_KILL_TIMER = 0;
             }
         }
 
