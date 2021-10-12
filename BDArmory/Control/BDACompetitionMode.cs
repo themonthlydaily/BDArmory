@@ -1029,7 +1029,7 @@ namespace BDArmory.Control
                 startCompetitionNow = true;
             }
         }
-        public float isUsingKillTimer;
+
         public void StartCompetitionMode(float distance)
         {
             if (!competitionStarting)
@@ -1063,9 +1063,6 @@ namespace BDArmory.Control
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
-
-                isUsingKillTimer = BDArmorySettings.COMPETITION_KILL_TIMER; //grab kill timer status so it can be reenabled once stuff's launched
-                BDArmorySettings.COMPETITION_KILL_TIMER = 0;
             }
         }
 
@@ -1415,7 +1412,6 @@ namespace BDArmory.Control
 
             competitionStatus.Add("Competition starting!  Good luck!");
             CompetitionStarted();
-            BDArmorySettings.COMPETITION_KILL_TIMER = isUsingKillTimer;
         }
         #endregion
 
@@ -1690,8 +1686,6 @@ namespace BDArmory.Control
                         break;
                 }
                 competitionRoutine = StartCoroutine(SequencedCompetition(commandSequence));
-                isUsingKillTimer = BDArmorySettings.COMPETITION_KILL_TIMER;
-                BDArmorySettings.COMPETITION_KILL_TIMER = 0;
             }
         }
 
@@ -2069,7 +2063,6 @@ namespace BDArmory.Control
                             // remove anything that doesn't contain BD Armory modules
                             RemoveNonCompetitors(true);
                             RemoveDebrisNow();
-                            BDArmorySettings.COMPETITION_KILL_TIMER = isUsingKillTimer; //reenable kill timer, if it was on, once things are launched
                             break;
                         }
                     case "RemoveFairings":
