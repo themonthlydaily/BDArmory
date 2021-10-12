@@ -9,6 +9,8 @@ IMPROVEMENTS
 		- Vessel tracing manual toggle moved from the Vessel Switcher Window to the Settings window (in the Other section when Advanced User Settings is enabled).
 		- Settings window doesn't automatically close when starting a competition.
 		- Settings are saved when switching scenes if the UI is open.
+		- Add toggle for 'Auto-Resume Tournaments' to Advanced Gameplay section of settings.
+	- Add an option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
 	- Landed Kill Timer no longer affects vessels using Surface AIs.
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Performance Logging option removed as it did nothing.
