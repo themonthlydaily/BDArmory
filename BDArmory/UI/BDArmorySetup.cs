@@ -332,6 +332,10 @@ namespace BDArmory.UI
         void Awake()
         {
             Instance = this;
+            if (!(HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor))
+            {
+                windowSettingsEnabled = false; // Close the settings on other scenes (it's been saved when the other scene was destroyed).
+            }
 
             // Create settings file if not present or migrate the old one to the PluginsData folder for compatibility with ModuleManager.
             var fileNode = ConfigNode.Load(BDArmorySettings.settingsConfigURL);
@@ -2752,6 +2756,146 @@ namespace BDArmory.UI
                 }
             }
 
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle"))) // Show/hide Radar settings.
+            {
+                BDArmorySettings.RADAR_SETTINGS_TOGGLE = !BDArmorySettings.RADAR_SETTINGS_TOGGLE;
+            }
+            if (BDArmorySettings.RADAR_SETTINGS_TOGGLE)
+            {
+                line += 0.2f;
+
+                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RWRWindowScale") + ": " + (BDArmorySettings.RWR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // RWR Window Scale
+                float rwrScale = BDArmorySettings.RWR_WINDOW_SCALE;
+                rwrScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), rwrScale, BDArmorySettings.RWR_WINDOW_SCALE_MIN, BDArmorySettings.RWR_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
+                if (rwrScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.RWR_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
+                {
+                    ResizeRwrWindow(rwrScale);
+                }
+
+                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RadarWindowScale") + ": " + (BDArmorySettings.RADAR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // Radar Window Scale
+                float radarScale = BDArmorySettings.RADAR_WINDOW_SCALE;
+                radarScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), radarScale, BDArmorySettings.RADAR_WINDOW_SCALE_MIN, BDArmorySettings.RADAR_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
+                if (radarScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.RADAR_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
+                {
+                    ResizeRadarWindow(radarScale);
+                }
+
+                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TargetWindowScale") + ": " + (BDArmorySettings.TARGET_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // Target Window Scale
+                float targetScale = BDArmorySettings.TARGET_WINDOW_SCALE;
+                targetScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetScale, BDArmorySettings.TARGET_WINDOW_SCALE_MIN, BDArmorySettings.TARGET_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
+                if (targetScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.TARGET_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
+                {
+                    ResizeTargetWindow(targetScale);
+                }
+
+                line += 0.5f;
+            }
+
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.OTHER_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_OtherSettingsToggle"))) // Show/hide Other settings.
+            {
+                BDArmorySettings.OTHER_SETTINGS_TOGGLE = !BDArmorySettings.OTHER_SETTINGS_TOGGLE;
+            }
+            if (BDArmorySettings.OTHER_SETTINGS_TOGGLE)
+            {
+                line += 0.2f;
+
+                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TriggerHold") + ": " + BDArmorySettings.TRIGGER_HOLD_TIME.ToString("0.00") + "s", leftLabel);//Trigger Hold
+                BDArmorySettings.TRIGGER_HOLD_TIME = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TRIGGER_HOLD_TIME, 0.02f, 1f);
+
+                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_UIVolume") + ": " + (BDArmorySettings.BDARMORY_UI_VOLUME * 100).ToString("0"), leftLabel);//UI Volume
+                float uiVol = BDArmorySettings.BDARMORY_UI_VOLUME;
+                uiVol = GUI.HorizontalSlider(SRightSliderRect(line), uiVol, 0f, 1f);
+                if (uiVol != BDArmorySettings.BDARMORY_UI_VOLUME && OnVolumeChange != null)
+                {
+                    OnVolumeChange();
+                }
+                BDArmorySettings.BDARMORY_UI_VOLUME = uiVol;
+
+                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_WeaponVolume") + ": " + (BDArmorySettings.BDARMORY_WEAPONS_VOLUME * 100).ToString("0"), leftLabel);//Weapon Volume
+                float weaponVol = BDArmorySettings.BDARMORY_WEAPONS_VOLUME;
+                weaponVol = GUI.HorizontalSlider(SRightSliderRect(line), weaponVol, 0f, 1f);
+                if (uiVol != BDArmorySettings.BDARMORY_WEAPONS_VOLUME && OnVolumeChange != null)
+                {
+                    OnVolumeChange();
+                }
+                BDArmorySettings.BDARMORY_WEAPONS_VOLUME = weaponVol;
+
+                if (BDArmorySettings.ADVANDED_USER_SETTINGS)
+                {
+                    BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS = GUI.Toggle(new Rect(settingsMargin, ++line * settingsLineHeight, 2f * (settingsWidth - 2f * settingsMargin) / 3f, settingsLineHeight), BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS, Localizer.Format("#LOC_BDArmory_Settings_TraceVessels"));// Trace Vessels (custom 2/3 width)
+                    if (LoadedVesselSwitcher.Instance != null)
+                    {
+                        if (GUI.Button(SLineThirdRect(line, 2), LoadedVesselSwitcher.Instance.vesselTraceEnabled ? Localizer.Format("#LOC_BDArmory_Settings_TraceVesselsManualStop") : Localizer.Format("#LOC_BDArmory_Settings_TraceVesselsManualStart")))
+                        {
+                            if (LoadedVesselSwitcher.Instance.vesselTraceEnabled)
+                            { LoadedVesselSwitcher.Instance.StopVesselTracing(); }
+                            else
+                            { LoadedVesselSwitcher.Instance.StartVesselTracing(); }
+                        }
+                    }
+                }
+
+                line += 0.5f;
+            }
+
+#if DEBUG  // Only visible when compiled in Debug configuration.
+            if (GUI.Button(SLineRect(++line), (BDArmorySettings.DEBUG_SETTINGS_TOGGLE ? "Hide " : " Show ") + Localizer.Format("#LOC_BDArmory_Settings_DebugSettingsToggle"))) // Show/Hide Debug Settings
+            {
+                BDArmorySettings.DEBUG_SETTINGS_TOGGLE = !BDArmorySettings.DEBUG_SETTINGS_TOGGLE;
+            }
+            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
+            {
+                if (BDACompetitionMode.Instance != null)
+                {
+                    if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
+                    {
+                        switch (Event.current.button)
+                        {
+                            case 1: // right click
+                                StartCoroutine(BDACompetitionMode.Instance.CheckGCPerformance());
+                                break;
+                            default:
+                                BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
+                                BDACompetitionMode.Instance.RunDebugChecks();
+                                break;
+                        }
+                    }
+                    if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
+                    {
+                        StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
+                    }
+                }
+                // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
+                // {
+                //     var test = FlightGlobals.ActiveVessel.transform.position;
+                //     float FiringTolerance = 1f;
+                //     float targetRadius = 20f;
+                //     Vector3 finalAimTarget = new Vector3(10f, 20f, 30f);
+                //     Vector3 pos = new Vector3(2f, 3f, 4f);
+                //     float theta_const = Mathf.Deg2Rad * 1f;
+                //     float test_out = 0f;
+                //     int iters = 10000000;
+                //     var now = Time.realtimeSinceStartup;
+                //     for (int i = 0; i < iters; ++i)
+                //     {
+                //         test_out = i > iters ? 1f : 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / (finalAimTarget - pos).sqrMagnitude;
+                //     }
+                //     Debug.Log("DEBUG sqrMagnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
+                //     now = Time.realtimeSinceStartup;
+                //     for (int i = 0; i < iters; ++i)
+                //     {
+                //         var theta = FiringTolerance * targetRadius / (finalAimTarget - pos).magnitude + theta_const;
+                //         test_out = i > iters ? 1f : 1f - 0.5f * (theta * theta);
+                //     }
+                //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
+                // }
+                if (GUI.Button(SLeftRect(++line), "Exit To Main Menu"))
+                {
+                    QuitKSP();
+                }
+            }
+#endif
+
             if (GUI.Button(SLineRect(++line), (BDArmorySettings.COMPETITION_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_CompSettingsToggle")))//Show/hide Competition settings.
             {
                 BDArmorySettings.COMPETITION_SETTINGS_TOGGLE = !BDArmorySettings.COMPETITION_SETTINGS_TOGGLE;
@@ -2879,134 +3023,11 @@ namespace BDArmory.UI
                 line += 0.5f;
             }
 
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.RADAR_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_RadarSettingsToggle"))) // Show/hide Radar settings.
-            {
-                BDArmorySettings.RADAR_SETTINGS_TOGGLE = !BDArmorySettings.RADAR_SETTINGS_TOGGLE;
-            }
-            if (BDArmorySettings.RADAR_SETTINGS_TOGGLE)
-            {
-                line += 0.2f;
-
-                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RWRWindowScale") + ": " + (BDArmorySettings.RWR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // RWR Window Scale
-                float rwrScale = BDArmorySettings.RWR_WINDOW_SCALE;
-                rwrScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), rwrScale, BDArmorySettings.RWR_WINDOW_SCALE_MIN, BDArmorySettings.RWR_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
-                if (rwrScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.RWR_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
-                {
-                    ResizeRwrWindow(rwrScale);
-                }
-
-                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RadarWindowScale") + ": " + (BDArmorySettings.RADAR_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // Radar Window Scale
-                float radarScale = BDArmorySettings.RADAR_WINDOW_SCALE;
-                radarScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), radarScale, BDArmorySettings.RADAR_WINDOW_SCALE_MIN, BDArmorySettings.RADAR_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
-                if (radarScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.RADAR_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
-                {
-                    ResizeRadarWindow(radarScale);
-                }
-
-                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TargetWindowScale") + ": " + (BDArmorySettings.TARGET_WINDOW_SCALE * 100).ToString("0") + "%", leftLabel); // Target Window Scale
-                float targetScale = BDArmorySettings.TARGET_WINDOW_SCALE;
-                targetScale = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), targetScale, BDArmorySettings.TARGET_WINDOW_SCALE_MIN, BDArmorySettings.TARGET_WINDOW_SCALE_MAX) * 100.0f) * 0.01f;
-                if (targetScale.ToString(CultureInfo.InvariantCulture) != BDArmorySettings.TARGET_WINDOW_SCALE.ToString(CultureInfo.InvariantCulture))
-                {
-                    ResizeTargetWindow(targetScale);
-                }
-
-                line += 0.5f;
-            }
-
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.OTHER_SETTINGS_TOGGLE ? "Hide " : "Show ") + Localizer.Format("#LOC_BDArmory_Settings_OtherSettingsToggle"))) // Show/hide Other settings.
-            {
-                BDArmorySettings.OTHER_SETTINGS_TOGGLE = !BDArmorySettings.OTHER_SETTINGS_TOGGLE;
-            }
-            if (BDArmorySettings.OTHER_SETTINGS_TOGGLE)
-            {
-                line += 0.2f;
-
-                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TriggerHold") + ": " + BDArmorySettings.TRIGGER_HOLD_TIME.ToString("0.00") + "s", leftLabel);//Trigger Hold
-                BDArmorySettings.TRIGGER_HOLD_TIME = GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TRIGGER_HOLD_TIME, 0.02f, 1f);
-
-                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_UIVolume") + ": " + (BDArmorySettings.BDARMORY_UI_VOLUME * 100).ToString("0"), leftLabel);//UI Volume
-                float uiVol = BDArmorySettings.BDARMORY_UI_VOLUME;
-                uiVol = GUI.HorizontalSlider(SRightSliderRect(line), uiVol, 0f, 1f);
-                if (uiVol != BDArmorySettings.BDARMORY_UI_VOLUME && OnVolumeChange != null)
-                {
-                    OnVolumeChange();
-                }
-                BDArmorySettings.BDARMORY_UI_VOLUME = uiVol;
-
-                GUI.Label(SLeftSliderRect(++line), Localizer.Format("#LOC_BDArmory_Settings_WeaponVolume") + ": " + (BDArmorySettings.BDARMORY_WEAPONS_VOLUME * 100).ToString("0"), leftLabel);//Weapon Volume
-                float weaponVol = BDArmorySettings.BDARMORY_WEAPONS_VOLUME;
-                weaponVol = GUI.HorizontalSlider(SRightSliderRect(line), weaponVol, 0f, 1f);
-                if (uiVol != BDArmorySettings.BDARMORY_WEAPONS_VOLUME && OnVolumeChange != null)
-                {
-                    OnVolumeChange();
-                }
-                BDArmorySettings.BDARMORY_WEAPONS_VOLUME = weaponVol;
-
-                BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS, Localizer.Format("#LOC_BDArmory_Settings_TraceVessels"));// Trace Vessels
-
-                line += 0.5f;
-            }
-
-#if DEBUG  // Only visible when compiled in Debug configuration.
-            if (GUI.Button(SLineRect(++line), (BDArmorySettings.DEBUG_SETTINGS_TOGGLE ? "Hide " : " Show ") + Localizer.Format("#LOC_BDArmory_Settings_DebugSettingsToggle"))) // Show/Hide Debug Settings
-            {
-                BDArmorySettings.DEBUG_SETTINGS_TOGGLE = !BDArmorySettings.DEBUG_SETTINGS_TOGGLE;
-            }
-            if (BDArmorySettings.DEBUG_SETTINGS_TOGGLE)
-            {
-                if (BDACompetitionMode.Instance != null)
-                {
-                    if (GUI.Button(SLeftRect(++line), "Run DEBUG checks"))// Run DEBUG checks
-                    {
-                        switch (Event.current.button)
-                        {
-                            case 1: // right click
-                                StartCoroutine(BDACompetitionMode.Instance.CheckGCPerformance());
-                                break;
-                            default:
-                                BDACompetitionMode.Instance.CleanUpKSPsDeadReferences();
-                                BDACompetitionMode.Instance.RunDebugChecks();
-                                break;
-                        }
-                    }
-                    if (GUI.Button(SLeftRect(++line), "Test Vessel Module Registry"))
-                    {
-                        StartCoroutine(VesselModuleRegistry.Instance.PerformanceTest());
-                    }
-                }
-                // if (GUI.Button(SLineRect(++line), "timing test")) // Timing tests.
-                // {
-                //     var test = FlightGlobals.ActiveVessel.transform.position;
-                //     float FiringTolerance = 1f;
-                //     float targetRadius = 20f;
-                //     Vector3 finalAimTarget = new Vector3(10f, 20f, 30f);
-                //     Vector3 pos = new Vector3(2f, 3f, 4f);
-                //     float theta_const = Mathf.Deg2Rad * 1f;
-                //     float test_out = 0f;
-                //     int iters = 10000000;
-                //     var now = Time.realtimeSinceStartup;
-                //     for (int i = 0; i < iters; ++i)
-                //     {
-                //         test_out = i > iters ? 1f : 1f - 0.5f * FiringTolerance * FiringTolerance * targetRadius * targetRadius / (finalAimTarget - pos).sqrMagnitude;
-                //     }
-                //     Debug.Log("DEBUG sqrMagnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
-                //     now = Time.realtimeSinceStartup;
-                //     for (int i = 0; i < iters; ++i)
-                //     {
-                //         var theta = FiringTolerance * targetRadius / (finalAimTarget - pos).magnitude + theta_const;
-                //         test_out = i > iters ? 1f : 1f - 0.5f * (theta * theta);
-                //     }
-                //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
-                // }
-            }
-#endif
-
             if (HighLogic.LoadedSceneIsFlight && BDACompetitionMode.Instance != null)
             {
-                ++line;
+                line += 0.5f;
 
-                GUI.Label(SLineRect(++line), "= " + Localizer.Format("#LOC_BDArmory_Settings_DogfightCompetition") + " =", centerLabel);//Dogfight Competition
+                GUI.Label(SLineRect(++line), "=== " + Localizer.Format("#LOC_BDArmory_Settings_DogfightCompetition") + " ===", centerLabel);//Dogfight Competition
                 if (BDACompetitionMode.Instance.competitionIsActive)
                 {
                     if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_StopCompetition"))) // Stop competition.
@@ -3305,5 +3326,13 @@ namespace BDArmory.UI
             SeismicChargeFX.originalMusicVolume = GameSettings.MUSIC_VOLUME;
             SeismicChargeFX.originalAmbienceVolume = GameSettings.AMBIENCE_VOLUME;
         }
+
+#if DEBUG
+        public static void QuitKSP()
+        {
+            HighLogic.LoadScene(GameScenes.MAINMENU);
+            Application.Quit();
+        }
+#endif
     }
 }

@@ -61,7 +61,7 @@ namespace BDArmory.UI
         private bool _teamsAssigned = false;
         private bool _autoPilotEnabled = false;
         private bool _guardModeEnabled = false;
-        private bool _vesselTraceEnabled = false;
+        public bool vesselTraceEnabled = false;
 
         // Vessel spawning
         // private bool _vesselsSpawned = false;
@@ -190,7 +190,7 @@ namespace BDArmory.UI
 
         void FixedUpdate()
         {
-            if (_vesselTraceEnabled)
+            if (vesselTraceEnabled)
             {
                 if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
                     floatingOriginCorrection += FloatingOrigin.OffsetNonKrakensbane;
@@ -201,7 +201,7 @@ namespace BDArmory.UI
                     if (!vesselTraces.ContainsKey(vessel.vesselName)) vesselTraces[vessel.vesselName] = new List<Tuple<float, Vector3, Quaternion>>();
                     vesselTraces[vessel.vesselName].Add(new Tuple<float, Vector3, Quaternion>(Time.time, referenceRotationCorrection * (vessel.transform.position + floatingOriginCorrection), referenceRotationCorrection * vessel.transform.rotation));
                 }
-                if (survivingVessels.Count == 0) _vesselTraceEnabled = false;
+                if (survivingVessels.Count == 0) vesselTraceEnabled = false;
             }
         }
 
@@ -303,8 +303,9 @@ namespace BDArmory.UI
 
         private void WindowVesselSwitcher(int id)
         {
-            int numButtons = 11;
-            GUI.DragWindow(new Rect(5f * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 3f * _margin, _titleHeight));
+            int numButtons = 10;
+            int numButtonsOnLeft = 4;
+            GUI.DragWindow(new Rect(numButtonsOnLeft * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 3f * _margin, _titleHeight));
 
             if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button)) // Don't get so small that the buttons get hidden.
             {
@@ -329,11 +330,6 @@ namespace BDArmory.UI
             {
                 BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = !BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE;
                 BDArmorySetup.SaveConfig();
-            }
-            if (GUI.Button(new Rect(4f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "tr", _vesselTraceEnabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
-            {
-                if (_vesselTraceEnabled) StopVesselTracing();
-                else StartVesselTracing();
             }
 
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 6 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "M", BDACompetitionMode.Instance.killerGMenabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
@@ -1210,8 +1206,8 @@ namespace BDArmory.UI
 
         public void StartVesselTracing()
         {
-            if (_vesselTraceEnabled) return;
-            _vesselTraceEnabled = true;
+            if (vesselTraceEnabled) return;
+            vesselTraceEnabled = true;
             Debug.Log("[BDArmory.LoadedVesselSwitcher]: Starting vessel tracing.");
             vesselTraces.Clear();
 
@@ -1236,8 +1232,8 @@ namespace BDArmory.UI
         }
         public void StopVesselTracing()
         {
-            if (!_vesselTraceEnabled) return;
-            _vesselTraceEnabled = false;
+            if (!vesselTraceEnabled) return;
+            vesselTraceEnabled = false;
             Debug.Log("[BDArmory.LoadedVesselSwitcher]: Stopping vessel tracing.");
             var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs/VesselTraces";
             if (!Directory.Exists(folder))
