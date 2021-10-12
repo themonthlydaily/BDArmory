@@ -1,8 +1,18 @@
 ﻿FIXES
 	- Fix some exceptions related to flames.
 	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
+IMPROVEMENTS
+	- UI:
+		- Reworks the BDA Settings Menu to be less cluttered/more organized/intuitive.
+		- Less commonly used toggles/settings now enabled via Advanced User Settings toggle.
+		- Disable Kill Timer setting removed, this is now handled by the Kill Timer slider.
+		- Vessel tracing manual toggle moved from the Vessel Switcher Window to the Settings window (in the Other section when Advanced User Settings is enabled).
+		- Settings window doesn't automatically close when starting a competition.
+		- Settings are saved when switching scenes if the UI is open.
+	- Landed Kill Timer no longer affects vessels using Surface AIs.
 ADDED/REMOVED/CHANGED SETTINGS VALUES
-	- None
+	- Performance Logging option removed as it did nothing.
+	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
 
 v1.4.10.0
 FIXES

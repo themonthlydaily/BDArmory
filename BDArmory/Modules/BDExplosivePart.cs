@@ -147,6 +147,7 @@ namespace BDArmory.Modules
                 isMissile = false;
             }
             GuiSetup();
+            /*
             if (BDArmorySettings.ADVANCED_EDIT)
             {
                 //Fields["tntMass"].guiActiveEditor = true;
@@ -155,7 +156,7 @@ namespace BDArmory.Modules
                 //((UI_FloatRange)Fields["tntMass"].uiControlEditor).maxValue = 3000f;
                 //((UI_FloatRange)Fields["tntMass"].uiControlEditor).stepIncrement = 5f;
             }
-
+            */
             CalculateBlast();
         }
 
