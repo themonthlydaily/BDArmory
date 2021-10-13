@@ -68,7 +68,7 @@ namespace BDArmory.Control
         public int vesselsPerTeam;
         public bool fullTeams;
         public TournamentType tournamentType = TournamentType.FFA;
-        [NonSerialized] public Dictionary<int, Dictionary<int, VesselSpawner.SpawnConfig>> rounds; // <Round, <Heat, Crafts>>
+        [NonSerialized] public Dictionary<int, Dictionary<int, VesselSpawner.SpawnConfig>> rounds; // <Round, <Heat, SpawnConfig>>
         [NonSerialized] public Dictionary<int, HashSet<int>> completed = new Dictionary<int, HashSet<int>>();
         [NonSerialized] private List<Queue<string>> teamSpawnQueues = new List<Queue<string>>();
         private string message;
@@ -235,21 +235,30 @@ namespace BDArmory.Control
             else // Make teams from the folders under the spawn folder.
             {
                 var teamDirs = Directory.GetDirectories(Environment.CurrentDirectory + $"/AutoSpawn/{folder}");
-                teamFiles = new List<List<string>>();
-                foreach (var teamDir in teamDirs)
+                if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
                 {
-                    var currentTeamFiles = Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList();
-                    if (currentTeamFiles.Count > 0)
-                        teamFiles.Add(currentTeamFiles);
+                    numberOfTeams = -1; // Flag for treating craft files as folder names.
+                    craftFiles = Directory.GetFiles(abs_folder).Where(f => f.EndsWith(".craft")).ToList();
+                    teamFiles = craftFiles.Select(f => new List<string> { f }).ToList();
                 }
-                foreach (var team in teamFiles)
-                    team.Shuffle();
-                craftFiles = teamFiles.SelectMany(v => v).ToList();
+                else
+                {
+                    teamFiles = new List<List<string>>();
+                    foreach (var teamDir in teamDirs)
+                    {
+                        var currentTeamFiles = Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList();
+                        if (currentTeamFiles.Count > 0)
+                            teamFiles.Add(currentTeamFiles);
+                    }
+                    foreach (var team in teamFiles)
+                        team.Shuffle();
+                    craftFiles = teamFiles.SelectMany(v => v).ToList();
+                }
             }
             vesselCount = craftFiles.Count;
             if (teamFiles.Count < 2)
             {
-                message = "Insufficient " + (numberOfTeams == 1 ? "craft files" : "folders") + " in '" + folder + "' to generate a tournament.";
+                message = "Insufficient " + (numberOfTeams != 1 ? "craft files" : "folders") + " in 'AutoSpawn/" + folder + "' to generate a tournament.";
                 if (BDACompetitionMode.Instance) BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.Log("[BDArmory.BDATournament]: " + message);
                 return false;
