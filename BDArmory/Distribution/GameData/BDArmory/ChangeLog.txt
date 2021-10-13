@@ -12,6 +12,7 @@ IMPROVEMENTS
 		- Add toggle for 'Auto-Resume Tournaments' to Advanced Gameplay section of settings.
 	- Add an option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
 	- Landed Kill Timer no longer affects vessels using Surface AIs.
+	- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Performance Logging option removed as it did nothing.
 	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
