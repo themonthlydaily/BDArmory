@@ -320,7 +320,7 @@ namespace BDArmory.UI
                         numberOfTeams = Localizer.Format("#LOC_BDArmory_Settings_Teams_Folders");
                         break;
                     default: // Specified directly
-                        numberOfTeams = BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS.ToString("0");
+                        numberOfTeams = Localizer.Format("#LOC_BDArmory_Settings_Teams_SplitEvenly") + " " + BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS.ToString("0");
                         break;
                 }
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Teams")}:  ({numberOfTeams})", leftLabel); // Number of teams.

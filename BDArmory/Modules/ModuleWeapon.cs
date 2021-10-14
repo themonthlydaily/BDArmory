@@ -2088,7 +2088,7 @@ namespace BDArmory.Modules
                                         ME.duration += duration;
                                     }
                                 }
-                                if (BDArmorySettings.INSTAKILL) p.Destroy();
+                                //if (BDArmorySettings.INSTAKILL) p.Destroy();
                                 if (instagib)
                                 {
                                     p.AddInstagibDamage();
