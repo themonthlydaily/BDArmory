@@ -1057,7 +1057,6 @@ namespace BDArmory.Control
         {
             if (!BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > BDArmorySetup.SystemMaxMemory) return false; // Only trigger if Auto-Resume Tournaments is enabled and the Quit Memory Usage Threshold is set.
             float memoryUsage = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / (1 << 30); // In GB.
-            Debug.Log($"DEBUG {memoryUsage} / {BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD} GB memory used.");
             if (memoryUsage >= BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD)
             {
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.competitionStatus.Add("Quitting in 3s due to memory usage threshold reached.");
