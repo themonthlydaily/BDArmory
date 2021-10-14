@@ -170,7 +170,19 @@ namespace BDArmory.UI
             { "Neutral", new BDTeam("Neutral", neutral: true) }
         };
 
-
+        static float _SystemMaxMemory = 0;
+        public static float SystemMaxMemory
+        {
+            get
+            {
+                if (_SystemMaxMemory == 0)
+                {
+                    _SystemMaxMemory = SystemInfo.systemMemorySize / 1024; // System Memory in GB.
+                    if (BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > _SystemMaxMemory + 1) BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD = _SystemMaxMemory + 1;
+                }
+                return _SystemMaxMemory;
+            }
+        }
 
         //competition mode
         string compDistGui = "1000";
@@ -2328,6 +2340,11 @@ namespace BDArmory.UI
                     BDArmorySettings.RESET_HP = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_HP, Localizer.Format("#LOC_BDArmory_Settings_ResetHP"));
                     BDArmorySettings.BULLET_WATER_DRAG = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BULLET_WATER_DRAG, Localizer.Format("#LOC_BDArmory_Settings_waterDrag"));// Underwater bullet drag
                     BDArmorySettings.AUTO_RESUME_TOURNAMENT = GUI.Toggle(SRightRect(line), BDArmorySettings.AUTO_RESUME_TOURNAMENT, Localizer.Format("#LOC_BDArmory_Settings_AutoResumeTournaments")); // Auto-Resume Tournaments
+                    if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
+                    {
+                        GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AutoQuitMemoryUsage")}:  ({(BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > SystemMaxMemory ? "Off" : $"{BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD}GB")})", leftLabel); // Auto-Quit Memory Threshold
+                        BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD, 1f, SystemMaxMemory + 1));
+                    }
                 }
 
                 line += 0.5f;

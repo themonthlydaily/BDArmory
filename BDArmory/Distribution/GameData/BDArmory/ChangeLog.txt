@@ -11,6 +11,7 @@ IMPROVEMENTS
 		- Settings are saved when switching scenes if the UI is open.
 		- Add toggle for 'Auto-Resume Tournaments' to Advanced Gameplay section of settings.
 	- Add an option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
+	- Add an option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. See the "Allocated" entry in the "DEBUG Memory Usage" lines in the KSP.log.
 	- Landed Kill Timer no longer affects vessels using Surface AIs.
 	- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
 ADDED/REMOVED/CHANGED SETTINGS VALUES
