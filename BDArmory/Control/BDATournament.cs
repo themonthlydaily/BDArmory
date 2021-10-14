@@ -701,7 +701,7 @@ namespace BDArmory.Control
                     currentHeat = heatIndex;
                     if (tournamentState.completed.ContainsKey(roundIndex) && tournamentState.completed[roundIndex].Contains(heatIndex)) continue; // We've done that heat.
 
-                    message = "Running heat " + heatIndex + " of round " + roundIndex + " of tournament " + tournamentState.tournamentID;
+                    message = $"Running heat {heatIndex} of round {roundIndex} of tournament {tournamentState.tournamentID} ({heatsRemaining} heats remaining in the tournament).";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
 

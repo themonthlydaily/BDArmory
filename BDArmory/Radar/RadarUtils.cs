@@ -1154,7 +1154,6 @@ namespace BDArmory.Radar
                 // blocked by terrain?
                 if (TerrainCheck(ray.origin, lockedVessel.transform.position))
                 {
-                    radar.UnlockTargetAt(lockIndex, true);
                     return false;
                 }
 
@@ -1180,7 +1179,6 @@ namespace BDArmory.Radar
                     else
                     {
                         // cannot track, so unlock it
-                        radar.UnlockTargetAt(lockIndex, true);
                         return false;
                     }
                 }
@@ -1194,10 +1192,8 @@ namespace BDArmory.Radar
             else
             {
                 // nothing tracked/locked at this index
-                radar.UnlockTargetAt(lockIndex, true);
+                return false;
             }
-
-            return false;
         }
 
         /// <summary>
