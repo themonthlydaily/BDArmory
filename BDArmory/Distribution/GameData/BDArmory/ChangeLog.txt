@@ -1,6 +1,7 @@
 ﻿FIXES
 	- Fix some exceptions related to flames.
 	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
+	- Fix bug where interrupted tournaments could lose team information.
 IMPROVEMENTS
 	- UI:
 		- Reworks the BDA Settings Menu to be less cluttered/more organized/intuitive.
