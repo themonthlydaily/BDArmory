@@ -701,7 +701,7 @@ namespace BDArmory.Control
                     currentHeat = heatIndex;
                     if (tournamentState.completed.ContainsKey(roundIndex) && tournamentState.completed[roundIndex].Contains(heatIndex)) continue; // We've done that heat.
 
-                    message = "Running heat " + heatIndex + " of round " + roundIndex + " of tournament " + tournamentState.tournamentID;
+                    message = $"Running heat {heatIndex} of round {roundIndex} of tournament {tournamentState.tournamentID} ({heatsRemaining} heats remaining in the tournament).";
                     BDACompetitionMode.Instance.competitionStatus.Add(message);
                     Debug.Log("[BDArmory.BDATournament]: " + message);
 
@@ -742,6 +742,8 @@ namespace BDArmory.Control
                     tournamentState.completed[roundIndex].Add(heatIndex);
                     SaveTournamentState();
                     heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+
+                    if (TournamentAutoResume.Instance != null && TournamentAutoResume.Instance.CheckMemoryUsage()) yield break;
 
                     if (tournamentState.completed[roundIndex].Count < tournamentState.rounds[roundIndex].Count)
                     {
@@ -973,7 +975,7 @@ namespace BDArmory.Control
 
         IEnumerator WaitForSettings()
         {
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(0.5f);
             var tic = Time.realtimeSinceStartup;
             yield return new WaitUntil(() => (BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 10)); // Wait until the settings are ready or timed out.
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
@@ -1044,6 +1046,38 @@ namespace BDArmory.Control
             HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
             HighLogic.SaveFolder = game;
             HighLogic.CurrentGame.Start();
+        }
+
+        /// <summary>
+        /// Check the non-native memory usage and automatically quit if it's above the configured threshold.
+        /// Note: only the managed (non-native) memory is checked, the amount of native memory may or may not be comparable to the amount of non-native memory. FIXME This needs checking in a long tournament.
+        /// </summary>
+        /// <returns></returns>
+        public bool CheckMemoryUsage()
+        {
+            if (!BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > BDArmorySetup.SystemMaxMemory) return false; // Only trigger if Auto-Resume Tournaments is enabled and the Quit Memory Usage Threshold is set.
+            float memoryUsage = (UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong() + UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver()) / (1 << 30); // In GB.
+            if (memoryUsage >= BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD)
+            {
+                if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.competitionStatus.Add("Quitting in 3s due to memory usage threshold reached.");
+                Debug.LogWarning($"[BDArmory.BDATournament]: Quitting KSP due to reaching Auto-Quit Memory Threshold: {memoryUsage} / {BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD}GB");
+                StartCoroutine(AutoQuit(3)); // Trigger quit in 3s to give the tournament coroutine time to stop and the message to be shown.
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Automatically quit KSP after a delay.
+        /// </summary>
+        /// <param name="delay"></param>
+        /// <returns></returns>
+        IEnumerator AutoQuit(float delay = 1)
+        {
+            yield return new WaitForSeconds(delay);
+            HighLogic.LoadScene(GameScenes.MAINMENU);
+            yield return new WaitForSeconds(0.5f); // Pause on the Main Menu a moment, then quit.
+            Application.Quit();
         }
     }
 }

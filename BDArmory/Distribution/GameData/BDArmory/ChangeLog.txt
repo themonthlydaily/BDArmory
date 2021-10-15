@@ -1,6 +1,7 @@
 ﻿FIXES
 	- Fix some exceptions related to flames.
 	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
+	- Fix bug where interrupted tournaments could lose team information.
 IMPROVEMENTS
 	- UI:
 		- Reworks the BDA Settings Menu to be less cluttered/more organized/intuitive.
@@ -9,13 +10,15 @@ IMPROVEMENTS
 		- Vessel tracing manual toggle moved from the Vessel Switcher Window to the Settings window (in the Other section when Advanced User Settings is enabled).
 		- Settings window doesn't automatically close when starting a competition.
 		- Settings are saved when switching scenes if the UI is open.
-		- Add toggle for 'Auto-Resume Tournaments' to Advanced Gameplay section of settings.
-	- Add an option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
+	- Add an 'Auto-Resume Tournaments' option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
+	- Add an 'Auto-Quit Memory Threshold' option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. In particular, the GfxDriver can use around 5GB of memory, but isn't measurable in non-debug versions of the Unity player. See the "DEBUG Memory Usage" lines in the KSP.log.
 	- Landed Kill Timer no longer affects vessels using Surface AIs.
 	- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
+	- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Performance Logging option removed as it did nothing.
 	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
+	- Auto-resume tournaments and Auto-quit KSP advanced options added to the Gameplay section.
 
 v1.4.10.0
 FIXES

@@ -754,9 +754,7 @@ namespace BDArmory.Modules
         {
             TargetSignatureData lockedTarget = lockedTargets[index];
 
-            Vector3 targetPlanarDirection =
-                Vector3.ProjectOnPlane(lockedTarget.predictedPosition - referenceTransform.position,
-                    referenceTransform.up);
+            Vector3 targetPlanarDirection = Vector3.ProjectOnPlane(lockedTarget.predictedPosition - referenceTransform.position, referenceTransform.up);
             float lookAngle = Vector3.Angle(targetPlanarDirection, referenceTransform.forward);
             if (referenceTransform.InverseTransformPoint(lockedTarget.predictedPosition).x < 0)
             {
@@ -787,23 +785,22 @@ namespace BDArmory.Modules
             }
             //RadarUtils.ScanInDirection (new Ray (referenceTransform.position, lockedTarget.predictedPosition - referenceTransform.position), lockRotationAngle * 2, minLockedSignalThreshold, ref attemptedLocks, lockedSignalPersist, true, rwrType, radarSnapshot);
 
-            if (
-                Vector3.Angle(lockedTarget.position - referenceTransform.position,
-                    this.lockedTarget.position - referenceTransform.position) > multiLockFOV / 2)
+            if (Vector3.Angle(lockedTarget.position - referenceTransform.position, this.lockedTarget.position - referenceTransform.position) > multiLockFOV / 2)
             {
                 UnlockTargetAt(index, true);
                 return;
             }
 
-            RadarUtils.RadarUpdateLockTrack(
+            if (!RadarUtils.RadarUpdateLockTrack(
                 new Ray(referenceTransform.position, lockedTarget.predictedPosition - referenceTransform.position),
-                lockedTarget.predictedPosition, lockRotationAngle * 2, this, lockedSignalPersist, true, index, lockedTarget.vessel);
+                lockedTarget.predictedPosition, lockRotationAngle * 2, this, lockedSignalPersist, true, index, lockedTarget.vessel))
+            {
+                UnlockTargetAt(index, true);
+                return;
+            }
 
             //if still failed or out of FOV, unlock.
-            if (!lockedTarget.exists ||
-                (!omnidirectional &&
-                 Vector3.Angle(lockedTarget.position - referenceTransform.position, transform.up) >
-                 directionalFieldOfView / 2))
+            if (!lockedTarget.exists || (!omnidirectional && Vector3.Angle(lockedTarget.position - referenceTransform.position, transform.up) > directionalFieldOfView / 2))
             {
                 //UnlockAllTargets();
                 UnlockTargetAt(index, true);
@@ -856,11 +853,6 @@ namespace BDArmory.Modules
 
         public void UnlockTargetAt(int index, bool tryRelock = false)
         {
-            if (index < 0 || index >= lockedTargets.Count)
-            {
-                Debug.LogWarning($"DEBUG Invalid index {index} for lockedTargets of size {lockedTargets.Count}");
-            }
-
             Vessel rVess = lockedTargets[index].vessel;
 
             if (tryRelock)
