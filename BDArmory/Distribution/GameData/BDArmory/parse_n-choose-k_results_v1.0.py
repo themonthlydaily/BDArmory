@@ -37,6 +37,8 @@ if args.results is not None:
         for k, c in counts.items():
             t[name_map[k[0]]][name_map[k[1]]] = c
         with open(args.output, 'w') as f:
-            f.write("vs," + ",".join(names) + "\n")
+            f.write("vs," + ",".join(names) + ",,sum(wins)\n")
             for i, name in enumerate(names):
-                f.write(name + "," + ",".join([str(c) for c in t[i]]) + "\n")
+                f.write(name + "," + ",".join([str(c) for c in t[i]]) + ",," + str(sum(t[i])) + "\n")
+            f.write(","*(len(names)+2))
+            f.write("\nsum(losses)," + ",".join([str(sum(t[i][j] for i in range(len(names)))) for j in range(len(names))])+",,\n")
