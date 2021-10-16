@@ -153,25 +153,25 @@ namespace BDArmory.Modules
             {
                 if (CASELevel == 0)
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-0", direction, false, part.mass + ((float)ammoExplosionYield * 10f), 1200 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
+                    ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "Ammunition (CASE-0)", direction, -1, false, part.mass + ((float)ammoExplosionYield * 10f), 1200 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE 0 explosion, tntMassEquivilent: " + ammoExplosionYield);
                 }
                 else
                 {
-                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-1", direction, false, part.mass + ((float)ammoExplosionYield * 10f), 600 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
+                    direction = part.transform.up;
+                    ExplosionFx.CreateExplosion(part.transform.position, ((float)ammoExplosionYield / 2), limitEdexploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "Ammunition (CASE-I)", direction, -1, false, part.mass + ((float)ammoExplosionYield * 10f), 600 * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE);
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE I explosion, tntMassEquivilent: " + ammoExplosionYield + ", part: " + part + ", vessel: " + vesselName);
                 }
             }
             else //if (CASELevel == 2) //blast contained, shunted out side of hull, minimal damage
             {
-                ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "CASE-2", direction, true);
+                ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, part, SourceVessel, "Ammunition (CASE-II)", direction, -1, true);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                 Ray BlastRay = new Ray(part.transform.position, part.transform.up);
                 var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);
                 if (hits.Length > 0)
                 {
                     var orderedHits = hits.OrderBy(x => x.distance);
-
                     using (var hitsEnu = orderedHits.GetEnumerator())
                     {
                         while (hitsEnu.MoveNext())
@@ -291,9 +291,12 @@ namespace BDArmory.Modules
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed)
             {
-                if (this.part.temperature > 900) //ammo cooks off, part is too hot
+                if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
                 {
-                    DetonateIfPossible();
+                    if (this.part.temperature > 900) //ammo cooks off, part is too hot
+                    {
+                        DetonateIfPossible();
+                    }
                 }
             }
         }

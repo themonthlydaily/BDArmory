@@ -231,6 +231,7 @@ namespace BDArmory.FX
 
         private static bool CanFlamesBeAttached(Part hitPart)
         {
+            if (hitPart == null || hitPart.vessel == null) return false;
             if (!BDArmorySettings.FIRE_FX_IN_FLIGHT && !hitPart.vessel.LandedOrSplashed || !hitPart.HasFuel())
                 return false;
 
@@ -265,7 +266,7 @@ namespace BDArmory.FX
         public static void CleanPartsOnFireInfo()
         {
             HashSet<Vessel> keysToRemove = new HashSet<Vessel>();
-            foreach (var key in PartsOnFire.Keys)
+            foreach (var key in PartsOnFire.Keys.ToList())
             {
                 PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList(); // Remove expired fires.
                 if (PartsOnFire[key].Count == 0) { keysToRemove.Add(key); } // Remove parts no longer on fire.
@@ -456,7 +457,7 @@ namespace BDArmory.FX
                                 leakcount++;
                             }
                             leak.drainDuration = 0;
-                            AttachFire(hit, hitPart, caliber, sourcevessel, -1, leakcount);
+                            AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
                         }
                     }
                     else
@@ -486,7 +487,7 @@ namespace BDArmory.FX
                 fuelLeak.SetActive(true);
             }
         }
-        public static void AttachFire(RaycastHit hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false, bool surfaceFire = false)
+        public static void AttachFire(Vector3 hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false, bool surfaceFire = false)
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED)
             {
@@ -507,7 +508,13 @@ namespace BDArmory.FX
         {
             if (!CanFlamesBeAttached(hitPart)) return;
 
+            if (flameFXPool == null) SetupBulletHitFXPool();
             var flameObject = flameFXPool.GetPooledObject();
+            if (flameObject == null)
+            {
+                Debug.LogError("[BDArmory.BulletHitFX]: flameFXPool gave a null flameObject!");
+                return;
+            }
             flameObject.transform.SetParent(hitPart.transform);
             flameObject.SetActive(true);
         }

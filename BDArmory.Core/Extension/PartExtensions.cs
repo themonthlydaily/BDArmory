@@ -13,7 +13,16 @@ namespace BDArmory.Core.Extension
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
-
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    if (p != p.vessel.rootPart)
+                    {
+                        damage *= BDArmorySettings.S4R2_DMG_MULT;
+                    }
+                }
+            }
             //////////////////////////////////////////////////////////
             // Basic Add Hitpoints for compatibility (only used by lasers & fires)
             //////////////////////////////////////////////////////////
@@ -30,13 +39,39 @@ namespace BDArmory.Core.Extension
             }
         }
 
+        public static void AddInstagibDamage(this Part p)
+        {
+            if (p.GetComponent<KerbalEVA>() != null)
+            {
+                p.Destroy();
+            }
+            else
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    p.vessel.rootPart.Destroy();
+                }
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.PartExtensions]: Instagib!");
+            }
+        }
+
         public static float AddExplosiveDamage(this Part p,
                                                float explosiveDamage,
                                                float caliber,
-                                               ExplosionSourceType sourceType)
+                                               ExplosionSourceType sourceType,
+                                               float multiplier = 1)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
-
+            /*
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    //if (p != p.vessel.rootPart) return 0f;
+                }
+            }
+            */
             float damage_ = 0f;
             //////////////////////////////////////////////////////////
             // Explosive Hitpoints
@@ -45,16 +80,16 @@ namespace BDArmory.Core.Extension
             switch (sourceType)
             {
                 case ExplosionSourceType.Missile:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage;
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage * multiplier;
                     break;
                 case ExplosionSourceType.Rocket:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * explosiveDamage;
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * explosiveDamage * multiplier;
                     break;
                 case ExplosionSourceType.BattleDamage:
                     damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * explosiveDamage;
                     break;
                 case ExplosionSourceType.Bullet:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * explosiveDamage;
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * explosiveDamage * multiplier;
                     break;
                 default: // Other?
                     damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * explosiveDamage;
@@ -86,6 +121,16 @@ namespace BDArmory.Core.Extension
             }
             else
             {
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                {
+                    if (p.vessel.rootPart != null)
+                    {
+                        if (p != p.vessel.rootPart)
+                        {
+                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                        }
+                    }
+                }
                 ApplyHitPoints(p, damage_);
             }
             return damage_;
@@ -101,7 +146,15 @@ namespace BDArmory.Core.Extension
                                                ExplosionSourceType sourceType)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
-
+            /*
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    if (p != p.vessel.rootPart) return 0f;
+                }
+            }
+            */
             //////////////////////////////////////////////////////////
             // Basic Kinetic Formula
             //////////////////////////////////////////////////////////
@@ -113,22 +166,22 @@ namespace BDArmory.Core.Extension
             {
                 case ExplosionSourceType.Rocket:
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
                 case ExplosionSourceType.BattleDamage:
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
                     break;
                 case ExplosionSourceType.Bullet:
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
                 default: // Other?    
                     damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
                             * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
                     break;
             }
@@ -158,6 +211,16 @@ namespace BDArmory.Core.Extension
             }
             else
             {
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                {
+                    if (p.vessel.rootPart != null)
+                    {
+                        if (p != p.vessel.rootPart)
+                        {
+                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                        }
+                    }
+                }
                 ApplyHitPoints(p, damage_, caliber, mass, multiplier, impactVelocity, penetrationfactor);
             }
             return damage_;
@@ -178,7 +241,19 @@ namespace BDArmory.Core.Extension
                 Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + p.name + ": " + damage_);
             }
         }
-
+        public static void AddHealth(this Part p, float healing, bool overcharge = false)
+        {
+            if (p.GetComponent<KerbalEVA>() != null)
+            {
+                ApplyHitPoints(p.GetComponent<KerbalEVA>(), healing);
+            }
+            else
+            {
+                Dependencies.Get<DamageService>().AddHealthToPart_svc(p, healing, overcharge);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.PartExtensions]: Standard Hitpoints Restored : " + healing);
+            }
+        }
         /// <summary>
         /// Explosive Hitpoint Damage
         /// </summary>
@@ -347,7 +422,13 @@ namespace BDArmory.Core.Extension
 
         public static Vector3 GetSize(this Part part)
         {
-            var size = part.GetComponentInChildren<MeshFilter>().mesh.bounds.size;
+            var meshFilter = part.GetComponentInChildren<MeshFilter>();
+            if (meshFilter == null)
+            {
+                Debug.LogWarning($"[BDArmory.PartExtension]: {part.name} has no MeshFilter! Returning zero size.");
+                return Vector3.zero;
+            }
+            var size = meshFilter.mesh.bounds.size;
 
             // if (part.name.Contains("B9.Aero.Wing.Procedural")) // Covered by SuicidalInsanity's patch.
             // {
@@ -500,7 +581,7 @@ namespace BDArmory.Core.Extension
                             Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage *= Mathf.Clamp01((113f - _damageReduction) / 100f)));
                         }
 
-                        damage *= Mathf.Clamp01((113f - _damageReduction) / 100f); ;
+                        damage *= Mathf.Clamp01((113f - _damageReduction) / 100f);
                     }
                     break;
             }

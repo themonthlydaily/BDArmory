@@ -10,7 +10,7 @@ namespace BDArmory.Modules
 {
     public class ClusterBomb : PartModule
     {
-        List<GameObject> submunitions;
+        public List<GameObject> submunitions;
         List<GameObject> fairings;
         MissileLauncher missileLauncher;
 
@@ -190,7 +190,7 @@ namespace BDArmory.Modules
         {
             ContactPoint contact = col.contacts[0];
             Vector3 pos = contact.point;
-            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, false, rb.mass * 1000);
+            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, -1, false, rb.mass * 1000);
         }
 
         void FixedUpdate()
@@ -248,7 +248,7 @@ namespace BDArmory.Modules
 
         void Detonate(Vector3 pos)
         {
-            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, false, rb.mass * 1000);
+            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, -1, false, rb.mass * 1000);
             Destroy(gameObject);
         }
 

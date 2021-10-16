@@ -28,6 +28,7 @@ namespace BDArmory.Bullets
         public float caliber;
         public float thrust;
         private Vector3 thrustVector;
+        private Vector3 dragVector;
         public float thrustTime;
         public bool shaped;
         public float maxAirDetonationRange;
@@ -36,6 +37,7 @@ namespace BDArmory.Bullets
         public bool gravitic;
         public bool EMP;
         public bool choker;
+        public bool thief;
         public float massMod = 0;
         public float impulse = 0;
         public bool incendiary;
@@ -43,6 +45,7 @@ namespace BDArmory.Bullets
         public float tntMass;
         bool explosive = true;
         public float bulletDmgMult = 1;
+        public float dmgMult = 1;
         public float blastRadius = 0;
         public float randomThrustDeviation = 0.05f;
         public float massScalar = 0.012f;
@@ -58,6 +61,7 @@ namespace BDArmory.Bullets
         Vector3 prevPosition;
         Vector3 currPosition;
         Vector3 startPosition;
+        bool startUnderwater = false;
         Ray RocketRay;
         private float impactVelocity;
 
@@ -116,7 +120,12 @@ namespace BDArmory.Bullets
             currPosition = transform.position;
             startPosition = transform.position;
             startTime = Time.time;
-
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
+            {
+                startUnderwater = true;
+            }
+            else
+                startUnderwater = false;
             massScalar = 0.012f / rocketMass;
 
             rb.mass = rocketMass;
@@ -128,7 +137,7 @@ namespace BDArmory.Bullets
 
             randThrustSeed = UnityEngine.Random.Range(0f, 100f);
             thrustVector = new Vector3(0, 0, thrust);
-
+            dragVector = new Vector3();
             SetupAudio();
 
             if (this.sourceVessel)
@@ -206,15 +215,13 @@ namespace BDArmory.Bullets
 
                 //guidance and attitude stabilisation scales to atmospheric density.
                 float atmosMultiplier =
-                    Mathf.Clamp01(2.5f *
-                                  (float)
-                                  FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
+                    Mathf.Clamp01((float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
                                       FlightGlobals.getExternalTemperature(), FlightGlobals.currentMainBody));
 
                 //model transform. always points prograde
                 transform.rotation = Quaternion.RotateTowards(transform.rotation,
                     Quaternion.LookRotation(rb.velocity + Krakensbane.GetFrameVelocity(), transform.up),
-                    atmosMultiplier * (0.5f * (Time.time - startTime)) * 50 * Time.fixedDeltaTime);
+                    Mathf.Clamp01(atmosMultiplier * 2.5f) * (0.5f * (Time.time - startTime)) * 50 * Time.fixedDeltaTime);
 
 
                 if (Time.time - startTime < thrustTime && Time.time - startTime > stayTime)
@@ -223,6 +230,18 @@ namespace BDArmory.Bullets
                     thrustVector.y = randomThrustDeviation * (1 - (Mathf.PerlinNoise(randThrustSeed, 4 * Time.time) * 2)) / massScalar;//far more affected than heavier ones
                     rb.AddRelativeForce(thrustVector);
                 }//0.012/rocketmass - use .012 as baseline, it's the mass of the hydra, which the randomTurstdeviation was originally calibrated for
+                if (BDArmorySettings.BULLET_WATER_DRAG)
+                {
+                    if (FlightGlobals.getAltitudeAtPos(currPosition) < 0)
+                    {
+                        //atmosMultiplier *= 83.33f;
+                        dragVector.z = -(0.5f * 1 * (rb.velocity.magnitude * rb.velocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000)) * TimeWarp.fixedDeltaTime;
+                        rb.AddRelativeForce(dragVector); //this is going to throw off aiming code, but you aren't going to hit anything with rockets underwater anyway
+                    }
+                    //dragVector.z = -(0.5f * (atmosMultiplier * 0.012f) * (rb.velocity.magnitude * rb.velocity.magnitude) * 0.5f * ((Mathf.PI * caliber * caliber * 0.25f) / 1000000))*TimeWarp.fixedDeltaTime;
+                    //rb.AddRelativeForce(dragVector);
+                    //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
+                }
             }
 
             if (Time.time - startTime > thrustTime)
@@ -290,7 +309,15 @@ namespace BDArmory.Bullets
                                     impactVelocity = (rb.velocity - (hitPart.rb.velocity + Krakensbane.GetFrameVelocityV3f())).magnitude;
                                 else
                                     impactVelocity = rb.velocity.magnitude;
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                if (dmgMult < 0)
+                                {
+                                    hitPart.AddInstagibDamage();
+                                }
+                                else
+                                {
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                }
+                                ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
                                 Detonate(hit.point, false);
                                 return;
                             }
@@ -374,7 +401,15 @@ namespace BDArmory.Bullets
                                 hasPenetrated = true;
 
                                 bool viableBullet = ProjectileUtils.CalculateBulletStatus(rocketMass * 1000, caliber);
-                                ProjectileUtils.ApplyDamage(hitPart, hit, 1, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                if (dmgMult < 0)
+                                {
+                                    hitPart.AddInstagibDamage();
+                                }
+                                else
+                                {
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                }
+                                ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
                                 ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Rocket, (rocketMass * 1000), penetrationFactor);
 
                                 penTicker += 1;
@@ -433,9 +468,18 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-            else if (FlightGlobals.getAltitudeAtPos(currPosition) <= 0)
+            if (BDArmorySettings.BULLET_WATER_DRAG)
             {
-                Detonate(currPosition, false);
+                if (FlightGlobals.getAltitudeAtPos(transform.position) > 0 && startUnderwater)
+                {
+                    startUnderwater = false;
+                    FXMonger.Splash(transform.position, caliber);
+                }
+                if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !startUnderwater)
+                {
+                    Detonate(transform.position, false);
+                    FXMonger.Splash(transform.position, caliber);
+                }
             }
             prevPosition = currPosition;
 
@@ -570,7 +614,7 @@ namespace BDArmory.Bullets
                                 float distance = Vector3.Distance(transform.position, hit.point);
                                 if (p != null)
                                 {
-                                    BulletHitFX.AttachFire(hit, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, false, true); //else apply fire to occluding part
+                                    BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, false, true); //else apply fire to occluding part
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                         Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
                                 }
@@ -608,7 +652,7 @@ namespace BDArmory.Bullets
                                         {
                                             MDEC = (ModuleDrainEC)partHit.vessel.rootPart.AddModule("ModuleDrainEC");
                                         }
-                                        MDEC.incomingDamage += ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
+                                        MDEC.incomingDamage = ((25 - Distance) * 5); //this way craft at edge of blast might only get disabled instead of bricked
                                         MDEC.softEMP = false; //can bypass EMP damage cap                                            
                                     }
                                     if (choker)
@@ -623,15 +667,14 @@ namespace BDArmory.Bullets
                                 }
                             }
                         }
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, true);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction,-1, true);
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass*1000, -1, dmgMult);
                     }
-
                 }
-            } // needs to be Explosiontype Bullet since missile only returns Module MissileLauncher
+            } 
             gameObject.SetActive(false);
         }
 

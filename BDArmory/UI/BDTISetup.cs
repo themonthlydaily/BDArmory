@@ -34,7 +34,7 @@ namespace BDArmory.UI
 
         public SortedList<string, List<MissileFire>> weaponManagers = new SortedList<string, List<MissileFire>>();
 
-        public static string textureDir = "BDArmory/Textures/Icons/";
+        public static string textureDir = "BDArmory/Textures/";
 
         //legacy version check
         bool LegacyTILoaded = false;
@@ -42,54 +42,124 @@ namespace BDArmory.UI
         private Texture2D dit;
         public Texture2D TextureIconDebris
         {
-            get { return dit ? dit : dit = GameDatabase.Instance.GetTexture(textureDir + "debrisIcon", false); }
+            get { return dit ? dit : dit = GameDatabase.Instance.GetTexture(textureDir + "Icons/debrisIcon", false); }
         }
         private Texture2D mit;
         public Texture2D TextureIconMissile
         {
-            get { return mit ? mit : mit = GameDatabase.Instance.GetTexture(textureDir + "missileIcon", false); }
+            get { return mit ? mit : mit = GameDatabase.Instance.GetTexture(textureDir + "Icons/missileIcon", false); }
         }
         private Texture2D rit;
         public Texture2D TextureIconRocket
         {
-            get { return rit ? rit : rit = GameDatabase.Instance.GetTexture(textureDir + "rocketIcon", false); }
+            get { return rit ? rit : rit = GameDatabase.Instance.GetTexture(textureDir + "Icons/rocketIcon", false); }
         }
         private Texture2D ti7;
         public Texture2D TextureIconGeneric
         {
-            get { return ti7 ? ti7 : ti7 = GameDatabase.Instance.GetTexture(textureDir + "Icon_Generic", false); }
+            get { return ti7 ? ti7 : ti7 = GameDatabase.Instance.GetTexture(textureDir + "Icons/Icon_Generic", false); }
         }
         private Texture2D ti1A;
         public Texture2D TextureIconShip
         {
-            get { return ti1A ? ti1A : ti1A = GameDatabase.Instance.GetTexture(textureDir + "Icon_Ship", false); }
+            get { return ti1A ? ti1A : ti1A = GameDatabase.Instance.GetTexture(textureDir + "Icons/Icon_Ship", false); }
         }
         private Texture2D ti2A;
         public Texture2D TextureIconPlane
         {
-            get { return ti2A ? ti2A : ti2A = GameDatabase.Instance.GetTexture(textureDir + "Icon_Plane", false); }
+            get { return ti2A ? ti2A : ti2A = GameDatabase.Instance.GetTexture(textureDir + "Icons/Icon_Plane", false); }
         }
         private Texture2D ti3A;
         public Texture2D TextureIconRover
         {
-            get { return ti3A ? ti3A : ti3A = GameDatabase.Instance.GetTexture(textureDir + "Icon_Rover", false); }
+            get { return ti3A ? ti3A : ti3A = GameDatabase.Instance.GetTexture(textureDir + "Icons/Icon_Rover", false); }
         }
         private Texture2D ti4A;
         public Texture2D TextureIconBase
         {
-            get { return ti4A ? ti4A : ti4A = GameDatabase.Instance.GetTexture(textureDir + "Icon_Base", false); }
+            get { return ti4A ? ti4A : ti4A = GameDatabase.Instance.GetTexture(textureDir + "Icons/Icon_Base", false); }
         }
         private Texture2D ti5A;
         public Texture2D TextureIconProbe
         {
-            get { return ti5A ? ti5A : ti5A = GameDatabase.Instance.GetTexture(textureDir + "Icon_Probe", false); }
+            get { return ti5A ? ti5A : ti5A = GameDatabase.Instance.GetTexture(textureDir + "Icons/Icon_Probe", false); }
         }
         private Texture2D ti6A;
         public Texture2D TextureIconSub
         {
-            get { return ti6A ? ti6A : ti6A = GameDatabase.Instance.GetTexture(textureDir + "Icon_Sub", false); }
+            get { return ti6A ? ti6A : ti6A = GameDatabase.Instance.GetTexture(textureDir + "Icons/Icon_Sub", false); }
         }
 
+        private Texture2D MTAcc;
+        public Texture2D MutatorIconAcc
+        {
+            get { return MTAcc ? MTAcc : MTAcc = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconAccuracy", false); }
+        }
+        private Texture2D MTAtk;
+        public Texture2D MutatorIconAtk
+        {
+            get { return MTAtk ? MTAtk : MTAtk = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconAttack", false); }
+        }
+        private Texture2D MTAtk2;
+        public Texture2D MutatorIconAtk2
+        {
+            get { return MTAtk2 ? MTAtk2 : MTAtk2 = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconAttack2", false); }
+        }
+        private Texture2D MTBal;
+        public Texture2D MutatorIconBullet
+        {
+            get { return MTBal ? MTBal : MTBal = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconBallistic", false); }
+        }
+        private Texture2D MTDef;
+        public Texture2D MutatorIconDefense
+        {
+            get { return MTDef ? MTDef : MTDef = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconDefense", false); }
+        }
+        private Texture2D MTLsr;
+        public Texture2D MutatorIconLaser
+        {
+            get { return MTLsr ? MTLsr : MTLsr = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconLaser", false); }
+        }
+        private Texture2D MTmass;
+        public Texture2D MutatorIconMass
+        {
+            get { return MTmass ? MTmass : MTmass = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconMass", false); }
+        }
+        private Texture2D MTHP;
+        public Texture2D MutatorIconRegen
+        {
+            get { return MTHP ? MTHP : MTHP = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconRegen", false); }
+        }
+        private Texture2D MTRkt;
+        public Texture2D MutatorIconRocket
+        {
+            get { return MTRkt ? MTRkt : MTRkt = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconRocket", false); }
+        }
+        private Texture2D MTdoom;
+        public Texture2D MutatorIconDoom
+        {
+            get { return MTdoom ? MTdoom : MTdoom = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconSkull", false); }
+        }
+        private Texture2D MTSpd;
+        public Texture2D MutatorIconSpeed
+        {
+            get { return MTSpd ? MTSpd : MTSpd = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconSpeed", false); }
+        }
+        private Texture2D MTTgt;
+        public Texture2D MutatorIconTarget
+        {
+            get { return MTTgt ? MTTgt : MTTgt = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconTarget", false); }
+        }
+        private Texture2D MTVmp;
+        public Texture2D MutatorIconVampire
+        {
+            get { return MTVmp ? MTVmp : MTVmp = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconVampire", false); }
+        }
+        private Texture2D MTRnd;
+        public Texture2D MutatorIconNull
+        {
+            get { return MTRnd ? MTRnd : MTRnd = GameDatabase.Instance.GetTexture(textureDir + "Mutators/IconUnknown", false); }
+        }
         void Start()
         {
             Instance = this;
@@ -128,7 +198,7 @@ namespace BDArmory.UI
             TILabel.font = BDArmorySetup.BDGuiSkin.window.font;
             TILabel.fontSize = BDArmorySetup.BDGuiSkin.window.fontSize;
             TILabel.fontStyle = BDArmorySetup.BDGuiSkin.window.fontStyle;
-            IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 280);
+            IconOptionsGroup = new Rect(15, 55, toolWindowWidth - 20, 290);
             TeamColorsGroup = new Rect(15, IconOptionsGroup.height, toolWindowWidth - 20, 25);
         }
 
@@ -228,6 +298,7 @@ namespace BDArmory.UI
             else
             {
                 showTeamIconGUI = true;
+                showPSA = false;
                 LoadConfig();
             }
         }
@@ -284,7 +355,14 @@ namespace BDArmory.UI
             title.fontSize = 30;
             title.alignment = TextAnchor.MiddleLeft;
             title.wordWrap = false;
-
+            if (HighLogic.LoadedSceneIsFlight && BDTISettings.TEAMICONS)
+            {
+                if (GameSettings.FLT_VESSEL_LABELS && !showPSA)
+                {
+                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_BDArmory_Icons_PSA"), 20.0f, ScreenMessageStyle.UPPER_CENTER);
+                    showPSA = true;
+                }
+            }
         }
         public bool showTeamIconSelect = false;
         public bool showColorSelect = false;
@@ -343,7 +421,7 @@ namespace BDArmory.UI
                 GUI.EndGroup();
                 TeamColorsGroup.height = Mathf.Lerp(TeamColorsGroup.height, (line * 25) + 5, 0.35f);
             }
-            toolWindowHeight = Mathf.Lerp(toolWindowHeight, (50 + IconOptionsGroup.height + TeamColorsGroup.height) + 15, 0.35f);
+            toolWindowHeight = Mathf.Lerp(toolWindowHeight, (50 + (BDTISettings.TEAMICONS ? IconOptionsGroup.height + TeamColorsGroup.height : 0)) + 15, 0.35f);
             WindowRectGUI.height = toolWindowHeight + 10;
         }
     }

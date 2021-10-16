@@ -1154,7 +1154,6 @@ namespace BDArmory.Radar
                 // blocked by terrain?
                 if (TerrainCheck(ray.origin, lockedVessel.transform.position))
                 {
-                    radar.UnlockTargetAt(lockIndex, true);
                     return false;
                 }
 
@@ -1180,7 +1179,6 @@ namespace BDArmory.Radar
                     else
                     {
                         // cannot track, so unlock it
-                        radar.UnlockTargetAt(lockIndex, true);
                         return false;
                     }
                 }
@@ -1194,10 +1192,8 @@ namespace BDArmory.Radar
             else
             {
                 // nothing tracked/locked at this index
-                radar.UnlockTargetAt(lockIndex, true);
+                return false;
             }
-
-            return false;
         }
 
         /// <summary>
@@ -1230,6 +1226,8 @@ namespace BDArmory.Radar
             Vector3 forwardVector = referenceTransform.forward;
             Vector3 upVector = referenceTransform.up;
             Vector3 lookDirection = -forwardVector;
+            var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(myWpnManager.vessel, true);
+            var ignoreMyTargetTargetingMe = pilotAI != null && pilotAI.evasionIgnoreMyTargetTargetingMe;
 
             using (var loadedvessels = BDATargetManager.LoadedVessels.GetEnumerator())
                 while (loadedvessels.MoveNext())
@@ -1296,6 +1294,7 @@ namespace BDArmory.Radar
                                     while (weapon.MoveNext())
                                     {
                                         if (weapon.Current == null || weapon.Current.weaponManager == null) continue;
+                                        if (ignoreMyTargetTargetingMe && myWpnManager.currentTarget != null && weapon.Current.weaponManager.vessel == myWpnManager.currentTarget.Vessel) continue;
                                         // If we're being targeted, calculate a miss distance
                                         if (weapon.Current.weaponManager.currentTarget != null && weapon.Current.weaponManager.currentTarget.Vessel == myWpnManager.vessel)
                                         {
@@ -1327,6 +1326,7 @@ namespace BDArmory.Radar
 
         public static bool MissileIsThreat(MissileBase missile, MissileFire mf, bool threatToMeOnly = true)
         {
+            if (missile == null || missile.part == null) return false;
             if (threatToMeOnly)
             {
                 Vector3 vectorFromMissile = mf.vessel.CoM - missile.part.transform.position;

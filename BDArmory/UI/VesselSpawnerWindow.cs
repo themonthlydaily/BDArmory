@@ -320,7 +320,7 @@ namespace BDArmory.UI
                         numberOfTeams = Localizer.Format("#LOC_BDArmory_Settings_Teams_Folders");
                         break;
                     default: // Specified directly
-                        numberOfTeams = BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS.ToString("0");
+                        numberOfTeams = Localizer.Format("#LOC_BDArmory_Settings_Teams_SplitEvenly") + " " + BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS.ToString("0");
                         break;
                 }
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_Teams")}:  ({numberOfTeams})", leftLabel); // Number of teams.
@@ -398,6 +398,9 @@ namespace BDArmory.UI
             {
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentDelayBetweenHeats")}: ({BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS}s)", leftLabel); // Delay between heats
                 BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_DELAY_BETWEEN_HEATS, 0f, 15f));
+
+                GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_TournamentTimeWarpBetweenRounds")}: ({(BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS > 0 ? BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS + "min" : "Off")})", leftLabel); // TimeWarp Between Rounds
+                BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS / 5f, 0f, 72f)) * 5;
 
                 switch (BDArmorySettings.TOURNAMENT_STYLE)
                 {

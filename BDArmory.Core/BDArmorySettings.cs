@@ -1,6 +1,6 @@
 using UnityEngine;
 
-using System;
+using System.Collections.Generic;
 
 namespace BDArmory.Core
 {
@@ -8,14 +8,20 @@ namespace BDArmory.Core
     {
         public static string oldSettingsConfigURL = "GameData/BDArmory/settings.cfg"; // Migrate from the old settings file to the new one in PluginData so that we don't invalidate the ModuleManager cache.
         public static string settingsConfigURL = "GameData/BDArmory/PluginData/settings.cfg";
+        public static bool ready = false;
 
         // Settings section toggles
-        [BDAPersistantSettingsField] public static bool GENERAL_SETTINGS_TOGGLE = true;
-        [BDAPersistantSettingsField] public static bool RADAR_SETTINGS_TOGGLE = true;
-        [BDAPersistantSettingsField] public static bool GAME_MODES_SETTINGS_TOGGLE = true;
-        [BDAPersistantSettingsField] public static bool SPAWN_SETTINGS_TOGGLE = true;
-        [BDAPersistantSettingsField] public static bool SLIDER_SETTINGS_TOGGLE = true;
-        [BDAPersistantSettingsField] public static bool OTHER_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool GAMEPLAY_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool GRAPHICS_UI_SECTION_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool GAME_MODES_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool SLIDER_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool RADAR_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool OTHER_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool DEBUG_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool COMPETITION_SETTINGS_TOGGLE = true;
+        [BDAPersistantSettingsField] public static bool GM_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool SPAWN_SETTINGS_TOGGLE = false;
+        [BDAPersistantSettingsField] public static bool ADVANDED_USER_SETTINGS = false;
 
         // Window settings
         [BDAPersistantSettingsField] public static bool STRICT_WINDOW_BOUNDARIES = true;
@@ -27,8 +33,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 350f;
 
         // General toggle settings
+        //[BDAPersistantSettingsField] public static bool INSTAKILL = true; //Depreciated, only affects lasers; use an Instagib mutator isntead
         [BDAPersistantSettingsField] public static bool AI_TOOLBAR_BUTTON = true;                 // Show or hide the BDA AI toolbar button.
-        [BDAPersistantSettingsField] public static bool INSTAKILL = false;
         [BDAPersistantSettingsField] public static bool INFINITE_AMMO = false;
         [BDAPersistantSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistantSettingsField] public static bool EJECT_SHELLS = true;
@@ -36,6 +42,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DRAW_AIMERS = true;
         [BDAPersistantSettingsField] public static bool DRAW_DEBUG_LINES = false;
         [BDAPersistantSettingsField] public static bool DRAW_DEBUG_LABELS = false;
+        [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
         [BDAPersistantSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistantSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;
         [BDAPersistantSettingsField] public static bool SHOW_AMMO_GAUGES = false;
@@ -43,9 +50,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
         [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = true;                   // Prevent craft from going into ramming mode when out of ammo.
         [BDAPersistantSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour)
-        [BDAPersistantSettingsField] public static bool PERFORMANCE_LOGGING = false;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
-        [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
+        //[BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
         [BDAPersistantSettingsField] public static bool AUTO_ENABLE_VESSEL_SWITCHING = false;     // Automatically enables vessel switching on competition start.
         [BDAPersistantSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistantSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
@@ -57,8 +63,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SHOW_CATEGORIES = true;
         [BDAPersistantSettingsField] public static bool IGNORE_TERRAIN_CHECK = false;
         [BDAPersistantSettingsField] public static bool DISPLAY_PATHING_GRID = false;             //laggy when the grid gets large
-        [BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users
+        //[BDAPersistantSettingsField] public static bool ADVANCED_EDIT = true;                     //Used for debug fields not nomrally shown to regular users //SI - Only usage is a commented out function in BDExplosivePart
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
+        [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
+        [BDAPersistantSettingsField] public static bool BULLET_WATER_DRAG = true;
+        [BDAPersistantSettingsField] public static bool LEGACY_ARMOR = false;
 
         // General slider settings
         [BDAPersistantSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -87,6 +96,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float IVA_LOWPASS_FREQ = 2500f;
         [BDAPersistantSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistantSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 256f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations.
+        [BDAPersistantSettingsField] public static float FIRE_RATE_OVERRIDE = 10f;
 
         // Physics constants
         [BDAPersistantSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
@@ -102,11 +112,12 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistantSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistantSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
+        [BDAPersistantSettingsField] public static float S4R2_DMG_MULT = 0.1f;
 
         // FX
         [BDAPersistantSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
-        [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed
-        [BDAPersistantSettingsField] public static float FIRELIFETIME_IN_SECONDS = 90f;           //controls fx for penetration only for landed or splashed
+        [BDAPersistantSettingsField] public static int MAX_FIRES_PER_VESSEL = 10;                 //controls fx for penetration only for landed or splashed //this is only for physical missile collisons into fueltanks - SI
+        [BDAPersistantSettingsField] public static float FIRELIFETIME_IN_SECONDS = 90f;           //controls fx for penetration only for landed or splashed 
 
         // Radar settings
         [BDAPersistantSettingsField] public static float RWR_WINDOW_SCALE_MIN = 0.50f;
@@ -133,7 +144,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int ASTEROID_FIELD_NUMBER = 100; // Number of asteroids
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ALTITUDE = 2f; // Km.
         [BDAPersistantSettingsField] public static float ASTEROID_FIELD_RADIUS = 5f; // Km.
-        // [BDAPersistantSettingsField] public static bool ASTEROID_FIELD_VESSEL_ATTRACTION = false; // Asteroids are attracted to vessels.
+        [BDAPersistantSettingsField] public static bool ASTEROID_FIELD_ANOMALOUS_ATTRACTION = false; // Asteroids are attracted to vessels.
+        [BDAPersistantSettingsField] public static float ASTEROID_FIELD_ANOMALOUS_ATTRACTION_STRENGTH = 0.2f; // Strength of the effect.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN = false;
         [BDAPersistantSettingsField] public static int ASTEROID_RAIN_NUMBER = 100; // Number of asteroids
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_DENSITY = 0.5f; // Arbitrary density scale.
@@ -141,6 +153,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float ASTEROID_RAIN_RADIUS = 3f; // Km.
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistantSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
+        [BDAPersistantSettingsField] public static bool MUTATOR_MODE = false;
 
         //Battle Damage settings
         [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
@@ -167,6 +180,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = false; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
         [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = true; //do fires add heat to parts?
+        [BDAPersistantSettingsField] public static bool ALLOW_S4R2_BD = false; //allow battle damage to proc when using zombie mode?
 
         // Remote logging
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle
@@ -214,6 +228,15 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool SF_REPULSOR = false;
         [BDAPersistantSettingsField] public static float SF_DRAGMULT = 2f;
 
+        //Mutator Mode
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_GLOBAL = false;
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_KILL = false;
+        [BDAPersistantSettingsField] public static bool MUTATOR_APPLY_TIMER = false;
+        [BDAPersistantSettingsField] public static float MUTATOR_DURATION = 0.5f;
+        [BDAPersistantSettingsField] public static List<string> MUTATOR_LIST = new List<string>();
+        [BDAPersistantSettingsField] public static int MUTATOR_APPLY_NUM = 1;
+        [BDAPersistantSettingsField] public static bool MUTATOR_ICONS = false;
+
         // Tournament settings
         [BDAPersistantSettingsField] public static bool SHOW_TOURNAMENT_OPTIONS = false;           // Show tournament options.
         [BDAPersistantSettingsField] public static int TOURNAMENT_STYLE = 0;                       // Tournament Style (Random, N-choose-K, etc.)
@@ -223,8 +246,9 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int TOURNAMENT_TEAMS_PER_HEAT = 2;              // Teams Per Heat
         [BDAPersistantSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
         [BDAPersistantSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
-
-        [BDAPersistantSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+        [BDAPersistantSettingsField] public static float TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS = 0;   // Timewarp between rounds in minutes.
+        [BDAPersistantSettingsField] public static bool AUTO_RESUME_TOURNAMENT = false;            // Automatically load the game the last incomplete tournament was running in and continue the tournament.
+        [BDAPersistantSettingsField] public static float QUIT_MEMORY_USAGE_THRESHOLD = float.MaxValue; // Automatically quit KSP when memory usage is beyond this. (0 = disabled)
 
         // Scoring categories
         [BDAPersistantSettingsField] public static float SCORING_HEADSHOT = 3;                     // Head-Shot Time Limit

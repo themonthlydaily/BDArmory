@@ -35,7 +35,7 @@ namespace BDArmory.Modules
 
         public void Start()
         {
-            Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and enabled." : ", but currently disabled."));
+            Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and " + (BDArmorySettings.KERBAL_SAFETY > 1 ? "fully" : "partially") + " enabled." : ", but currently disabled."));
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
             evaKerbalsToMonitor = new List<KerbalEVA>();
             if (BDArmorySettings.KERBAL_SAFETY > 0)

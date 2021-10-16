@@ -38,8 +38,6 @@ namespace BDArmory.Control
             spawnLocationCamera = new GameObject("StationaryCameraParent");
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn")) // Ensure AutoSpawn folder exists.
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
         }
 
         void OnDestroy()
@@ -218,13 +216,22 @@ namespace BDArmory.Control
                 {
                     spawnConfig.teamsSpecific = new List<List<string>>();
                     var teamDirs = Directory.GetDirectories(Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}");
-                    var stripStartCount = (Environment.CurrentDirectory + $"/AutoSpawn/").Length;
-                    Debug.Log("[BDArmory.VesselSpawner]: Spawning teams from folders " + string.Join(", ", teamDirs.Select(d => d.Substring(stripStartCount))));
-                    foreach (var teamDir in teamDirs)
+                    if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
                     {
-                        spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList());
+                        spawnConfig.numberOfTeams = -1; // Flag for treating craft files as folder names.
+                        spawnConfig.craftFiles = Directory.GetFiles(Environment.CurrentDirectory + $"/AutoSpawn/{spawnConfig.folder}").Where(f => f.EndsWith(".craft")).ToList();
+                        spawnConfig.teamsSpecific = spawnConfig.craftFiles.Select(f => new List<string> { f }).ToList();
                     }
-                    spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
+                    else
+                    {
+                        var stripStartCount = (Environment.CurrentDirectory + $"/AutoSpawn/").Length;
+                        Debug.Log("[BDArmory.VesselSpawner]: Spawning teams from folders " + string.Join(", ", teamDirs.Select(d => d.Substring(stripStartCount))));
+                        foreach (var teamDir in teamDirs)
+                        {
+                            spawnConfig.teamsSpecific.Add(Directory.GetFiles(teamDir).Where(f => f.EndsWith(".craft")).ToList());
+                        }
+                        spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
+                    }
                 }
                 else // Just the specified folder.
                 {
@@ -235,7 +242,6 @@ namespace BDArmory.Control
             else // Spawn the specific vessels.
             {
                 spawnConfig.craftFiles = spawnConfig.teamsSpecific.SelectMany(v => v.ToList()).ToList();
-                // spawnConfig.numberOfTeams = 1;
             }
             if (spawnConfig.craftFiles.Count == 0)
             {
@@ -246,7 +252,8 @@ namespace BDArmory.Control
                 spawnFailureReason = SpawnFailureReason.NoCraft;
                 yield break;
             }
-            if (spawnConfig.teamsSpecific != null)
+            bool useOriginalTeamNames = spawnConfig.assignTeams && (spawnConfig.numberOfTeams == 1 || spawnConfig.numberOfTeams == -1); // We'll be using the folders or craft filenames as team names in the originalTeams dictionary.
+            if (spawnConfig.teamsSpecific != null && !useOriginalTeamNames)
             {
                 spawnConfig.teamCounts = spawnConfig.teamsSpecific.Select(tl => tl.Count).ToList();
             }
@@ -352,7 +359,7 @@ namespace BDArmory.Control
                     {
                         if (!spawnAirborne)
                         {
-                            message = "Failed to find terrain at the spawning point!";
+                            message = "Failed to find terrain at the spawning point! Try increasing the spawn altitude.";
                             Debug.Log("[BDArmory.VesselSpawner]: " + message);
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             vesselsSpawning = false;
@@ -382,7 +389,6 @@ namespace BDArmory.Control
             string failedVessels = "";
             var shipFacility = EditorFacility.None;
             List<List<string>> teamVesselNames = null;
-            bool useOriginalTeamNames = false;
             if (spawnConfig.teamsSpecific == null)
             {
                 foreach (var craftUrl in spawnConfig.craftFiles) // First spawn the vessels in the air.
@@ -423,7 +429,6 @@ namespace BDArmory.Control
                 teamVesselNames = new List<List<string>>();
                 var currentTeamNames = new List<string>();
                 int spawnedTeamCount = 0;
-                if (spawnConfig.assignTeams && spawnConfig.numberOfTeams == 1) useOriginalTeamNames = true;
                 Vector3 teamSpawnPosition;
                 foreach (var team in spawnConfig.teamsSpecific)
                 {
@@ -464,10 +469,20 @@ namespace BDArmory.Control
                         currentTeamNames.Add(vessel.vesselName);
                         if (spawnConfig.assignTeams)
                         {
-                            if (spawnConfig.numberOfTeams == 1) // Assign team names based on folders.
+                            switch (spawnConfig.numberOfTeams)
                             {
-                                var paths = craftUrl.Split(Path.DirectorySeparatorChar);
-                                originalTeams[vessel.vesselName] = paths[paths.Length - 2];
+                                case 1: // Assign team names based on folders.
+                                    {
+                                        var paths = craftUrl.Split(Path.DirectorySeparatorChar);
+                                        originalTeams[vessel.vesselName] = paths[paths.Length - 2];
+                                        break;
+                                    }
+                                case -1: // Assign team names based on craft filename. We can't use vessel name as that can get adjusted above to avoid conflicts.
+                                    {
+                                        var paths = craftUrl.Split(Path.DirectorySeparatorChar);
+                                        originalTeams[vessel.vesselName] = paths[paths.Length - 1].Substring(0, paths[paths.Length - 1].Length - 6);
+                                        break;
+                                    }
                             }
                         }
                         spawnedVessels.Add(vessel.vesselName, new Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>(vessel, craftSpawnPosition, direction, vessel.GetHeightFromTerrain() - 35f, shipFacility)); // Store the vessel, its spawning point (which is different from its position) and height from the terrain!
@@ -571,6 +586,14 @@ namespace BDArmory.Control
                         SF = (ModuleSpaceFriction)vessel.rootPart.AddModule("ModuleSpaceFriction");
                     }
                 }
+                if (BDArmorySettings.MUTATOR_MODE)
+                {
+                    var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                    if (MM == null)
+                    {
+                        MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
+                    }
+                }
                 Debug.Log("[BDArmory.VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
             }
             #endregion
@@ -609,6 +632,7 @@ namespace BDArmory.Control
                     do
                     {
                         yield return new WaitForFixedUpdate();
+                        CheckForRenamedVessels(spawnedVessels);
 
                         // Check that none of the vessels have lost parts.
                         if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
@@ -640,14 +664,14 @@ namespace BDArmory.Control
 
                         if (allWeaponManagersAssigned)
                         {
-                            if (spawnConfig.numberOfTeams != 1) // Already assigned.
+                            if (spawnConfig.numberOfTeams != 1 && spawnConfig.numberOfTeams != -1) // Already assigned.
                                 SaveTeams();
                             break;
                         }
                     } while (Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 10); // Give it up to 10s for the weapon managers to get added to the LoadedVesselSwitcher's list.
                     if (!allWeaponManagersAssigned && spawnFailureReason == SpawnFailureReason.None)
                     {
-                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for weapon managers to be appear in the Vessel Switcher.");
+                        BDACompetitionMode.Instance.competitionStatus.Add("Timed out waiting for weapon managers to appear in the Vessel Switcher.");
                         spawnFailureReason = SpawnFailureReason.TimedOut;
                     }
                 }
@@ -672,6 +696,10 @@ namespace BDArmory.Control
                         yield return new WaitForFixedUpdate();
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
+                            if (spawnedVessels[vesselName].Item1.LandedOrSplashed)
+                            {
+                                vesselsHaveLanded[vesselName] = 2;
+                            }
                             if (vesselsHaveLanded[vesselName] == 0 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, radialUnitVector) < 0) // Check that vessel has started moving.
                                 vesselsHaveLanded[vesselName] = 1;
                             if (vesselsHaveLanded[vesselName] == 1 && Vector3.Dot(spawnedVessels[vesselName].Item1.srf_velocity, radialUnitVector) >= 0) // Check if the vessel has landed.
@@ -749,6 +777,7 @@ namespace BDArmory.Control
             }
             else
             {
+                CheckForRenamedVessels(spawnedVessels);
                 if (spawnConfig.assignTeams)
                 {
                     // Assign the vessels to teams.
@@ -835,6 +864,23 @@ namespace BDArmory.Control
                 }
             }
             vesselsSpawningOnceContinuously = false; // For when VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING gets toggled.
+        }
+
+        /// <summary>
+        /// If the VESSELNAMING tag exists in the craft file, then KSP renames the vessel at some point after spawning.
+        /// This function checks for renamed vessels and sets the name back to what it was.
+        /// This must be called once after a yield, before using vessel.vesselName as an index in spawnedVessels.Keys.
+        /// </summary>
+        /// <param name="spawnedVessels"></param>
+        void CheckForRenamedVessels(Dictionary<string, Tuple<Vessel, Vector3d, Vector3, float, EditorFacility>> spawnedVessels)
+        {
+            foreach (var vesselName in spawnedVessels.Keys.ToList())
+            {
+                if (vesselName != spawnedVessels[vesselName].Item1.vesselName)
+                {
+                    spawnedVessels[vesselName].Item1.vesselName = vesselName;
+                }
+            }
         }
         #endregion
 
@@ -1211,6 +1257,25 @@ namespace BDArmory.Control
                                 FlightCamera.fetch.SetDistance(50);
                             }
                         }
+                        if (BDArmorySettings.MUTATOR_MODE)
+                        {
+                            var MM = vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                            if (MM == null)
+                            {
+                                MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
+                            }
+                            if (BDArmorySettings.MUTATOR_LIST.Count > 0)
+                            {
+                                if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //same mutator for all craft
+                                {
+                                    MM.EnableMutator(BDACompetitionMode.Instance.currentMutator);
+                                }
+                                if (!BDArmorySettings.MUTATOR_APPLY_GLOBAL && BDArmorySettings.MUTATOR_APPLY_TIMER) //mutator applied on a per-craft basis
+                                {
+                                    MM.EnableMutator(); //random mutator
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1378,7 +1443,7 @@ namespace BDArmory.Control
             public float easeInSpeed;
             public bool killEverythingFirst = true;
             public bool assignTeams = true;
-            public int numberOfTeams = 0; // Number of teams (or FFA or Folders). For evenly (as possible) splitting vessels into teams.
+            public int numberOfTeams = 0; // Number of teams (or FFA, Folders or Inf). For evenly (as possible) splitting vessels into teams.
             public List<int> teamCounts; // List of team numbers. For unevenly splitting vessels into teams based on their order in the tournament state file for the round. E.g., when spawning from folders.
             public List<List<string>> teamsSpecific; // Dictionary of vessels and teams. For splitting specific vessels into specific teams.
             public string folder = null;
@@ -1458,12 +1523,12 @@ namespace BDArmory.Control
             return optimisedSlots;
         }
 
-        public Vessel SpawnSpawnProbe(Vector2d geoCoords, float altitude)
+        public Vessel SpawnSpawnProbe()
         {
             // Spawn in the SpawnProbe at the camera position and switch to it so that we can clean up the other vessels properly.
             var dummyVar = EditorFacility.None;
             Vector3d dummySpawnCoords;
-            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + altitude * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
             if (!File.Exists($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft"))
             {
                 message = "GameData/BDArmory/craft/SpawnProbe.craft is missing. Please create the craft (a simple octo2 probe core will do).";
@@ -1472,11 +1537,10 @@ namespace BDArmory.Control
                 return null;
             }
             Vessel spawnProbe = SpawnVesselFromCraftFile($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft", dummySpawnCoords, 0, 0f, out dummyVar);
-            spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
             return spawnProbe;
         }
 
-        private int removeVesselsPending = 0;
+        public int removeVesselsPending = 0;
         // Remove a vessel and clean up any remaining parts. This fixes the case where the currently focussed vessel refuses to die properly.
         public void RemoveVessel(Vessel vessel)
         {
