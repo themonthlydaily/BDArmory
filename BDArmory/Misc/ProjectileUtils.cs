@@ -108,7 +108,7 @@ namespace BDArmory.Misc
                     BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage);
                     break;
                 case ExplosionSourceType.Rocket:
-                    if (newhit) BDACompetitionMode.Instance.Scores.RegisterRocketStrike(aName, tName);
+                    //if (newhit) BDACompetitionMode.Instance.Scores.RegisterRocketStrike(aName, tName);
                     BDACompetitionMode.Instance.Scores.RegisterRocketDamage(aName, tName, damage);
                     break;
                 case ExplosionSourceType.Missile:
@@ -584,21 +584,22 @@ namespace BDArmory.Misc
             return yieldStrength;
         }
 
-        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float apBulletMod, float Density, bool isSabot)
+        public static float CalculateDeformation(float yieldStrength, float bulletEnergy, float caliber, float impactVel, float hardness, float Density, float HEratio, float apBulletMod)
         {
             if (bulletEnergy < yieldStrength) return caliber; //armor stops the round, but calc armor damage
             else //bullet penetrates. Calculate what happens to the bullet
             {
                 //deform bullet from impact
                 if (yieldStrength < 1) yieldStrength = 1000;
+                float BulletDurabilityMod = ((1 - HEratio) * (caliber / 25)); //rounds that are larger, or have less HE, are structurally stronger and betterresist deformation
                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils]: properties: yield:" + yieldStrength + "; Energy: " + bulletEnergy + "; caliber: " + caliber + "; impactVel: " + impactVel);
-                    Debug.Log("[BDArmory.ProjectileUtils]: properties: hardness:" + hardness + "; apBulletMod: " + apBulletMod + "; density: " + Density);
+                    Debug.Log("[BDArmory.ProjectileUtils]: properties: hardness:" + hardness + "; BulletDurabilityMod: " + BulletDurabilityMod + "; density: " + Density);
                 }
-                float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * Mathf.Sqrt(Density / 1000))) / impactVel) / apBulletMod); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
+                float newCaliber = ((((yieldStrength / bulletEnergy) * (hardness * Mathf.Sqrt(Density / 1000))) / impactVel) / (BulletDurabilityMod * apBulletMod)); //faster penetrating rounds less deformed, thin armor will impart less deformation before failing
                 newCaliber = Mathf.Clamp(newCaliber, 1f, 5f);
-                if (impactVel > 1250 && !isSabot) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
+                if (impactVel > 1250) //too fast and steel/lead begin to melt on impact - hence DU/Tungsten hypervelocity penetrators
                 {
                     newCaliber *= (impactVel / 1000);
                 }
@@ -624,7 +625,7 @@ namespace BDArmory.Misc
             {
                 density = 19;
             }
-            float bulletLength = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * 19) + 1) * 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
+            float bulletLength = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * density) + 1) * 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
                                                                                                                                      //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {

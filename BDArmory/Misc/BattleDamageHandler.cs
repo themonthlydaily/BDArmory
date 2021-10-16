@@ -54,7 +54,7 @@ namespace BDArmory.Misc
             }
             if (BDArmorySettings.BD_FIRES_ENABLED)
             {
-                if (part.isBattery())
+                if (part.isBattery() && part.GetDamagePercentage() < 0.95f)
                 {
                     var alreadyburning = part.GetComponentInChildren<FireFX>();
                     if (alreadyburning == null)
@@ -93,7 +93,7 @@ namespace BDArmory.Misc
                 }
             }
             //AmmoBins
-            if (BDArmorySettings.BD_AMMOBINS && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
+            if (BDArmorySettings.BD_AMMOBINS && part.GetDamagePercentage() < 0.95f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
             {
                 var ammo = part.FindModuleImplementing<ModuleCASE>();
                 if (ammo != null)
@@ -145,12 +145,15 @@ namespace BDArmory.Misc
                         }
                         if (engine.thrustPercentage > BDArmorySettings.BD_PROP_FLOOR) //engines take thrust damage per hit
                         {
+                            BattleDamageTracker tracker = part.gameObject.AddOrGetComponent<BattleDamageTracker>();
                             //AP does bonus damage
-                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE) * 10; //convert from damagepercent to thrustpercent
-                            Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
+                            engine.thrustPercentage -= ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE) * 10; //convert from damagepercent to thrustpercent
+                            //use difference in old Hp and current, not just current, else it doesn't matter if its a heavy hit or chipped paint, thrust reduction is the same
+                            engine.thrustPercentage = Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
                             engine.PlayFlameoutFX(true);
-
+                            tracker.oldDamagePercent = part.GetDamagePercentage();
+                            /*
                             if (BDArmorySettings.BD_BALANCED_THRUST && !isSRB) //need to poke this more later, not working properly
                             {
                                 using (List<Part>.Enumerator pSym = part.vessel.Parts.GetEnumerator())
@@ -169,7 +172,7 @@ namespace BDArmory.Misc
                                         }
                                     }
                             }
-
+                            */
                         }
                         if (part.GetDamagePercentage() < 0.75f || (part.GetDamagePercentage() < 0.82f && penetrationFactor > 2))
                         {
@@ -219,10 +222,12 @@ namespace BDArmory.Misc
                 }
                 if (BDArmorySettings.BD_INTAKES) //intake damage
                 {
+                    BattleDamageTracker tracker = part.gameObject.AddOrGetComponent<BattleDamageTracker>();
                     var intake = part.FindModuleImplementing<ModuleResourceIntake>();
                     //if (part.isAirIntake(intake)) instead? or use vesselregistry
                     if (intake != null)
                     {
+                        tracker.origIntakeArea = intake.area;
                         float HEBonus = 0.7f;
                         if (explosivedamage)
                         {
@@ -233,11 +238,11 @@ namespace BDArmory.Misc
                         {
                             HEBonus = 1.1f;
                         }
-                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE / 2))); //HE does bonus damage
+                        intake.intakeSpeed *= (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE / 2))); //HE does bonus damage
                         Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
-                        intake.area *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
-                        Mathf.Clamp((float)intake.area, 0.0005f, 99999); //even shredded intake ducting will still get some air to engines
+                        intake.area -= (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
+                        Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea/4), 99999); //even shredded intake ducting will still get some air to engines
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed);
                     }
                 }

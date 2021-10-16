@@ -3604,8 +3604,8 @@ namespace BDArmory.Modules
                             float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
-                            bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
-                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).airDetonation;
+                            bool candidatePFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Proximity || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
+                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Timed || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
                             float Cannistershot = ((ModuleWeapon)item.Current).ProjectileCount;
 
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
@@ -3817,8 +3817,8 @@ namespace BDArmory.Modules
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                             bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
                             float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
-                            bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
-                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).airDetonation;
+                            bool candidatePFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Proximity || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
+                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Timed || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
                             float Cannistershot = ((ModuleWeapon)item.Current).ProjectileCount;
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
@@ -3954,6 +3954,7 @@ namespace BDArmory.Modules
                         }
                         //projectile weapon selected, any missiles that take precedence?
                         if (candidateClass != WeaponClasses.Missile) continue;
+                        if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
                         bool EMP = ((MissileLauncher)item.Current).EMP;
                         if (EMP && target.isDebilitated) continue;

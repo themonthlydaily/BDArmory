@@ -36,6 +36,12 @@ namespace BDArmory.FX
         public string explModelPath { get; set; }
         public string explSoundPath { get; set; } //do EMP effects?
 
+        public static string flashModelPath = "BDArmory/Models/explosion/nuke/nukeFlash";
+        public static string shockModelPath = "BDArmory/Models/explosion/nuke/nukeShock";
+        public static string blastModelPath = "BDArmory/Models/explosion/nuke/nukeBlast";
+        public static string plumeModelPath = "BDArmory/Models/explosion/nuke/nukePlume";
+        public static string debrisModelPath = "BDArmory/Models/explosion/nuke/nukeScatter";
+        public static string blastSoundPath = "BDArmory/Models/explosion/nuke/nukeBoom";
         void OnEnable()
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -65,13 +71,31 @@ namespace BDArmory.FX
                     if (!hasDetonated)
                     {
                         Detonate();
-                        ExplosionFx.CreateExplosion(Position, tntmass, explModelPath, explSoundPath, ExplosionSource, 0, null, Sourcevessel, reportingName);
+                        if (lastValidAtmDensity < 0.05)
+                        {
+                            FXBase.CreateFX(transform.position, yield, flashModelPath, "", 0.3f, 0.3f);
+                        }
+                        else
+                        {
+                            FXBase.CreateFX(transform.position, yield/2, flashModelPath, ""); 
+                            FXBase.CreateFX(transform.position, (yield/2) * lastValidAtmDensity, shockModelPath, "");
+                            FXBase.CreateFX(transform.position, yield/2, blastModelPath, blastSoundPath, 1.5f); 
+                        }
+                        if (Misc.Misc.GetRadarAltitudeAtPos(transform.position) < (300 + (100 * (yield/2))))
+                        {    
+                            double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
+                            double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
+                            double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
+                            
+                            FXBase.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 2, plumeModelPath, "", 30f);
+                            FXBase.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 2, debrisModelPath, "", 30f);
+                        }
                     }
                 }
             }
         }
 
-        void Detonate() //borrowed from Stockalike Project Orion
+        void Detonate() //borrowed from Stockalike Project Orion //Need to add distance/timeToImpact considerations a la ExplosioNFX, though I suspect that will involve cloning ~85% of its code
         {
             if (hasDetonated || FlightGlobals.currentMainBody == null)
             {
@@ -83,7 +107,7 @@ namespace BDArmory.FX
             //affect any nearby parts/vessels that aren't the source vessel
 
             Dictionary<string, int> vesselsHitByMissiles = new Dictionary<string, int>();
-
+            double blastImpulse = 1000;
             using (var blastHits = Physics.OverlapSphere(transform.position, thermalRadius, 9076737).AsEnumerable().GetEnumerator())
             {
                 partsHit.Clear();
@@ -130,9 +154,9 @@ namespace BDArmory.FX
                                 // Forces
                                 if (p.rb != null && p.rb.mass > 0) // Don't apply forces to physicsless parts.
                                 {
-                                    var blastImpulse = Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot * radiativeArea / 3f;
+                                    blastImpulse = Mathf.Pow(3.01f * 1100f / distToG0, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot * radiativeArea / 3f;
                                     // Math.Pow(Math.Pow(Math.Pow(9.54e-3 * 2200.0 / distToG0, 1.95), 4.0) + Math.Pow(Math.Pow(3.01 * 1100.0 / distToG0, 1.25), 4.0), 0.25) * 6.894 * vessel.atmDensity * Math.Pow(yield, 1.0 / 3.0) * partHit.radiativeArea / 3.0; //assuming a 0.05 kT yield
-                                    if (float.IsNaN(blastImpulse))
+                                    if (double.IsNaN(blastImpulse))
                                     {
                                         Debug.LogWarning("[BDArmory.NukeFX]: blast impulse is NaN. distToG0: " + distToG0 + ", vessel: " + p.vessel + ", atmDensity: " + lastValidAtmDensity + ", yield^(1/3): " + yieldCubeRoot + ", partHit: " + partHit + ", radiativeArea: " + radiativeArea);
                                     }
@@ -168,25 +192,47 @@ namespace BDArmory.FX
                             }
                         }
                     }
-                    else
-                    {
-
+                    else //this isn't finding buildings for some reason, FIXME later
+                    {/*
+                        DestructibleBuilding building = null;
+                        try
+                        {
+                            building = blastHits.Current.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogWarning("[BDArmory.ProjectileUtils]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
+                        }
+                        if (building != null && building.IsIntact)
+                        {
+                            var distToEpicenter = Mathf.Max((transform.position - building.transform.position).magnitude, 1f);
+                            var blastImpulse = Mathf.Pow(3.01f * 1100f / distToEpicenter, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot;
+                            Debug.Log("[BDArmory.NukeFX]: Building hit; distToG0: " + distToEpicenter + ", yield: " + yield + ", building: " + building.name);
+                            
+                            if (!double.IsNaN(blastImpulse)) //140kPa, level at which reinforced concrete structures are destroyed
+                            {
+                                Debug.Log("[BDArmory.NukeFX]: Building Impulse: " + blastImpulse);
+                                if (blastImpulse > 140)
+                                {
+                                    building.Demolish();
+                                }
+                            }
+                        }
+                        */
                         DestructibleBuilding building = blastHits.Current.GetComponentInParent<DestructibleBuilding>();
 
                         if (building != null)
                         {
-                            var distToEpicenter = Mathf.Max((transform.position - building.transform.position).magnitude, 1f);
-                            var blastImpulse = Mathf.Pow(3.01f * 1100f / distToEpicenter, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot;
-                            // blastImpulse = (((((Math.Pow((Math.Pow((Math.Pow((9.54 * Math.Pow(10.0, -3.0) * (2200.0 / distToEpicenter)), 1.95)), 4.0) + Math.Pow((Math.Pow((3.01 * (1100.0 / distToEpicenter)), 1.25)), 4.0)), 0.25)) * 6.894) * (vessel.atmDensity)) * Math.Pow(yield, (1.0 / 3.0))));
-                            if (!double.IsNaN(blastImpulse) && blastImpulse > 140) //140kPa, level at which reinforced concrete structures are destroyed
-                            {
-                                building.Demolish();
-                            }
+                            Vector3 distToEpicenter = transform.position - building.transform.position;
+                            blastImpulse = blastImpulse = Mathf.Pow(3.01f * 1100f / distToEpicenter.magnitude, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot;
+                        }
+                        if (blastImpulse > 140) //140kPa, level at which reinforced concrete structures are destroyed
+                        {
+                            building.Demolish();
                         }
                     }
                 }
             }
-            ExplosionFx.CreateExplosion(transform.position, 1, explModelPath, explSoundPath, ExplosionSourceType.Other, 0, null, Sourcevessel, reportingName);
             gameObject.SetActive(false);
         }
         static void SetupPool(string ModelPath)
@@ -207,7 +253,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float tntMassEquivalent = 100, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke", string ModelPath = "BDArmory/Models/Mutators/NukeCore")
+        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string explosionPath = "BDArmory/Models/explosion/explosion", string soundPath = "BDArmory/Sounds/explode1", float delay = 2.5f, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke", string ModelPath = "BDArmory/Models/Mutators/NukeCore")
         {
             SetupPool(ModelPath);
 
@@ -228,7 +274,6 @@ namespace BDArmory.FX
             eFx.fluence = thermalShock;
             eFx.isEMP = emp;
             eFx.detonationTimer = delay;
-            eFx.tntmass = tntMassEquivalent;
             newExplosion.SetActive(true);
         }     
     }

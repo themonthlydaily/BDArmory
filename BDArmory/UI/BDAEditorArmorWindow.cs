@@ -44,6 +44,7 @@ namespace BDArmory.UI
         private float ArmorCost = 0;
         private bool armorslist = false;
         private float Thickness = 10;
+        private bool useNumField = false;
         private float oldThickness = 10;
         private float maxThickness = 60;
         private bool Visualizer = false;
@@ -56,6 +57,8 @@ namespace BDArmory.UI
         private bool isSteel = false;
         private bool isAluminium = true;
         private int hullmat = 2;
+
+        Dictionary<string, NumericInputField> thicknessField;
         void Awake()
         {
         }
@@ -64,6 +67,10 @@ namespace BDArmory.UI
         {
             Instance = this;
             AddToolbarButton();
+            thicknessField = new Dictionary<string, NumericInputField> 
+            {
+                {"Thickness", gameObject.AddComponent<NumericInputField>().Initialise(0, 10, 0, 1500) },               
+            };
             GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
         }
 
@@ -182,7 +189,6 @@ namespace BDArmory.UI
             {
                 HideToolbarGUI();
             }
-
             if (CalcArmor)
             {
                 CalcArmor = false;
@@ -191,6 +197,9 @@ namespace BDArmory.UI
             }
 
             GUIStyle style = BDArmorySetup.BDGuiSkin.label;
+
+            useNumField = GUI.Toggle(new Rect(windowRect.width - 36, 2, 16, 16), useNumField, "#", useNumField ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+
             float line = 1.5f;
 
             style.fontStyle = FontStyle.Normal;
@@ -220,11 +229,20 @@ namespace BDArmory.UI
             line += 1.5f;
             GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorThickness") + ": " + Thickness + "mm", style);
             line++;
-            Thickness = GUI.HorizontalSlider(new Rect(20, line * lineHeight, 260, lineHeight), Thickness, 0, maxThickness);
-            Thickness /= 5;
-            Thickness = Mathf.Round(Thickness);
-            Thickness *= 5;
-            line++;
+            if (!useNumField)
+            {
+                Thickness = GUI.HorizontalSlider(new Rect(20, line * lineHeight, 260, lineHeight), Thickness, 0, maxThickness);
+                //Thickness /= 5;
+                Thickness = Mathf.Round(Thickness);
+                //Thickness *= 5;
+                line++;
+            }
+            else
+            {
+                thicknessField["Thickness"].tryParseValue(GUI.TextField(new Rect(20, line * lineHeight, 260, lineHeight), thicknessField["Thickness"].possibleValue, 4));
+                Thickness = Mathf.Min((float)thicknessField["Thickness"].currentValue, maxThickness);
+                line++;
+            }
             if (Thickness != oldThickness)
             {
                 oldThickness = Thickness;

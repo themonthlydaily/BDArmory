@@ -24,7 +24,7 @@ namespace BDArmory.Core.Module
         public float Hitpoints;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorThickness"),//Armor Thickness
-        UI_FloatRange(minValue = 0f, maxValue = 500f, stepIncrement = 5f, scene = UI_Scene.All)]
+        UI_FloatRange(minValue = 0f, maxValue = 200, stepIncrement = 1f, scene = UI_Scene.All)]
         public float Armor = 10f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_ArmorType"),//Armor Types
@@ -101,7 +101,7 @@ namespace BDArmory.Core.Module
         public float Cost;
 
         private bool startsArmored = false;
-
+        public bool Armorpanel => startsArmored;
         //Part vars
         private float partMass = 0f;
         public Vector3 partSize;
@@ -980,13 +980,12 @@ namespace BDArmory.Core.Module
             {
                 HullmassAdjust = 0;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
-                part.maxTemp = 1000;
+                //removing maxtemp from aluminium and steel to prevent hull type from causing issues with, say, spacecraft re-entry on installs with BDA not used exclusively for BDA
             }
             else //hulltype 3
             {
                 HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                part.maxTemp = 2000;
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullmassAdjust)
             {

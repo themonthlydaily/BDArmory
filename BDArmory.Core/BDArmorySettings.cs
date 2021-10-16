@@ -67,6 +67,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
         [BDAPersistantSettingsField] public static bool BULLET_WATER_DRAG = true;
+        [BDAPersistantSettingsField] public static bool PERSISTANT_FX = true;
         [BDAPersistantSettingsField] public static bool LEGACY_ARMOR = false;
 
         // General slider settings
@@ -179,7 +180,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = false;  //can fires occur
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = false; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
-        [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = true; //do fires add heat to parts?
+        [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = false; //do fires add heat to parts/are fires able to cook off fuel/ammo?
+        [BDAPersistantSettingsField] public static bool BD_INTENSE_FIRES = false; //do fuel tank fires DoT get bigger over time?
         [BDAPersistantSettingsField] public static bool ALLOW_S4R2_BD = false; //allow battle damage to proc when using zombie mode?
 
         // Remote logging

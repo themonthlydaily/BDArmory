@@ -49,6 +49,7 @@ namespace BDArmory.Bullets
         public float blastRadius = 0;
         public float randomThrustDeviation = 0.05f;
         public float massScalar = 0.012f;
+        private float HERatio = 0.1f;
         public string explModelPath;
         public string explSoundPath;
 
@@ -140,9 +141,11 @@ namespace BDArmory.Bullets
             dragVector = new Vector3();
             SetupAudio();
 
+            // Log shots fired.
             if (this.sourceVessel)
             {
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the rocket hits.
+                BDACompetitionMode.Instance.Scores.RegisterShot(sourceVesselName);
             }
             else
             {
@@ -151,6 +154,14 @@ namespace BDArmory.Bullets
             if (tntMass <= 0)
             {
                 explosive = false;
+            }
+            if (explosive)
+            {
+                HERatio = Mathf.Clamp(tntMass / ((rocketMass*1000) < tntMass ? tntMass * 1.25f : (rocketMass * 1000)), 0.01f, 0.95f);
+            }
+            else
+            {
+                HERatio = 0;
             }
         }
 
@@ -375,9 +386,9 @@ namespace BDArmory.Bullets
                                 float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(rocketMass * 1000, impactVelocity);
                                 float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                                 //calculate bullet deformation
-                                float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, 1, Density);
+                                float newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactVelocity, hardness, Density, HERatio,1);
                                 //calculate penetration
-                                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1);
+                                penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, rocketMass * 1000, impactVelocity, Ductility, Density, Strength, thickness, 1, false);
                                 caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
                                 penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
                                 ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName(), ExplosionSourceType.Rocket);
@@ -408,6 +419,10 @@ namespace BDArmory.Bullets
                                 else
                                 {
                                     ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                    if (!explosive)
+                                    {
+                                        BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName()); //if non-explosive hit, add rocketstrike, else ExplosionFX adds rocketstrike from HE detonation
+                                    }
                                 }
                                 ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
                                 ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Rocket, (rocketMass * 1000), penetrationFactor);

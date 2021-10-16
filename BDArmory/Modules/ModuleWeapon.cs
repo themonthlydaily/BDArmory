@@ -64,6 +64,18 @@ namespace BDArmory.Modules
             NumericalIntegration
         }
 
+        public enum FuzeTypes
+        {
+            None,       //So very tempted to have none be 'no fuze', and HE rounds with fuzetype = None act just like standard slug rounds
+            Timed,      //detoantes after set flighttime. Main use case probably AA, assume secondary contact fuze
+            Proximity,  //detonates when in proximity to target. No need for secondary contact fuze
+            Flak,       //detonates when in proximity or after set flighttime. Again, shouldn't need secondary contact fuze
+            Delay,      //detonates 0.02s after any impact. easily defeated by whipple shields
+            Penetrating,//detonates 0.02s after penetrating a minimum thickness of armor. will ignore lightly armored/soft hits
+            Impact      //standard contact + graze fuze, detonates on hit
+            //Laser     //laser-guided smart rounds?
+        }
+
         public WeaponStates weaponState = WeaponStates.Disabled;
 
         //animations
@@ -73,6 +85,8 @@ namespace BDArmory.Modules
         public float bulletBallisticCoefficient;
 
         public WeaponTypes eWeaponType;
+
+        public FuzeTypes eFuzeType;
 
         public float heat;
         public bool isOverheated;
@@ -604,14 +618,9 @@ namespace BDArmory.Modules
         public bool showReloadMeter = false; //used for cannons or guns with extremely low rate of fire
 
         //Air Detonating Rounds
-        [KSPField]
-        public bool airDetonation = false;
-
-        [KSPField]
+        //public bool airDetonation = false;
         public bool proximityDetonation = false;
-
-        [KSPField]
-        public bool airDetonationTiming = true;
+        //public bool airDetonationTiming = true;
 
         [KSPField(isPersistant = true, guiActive = true, guiName = "#LOC_BDArmory_DefaultDetonationRange", guiActiveEditor = false)]//Fuzed Detonation Range 
         public float defaultDetonationRange = 3500; // maxairDetrange works for altitude fuzing, use this for VT fuzing
@@ -884,20 +893,9 @@ namespace BDArmory.Modules
             }
             if (eWeaponType == WeaponTypes.Ballistic)
             {
-                if (airDetonation)
-                {
-                    UI_FloatRange detRange = (UI_FloatRange)Fields["maxAirDetonationRange"].uiControlEditor;
-                    detRange.maxValue = maxEffectiveDistance; //altitude fuzing clamped to max range
-                }
-                else //disable fuze GUI elements on un-fuzed munitions
-                {
-                    Fields["maxAirDetonationRange"].guiActive = false;
-                    Fields["maxAirDetonationRange"].guiActiveEditor = false;
-                    Fields["defaultDetonationRange"].guiActive = false;
-                    Fields["defaultDetonationRange"].guiActiveEditor = false;
-                    Fields["detonationRange"].guiActive = false;
-                    Fields["detonationRange"].guiActiveEditor = false;
-                }
+                UI_FloatRange detRange = (UI_FloatRange)Fields["maxAirDetonationRange"].uiControlEditor;
+                detRange.maxValue = maxEffectiveDistance; //altitude fuzing clamped to max range
+
                 rocketPod = false;
             }
             if (eWeaponType == WeaponTypes.Rocket)
@@ -1206,16 +1204,7 @@ namespace BDArmory.Modules
         }
         public void PAWRefresh()
         {
-            if (!proximityDetonation)
-            {
-                Fields["maxAirDetonationRange"].guiActive = false;
-                Fields["maxAirDetonationRange"].guiActiveEditor = false;
-                Fields["defaultDetonationRange"].guiActive = false;
-                Fields["defaultDetonationRange"].guiActiveEditor = false;
-                Fields["detonationRange"].guiActive = false;
-                Fields["detonationRange"].guiActiveEditor = false;
-            }
-            else
+            if (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak)
             {
                 Fields["maxAirDetonationRange"].guiActive = true;
                 Fields["maxAirDetonationRange"].guiActiveEditor = true;
@@ -1223,6 +1212,15 @@ namespace BDArmory.Modules
                 Fields["defaultDetonationRange"].guiActiveEditor = true;
                 Fields["detonationRange"].guiActive = true;
                 Fields["detonationRange"].guiActiveEditor = true;
+            }
+            else
+            {
+                Fields["maxAirDetonationRange"].guiActive = false;
+                Fields["maxAirDetonationRange"].guiActiveEditor = false;
+                Fields["defaultDetonationRange"].guiActive = false;
+                Fields["defaultDetonationRange"].guiActiveEditor = false;
+                Fields["detonationRange"].guiActive = false;
+                Fields["detonationRange"].guiActiveEditor = false;
             }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
@@ -1656,6 +1654,7 @@ namespace BDArmory.Modules
                                     pBullet.currentVelocity = (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
                                     pBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime; // Initially, put the bullet at the fireTransform position at the start of the next physics frame
 
+                                    pBullet.sourceWeapon = this.part;
                                     pBullet.sourceVessel = vessel;
                                     pBullet.team = weaponManager.Team.Name;
                                     pBullet.bulletTexturePath = bulletTexturePath;
@@ -1684,20 +1683,38 @@ namespace BDArmory.Modules
 
                                     if (bulletInfo.explosive)
                                     {
-                                        pBullet.bulletType = PooledBullet.PooledBulletTypes.Explosive;
                                         pBullet.explModelPath = explModelPath;
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
-                                        pBullet.airDetonation = airDetonation;
                                         pBullet.detonationRange = detonationRange;
-                                        pBullet.maxAirDetonationRange = maxAirDetonationRange;
-                                        pBullet.defaultDetonationRange = defaultDetonationRange;
-                                        pBullet.proximityDetonation = proximityDetonation;
+                                        switch (eFuzeType)
+                                        {
+                                            case FuzeTypes.None:
+                                                pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
+                                                break;
+                                            case FuzeTypes.Impact:
+                                                pBullet.fuzeType = PooledBullet.BulletFuzeTypes.Impact;
+                                                break;
+                                            case FuzeTypes.Delay:
+                                                pBullet.fuzeType = PooledBullet.BulletFuzeTypes.Delay;
+                                                break;
+                                            case FuzeTypes.Penetrating:
+                                                pBullet.fuzeType = PooledBullet.BulletFuzeTypes.Penetrating;
+                                                break;
+                                            case FuzeTypes.Timed:
+                                                pBullet.fuzeType = PooledBullet.BulletFuzeTypes.Timed;
+                                                break;
+                                            case FuzeTypes.Proximity:
+                                                pBullet.fuzeType = PooledBullet.BulletFuzeTypes.Proximity;
+                                                break;
+                                            case FuzeTypes.Flak:
+                                                pBullet.fuzeType = PooledBullet.BulletFuzeTypes.Flak;
+                                                break;
+                                        }
                                     }
                                     else
                                     {
-                                        pBullet.bulletType = PooledBullet.PooledBulletTypes.Standard;
-                                        pBullet.airDetonation = false;
+                                        pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
                                     }
                                     if (impulseWeapon)
                                     {
@@ -1731,7 +1748,7 @@ namespace BDArmory.Modules
                                     }
                                     pBullet.gameObject.SetActive(true);
 
-                                    if (!pBullet.CheckBulletCollision(iTime, true)) // Check that the bullet won't immediately hit anything.
+                                    if (!pBullet.CheckBulletCollision(iTime)) // Check that the bullet won't immediately hit anything.
                                     {
                                         pBullet.MoveBullet(iTime); // Move the bullet forward by the amount of time within the physics frame determined by it's firing rate.
                                     }
@@ -2028,7 +2045,7 @@ namespace BDArmory.Modules
                                 }
                                 else
                                 {
-                                    HitpointTracker armor = GetComponent<HitpointTracker>();
+                                    HitpointTracker armor = p.GetComponent<HitpointTracker>();
                                     float initialDamage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
 
                                     if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
@@ -2044,7 +2061,7 @@ namespace BDArmory.Modules
                                         }
                                     }
                                     p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
-                                    p.AddDamage(damage);
+									p.AddDamage(damage);
                                 }
                                 if (HEpulses)
                                 {
@@ -2912,17 +2929,14 @@ namespace BDArmory.Modules
                     finalTarget += 0.5f * targetAcceleration * predictedFlightTime * predictedFlightTime;
                 }
                 //airdetonation
-                if (airDetonation)
+                if (eFuzeType == FuzeTypes.Timed || eFuzeType == FuzeTypes.Flak)
                 {
-                    if (targetAcquired && airDetonationTiming)
+                    if (targetAcquired)
                     {
-                        //detonationRange = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //this returns 0, use detonationRange GUI tweakable instead
                         defaultDetonationRange = targetDistance;// adds variable time fuze if/when proximity fuzes fail
-
                     }
                     else
                     {
-                        //detonationRange = defaultDetonationRange;
                         defaultDetonationRange = maxAirDetonationRange; //airburst at max range
                     }
                 }
@@ -4010,31 +4024,37 @@ namespace BDArmory.Modules
         void ParseBulletFuzeType(string type)
         {
             type = type.ToLower();
-            if (type == "none") //no fuze present
+            switch (type)
             {
-                proximityDetonation = false;
-                airDetonation = false;
-                airDetonationTiming = false;
-            }
-            if (type == "timed")//detonates after set distance
-            {
-                airDetonation = true;
-                airDetonationTiming = true;
-                proximityDetonation = false;
-            }
-            if (type == "proximity")//proximity fuzing
-            {
-                airDetonation = false;
-                airDetonationTiming = false;
-                proximityDetonation = true;
-            }
-            if (type == "flak") //detonates at set distance/proximity
-            {
-                proximityDetonation = true;
-                airDetonation = true;
-                airDetonationTiming = true;
+                //Anti-Air fuzes
+                case "timed":
+                    eFuzeType = FuzeTypes.Timed;
+                    break;
+                case "proximity":
+                    eFuzeType = FuzeTypes.Proximity;
+                    break;
+                case "flak":
+                    eFuzeType = FuzeTypes.Flak;
+                    break;
+                   //Anti-Armour fuzes
+                case "delay":
+                    eFuzeType = FuzeTypes.Delay;
+                    break;
+                case "penetrating":
+                    eFuzeType = FuzeTypes.Penetrating;
+                    break;
+                case "impact":
+                    eFuzeType = FuzeTypes.Impact;
+                    break;
+                case "none":
+                    eFuzeType = FuzeTypes.Impact;
+                    break;
+                default: 
+                    eFuzeType = FuzeTypes.None;
+                    break;
             }
         }
+
 
         public void SetupBulletPool()
         {
@@ -4101,7 +4121,6 @@ namespace BDArmory.Modules
                 ParseBulletDragType();
                 ParseBulletFuzeType(bulletInfo.fuzeType);
                 tntMass = bulletInfo.tntMass;
-                SetInitialDetonationDistance();
                 tracerStartWidth = caliber / 300;
                 tracerEndWidth = caliber / 750;
                 nonTracerWidth = caliber / 500;
@@ -4124,7 +4143,7 @@ namespace BDArmory.Modules
                     }
                     if (bulletInfo.explosive)
                     {
-                        if (airDetonation || proximityDetonation)
+                        if (eFuzeType == FuzeTypes.Timed || eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak)
                         {
                             guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
                         }
@@ -4221,17 +4240,17 @@ namespace BDArmory.Modules
                 electroLaser = rocketInfo.EMP; //borrowing electrolaser bool, should really rename it empWeapon
                 choker = rocketInfo.choker;
                 incendiary = rocketInfo.incendiary;
-                PAWRefresh();
-                SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
-                SetInitialDetonationDistance();
+                SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation                
                 SetupRocketPool(currentType, rocketModelPath);
             }
+            PAWRefresh();
+            SetInitialDetonationDistance();
         }
         protected void SetInitialDetonationDistance()
         {
             if (this.detonationRange == -1)
             {
-                if (eWeaponType == WeaponTypes.Ballistic && (bulletInfo.tntMass != 0 && (proximityDetonation || airDetonation)))
+                if (eWeaponType == WeaponTypes.Ballistic && (bulletInfo.tntMass != 0 && (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak)))
                 {
                     blastRadius = BlastPhysicsUtils.CalculateBlastRange(bulletInfo.tntMass); //reproting as two so blastradius can be handed over to PooledRocket for detonation/safety stuff
                     detonationRange = blastRadius * 0.666f;
@@ -4353,11 +4372,15 @@ namespace BDArmory.Modules
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
                             output.AppendLine($"- radius:  {Math.Round(BlastPhysicsUtils.CalculateBlastRange(binfo.tntMass), 2)} m");
-                            output.AppendLine($"Air detonation: {airDetonation}");
-                            if (airDetonation)
+                            if (binfo.fuzeType.ToLower() == "timed" || binfo.fuzeType.ToLower() == "proximity" || binfo.fuzeType.ToLower() == "flak")
                             {
-                                output.AppendLine($"- auto timing: {airDetonationTiming}");
+                                output.AppendLine($"Air detonation: True");
+                                output.AppendLine($"- auto timing: {(binfo.fuzeType.ToLower() != "proximity")}");
                                 output.AppendLine($"- max range: {maxAirDetonationRange} m");
+                            }
+                            else
+                            {
+                                output.AppendLine($"Air detonation: False");
                             }
                         }
                         if (impulseWeapon || graviticWeapon || incendiary)

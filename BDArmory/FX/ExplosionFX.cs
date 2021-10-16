@@ -50,6 +50,7 @@ namespace BDArmory.FX
 
 
         static RaycastHit[] lineOfSightHits;
+        static RaycastHit[] reverseHits;
         static Collider[] overlapSphereColliders;
         public static List<Part> IgnoreParts;
         public static List<DestructibleBuilding> IgnoreBuildings;
@@ -61,6 +62,7 @@ namespace BDArmory.FX
         void Awake()
         {
             if (lineOfSightHits == null) { lineOfSightHits = new RaycastHit[100]; }
+            if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
             if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[100]; }
             if (IgnoreParts == null) { IgnoreParts = new List<Part>(); }
             if (IgnoreBuildings == null) { IgnoreBuildings = new List<DestructibleBuilding>(); }
@@ -93,6 +95,10 @@ namespace BDArmory.FX
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
+            }
+            if (BDArmorySettings.PERSISTANT_FX && Caliber > 30)
+            {
+                FXBase.CreateFX(Position, Caliber / 60, "BDArmory/Models/explosion/flakSmoke", "", 0.3f, Caliber / 4);
             }
         }
 
@@ -160,11 +166,6 @@ namespace BDArmory.FX
             {
                 overlapSphereColliders = Physics.OverlapSphere(Position, Range, 9076737);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
-            }
-            float shrapnelrange = Range;
-            if (ProjMass > 0)
-            {
-                shrapnelrange = Range * 2;
             }
             using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
             {
@@ -293,7 +294,7 @@ namespace BDArmory.FX
                             IntermediateParts = intermediateParts
                         });
                     }
-                    if (ProjMass > 0)
+                    if (ProjMass > 0 && distance <= Range * 2)
                     {
                         ProjectileUtils.CalculateShrapnelDamage(part, hit, 120, Power, distance, sourceVesselName, ExplosionSource, ProjMass); //part hit by shrapnel, but not pressure wave
                     }
@@ -331,37 +332,49 @@ namespace BDArmory.FX
                 lineOfSightHits = Physics.RaycastAll(partRay, Range, 9076737);
                 hitCount = lineOfSightHits.Length;
             }
-            intermediateParts = new List<Tuple<float, float, float>>();
-            using (var hitsEnu = lineOfSightHits.Take(hitCount).OrderBy(x => x.distance).GetEnumerator())
-                while (hitsEnu.MoveNext())
+            int reverseHitCount = 0;
+            //check if explosion is originating inside a part
+            reverseHitCount = Physics.RaycastNonAlloc(new Ray(part.transform.position - Position, Position), reverseHits, Range, 9076737);
+            if (reverseHitCount == reverseHits.Length)
                 {
-                    Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
-                    if (partHit == null) continue;
-                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                    hit = hitsEnu.Current;
-                    distance = hit.distance;
-                    if (partHit == part)
-                    {
-                        return true;
-                    }
-                    if (partHit != part)
-                    {
-                        // ignoring collisions against the explosive, or explosive vessel for certain explosive types (e.g., missile/rocket casing)
-                        if (partHit == explosivePart || (explosivePart != null && ignoreCasingFor.Contains(ExplosionSource) && partHit.vessel == explosivePart.vessel))
-                        {
-                            continue;
-                        }
-                        if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
-                        var partHP = partHit.Damage();
-                        var partArmour = partHit.GetArmorThickness();
-                        if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
-                            intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmour));
-                    }
+                    reverseHits = Physics.RaycastAll(new Ray(part.transform.position - Position, Position), Range, 9076737);
+                    reverseHitCount = reverseHits.Length;
                 }
+             for (int i = 0; i < reverseHitCount; ++i)
+                { reverseHits[i].distance = Range - reverseHits[i].distance; }
 
-            hit = new RaycastHit();
-            distance = 0;
-            return false;
+            intermediateParts = new List<Tuple<float, float, float>>();
+
+                using (var hitsEnu = lineOfSightHits.Take(hitCount).Concat(reverseHits.Take(reverseHitCount)).OrderBy(x => x.distance).GetEnumerator())
+                    while (hitsEnu.MoveNext())
+                    {
+                        Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
+                        if (partHit == null) continue;
+                        if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                        hit = hitsEnu.Current;
+                        distance = hit.distance;
+                        if (partHit == part)
+                        {
+                            return true;
+                        }
+                        if (partHit != part)
+                        {
+                            // ignoring collisions against the explosive, or explosive vessel for certain explosive types (e.g., missile/rocket casing)
+                            if (partHit == explosivePart || (explosivePart != null && ignoreCasingFor.Contains(ExplosionSource) && partHit.vessel == explosivePart.vessel))
+                            {
+                                continue;
+                            }
+                            if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
+                            var partHP = partHit.Damage();
+                            var partArmour = partHit.GetArmorThickness();
+                            if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
+                                intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmour));
+                        }
+                    }
+
+                hit = new RaycastHit();
+                distance = 0;
+                return false;
         }
 
         public void Update()
@@ -611,7 +624,7 @@ namespace BDArmory.FX
         }
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
-            float caliber = 0, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1)
+            float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1)
         {
             CreateObjectPool(explModelPath, soundPath);
 

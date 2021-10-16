@@ -31,9 +31,11 @@ namespace BDArmory.FX
         private float startTime;
         public bool hasFuel = true;
         public float burnRate = 1;
+        private float fireIntensity = 0;
         private float tntMassEquivalent = 0;
         public bool surfaceFire = false;
-        private bool woodenPart = false;
+        private int fireDmgFloor = 1000;
+        private bool isSRB = false;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
@@ -72,8 +74,22 @@ namespace BDArmory.FX
             var hullmat = parentPart.FindModuleImplementing<HitpointTracker>();
             if (hullmat != null)
             {
-                if (hullmat.HullTypeNum == 1) woodenPart = true;
+                if (hullmat.HullTypeNum == 1) fireDmgFloor = 350;
+                else if (hullmat.HullTypeNum == 2) fireDmgFloor = 1210; //993c melting point of Aluminium
+                else
+                {
+                    fireDmgFloor = 1700; //~1500c, melting point of mild steel
+                }
             }
+            solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
+            if (engine != null)
+            {
+                if (solid != null)
+                {
+                    isSRB = true;
+                }
+            }
+            fireIntensity = burnRate;
             BDArmorySetup.numberOfParticleEmitters++;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
 
@@ -155,7 +171,7 @@ namespace BDArmory.FX
             ox = null;
             ec = null;
             mp = null;
-            woodenPart = false;
+            fireIntensity = 1;
         }
 
         void Update()
@@ -177,7 +193,7 @@ namespace BDArmory.FX
                     // }
                     if (engine != null)
                     {
-                        if (engine.throttleLocked && !engine.allowShutdown) //likely a SRB
+                        if (isSRB) 
                         {
                             if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
                             {
@@ -225,7 +241,8 @@ namespace BDArmory.FX
                             {
                                 if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
                                 {
-                                    fuel.amount -= (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                    fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                    fuel.amount -= fireIntensity;
                                     burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
                                 }
                                 else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
@@ -244,6 +261,7 @@ namespace BDArmory.FX
                         {
                             if (ox.amount > 0)
                             {
+                                fireIntensity *= 1.2f;
                                 ox.amount -= (burnRate * Mathf.Clamp((float)((1 - (ox.amount / ox.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
                             }
                             else
@@ -321,14 +339,28 @@ namespace BDArmory.FX
                 {
                     if (BDArmorySettings.BD_FIRE_HEATDMG)
                     {
-                        if (parentPart.temperature > (woodenPart ? 500 : 1000)) //so wood takes fire damage before it reaches destroy temp of 770;
+                        if (parentPart.temperature > fireDmgFloor)
                         {
-                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                            if (BDArmorySettings.BD_INTENSE_FIRES)
+                            {
+                                parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime); //scale of tank fire determines damage
+                            }
+                            else
+                            {
+                                parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime); //else flat burn rate
+                            }
                         }
                     }
                     else
                     {
-                        parentPart.AddDamage(burnRate * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        if (BDArmorySettings.BD_INTENSE_FIRES)
+                        {
+                            parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        }
+                        else
+                        {
+                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        }
                     }
                     ////////////////////////////////////////////////
 

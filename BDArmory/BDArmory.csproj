@@ -159,6 +159,7 @@
     <Compile Include="FX\ExplosionFX.cs" />
     <Compile Include="FX\FireFX.cs" />
     <Compile Include="FX\FuelLeakFX.cs" />
+    <Compile Include="FX\FXBase.cs" />
     <Compile Include="FX\NukeFX.cs" />
     <Compile Include="FX\ParticleTurbulence.cs" />
     <Compile Include="FX\ShellCasing.cs" />
@@ -166,6 +167,7 @@
     <Compile Include="Guidances\CruiseGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
     <Compile Include="Guidances\MissileGuidance.cs" />
+    <Compile Include="Misc\BattleDamageTracker.cs" />
     <Compile Include="Misc\BDAEditorTools.cs" />
     <Compile Include="Misc\BDAModuleInfos.cs" />
     <Compile Include="Misc\BDATooltips.cs" />
