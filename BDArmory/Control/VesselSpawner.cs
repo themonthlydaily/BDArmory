@@ -359,7 +359,7 @@ namespace BDArmory.Control
                     {
                         if (!spawnAirborne)
                         {
-                            message = "Failed to find terrain at the spawning point!";
+                            message = "Failed to find terrain at the spawning point! Try increasing the spawn altitude.";
                             Debug.Log("[BDArmory.VesselSpawner]: " + message);
                             BDACompetitionMode.Instance.competitionStatus.Add(message);
                             vesselsSpawning = false;
