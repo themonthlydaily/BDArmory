@@ -73,13 +73,13 @@ namespace BDArmory.FX
                         Detonate();
                         if (lastValidAtmDensity < 0.05)
                         {
-                            FXBase.CreateFX(transform.position, yield, flashModelPath, "", 0.3f, 0.3f);
+                            FXEmitter.CreateFX(transform.position, yield, flashModelPath, "", 0.3f, 0.3f);
                         }
                         else
                         {
-                            FXBase.CreateFX(transform.position, yield/2, flashModelPath, ""); 
-                            FXBase.CreateFX(transform.position, (yield/2) * lastValidAtmDensity, shockModelPath, "");
-                            FXBase.CreateFX(transform.position, yield/2, blastModelPath, blastSoundPath, 1.5f); 
+                            FXEmitter.CreateFX(transform.position, yield/2, flashModelPath, ""); 
+                            FXEmitter.CreateFX(transform.position, (yield/2) * lastValidAtmDensity, shockModelPath, "");
+                            FXEmitter.CreateFX(transform.position, yield/2, blastModelPath, blastSoundPath, 1.5f); 
                         }
                         if (Misc.Misc.GetRadarAltitudeAtPos(transform.position) < (300 + (100 * (yield/2))))
                         {    
@@ -87,15 +87,15 @@ namespace BDArmory.FX
                             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
                             double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
                             
-                            FXBase.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 2, plumeModelPath, "", 30f);
-                            FXBase.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 2, debrisModelPath, "", 30f);
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 2, plumeModelPath, "", 30f);
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 2, debrisModelPath, "", 1.5f);
                         }
                     }
                 }
             }
         }
 
-        void Detonate() //borrowed from Stockalike Project Orion //Need to add distance/timeToImpact considerations a la ExplosioNFX, though I suspect that will involve cloning ~85% of its code
+        void Detonate() //borrowed from Stockalike Project Orion //Need to add distance/timeToImpact considerations a la ExplosionFX, though I suspect that will involve cloning ~85% of its code
         {
             if (hasDetonated || FlightGlobals.currentMainBody == null)
             {
@@ -132,6 +132,7 @@ namespace BDArmory.FX
                                                                                                                                        // everything gets heated via atmosphere
                         if (isEMP)
                         {
+                            if (partHit != partHit.vessel.rootPart) continue; //don't apply EMP buildup per part
                             var EMP = partHit.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
                             if (EMP == null)
                             {

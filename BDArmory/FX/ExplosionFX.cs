@@ -98,7 +98,7 @@ namespace BDArmory.FX
             }
             if (BDArmorySettings.PERSISTANT_FX && Caliber > 30)
             {
-                FXBase.CreateFX(Position, Caliber / 60, "BDArmory/Models/explosion/flakSmoke", "", 0.3f, Caliber / 4);
+                FXEmitter.CreateFX(Position, Caliber / 60, "BDArmory/Models/explosion/flakSmoke", "", 0.3f, Caliber / 4);
             }
         }
 

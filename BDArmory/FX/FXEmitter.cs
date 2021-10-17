@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace BDArmory.FX
 {
-	class FXBase : MonoBehaviour
+	class FXEmitter : MonoBehaviour
     {
         public static Dictionary<string, ObjectPool> FXPools = new Dictionary<string, ObjectPool>();
         public KSPParticleEmitter[] pEmitters { get; set; }
@@ -103,7 +103,7 @@ namespace BDArmory.FX
                     Debug.LogError("[BDArmory.FXBase]: " + ModelPath + " was not found, using the default model instead. Please fix your model.");
                     FXTemplate = GameDatabase.Instance.GetModel(defaultModelPath);
                 }
-                var eFx = FXTemplate.AddComponent<FXBase>();
+                var eFx = FXTemplate.AddComponent<FXEmitter>();
                 if (!String.IsNullOrEmpty(soundPath))
                 {
                     var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
@@ -136,7 +136,7 @@ namespace BDArmory.FX
 
             GameObject newFX = FXPools[ModelPath + soundPath].GetPooledObject();
             newFX.transform.SetPositionAndRotation(position, rotation);
-            FXBase eFx = newFX.GetComponent<FXBase>();
+            FXEmitter eFx = newFX.GetComponent<FXEmitter>();
 
             eFx.Position = position;
             eFx.Power = scale;
