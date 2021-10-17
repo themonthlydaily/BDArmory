@@ -557,7 +557,9 @@ namespace BDArmory.Modules
         LineRenderer lr;
         Vector3 flyingToPosition;
         Vector3 rollTarget;
+#if DEBUG
         Vector3 rollTarget_DEBUG;
+#endif
         Vector3 angVelRollTarget;
 
         //speed controller
@@ -1682,8 +1684,7 @@ namespace BDArmory.Modules
                 rollTarget = -commandLeader.vessel.ReferenceTransform.forward;
             }
 
-            rollTarget_DEBUG = Vector3.zero; // FIXME DEBUG, remove before merge
-            //
+            bool requiresLowAltitudeRollTargetCorrection = false;
             if (belowMinAltitude)
             {
                 if (avoidingTerrain)
@@ -1691,32 +1692,21 @@ namespace BDArmory.Modules
                 else
                     rollTarget = vessel.upAxis * 100;
             }
-            else if (!avoidingTerrain && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0) // Adjust roll target to avoid triggering terrain avoidance
+            else if (!avoidingTerrain && vessel.verticalSpeed < 0 && Vector3.Dot(rollTarget, upDirection) < 0 && Vector3.Dot(rollTarget, vessel.Velocity()) < 0) // If we're not avoiding terrain, heading downwards and the roll target is behind us and downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground.
             {
-                // If we're not avoiding terrain and the roll target is behind us and the roll target is downwards, check that a circle arc of radius "turn radius" (scaled by twiddle factor minimum) tilted at angle of rollTarget has enough room to avoid hitting the ground
                 // The following calculates the altitude required to turn in the direction of the rollTarget based on the current velocity and turn radius.
-                var n = Vector3.Cross(vessel.srf_vel_direction, rollTarget).normalized;
-                var m = Vector3.Cross(n, upDirection).normalized;
+                // The setup is a circle in the plane of the rollTarget, which is tilted by angle phi from vertical, with the vessel at the point subtending an angle theta as measured from the top of the circle.
+                var n = Vector3.Cross(vessel.srf_vel_direction, rollTarget).normalized; // Normal of the plane of rollTarget.
+                var m = Vector3.Cross(n, upDirection).normalized; // cos(theta) = dot(m,v).
                 if (m.magnitude < 0.1f) m = upDirection; // In case n and upDirection are colinear.
-                var a = Vector3.Dot(n, upDirection);
-                var b = Mathf.Sqrt(1f - a * a);
-                var r = turnRadius * turnRadiusTwiddleFactorMin;
-                var h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b;
+                var a = Vector3.Dot(n, upDirection); // sin(phi) = dot(n,up)
+                var b = Mathf.Sqrt(1f - a * a); // cos(phi) = sqrt(1-sin(phi)^2)
+                var r = turnRadius * turnRadiusTwiddleFactorMin; // Radius of turning circle.
+                var h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b; // Required altitude: h = r * (1+cos(theta)) * cos(phi).
                 if (vessel.radarAltitude < h) // Too low for this manoeuvre.
                 {
-                    Debug.Log($"DEBUG {vessel.vesselName} too low for rollTarget; v: {vessel.srf_vel_direction.ToString("G3")}, t: {rollTarget.ToString("G3")}, r: {r}, h: {h}, alt: {vessel.radarAltitude}, up: {upDirection.ToString("G3")}, phi: {Mathf.Rad2Deg * Mathf.Acos(b)}");
-                    // Rotate rollTarget around vessel.srf_vel_direction to be horizontal. // FIXME this isn't working as the later projection takes it away from horizontal again.
-                    rollTarget = Vector3.ProjectOnPlane(rollTarget, upDirection).normalized * 100;
-                    n = Vector3.Cross(vessel.srf_vel_direction, rollTarget).normalized;
-                    m = Vector3.Cross(n, upDirection).normalized;
-                    if (m.magnitude < 0.1f) m = upDirection; // In case n and upDirection are colinear.
-                    a = Vector3.Dot(n, upDirection);
-                    b = Mathf.Sqrt(1f - a * a);
-                    r = turnRadius * turnRadiusTwiddleFactorMin;
-                    h = r * (1 + Vector3.Dot(m, vessel.srf_vel_direction)) * b;
-                    Debug.Log($"DEBUG new rollTarget: {rollTarget.ToString("G3")} h': {h}");
-                    rollTarget_DEBUG = rollTarget;
-                    if (FlightGlobals.ActiveVessel != vessel) LoadedVesselSwitcher.Instance.ForceSwitchVessel(vessel);
+                    // Debug.Log($"DEBUG {vessel.vesselName} too low for rollTarget; v: {vessel.srf_vel_direction.ToString("G3")}, t: {rollTarget.ToString("G3")}, r: {r}, h: {h}, alt: {vessel.radarAltitude}, up: {upDirection.ToString("G3")}, phi: {Mathf.Rad2Deg * Mathf.Acos(b)}");
+                    requiresLowAltitudeRollTargetCorrection = true; // For simplicity, we'll apply the correction after the projections have occurred.
                 }
             }
             if (useVelRollTarget && !belowMinAltitude)
@@ -1732,6 +1722,15 @@ namespace BDArmory.Modules
             //ramming
             if (ramming)
                 rollTarget = Vector3.ProjectOnPlane(targetPosition - vesselTransform.position + rollUp * Mathf.Clamp((targetPosition - vesselTransform.position).magnitude / 500f, 0f, 1f) * upDirection, vesselTransform.up);
+
+#if DEBUG
+            rollTarget_DEBUG = rollTarget;
+#endif
+            if (requiresLowAltitudeRollTargetCorrection) // Low altitude downwards loop prevention to avoid triggering terrain avoidance.
+            {
+                // Set the roll target to be horizontal.
+                rollTarget = Vector3.ProjectOnPlane(rollTarget, upDirection).normalized * 100;
+            }
 
             // Limit Bank Angle, this should probably be re-worked using quaternions or something like that, SignedAngle doesn't work well for angles > 90
             Vector3 horizonNormal = Vector3.ProjectOnPlane(vessel.transform.position - vessel.mainBody.transform.position, vesselTransform.up);
@@ -2974,7 +2973,9 @@ namespace BDArmory.Modules
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + vessel.Velocity().normalized * 100, 3, Color.magenta);
 
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget, 2, Color.blue);
+#if DEBUG
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget_DEBUG / 2f, 4, Color.cyan);
+#endif
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right) + angVelRollTarget, 2, Color.green);
             if (avoidingTerrain)
             {

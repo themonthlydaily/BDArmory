@@ -2908,7 +2908,7 @@ namespace BDArmory.UI
                 //     }
                 //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
                 // }
-                if (GUI.Button(SLeftRect(++line), "Exit To Main Menu"))
+                if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
                     QuitKSP();
                 }
