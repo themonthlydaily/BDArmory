@@ -17,6 +17,7 @@ IMPROVEMENTS
 	- Landed Kill Timer no longer affects vessels using Surface AIs.
 	- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
 	- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
+	- Apply a correction to the roll target when a low-altitude inverted-roll is requested to avoid looping down and immediately triggering terrain avoidance.
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Performance Logging option removed as it did nothing.
 	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
