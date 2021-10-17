@@ -327,14 +327,25 @@ namespace BDArmory.Bullets
                 {
                     startsUnderwater = false;
                 }
-                if (!startsUnderwater && underwater && caliber < 75f) // Bullets entering water from air either disintegrate or don't penetrate far enough to bother about. Except large caliber naval shells.
+                if (!startsUnderwater && underwater) // Bullets entering water from air either disintegrate or don't penetrate far enough to bother about. Except large caliber naval shells.
                 {
-                    if (explosive)
-                        ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
-                    hasDetonated = true;
+                    if (caliber < 75f) 
+                    {
+                        if (explosive && (fuzeType != BulletFuzeTypes.Delay || fuzeType != BulletFuzeTypes.Penetrating))
+                            ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                        hasDetonated = true;
 
-                    KillBullet();
-                    return;
+                        KillBullet();
+                        return;
+                    }
+                    else
+                    {
+                        if (explosive && (fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating))
+                        {
+                            fuzeTriggered = true;
+                            StartCoroutine(DelayedDetonationRoutine());
+                        }
+                    }
                 }
             }
             //////////////////////////////////////////////////
@@ -385,7 +396,7 @@ namespace BDArmory.Bullets
                 {
                     underwater = true;
                 }
-                FXMonger.Splash(transform.position, caliber);
+                FXMonger.Splash(transform.position, caliber/2);
             }
             // Second half-timestep velocity change (leapfrog integrator) (should be identical code-wise to the initial half-step)
             LeapfrogVelocityHalfStep(0.5f * period);
@@ -764,6 +775,15 @@ namespace BDArmory.Bullets
             {
                 ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
                 hasDetonated = true;
+                if (tntMass > 1)
+                {
+                    if ((FlightGlobals.getAltitudeAtPos(transform.position) <= 0) && (FlightGlobals.getAltitudeAtPos(transform.position) > -detonationRange))
+                    {
+                        double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
+                        double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
+                        FXMonger.Splash(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, 0), tntMass*20);
+                    }
+                }
                 KillBullet();
             }
         }
