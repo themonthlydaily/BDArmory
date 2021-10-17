@@ -14,7 +14,8 @@ namespace BDArmory.Misc
 	{
 		public float oldDamagePercent = 1;
 		public double origIntakeArea = 1;
-
+        public bool isSRB = false;
+        public bool SRBFuelled = false;
         public Part Part
         {
             get
@@ -47,8 +48,26 @@ namespace BDArmory.Misc
                     Destroy(this);
                     return;
                 }
-            }           
-
+            }
+            foreach (var engine in Part.GetComponentsInChildren<ModuleEngines>())
+            {
+                if (!engine.allowShutdown && engine.throttleLocked)
+                {
+                    isSRB = true;
+                    using (IEnumerator<PartResource> resources = Part.Resources.GetEnumerator())
+                        while (resources.MoveNext())
+                        {
+                            if (resources.Current == null) continue;
+                            if (resources.Current.resourceName.Contains("SolidFuel"))
+                            {
+                                if (resources.Current.amount > 1d)
+                                {
+                                    SRBFuelled = true;
+                                }
+                            }
+                        }
+                }
+            }
             Part.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
         }
         void OnDestroy()

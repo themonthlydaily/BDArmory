@@ -2333,10 +2333,13 @@ namespace BDArmory.Modules
             {
                 return;
             }
-
+            if (missilesAway > maxMissilesOnTarget)
+            {
+                return;
+            }
             if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-                selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-                selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
+            selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+            selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
             {
                 FireCurrentMissile(true);
             }

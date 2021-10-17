@@ -75,7 +75,7 @@ namespace BDArmory.FX
             if (hullmat != null)
             {
                 if (hullmat.HullTypeNum == 1) fireDmgFloor = 350;
-                else if (hullmat.HullTypeNum == 2) fireDmgFloor = 1210; //993c melting point of Aluminium
+                else if (hullmat.HullTypeNum == 2) fireDmgFloor = 1000; //993c melting point of Aluminium
                 else
                 {
                     fireDmgFloor = 1700; //~1500c, melting point of mild steel
@@ -337,30 +337,13 @@ namespace BDArmory.FX
                 }
                 if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRE_DOT)
                 {
-                    if (BDArmorySettings.BD_FIRE_HEATDMG)
+                    if (BDArmorySettings.BD_INTENSE_FIRES)
                     {
-                        if (parentPart.temperature > fireDmgFloor)
-                        {
-                            if (BDArmorySettings.BD_INTENSE_FIRES)
-                            {
-                                parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime); //scale of tank fire determines damage
-                            }
-                            else
-                            {
-                                parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime); //else flat burn rate
-                            }
-                        }
+                        parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
                     else
                     {
-                        if (BDArmorySettings.BD_INTENSE_FIRES)
-                        {
-                            parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
-                        }
-                        else
-                        {
-                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
-                        }
+                        parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
                     ////////////////////////////////////////////////
 

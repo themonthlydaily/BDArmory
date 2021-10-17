@@ -661,7 +661,7 @@ namespace BDArmory.Bullets
                                 }
                                 if (fuzeTriggered)
                                 {
-                                    Debug.Log("[BDArmory.PooledBullet]: Active Delay Fuze failed to penetrate, detonating");
+                                    //Debug.Log("[BDArmory.PooledBullet]: Active Delay Fuze failed to penetrate, detonating");
                                     fuzeTriggered = false;
                                     StopCoroutine(DelayedDetonationRoutine());
                                 }
@@ -729,7 +729,7 @@ namespace BDArmory.Bullets
                                 }
                                 else //impact by impact, Timed, Prox and Flak, if for whatever those last two have 0 proxi range
                                 {
-                                    Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
+                                    //Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
                                     ExplosiveDetonation(hitPart, hit, bulletRay);
                                     ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                                     hasDetonated = true;
@@ -738,7 +738,7 @@ namespace BDArmory.Bullets
                                 }
                                 if (!viableBullet)
                                 {
-                                    Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
+                                    //Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
                                     ExplosiveDetonation(hitPart, hit, bulletRay);
                                     ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                                     hasDetonated = true;
@@ -895,6 +895,7 @@ namespace BDArmory.Bullets
             // High Explosive Detonation
             ///////////////////////////////////////////////////////////////////////
             if (fuzeType == BulletFuzeTypes.None) return false;
+            if (distanceTraveled <= detonationRange * 2.5f && (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Timed)) return false; //bullet not past arming distance
             if (hitPart == null || hitPart.vessel != sourceVessel)
             {
                 //if bullet hits and is HE, detonate and kill bullet
