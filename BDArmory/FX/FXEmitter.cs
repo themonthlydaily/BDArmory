@@ -80,12 +80,6 @@ namespace BDArmory.FX
         {
             if (!gameObject.activeInHierarchy) return;
 
-            //floating origin and velocity offloading corrections
-            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
-            {
-                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
-            }
-
             if (disabled && TimeIndex > particlesMaxEnergy)
             {
                 gameObject.SetActive(false);
@@ -104,20 +98,17 @@ namespace BDArmory.FX
                     Debug.LogError("[BDArmory.FXBase]: " + ModelPath + " was not found, using the default model instead. Please fix your model.");
                     FXTemplate = GameDatabase.Instance.GetModel(defaultModelPath);
                 }
-                var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
-                if (soundClip == null)
+                var eFx = FXTemplate.AddComponent<FXEmitter>();
+                if (!String.IsNullOrEmpty(soundPath))
                 {
-                    Debug.LogError("[BDArmory.FXBase]: " + soundPath + " was not found, using the default sound instead.");
-                    //soundClip = GameDatabase.Instance.GetAudioClip(defaultSoundPath);
-                }
-                var eFx = FXTemplate.AddComponent<ExplosionFx>();
-                if (soundClip != null)
-                {
+                    var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
+
                     eFx.ExSound = soundClip;
                     eFx.audioSource = FXTemplate.AddComponent<AudioSource>();
                     eFx.audioSource.minDistance = 200;
                     eFx.audioSource.maxDistance = 5500;
                     eFx.audioSource.spatialBlend = 1;
+
                 }
                 FXTemplate.SetActive(false);
                 FXPools[key] = ObjectPool.CreateObjectPool(FXTemplate, 10, true, true, 0f, false);
