@@ -50,7 +50,7 @@ namespace BDArmory.UI
                 if (!field.Current.IsDefined(typeof(BDAWindowSettingsField), false)) continue;
                 if (!settings.HasValue(field.Current.Name)) continue;
 
-                object parsedValue = BDAPersistantSettingsField.ParseValue(field.Current.FieldType, settings.GetValue(field.Current.Name));
+                object parsedValue = BDAPersistentSettingsField.ParseValue(field.Current.FieldType, settings.GetValue(field.Current.Name));
                 if (parsedValue != null)
                 {
                     field.Current.SetValue(null, parsedValue);

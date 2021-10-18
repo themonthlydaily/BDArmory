@@ -744,7 +744,7 @@ namespace BDArmory.UI
             {
                 Debug.Log("[BDArmory.BDArmorySetup]=== Loading settings.cfg ===");
 
-                BDAPersistantSettingsField.Load();
+                BDAPersistentSettingsField.Load();
                 BDInputSettingsFields.LoadSettings();
                 BDArmorySettings.ready = true;
             }
@@ -760,7 +760,7 @@ namespace BDArmory.UI
             {
                 Debug.Log("[BDArmory.BDArmorySetup] == Saving settings.cfg ==	");
 
-                BDAPersistantSettingsField.Save();
+                BDAPersistentSettingsField.Save();
 
                 BDInputSettingsFields.SaveSettings();
 
