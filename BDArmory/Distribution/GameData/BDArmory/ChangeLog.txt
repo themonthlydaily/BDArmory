@@ -12,12 +12,17 @@ IMPROVEMENTS
 		- Vessel tracing manual toggle moved from the Vessel Switcher Window to the Settings window (in the Other section when Advanced User Settings is enabled).
 		- Settings window doesn't automatically close when starting a competition.
 		- Settings are saved when switching scenes if the UI is open.
-	- Add an 'Auto-Resume Tournaments' option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
-	- Add an 'Auto-Quit Memory Threshold' option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. In particular, the GfxDriver can use around 5GB of memory, but isn't measurable in non-debug versions of the Unity player. See the "DEBUG Memory Usage" lines in the KSP.log.
-	- Landed Kill Timer no longer affects vessels using Surface AIs.
-	- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
-	- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
-	- Apply a correction to the roll target when a low-altitude inverted-roll is requested to avoid looping down and immediately triggering terrain avoidance.
+	- Tournaments:
+		- Add an 'Auto-Resume Tournaments' option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
+		- Add an 'Auto-Quit Memory Threshold' option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. In particular, the GfxDriver can use around 5GB of memory, but isn't measurable in non-debug versions of the Unity player. See the "DEBUG Memory Usage" lines in the KSP.log.
+		- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
+		- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
+	- Competitions:
+		- Landed Kill Timer no longer affects vessels using Surface AIs.
+	- AI:
+		- Apply a correction to the roll target when a low-altitude inverted-roll is requested to avoid looping down and immediately triggering terrain avoidance.
+	- Evolution:
+		- Add a hidden AUTO_RESUME_EVOLUTION setting to resume evolution on restarting KSP (similar to and overrides the 'Auto-Resume Tournaments' setting).
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Performance Logging option removed as it did nothing.
 	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
