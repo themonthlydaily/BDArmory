@@ -39,7 +39,7 @@ namespace BDArmory.Modules
         public bool isEMP = false;
 
         [KSPField(isPersistant = true)]
-        public bool engineCore = true;
+        public bool engineCore = false;
 
         [KSPField(isPersistant = true)]
         public float meltDownDuration = 2.5f;
