@@ -75,7 +75,7 @@ namespace BDArmory.Misc
 
                 // Rough estimate of turning radius and arc length to travel
                 float arcLength = 0;
-                if ((!missile.vessel.LandedOrSplashed) && (missile.GetWeaponClass() != WeaponClasses.SLW)) // If the missile isn't a torpedo
+                if ((!missile.vessel.LandedOrSplashed) && (missile.GetWeaponClass() != WeaponClasses.SLW) && (ml.guidanceActive)) // If the missile isn't a torpedo and has guidance
                 {
                     float futureTime = Mathf.Clamp((missile.vessel.LandedOrSplashed ? 0f : missile.dropTime), 0f, 2f);
                     Vector3 futureRelPosition = (targetPosition + targetVelocity * futureTime) - (missile.part.transform.position + launcherVelocity * futureTime);

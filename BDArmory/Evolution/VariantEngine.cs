@@ -56,6 +56,7 @@ namespace BDArmory.Evolution
             "controlSurfaceLag",
             "targetScanInterval",               // ModuleWeapon
             "fireBurstLength",
+            "AutoFireCosAngleAdjustment",
             "guardAngle",
             "guardRange",
             "gunRange",

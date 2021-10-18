@@ -2646,12 +2646,13 @@ namespace BDArmory.Control
                         vData.AverageSpeed += vessel.srfSpeed;
                         vData.AverageAltitude += vessel.altitude;
                         vData.averageCount++;
-                        if (vData.landedState && !BDArmorySettings.DISABLE_KILL_TIMER)
+                        if (vData.landedState && BDArmorySettings.COMPETITION_KILL_TIMER > 0)
                         {
                             KillTimer[vesselName] = (int)(now - vData.landedKillTimer);
                             if (now - vData.landedKillTimer > BDArmorySettings.COMPETITION_KILL_TIMER)
                             {
-                                vesselsToKill.Add(mf.vessel);
+                                var srfVee = VesselModuleRegistry.GetBDModuleSurfaceAI(vessel, true);
+                                if (srfVee == null) vesselsToKill.Add(mf.vessel); //don't kill timer remove surface Ai vessels
                             }
                         }
                         else if (KillTimer.ContainsKey(vesselName))
