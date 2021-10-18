@@ -718,8 +718,15 @@ namespace BDArmory.Control
                                     BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + BDACompetitionMode.Instance.competitionStartFailureReason + ", trying again.");
                                     break;
                                 case VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
+                                    BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", trying again with increased altitude.");
+                                    tournamentState.rounds[roundIndex][heatIndex].altitude = Math.Min(tournamentState.rounds[roundIndex][heatIndex].altitude + 3, 10); // Increase the spawning altitude and try again.
+                                    break;
                                 case VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
                                     BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", trying again.");
+                                    break;
+                                case VesselSpawner.SpawnFailureReason.NoTerrain: // Failed to find the terrain when ground spawning.
+                                    BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", trying again.");
+                                    attempts = Math.Max(attempts, 2); // Try only once more.
                                     break;
                                 default: // Spawning is unrecoverable.
                                     BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", aborting.");
