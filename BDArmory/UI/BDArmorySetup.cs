@@ -2255,7 +2255,7 @@ namespace BDArmory.UI
                 {
                     BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI, Localizer.Format("#LOC_BDArmory_Settings_DisplayCompetitionStatusHiddenUI"));
                 }
-
+                BDArmorySettings.PERSISTANT_FX = GUI.Toggle(SRightRect(line), BDArmorySettings.PERSISTANT_FX, Localizer.Format("#LOC_BDArmory_Settings_PersistentFX"));//"Persistent FX"
                 if (HighLogic.LoadedSceneIsEditor && BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
                     if (BDArmorySettings.SHOW_CATEGORIES != (BDArmorySettings.SHOW_CATEGORIES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.SHOW_CATEGORIES, Localizer.Format("#LOC_BDArmory_Settings_ShowEditorSubcategories"))))//"Show Editor Subcategories"
