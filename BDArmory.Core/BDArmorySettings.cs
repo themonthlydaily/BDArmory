@@ -67,7 +67,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
         [BDAPersistantSettingsField] public static bool BULLET_WATER_DRAG = true;
-        [BDAPersistantSettingsField] public static bool PERSISTANT_FX = false;
+        [BDAPersistantSettingsField] public static bool PERSISTENT_FX = false;
         [BDAPersistantSettingsField] public static bool LEGACY_ARMOR = false;
 
         // General slider settings
@@ -157,32 +157,32 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool MUTATOR_MODE = false;
 
         //Battle Damage settings
-        [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;
-        [BDAPersistantSettingsField] public static float BD_DAMAGE_CHANCE = 5; //base chance per-hit to proc damage
-        [BDAPersistantSettingsField] public static bool BD_SUBSYSTEMS = true; //non-critical module damage?
-        [BDAPersistantSettingsField] public static bool BD_TANKS = true;      //Fuel tanks, batteries can leak/burn
-        [BDAPersistantSettingsField] public static float BD_TANK_LEAK_TIME = 20; //Leak duration
-        [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
-        [BDAPersistantSettingsField] public static bool BD_AMMOBINS = true;   //can ammo bins explode?
-        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
-        [BDAPersistantSettingsField] public static bool BD_PROPULSION = true; //engine thrust reduction, fires
-        [BDAPersistantSettingsField] public static float BD_PROP_FLOOR = 20; //minimum thrust% damaged engines produce
-        [BDAPersistantSettingsField] public static float BD_PROP_FLAMEOUT = 25; //remaiing HP% engines flameout
+        [BDAPersistantSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.
+        [BDAPersistantSettingsField] public static float BD_DAMAGE_CHANCE = 5;          // Base chance per-hit to proc damage
+        [BDAPersistantSettingsField] public static bool BD_SUBSYSTEMS = true;           // Non-critical module damage?
+        [BDAPersistantSettingsField] public static bool BD_TANKS = true;                // Fuel tanks, batteries can leak/burn
+        [BDAPersistantSettingsField] public static float BD_TANK_LEAK_TIME = 20;        // Leak duration
+        [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1;         // Leak rate modifier
+        [BDAPersistantSettingsField] public static bool BD_AMMOBINS = true;             // Can ammo bins explode?
+        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false;       // Ammo bins guaranteed to explode when destroyed
+        [BDAPersistantSettingsField] public static bool BD_PROPULSION = true;           // Engine thrust reduction, fires
+        [BDAPersistantSettingsField] public static float BD_PROP_FLOOR = 20;            // Minimum thrust% damaged engines produce
+        [BDAPersistantSettingsField] public static float BD_PROP_FLAMEOUT = 25;         // Remaining HP% engines flameout
         [BDAPersistantSettingsField] public static bool BD_BALANCED_THRUST = true;
-        [BDAPersistantSettingsField] public static float BD_PROP_DAM_RATE = 1; //rate multiplier, 0.1-2
-        [BDAPersistantSettingsField] public static bool BD_INTAKES = true; //Can intakes be damaged?
-        [BDAPersistantSettingsField] public static bool BD_GIMBALS = true; //can gimbals be disabled?
-        [BDAPersistantSettingsField] public static bool BD_AEROPARTS = true; //lift loss & added drag
-        [BDAPersistantSettingsField] public static float BD_LIFT_LOSS_RATE = 1; //rate multiplier
-        [BDAPersistantSettingsField] public static bool BD_CTRL_SRF = true; //disable ctrl srf actuatiors?
-        [BDAPersistantSettingsField] public static bool BD_COCKPITS = false;  //control degredation
-        [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = false; //cockpit damage can kill pilots?
-        [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = true;  //can fires occur
-        [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = true; //do fires do DoT
-        [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
-        [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = false; //do fires add heat to parts/are fires able to cook off fuel/ammo?
-        [BDAPersistantSettingsField] public static bool BD_INTENSE_FIRES = false; //do fuel tank fires DoT get bigger over time?
-        [BDAPersistantSettingsField] public static bool ALLOW_S4R2_BD = false; //allow battle damage to proc when using zombie mode?
+        [BDAPersistantSettingsField] public static float BD_PROP_DAM_RATE = 1;          // Rate multiplier, 0.1-2
+        [BDAPersistantSettingsField] public static bool BD_INTAKES = true;              // Can intakes be damaged?
+        [BDAPersistantSettingsField] public static bool BD_GIMBALS = true;              // Can gimbals be disabled?
+        [BDAPersistantSettingsField] public static bool BD_AEROPARTS = true;            // Lift loss & added drag
+        [BDAPersistantSettingsField] public static float BD_LIFT_LOSS_RATE = 1;         // Rate multiplier
+        [BDAPersistantSettingsField] public static bool BD_CTRL_SRF = true;             // Disable ctrl srf actuatiors?
+        [BDAPersistantSettingsField] public static bool BD_COCKPITS = false;            // Control degredation
+        [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = false;         // Cockpit damage can kill pilots?
+        [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = true;        // Can fires occur
+        [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = true;             // Do fires do DoT
+        [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
+        [BDAPersistantSettingsField] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
+        [BDAPersistantSettingsField] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
+        [BDAPersistantSettingsField] public static bool ALLOW_S4R2_BD = false;          // Allow battle damage to proc when using zombie mode?
 
         // Remote logging
         [BDAPersistantSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle
@@ -262,5 +262,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static int EVOLUTION_ANTAGONISTS_PER_HEAT = 1;
         [BDAPersistantSettingsField] public static int EVOLUTION_MUTATIONS_PER_HEAT = 1;
         [BDAPersistantSettingsField] public static int EVOLUTION_HEATS_PER_GROUP = 1;
+        [BDAPersistantSettingsField] public static bool AUTO_RESUME_EVOLUTION = false;             // Automatically load the game and start evolution with the last used settings/seeds. Note: this overrides the AUTO_RESUME_TOURNAMENT setting.
     }
 }

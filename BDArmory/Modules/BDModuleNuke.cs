@@ -174,7 +174,7 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            if (missile != null && 
+            if (missile != null &&
                 (missile.MissileState == MissileBase.MissileStates.Idle || missile.MissileState == MissileBase.MissileStates.Drop))
             {
                 return;

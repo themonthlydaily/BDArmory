@@ -125,7 +125,7 @@ namespace BDArmory.Misc
                 if (part.isEngine() && part.GetDamagePercentage() < 0.95f) //first hit's free
                 {
                     foreach (var engine in part.GetComponentsInChildren<ModuleEngines>())
-                    {                      
+                    {
                         if (engine.thrustPercentage > BDArmorySettings.BD_PROP_FLOOR) //engines take thrust damage per hit
                         {
                             //AP does bonus damage
@@ -223,7 +223,7 @@ namespace BDArmory.Misc
                         Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
                         intake.area -= (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
-                        Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea/4), 99999); //even shredded intake ducting will still get some air to engines
+                        Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea / 4), 99999); //even shredded intake ducting will still get some air to engines
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed);
                     }
                 }
