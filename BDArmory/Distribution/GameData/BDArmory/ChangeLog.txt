@@ -14,7 +14,7 @@ FIXES
 	- EMPs from nukes will no longer repeatedly fry a hit vessel.
 IMPROVEMENTS
 	- General:
-		- Add optional persistant FX for smoke/debris from explosions.
+		- Add optional persistent FX for smoke/debris from explosions.
 		- Explosions will now damage a part if detonating inside it.
 		- Adds generic FX spawner.
 		- Renames RWPS3R2NukeModule to BDModuleNuke, and expands it into a missile-usable module.
