@@ -710,7 +710,7 @@ namespace BDArmory.Bullets
                                     //distanceTraveled += hit.distance;
                                     if (!fuzeTriggered)
                                     {
-                                        Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
+                                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
                                         fuzeTriggered = true;
                                         StartCoroutine(DelayedDetonationRoutine());
                                     }
@@ -721,7 +721,7 @@ namespace BDArmory.Bullets
                                     {
                                         if (!fuzeTriggered)
                                         {
-                                            Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
+                                            //Debug.Log("[BDArmory.PooledBullet]: Delay Fuze Tripped");
                                             fuzeTriggered = true;
                                             StartCoroutine(DelayedDetonationRoutine());
                                         }

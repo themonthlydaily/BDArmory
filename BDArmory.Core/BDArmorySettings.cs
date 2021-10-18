@@ -175,7 +175,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_AEROPARTS = true; //lift loss & added drag
         [BDAPersistantSettingsField] public static float BD_LIFT_LOSS_RATE = 1; //rate multiplier
         [BDAPersistantSettingsField] public static bool BD_CTRL_SRF = true; //disable ctrl srf actuatiors?
-
         [BDAPersistantSettingsField] public static bool BD_COCKPITS = false;  //control degredation
         [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = false; //cockpit damage can kill pilots?
         [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = true;  //can fires occur
