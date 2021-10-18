@@ -21,6 +21,8 @@ IMPROVEMENTS
 		- Landed Kill Timer no longer affects vessels using Surface AIs.
 	- AI:
 		- Apply a correction to the roll target when a low-altitude inverted-roll is requested to avoid looping down and immediately triggering terrain avoidance.
+	- Evolution:
+		- Add a hidden AUTO_RESUME_EVOLUTION setting to resume evolution on restarting KSP (similar to and overrides the 'Auto-Resume Tournaments' setting).
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Performance Logging option removed as it did nothing.
 	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).

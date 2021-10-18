@@ -991,20 +991,23 @@ namespace BDArmory.Control
 
         IEnumerator AutoResumeTournament()
         {
-            // Check that there is an incomplete tournament, otherwise abort.
-            bool incompleteTournament = false;
-            if (File.Exists(BDATournament.defaultStateFile)) // Tournament state file exists.
+            if (!BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
             {
-                var tournamentState = new TournamentState();
-                tournamentState.LoadState(BDATournament.defaultStateFile);
-                savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
-                if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
+                // Check that there is an incomplete tournament, otherwise abort.
+                bool incompleteTournament = false;
+                if (File.Exists(BDATournament.defaultStateFile)) // Tournament state file exists.
                 {
-                    incompleteTournament = true;
-                    game = tournamentState.savegame;
+                    var tournamentState = new TournamentState();
+                    tournamentState.LoadState(BDATournament.defaultStateFile);
+                    savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
+                    if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
+                    {
+                        incompleteTournament = true;
+                        game = tournamentState.savegame;
+                    }
                 }
+                if (!incompleteTournament) yield break;
             }
-            if (!incompleteTournament) yield break;
             // Load saved game.
             var tic = Time.time;
             sceneLoaded = false;
@@ -1019,9 +1022,9 @@ namespace BDArmory.Control
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load flight scene."); yield break; }
             // Resume the tournament.
             yield return new WaitForSeconds(1);
-            tic = Time.time;
-            if (!BDArmorySettings.AUTO_RESUME_EVOLUTION)
+            if (!BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
             {
+                tic = Time.time;
                 yield return new WaitWhile(() => ((BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
                 if (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) yield break;
                 BDArmorySetup.windowBDAToolBarEnabled = true;
@@ -1034,7 +1037,8 @@ namespace BDArmory.Control
                 BDArmorySetup.windowBDAToolBarEnabled = true;
                 BDArmorySetup.Instance.showVesselSwitcherGUI = true;
                 Evolution.BDAModuleEvolution evolution = Evolution.BDAModuleEvolution.Instance;
-                evolution.StartEvolution(); ;
+                if (evolution == null) yield break;
+                evolution.StartEvolution();
             }
         }
 

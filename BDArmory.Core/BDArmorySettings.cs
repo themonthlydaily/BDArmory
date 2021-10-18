@@ -248,7 +248,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
         [BDAPersistantSettingsField] public static float TOURNAMENT_TIMEWARP_BETWEEN_ROUNDS = 0;   // Timewarp between rounds in minutes.
         [BDAPersistantSettingsField] public static bool AUTO_RESUME_TOURNAMENT = false;            // Automatically load the game the last incomplete tournament was running in and continue the tournament.
-        [BDAPersistantSettingsField] public static bool AUTO_RESUME_EVOLUTION = false;            // Automatically load the game and start evolution with the last used settings/seeds.
+        [BDAPersistantSettingsField] public static bool AUTO_RESUME_EVOLUTION = false;             // Automatically load the game and start evolution with the last used settings/seeds. Note: this overrides the AUTO_RESUME_TOURNAMENT setting.
         [BDAPersistantSettingsField] public static float QUIT_MEMORY_USAGE_THRESHOLD = float.MaxValue; // Automatically quit KSP when memory usage is beyond this. (0 = disabled)
 
         // Scoring categories
