@@ -132,7 +132,7 @@ namespace BDArmory.Modules
         public float BallisticAngle = 45.0f;
 
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseAltitude"), UI_FloatRange(minValue = 1f, maxValue = 500f, stepIncrement = 10f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise Altitude
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseAltitude"), UI_FloatRange(minValue = 5f, maxValue = 500f, stepIncrement = 5f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise Altitude
         public float CruiseAltitude = 500;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseSpeed"), UI_FloatRange(minValue = 100f, maxValue = 6000f, stepIncrement = 50f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise speed
@@ -1154,10 +1154,10 @@ namespace BDArmory.Modules
             {
                 Events["CruiseAltitudeRange"].guiName = "Change to High Altitude Range";
 
-                UI_FloatRange cruiseAltitudField = (UI_FloatRange)Fields["CruiseAltitude"].uiControlEditor;
-                cruiseAltitudField.maxValue = 500f;
-                cruiseAltitudField.minValue = 1f;
-                cruiseAltitudField.stepIncrement = 5f;
+                UI_FloatRange cruiseAltitudeField = (UI_FloatRange)Fields["CruiseAltitude"].uiControlEditor;
+                cruiseAltitudeField.maxValue = 500f;
+                cruiseAltitudeField.minValue = 5f;
+                cruiseAltitudeField.stepIncrement = 5f;
             }
             else
             {

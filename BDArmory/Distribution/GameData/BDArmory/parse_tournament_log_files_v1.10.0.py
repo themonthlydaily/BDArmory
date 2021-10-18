@@ -62,6 +62,9 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 			continue
 		tournamentData[round.name] = {}
 		logFiles = sorted(round.glob("[0-9]*.log"))
+		if len(logFiles) == 0:
+			del tournamentData[round.name]
+			continue
 		for heat in logFiles if args.N == None else logFiles[:args.N]:
 			with open(heat, "r") as logFile:
 				tournamentData[round.name][heat.name] = {'result': None, 'duration': 0, 'craft': {}}

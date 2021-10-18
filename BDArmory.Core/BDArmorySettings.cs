@@ -50,9 +50,8 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BULLET_DECALS = true;
         [BDAPersistantSettingsField] public static bool DISABLE_RAMMING = true;                   // Prevent craft from going into ramming mode when out of ammo.
         [BDAPersistantSettingsField] public static bool DEFAULT_FFA_TARGETING = false;            // Free-for-all combat style instead of teams (changes target selection behaviour)
-        [BDAPersistantSettingsField] public static bool PERFORMANCE_LOGGING = false;
         [BDAPersistantSettingsField] public static bool RUNWAY_PROJECT = false;                    // Enable/disable Runway Project specific enhancements.
-        [BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
+        //[BDAPersistantSettingsField] public static bool DISABLE_KILL_TIMER = true;                //disables the kill timers.
         [BDAPersistantSettingsField] public static bool AUTO_ENABLE_VESSEL_SWITCHING = false;     // Automatically enables vessel switching on competition start.
         [BDAPersistantSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistantSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
@@ -166,6 +165,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
         [BDAPersistantSettingsField] public static bool BD_AMMOBINS = true;   //can ammo bins explode?
         [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
+        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = true; // Ammo bins guaranteed to explode when destroyed
         [BDAPersistantSettingsField] public static bool BD_PROPULSION = true; //engine thrust reduction, fires
         [BDAPersistantSettingsField] public static float BD_PROP_FLOOR = 20; //minimum thrust% damaged engines produce
         [BDAPersistantSettingsField] public static float BD_PROP_FLAMEOUT = 25; //remaiing HP% engines flameout
@@ -176,8 +176,11 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool BD_AEROPARTS = true; //lift loss & added drag
         [BDAPersistantSettingsField] public static float BD_LIFT_LOSS_RATE = 1; //rate multiplier
         [BDAPersistantSettingsField] public static bool BD_CTRL_SRF = true; //disable ctrl srf actuatiors?
+
         [BDAPersistantSettingsField] public static bool BD_COCKPITS = false;  //control degredation
         [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = false; //cockpit damage can kill pilots?
+        [BDAPersistantSettingsField] public static bool BD_COCKPITS = true;  //control degredation
+        [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = true; //cockpit damage can kill pilots?
         [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = true;  //can fires occur
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = true; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT

@@ -1,4 +1,29 @@
-﻿v1.4.10.0
+﻿FIXES
+	- Fix some exceptions related to flames.
+	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
+	- Fix bug where interrupted tournaments could lose team information.
+	- Fix exception in Team Icons.
+	- Allow extra attempt at spawning when no terrain was found as it sometimes works the second time.
+IMPROVEMENTS
+	- UI:
+		- Reworks the BDA Settings Menu to be less cluttered/more organized/intuitive.
+		- Less commonly used toggles/settings now enabled via Advanced User Settings toggle.
+		- Disable Kill Timer setting removed, this is now handled by the Kill Timer slider.
+		- Vessel tracing manual toggle moved from the Vessel Switcher Window to the Settings window (in the Other section when Advanced User Settings is enabled).
+		- Settings window doesn't automatically close when starting a competition.
+		- Settings are saved when switching scenes if the UI is open.
+	- Add an 'Auto-Resume Tournaments' option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
+	- Add an 'Auto-Quit Memory Threshold' option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. In particular, the GfxDriver can use around 5GB of memory, but isn't measurable in non-debug versions of the Unity player. See the "DEBUG Memory Usage" lines in the KSP.log.
+	- Landed Kill Timer no longer affects vessels using Surface AIs.
+	- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
+	- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
+	- Apply a correction to the roll target when a low-altitude inverted-roll is requested to avoid looping down and immediately triggering terrain avoidance.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Performance Logging option removed as it did nothing.
+	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
+	- Auto-resume tournaments and Auto-quit KSP advanced options added to the Gameplay section.
+
+v1.4.10.0
 FIXES
 	- General:
 		- Consider 'splashed' vessels as 'landed' when spawning.
@@ -61,6 +86,11 @@ IMPROVEMENTS
 		- Automatically create a GameData/Custom/Flags directory for standardising the location of flags for BDArmory competitions.
 		- Price rebalance.
 		- Some RWP specific options (to be decalred once the rounds have been run).
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Low altitude kill limit expanded and "Off" value changed.
+	- Legacy armour option added (config file only).
+	- Competition status messages with hidden UI option added.
+	- Underwater bullet drag option added.
 
 v1.4.9.1
 FIXES
