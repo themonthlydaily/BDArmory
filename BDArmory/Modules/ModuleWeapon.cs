@@ -2061,7 +2061,7 @@ namespace BDArmory.Modules
                                         }
                                     }
                                     p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
-									p.AddDamage(damage);
+                                    p.AddDamage(damage);
                                 }
                                 if (HEpulses)
                                 {
@@ -4036,7 +4036,7 @@ namespace BDArmory.Modules
                 case "flak":
                     eFuzeType = FuzeTypes.Flak;
                     break;
-                   //Anti-Armour fuzes
+                //Anti-Armour fuzes
                 case "delay":
                     eFuzeType = FuzeTypes.Delay;
                     break;
@@ -4049,7 +4049,7 @@ namespace BDArmory.Modules
                 case "none":
                     eFuzeType = FuzeTypes.Impact;
                     break;
-                default: 
+                default:
                     eFuzeType = FuzeTypes.None;
                     break;
             }
