@@ -1,4 +1,10 @@
-﻿v1.4.11.0
+﻿v1.4.11.1
+FIXES
+IMPROVEMENTS
+	- Adds AIR-2 Genie example weapon.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+
+v1.4.11.0
 FIXES
 	- Fix some exceptions related to flames.
 	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
@@ -20,7 +26,6 @@ IMPROVEMENTS
 		- Renames RWPS3R2NukeModule to BDModuleNuke, and expands it into a missile-usable module.
 		- Adds some FX to nuke detonations.
 		- Nukes now act like explosions and delay damage/heat/impulse imparted to target based on distance from detonation.
-		- Adds AIR-2 Genie example weapon.
 	- UI:
 		- Reworks the BDA Settings Menu to be less cluttered/more organized/intuitive.
 		- Less commonly used toggles/settings now enabled via Advanced User Settings toggle.

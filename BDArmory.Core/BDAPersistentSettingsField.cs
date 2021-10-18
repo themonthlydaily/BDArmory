@@ -7,9 +7,9 @@ using UnityEngine;
 namespace BDArmory.Core
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class BDAPersistantSettingsField : Attribute
+    public class BDAPersistentSettingsField : Attribute
     {
-        public BDAPersistantSettingsField()
+        public BDAPersistentSettingsField()
         {
         }
 
@@ -27,7 +27,7 @@ namespace BDArmory.Core
             while (field.MoveNext())
             {
                 if (field.Current == null) continue;
-                if (!field.Current.IsDefined(typeof(BDAPersistantSettingsField), false)) continue;
+                if (!field.Current.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
 
                 var fieldValue = field.Current.GetValue(null);
                 if (fieldValue.GetType() == typeof(Vector2d))
@@ -58,7 +58,7 @@ namespace BDArmory.Core
             while (field.MoveNext())
             {
                 if (field.Current == null) continue;
-                if (!field.Current.IsDefined(typeof(BDAPersistantSettingsField), false)) continue;
+                if (!field.Current.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
 
                 if (!settings.HasValue(field.Current.Name)) continue;
                 object parsedValue = ParseValue(field.Current.FieldType, settings.GetValue(field.Current.Name));

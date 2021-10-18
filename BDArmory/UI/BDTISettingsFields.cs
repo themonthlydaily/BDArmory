@@ -96,7 +96,7 @@ namespace BDArmory.UI
 			{
 				return value;
 			}
-			Debug.LogError("[BDArmory]: BDAPersistantSettingsField to parse settings field of type " + type +
+			Debug.LogError("[BDArmory]: BDAPersistentSettingsField to parse settings field of type " + type +
 						   " and value " + value);
 
 			return null;
