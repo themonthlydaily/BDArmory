@@ -165,7 +165,6 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static float BD_TANK_LEAK_RATE = 1; //leak rate modifier
         [BDAPersistantSettingsField] public static bool BD_AMMOBINS = true;   //can ammo bins explode?
         [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = false; // Ammo bins guaranteed to explode when destroyed
-        [BDAPersistantSettingsField] public static bool BD_VOLATILE_AMMO = true; // Ammo bins guaranteed to explode when destroyed
         [BDAPersistantSettingsField] public static bool BD_PROPULSION = true; //engine thrust reduction, fires
         [BDAPersistantSettingsField] public static float BD_PROP_FLOOR = 20; //minimum thrust% damaged engines produce
         [BDAPersistantSettingsField] public static float BD_PROP_FLAMEOUT = 25; //remaiing HP% engines flameout
@@ -179,8 +178,6 @@ namespace BDArmory.Core
 
         [BDAPersistantSettingsField] public static bool BD_COCKPITS = false;  //control degredation
         [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = false; //cockpit damage can kill pilots?
-        [BDAPersistantSettingsField] public static bool BD_COCKPITS = true;  //control degredation
-        [BDAPersistantSettingsField] public static bool BD_PILOT_KILLS = true; //cockpit damage can kill pilots?
         [BDAPersistantSettingsField] public static bool BD_FIRES_ENABLED = true;  //can fires occur
         [BDAPersistantSettingsField] public static bool BD_FIRE_DOT = true; //do fires do DoT
         [BDAPersistantSettingsField] public static float BD_FIRE_DAMAGE = 5; //do fires do DoT
