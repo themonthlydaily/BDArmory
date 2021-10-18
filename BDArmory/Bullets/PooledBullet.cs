@@ -331,7 +331,7 @@ namespace BDArmory.Bullets
                 {
                     if (caliber < 75f) 
                     {
-                        if (explosive && (fuzeType != BulletFuzeTypes.Delay || fuzeType != BulletFuzeTypes.Penetrating))
+                        if (explosive)
                             ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
                         hasDetonated = true;
 
@@ -340,10 +340,20 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
-                        if (explosive && (fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating))
+                        if (explosive)
                         {
-                            fuzeTriggered = true;
-                            StartCoroutine(DelayedDetonationRoutine());
+                            if (fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating)
+                            {
+                                fuzeTriggered = true;
+                                StartCoroutine(DelayedDetonationRoutine());
+                            }
+                            else //if (fuzeType != BulletFuzeTypes.None)
+                            {
+                                ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                                hasDetonated = true;
+                                KillBullet();
+                                return;
+                            }
                         }
                     }
                 }
@@ -715,7 +725,7 @@ namespace BDArmory.Bullets
                                         StartCoroutine(DelayedDetonationRoutine());
                                     }
                                 }
-                                else if (fuzeType == BulletFuzeTypes.Penetrating)
+                                else if (fuzeType == BulletFuzeTypes.Penetrating) //should look into having this be a set depth. For now, assume fancy inertial/electrical mechanism for detecting armor thickness based on time spent passing through
                                 {
                                     if (penetrationFactor < 1.5f)
                                     {

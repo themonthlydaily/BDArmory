@@ -492,7 +492,10 @@ namespace BDArmory.Bullets
                 }
                 if (FlightGlobals.getAltitudeAtPos(transform.position) <= 0 && !startUnderwater)
                 {
-                    Detonate(transform.position, false);
+                    if (tntMass > 0) //look into fuze options similar to bullets?
+                    {
+                        Detonate(transform.position, false);
+                    }
                     FXMonger.Splash(transform.position, caliber);
                 }
             }
