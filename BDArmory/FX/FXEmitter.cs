@@ -80,6 +80,11 @@ namespace BDArmory.FX
         {
             if (!gameObject.activeInHierarchy) return;
 
+            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            {
+                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
+            }
+
             if (disabled && TimeIndex > particlesMaxEnergy)
             {
                 gameObject.SetActive(false);

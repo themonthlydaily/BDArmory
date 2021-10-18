@@ -255,7 +255,7 @@ namespace BDArmory.FX
         {
             Ray ray = new Ray(Position, building.transform.position - Position);
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, Range, 557057))
+            if (Physics.Raycast(ray, out rayHit, Range, 9076737))
             {
                 //TODO: Maybe we are not hitting building because we are hitting explosive parts.
 
