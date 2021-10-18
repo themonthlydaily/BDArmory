@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace BDArmory.Modules
 {
-    class RWPS3R2NukeModule : PartModule
+    class BDModuleNuke : PartModule
     {
         [KSPField(isPersistant = true, guiActive = true, guiName = "WARNING: Reactor Safeties:", guiActiveEditor = true), UI_Label(affectSymCounterparts = UI_Scene.All, scene = UI_Scene.All)]//Weapon Name
         public string status = "OFFLINE";
@@ -52,6 +52,17 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true)]
         public string reportingName = "Reactor Containment Failure";
 
+        MissileLauncher missile;
+        public MissileLauncher Launcher
+        {
+            get
+            {
+                if (missile) return missile;
+                missile = missile = part.FindModuleImplementing<MissileLauncher>();
+                return missile;
+            }
+        }
+
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -74,6 +85,7 @@ namespace BDArmory.Modules
                     Fields["status"].guiActive = false;
                     Fields["fuelleft"].guiActiveEditor = false;
                     Fields["fuelleft"].guiActive = false;
+                    var missile = part.FindModuleImplementing<MissileLauncher>();
                 }
                 Sourcevessel = part.vessel.GetName();
 
@@ -162,9 +174,14 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.RWPS3R2NukeModule]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
+            if (missile != null && 
+                (missile.MissileState == MissileBase.MissileStates.Idle || missile.MissileState == MissileBase.MissileStates.Drop))
+            {
+                return;
+            }
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModuleNuke]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
-            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, explModelPath, explSoundPath, 0, thermalRadius, yield, fluence, isEMP, reportingName);
+            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, 0, thermalRadius, yield, fluence, isEMP, reportingName);
             hasDetonated = true;
             if (part.vessel != null) // Already in the process of being destroyed.
                 part.Destroy();

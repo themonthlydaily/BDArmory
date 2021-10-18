@@ -22,6 +22,7 @@ namespace BDArmory.FX
 
         private bool disabled = true;
         public static string defaultModelPath = "BDArmory/Models/explosion/flakSmoke";
+        public static string defaultSoundPath = "BDArmory/Sounds/explode1";
         private float particlesMaxEnergy;
         private void OnEnable()
         {
@@ -103,17 +104,20 @@ namespace BDArmory.FX
                     Debug.LogError("[BDArmory.FXBase]: " + ModelPath + " was not found, using the default model instead. Please fix your model.");
                     FXTemplate = GameDatabase.Instance.GetModel(defaultModelPath);
                 }
-                var eFx = FXTemplate.AddComponent<FXEmitter>();
-                if (!String.IsNullOrEmpty(soundPath))
+                var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
+                if (soundClip == null)
                 {
-                    var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
-
+                    Debug.LogError("[BDArmory.FXBase]: " + soundPath + " was not found, using the default sound instead.");
+                    //soundClip = GameDatabase.Instance.GetAudioClip(defaultSoundPath);
+                }
+                var eFx = FXTemplate.AddComponent<ExplosionFx>();
+                if (soundClip != null)
+                {
                     eFx.ExSound = soundClip;
                     eFx.audioSource = FXTemplate.AddComponent<AudioSource>();
                     eFx.audioSource.minDistance = 200;
                     eFx.audioSource.maxDistance = 5500;
                     eFx.audioSource.spatialBlend = 1;
-
                 }
                 FXTemplate.SetActive(false);
                 FXPools[key] = ObjectPool.CreateObjectPool(FXTemplate, 10, true, true, 0f, false);
