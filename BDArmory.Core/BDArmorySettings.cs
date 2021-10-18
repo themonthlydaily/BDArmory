@@ -67,7 +67,7 @@ namespace BDArmory.Core
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS = true;             //Display competition status
         [BDAPersistantSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
         [BDAPersistantSettingsField] public static bool BULLET_WATER_DRAG = true;
-        [BDAPersistantSettingsField] public static bool PERSISTANT_FX = true;
+        [BDAPersistantSettingsField] public static bool PERSISTANT_FX = false;
         [BDAPersistantSettingsField] public static bool LEGACY_ARMOR = false;
 
         // General slider settings
