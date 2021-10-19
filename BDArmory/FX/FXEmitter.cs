@@ -48,8 +48,6 @@ namespace BDArmory.FX
                     emission.enabled = true;
                     EffectBehaviour.AddParticleEmitter(pe);
                 }
-            //figure out how to scale the .mu as well as pe size.
-            //figure out scaling calc; should be linear?, model scaled to 1.5kt
         }
 
         void OnDisable()

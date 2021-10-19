@@ -167,9 +167,9 @@ namespace BDArmory.FX
                             DestructibleBuilding building = hitCollidersEnu.Current.gameObject.GetComponentUpwards<DestructibleBuilding>();
 							try
 							{
-								Debug.Log("[BDArmory.NukeFX] finding building hit, building is: " + building); //this is returning Null, FIXME later. will have to check, but I suspect ExplosionFX is also not finding buildings - SI
+								//Debug.Log("[BDArmory.NukeFX] finding building hit, building is: " + building); //this is returning Null, FIXME later. will have to check, but I suspect ExplosionFX is also not finding buildings - SI
 							}
-							catch { Debug.Log("[BDArmory.NukeFX] No building found"); 
+							catch { //Debug.Log("[BDArmory.NukeFX] No building found"); 
                             }
                             if (building != null && !explosionEventsBuildingAdded.Contains(building))
                             {
@@ -343,16 +343,16 @@ namespace BDArmory.FX
         private void ExecuteBuildingBlastEvent(BuildingNukeHitEvent eventToExecute)
         {
             DestructibleBuilding building = eventToExecute.Building;
-            Debug.Log("[BDArmory.NukeFX] Beginning building hit");
+            //Debug.Log("[BDArmory.NukeFX] Beginning building hit");
             if (building && building.IsIntact)
             {
                 var distToEpicenter = Mathf.Max((transform.position - building.transform.position).magnitude, 1f);
                 var blastImpulse = Mathf.Pow(3.01f * 1100f / distToEpicenter, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot;
-                Debug.Log("[BDArmory.NukeFX]: Building hit; distToG0: " + distToEpicenter + ", yield: " + yield + ", building: " + building.name);
+                //Debug.Log("[BDArmory.NukeFX]: Building hit; distToG0: " + distToEpicenter + ", yield: " + yield + ", building: " + building.name);
 
                 if (!double.IsNaN(blastImpulse)) //140kPa, level at which reinforced concrete structures are destroyed
                 {
-                    Debug.Log("[BDArmory.NukeFX]: Building Impulse: " + blastImpulse);
+                    //Debug.Log("[BDArmory.NukeFX]: Building Impulse: " + blastImpulse);
                     if (blastImpulse > 140)
                     {
                         building.Demolish();
