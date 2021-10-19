@@ -42,9 +42,6 @@ namespace BDArmory.Modules
         public float fluence = 0.05f;
 
         [KSPField(isPersistant = true)]
-        public float tntEquivilent = 100;
-
-        [KSPField(isPersistant = true)]
         public bool isEMP = false;
 
         [KSPField(isPersistant = true)]

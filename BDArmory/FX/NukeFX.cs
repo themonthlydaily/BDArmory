@@ -273,24 +273,27 @@ namespace BDArmory.FX
 
                         LightFx = gameObject.GetComponent<Light>();
                         LightFx.range = thermalRadius * 3f;
+                        float scale = Mathf.Sqrt(400 * (6 * yield)) / 219;
                         if (lastValidAtmDensity < 0.05)
                         {
-                            FXEmitter.CreateFX(transform.position, yield, flashModelPath, "", 0.3f, 0.3f);
+                            FXEmitter.CreateFX(transform.position, scale, flashModelPath, "", 0.3f, 0.3f);
                         }
                         else
                         {
-                            FXEmitter.CreateFX(transform.position, yield / 4, flashModelPath, blastSoundPath);
-                            FXEmitter.CreateFX(transform.position, (yield / 4) * lastValidAtmDensity, shockModelPath, blastSoundPath);
-                            FXEmitter.CreateFX(transform.position, yield / 4, blastModelPath, blastSoundPath, 1.5f);
+                            //default model scaled for 20kt; yield = 20 = scale of 1
+                            //scaling calc is roughly SqRt( 400 * (6x))
+                            FXEmitter.CreateFX(transform.position, scale, flashModelPath, blastSoundPath);
+                            FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, blastSoundPath);
+                            FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Min(30 * scale, 30f));
                         }
-                        if (Misc.Misc.GetRadarAltitudeAtPos(transform.position) < (300 + (100 * (yield / 4))))
+                        if (Misc.Misc.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
                         {
                             double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
                             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
                             double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
 
-                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 4, plumeModelPath, blastSoundPath, 30f);
-                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), yield / 4, debrisModelPath, blastSoundPath, 1.5f);
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, plumeModelPath, blastSoundPath, 30f, Mathf.Min(30 * scale, 30f));
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, blastSoundPath, 1.5f, Mathf.Min(30 * scale, 30f));
                         }
                     }
                     if (LightFx != null) LightFx.intensity -= 12 * Time.deltaTime;
@@ -375,7 +378,7 @@ namespace BDArmory.FX
                     Debug.Log("[BDArmory.NukeFX]: radiative area of part " + part + " was NaN, using approximate area " + radiativeArea + " instead.");
                 }
                 //part.skinTemperature += fluence * 3370000000 / (4 * Math.PI * (realDistance * realDistance)) * radiativeArea / 2; // Fluence scales linearly w/ yield, 1 Kt will produce between 33 TJ and 337 kJ at 0-1000m,
-                part.skinTemperature += fluence * (499259259 * BDArmorySettings.EXP_DMG_MOD_MISSILE) / (4 * Math.PI * (realDistance * realDistance)) * radiativeArea / 2; // everything gets heated via atmosphere                                                                                                                                  
+                part.skinTemperature += fluence * (337000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE) / (4 * Math.PI * (realDistance * realDistance)); // everything gets heated via atmosphere                                                                                                                                  
                 if (isEMP)
                 {
                     if (part == part.vessel.rootPart) //don't apply EMP buildup per part
@@ -389,7 +392,7 @@ namespace BDArmory.FX
                         EMP.softEMP = false;
                     }
                 }
-                double blastImpulse = Mathf.Pow(3.01f * 1100f / realDistance, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot * radiativeArea / 3f;
+                double blastImpulse = Mathf.Pow(3.01f * 1100f / realDistance, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot * (radiativeArea / 3f);
                 if (blastImpulse > 0)
                 {
                     if (rb != null && rb.mass > 0)
@@ -414,7 +417,9 @@ namespace BDArmory.FX
                         NegativeForce = (float)blastImpulse * 0.25f
                     });
                     float damage = 0;
-                    float blastDamage = ((float)((yield * (499259259 * BDArmorySettings.EXP_DMG_MOD_MISSILE)) / (4f * Mathf.PI * realDistance * realDistance) * (radiativeArea / 2f)));
+                    //float blastDamage = ((float)((yield * (45000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE)) / (4f * Mathf.PI * realDistance * realDistance) * (radiativeArea / 2f)));
+                    //this shouldn't scale linearly
+                    float blastDamage = (float)blastImpulse * BDArmorySettings.EXP_DMG_MOD_MISSILE;
                     if (float.IsNaN(blastDamage))
                     {
                         Debug.LogWarning("[BDArmory.NukeFX]: blast damage is NaN. distToG0: " + realDistance + ", yield: " + yield + ", part: " + part + ", radiativeArea: " + radiativeArea);
