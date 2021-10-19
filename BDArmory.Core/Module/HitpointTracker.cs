@@ -250,7 +250,7 @@ namespace BDArmory.Core.Module
                 {
                     typecount++;
                 }
-                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR)
+                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR)
                 {
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
@@ -828,7 +828,7 @@ namespace BDArmory.Core.Module
                         ArmorTypeNum = 1; //reset to 'None'
                     }
                 }
-                if (isAI || part.IsMissile())
+                if (isAI || part.IsMissile() || BDArmorySettings.RESET_ARMOUR)
                 {
                     ArmorTypeNum = 1; //reset to 'None'
                 }
@@ -860,12 +860,23 @@ namespace BDArmory.Core.Module
                     Strength = 940;
                     SafeUseTemp = 2500;
                 }
-
+                else if (BDArmorySettings.RESET_ARMOUR)
+                {
+                    guiArmorTypeString = "None";
+                    SelectedArmorType = "None";
+                    Density = 2700;
+                    Diffusivity = 237f;
+                    Ductility = 0.6f;
+                    Hardness = 300;
+                    Strength = 200;
+                    SafeUseTemp = 993;
+                    Armor = 10;
+                }
             }
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
-            if (ArmorTypeNum > 1 && !BDArmorySettings.LEGACY_ARMOR) //don't apply cost/mass to None armor type
+            if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR)) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
@@ -885,7 +896,7 @@ namespace BDArmory.Core.Module
 
         public void SetArmor()
         {
-            if (isAI) return; //replace with newer implementation
+            //if (isAI) return; //replace with newer implementation
             if (part.IsMissile()) return;
             if (ArmorTypeNum > 1)
             {
