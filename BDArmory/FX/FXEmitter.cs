@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace BDArmory.FX
 {
-	class FXEmitter : MonoBehaviour
+    class FXEmitter : MonoBehaviour
     {
         public static Dictionary<string, ObjectPool> FXPools = new Dictionary<string, ObjectPool>();
         public KSPParticleEmitter[] pEmitters { get; set; }
@@ -61,11 +61,12 @@ namespace BDArmory.FX
                 }
             }
         }
+
         public void Update()
         {
             if (!gameObject.activeInHierarchy) return;
 
-            if (!disabled && TimeIndex > emitTime && pEmitters != null) 
+            if (!disabled && TimeIndex > emitTime && pEmitters != null)
             {
                 foreach (var pe in pEmitters)
                 {
@@ -120,7 +121,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3))            
+        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3))
         {
             CreateObjectPool(ModelPath, soundPath);
 

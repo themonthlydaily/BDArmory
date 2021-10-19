@@ -96,7 +96,7 @@ namespace BDArmory.FX
             {
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
-            if (BDArmorySettings.PERSISTANT_FX && Caliber > 30)
+            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30)
             {
                 FXEmitter.CreateFX(Position, Caliber / 60, "BDArmory/Models/explosion/flakSmoke", "", 0.3f, Caliber / 4);
             }
@@ -317,7 +317,7 @@ namespace BDArmory.FX
 
         /// <summary>
         /// This method will calculate if there is valid line of sight between the explosion origin and the specific Part
-        /// In order to avoid collisions with the same missile part, It will not take into account those parts beloging to same vessel that contains the explosive part
+        /// In order to avoid collisions with the same missile part, It will not take into account those parts belonging to same vessel that contains the explosive part
         /// </summary>
         /// <param name="part"></param>
         /// <param name="explosivePart"></param>
@@ -336,45 +336,45 @@ namespace BDArmory.FX
             //check if explosion is originating inside a part
             reverseHitCount = Physics.RaycastNonAlloc(new Ray(part.transform.position - Position, Position), reverseHits, Range, 9076737);
             if (reverseHitCount == reverseHits.Length)
-                {
-                    reverseHits = Physics.RaycastAll(new Ray(part.transform.position - Position, Position), Range, 9076737);
-                    reverseHitCount = reverseHits.Length;
-                }
-             for (int i = 0; i < reverseHitCount; ++i)
-                { reverseHits[i].distance = Range - reverseHits[i].distance; }
+            {
+                reverseHits = Physics.RaycastAll(new Ray(part.transform.position - Position, Position), Range, 9076737);
+                reverseHitCount = reverseHits.Length;
+            }
+            for (int i = 0; i < reverseHitCount; ++i)
+            { reverseHits[i].distance = Range - reverseHits[i].distance; }
 
             intermediateParts = new List<Tuple<float, float, float>>();
 
-                using (var hitsEnu = lineOfSightHits.Take(hitCount).Concat(reverseHits.Take(reverseHitCount)).OrderBy(x => x.distance).GetEnumerator())
-                    while (hitsEnu.MoveNext())
+            using (var hitsEnu = lineOfSightHits.Take(hitCount).Concat(reverseHits.Take(reverseHitCount)).OrderBy(x => x.distance).GetEnumerator())
+                while (hitsEnu.MoveNext())
+                {
+                    Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
+                    if (partHit == null) continue;
+                    if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                    hit = hitsEnu.Current;
+                    distance = hit.distance;
+                    if (partHit == part)
                     {
-                        Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
-                        if (partHit == null) continue;
-                        if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                        hit = hitsEnu.Current;
-                        distance = hit.distance;
-                        if (partHit == part)
-                        {
-                            return true;
-                        }
-                        if (partHit != part)
-                        {
-                            // ignoring collisions against the explosive, or explosive vessel for certain explosive types (e.g., missile/rocket casing)
-                            if (partHit == explosivePart || (explosivePart != null && ignoreCasingFor.Contains(ExplosionSource) && partHit.vessel == explosivePart.vessel))
-                            {
-                                continue;
-                            }
-                            if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
-                            var partHP = partHit.Damage();
-                            var partArmour = partHit.GetArmorThickness();
-                            if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
-                                intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmour));
-                        }
+                        return true;
                     }
+                    if (partHit != part)
+                    {
+                        // ignoring collisions against the explosive, or explosive vessel for certain explosive types (e.g., missile/rocket casing)
+                        if (partHit == explosivePart || (explosivePart != null && ignoreCasingFor.Contains(ExplosionSource) && partHit.vessel == explosivePart.vessel))
+                        {
+                            continue;
+                        }
+                        if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
+                        var partHP = partHit.Damage();
+                        var partArmour = partHit.GetArmorThickness();
+                        if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
+                            intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmour));
+                    }
+                }
 
-                hit = new RaycastHit();
-                distance = 0;
-                return false;
+            hit = new RaycastHit();
+            distance = 0;
+            return false;
         }
 
         public void Update()
