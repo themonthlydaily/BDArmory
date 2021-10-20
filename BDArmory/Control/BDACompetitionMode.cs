@@ -1428,6 +1428,7 @@ namespace BDArmory.Control
                 {
                     VesselModuleRegistry.OnVesselModified(vessel, true);
                     pilot = VesselModuleRegistry.GetModule<IBDAIControl>(vessel);
+                    if (pilot == null || pilot.weaponManager == null) continue; // Unfixable, ignore the vessel.
                 }
                 if (IsValidVessel(vessel) != InvalidVesselReason.None) continue;
                 if (pilot.weaponManager.Team.Neutral) continue; // Ignore the neutrals.
