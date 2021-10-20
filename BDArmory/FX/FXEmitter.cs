@@ -149,10 +149,10 @@ namespace BDArmory.FX
             newFX.transform.SetPositionAndRotation(position, rotation);
             if (scaleEmitter)
             {
-                //Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
                 newFX.transform.localScale = Vector3.one;
                 newFX.transform.localScale *= scale;
             }
+            //Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
             FXEmitter eFx = newFX.GetComponent<FXEmitter>();
 
             eFx.Position = position;

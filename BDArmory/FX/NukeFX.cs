@@ -285,7 +285,7 @@ namespace BDArmory.FX
                             //scaling calc is roughly SqRt( 400 * (6x))
                             FXEmitter.CreateFX(transform.position, scale, flashModelPath, blastSoundPath, 0.3f, -1, default, true);
                             FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, blastSoundPath, 0.3f, -1, default, true);
-                            FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Min(30 * scale, 30f), default, true);
+                            FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Max(30 * scale, 30f), default, true);
                         }
                         if (Misc.Misc.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
                         {
@@ -293,8 +293,8 @@ namespace BDArmory.FX
                             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
                             double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
 
-                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, plumeModelPath, blastSoundPath, 30f, Mathf.Min(30 * scale, 30f), default, true);
-                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, blastSoundPath, 1.5f, Mathf.Min(30 * scale, 30f), default, true) ;
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, plumeModelPath, blastSoundPath, 30f, Mathf.Max(30 * scale, 30f), default, true);
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, blastSoundPath, 1.5f, Mathf.Max(30 * scale, 30f), default, true) ;
                         }
                     }
                     if (LightFx != null) LightFx.intensity -= 12 * Time.deltaTime;
