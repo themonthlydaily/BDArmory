@@ -1201,6 +1201,7 @@ namespace BDArmory.Modules
 
         public override void OnFixedUpdate()
         {
+            if (vessel == null) return;
             if (guardMode && vessel.IsControllable)
             {
                 GuardMode();
@@ -2333,10 +2334,13 @@ namespace BDArmory.Modules
             {
                 return;
             }
-
+            if (missilesAway > maxMissilesOnTarget)
+            {
+                return;
+            }
             if (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-                selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-                selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
+            selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+            selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb)
             {
                 FireCurrentMissile(true);
             }
@@ -3604,8 +3608,8 @@ namespace BDArmory.Modules
                             float candidateYTraverse = ((ModuleWeapon)item.Current).yawRange;
                             float candidatePTraverse = ((ModuleWeapon)item.Current).maxPitch;
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
-                            bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
-                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).airDetonation;
+                            bool candidatePFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Proximity || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
+                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Timed || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
                             float Cannistershot = ((ModuleWeapon)item.Current).ProjectileCount;
 
                             Transform fireTransform = ((ModuleWeapon)item.Current).fireTransforms[0];
@@ -3817,8 +3821,8 @@ namespace BDArmory.Modules
                             float candidateRPM = ((ModuleWeapon)item.Current).roundsPerMinute;
                             bool candidateGimbal = ((ModuleWeapon)item.Current).turret;
                             float candidateTraverse = ((ModuleWeapon)item.Current).yawRange;
-                            bool candidatePFuzed = ((ModuleWeapon)item.Current).proximityDetonation;
-                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).airDetonation;
+                            bool candidatePFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Proximity || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
+                            bool candidateVTFuzed = ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Timed || ((ModuleWeapon)item.Current).eFuzeType == ModuleWeapon.FuzeTypes.Flak;
                             float Cannistershot = ((ModuleWeapon)item.Current).ProjectileCount;
                             float candidateMinrange = ((EngageableWeapon)item.Current).engageRangeMin;
                             int candidatePriority = Mathf.RoundToInt(((ModuleWeapon)item.Current).priority);
@@ -3954,6 +3958,7 @@ namespace BDArmory.Modules
                         }
                         //projectile weapon selected, any missiles that take precedence?
                         if (candidateClass != WeaponClasses.Missile) continue;
+                        if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
                         bool EMP = ((MissileLauncher)item.Current).EMP;
                         if (EMP && target.isDebilitated) continue;
@@ -4100,6 +4105,7 @@ namespace BDArmory.Modules
                         if (candidateClass == WeaponClasses.Bomb && (!vessel.Splashed || (vessel.Splashed && vessel.altitude > currentTarget.Vessel.altitude))) //I guess depth charges would sorta apply here, but those are SLW instead
                         {
                             if (targetWeapon != null && targetWeapon.GetWeaponClass() == WeaponClasses.Missile) continue;
+                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             // only useful if we are flying
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             int candidateCluster = ((MissileBase)item.Current).clusterbomb;
@@ -4138,8 +4144,6 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                        if ((candidateClass == WeaponClasses.Missile || candidateClass == WeaponClasses.SLW) && (missilesAway >= maxMissilesOnTarget)) //change this out for a string,int dictionary of available targets and missiles fired at them
-                            continue; // Max missiles are fired, try another weapon
                         //Missiles are the preferred method of ground attack. use if available over other options
                         if (candidateClass == WeaponClasses.Missile) //don't use missiles underwater. That's what torpedoes are for
                         {
@@ -4148,7 +4152,7 @@ namespace BDArmory.Modules
                             // - guided missiles
                             // - by blast strength
                             if (vessel.Splashed && FlightGlobals.getAltitudeAtPos(item.Current.GetPart().transform.position) < -2) continue;
-
+                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
                             bool candidateAGM = false;
@@ -4215,6 +4219,7 @@ namespace BDArmory.Modules
                         // almost as good as STS missiles, which we don't have.
                         if (candidateClass == WeaponClasses.SLW && target.isSplashed)
                         {
+                            if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             // not sure on the desired selection priority algorithm, so placeholder By Yield for now
                             float droptime = ((MissileBase)item.Current).dropTime;
@@ -4259,6 +4264,7 @@ namespace BDArmory.Modules
                             {
                                 if (item.Current.GetMissileType().ToLower() != "torpedo") continue;
                                 if (distance < candidateYield) continue; //don't use explosives within their blast radius
+                                if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                                 targetWeapon = item.Current;
                                 break;
                             }

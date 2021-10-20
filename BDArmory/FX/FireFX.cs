@@ -3,6 +3,7 @@ using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;
+using BDArmory.Core.Module;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
@@ -30,8 +31,11 @@ namespace BDArmory.FX
         private float startTime;
         public bool hasFuel = true;
         public float burnRate = 1;
+        private float fireIntensity = 0;
         private float tntMassEquivalent = 0;
         public bool surfaceFire = false;
+        private int fireDmgFloor = 1000; // FIXME This is assigned but its value is never used.
+        private bool isSRB = false;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
@@ -67,7 +71,25 @@ namespace BDArmory.FX
             {
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
-
+            var hullmat = parentPart.FindModuleImplementing<HitpointTracker>();
+            if (hullmat != null)
+            {
+                if (hullmat.HullTypeNum == 1) fireDmgFloor = 350;
+                else if (hullmat.HullTypeNum == 2) fireDmgFloor = 1000; //993c melting point of Aluminium
+                else
+                {
+                    fireDmgFloor = 1700; //~1500c, melting point of mild steel
+                }
+            }
+            solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
+            if (engine != null)
+            {
+                if (solid != null)
+                {
+                    isSRB = true;
+                }
+            }
+            fireIntensity = burnRate;
             BDArmorySetup.numberOfParticleEmitters++;
             pEmitters = gameObject.GetComponentsInChildren<KSPParticleEmitter>();
 
@@ -149,6 +171,7 @@ namespace BDArmory.FX
             ox = null;
             ec = null;
             mp = null;
+            fireIntensity = 1;
         }
 
         void Update()
@@ -170,7 +193,7 @@ namespace BDArmory.FX
                     // }
                     if (engine != null)
                     {
-                        if (engine.throttleLocked && !engine.allowShutdown) //likely a SRB
+                        if (isSRB)
                         {
                             if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
                             {
@@ -218,7 +241,8 @@ namespace BDArmory.FX
                             {
                                 if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
                                 {
-                                    fuel.amount -= (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                    fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                    fuel.amount -= fireIntensity;
                                     burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
                                 }
                                 else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
@@ -237,6 +261,7 @@ namespace BDArmory.FX
                         {
                             if (ox.amount > 0)
                             {
+                                fireIntensity *= 1.2f;
                                 ox.amount -= (burnRate * Mathf.Clamp((float)((1 - (ox.amount / ox.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
                             }
                             else
@@ -312,12 +337,9 @@ namespace BDArmory.FX
                 }
                 if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRE_DOT)
                 {
-                    if (BDArmorySettings.BD_FIRE_HEATDMG)
+                    if (BDArmorySettings.BD_INTENSE_FIRES)
                     {
-                        if (parentPart.temperature > 1000)
-                        {
-                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
-                        }
+                        parentPart.AddDamage(fireIntensity * BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
                     else
                     {
@@ -455,7 +477,7 @@ namespace BDArmory.FX
                 }
                 if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
-                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 0, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "Fuel");
+                    ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "Fuel");
                     if (BDArmorySettings.RUNWAY_PROJECT_ROUND != 42)
                     {
                         if (tntFuel > 0 || tntMP > 0) parentPart.Destroy();

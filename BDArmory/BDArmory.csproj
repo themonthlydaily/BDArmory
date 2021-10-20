@@ -159,6 +159,7 @@
     <Compile Include="FX\ExplosionFX.cs" />
     <Compile Include="FX\FireFX.cs" />
     <Compile Include="FX\FuelLeakFX.cs" />
+    <Compile Include="FX\FXEmitter.cs" />
     <Compile Include="FX\NukeFX.cs" />
     <Compile Include="FX\ParticleTurbulence.cs" />
     <Compile Include="FX\ShellCasing.cs" />
@@ -166,6 +167,7 @@
     <Compile Include="Guidances\CruiseGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
     <Compile Include="Guidances\MissileGuidance.cs" />
+    <Compile Include="Misc\BattleDamageTracker.cs" />
     <Compile Include="Misc\BDAEditorTools.cs" />
     <Compile Include="Misc\BDAModuleInfos.cs" />
     <Compile Include="Misc\BDATooltips.cs" />
@@ -224,7 +226,7 @@
     <Compile Include="Modules\ModuleWeapon.cs" />
     <Compile Include="Modules\ModuleWingCommander.cs" />
     <Compile Include="Modules\RadarWarningReceiver.cs" />
-    <Compile Include="Modules\RWPS3R2NukeModule.cs" />
+    <Compile Include="Modules\BDModuleNuke.cs" />
     <Compile Include="Modules\VesselModuleRegistry.cs" />
     <Compile Include="Parts\GPSTargetInfo.cs" />
     <Compile Include="Parts\SeismicChargeFX.cs" />

@@ -423,7 +423,7 @@ namespace BDArmory.Modules
             if (!Vengeance) return;
             if (!BDACompetitionMode.Instance.competitionIsActive) return;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator] triggering vengeance nuke");
-            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "BDArmory/Models/explosion/explosion", "BDArmory/Sounds/explode1", 2.5f, 100, 500, 0.05f, 0.05f, true, "Vengeance Explosion", "BDArmory/Models/Mutators/Vengence");
+            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), 2.5f, 500, 0.05f, 0.05f, true, "Vengeance Explosion", "BDArmory/Models/Mutators/Vengence");
         }
     }
 }

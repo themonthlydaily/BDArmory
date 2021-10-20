@@ -24,7 +24,7 @@ namespace BDArmory.Core.Module
         public float Hitpoints;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorThickness"),//Armor Thickness
-        UI_FloatRange(minValue = 0f, maxValue = 500f, stepIncrement = 5f, scene = UI_Scene.All)]
+        UI_FloatRange(minValue = 0f, maxValue = 200, stepIncrement = 1f, scene = UI_Scene.All)]
         public float Armor = 10f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_ArmorType"),//Armor Types
@@ -101,7 +101,7 @@ namespace BDArmory.Core.Module
         public float Cost;
 
         private bool startsArmored = false;
-
+        public bool Armorpanel => startsArmored;
         //Part vars
         private float partMass = 0f;
         public Vector3 partSize;
@@ -238,10 +238,21 @@ namespace BDArmory.Core.Module
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
-                UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                //Once started the max value of the field should be the initial one
-                armorField.maxValue = Armor;
+                if (BDArmorySettings.RESET_ARMOUR)
+                {
+                    HullTypeNum = 2;
+                    IgnoreForArmorSetup = true;
+                    ArmorSetup(null, null);
+                    SetHullMass();
+                }
+                else
+                {
+                    UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
+                    //Once started the max value of the field should be the initial one
+                    armorField.maxValue = Armor;
+                }
                 part.RefreshAssociatedWindows();
+
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -250,7 +261,7 @@ namespace BDArmory.Core.Module
                 {
                     typecount++;
                 }
-                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR)
+                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR)
                 {
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
@@ -285,6 +296,7 @@ namespace BDArmory.Core.Module
                     Fields["HullTypeNum"].guiActiveEditor = false;
                     Fields["guiHullTypeString"].guiActiveEditor = false;
                     IgnoreForArmorSetup = true;
+                    SetHullMass();
                 }
                 if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
                 {
@@ -737,7 +749,7 @@ namespace BDArmory.Core.Module
         }
         #endregion Hitpoints Functions
 
-        #region Armour
+        #region Armor
 
         public void ReduceArmor(float massToReduce) //incoming massToreduce should be cm3
         {
@@ -828,7 +840,7 @@ namespace BDArmory.Core.Module
                         ArmorTypeNum = 1; //reset to 'None'
                     }
                 }
-                if (isAI || part.IsMissile())
+                if (isAI || part.IsMissile() || BDArmorySettings.RESET_ARMOUR)
                 {
                     ArmorTypeNum = 1; //reset to 'None'
                 }
@@ -848,24 +860,34 @@ namespace BDArmory.Core.Module
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
                 SetArmor();
-
-                if (BDArmorySettings.LEGACY_ARMOR)
-                {
-                    guiArmorTypeString = "Steel";
-                    SelectedArmorType = "Legacy Armor";
-                    Density = 7850;
-                    Diffusivity = 48.5f;
-                    Ductility = 0.15f;
-                    Hardness = 1176;
-                    Strength = 940;
-                    SafeUseTemp = 2500;
-                }
-
+            }
+            if (BDArmorySettings.LEGACY_ARMOR)
+            {
+                guiArmorTypeString = "Steel";
+                SelectedArmorType = "Legacy Armor";
+                Density = 7850;
+                Diffusivity = 48.5f;
+                Ductility = 0.15f;
+                Hardness = 1176;
+                Strength = 940;
+                SafeUseTemp = 2500;
+            }
+            else if (BDArmorySettings.RESET_ARMOUR)
+            {
+                guiArmorTypeString = "None";
+                SelectedArmorType = "None";
+                Density = 2700;
+                Diffusivity = 237f;
+                Ductility = 0.6f;
+                Hardness = 300;
+                Strength = 200;
+                SafeUseTemp = 993;
+                Armor = 10;
             }
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
-            if (ArmorTypeNum > 1 && !BDArmorySettings.LEGACY_ARMOR) //don't apply cost/mass to None armor type
+            if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || !BDArmorySettings.RESET_ARMOUR)) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
@@ -885,7 +907,8 @@ namespace BDArmory.Core.Module
 
         public void SetArmor()
         {
-            if (isAI) return; //replace with newer implementation
+            //if (isAI) return; //replace with newer implementation
+            if (BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR) return;
             if (part.IsMissile()) return;
             if (ArmorTypeNum > 1)
             {
@@ -944,6 +967,7 @@ namespace BDArmory.Core.Module
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
             if (IgnoreForArmorSetup) return;
+            if (isAI) HullTypeNum = 1;
             if (part.isEngine() && HullTypeNum < 2) //can armor engines, but not make them out of wood.
             {
                 HullTypeNum = 2;
@@ -980,13 +1004,12 @@ namespace BDArmory.Core.Module
             {
                 HullmassAdjust = 0;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Aluminium");
-                part.maxTemp = 1000;
+                //removing maxtemp from aluminium and steel to prevent hull type from causing issues with, say, spacecraft re-entry on installs with BDA not used exclusively for BDA
             }
             else //hulltype 3
             {
                 HullmassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                part.maxTemp = 2000;
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullmassAdjust)
             {
@@ -999,14 +1022,14 @@ namespace BDArmory.Core.Module
             }
             _hullConfigured = true;
         }
-        #endregion Armour
+        #endregion Armor
         public override string GetInfo()
         {
             StringBuilder output = new StringBuilder();
             output.Append(Environment.NewLine);
             if (startsArmored)
             {
-                output.AppendLine($"Starts Armoured");
+                output.AppendLine($"Starts Armored");
                 output.AppendLine($" - Armor Mass: {armorMass}");
             }
             return output.ToString();

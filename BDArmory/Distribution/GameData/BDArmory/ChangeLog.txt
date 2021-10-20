@@ -1,8 +1,45 @@
-﻿FIXES
+﻿v1.4.11.2
+FIXES 
+	- Fix Intake Battle Damage issue.
+	- Intake Battle Damage now clamped to a minimum of 1/4 original intake area.
+	- AP rounds that penetrate multiple parts now only register a single 'hit' for scoring.
+	- Fixes Nuke FX scale and scaling.
+IMPROVEMENTS
+	- Adds Armour Reset toggle to BDA settings menu to reset craft armor/hull material to defaults.
+	- Missiles can now use in-flight animations with the 'flightAnimationName =' field.
+	- Adds config fields to BDModuleNuke for setting custom FX/sound.
+	- Nukes now have Editor info cards.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Added Armor Reset toggle.
+
+v1.4.11.1
+FIXES
+IMPROVEMENTS
+	- Adds AIR-2 Genie example weapon.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+
+v1.4.11.0
+FIXES
 	- Fix some exceptions related to flames.
 	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
 	- Fix bug where interrupted tournaments could lose team information.
+	- Fix exception in Team Icons.
+	- Allow extra attempt at spawning when no terrain was found as it sometimes works the second time.
+	- Fixes laser damage calc incorrectly using laser part armor thickness instead of target.
+	- Fixes AI not using AGMS against ground targets.
+	- Fixes sabot deformation.
+	- Fixes missiles not respecting max missiles per target setting.
+	- Rockets will now properly score only a single hit if HE.
+	- Scoring now tracks rockets fired.
+	- EMPs from nukes will no longer repeatedly fry a hit vessel.
 IMPROVEMENTS
+	- General:
+		- Add optional persistent FX for smoke/debris from explosions.
+		- Explosions will now damage a part if detonating inside it.
+		- Adds generic FX spawner.
+		- Renames RWPS3R2NukeModule to BDModuleNuke, and expands it into a missile-usable module.
+		- Adds some FX to nuke detonations.
+		- Nukes now act like explosions and delay damage/heat/impulse imparted to target based on distance from detonation.
 	- UI:
 		- Reworks the BDA Settings Menu to be less cluttered/more organized/intuitive.
 		- Less commonly used toggles/settings now enabled via Advanced User Settings toggle.
@@ -10,15 +47,38 @@ IMPROVEMENTS
 		- Vessel tracing manual toggle moved from the Vessel Switcher Window to the Settings window (in the Other section when Advanced User Settings is enabled).
 		- Settings window doesn't automatically close when starting a competition.
 		- Settings are saved when switching scenes if the UI is open.
-	- Add an 'Auto-Resume Tournaments' option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
-	- Add an 'Auto-Quit Memory Threshold' option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. In particular, the GfxDriver can use around 5GB of memory, but isn't measurable in non-debug versions of the Unity player. See the "DEBUG Memory Usage" lines in the KSP.log.
-	- Landed Kill Timer no longer affects vessels using Surface AIs.
-	- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
-	- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
+	- Tournaments:
+		- Add an 'Auto-Resume Tournaments' option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
+		- Add an 'Auto-Quit Memory Threshold' option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. In particular, the GfxDriver can use around 5GB of memory, but isn't measurable in non-debug versions of the Unity player. See the "DEBUG Memory Usage" lines in the KSP.log.
+		- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
+		- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
+	- Competitions:
+		- Landed Kill Timer no longer affects vessels using Surface AIs.
+	- AI:
+		- Apply a correction to the roll target when a low-altitude inverted-roll is requested to avoid looping down and immediately triggering terrain avoidance.
+	- Armor:
+		- Adds numeric field to Armor GUI thickness slider.
+		- Allow armor thickness adjustment in non-"integer of 5" increments.
+		- Remove lowered max temp of aluminum/steel hulls.
+	- Bullets:
+		- Sabot rounds now identified via mass, caliber, and length instead of caliber and velocity.
+		- Bullet deformation now controlled by caliber and HE ratio.
+		- Rework bullet collision, bullets now do both entry and exit damage to parts they (over)penetrate.
+		- Adds three new fuze types - Impact, Delay, and Penetrating.
+		- Proximity/Timed fuze rounds will not detonate if they hit something within their arming dist.
+	- Battle Damage:
+		- Fires Add Heat no longer prevents damage from occurring.
+		- Add Battle Damage option for fire damage to scale to fire intensity.
+		- Engines and intakes now properly take Battle Damage relative to damage taken.
+		- Engines now properly clamp thrust to thrust floor value when Battle Damage.
+		- Default Battle Damage settings are mostly true by default.
+	- Evolution:
+		- Add a hidden AUTO_RESUME_EVOLUTION setting to resume evolution on restarting KSP (similar to and overrides the 'Auto-Resume Tournaments' setting).
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Performance Logging option removed as it did nothing.
 	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
-	- Auto-resume tournaments and Auto-quit KSP advanced options added to the Gameplay section.
+	- Auto-resume tournaments and Auto-quit KSP advanced options added to the Gameplay section, plus a hidden Auto-resume evolution setting.
+	- Persistent FX setting added.
 
 v1.4.10.0
 FIXES
@@ -108,7 +168,7 @@ FIXES
 	- When setting HP of parts, use an alternate approach to getting volume based on partSize when GetAverageBoundSize gives ridiculous results. Failing that, just base it on mass. (Fixes HP on TweakScale and AP+ parts.)
 	- Actually run the armour and hull setup functions in flight mode.
 	- Add conformal decal exception to HP/Armor visualizer.
-	- Make rendering of RCS snapshots and HP/Armour visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
+	- Make rendering of RCS snapshots and HP/Armor visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
 	- Various fixes for shrapnel damage.
 	- Fix penetration velocity reduction.
 	- Fix barrage mode not cycling through singlebarrel weapons.
