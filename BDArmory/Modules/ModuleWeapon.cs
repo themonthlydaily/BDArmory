@@ -447,10 +447,11 @@ namespace BDArmory.Modules
         [KSPField]
         public float recoilReduction = 1; //for reducing recoil on large guns with built in compensation
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireLimits"),//Fire Limits
-         UI_Toggle(disabledText = "#LOC_BDArmory_FireLimits_disabledText", enabledText = "#LOC_BDArmory_FireLimits_enabledText")]//None--In range
+        //[KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireLimits"),//Fire Limits
+        // UI_Toggle(disabledText = "#LOC_BDArmory_FireLimits_disabledText", enabledText = "#LOC_BDArmory_FireLimits_enabledText")]//None--In range
+        [KSPField]
         public bool onlyFireInRange = true;
-        //prevent firing when gun's turret is trying to exceed gimbal limits
+        // UNUSED, supposedly once prevented firing when gun's turret is trying to exceed gimbal limits
 
         [KSPField]
         public bool bulletDrop = true; //projectiles are affected by gravity
