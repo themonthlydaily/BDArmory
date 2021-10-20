@@ -749,7 +749,7 @@ namespace BDArmory.Core.Module
         }
         #endregion Hitpoints Functions
 
-        #region Armour
+        #region Armor
 
         public void ReduceArmor(float massToReduce) //incoming massToreduce should be cm3
         {
@@ -1022,14 +1022,14 @@ namespace BDArmory.Core.Module
             }
             _hullConfigured = true;
         }
-        #endregion Armour
+        #endregion Armor
         public override string GetInfo()
         {
             StringBuilder output = new StringBuilder();
             output.Append(Environment.NewLine);
             if (startsArmored)
             {
-                output.AppendLine($"Starts Armoured");
+                output.AppendLine($"Starts Armored");
                 output.AppendLine($" - Armor Mass: {armorMass}");
             }
             return output.ToString();
