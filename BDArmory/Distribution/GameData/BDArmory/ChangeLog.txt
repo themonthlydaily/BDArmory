@@ -1,4 +1,15 @@
-﻿v1.4.11.1
+﻿FIXES
+	- Fixes nukeFX scaling.
+	- Fix Intake battle damage issue.
+	- Properly clamp intake damage to a minimum.
+IMPROVEMENTS
+	- Adds Armour Reset toggle to BDA settings menu to reset craft armor/hull material.
+	- Adds in-flight anim support for missiles.
+	- Adds config fields, Editor info to NukeModule.
+	- Re-adds krakenbane fix to FXEmitter.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+
+v1.4.11.1
 FIXES
 IMPROVEMENTS
 	- Adds AIR-2 Genie example weapon.
