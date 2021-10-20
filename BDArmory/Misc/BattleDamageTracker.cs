@@ -10,23 +10,23 @@ using UnityEngine;
 
 namespace BDArmory.Misc
 {
-	public class BattleDamageTracker : MonoBehaviour
-	{
-		public float oldDamagePercent = 1;
-		public double origIntakeArea = 1;
+    public class BattleDamageTracker : MonoBehaviour
+    {
+        public float oldDamagePercent = 1;
+        public double origIntakeArea = -1;
         public bool isSRB = false;
         public bool SRBFuelled = false;
-        public Part Part
-        {
-            get
-            {
-                return Part;
-            }
-            set
-            {
-                Part = value;
-            }
-        }
+        public Part Part { get; set; }
+        // {
+        //     get
+        //     {
+        //         return Part; // FIXME If you want custom getters and setters then you need your own backing variable, e.g., private Part _Part;, auto-getters and setters will make the backing variable automatically.
+        //     }
+        //     set
+        //     {
+        //         Part = value;
+        //     }
+        // }
 
         void Awake()
         {

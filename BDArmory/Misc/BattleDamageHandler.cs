@@ -122,6 +122,7 @@ namespace BDArmory.Misc
             if (BDArmorySettings.BD_PROPULSION)
             {
                 BattleDamageTracker tracker = part.gameObject.AddOrGetComponent<BattleDamageTracker>();
+                tracker.Part = part;
                 if (part.isEngine() && part.GetDamagePercentage() < 0.95f) //first hit's free
                 {
                     foreach (var engine in part.GetComponentsInChildren<ModuleEngines>())
@@ -208,7 +209,10 @@ namespace BDArmory.Misc
                     //if (part.isAirIntake(intake)) instead? or use vesselregistry
                     if (intake != null)
                     {
-                        tracker.origIntakeArea = intake.area;
+                        if (tracker.origIntakeArea < 0)
+                        {
+                            tracker.origIntakeArea = intake.area;
+                        }
                         float HEBonus = 0.7f;
                         if (explosivedamage)
                         {
@@ -219,12 +223,12 @@ namespace BDArmory.Misc
                         {
                             HEBonus = 1.1f;
                         }
-                        intake.intakeSpeed *= (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE / 2))); //HE does bonus damage
+                        intake.intakeSpeed *= (1 - ((tracker.oldDamagePercent - part.GetDamagePercentage()) * HEBonus) * BDArmorySettings.BD_PROP_DAM_RATE); //HE does bonus damage
                         Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
-                        intake.area -= (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
-                        Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea/4), 99999); //even shredded intake ducting will still get some air to engines
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed);
+                        intake.area -= (tracker.origIntakeArea * (((tracker.oldDamagePercent - part.GetDamagePercentage()) * HEBonus) * BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
+                        intake.area = Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea/4), 99999); //even shredded intake ducting will still get some air to engines
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Orig Area: " + tracker.origIntakeArea + "; Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed + "; intake damage: " + (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)));
                     }
                 }
                 if (BDArmorySettings.BD_GIMBALS) //engine gimbal damage

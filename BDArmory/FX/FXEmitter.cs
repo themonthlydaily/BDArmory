@@ -136,6 +136,8 @@ namespace BDArmory.FX
 
             GameObject newFX = FXPools[ModelPath + soundPath].GetPooledObject();
             newFX.transform.SetPositionAndRotation(position, rotation);
+            Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
+            newFX.transform.localScale = Vector3.one;
             newFX.transform.localScale *= scale;
             FXEmitter eFx = newFX.GetComponent<FXEmitter>();
 

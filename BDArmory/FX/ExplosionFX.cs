@@ -96,9 +96,9 @@ namespace BDArmory.FX
             {
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
-            if (BDArmorySettings.PERSISTANT_FX && Caliber > 30)
+            if (BDArmorySettings.PERSISTANT_FX && Caliber > 30 && Misc.Misc.GetRadarAltitudeAtPos(transform.position) > Caliber / 60)
             {
-                FXEmitter.CreateFX(Position, Caliber / 60, "BDArmory/Models/explosion/flakSmoke", "", 0.3f, Caliber / 4);
+                FXEmitter.CreateFX(Position, (Caliber / 30), "BDArmory/Models/explosion/flakSmoke", "", 0.1f, Caliber / 4);
             }
         }
 

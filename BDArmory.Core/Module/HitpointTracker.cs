@@ -285,6 +285,7 @@ namespace BDArmory.Core.Module
                     Fields["HullTypeNum"].guiActiveEditor = false;
                     Fields["guiHullTypeString"].guiActiveEditor = false;
                     IgnoreForArmorSetup = true;
+                    SetHullMass();
                 }
                 if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
                 {
@@ -955,6 +956,7 @@ namespace BDArmory.Core.Module
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
             if (IgnoreForArmorSetup) return;
+            if (isAI) HullTypeNum = 1;
             if (part.isEngine() && HullTypeNum < 2) //can armor engines, but not make them out of wood.
             {
                 HullTypeNum = 2;

@@ -351,6 +351,7 @@ namespace BDArmory.Bullets
                             {
                                 ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
                                 hasDetonated = true;
+                                FXMonger.Splash(transform.position, caliber / 2);
                                 KillBullet();
                                 return;
                             }
