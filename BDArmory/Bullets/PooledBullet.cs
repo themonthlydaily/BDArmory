@@ -681,7 +681,7 @@ namespace BDArmory.Bullets
                                     StopCoroutine(DelayedDetonationRoutine());
                                 }
                                 ExplosiveDetonation(hitPart, hit, bulletRay);
-                                ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
+                                ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, penTicker > 0 ? false : true );
                                 hasDetonated = true;
                                 KillBullet();
                                 return true;
@@ -709,10 +709,11 @@ namespace BDArmory.Bullets
                             if (dmgMult < 0)
                             {
                                 hitPart.AddInstagibDamage();
+                                ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, true);
                             }
                             else
                             {
-                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? true : false);
+								ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
                             }
                             //Delay and Penetrating Fuze bullets that penetrate should explode shortly after
                             //if penetration is very great, they will have moved on                            

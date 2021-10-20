@@ -94,7 +94,10 @@ namespace BDArmory.Misc
             // Debug.Log("DEBUG Ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
 
             // Update scoring structures
-            ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, explosionSource, true);
+            if (firstHit)
+            {
+                ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, damage, name, explosionSource, true);
+            }
             StealResources(hitPart, sourceVessel);
         }
         public static void ApplyScore(Part hitPart, string sourceVessel, double distanceTraveled, float damage, string name, ExplosionSourceType ExplosionSource, bool newhit = false)
