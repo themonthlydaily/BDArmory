@@ -36,7 +36,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ArmorInfo.cs" />
-    <Compile Include="BDAPersistantSettingsField.cs" />
+    <Compile Include="BDAPersistentSettingsField.cs" />
     <Compile Include="BDArmorySettings.cs" />
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="BuildingDamage.cs" />

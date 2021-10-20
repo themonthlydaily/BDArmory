@@ -165,17 +165,18 @@ namespace BDArmory.FX
                         else
                         {
                             DestructibleBuilding building = hitCollidersEnu.Current.gameObject.GetComponentUpwards<DestructibleBuilding>();
-							try
-							{
-								//Debug.Log("[BDArmory.NukeFX] finding building hit, building is: " + building); //this is returning Null, FIXME later. will have to check, but I suspect ExplosionFX is also not finding buildings - SI
-							}
-							catch { //Debug.Log("[BDArmory.NukeFX] No building found"); 
+                            try
+                            {
+                                //Debug.Log("[BDArmory.NukeFX] finding building hit, building is: " + building); //this is returning Null, FIXME later. will have to check, but I suspect ExplosionFX is also not finding buildings - SI
+                            }
+                            catch
+                            { //Debug.Log("[BDArmory.NukeFX] No building found"); 
                             }
                             if (building != null && !explosionEventsBuildingAdded.Contains(building))
                             {
                                 //ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
                                 Ray ray = new Ray(Position, building.transform.position - Position);
-                                var distance = Vector3.Distance(building.transform.position,Position);
+                                var distance = Vector3.Distance(building.transform.position, Position);
                                 RaycastHit rayHit;
                                 if (Physics.Raycast(ray, out rayHit, thermalRadius, 9076737))
                                 {
@@ -188,7 +189,7 @@ namespace BDArmory.FX
                                         explosionEventsBuildingAdded.Add(building);
                                     }
                                 }
-                            }                          
+                            }
                         }
                     }
                     catch

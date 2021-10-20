@@ -329,7 +329,7 @@ namespace BDArmory.Bullets
                 }
                 if (!startsUnderwater && underwater) // Bullets entering water from air either disintegrate or don't penetrate far enough to bother about. Except large caliber naval shells.
                 {
-                    if (caliber < 75f) 
+                    if (caliber < 75f)
                     {
                         if (explosive)
                             ExplosionFx.CreateExplosion(currPosition, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
@@ -407,7 +407,7 @@ namespace BDArmory.Bullets
                 {
                     underwater = true;
                 }
-                FXMonger.Splash(transform.position, caliber/2);
+                FXMonger.Splash(transform.position, caliber / 2);
             }
             // Second half-timestep velocity change (leapfrog integrator) (should be identical code-wise to the initial half-step)
             LeapfrogVelocityHalfStep(0.5f * period);
@@ -442,9 +442,9 @@ namespace BDArmory.Bullets
 
         /// <summary>
         /// Check for bullet collision in the upcoming period. 
+        /// This also performs a raycast in reverse to detect collisions from rays starting within an object.
         /// </summary>
         /// <param name="period">Period to consider, typically Time.fixedDeltaTime</param>
-        /// <param name="reverse">Also perform raycast in reverse to detect collisions from rays starting within an object.</param>
         /// <returns>true if a collision is detected, false otherwise.</returns>
         public bool CheckBulletCollision(float period)
         {
@@ -465,14 +465,14 @@ namespace BDArmory.Bullets
             }
             int reverseHitCount = 0;
 
-                reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, 9076737);
-                if (reverseHitCount == reverseHits.Length)
-                {
-                    reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
-                    reverseHitCount = reverseHits.Length;
-                }
-                for (int i = 0; i < reverseHitCount; ++i)
-                { reverseHits[i].distance = dist - reverseHits[i].distance; }
+            reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, 9076737);
+            if (reverseHitCount == reverseHits.Length)
+            {
+                reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
+                reverseHitCount = reverseHits.Length;
+            }
+            for (int i = 0; i < reverseHitCount; ++i)
+            { reverseHits[i].distance = dist - reverseHits[i].distance; }
 
             if (hitCount + reverseHitCount > 0)
             {
@@ -546,7 +546,7 @@ namespace BDArmory.Bullets
                         {
                             ProjectileUtils.CheckBuildingHit(hit, bulletMass, currentVelocity, bulletDmgMult);
                             if (!RicochetScenery(hitAngle))
-                            {                                
+                            {
                                 ExplosiveDetonation(hitPart, hit, bulletRay);
                                 KillBullet();
                                 distanceTraveled += hit.distance;
@@ -577,10 +577,11 @@ namespace BDArmory.Bullets
                         }
                         if (impulse != 0 && hitPart.rb != null)
                         {
+                            distanceTraveled += hit.distance;
                             hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Acceleration);
                             ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, true);
                             KillBullet();
-                            break; //impulse rounds shouldn't penetrate/do damage
+                            return true; //impulse rounds shouldn't penetrate/do damage
                         }
                         float anglemultiplier = (float)Math.Cos(Math.PI * hitAngle / 180.0);
                         //calculate armor thickness
@@ -589,19 +590,19 @@ namespace BDArmory.Bullets
                         float penetration = 0;
                         float penetrationFactor = 0;
                         var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
-						if (Armor != null)
-						{
-							float Ductility = Armor.Ductility;
-							float hardness = Armor.Hardness;
-							float Strength = Armor.Strength;
-							float safeTemp = Armor.SafeUseTemp;
-							float Density = Armor.Density;
-							if (BDArmorySettings.DRAW_ARMOR_LABELS)
-							{
-								Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
-							}
-							float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
-							float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
+                        if (Armor != null)
+                        {
+                            float Ductility = Armor.Ductility;
+                            float hardness = Armor.Hardness;
+                            float Strength = Armor.Strength;
+                            float safeTemp = Armor.SafeUseTemp;
+                            float Density = Armor.Density;
+                            if (BDArmorySettings.DRAW_ARMOR_LABELS)
+                            {
+                                Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                            }
+                            float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
+                            float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
                             //calculate bullet deformation
                             float newCaliber = caliber;
                             if (!sabot)
@@ -614,16 +615,16 @@ namespace BDArmory.Bullets
                             //{
                             //    newCaliber = 
                             //}
-							//calculate penetration
-							penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
-							caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
-							penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
-							ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactSpeed, sourceVesselName, ExplosionSourceType.Bullet);                            
+                            //calculate penetration
+                            penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
+                            caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
+                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
+                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactSpeed, sourceVesselName, ExplosionSourceType.Bullet);
                         }
-						else
-						{
-							Debug.Log("[PooledBUllet].ArmorVars not found; hitPart null");
-						}
+                        else
+                        {
+                            Debug.Log("[PooledBUllet].ArmorVars not found; hitPart null");
+                        }
                         //determine what happens to bullet
                         //pen < 1: bullet stopped by armor
                         //pen > 1 && <2: bullet makes it into part, but can't punch through other side
@@ -635,7 +636,9 @@ namespace BDArmory.Bullets
                                 bool viableBullet = ProjectileUtils.CalculateBulletStatus(bulletMass, caliber, sabot);
                                 if (!viableBullet)
                                 {
+                                    distanceTraveled += hit.distance;
                                     KillBullet();
+                                    return true;
                                 }
                                 else
                                 {
@@ -745,6 +748,7 @@ namespace BDArmory.Bullets
                                     ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                                     hasDetonated = true;
                                     KillBullet();
+                                    distanceTraveled += hit.distance;
                                     return true;
                                 }
                                 if (!viableBullet)
@@ -754,10 +758,11 @@ namespace BDArmory.Bullets
                                     ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                                     hasDetonated = true;
                                     KillBullet();
+                                    distanceTraveled += hit.distance;
                                     return true;
                                 }
                             }
-                            penTicker += 1;    
+                            penTicker += 1;
                         }
 
                         //bullet should not go any further if moving too slowly after hit
@@ -792,7 +797,7 @@ namespace BDArmory.Bullets
                     {
                         double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
                         double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
-                        FXMonger.Splash(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, 0), tntMass*20);
+                        FXMonger.Splash(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, 0), tntMass * 20);
                     }
                 }
                 KillBullet();

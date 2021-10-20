@@ -34,7 +34,7 @@ namespace BDArmory.FX
         private float fireIntensity = 0;
         private float tntMassEquivalent = 0;
         public bool surfaceFire = false;
-        private int fireDmgFloor = 1000;
+        private int fireDmgFloor = 1000; // FIXME This is assigned but its value is never used.
         private bool isSRB = false;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
@@ -193,7 +193,7 @@ namespace BDArmory.FX
                     // }
                     if (engine != null)
                     {
-                        if (isSRB) 
+                        if (isSRB)
                         {
                             if (parentPart.RequestResource("SolidFuel", (double)(burnRate * TimeWarp.deltaTime)) <= 0)
                             {

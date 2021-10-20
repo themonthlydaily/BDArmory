@@ -14,6 +14,7 @@ namespace BDArmory.Misc
     {
         public float oldDamagePercent = 1;
         public double origIntakeArea = -1;
+
         public bool isSRB = false;
         public bool SRBFuelled = false;
         public Part Part { get; set; }

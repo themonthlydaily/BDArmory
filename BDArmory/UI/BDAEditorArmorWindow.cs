@@ -67,9 +67,9 @@ namespace BDArmory.UI
         {
             Instance = this;
             AddToolbarButton();
-            thicknessField = new Dictionary<string, NumericInputField> 
+            thicknessField = new Dictionary<string, NumericInputField>
             {
-                {"Thickness", gameObject.AddComponent<NumericInputField>().Initialise(0, 10, 0, 1500) },               
+                {"Thickness", gameObject.AddComponent<NumericInputField>().Initialise(0, 10, 0, 1500) }, // FIXME should use maxThickness instead of 1500 here.
             };
             GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
         }
@@ -240,7 +240,7 @@ namespace BDArmory.UI
             else
             {
                 thicknessField["Thickness"].tryParseValue(GUI.TextField(new Rect(20, line * lineHeight, 260, lineHeight), thicknessField["Thickness"].possibleValue, 4));
-                Thickness = Mathf.Min((float)thicknessField["Thickness"].currentValue, maxThickness);
+                Thickness = Mathf.Min((float)thicknessField["Thickness"].currentValue, maxThickness); // FIXME Mathf.Min shouldn't be necessary if the maxValue of the thicknessField has been updated for maxThickness
                 line++;
             }
             if (Thickness != oldThickness)
@@ -248,6 +248,7 @@ namespace BDArmory.UI
                 oldThickness = Thickness;
                 SetThickness = true;
                 maxThickness = 10;
+                thicknessField["Thickness"].maxValue = maxThickness;
                 CalculateArmorMass();
             }
             GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorSelect"), style);
@@ -380,6 +381,7 @@ namespace BDArmory.UI
                             if (armor.maxSupportedArmor > maxThickness)
                             {
                                 maxThickness = armor.maxSupportedArmor;
+                                thicknessField["Thickness"].maxValue = maxThickness;
                             }
                             if (SetType || SetThickness)
                             {
@@ -402,6 +404,7 @@ namespace BDArmory.UI
                                         if (armor.maxSupportedArmor > maxThickness)
                                         {
                                             maxThickness = armor.maxSupportedArmor;
+                                            thicknessField["Thickness"].maxValue = maxThickness;
                                         }
                                     }
                                 }
