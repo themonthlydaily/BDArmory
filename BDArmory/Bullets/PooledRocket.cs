@@ -326,7 +326,7 @@ namespace BDArmory.Bullets
                                 }
                                 else
                                 {
-                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true);
                                 }
                                 ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
                                 Detonate(hit.point, false);
@@ -394,8 +394,8 @@ namespace BDArmory.Bullets
                                 ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName(), ExplosionSourceType.Rocket);
 
                                 //calculate return bullet post-pen vel
-
                                 //calculate armor damage
+                                //FIXME later - if doing bullet style armor penetrtion, then immplement armor penetration, and let AP/kinetic warhead rockets (over?)penetrate parts
                             }
                             else
                             {
@@ -418,7 +418,7 @@ namespace BDArmory.Bullets
                                 }
                                 else
                                 {
-                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket);
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true);
                                     if (!explosive)
                                     {
                                         BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName()); //if non-explosive hit, add rocketstrike, else ExplosionFX adds rocketstrike from HE detonation

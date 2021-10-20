@@ -24,6 +24,7 @@ namespace BDArmory.FX
         public static string defaultModelPath = "BDArmory/Models/explosion/flakSmoke";
         public static string defaultSoundPath = "BDArmory/Sounds/explode1";
         private float particlesMaxEnergy;
+        private float maxEnergy;
         private void OnEnable()
         {
             StartTime = Time.time;
@@ -38,6 +39,7 @@ namespace BDArmory.FX
                     pe.minSize *= Power;
                     if (maxTime > 0)
                     {
+                        maxEnergy = pe.maxEnergy;
                         pe.maxEnergy = maxTime;
                         pe.minEnergy = maxTime * .66f;
                     }
@@ -56,6 +58,14 @@ namespace BDArmory.FX
             {
                 if (pe != null)
                 {
+                    pe.maxSize /= Power;
+                    pe.maxParticleSize /= Power;
+                    pe.minSize /= Power;
+                    if (maxTime > 0)
+                    {
+                        pe.maxEnergy = maxEnergy;
+                        pe.minEnergy = maxEnergy * .66f;
+                    }
                     pe.emit = false;
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
@@ -139,7 +149,7 @@ namespace BDArmory.FX
             newFX.transform.SetPositionAndRotation(position, rotation);
             if (scaleEmitter)
             {
-                Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
+                //Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
                 newFX.transform.localScale = Vector3.one;
                 newFX.transform.localScale *= scale;
             }

@@ -238,10 +238,21 @@ namespace BDArmory.Core.Module
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
-                UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                //Once started the max value of the field should be the initial one
-                armorField.maxValue = Armor;
+                if (BDArmorySettings.RESET_ARMOUR)
+                {
+                    HullTypeNum = 2;
+                    IgnoreForArmorSetup = true;
+                    ArmorSetup(null, null);
+                    SetHullMass();
+                }
+                else
+                {
+                    UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
+                    //Once started the max value of the field should be the initial one
+                    armorField.maxValue = Armor;
+                }
                 part.RefreshAssociatedWindows();
+
             }
             if (HighLogic.LoadedSceneIsEditor)
             {
@@ -849,35 +860,34 @@ namespace BDArmory.Core.Module
                 Strength = armorInfo.Strength;
                 SafeUseTemp = armorInfo.SafeUseTemp;
                 SetArmor();
-
-                if (BDArmorySettings.LEGACY_ARMOR)
-                {
-                    guiArmorTypeString = "Steel";
-                    SelectedArmorType = "Legacy Armor";
-                    Density = 7850;
-                    Diffusivity = 48.5f;
-                    Ductility = 0.15f;
-                    Hardness = 1176;
-                    Strength = 940;
-                    SafeUseTemp = 2500;
-                }
-                else if (BDArmorySettings.RESET_ARMOUR)
-                {
-                    guiArmorTypeString = "None";
-                    SelectedArmorType = "None";
-                    Density = 2700;
-                    Diffusivity = 237f;
-                    Ductility = 0.6f;
-                    Hardness = 300;
-                    Strength = 200;
-                    SafeUseTemp = 993;
-                    Armor = 10;
-                }
+            }
+            if (BDArmorySettings.LEGACY_ARMOR)
+            {
+                guiArmorTypeString = "Steel";
+                SelectedArmorType = "Legacy Armor";
+                Density = 7850;
+                Diffusivity = 48.5f;
+                Ductility = 0.15f;
+                Hardness = 1176;
+                Strength = 940;
+                SafeUseTemp = 2500;
+            }
+            else if (BDArmorySettings.RESET_ARMOUR)
+            {
+                guiArmorTypeString = "None";
+                SelectedArmorType = "None";
+                Density = 2700;
+                Diffusivity = 237f;
+                Ductility = 0.6f;
+                Hardness = 300;
+                Strength = 200;
+                SafeUseTemp = 993;
+                Armor = 10;
             }
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
-            if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR)) //don't apply cost/mass to None armor type
+            if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || !BDArmorySettings.RESET_ARMOUR)) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
@@ -898,6 +908,7 @@ namespace BDArmory.Core.Module
         public void SetArmor()
         {
             //if (isAI) return; //replace with newer implementation
+            if (BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR) return;
             if (part.IsMissile()) return;
             if (ArmorTypeNum > 1)
             {

@@ -217,6 +217,7 @@ namespace BDArmory.Bullets
             tracerEndWidth *= 2f;
 
             //leftPenetration = 1;
+            penTicker = 0;
             wasInitiated = true;
             StartCoroutine(FrameDelayedRoutine());
 
@@ -452,7 +453,7 @@ namespace BDArmory.Bullets
             hasPenetrated = true;
             hasDetonated = false;
             hasRicocheted = false;
-            penTicker = 0;
+            //penTicker = 0;
             currPosition = transform.position;
 
             float dist = currentVelocity.magnitude * period;
@@ -522,7 +523,7 @@ namespace BDArmory.Bullets
                             }
                             else
                             {
-                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactSpeed, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactSpeed, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, true);
                             }
                             ExplosiveDetonation(hitPart, hit, bulletRay);
                             ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
@@ -680,6 +681,7 @@ namespace BDArmory.Bullets
                                     StopCoroutine(DelayedDetonationRoutine());
                                 }
                                 ExplosiveDetonation(hitPart, hit, bulletRay);
+                                ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
                                 hasDetonated = true;
                                 KillBullet();
                                 return true;
@@ -710,7 +712,7 @@ namespace BDArmory.Bullets
                             }
                             else
                             {
-                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet);
+                                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? true : false);
                             }
                             //Delay and Penetrating Fuze bullets that penetrate should explode shortly after
                             //if penetration is very great, they will have moved on                            
@@ -745,7 +747,7 @@ namespace BDArmory.Bullets
                                 {
                                     //Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
                                     ExplosiveDetonation(hitPart, hit, bulletRay);
-                                    ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
+                                    ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding 
                                     hasDetonated = true;
                                     KillBullet();
                                     distanceTraveled += hit.distance;

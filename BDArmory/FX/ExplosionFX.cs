@@ -296,7 +296,7 @@ namespace BDArmory.FX
                     }
                     if (ProjMass > 0 && distance <= Range * 2)
                     {
-                        ProjectileUtils.CalculateShrapnelDamage(part, hit, 120, Power, distance, sourceVesselName, ExplosionSource, ProjMass); //part hit by shrapnel, but not pressure wave
+                        ProjectileUtils.CalculateShrapnelDamage(part, hit, Caliber, Power, distance, sourceVesselName, ExplosionSource, ProjMass); //part hit by shrapnel, but not pressure wave
                     }
                     partsAdded.Add(part);
                     return true;

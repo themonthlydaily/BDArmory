@@ -70,7 +70,7 @@ namespace BDArmory.Misc
         public static HashSet<string> IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
         public static bool IsIgnoredPart(Part part) { return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name); }
 
-        public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource)
+        public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit)
         {
             //hitting a vessel Part
             //No struts, they cause weird bugs :) -BahamutoD
@@ -298,7 +298,7 @@ namespace BDArmory.Misc
                 float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
                 float damage;
                 // go through and make sure all unit conversions correct
-                if (penetrationFactor == -1) //airburst/parts caught in AoE
+                if (penetrationFactor < 0) //airburst/parts caught in AoE
                 {
                     if (detonationDist > (5 * (caliber / 1000))) //caliber in mm, not m
                     {
