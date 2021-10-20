@@ -8,6 +8,7 @@ IMPROVEMENTS
 	- Adds config fields, Editor info to NukeModule.
 	- Re-adds krakenbane fix to FXEmitter.
 ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Added Armour Reset toggle.
 
 v1.4.11.1
 FIXES
