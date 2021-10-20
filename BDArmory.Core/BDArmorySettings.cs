@@ -56,7 +56,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistentSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
         [BDAPersistentSettingsField] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
-        [BDAPersistantSettingsField] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor/ hull material of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor/ hull material of parts of vessels when they're spawned in flight mode.
         [BDAPersistentSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see

@@ -121,7 +121,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3))
+        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3), bool scaleEmitter = false)
         {
             CreateObjectPool(ModelPath, soundPath);
 
@@ -137,9 +137,12 @@ namespace BDArmory.FX
 
             GameObject newFX = FXPools[ModelPath + soundPath].GetPooledObject();
             newFX.transform.SetPositionAndRotation(position, rotation);
-            Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
-            newFX.transform.localScale = Vector3.one;
-            newFX.transform.localScale *= scale;
+            if (scaleEmitter)
+            {
+                Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
+                newFX.transform.localScale = Vector3.one;
+                newFX.transform.localScale *= scale;
+            }
             FXEmitter eFx = newFX.GetComponent<FXEmitter>();
 
             eFx.Position = position;
