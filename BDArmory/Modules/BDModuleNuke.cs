@@ -4,24 +4,33 @@ using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.FX;
+using System;
 using System.Collections;
+using System.Text;
 using UnityEngine;
 
 namespace BDArmory.Modules
 {
     class BDModuleNuke : PartModule
     {
-        [KSPField(isPersistant = true, guiActive = true, guiName = "WARNING: Reactor Safeties:", guiActiveEditor = true), UI_Label(affectSymCounterparts = UI_Scene.All, scene = UI_Scene.All)]//Weapon Name
+        [KSPField(isPersistant = true, guiActive = true, guiName = "WARNING: Reactor Safeties:", guiActiveEditor = false), UI_Label(affectSymCounterparts = UI_Scene.All, scene = UI_Scene.All)]//Weapon Name
         public string status = "OFFLINE";
 
         [KSPField(isPersistant = true, guiActive = true, guiName = "Coolant Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
         public double fuelleft;
 
         [KSPField]
-        public string explModelPath = "BDArmory/Models/explosion/explosion";
-
+        public static string flashModelPath = "BDArmory/Models/explosion/nuke/nukeFlash";
         [KSPField]
-        public string explSoundPath = "BDArmory/Sounds/explode1";
+        public static string shockModelPath = "BDArmory/Models/explosion/nuke/nukeShock";
+        [KSPField]
+        public static string blastModelPath = "BDArmory/Models/explosion/nuke/nukeBlast";
+        [KSPField]
+        public static string plumeModelPath = "BDArmory/Models/explosion/nuke/nukePlume";
+        [KSPField]
+        public static string debrisModelPath = "BDArmory/Models/explosion/nuke/nukeScatter";
+        [KSPField]
+        public static string blastSoundPath = "BDArmory/Models/explosion/nuke/nukeBoom";
 
         [KSPField(isPersistant = true)]
         public float thermalRadius = 750;
@@ -31,9 +40,6 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true)]
         public float fluence = 0.05f;
-
-        [KSPField(isPersistant = true)]
-        public float tntEquivilent = 100;
 
         [KSPField(isPersistant = true)]
         public bool isEMP = false;
@@ -81,9 +87,7 @@ namespace BDArmory.Modules
                 }
                 else
                 {
-                    Fields["status"].guiActiveEditor = false;
                     Fields["status"].guiActive = false;
-                    Fields["fuelleft"].guiActiveEditor = false;
                     Fields["fuelleft"].guiActive = false;
                     var missile = part.FindModuleImplementing<MissileLauncher>();
                 }
@@ -181,10 +185,29 @@ namespace BDArmory.Modules
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModuleNuke]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
-            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, 0, thermalRadius, yield, fluence, isEMP, reportingName);
+            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, 0, thermalRadius, yield, fluence, isEMP, reportingName, "", "",blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath);
             hasDetonated = true;
             if (part.vessel != null) // Already in the process of being destroyed.
                 part.Destroy();
+        }
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+            if (engineCore)
+            {
+                output.Append(Environment.NewLine);
+                output.AppendLine($"Reactor Core");
+                output.AppendLine($"An unstable reactor core that will detonate if the engine is disabled");
+                output.AppendLine($"Yield: {yield}");
+                output.AppendLine($"Generates EMP: {isEMP}");
+            }
+            if (missile == null)
+            {
+                output.AppendLine($"Nuclear Warhead");
+                output.AppendLine($"Yield: {yield}");
+                output.AppendLine($"Generates EMP: {isEMP}");
+            }
+            return output.ToString();
         }
     }
 }

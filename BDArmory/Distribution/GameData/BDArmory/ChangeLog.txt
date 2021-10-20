@@ -1,4 +1,18 @@
-﻿v1.4.11.1
+﻿v1.4.11.2
+FIXES 
+	- Fix Intake Battle Damage issue.
+	- Intake Battle Damage now clamped to a minimum of 1/4 original intake area.
+	- AP rounds that penetrate multiple parts now only register a single 'hit' for scoring.
+	- Fixes Nuke FX scale and scaling.
+IMPROVEMENTS
+	- Adds Armour Reset toggle to BDA settings menu to reset craft armor/hull material to defaults.
+	- Missiles can now use in-flight animations with the 'flightAnimationName =' field.
+	- Adds config fields to BDModuleNuke for setting custom FX/sound.
+	- Nukes now have Editor info cards.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Added Armor Reset toggle.
+
+v1.4.11.1
 FIXES
 IMPROVEMENTS
 	- Adds AIR-2 Genie example weapon.
@@ -154,7 +168,7 @@ FIXES
 	- When setting HP of parts, use an alternate approach to getting volume based on partSize when GetAverageBoundSize gives ridiculous results. Failing that, just base it on mass. (Fixes HP on TweakScale and AP+ parts.)
 	- Actually run the armour and hull setup functions in flight mode.
 	- Add conformal decal exception to HP/Armor visualizer.
-	- Make rendering of RCS snapshots and HP/Armour visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
+	- Make rendering of RCS snapshots and HP/Armor visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
 	- Various fixes for shrapnel damage.
 	- Fix penetration velocity reduction.
 	- Fix barrage mode not cycling through singlebarrel weapons.

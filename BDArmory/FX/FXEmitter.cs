@@ -24,6 +24,7 @@ namespace BDArmory.FX
         public static string defaultModelPath = "BDArmory/Models/explosion/flakSmoke";
         public static string defaultSoundPath = "BDArmory/Sounds/explode1";
         private float particlesMaxEnergy;
+        private float maxEnergy;
         private void OnEnable()
         {
             StartTime = Time.time;
@@ -38,6 +39,7 @@ namespace BDArmory.FX
                     pe.minSize *= Power;
                     if (maxTime > 0)
                     {
+                        maxEnergy = pe.maxEnergy;
                         pe.maxEnergy = maxTime;
                         pe.minEnergy = maxTime * .66f;
                     }
@@ -56,6 +58,14 @@ namespace BDArmory.FX
             {
                 if (pe != null)
                 {
+                    pe.maxSize /= Power;
+                    pe.maxParticleSize /= Power;
+                    pe.minSize /= Power;
+                    if (maxTime > 0)
+                    {
+                        pe.maxEnergy = maxEnergy;
+                        pe.minEnergy = maxEnergy * .66f;
+                    }
                     pe.emit = false;
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
@@ -80,6 +90,11 @@ namespace BDArmory.FX
         public void FixedUpdate()
         {
             if (!gameObject.activeInHierarchy) return;
+
+            if (!FloatingOrigin.Offset.IsZero() || !Krakensbane.GetFrameVelocity().IsZero())
+            {
+                transform.position -= FloatingOrigin.OffsetNonKrakensbane;
+            }
 
             if (disabled && TimeIndex > particlesMaxEnergy)
             {
@@ -116,7 +131,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3))
+        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3), bool scaleEmitter = false)
         {
             CreateObjectPool(ModelPath, soundPath);
 
@@ -132,6 +147,12 @@ namespace BDArmory.FX
 
             GameObject newFX = FXPools[ModelPath + soundPath].GetPooledObject();
             newFX.transform.SetPositionAndRotation(position, rotation);
+            if (scaleEmitter)
+            {
+                newFX.transform.localScale = Vector3.one;
+                newFX.transform.localScale *= scale;
+            }
+            //Debug.Log("[FXEmitter] start scale: " + newFX.transform.localScale);
             FXEmitter eFx = newFX.GetComponent<FXEmitter>();
 
             eFx.Position = position;

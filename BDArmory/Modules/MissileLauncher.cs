@@ -195,6 +195,12 @@ namespace BDArmory.Modules
         public float deployTime = 0.2f;
 
         [KSPField]
+        public string flightAnimationName = "";
+
+        [KSPField]
+        public bool OneShotAnim = true;
+
+        [KSPField]
         public bool useSimpleDrag = false;
 
         [KSPField]
@@ -215,6 +221,8 @@ namespace BDArmory.Modules
         //public float deployedTime;
 
         AnimationState[] deployStates;
+
+        AnimationState[] animStates;
 
         bool hasPlayedFlyby;
 
@@ -556,6 +564,11 @@ namespace BDArmory.Modules
             else
             {
                 deployedDrag = simpleDrag;
+            }
+
+            if (flightAnimationName != "")
+            {
+                animStates = Misc.Misc.SetUpAnimation(flightAnimationName, part);
             }
 
             SetInitialDetonationDistance();
@@ -1289,14 +1302,15 @@ namespace BDArmory.Modules
         IEnumerator MissileRoutine()
         {
             MissileState = MissileStates.Drop;
-            StartCoroutine(AnimRoutine());
+            StartCoroutine(DeployAnimRoutine());
             yield return new WaitForSeconds(dropTime);
             yield return StartCoroutine(BoostRoutine());
+            StartCoroutine(FlightAnimRoutine());
             yield return new WaitForSeconds(cruiseDelay);
             yield return StartCoroutine(CruiseRoutine());
         }
 
-        IEnumerator AnimRoutine()
+        IEnumerator DeployAnimRoutine()
         {
             yield return new WaitForSeconds(deployTime);
             if (deployStates == null)
@@ -1316,7 +1330,28 @@ namespace BDArmory.Modules
                     }
             }
         }
+        IEnumerator FlightAnimRoutine()
+        {
+            if (animStates == null)
+            {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.LogWarning("[BDArmory.MissileLauncher]: animStates was null, aborting AnimRoutine.");
+                yield break;
+            }
 
+            if (!string.IsNullOrEmpty(flightAnimationName))
+            {
+                using (var anim = animStates.AsEnumerable().GetEnumerator())
+                    while (anim.MoveNext())
+                    {
+                        if (anim.Current == null) continue;
+                        if (!OneShotAnim)
+                        {
+                            anim.Current.wrapMode = WrapMode.Loop;
+                        }
+                        anim.Current.speed = 1;
+                    }
+            }
+        }
         IEnumerator BoostRoutine()
         {
             StartBoost();
@@ -2239,11 +2274,21 @@ namespace BDArmory.Modules
             while (partModules.MoveNext())
             {
                 if (partModules.Current == null) continue;
-                if (partModules.Current.moduleName != "BDExplosivePart") continue;
-                float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
-                output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
-                output.AppendLine($"- tnt Mass: {tntMass} kg");
-                break;
+                if (partModules.Current.moduleName == "BDExplosivePart")
+                {
+                    float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
+                    output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
+                    output.AppendLine($"- tnt Mass: {tntMass} kg");
+                }
+                else if (partModules.Current.moduleName == "BDModuleNuke")
+                {
+                    float yield = ((BDModuleNuke)partModules.Current).yield;
+                    float radius = ((BDModuleNuke)partModules.Current).thermalRadius;
+                    output.AppendLine($"- Yield: {yield} kT");
+                    output.AppendLine($"- Max radius: {radius} m");
+                }
+                else continue;
+                    break;
             }
             partModules.Dispose();
 
