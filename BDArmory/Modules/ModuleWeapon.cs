@@ -4036,7 +4036,7 @@ namespace BDArmory.Modules
                 case "flak":
                     eFuzeType = FuzeTypes.Flak;
                     break;
-                //Anti-Armour fuzes
+                //Anti-Armor fuzes
                 case "delay":
                     eFuzeType = FuzeTypes.Delay;
                     break;
