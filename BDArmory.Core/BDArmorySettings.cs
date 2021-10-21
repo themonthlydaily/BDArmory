@@ -267,6 +267,6 @@ namespace BDArmory.Core
 
         // Countermeasure constants
         [BDAPersistentSettingsField] public static float FLARE_FACTOR = 1.6f;                       // Change this to make flares more or less effective, values close to or below 1.0 will cause flares to fail to decoy often
-        [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 1.0f;                       // Change this to make chaff more or less effective. Values higher than 1.0 will make chaff batter, values below 1.0 will make chaff worse.
+        [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 0.6f;                       // Change this to make chaff more or less effective. Higher values will make chaff batter, lower values will make chaff worse.
     }
 }
