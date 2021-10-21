@@ -1,4 +1,10 @@
-﻿v1.4.11.2
+﻿FIXES
+- Fix BDA part category placement to be usable on low resolution screens.
+- Don't add explosive forces when paintball mode is enabled.
+IMPROVEMENTS
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+
+v1.4.11.2
 FIXES 
 	- Fix Intake Battle Damage issue.
 	- Intake Battle Damage now clamped to a minimum of 1/4 original intake area.
