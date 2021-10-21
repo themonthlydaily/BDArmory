@@ -24,7 +24,7 @@ namespace BDArmory.Modules
          UI_Label(affectSymCounterparts = UI_Scene.All, controlEnabled = true, scene = UI_Scene.All)]
         public float blastRadius = 10;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ProximityFuzeRadius"), UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Proximity Fuze Radius
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_ProximityTriggerDistance"), UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Proximity Fuze Radius
         public float detonationRange = -1f; // give ability to set proximity range
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DetonateAtMinimumDistance"), UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)] // Detonate At Minumum Distance
         public bool detonateAtMinimumDistance = false;
@@ -147,6 +147,7 @@ namespace BDArmory.Modules
                 isMissile = false;
             }
             GuiSetup();
+            /*
             if (BDArmorySettings.ADVANCED_EDIT)
             {
                 //Fields["tntMass"].guiActiveEditor = true;
@@ -155,7 +156,7 @@ namespace BDArmory.Modules
                 //((UI_FloatRange)Fields["tntMass"].uiControlEditor).maxValue = 3000f;
                 //((UI_FloatRange)Fields["tntMass"].uiControlEditor).stepIncrement = 5f;
             }
-
+            */
             CalculateBlast();
         }
 
@@ -219,6 +220,8 @@ namespace BDArmory.Modules
                 Fields["guiIFFString"].guiActive = false;
                 Fields["detonationRange"].guiActiveEditor = false;
                 Fields["detonationRange"].guiActive = false;
+                Fields["detonateAtMinimumDistance"].guiActiveEditor = false;
+                Fields["detonateAtMinimumDistance"].guiActive = false;
             }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
@@ -309,7 +312,7 @@ namespace BDArmory.Modules
                     direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
                 }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1);
                 hasDetonated = true;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
             }

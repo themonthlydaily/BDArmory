@@ -207,7 +207,7 @@ namespace BDArmory.UI
                                         Vector2 guiPos;
                                         string UIdist;
                                         string UoM;
-                                        if (Dist.magnitude > 100)
+                                        if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
                                         {
                                             if ((Dist.magnitude / 1000) >= 1)
                                             {
@@ -238,7 +238,7 @@ namespace BDArmory.UI
                                 Vector3 sPos = FlightGlobals.ActiveVessel.vesselTransform.position;
                                 Vector3 tPos = v.Current.vesselTransform.position;
                                 Vector3 Dist = (tPos - sPos);
-                                if (Dist.magnitude > 100)
+                                if (Dist.magnitude > BDTISettings.DISTANCE_THRESHOLD)
                                 {
                                     BDGUIUtils.DrawTextureOnWorldPos(v.Current.CoM, BDTISetup.Instance.TextureIconDebris, new Vector2(20, 20), 0);
                                 }
@@ -254,6 +254,7 @@ namespace BDArmory.UI
                             while (wm.MoveNext())
                             {
                                 if (wm.Current == null) continue;
+                                if (!BDTISetup.Instance.ColorAssignments.ContainsKey(wm.Current.Team.Name)) continue; // Ignore entries that haven't been updated yet.
                                 Teamcolor = BDTISetup.Instance.ColorAssignments[wm.Current.Team.Name];
                                 IconUIStyle.normal.textColor = Teamcolor;
                                 if (wm.Current.vessel.isActiveVessel)
@@ -264,7 +265,7 @@ namespace BDArmory.UI
                                         Vector3 sPos = FlightGlobals.ActiveVessel.CoM;
                                         Vector3 tPos = (wm.Current.currentTarget.Vessel.CoM);
                                         Vector3 RelPos = (tPos - sPos);
-                                        if (RelPos.magnitude >= 100)
+                                        if (RelPos.magnitude >= BDTISettings.DISTANCE_THRESHOLD)
                                         {
                                             DrawThreatIndicator(wm.Current.vessel.CoM, wm.Current.currentTarget.Vessel.CoM, Teamcolor);
                                         }
@@ -284,7 +285,7 @@ namespace BDArmory.UI
                                     string selectedWeapon = String.Empty;
                                     string AIstate = String.Empty;
                                     distance = targetRelPos.magnitude;
-                                    if (distance >= 100)
+                                    if (distance >= BDTISettings.DISTANCE_THRESHOLD)
                                     {
                                         if ((distance / 1000) >= 1)
                                         {
@@ -361,10 +362,10 @@ namespace BDArmory.UI
                                                 BDArmory.Control.ScoringData scoreData = null;
                                                 int Score = 0;
 
-                                                if (BDACompetitionMode.Instance.Scores.ContainsKey(wm.Current.vessel.vesselName))
+                                                if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(wm.Current.vessel.vesselName))
                                                 {
-                                                    scoreData = BDACompetitionMode.Instance.Scores[wm.Current.vessel.vesselName];
-                                                    Score = scoreData.Score;
+                                                    scoreData = BDACompetitionMode.Instance.Scores.ScoreData[wm.Current.vessel.vesselName];
+                                                    Score = scoreData.hits;
                                                 }
                                                 if (VesselSpawner.Instance.vesselsSpawningContinuously)
                                                 {
@@ -381,7 +382,7 @@ namespace BDArmory.UI
                                             {
 
                                                 double hpPercent = 1;
-                                                hpPercent = Mathf.Clamp((1 - ((wm.Current.totalHP - wm.Current.vessel.parts.Count) / wm.Current.totalHP)), 0, 1);
+                                                hpPercent = Mathf.Clamp(wm.Current.currentHP / wm.Current.totalHP, 0, 1);
                                                 if (hpPercent > 0)
                                                 {
                                                     Rect barRect = new Rect((guiPos.x - (32 * BDTISettings.ICONSCALE)), (guiPos.y + (30 * BDTISettings.ICONSCALE)), (64 * BDTISettings.ICONSCALE), 12);
@@ -421,7 +422,7 @@ namespace BDArmory.UI
                                                 Rect RAltRect = new Rect((guiPos.x - (96 * BDTISettings.ICONSCALE)), guiPos.y + 80, 100, 32);
                                                 GUI.Label(RAltRect, "Alt: " + wm.Current.vessel.altitude.ToString("0.0") + "m", IconUIStyle);
                                                 Rect ThrottleRect = new Rect((guiPos.x - (96 * BDTISettings.ICONSCALE)), guiPos.y + 96, 100, 32);
-                                                GUI.Label(ThrottleRect, "Throttle: " + Mathf.CeilToInt(wm.Current.vessel.ctrlState.mainThrottle*100) + "%", IconUIStyle);
+                                                GUI.Label(ThrottleRect, "Throttle: " + Mathf.CeilToInt(wm.Current.vessel.ctrlState.mainThrottle * 100) + "%", IconUIStyle);
                                             }
                                         }
                                     }

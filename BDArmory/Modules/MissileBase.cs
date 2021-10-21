@@ -132,7 +132,7 @@ namespace BDArmory.Modules
         public float BallisticAngle = 45.0f;
 
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseAltitude"), UI_FloatRange(minValue = 1f, maxValue = 500f, stepIncrement = 10f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise Altitude
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseAltitude"), UI_FloatRange(minValue = 5f, maxValue = 500f, stepIncrement = 5f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise Altitude
         public float CruiseAltitude = 500;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CruiseSpeed"), UI_FloatRange(minValue = 100f, maxValue = 6000f, stepIncrement = 50f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]//Cruise speed
@@ -185,6 +185,10 @@ namespace BDArmory.Modules
         public Vessel SourceVessel { get; set; } = null;
 
         public bool HasExploded { get; set; } = false;
+
+        public int clusterbomb { get; set; } = 1;
+
+        public bool EMP { get; set; } = false;
 
         protected IGuidance _guidance;
 
@@ -322,10 +326,11 @@ namespace BDArmory.Modules
             var explosive = p.FindModuleImplementing<BDExplosivePart>();
             if (explosive != null)
             {
-                p.FindModuleImplementing<BDExplosivePart>().Armed = true;
+                explosive.Armed = true;
+                explosive.detonateAtMinimumDistance = DetonateAtMinimumDistance;
                 if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
                 {
-                    p.FindModuleImplementing<BDExplosivePart>().Shaped = true;
+                    explosive.Shaped = true;
                 }
             }
         }
@@ -571,7 +576,12 @@ namespace BDArmory.Modules
                         {
                             TargetAcquired = true;
                             radarTarget = t;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition;
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = radarTarget.acceleration;
                             _radarFailTimer = 0;
@@ -595,7 +605,12 @@ namespace BDArmory.Modules
                                 _radarFailTimer += Time.fixedDeltaTime;
                                 radarTarget.timeAcquired = Time.time;
                                 radarTarget.position = radarTarget.predictedPosition;
-                                TargetPosition = radarTarget.predictedPositionWithChaffFactor;
+                                if (weaponClass == WeaponClasses.SLW)
+                                {
+                                    TargetPosition = radarTarget.predictedPosition;
+                                }
+                                else
+                                    TargetPosition = radarTarget.predictedPositionWithChaffFactor;
                                 TargetVelocity = radarTarget.velocity;
                                 TargetAcceleration = Vector3.zero;
                                 TargetAcquired = true;
@@ -660,7 +675,13 @@ namespace BDArmory.Modules
                                         radarTarget = scannedTargets[i];
                                         TargetAcquired = true;
                                         radarLOALSearching = false;
-                                        TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                                        if (weaponClass == WeaponClasses.SLW)
+                                        {
+                                            TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                                        }
+                                        else
+                                            TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+
                                         TargetVelocity = radarTarget.velocity;
                                         TargetAcceleration = radarTarget.acceleration;
                                         _radarFailTimer = 0;
@@ -695,8 +716,14 @@ namespace BDArmory.Modules
                         if (radarLOAL)
                         {
                             radarLOALSearching = true;
-                            TargetAcquired = true;
-                            TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                            TargetAcquired = true;    
+                            if (weaponClass == WeaponClasses.SLW)
+                            {
+                                TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                            }
+                            else
+                                TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+
                             TargetVelocity = radarTarget.velocity;
                             TargetAcceleration = Vector3.zero;
                             ActiveRadar = false;
@@ -766,7 +793,12 @@ namespace BDArmory.Modules
                     radarTarget = lockedTarget;
                     TargetAcquired = true;
                     radarLOALSearching = false;
-                    TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
+                    if (weaponClass == WeaponClasses.SLW)
+                    {
+                        TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
+                    }
+                    else
+                        TargetPosition = radarTarget.predictedPositionWithChaffFactor + (radarTarget.velocity * Time.fixedDeltaTime);
                     TargetVelocity = radarTarget.velocity;
                     TargetAcceleration = radarTarget.acceleration;
 
@@ -1122,10 +1154,10 @@ namespace BDArmory.Modules
             {
                 Events["CruiseAltitudeRange"].guiName = "Change to High Altitude Range";
 
-                UI_FloatRange cruiseAltitudField = (UI_FloatRange)Fields["CruiseAltitude"].uiControlEditor;
-                cruiseAltitudField.maxValue = 500f;
-                cruiseAltitudField.minValue = 1f;
-                cruiseAltitudField.stepIncrement = 5f;
+                UI_FloatRange cruiseAltitudeField = (UI_FloatRange)Fields["CruiseAltitude"].uiControlEditor;
+                cruiseAltitudeField.maxValue = 500f;
+                cruiseAltitudeField.minValue = 5f;
+                cruiseAltitudeField.stepIncrement = 5f;
             }
             else
             {

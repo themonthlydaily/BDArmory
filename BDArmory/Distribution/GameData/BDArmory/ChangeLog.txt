@@ -1,4 +1,300 @@
-﻿v1.4.7.1
+﻿v1.4.11.2
+FIXES 
+	- Fix Intake Battle Damage issue.
+	- Intake Battle Damage now clamped to a minimum of 1/4 original intake area.
+	- AP rounds that penetrate multiple parts now only register a single 'hit' for scoring.
+	- Fixes Nuke FX scale and scaling.
+IMPROVEMENTS
+	- Adds Armour Reset toggle to BDA settings menu to reset craft armor/hull material to defaults.
+	- Missiles can now use in-flight animations with the 'flightAnimationName =' field.
+	- Adds config fields to BDModuleNuke for setting custom FX/sound.
+	- Nukes now have Editor info cards.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Added Armor Reset toggle.
+
+v1.4.11.1
+FIXES
+IMPROVEMENTS
+	- Adds AIR-2 Genie example weapon.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+
+v1.4.11.0
+FIXES
+	- Fix some exceptions related to flames.
+	- Fix for spawning where VESSELNAMING tag is different from the vessel's name (the name gets reverted so that the VESSELNAMING tag is effectively ignored).
+	- Fix bug where interrupted tournaments could lose team information.
+	- Fix exception in Team Icons.
+	- Allow extra attempt at spawning when no terrain was found as it sometimes works the second time.
+	- Fixes laser damage calc incorrectly using laser part armor thickness instead of target.
+	- Fixes AI not using AGMS against ground targets.
+	- Fixes sabot deformation.
+	- Fixes missiles not respecting max missiles per target setting.
+	- Rockets will now properly score only a single hit if HE.
+	- Scoring now tracks rockets fired.
+	- EMPs from nukes will no longer repeatedly fry a hit vessel.
+IMPROVEMENTS
+	- General:
+		- Add optional persistent FX for smoke/debris from explosions.
+		- Explosions will now damage a part if detonating inside it.
+		- Adds generic FX spawner.
+		- Renames RWPS3R2NukeModule to BDModuleNuke, and expands it into a missile-usable module.
+		- Adds some FX to nuke detonations.
+		- Nukes now act like explosions and delay damage/heat/impulse imparted to target based on distance from detonation.
+	- UI:
+		- Reworks the BDA Settings Menu to be less cluttered/more organized/intuitive.
+		- Less commonly used toggles/settings now enabled via Advanced User Settings toggle.
+		- Disable Kill Timer setting removed, this is now handled by the Kill Timer slider.
+		- Vessel tracing manual toggle moved from the Vessel Switcher Window to the Settings window (in the Other section when Advanced User Settings is enabled).
+		- Settings window doesn't automatically close when starting a competition.
+		- Settings are saved when switching scenes if the UI is open.
+	- Tournaments:
+		- Add an 'Auto-Resume Tournaments' option to automatically load the savegame associated with an unfinished tournament, enter flight mode and resume the tournament on KSP launch.
+		- Add an 'Auto-Quit Memory Threshold' option (when auto-resuming tournaments is enabled) to automatically quit KSP between heats if the managed memory is above a threshold. Note: native (unmanaged) memory is not measurable from within Unity, so actual memory usage may be higher. In particular, the GfxDriver can use around 5GB of memory, but isn't measurable in non-debug versions of the Unity player. See the "DEBUG Memory Usage" lines in the KSP.log.
+		- Add results.json parser for N-choose-K style tournaments to produce a table of who-beat-who."
+		- Expand the 'Folders' teams mode for spawning and tournaments to 'Per Folder / Per Craft File' where, if no subfolders are found, then each craft file in the folder is treated as if it were in a subfolder with the name of the craft file (minus the '.craft').
+	- Competitions:
+		- Landed Kill Timer no longer affects vessels using Surface AIs.
+	- AI:
+		- Apply a correction to the roll target when a low-altitude inverted-roll is requested to avoid looping down and immediately triggering terrain avoidance.
+	- Armor:
+		- Adds numeric field to Armor GUI thickness slider.
+		- Allow armor thickness adjustment in non-"integer of 5" increments.
+		- Remove lowered max temp of aluminum/steel hulls.
+	- Bullets:
+		- Sabot rounds now identified via mass, caliber, and length instead of caliber and velocity.
+		- Bullet deformation now controlled by caliber and HE ratio.
+		- Rework bullet collision, bullets now do both entry and exit damage to parts they (over)penetrate.
+		- Adds three new fuze types - Impact, Delay, and Penetrating.
+		- Proximity/Timed fuze rounds will not detonate if they hit something within their arming dist.
+	- Battle Damage:
+		- Fires Add Heat no longer prevents damage from occurring.
+		- Add Battle Damage option for fire damage to scale to fire intensity.
+		- Engines and intakes now properly take Battle Damage relative to damage taken.
+		- Engines now properly clamp thrust to thrust floor value when Battle Damage.
+		- Default Battle Damage settings are mostly true by default.
+	- Evolution:
+		- Add a hidden AUTO_RESUME_EVOLUTION setting to resume evolution on restarting KSP (similar to and overrides the 'Auto-Resume Tournaments' setting).
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Performance Logging option removed as it did nothing.
+	- InstaKill option removed (only affects lasers, use the InstaGib mutator instead).
+	- Auto-resume tournaments and Auto-quit KSP advanced options added to the Gameplay section, plus a hidden Auto-resume evolution setting.
+	- Persistent FX setting added.
+
+v1.4.10.0
+FIXES
+	- General:
+		- Consider 'splashed' vessels as 'landed' when spawning.
+		- Symmetric parts are updated when armour type or hull material is adjusted in the editor.
+		- Fix exception in updating radar locked targets.
+		- Remove duplicate 'Detonate At Minimum Distance' toggle from non-modular missiles.
+	- AI GUI:
+		- Get the AI on the initial load when reverting to the editor.
+		- Fix the AI GUI updating the values when switching vessels when using numeric fields.
+		- Fix some surface AI values being initialised from the wrong variables in the AI GUI.
+	- Mutators:
+		- Fix speed mutators from setting engine throttle to 0.
+		- Fix mutator mode interaction with weapon arenas and impulse weapons (gravity gun).
+	- Weapons:
+		- Fix some weapon selection criteria.
+		- Fix lasers doing negative damage.
+		- Fixes issue where AI would sometimes select rockets over guns for AtA when gun was superior option.
+		- Fixes some typos in Stingray.cfg.
+		- Torpedoes are no longer affected by Chaff.
+		- Beam-guided munitions can now properly target splashed targets.
+	- Battle Damage:
+		- Heartbleed/Armor melting no longer occurs when game is paused
+		- Adds check so empty fuel tanks will no longer catch fire if part temp exceeds fuel ignition point.
+		- Autoigniting fuel tanks will only add a single fire.
+		- Removes ability to add firebottles to SRBs.
+		- Fuel Tanks/Ammo Boxes now require 'Fires' and 'Fires Add Heat' enabled in Battle Damage settings to catch fire if too hot.
+		- Burning Fuel tanks now properly destroy the part if they explode.
+	- SPH/VAB
+		- The Armor Tool GUI will no longer reset armor thickness of all parts to 10 when opened.
+IMPROVEMENTS
+	- Weapons:
+		- Adds clusterbombs to weapon selection logic.
+		- Adds support for beam-guided AtA missiles.
+		- AI should now select best, rather than first, bomb available when attacking ground targets.
+		- Selection logic now weights cluster ammo for missile interception.
+		- AI will can now select rockets/lasers to use at close range against underwater targets.
+		- AI can now target flying targets with laser-guided munitions.
+		- AI will not use EMP missiles against targets that are currently EMP'ed.
+		- Adds water splash FX for bullets hitting water.
+		- Bullets can now ricochet off water.
+		- Added an "Underwater Bullet Drag" option for bullets and rockets to have considerable drag when in water. When enabled, the following applies:
+			- Bullets with caliber < 75 and rockets fired from above water stop when entering water and explode if they're explosive.
+			- Rockets with sufficient thrust duration can be fired from underwater at splashed/submerged targets that are close enough.
+			- Weapons targeting nearly fully submerged targets will target the water surface immediately above the target.
+			- Weapon selection updated to reflect the above changes.
+			- AI will no longer select guns when underwater.
+	- UI:
+		- Add a toggle for showing the competition status messages with the UI hidden.
+		- Add option to TimeWarp between tournament rounds (not heats) on planets with a solid surface (due to a technical constraint).
+		- Add Underwater vessel status to LoadedVesselSwitcher window and put the status after the vessel name.
+		- Expand the low altitude GM kill limit to depths of -10km.
+		- A clearer message when a tournament stops due to spawning/competition start failures.
+		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles.
+	- Internal:
+		- Adjust camera weights for picking a better vessel to switch to.
+		- Add a IsUnderwater vessel extension.
+		- Adds hidden legacy armor toggle to disable armor overhaul changes (armor types/hull material) accessible via editing settings.cfg.
+	- General:
+		- Adjust armor panel buoyancy, armor panels will float again when at max thickness.
+		- Automatically create a GameData/Custom/Flags directory for standardising the location of flags for BDArmory competitions.
+		- Price rebalance.
+		- Some RWP specific options (to be decalred once the rounds have been run).
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Low altitude kill limit expanded and "Off" value changed.
+	- Legacy armour option added (config file only).
+	- Competition status messages with hidden UI option added.
+	- Underwater bullet drag option added.
+
+v1.4.9.1
+FIXES
+	- Fix various fields in the AI GUI for surface AIs.
+	- Fix broadside direction to not be reversed.
+	- Set default mutator mode (for new installs) to false.
+	- Add missing checks for empty mutator list (was causing competitions to fail to start).
+	- Fix laser damage calculation.
+
+v1.4.9.0
+FIXES
+	- Fixes an NRE in PartExtension.GetSize that was causing KSP to crash when deploying a flag.
+	- Properly reset the AIGUI input fields when adding and removing multiple AIs.
+	- Add missing field to surface AI input fields.
+	- Fix Evolution UI bug and allow 0 adversaries.
+	- Make the CASE-I explosion directed in the up direction of the part.
+	- Check for null vessels in ForceUpdateRadarCrossSections (fixes competitions not starting due to this exception).
+	- When setting HP of parts, use an alternate approach to getting volume based on partSize when GetAverageBoundSize gives ridiculous results. Failing that, just base it on mass. (Fixes HP on TweakScale and AP+ parts.)
+	- Actually run the armour and hull setup functions in flight mode.
+	- Add conformal decal exception to HP/Armor visualizer.
+	- Make rendering of RCS snapshots and HP/Armor visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
+	- Various fixes for shrapnel damage.
+	- Fix penetration velocity reduction.
+	- Fix barrage mode not cycling through singlebarrel weapons.
+	- Fix RPM for multibarrel weapons, actual RPM is now listed RPM, not listed RPM * num of barrels.
+	- Fix occasional NRE in AnalyseCollision.
+IMPROVEMENTS
+	- Internal:
+		- Add angle parameter for creating directed explosions (defaults to 100°).
+		- Log 'StopCompetition' events to the log as well as the screen.
+	- Armor:
+		- Add attach node sizes to armor panels.
+		- Add Editor RMB context info for armor panels to inform players of panel armor mass.
+	- AI:
+		- Allow collision avoidance detection from vessels approaching from behind.
+		- Don't apply premature dive fix when evading.
+		- Add an option to ignore gunfire from the current target for evasion purposes. (I.e., don't trigger evasion when jousting, only from other sources.)
+	- Game modes:
+		- Add Asteroid Field game mode, with anomalous attraction option.
+		- Add Mutator mode:
+			- Select one or more mutators to change up how weapons and craft behave for the round.
+			- Mutators can be applied globally, per vessel, or on kill.
+KNOWN ISSUES
+	- Occasional graphical glitch for proc wings in the SPH/VAB due to HP/Armor visualizer. Doesn't affect flight mode and the color resets if the craft is reloaded or the proc wings color settings are nudged.
+
+v1.4.8.2
+FIXES
+	- Fixes armor panel settings not persisting from Editor to Flight.
+	- Fixes steel hull material massively increasing weight.
+	- Triangular armor panels/wings now properly have 1/2 armor mass of rectangular panels.
+	- Put the Gau-22 in the correct category in the SPH.
+	- Fix minor mesh errors on the Sidam.
+	- Don't detonate CASE ammo on vessel packing or unloading.
+	- More fixes for proc-wings:
+		- HP is updated properly on vessel load.
+		- Mostly fixed interaction between the HP/Armor visualizer and proc wings shaders.
+IMPROVEMENTS
+	- Add a slider for controlling the distance threshold of showing team icons.
+
+KNOWN ISSUES
+	- Occasional graphical glitch for proc wings in the SPH/VAB due to HP/Armor visualizer. Doesn't affect flight mode and the color resets if the craft is reloaded or the proc wings color settings are nudged.
+	- Flickering of the RCS window, particularly when the Armor window is open. 
+	- Tweakscale HP is misbehaving beyond certain size changes.
+
+v1.4.8.1
+FIXES
+	- Fix (mostly) Pwing - HPVisualizer issue
+	- Fix burstfire
+	- Fix procwing HP bug
+IMPROVEMENTS
+	- Internal stuff:
+		- Implement the AddPlayerToRammingInformation and RemovePlayerFromRammingInformation functions (not used yet).
+
+v1.4.8.0
+FIXES
+	- Fix logic of which vessels to ignore in RCS snapshots.
+	- onDisable -> OnDisable. Deactivate FireFX properly such that the parentPart always gets cleared (also in FuelLeakFX.cs).
+	- Fix line-of-sight checks in ExplosionFX for exploding parts on vessels.
+	- Don't detonate for surface fires, excess fuel explosions cause surface fires.
+	- Don't trigger CASE ammo explosions on scene changes.
+	- Fix rippleRPM.
+	- Fixes to burstfire.
+	- Fix checks for uncontrolled vessels.
+	- Fix LangVersion in .csproj to build with later than C# 7.3.
+	- Fix missing team in summary when the team is only dead.
+	- Fix bug with 'dead teams' in tournament parser script.
+	- A variety of minor bug fixes and optimisations.
+IMPROVEMENTS
+	- General:
+		- Adds support for weapons with multiple fire animations or barrels (battleship guns/wirbelwinds/etc).
+		- Adds Sidam quad 25mm to demonstrate multi-fireanim/multi-barrel functionality, and the GAU-22 to provide a fixed 25mm weapon.
+		- Fix fuel fires/ammo explosions occasionally yielding larger than expected damage.
+		- Ammo explosion max damage now capped.
+		- Weapons with integral CASE will no longer add an additional 2000 funds to part cost on load.
+		- Add N-choose-K style tournament option.
+		- Variant engine for automated craft evolution.
+	- AI/WM:
+		- Added stand-off distance to try to avoid getting closer than this distance when tailing another craft.
+		- Improved vessel-vessel collision avoidance based on look-ahead and avoidance strength and only avoiding as long as necessary (note: this uses different settings in the pilot AI, so old craft may need re-tuning for this).
+		- Expand targeting logic for rockets.
+		- Adds AI GUI, available in both editors and in flight, with configurable hotkey (default 'Numpad /') and optional toolbar button.
+		- Expands Weapon Manager GUI, adds target priorities tab.
+		- Adds togglable context labels and infolinks to AI and WM GUIs for on-hand info about what each setting does.
+		- Ki improvements with 0.995 decay factor and fixed +1/-1 clamps.
+		- Update target priority to work for ground targets.
+	- Armor Overhaul:
+		- Armor now adds mass to craft, relative to thickness and part size.
+		- Can now select from multiple armor materials, each with their own strengths and weaknesses.
+		- Adds spalling damage from near-penetrating hits.
+		- Adds shrapnel damage from explosive detonations.
+		- Adds Armor tool to SHP/VAB editors for easy armor manipulation across a craft.
+		- Adds HP visualizer, to see HP of all parts across craft.
+	- GameModes:
+		- Adds Space Tools BDA setting.
+			- Adds Space Friction toggle for starwars-style space dogfights.
+			- Adds contragrav setting for atmospheric use for things that reasonably shouldn't fly - sky battleships/stock zeppelins/etc - or for null-atmo fights where wings can't generate lift.
+			- Adds repulsor setting for hover vehicles.
+		- Rework Tag mode to use the new scoring datastructure.
+	- Scoring:
+		- Rework the code interally for a more consistent approach.
+		- Sliders for controlling the time limits for head-shots and kill-steals.
+		- Head-shots are now separated into clean-kills (within the time limit and was the only plane to damage the target), head-shot (within the time limit, but not the only plane to damage the target) and kill-steals (within both time limits).
+		- Separate scoring categories for rockets and battle damage, giving: bullets, rockets, missiles, ramming and battle damage (including self-inflicted).
+		- Improve score-related UI messages.
+		- Updated parsing script to handle these new categories.
+		- Remote orchestration is not yet updated, so report rocket damage as missile damage to the remote orchestration for now.
+		- Fix bugs in continuous spawning and integrate it into the new scoring datastructure.
+	- UI:
+		- Always show a clock during competitions and competition start for time synchronisation of video post-processing.
+		- Add the AI/WM GUI toggle hotkeys into the hotkey settings so they can be set.
+		- Increase the default width of the vessel spawner window a bit to fit the tournament status for long tournaments. Automatically adjust existing window width if running a tournament with >99 heats.
+		- Extra damage sliders for rocket and battle damage multipliers.
+		- Add an Advanced Tweakables toggle to the BDArmory settings for easier access.
+		- Add a toggle for the BDA AI toolbar button.
+	- Internal stuff:
+		- Balance for 25mm round (tested in FJRT2).
+		- Adjustment of battle damage damage.
+		- Automatically create the AutoSpawn folder on entering flight mode if it doesn't already exist.
+		- Move toolbar button logic to BDArmorySetup.cs and enable toolbar button in SPH and VAB too for accessing BDA settings window.
+		- Move SpawnField class to BDArmory.UI.NumericInputField.
+		- Track the current HP ignoring ignored parts as needed.
+		- Deprecate BD_AMMO_DMG_MULT.
+		- CASE now uses EST.BattleDamage.
+		- Change competition update tick to 1s to match best precision of vessel state checks.
+		- Detection of crew being killed in 'uncontrolled' checks.
+
+v1.4.7.1
 FIXES
 	- Quick fix for craft names using invalid filename chars in the remote orchestration.
 	- Hide the Asteroid Rain radius slider when Follow Spread is enabled.

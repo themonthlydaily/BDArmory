@@ -6,6 +6,7 @@ using BDArmory.Core.Extension;
 using BDArmory.FX;
 using BDArmory.Modules;
 using BDArmory.Control;
+using BDArmory.Core.Module;
 
 namespace BDArmory.Misc
 {
@@ -14,6 +15,16 @@ namespace BDArmory.Misc
         public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc)
         {
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            {
+                if (!BDArmorySettings.ALLOW_S4R2_BD)
+                {
+                    if (part.vessel.rootPart != null)
+                    {
+                        if (part != part.vessel.rootPart) return;
+                    }
+                }
+            }
             if (ProjectileUtils.IsIgnoredPart(part)) return; // Ignore ignored parts.
 
             double damageChance = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE * ((1 - part.GetDamagePercentage()) * 10) * (penetrationFactor / 2)), 0, 100); //more heavily damaged parts more likely to take battledamage
@@ -32,7 +43,7 @@ namespace BDArmory.Misc
                     {
                         if (alreadyburning != null)
                         {
-                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                         }
                         else
                         {
@@ -43,7 +54,7 @@ namespace BDArmory.Misc
             }
             if (BDArmorySettings.BD_FIRES_ENABLED)
             {
-                if (part.isBattery())
+                if (part.isBattery() && part.GetDamagePercentage() < 0.95f)
                 {
                     var alreadyburning = part.GetComponentInChildren<FireFX>();
                     if (alreadyburning == null)
@@ -60,13 +71,29 @@ namespace BDArmory.Misc
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Battery Dice Roll: " + Diceroll);
                         if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
                         {
-                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
+                        }
+                    }
+                }
+            }
+            var Armor = part.FindModuleImplementing<HitpointTracker>();
+            if (Armor != null)
+            {
+                if (Armor.HullTypeNum == 1) //wooden parts can potentially catch fire
+                {
+                    if (incendiary)
+                    {
+                        double Diceroll = UnityEngine.Random.Range(0, 100);
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Wood part Dice Roll: " + Diceroll);
+                        if (Diceroll <= BDArmorySettings.BD_DAMAGE_CHANCE)
+                        {
+                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 90);
                         }
                     }
                 }
             }
             //AmmoBins
-            if (BDArmorySettings.BD_AMMOBINS && part.GetDamagePercentage() < 0.9f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
+            if (BDArmorySettings.BD_AMMOBINS && part.GetDamagePercentage() < 0.95f) //explosions have penetration of 0.5, should stop explosions phasing though parts from detonating ammo
             {
                 var ammo = part.FindModuleImplementing<ModuleCASE>();
                 if (ammo != null)
@@ -94,49 +121,36 @@ namespace BDArmory.Misc
             //Propulsaion Damage
             if (BDArmorySettings.BD_PROPULSION)
             {
+                BattleDamageTracker tracker = part.gameObject.AddOrGetComponent<BattleDamageTracker>();
+                tracker.Part = part;
                 if (part.isEngine() && part.GetDamagePercentage() < 0.95f) //first hit's free
                 {
                     foreach (var engine in part.GetComponentsInChildren<ModuleEngines>())
                     {
-                        bool isSRB = false;
-                        bool SRBFuelled = false;
-                        if (!engine.allowShutdown && engine.throttleLocked)
-                        {
-                            isSRB = true;
-                            using (IEnumerator<PartResource> resources = part.Resources.GetEnumerator())
-                                while (resources.MoveNext())
-                                {
-                                    if (resources.Current == null) continue;
-                                    if (resources.Current.resourceName.Contains("SolidFuel"))
-                                    {
-                                        if (resources.Current.amount > 1d)
-                                        {
-                                            SRBFuelled = true;
-                                        }
-                                    }
-                                }
-                        }
                         if (engine.thrustPercentage > BDArmorySettings.BD_PROP_FLOOR) //engines take thrust damage per hit
                         {
                             //AP does bonus damage
-                            engine.thrustPercentage -= (((1 - part.GetDamagePercentage()) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE)*10; //convert from damagepercent to thrustpercent
-                            Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
+                            engine.thrustPercentage -= ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * (penetrationFactor / 2)) * BDArmorySettings.BD_PROP_DAM_RATE) * 10; //convert from damagepercent to thrustpercent
+                            //use difference in old Hp and current, not just current, else it doesn't matter if its a heavy hit or chipped paint, thrust reduction is the same
+                            engine.thrustPercentage = Mathf.Clamp(engine.thrustPercentage, BDArmorySettings.BD_PROP_FLOOR, 100); //even heavily damaged engines will still put out something
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: engine thrust: " + engine.thrustPercentage);
                             engine.PlayFlameoutFX(true);
+                            tracker.oldDamagePercent = part.GetDamagePercentage();
                             /*
-                            float enginelevel = engine.thrustPercentage;
-                            if (BDArmorySettings.BD_BALANCED_THRUST) //need to poke this more later, not working properly
+                            if (BDArmorySettings.BD_BALANCED_THRUST && !isSRB) //need to poke this more later, not working properly
                             {
-                                using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                                using (List<Part>.Enumerator pSym = part.vessel.Parts.GetEnumerator())
                                     while (pSym.MoveNext())
                                     {
                                         if (pSym.Current == null) continue;
-                                        if (pSym.Current != part && pSym.Current.vessel == part.vessel)
+                                        if (pSym.Current != part)
                                         {
-                                            var symEngine = pSym.Current.FindModuleImplementing<ModuleEngines>();
-                                            if (symEngine != null)
+                                            if (pSym.Current.isSymmetryCounterPart(part))
                                             {
-                                                symEngine.thrustPercentage = enginelevel;
+                                                foreach (var SymEngine in pSym.Current.GetComponentsInChildren<ModuleEngines>())
+                                                {
+                                                    SymEngine.thrustPercentage = engine.thrustPercentage;
+                                                }
                                             }
                                         }
                                     }
@@ -146,7 +160,7 @@ namespace BDArmory.Misc
                         if (part.GetDamagePercentage() < 0.75f || (part.GetDamagePercentage() < 0.82f && penetrationFactor > 2))
                         {
                             var leak = part.GetComponentInChildren<FuelLeakFX>();
-                            if (leak == null && !isSRB) //engine isn't a srb
+                            if (leak == null && !tracker.isSRB) //engine isn't a srb
                             {
                                 BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker);
                             }
@@ -154,26 +168,26 @@ namespace BDArmory.Misc
                         if (part.GetDamagePercentage() < 0.50f || (part.GetDamagePercentage() < 0.625f && penetrationFactor > 2))
                         {
                             var alreadyburning = part.GetComponentInChildren<FireFX>();
-                            if (isSRB) //srbs are steel tubes full of explosives; treat differently
+                            if (tracker.isSRB) //srbs are steel tubes full of explosives; treat differently
                             {
-                                if ((explosivedamage || incendiary) && SRBFuelled)
+                                if ((explosivedamage || incendiary) && tracker.SRBFuelled)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker);
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                                 }
                             }
                             else
                             {
                                 if (alreadyburning == null)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, -1, 1, true);
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1, true);
                                 }
                             }
                         }
-                        if (part.GetDamagePercentage() < (BDArmorySettings.BD_PROP_FLAMEOUT/100))
+                        if (part.GetDamagePercentage() < (BDArmorySettings.BD_PROP_FLAMEOUT / 100))
                         {
                             if (engine.EngineIgnited)
                             {
-                                if (isSRB) //SRB is lit, and casing integrity fails due to damage; boom
+                                if (tracker.isSRB) //SRB is lit, and casing integrity fails due to damage; boom
                                 {
                                     var Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
                                     Rupture.CASELevel = 0;
@@ -192,23 +206,29 @@ namespace BDArmory.Misc
                 if (BDArmorySettings.BD_INTAKES) //intake damage
                 {
                     var intake = part.FindModuleImplementing<ModuleResourceIntake>();
+                    //if (part.isAirIntake(intake)) instead? or use vesselregistry
                     if (intake != null)
                     {
+                        if (tracker.origIntakeArea < 0)
+                        {
+                            tracker.origIntakeArea = intake.area;
+                        }
                         float HEBonus = 0.7f;
                         if (explosivedamage)
                         {
                             HEBonus = 1.4f;
                         }
+
                         if (incendiary)
                         {
                             HEBonus = 1.1f;
                         }
-                        intake.intakeSpeed *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) * (BDArmorySettings.BD_PROP_DAM_RATE / 2))); //HE does bonus damage
-                        Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
+                        intake.intakeSpeed *= (1 - ((tracker.oldDamagePercent - part.GetDamagePercentage()) * HEBonus) * BDArmorySettings.BD_PROP_DAM_RATE); //HE does bonus damage
+                        intake.intakeSpeed = Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
-                        intake.area *= (1 - (((1 - part.GetDamagePercentage()) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
-                        Mathf.Clamp((float)intake.area, 0.0005f, 99999); //even shredded intake ducting will still get some air to engines
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed);
+                        intake.area -= (tracker.origIntakeArea * (((tracker.oldDamagePercent - part.GetDamagePercentage()) * HEBonus) * BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
+                        intake.area = Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea/4), 99999); //even shredded intake ducting will still get some air to engines
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Orig Area: " + tracker.origIntakeArea + "; Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed + "; intake damage: " + (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)));
                     }
                 }
                 if (BDArmorySettings.BD_GIMBALS) //engine gimbal damage
@@ -234,7 +254,7 @@ namespace BDArmory.Misc
                             gimbal.gimbalRange = 0;
                             if (incendiary)
                             {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 20);
+                                BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 20);
                             }
                         }
                     }
@@ -263,6 +283,7 @@ namespace BDArmory.Misc
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                 }
                 if (part.GetComponent<ModuleControlSurface>() != null && part.GetDamagePercentage() > 0.125f)
+                //if ( part.isControlSurface(aileron))?
                 {
                     ModuleControlSurface aileron;
                     aileron = part.GetComponent<ModuleControlSurface>();
@@ -286,9 +307,9 @@ namespace BDArmory.Misc
                             aileron.actuatorSpeed = 0;
                             aileron.authorityLimiter = 0;
                             aileron.ctrlSurfaceRange = 0;
-                            if (incendiary)
+                            if (Diceroll <= ((BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus) / 2))
                             {
-                                BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 10);
+                                BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 10);
                             }
                         }
                     }
@@ -366,7 +387,7 @@ namespace BDArmory.Misc
                     {
                         if (incendiary)
                         {
-                            BulletHitFX.AttachFire(hitLoc, part, caliber, attacker, 20);
+                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 20);
                         }
                     }
                 }

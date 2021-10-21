@@ -7,9 +7,9 @@ using UnityEngine;
 namespace BDArmory.Core
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class BDAPersistantSettingsField : Attribute
+    public class BDAPersistentSettingsField : Attribute
     {
-        public BDAPersistantSettingsField()
+        public BDAPersistentSettingsField()
         {
         }
 
@@ -27,14 +27,20 @@ namespace BDArmory.Core
             while (field.MoveNext())
             {
                 if (field.Current == null) continue;
-                if (!field.Current.IsDefined(typeof(BDAPersistantSettingsField), false)) continue;
+                if (!field.Current.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
 
                 var fieldValue = field.Current.GetValue(null);
                 if (fieldValue.GetType() == typeof(Vector2d))
+                {
                     settings.SetValue(field.Current.Name, ((Vector2d)fieldValue).ToString("G"), true);
+                }
+                else if (fieldValue.GetType() == typeof(List<string>))
+                {
+                    settings.SetValue(field.Current.Name, string.Join("; ", (List<string>)fieldValue), true);
+                }
                 else
                 {
-                    settings.SetValue(field.Current.Name, field.Current.GetValue(null).ToString(), true);
+                    settings.SetValue(field.Current.Name, fieldValue.ToString(), true);
                 }
             }
             field.Dispose();
@@ -52,7 +58,7 @@ namespace BDArmory.Core
             while (field.MoveNext())
             {
                 if (field.Current == null) continue;
-                if (!field.Current.IsDefined(typeof(BDAPersistantSettingsField), false)) continue;
+                if (!field.Current.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
 
                 if (!settings.HasValue(field.Current.Name)) continue;
                 object parsedValue = ParseValue(field.Current.FieldType, settings.GetValue(field.Current.Name));
@@ -116,6 +122,10 @@ namespace BDArmory.Core
                     double x = double.Parse(strings[0]);
                     double y = double.Parse(strings[1]);
                     return new Vector2d(x, y);
+                }
+                else if (type == typeof(List<string>))
+                {
+                    return value.Split(new string[] {"; "}, StringSplitOptions.RemoveEmptyEntries).ToList();
                 }
             }
             catch (Exception e)

@@ -12,7 +12,7 @@
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <!-- <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>False</Optimize>
@@ -32,7 +32,7 @@
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <ConsolePause>False</ConsolePause>
-  </PropertyGroup>
+  </PropertyGroup> -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
@@ -51,6 +51,7 @@
     <!-- <CodeAnalysisRuleSet>BasicCorrectnessRules.ruleset</CodeAnalysisRuleSet> -->
     <Optimize>true</Optimize>
     <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
+    <LangVersion>default</LangVersion>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
@@ -140,6 +141,7 @@
     <Compile Include="Control\BDATournament.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
     <Compile Include="Control\IBDAIControl.cs" />
+    <Compile Include="Control\MutatorInfo.cs" />
     <Compile Include="Control\VesselSpawner.cs" />
     <Compile Include="Control\VesselSpawnerField.cs" />
     <Compile Include="CounterMeasure\CMChaff.cs" />
@@ -157,12 +159,15 @@
     <Compile Include="FX\ExplosionFX.cs" />
     <Compile Include="FX\FireFX.cs" />
     <Compile Include="FX\FuelLeakFX.cs" />
+    <Compile Include="FX\FXEmitter.cs" />
+    <Compile Include="FX\NukeFX.cs" />
     <Compile Include="FX\ParticleTurbulence.cs" />
     <Compile Include="FX\ShellCasing.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
     <Compile Include="Guidances\CruiseGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
     <Compile Include="Guidances\MissileGuidance.cs" />
+    <Compile Include="Misc\BattleDamageTracker.cs" />
     <Compile Include="Misc\BDAEditorTools.cs" />
     <Compile Include="Misc\BDAModuleInfos.cs" />
     <Compile Include="Misc\BDATooltips.cs" />
@@ -183,6 +188,7 @@
     <Compile Include="Modules\Animation\BDALookConstraintUp.cs" />
     <Compile Include="Modules\Animation\BDAScaleByDistance.cs" />
     <Compile Include="Modules\BDAdjustableRail.cs" />
+    <Compile Include="Modules\BDAMutator.cs" />
     <Compile Include="Modules\BDExplosivePart.cs" />
     <Compile Include="Modules\BDGenericAIBase.cs" />
     <Compile Include="Modules\BDMMLauncher.cs" />
@@ -212,6 +218,7 @@
     <Compile Include="Modules\ModuleRadar.cs" />
     <Compile Include="Modules\ModuleReactiveArmor.cs" />
     <Compile Include="Modules\ModuleSelfSealingTank.cs" />
+    <Compile Include="Modules\ModuleSpaceFriction.cs" />
     <Compile Include="Modules\ModuleSpaceRadar.cs" />
     <Compile Include="Modules\ModuleTargetingCamera.cs" />
     <Compile Include="Modules\ModuleTurret.cs" />
@@ -219,7 +226,7 @@
     <Compile Include="Modules\ModuleWeapon.cs" />
     <Compile Include="Modules\ModuleWingCommander.cs" />
     <Compile Include="Modules\RadarWarningReceiver.cs" />
-    <Compile Include="Modules\RWPS3R2NukeModule.cs" />
+    <Compile Include="Modules\BDModuleNuke.cs" />
     <Compile Include="Modules\VesselModuleRegistry.cs" />
     <Compile Include="Parts\GPSTargetInfo.cs" />
     <Compile Include="Parts\SeismicChargeFX.cs" />
@@ -234,7 +241,9 @@
     <Compile Include="Targeting\TargetInfo.cs" />
     <Compile Include="Targeting\TargetSignatureData.cs" />
     <Compile Include="UI\BDAEditorAnalysisWindow.cs" />
+    <Compile Include="UI\BDAEditorArmorWindow.cs" />
     <Compile Include="UI\BDAEditorCategory.cs" />
+    <Compile Include="UI\BDArmoryAIGUI.cs" />
     <Compile Include="UI\BDATargetManager.cs" />
     <Compile Include="UI\BDAWindowSettingsField.cs" />
     <Compile Include="UI\BDArmorySetup.cs" />
@@ -257,6 +266,18 @@
     <Compile Include="UI\KrakensbaneDebug.cs" />
     <Compile Include="UI\LoadedVesselSwitcher.cs" />
     <Compile Include="UI\VesselSpawnerWindow.cs" />
+    <Compile Include="Evolution\BDAEvolution.cs" />
+    <Compile Include="Evolution\EvolutionWindow.cs" />
+    <Compile Include="Evolution\VariantEngine.cs" />
+    <Compile Include="Evolution\VariantMutation.cs" />
+    <Compile Include="Evolution\PilotAIMutation.cs" />
+    <Compile Include="Evolution\PilotAINudgeMutation.cs" />
+    <Compile Include="Evolution\WeaponManagerMutation.cs" />
+    <Compile Include="Evolution\WeaponManagerNudgeMutation.cs" />
+    <Compile Include="Evolution\ControlSurfaceAxisNudgeMutation.cs" />
+    <Compile Include="Evolution\EngineGimbalAxisNudgeMutation.cs" />
+    <Compile Include="Evolution\ControlSurfaceNudgeMutation.cs" />
+    <Compile Include="Evolution\EngineGimbalNudgeMutation.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BDArmory.Core\BDArmory.Core.csproj">
@@ -278,6 +299,7 @@
     <None Include="Distribution\GameData\BDArmory\AssetBundles\bdarmoryshaders_windows.bundle" />
     <None Include="Distribution\GameData\BDArmory\ATM_BDArmory.cfg" />
     <None Include="Distribution\GameData\BDArmory\BDArmory.version" />
+    <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Armors.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Bullets.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Rockets.cfg" />
     <None Include="Distribution\GameData\BDArmory\craft\BDA - Test Plane - AA.craft" />

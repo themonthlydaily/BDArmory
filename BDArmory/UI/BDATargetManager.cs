@@ -11,7 +11,6 @@ using BDArmory.Modules;
 using BDArmory.Parts;
 using BDArmory.Radar;
 using BDArmory.Targeting;
-using KSP.UI.Screens;
 using UnityEngine;
 
 namespace BDArmory.UI
@@ -30,7 +29,6 @@ namespace BDArmory.UI
         private StringBuilder debugString = new StringBuilder();
         private float updateTimer = 0;
 
-        public static bool hasAddedButton;
         static string gpsTargetsCfg = "GameData/BDArmory/PluginData/gpsTargets.cfg";
 
         void Awake()
@@ -81,9 +79,6 @@ namespace BDArmory.UI
             ActiveLasers = new List<ModuleTargetingCamera>();
 
             FiredMissiles = new List<IBDWeapon>();
-
-            //AddToolbarButton();
-            StartCoroutine(ToolbarButtonRoutine());
         }
 
         public static List<GPSTargetInfo> GPSTargetList(BDTeam team)
@@ -130,44 +125,6 @@ namespace BDArmory.UI
             LoadedVessels.RemoveAll(ves => ves == null);
             LoadedVessels.RemoveAll(ves => ves.loaded == false);
         }
-
-        void AddToolbarButton()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                if (!hasAddedButton)
-                {
-                    Texture buttonTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "icon", false);
-                    ApplicationLauncher.Instance.AddModApplication(ShowToolbarGUI, HideToolbarGUI, Dummy, Dummy, Dummy, Dummy, ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
-                    hasAddedButton = true;
-                }
-            }
-        }
-
-        IEnumerator ToolbarButtonRoutine()
-        {
-            if (hasAddedButton) yield break;
-            if (!HighLogic.LoadedSceneIsFlight) yield break;
-            while (!ApplicationLauncher.Ready)
-            {
-                yield return null;
-            }
-
-            AddToolbarButton();
-        }
-
-        public void ShowToolbarGUI()
-        {
-            BDArmorySetup.windowBDAToolBarEnabled = true;
-        }
-
-        public void HideToolbarGUI()
-        {
-            BDArmorySetup.windowBDAToolBarEnabled = false;
-        }
-
-        void Dummy()
-        { }
 
         void Update()
         {
@@ -918,8 +875,8 @@ namespace BDArmory.UI
             using (List<TargetInfo>.Enumerator target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
-                    if (target.Current == null) continue;
-                    if (target.Current && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
+                    if (target.Current == null || target.Current.Vessel == null) continue;
+                    if (mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
                     {
                         if (finalTarget == null || target.Current.NumFriendliesEngaging(mf.Team) < finalTarget.NumFriendliesEngaging(mf.Team))
                         {
@@ -940,8 +897,9 @@ namespace BDArmory.UI
             using (var target = TargetList(mf.Team).GetEnumerator())
                 while (target.MoveNext())
                 {
+                    if (target.Current == null || target.Current.Vessel == null) continue;
                     if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
-                    if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
+                    if (mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
                     {
                         float theta = Vector3.Angle(mf.vessel.srf_vel_direction, target.Current.transform.position - mf.vessel.transform.position);
                         float distance = (mf.vessel.transform.position - target.Current.position).magnitude;
@@ -965,7 +923,7 @@ namespace BDArmory.UI
                 while (target.MoveNext())
                 {
                     if (mf.multiTargetNum > 1 && mf.targetsAssigned.Contains(target.Current)) continue;
-                    if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat && !target.Current.isLandedOrSurfaceSplashed)
+                    if (target.Current != null && target.Current.Vessel && mf.CanSeeTarget(target.Current) && !target.Current.isMissile && target.Current.isThreat)
                     {
                         float targetScore = (target.Current == mf.currentTarget ? mf.targetBias : 1f) * (
                             1f +
