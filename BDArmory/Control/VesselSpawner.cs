@@ -1553,16 +1553,12 @@ namespace BDArmory.Control
             if (vessel == null) return;
             if (BDArmorySettings.ASTEROID_RAIN && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
             if (BDArmorySettings.ASTEROID_FIELD && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
-            ++removeVesselsPending;
             StartCoroutine(RemoveVesselCoroutine(vessel));
         }
-        private IEnumerator RemoveVesselCoroutine(Vessel vessel)
+        public IEnumerator RemoveVesselCoroutine(Vessel vessel)
         {
-            if (vessel == null)
-            {
-                --removeVesselsPending;
-                yield break;
-            }
+            if (vessel == null) yield break;
+            ++removeVesselsPending;
             if (vessel != FlightGlobals.ActiveVessel && vessel.vesselType != VesselType.SpaceObject)
             {
                 if (BDArmorySettings.KERBAL_SAFETY > 0)

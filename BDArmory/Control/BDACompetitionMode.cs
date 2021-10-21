@@ -2402,15 +2402,7 @@ namespace BDArmory.Control
                         var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
                         if (cometVessel) { Destroy(cometVessel); }
                     }
-                    vessel.Die();
-                    // yield return new WaitForFixedUpdate();
-                    // if (vessel != null)
-                    // {
-                    //     var partsToKill = vessel.parts.ToList();
-                    //     foreach (var part in partsToKill)
-                    //         if (part != null)
-                    //             part.Die();
-                    // }
+                    yield return VesselSpawner.Instance.RemoveVesselCoroutine(vessel);
                 }
             }
             if (nonCompetitorsToRemove.Contains(vessel))
