@@ -1201,6 +1201,7 @@ namespace BDArmory.Modules
 
         public override void OnFixedUpdate()
         {
+            if (vessel == null) return;
             if (guardMode && vessel.IsControllable)
             {
                 GuardMode();

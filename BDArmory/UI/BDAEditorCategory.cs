@@ -144,7 +144,7 @@ namespace BDArmory.UI
                             else if (parts.Current.partPrefab.FindModuleImplementing<MissileTurret>() != null)
                             {
                                 parts.Current.partConfig.AddValue(AutoBDACategoryKey, "Missile turrets");
-                            }                            
+                            }
                             else if (parts.Current.partPrefab.FindModuleImplementing<ModuleRadar>() != null)
                             {
                                 parts.Current.partConfig.AddValue(AutoBDACategoryKey, "Radars");
@@ -293,7 +293,8 @@ namespace BDArmory.UI
             BDAPartBar = BDAPartBarContainer.AddComponent<RectTransform>();
             BDAPartBar.name = "BDAPartBar";
             BDAPartBarContainer.transform.SetParent(PartCategorizer.Instance.transform, false);
-            BDAPartBar.anchoredPosition = EditorPanels.Instance.partsEditorModes.panelTransform.anchoredPosition + new Vector2(-212, -126);
+            BDAPartBar.anchoredPosition = EditorPanels.Instance.partsEditorModes.panelTransform.anchoredPosition;// + new Vector2(-212, -126);
+            var panelTop = EditorPanels.Instance.partsEditorModes.transform.position.y - 1;
 
             // BDA part category bar background
             // DOESN'T WORK, NOTHING WORKS. :(
@@ -324,7 +325,8 @@ namespace BDArmory.UI
                     button.btnToggleGeneric.onTrueBtn.RemoveAllListeners();
                     button.btnToggleGeneric.SetGroup(412440121);
                     button.transform.SetParent(BDAPartBar, false);
-                    button.transform.position = new Vector3(BDACategory.button.transform.position.x + 34, 424, 750) + button_offset * SubcategoryButtons.Count;
+                    // button.transform.position = new Vector3(BDACategory.button.transform.position.x + 34, 424, 750) + button_offset * SubcategoryButtons.Count;
+                    button.transform.position = new Vector3(BDACategory.button.transform.position.x + 34, panelTop - button_offset.y, 750) + button_offset * SubcategoryButtons.Count;
                     categorizer_button.DeleteSubcategory();
                     SubcategoryButtons.Add(button);
                     // Gotta use a saved value, because the enumerator changes the value during the run
