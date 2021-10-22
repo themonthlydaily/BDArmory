@@ -634,17 +634,14 @@ namespace BDArmory.Core.Module
                             hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
                         } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
                     }
-                    else
+                    switch (HullTypeNum)
                     {
-                        switch (HullTypeNum)
-                        {
-                            case 1:
-                                hitpoints /= 4;
-                                break;
-                            case 3:
-                                hitpoints *= 1.75f;
-                                break;
-                        }
+                        case 1:
+                            hitpoints /= 4;
+                            break;
+                        case 3:
+                            hitpoints *= 1.75f;
+                            break;
                     }
                     hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                     if (hitpoints <= 0) hitpoints = HpRounding;
