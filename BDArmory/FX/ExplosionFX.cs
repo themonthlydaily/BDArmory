@@ -528,7 +528,7 @@ namespace BDArmory.FX
                         NegativeForce = blastInfo.VelocityChange * 0.25f
                     });
 
-                    if (rb != null && rb.mass > 0)
+                    if (rb != null && rb.mass > 0 && !BDArmorySettings.PAINTBALL_MODE)
                     {
                         AddForceAtPosition(rb,
                             (eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized *
@@ -545,6 +545,7 @@ namespace BDArmory.FX
                     if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
                     {
                         damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
+                        if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
                     }
                     if (damage > 0) //else damage from spalling done in CalcExplArmorDamage
                     {
@@ -590,7 +591,7 @@ namespace BDArmory.FX
                         " TimePlanned: {" + eventToExecute.TimeToImpact + "}," +
                         " NegativePressure: {" + eventToExecute.IsNegativePressure + "}");
                 }
-                if (rb != null && rb.mass > 0)
+                if (rb != null && rb.mass > 0 && !BDArmorySettings.PAINTBALL_MODE)
                     AddForceAtPosition(rb, (Position - part.transform.position).normalized * eventToExecute.NegativeForce * BDArmorySettings.EXP_IMP_MOD * 0.25f, part.transform.position);
             }
         }

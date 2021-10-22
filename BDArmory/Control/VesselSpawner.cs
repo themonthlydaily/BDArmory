@@ -1553,16 +1553,12 @@ namespace BDArmory.Control
             if (vessel == null) return;
             if (BDArmorySettings.ASTEROID_RAIN && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
             if (BDArmorySettings.ASTEROID_FIELD && vessel.vesselType == VesselType.SpaceObject) return; // Don't remove asteroids we're using.
-            ++removeVesselsPending;
             StartCoroutine(RemoveVesselCoroutine(vessel));
         }
-        private IEnumerator RemoveVesselCoroutine(Vessel vessel)
+        public IEnumerator RemoveVesselCoroutine(Vessel vessel)
         {
-            if (vessel == null)
-            {
-                --removeVesselsPending;
-                yield break;
-            }
+            if (vessel == null) yield break;
+            ++removeVesselsPending;
             if (vessel != FlightGlobals.ActiveVessel && vessel.vesselType != VesselType.SpaceObject)
             {
                 if (BDArmorySettings.KERBAL_SAFETY > 0)
@@ -1573,17 +1569,19 @@ namespace BDArmory.Control
             else
             {
                 if (vessel.vesselType == VesselType.SpaceObject)
-                { BDACompetitionMode.Instance.RemoveSpaceObject(vessel); }
-                else
                 {
-                    vessel.Die(); // Kill the vessel
-                    yield return new WaitForFixedUpdate();
-                    if (vessel != null)
-                    {
-                        var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
-                        foreach (var part in partsToKill)
-                            part.Die();
-                    }
+                    if (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
+                    if (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
+                    var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
+                    if (cometVessel) { Destroy(cometVessel); }
+                }
+                vessel.Die(); // Kill the vessel
+                yield return new WaitForFixedUpdate();
+                if (vessel != null)
+                {
+                    var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
+                    foreach (var part in partsToKill)
+                        part.Die();
                 }
                 yield return new WaitForFixedUpdate();
             }

@@ -162,6 +162,10 @@ namespace BDArmory.Misc
             /// Sufficient penetration b bullet will result in armor spalling or failure 
             /// </summary>
             float thickness = (float)hitPart.GetArmorThickness();
+            if (thickness < 1)
+            {
+                thickness = 1; //prevent divide by zero or other odd behavior
+            }
             double volumeToReduce = -1;
             float caliberModifier = 1; //how many calibers wide is the armor loss/spall?       
             float spallMass = 0;
@@ -262,6 +266,10 @@ namespace BDArmory.Misc
             /// Shrapnel penetration dist determined by caliber, penetration. Penetration = -1 is part only hit by blast/airburst
             /// </summary>
             float thickness = (float)hitPart.GetArmorThickness();
+            if (thickness < 1)
+            {
+                thickness = 1; //prevent divide by zero or other odd behavior
+            }
             double volumeToReduce;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
@@ -394,6 +402,10 @@ namespace BDArmory.Misc
             /// </summary>
             //use blastTotalPressure to get MPa of shock on plate, compare to armor mat tolerances
             float thickness = (float)hitPart.GetArmorThickness();
+            if (thickness < 1)
+            {
+                thickness = 1; //prevent divide by zero or other odd behavior
+            }
             float spallCaliber = ((float)hitPart.radiativeArea / 3) * 10000;  //using this as a hack for affected srf. area, convert m2 to cm2
             float spallMass;
             float damage;
@@ -644,6 +656,10 @@ namespace BDArmory.Misc
         public static float CalculatePenetration(float caliber, float newCaliber, float projMass, float impactVel, float Ductility, float Density, float Strength, float thickness, float APmod, bool isSabot)
         {
             float Energy = CalculateProjectileEnergy(projMass, impactVel);
+            if (thickness < 1)
+            {
+                thickness = 1; //prevent divide by zero or other odd behavior
+            }
             //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
             float penetration;
             //bullet's deformed, penetration using larger crosssection  

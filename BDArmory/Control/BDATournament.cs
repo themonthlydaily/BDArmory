@@ -998,7 +998,7 @@ namespace BDArmory.Control
                 if (File.Exists(BDATournament.defaultStateFile)) // Tournament state file exists.
                 {
                     var tournamentState = new TournamentState();
-                    tournamentState.LoadState(BDATournament.defaultStateFile);
+                    if (!tournamentState.LoadState(BDATournament.defaultStateFile)) yield break; // Failed to load
                     savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
                     if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
                     {
