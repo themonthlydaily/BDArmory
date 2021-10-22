@@ -143,6 +143,11 @@ namespace BDArmory.Control
         {
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
+            if (float.IsNaN(damage))
+            {
+                Debug.LogError($"DEBUG {attacker} did NaN damage to {victim}!");
+                return false;
+            }
 
             if (ScoreData[victim].damageFromGuns.ContainsKey(attacker)) { ScoreData[victim].damageFromGuns[attacker] += damage; }
             else { ScoreData[victim].damageFromGuns[attacker] = damage; }
@@ -2394,14 +2399,7 @@ namespace BDArmory.Control
                 else
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                        Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.GetName());
-                    if (vessel.vesselType == VesselType.SpaceObject)
-                    {
-                        if (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
-                        if (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
-                        var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
-                        if (cometVessel) { Destroy(cometVessel); }
-                    }
+                        Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.vesselName);
                     yield return VesselSpawner.Instance.RemoveVesselCoroutine(vessel);
                 }
             }
@@ -2958,6 +2956,7 @@ namespace BDArmory.Control
         /// <param name="vessel"></param>
         public void AddPlayerToRammingInformation(Vessel vessel)
         {
+            if (rammingInformation == null) return; // Not set up yet.
             if (!rammingInformation.ContainsKey(vessel.vesselName)) // Vessel information hasn't been added to rammingInformation datastructure yet.
             {
                 rammingInformation.Add(vessel.vesselName, new RammingInformation { vesselName = vessel.vesselName, targetInformation = new Dictionary<string, RammingTargetInformation>() });
@@ -2985,6 +2984,7 @@ namespace BDArmory.Control
         /// <param name="player"></param>
         public void RemovePlayerFromRammingInformation(string player)
         {
+            if (rammingInformation == null) return; // Not set up yet.
             if (!rammingInformation.ContainsKey(player)) return; // Player isn't in the ramming information
             rammingInformation.Remove(player); // Remove the player.
             foreach (var otherVesselName in rammingInformation.Keys) // Remove the player's target information from the other players.

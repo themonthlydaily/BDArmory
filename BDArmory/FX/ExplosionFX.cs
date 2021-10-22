@@ -545,6 +545,7 @@ namespace BDArmory.FX
                     if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
                     {
                         damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
+                        if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
                     }
                     if (damage > 0) //else damage from spalling done in CalcExplArmorDamage
                     {
