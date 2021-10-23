@@ -2893,16 +2893,25 @@ namespace BDArmory.Modules
 
                 if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
                 {
-                    var bulletEffectiveVelocity = part.rb.velocity + baseBulletVelocity * fireTransforms[0].forward;
                     var gravity = (Vector3)FlightGlobals.getGeeForceAtPosition((fireTransforms[0].position + targetPosition) / 2f);
                     var bulletAcceleration = bulletDrop ? gravity : Vector3.zero; // Drag is ignored.
                     var bulletRelativePosition = targetPosition - fireTransforms[0].position;
-                    var bulletRelativeVelocity = targetVelocity - bulletEffectiveVelocity;
-                    var bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
-                    var timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude);
-                    var targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
-                    var bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
-                    finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA;
+                    var firingDirection = fireTransforms[0].forward;
+                    Vector3 bulletEffectiveVelocity, bulletRelativeVelocity, bulletRelativeAcceleration, targetPredictedPosition, bulletDropOffset, lastFiringDirection;
+                    float timeToCPA;
+                    var count = 0;
+                    do
+                    {
+                        lastFiringDirection = firingDirection;
+                        bulletEffectiveVelocity = part.rb.velocity + baseBulletVelocity * firingDirection;
+                        bulletRelativeVelocity = targetVelocity - bulletEffectiveVelocity;
+                        bulletRelativeAcceleration = targetAcceleration - bulletAcceleration;
+                        timeToCPA = AIUtils.ClosestTimeToCPA(bulletRelativePosition, bulletRelativeVelocity, bulletRelativeAcceleration, maxTargetingRange / bulletEffectiveVelocity.magnitude);
+                        targetPredictedPosition = AIUtils.PredictPosition(targetPosition, targetVelocity, targetAcceleration, timeToCPA);
+                        bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
+                        finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA;
+                        firingDirection = (finalTarget - fireTransforms[0].position).normalized;
+                    } while (++count < 10 && Vector3.Angle(lastFiringDirection, firingDirection) > 1f); // 1° margin of error
                     targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
                     if (bulletDrop && targetDistance > 10000)// The above calculate becomes inaccurate for distances over approximately 10km due to surface curvature (varying gravity direction), so we try to narrow it down with a simulation.
                     {
@@ -2912,6 +2921,7 @@ namespace BDArmory.Modules
                         targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
                     }
 #if DEBUG
+                    Debug.Log($"DEBUG {count} iterations for convergence in aiming loop");
                     debugTargetPosition = targetPosition;
                     debugLastTargetPosition = debugTargetPosition;
                     debugRelVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
