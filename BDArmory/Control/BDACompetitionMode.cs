@@ -81,6 +81,18 @@ namespace BDArmory.Control
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
             if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].shotsFired;
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                {
+                    var chance = UnityEngine.Random.Range(0f, 1f);
+                    if (chance > 0.5f + (Mathf.Sqrt(BDArmorySettings.FIRE_RATE_OVERRIDE) - 8f) / 20f)
+                    { BDArmorySettings.FIRE_RATE_OVERRIDE += 5f; }
+                    else
+                    { BDArmorySettings.FIRE_RATE_OVERRIDE -= 5f; }
+                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Clamp(BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300f);
+                }
+            }
             return true;
         }
         /// <summary>
@@ -939,6 +951,10 @@ namespace BDArmory.Control
                             competitionStatus.lastActiveVessel = vesselName;
                         }
                         guiStatusString += (string.IsNullOrEmpty(guiStatusString) ? "" : "\n") + currentVesselStatus;
+                        if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                        {
+                            guiStatusString += $"\nCurrent Firing Rate: {BDArmorySettings.FIRE_RATE_OVERRIDE} shots/min.";
+                        }
                     }
                 }
                 if (!BDArmorySetup.GAME_UI_ENABLED)
@@ -1129,6 +1145,7 @@ namespace BDArmory.Control
             rammingInformation = null; // Reset the ramming information.
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = 50f;
             finalGracePeriodStart = -1;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
