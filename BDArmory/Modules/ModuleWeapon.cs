@@ -2921,7 +2921,7 @@ namespace BDArmory.Modules
                         targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
                     }
 #if DEBUG
-                    Debug.Log($"DEBUG {count} iterations for convergence in aiming loop");
+                    // Debug.Log($"DEBUG {count} iterations for convergence in aiming loop");
                     debugTargetPosition = targetPosition;
                     debugLastTargetPosition = debugTargetPosition;
                     debugRelVelAdj = (targetVelocity - part.rb.velocity) * timeToCPA;
