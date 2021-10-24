@@ -83,16 +83,11 @@ namespace BDArmory.Control
             ++ScoreData[shooter].shotsFired;
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
-                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromShotThisFrame)
                 {
-                    BDArmorySettings.FIRE_RATE_OVERRIDE += Mathf.Round(VectorUtils.Gaussian() * BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD + (BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER - BDArmorySettings.FIRE_RATE_OVERRIDE) * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS);
-
-                    // var chance = UnityEngine.Random.Range(0f, 1f);
-                    // if (chance > 0.5f + (Mathf.Sqrt(BDArmorySettings.FIRE_RATE_OVERRIDE) - 10f) / 50f)
-                    // { BDArmorySettings.FIRE_RATE_OVERRIDE += 5f; }
-                    // else
-                    // { BDArmorySettings.FIRE_RATE_OVERRIDE -= 5f; }
+                    BDArmorySettings.FIRE_RATE_OVERRIDE += Mathf.Round(VectorUtils.Gaussian() * BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD + (BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER - BDArmorySettings.FIRE_RATE_OVERRIDE) * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS);
                     BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Max(BDArmorySettings.FIRE_RATE_OVERRIDE, 10f);
+                    BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromShotThisFrame = true;
                 }
             }
             return true;
@@ -144,6 +139,13 @@ namespace BDArmory.Control
                     RegisterIsIT(attacker); // Register the attacker as now being IT.
                 }
             }
+
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame)
+            {
+                BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Clamp(BDArmorySettings.FIRE_RATE_OVERRIDE * BDArmorySettings.HITPOINT_MULTIPLIER, 10f, 1200f);
+                BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame = true;
+            }
+
             return true;
         }
         /// <summary>
@@ -1651,6 +1653,8 @@ namespace BDArmory.Control
         #region Runway Project
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
+        public bool s4r1FiringRateUpdatedFromShotThisFrame = false;
+        public bool s4r1FiringRateUpdatedFromHitThisFrame = false;
 
         public void StartRapidDeployment(float distance)
         {
@@ -2446,6 +2450,8 @@ namespace BDArmory.Control
         {
             if (competitionIsActive)
                 LogRamming();
+            s4r1FiringRateUpdatedFromShotThisFrame = false;
+            s4r1FiringRateUpdatedFromHitThisFrame = false;
         }
 
         // the competition update system

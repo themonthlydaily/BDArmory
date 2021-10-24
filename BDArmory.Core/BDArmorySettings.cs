@@ -102,6 +102,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_CENTER = 100f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 20f;
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_BIAS = 0.1f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 1.2f;
 
         // Physics constants
         [BDAPersistentSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
