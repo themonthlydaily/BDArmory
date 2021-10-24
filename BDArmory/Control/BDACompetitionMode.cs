@@ -85,12 +85,14 @@ namespace BDArmory.Control
             {
                 if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 {
-                    var chance = UnityEngine.Random.Range(0f, 1f);
-                    if (chance > 0.5f + (Mathf.Sqrt(BDArmorySettings.FIRE_RATE_OVERRIDE) - 8f) / 20f)
-                    { BDArmorySettings.FIRE_RATE_OVERRIDE += 5f; }
-                    else
-                    { BDArmorySettings.FIRE_RATE_OVERRIDE -= 5f; }
-                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Clamp(BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300f);
+                    BDArmorySettings.FIRE_RATE_OVERRIDE += Mathf.Round(VectorUtils.Gaussian() * BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD + (BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER - BDArmorySettings.FIRE_RATE_OVERRIDE) * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS);
+
+                    // var chance = UnityEngine.Random.Range(0f, 1f);
+                    // if (chance > 0.5f + (Mathf.Sqrt(BDArmorySettings.FIRE_RATE_OVERRIDE) - 10f) / 50f)
+                    // { BDArmorySettings.FIRE_RATE_OVERRIDE += 5f; }
+                    // else
+                    // { BDArmorySettings.FIRE_RATE_OVERRIDE -= 5f; }
+                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Max(BDArmorySettings.FIRE_RATE_OVERRIDE, 10f);
                 }
             }
             return true;
@@ -1145,7 +1147,7 @@ namespace BDArmory.Control
             rammingInformation = null; // Reset the ramming information.
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = 50f;
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
