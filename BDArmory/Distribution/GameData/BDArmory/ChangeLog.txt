@@ -1,7 +1,24 @@
 ﻿FIXES
 - Fix BDA part category placement to be usable on low resolution screens.
 - Don't add explosive forces when paintball mode is enabled.
+- Minimal seat filling should fill the first non-weapon crewed command part, not the first non-weapon crewed part.
+- Iteratively refine the aiming point (measured to take 2-3 iterations typically) to avoid the turret premature firing issue.
+- Fix issue of NaN appearing in bullet damage.
+- Add a check for failing to load the tournament state.
+- Some fixes for continuous spawning, but it's still misbehaving.
+- Apply hull modifier to proc wings also.
 IMPROVEMENTS
+- General:
+	- Update the tournament parser to sort teams by wins, have the same column order in the csv as in the console and include cumulative score per round results.
+	- Use RemoveVessel in VesselSpawner.cs for removing spectators for more consistent removal.
+	- Disable guard mode on aerial spawn to be consistent with competition start sequence (in case there's a delay between spawning and starting where someone activated guard mode on AG10).
+- UI:
+	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short teamnames are used.
+	- Remove unused "fire in range" toggle from weapon UI.
+- Countermeasures:
+	- Add separate countermeasure settings to the weapons manager for chaff.
+	- Update default values for flares and chaff to be more effective.
+	- Lower default chaff factor to slightly nerf chaff performance.
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 
 v1.4.11.2
