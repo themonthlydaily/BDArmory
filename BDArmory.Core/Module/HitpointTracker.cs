@@ -23,9 +23,13 @@ namespace BDArmory.Core.Module
         UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.All, maxValue = 100000, minValue = 0, requireFullControl = false)]
         public float Hitpoints;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorThickness"),//Armor Thickness
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorThickness"),//Armor Thickness
         UI_FloatRange(minValue = 0f, maxValue = 200, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float Armor = 10f;
+        public float Armor = 10f; //settable Armor thickness availible for editing in the SPH?VAB
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Hitpoints
+UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.All, maxValue = 100, minValue = 0, requireFullControl = false)]
+        public float ArmorRemaining;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_ArmorType"),//Armor Types
         UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
@@ -110,8 +114,6 @@ namespace BDArmory.Core.Module
         [KSPField(isPersistant = true)]
         public float armorVolume = -1;
         private float sizeAdjust;
-        [KSPField(isPersistant = true)]
-        public bool IsTrangularPanel = false;
         AttachNode bottom;
         AttachNode top;
 
@@ -216,7 +218,7 @@ namespace BDArmory.Core.Module
                 damageFieldEditor.minValue = 0f;
 
                 Hitpoints = maxHitPoints_;
-
+                ArmorRemaining = 100;
                 if (!ArmorSet) overrideArmorSetFromConfig();
 
                 previousHitpoints = maxHitPoints_;
@@ -247,9 +249,9 @@ namespace BDArmory.Core.Module
                 }
                 else
                 {
-                    UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
+                    //UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                     //Once started the max value of the field should be the initial one
-                    armorField.maxValue = Armor;
+                    //armorField.maxValue = Armor;
                 }
                 part.RefreshAssociatedWindows();
 
@@ -359,10 +361,6 @@ namespace BDArmory.Core.Module
                 }
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: part size is (X: " + partSize.x + ";, Y: " + partSize.y + "; Z: " + partSize.z);
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR]: size adjust mult: " + sizeAdjust + "; part srf area: " + ((((partSize.x * partSize.y) * 2) + ((partSize.x * partSize.z) * 2) + ((partSize.y * partSize.z) * 2)) * sizeAdjust));
-            }
-            if (IsTrangularPanel)
-            {
-                armorVolume /= 2;
             }
             SetupPrefab();
             if (HighLogic.LoadedSceneIsEditor && !isProcWing)
@@ -633,17 +631,15 @@ namespace BDArmory.Core.Module
                     } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
 
                 }
-                else
+
+                switch (HullTypeNum)
                 {
-                    switch (HullTypeNum)
-                    {
-                        case 1:
-                            hitpoints /= 4;
-                            break;
-                        case 3:
-                            hitpoints *= 1.75f;
-                            break;
-                    }
+                    case 1:
+                        hitpoints /= 4;
+                        break;
+                    case 3:
+                        hitpoints *= 1.75f;
+                        break;
                 }
                 hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
                 if (hitpoints <= 0) hitpoints = HpRounding;
@@ -753,15 +749,19 @@ namespace BDArmory.Core.Module
 
         public void ReduceArmor(float massToReduce) //incoming massToreduce should be cm3
         {
+            //how do I wantto do this? have armor usethe thickness, which gets slwly wittled away?
+            //or have an armor remaining % slimiar to HP, that is reduced, and pen calcs are changed to always use set thickness, but with (100- currentArmor%) % chance of allowing rounds through?
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * (Density / 1000000000))); //g/m3
             }
             float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
             Armor -= (reduceMass / armorMass) * Armor; //now properly reduces armor thickness
+            ArmorRemaining = (1 - (reduceMass / armorMass)) * 100;
             if (Armor < 0)
             {
                 Armor = 0;
+                ArmorRemaining = 0;
             }
             armorMass -= reduceMass; //tons
             if (armorMass < 0)
@@ -872,7 +872,7 @@ namespace BDArmory.Core.Module
                 Strength = 940;
                 SafeUseTemp = 2500;
             }
-            else if (BDArmorySettings.RESET_ARMOUR)
+            else if (BDArmorySettings.RESET_ARMOUR && ArmorThickness <= 10) //don't reset armor panels
             {
                 guiArmorTypeString = "None";
                 SelectedArmorType = "None";
@@ -887,7 +887,7 @@ namespace BDArmory.Core.Module
             var oldArmorMass = armorMass;
             armorMass = 0;
             armorCost = 0;
-            if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || !BDArmorySettings.RESET_ARMOUR)) //don't apply cost/mass to None armor type
+            if (ArmorTypeNum > 1 && (!BDArmorySettings.LEGACY_ARMOR || (!BDArmorySettings.RESET_ARMOUR || (BDArmorySettings.RESET_ARMOUR && ArmorThickness > 10)))) //don't apply cost/mass to None armor type
             {
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
@@ -912,6 +912,7 @@ namespace BDArmory.Core.Module
             if (part.IsMissile()) return;
             if (ArmorTypeNum > 1)
             {
+                /*
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                 if (armorFieldFlight.maxValue != maxSupportedArmor)
                 {
@@ -919,6 +920,7 @@ namespace BDArmory.Core.Module
                     armorFieldFlight.minValue = 0f;
                     armorFieldFlight.maxValue = maxSupportedArmor;
                 }
+                */
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
                 if (armorFieldEditor.maxValue != maxSupportedArmor)
                 {
@@ -939,9 +941,9 @@ namespace BDArmory.Core.Module
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
                 armorFieldEditor.maxValue = 10; //max none armor to 10 (simulate part skin of alimunium)
                 armorFieldEditor.minValue = 0;
-                UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                armorFieldFlight.minValue = 0f;
-                armorFieldFlight.maxValue = 10;
+                //UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
+                //armorFieldFlight.minValue = 0f;
+                //armorFieldFlight.maxValue = 10;
                 part.RefreshAssociatedWindows();
                 //GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }

@@ -139,7 +139,10 @@ namespace BDArmory.Misc
             ///////////////////////////////////////////////////////////////////////
 
             float thickness = (float)hitPart.GetArmorThickness(); //returns mm
-
+            if (thickness <= 0)
+            {
+                thickness = 1;
+            }
             var penetrationFactor = penetration / thickness;
 
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
@@ -162,10 +165,8 @@ namespace BDArmory.Misc
             /// Sufficient penetration b bullet will result in armor spalling or failure 
             /// </summary>
             float thickness = (float)hitPart.GetArmorThickness();
-            if (thickness < 1)
-            {
-                thickness = 1; //prevent divide by zero or other odd behavior
-            }
+            if (thickness <= 0) return; //No armor present to spall/damage
+
             double volumeToReduce = -1;
             float caliberModifier = 1; //how many calibers wide is the armor loss/spall?       
             float spallMass = 0;
@@ -268,7 +269,7 @@ namespace BDArmory.Misc
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness < 1)
             {
-                thickness = 1; //prevent divide by zero or other odd behavior
+                thickness = 0.1f; //prevent divide by zero or other odd behavior
             }
             double volumeToReduce;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
@@ -402,10 +403,7 @@ namespace BDArmory.Misc
             /// </summary>
             //use blastTotalPressure to get MPa of shock on plate, compare to armor mat tolerances
             float thickness = (float)hitPart.GetArmorThickness();
-            if (thickness < 1)
-            {
-                thickness = 1; //prevent divide by zero or other odd behavior
-            }
+            if (thickness <= 0) return false; //no armor to stop explosion
             float spallCaliber = ((float)hitPart.radiativeArea / 3) * 10000;  //using this as a hack for affected srf. area, convert m2 to cm2
             float spallMass;
             float damage;
