@@ -1804,7 +1804,15 @@ namespace BDArmory.Control
             ConfigNode[] additionalNodes = new ConfigNode[0];
 
             // Create the config node representation of the ProtoVessel
-            ConfigNode protoVesselNode = ProtoVessel.CreateVesselNode(vesselData.name, vesselData.vesselType, vesselData.orbit, 0, partNodes, additionalNodes);
+            int rootPartIndex = 0;
+            foreach (var part in shipConstruct.Parts)
+            {
+                if (part.parent == null) break;
+                ++rootPartIndex;
+            }
+            if (rootPartIndex == shipConstruct.Parts.Count()) rootPartIndex = 0; // Didn't find a non-parent part!?
+            ConfigNode protoVesselNode = ProtoVessel.CreateVesselNode(vesselData.name, vesselData.vesselType, vesselData.orbit, rootPartIndex, partNodes, additionalNodes);
+
 
             // Additional settings for a landed vessel
             if (!vesselData.orbiting)
