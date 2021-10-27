@@ -495,7 +495,7 @@ namespace BDArmory.Control
             }
             if (failedVessels != "")
             {
-                message += "Some vessels failed to spawn: " + failedVessels;
+                message = "Some vessels failed to spawn: " + failedVessels;
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.Log("[BDArmory.VesselSpawner]: " + message);
             }
