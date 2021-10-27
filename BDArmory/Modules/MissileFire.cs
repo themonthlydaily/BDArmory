@@ -993,6 +993,11 @@ namespace BDArmory.Modules
                 GameEvents.onEditorPartDeleted.Add(UpdateMaxGunRange);
                 UpdateMaxGunRange(part);
             }
+            targetingString = (targetCoM ? Localizer.Format("#LOC_BDArmory_TargetCOM") + "; " : "")
+            + (targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
+            + (targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
+            + (targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
+            + (targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
         }
 
         void OnPartDie()
