@@ -290,6 +290,13 @@ namespace BDArmory.Control
                     yield break;
                 }
                 Vessel spawnProbe = SpawnVesselFromCraftFile($"{Environment.CurrentDirectory}/GameData/BDArmory/craft/SpawnProbe.craft", dummySpawnCoords, 0, 0f, out dummyVar);
+                if (spawnProbe == null)
+                {
+                    message = "Failed to spawn SpawnProbe!";
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    Debug.LogError("[BDArmory.VesselSpawner]: " + message);
+                    yield break;
+                }
                 spawnProbe.Landed = false; // Tell KSP that it's not landed so KSP doesn't mess with its position.
                 yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
@@ -1681,6 +1688,9 @@ namespace BDArmory.Control
                     vesselData.name = shipConstruct.shipName;
                 }
 
+                // Sort the parts into top-down tree order.
+                shipConstruct.parts = SortPartTree(shipConstruct.parts);
+
                 // Set some parameters that need to be at the part level
                 uint missionID = (uint)Guid.NewGuid().GetHashCode();
                 uint launchID = HighLogic.CurrentGame.launchID++;
@@ -1805,12 +1815,6 @@ namespace BDArmory.Control
 
             // Create the config node representation of the ProtoVessel
             int rootPartIndex = 0;
-            foreach (var part in shipConstruct.Parts)
-            {
-                if (part.parent == null) break;
-                ++rootPartIndex;
-            }
-            if (rootPartIndex == shipConstruct.Parts.Count()) rootPartIndex = 0; // Didn't find a non-parent part!?
             ConfigNode protoVesselNode = ProtoVessel.CreateVesselNode(vesselData.name, vesselData.vesselType, vesselData.orbit, rootPartIndex, partNodes, additionalNodes);
 
 
@@ -1936,6 +1940,22 @@ namespace BDArmory.Control
             }
 
             return protoVessel.vesselRef;
+        }
+
+        List<Part> SortPartTree(List<Part> parts)
+        {
+            List<Part> Parts = parts.Where(p => p.parent == null).ToList(); // There can be only one.
+            while (Parts.Count() < parts.Count())
+            {
+                var partsToAdd = parts.Where(p => !Parts.Contains(p) && Parts.Contains(p.parent));
+                if (partsToAdd.Count() == 0)
+                {
+                    Debug.Log($"[BDArmory.VesselSpawner]: Part count mismatch when sorting the part-tree: {Parts.Count()} vs {parts.Count()}");
+                    break;
+                }
+                Parts.AddRange(partsToAdd);
+            }
+            return Parts;
         }
 
         private IEnumerator PlaceSpawnedVessel(Vessel v)
