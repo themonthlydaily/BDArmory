@@ -3319,7 +3319,7 @@ namespace BDArmory.UI
             {
                 BDAWindowSettingsField.Save();
             }
-            if (windowSettingsEnabled)
+            if (windowSettingsEnabled || showVesselSpawnerGUI)
                 SaveConfig();
 
             GameEvents.onHideUI.Remove(HideGameUI);
