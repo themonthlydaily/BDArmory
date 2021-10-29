@@ -142,7 +142,7 @@ namespace BDArmory.Control
 
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame)
             {
-                BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Clamp(BDArmorySettings.FIRE_RATE_OVERRIDE * BDArmorySettings.HITPOINT_MULTIPLIER, 10f, 1200f);
+                BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Clamp(BDArmorySettings.FIRE_RATE_OVERRIDE * BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 10f, 1200f);
                 BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame = true;
             }
 
