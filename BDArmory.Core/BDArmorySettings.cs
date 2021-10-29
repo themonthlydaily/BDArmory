@@ -99,10 +99,10 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistentSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 256f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations.
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE = 10f;
-        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_CENTER = 100f;
-        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 20f;
-        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_BIAS = 0.1f;
-        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 1.2f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_CENTER = 20f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 5f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_BIAS = 0.16f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 2f;
 
         // Physics constants
         [BDAPersistentSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
