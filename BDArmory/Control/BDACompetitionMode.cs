@@ -738,7 +738,7 @@ namespace BDArmory.Control
             }
 
             // Dump the log results to a file
-            var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
+            var folder = Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "Logs");
             if (BDATournament.Instance.tournamentStatus == TournamentStatus.Running)
             {
                 folder = Path.Combine(folder, "Tournament " + BDATournament.Instance.tournamentID, "Round " + BDATournament.Instance.currentRound);

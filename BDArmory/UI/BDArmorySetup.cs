@@ -380,11 +380,11 @@ namespace BDArmory.UI
             LoadConfig();
 
             // Ensure AutoSpawn folder exists.
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn"))
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
+            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")))
+            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")); }
             // Ensure GameData/Custom/Flags folder exists.
-            if (!Directory.Exists(Environment.CurrentDirectory + "/GameData/Custom/Flags"))
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/GameData/Custom/Flags"); }
+            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")))
+            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")); }
         }
 
         void Start()
@@ -3073,7 +3073,7 @@ namespace BDArmory.UI
                     {
                         if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RemoteSync"))) // Run Via Remote Orchestration
                         {
-                            string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
+                            string vesselPath = Path.Combine(Environment.CurrentDirectory, "AutoSpawn");
                             if (!System.IO.Directory.Exists(vesselPath))
                             {
                                 System.IO.Directory.CreateDirectory(vesselPath);
