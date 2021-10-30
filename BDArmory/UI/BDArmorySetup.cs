@@ -380,11 +380,11 @@ namespace BDArmory.UI
             LoadConfig();
 
             // Ensure AutoSpawn folder exists.
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn"))
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
+            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")))
+            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")); }
             // Ensure GameData/Custom/Flags folder exists.
-            if (!Directory.Exists(Environment.CurrentDirectory + "/GameData/Custom/Flags"))
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/GameData/Custom/Flags"); }
+            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")))
+            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")); }
         }
 
         void Start()
@@ -2689,8 +2689,14 @@ namespace BDArmory.UI
 
                         if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                         {
-                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRate")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE})", leftLabel);//Fire Rate Override
-                            BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300f));
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateCenter")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER})", leftLabel);//Fire Rate Override Center
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER, 10f, 300f) / 5f) * 5f;
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateSpread")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD})", leftLabel);//Fire Rate Override Spread
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD, 0f, 50f));
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateBias")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS:G2})", leftLabel);//Fire Rate Override Bias
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS, 0f, 1f) * 50f) / 50f;
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateHitMultiplier")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER})", leftLabel);//Fire Rate Hit Multiplier
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
                         if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
                         {
@@ -3067,7 +3073,7 @@ namespace BDArmory.UI
                     {
                         if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RemoteSync"))) // Run Via Remote Orchestration
                         {
-                            string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
+                            string vesselPath = Path.Combine(Environment.CurrentDirectory, "AutoSpawn");
                             if (!System.IO.Directory.Exists(vesselPath))
                             {
                                 System.IO.Directory.CreateDirectory(vesselPath);
@@ -3313,7 +3319,7 @@ namespace BDArmory.UI
             {
                 BDAWindowSettingsField.Save();
             }
-            if (windowSettingsEnabled)
+            if (windowSettingsEnabled || showVesselSpawnerGUI)
                 SaveConfig();
 
             GameEvents.onHideUI.Remove(HideGameUI);

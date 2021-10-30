@@ -7,6 +7,7 @@
 - Add a check for failing to load the tournament state.
 - Some fixes for continuous spawning, but it's still misbehaving.
 - Apply hull modifier to proc wings also.
+- Use the OS-dependent directory separator char for player-visible paths.
 IMPROVEMENTS
 - General:
 	- Update the tournament parser to sort teams by wins, have the same column order in the csv as in the console and include cumulative score per round results.

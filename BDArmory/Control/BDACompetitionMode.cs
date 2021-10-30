@@ -81,6 +81,15 @@ namespace BDArmory.Control
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
             if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].shotsFired;
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromShotThisFrame)
+                {
+                    BDArmorySettings.FIRE_RATE_OVERRIDE += Mathf.Round(VectorUtils.Gaussian() * BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD + (BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER - BDArmorySettings.FIRE_RATE_OVERRIDE) * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS);
+                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Max(BDArmorySettings.FIRE_RATE_OVERRIDE, 10f);
+                    BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromShotThisFrame = true;
+                }
+            }
             return true;
         }
         /// <summary>
@@ -130,6 +139,13 @@ namespace BDArmory.Control
                     RegisterIsIT(attacker); // Register the attacker as now being IT.
                 }
             }
+
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame)
+            {
+                BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(Mathf.Min(BDArmorySettings.FIRE_RATE_OVERRIDE * BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1200f));
+                BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame = true;
+            }
+
             return true;
         }
         /// <summary>
@@ -722,7 +738,7 @@ namespace BDArmory.Control
             }
 
             // Dump the log results to a file
-            var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
+            var folder = Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "Logs");
             if (BDATournament.Instance.tournamentStatus == TournamentStatus.Running)
             {
                 folder = Path.Combine(folder, "Tournament " + BDATournament.Instance.tournamentID, "Round " + BDATournament.Instance.currentRound);
@@ -939,6 +955,10 @@ namespace BDArmory.Control
                             competitionStatus.lastActiveVessel = vesselName;
                         }
                         guiStatusString += (string.IsNullOrEmpty(guiStatusString) ? "" : "\n") + currentVesselStatus;
+                        if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                        {
+                            guiStatusString += $"\nCurrent Firing Rate: {BDArmorySettings.FIRE_RATE_OVERRIDE} shots/min.";
+                        }
                     }
                 }
                 if (!BDArmorySetup.GAME_UI_ENABLED)
@@ -1129,6 +1149,7 @@ namespace BDArmory.Control
             rammingInformation = null; // Reset the ramming information.
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
@@ -1143,7 +1164,7 @@ namespace BDArmory.Control
         {
             competitionStarting = true;
             startTag = true; // Tag entry condition, should be true even if tag is not currently enabled, so if tag is enabled later in the competition it will function
-            competitionStatus.Set("Competition: Pilots are taking off.");
+            competitionStatus.Add("Competition: Pilots are taking off.");
             var pilots = new Dictionary<BDTeam, List<IBDAIControl>>();
             HashSet<IBDAIControl> readyToLaunch = new HashSet<IBDAIControl>();
             using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
@@ -1632,6 +1653,8 @@ namespace BDArmory.Control
         #region Runway Project
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
+        public bool s4r1FiringRateUpdatedFromShotThisFrame = false;
+        public bool s4r1FiringRateUpdatedFromHitThisFrame = false;
 
         public void StartRapidDeployment(float distance)
         {
@@ -2427,6 +2450,8 @@ namespace BDArmory.Control
         {
             if (competitionIsActive)
                 LogRamming();
+            s4r1FiringRateUpdatedFromShotThisFrame = false;
+            s4r1FiringRateUpdatedFromHitThisFrame = false;
         }
 
         // the competition update system

@@ -81,7 +81,7 @@ namespace BDArmory.Control
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.FFA;
-            var abs_folder = Environment.CurrentDirectory + $"/AutoSpawn/{folder}";
+            var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files does not exist.";
@@ -202,7 +202,7 @@ namespace BDArmory.Control
         {
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.Teams;
-            var abs_folder = Environment.CurrentDirectory + $"/AutoSpawn/{folder}";
+            var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files or team folders does not exist.";
@@ -234,7 +234,7 @@ namespace BDArmory.Control
             }
             else // Make teams from the folders under the spawn folder.
             {
-                var teamDirs = Directory.GetDirectories(Environment.CurrentDirectory + $"/AutoSpawn/{folder}");
+                var teamDirs = Directory.GetDirectories(abs_folder);
                 if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
@@ -258,7 +258,7 @@ namespace BDArmory.Control
             vesselCount = craftFiles.Count;
             if (teamFiles.Count < 2)
             {
-                message = "Insufficient " + (numberOfTeams != 1 ? "craft files" : "folders") + " in 'AutoSpawn/" + folder + "' to generate a tournament.";
+                message = $"Insufficient {(numberOfTeams != 1 ? "craft files" : "folders")} in '{Path.Combine("AutoSpawn", folder)}' to generate a tournament.";
                 if (BDACompetitionMode.Instance) BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.Log("[BDArmory.BDATournament]: " + message);
                 return false;
