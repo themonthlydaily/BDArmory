@@ -7,7 +7,8 @@
 - Add a check for failing to load the tournament state.
 - Some fixes for continuous spawning, but it's still misbehaving.
 - Apply hull modifier to proc wings also.
-- Use the OS-dependent directory separator char for player-visible paths.
+- Use the OS-dependent directory separator char for player-visible paths (fixes team names containing the 'AutoSpawn' folder in Windows).
+- Replace ', ' with ',' in the summary.csv file for teams for consistent team member naming.
 IMPROVEMENTS
 - General:
 	- Update the tournament parser to sort teams by wins, have the same column order in the csv as in the console and include cumulative score per round results.
@@ -158,6 +159,8 @@ IMPROVEMENTS
 		- Expand the low altitude GM kill limit to depths of -10km.
 		- A clearer message when a tournament stops due to spawning/competition start failures.
 		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles.
+	- RWP:
+		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
 	- Internal:
 		- Adjust camera weights for picking a better vessel to switch to.
 		- Add a IsUnderwater vessel extension.
