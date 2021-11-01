@@ -17,6 +17,7 @@ IMPROVEMENTS
 - UI:
 	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short teamnames are used.
 	- Remove unused "fire in range" toggle from weapon UI.
+	- Add a UTC timestamp to the clock.
 - Countermeasures:
 	- Add separate countermeasure settings to the weapons manager for chaff.
 	- Update default values for flares and chaff to be more effective.
