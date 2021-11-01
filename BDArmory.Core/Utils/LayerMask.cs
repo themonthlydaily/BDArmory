@@ -24,7 +24,7 @@
         }
     }
 
-    public enum Layer { Parts = 1 << 0, Scenery = 1 << 15, EVA = 1 << 17, RootPart = 1 << 21 }; // Scenery includes terrain and buildings.
+    public enum LayerMasks { Parts = 1 << 0, Scenery = 1 << 15, EVA = 1 << 17, RootPart = 1 << 21 }; // Scenery includes terrain and buildings.
     // Commonly used values:
     // 163840 = (1 << 15) | (1 << 17)
     // 557057 = (1 << 0) | (1 << 15) | (1 << 19) = Parts|Scenery|???
