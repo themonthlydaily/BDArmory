@@ -184,8 +184,7 @@ namespace BDArmory.Modules
             // clamp target yaw in a non-wobbly way
             if (Mathf.Abs(targetYawAngle) > yawRange / 2)
             {
-                var nonWooblyWay = Vector3.Dot(yawTransform.parent.right,
-                    targetDirection + referenceTransform.position - yawTransform.position);
+                var nonWooblyWay = Vector3.Dot(yawTransform.parent.right, targetDirection + referenceTransform.position - yawTransform.position);
                 if (float.IsNaN(nonWooblyWay)) return;
 
                 targetYawAngle = yawRange / 2 * Math.Sign(nonWooblyWay);

@@ -452,7 +452,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 			with open(tournamentDir / 'summary.csv', 'a') as f:
 				f.write('\n\nTeam,Wins,Draws,Deaths,Vessels')
 				for team in sorted(teamNames, key=lambda team: teamWins[team], reverse=True):
-					f.write('\n' + ','.join([str(v) for v in (team, teamWins[team], teamDraws[team], teamDeaths[team], summary['teams'][team])]))
+					f.write('\n' + ','.join([str(v) for v in (team, teamWins[team], teamDraws[team], teamDeaths[team], summary['teams'][team].replace(", ", ","))]))
 
 				# Write per round cumulative score results to summary.csv file.
 				if args.score:
