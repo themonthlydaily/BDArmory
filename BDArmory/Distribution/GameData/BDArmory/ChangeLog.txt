@@ -21,7 +21,10 @@ IMPROVEMENTS
 	- Add separate countermeasure settings to the weapons manager for chaff.
 	- Update default values for flares and chaff to be more effective.
 	- Lower default chaff factor to slightly nerf chaff performance.
+	- Add Vessel-Relative Bullet Checks for more accurate bullet checks that work in high-velocity environments (enabled by default).
+	- Replace smoothing of target velocity and acceleration with Brown's double exponential smoothing for improved aiming, particularly at longer ranges.
 ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Vessel-Relative Bullet Checks in advacned Gameplay settings.
 
 v1.4.11.2
 FIXES 

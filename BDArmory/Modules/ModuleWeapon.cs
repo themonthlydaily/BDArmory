@@ -131,6 +131,10 @@ namespace BDArmory.Modules
         private Vector3 targetAcceleration; // local frame
         private Vector3 targetVelocityPrevious; // for acceleration calculation
         // private Vector3 targetAccelerationPrevious;
+        private Vector3 targetVelocityS1;
+        private Vector3 targetVelocityS2;
+        private Vector3 targetAccelerationS1;
+        private Vector3 targetAccelerationS2;
         private bool targetAccelerationWasReset = true;
         // private Vector3 relativeVelocity;
         public Vector3 finalAimTarget;
@@ -1653,7 +1657,7 @@ namespace BDArmory.Modules
 
                                     Vector3 firedVelocity = VectorUtils.GaussianDirectionDeviation(fireTransform.forward, (maxDeviation / 2)) * bulletVelocity;
                                     pBullet.currentVelocity = (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) + firedVelocity; // use the real velocity, w/o offloading
-                                    pBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime; // Initially, put the bullet at the fireTransform position at the start of the next physics frame
+                                    // pBullet.transform.position += (part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime; // Initially, put the bullet at the fireTransform position at the start of the next physics frame
 
                                     pBullet.sourceWeapon = this.part;
                                     pBullet.sourceVessel = vessel;
@@ -1749,7 +1753,7 @@ namespace BDArmory.Modules
                                     }
                                     pBullet.gameObject.SetActive(true);
 
-                                    if (!pBullet.CheckBulletCollision(iTime)) // Check that the bullet won't immediately hit anything.
+                                    if (!pBullet.CheckBulletCollisions(iTime)) // Check that the bullet won't immediately hit anything.
                                     {
                                         pBullet.MoveBullet(iTime); // Move the bullet forward by the amount of time within the physics frame determined by it's firing rate.
                                     }
@@ -2817,8 +2821,7 @@ namespace BDArmory.Modules
 #endif
                 }
                 // Continue aiming towards where the target is expected to be while reloading based on the last measured pos, vel, acc.
-                finalAimTarget = AIUtils.PredictPosition(lastFinalAimTarget, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime);
-
+                finalAimTarget = AIUtils.PredictPosition(lastFinalAimTarget, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime); // FIXME Check this predicted position when in orbit.
 #if DEBUG
                 debugTargetPosition = AIUtils.PredictPosition(debugLastTargetPosition, targetVelocity, targetAcceleration, Time.time - lastGoodTargetTime);
 #endif
@@ -2833,47 +2836,43 @@ namespace BDArmory.Modules
                 if (!slaved && !aiControlled && (yawRange > 0 || maxPitch - minPitch > 0))
                 {
                     //MouseControl
-                    Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height,
-                        0);
+                    Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
                     Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
                     RaycastHit hit;
 
                     if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
                     {
-                        targetPosition = hit.point;
-
-                        //aim through self vessel if occluding mouseray
-
                         KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                         Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
 
-                        if (p && p.vessel && p.vessel == vessel)
+                        if (p != null && p.vessel != null && p.vessel == vessel) //aim through self vessel if occluding mouseray
                         {
-                            targetPosition = ray.direction * maxTargetingRange +
-                                             FlightCamera.fetch.mainCamera.transform.position;
+                            targetPosition = ray.origin + ray.direction * maxTargetingRange;
                         }
+                        else
+                        {
+                            targetPosition = hit.point;
+                        }
+                        targetAccelerationWasReset = true;
                     }
                     else
                     {
-                        targetPosition = (ray.direction * (maxTargetingRange + (FlightCamera.fetch.Distance * 0.75f))) +
-                                         FlightCamera.fetch.mainCamera.transform.position;
+                        targetPosition = ray.origin + ray.direction * (maxTargetingRange + (FlightCamera.fetch.Distance * 0.75f));
 
                         if (visualTargetVessel != null && visualTargetVessel.loaded)
                         {
                             if (!targetCOM && visualTargetPart != null)
                             {
-                                targetPosition = ray.direction *
-                                                 Vector3.Distance(visualTargetPart.transform.position,
-                                                     FlightCamera.fetch.mainCamera.transform.position) +
-                                                 FlightCamera.fetch.mainCamera.transform.position;
+                                targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetPart.transform.position, ray.origin);
                             }
                             else
                             {
-                                targetPosition = ray.direction *
-                                                 Vector3.Distance(visualTargetVessel.transform.position,
-                                                     FlightCamera.fetch.mainCamera.transform.position) +
-                                                 FlightCamera.fetch.mainCamera.transform.position;
+                                targetPosition = ray.origin + ray.direction * Vector3.Distance(visualTargetVessel.transform.position, ray.origin);
                             }
+                        }
+                        else
+                        {
+                            targetPosition = ray.origin + ray.direction * maxTargetingRange;
                         }
                     }
                 }
@@ -2911,9 +2910,9 @@ namespace BDArmory.Modules
                         bulletDropOffset = -0.5f * bulletAcceleration * timeToCPA * timeToCPA;
                         finalTarget = targetPredictedPosition + bulletDropOffset - part.rb.velocity * timeToCPA;
                         firingDirection = (finalTarget - fireTransforms[0].position).normalized;
-                    } while (++count < 10 && Vector3.Angle(lastFiringDirection, firingDirection) > 1f); // 1° margin of error
+                    } while (++count < 10 && Vector3.Angle(lastFiringDirection, firingDirection) > 1f); // 1° margin of error is sufficient to prevent premature firing
                     targetDistance = Vector3.Distance(finalTarget, fireTransforms[0].position);
-                    if (bulletDrop && targetDistance > 10000)// The above calculate becomes inaccurate for distances over approximately 10km due to surface curvature (varying gravity direction), so we try to narrow it down with a simulation.
+                    if (bulletDrop && targetDistance > 10000)// The above calculation becomes inaccurate for distances over approximately 10km due to surface curvature (varying gravity direction), so we try to narrow it down with a simulation.
                     {
                         var simulatedCPA = BallisticTrajectoryClosestApproachSimulation(fireTransforms[0].position, bulletEffectiveVelocity, targetPosition, targetVelocity, targetAcceleration, BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER * Time.fixedDeltaTime);
                         var correction = simulatedCPA - AIUtils.PredictPosition(fireTransforms[0].position, bulletEffectiveVelocity, bulletAcceleration, timeToCPA);
@@ -3003,8 +3002,8 @@ namespace BDArmory.Modules
                 {
                     float simTime = 0;
                     Vector3 pointingDirection = fireTransform.forward;
-                    Vector3 simVelocity = part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (baseBulletVelocity * fireTransform.forward);
-                    Vector3 simCurrPos = fireTransform.position + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
+                    Vector3 simVelocity = part.rb.velocity + (baseBulletVelocity * fireTransform.forward); //  + Krakensbane.GetFrameVelocityV3f()
+                    Vector3 simCurrPos = fireTransform.position;// + ((part.rb.velocity + Krakensbane.GetFrameVelocityV3f()) * Time.fixedDeltaTime);
                     Vector3 simPrevPos = simCurrPos;
                     Vector3 simStartPos = simCurrPos;
                     float simDeltaTime;
@@ -3179,7 +3178,8 @@ namespace BDArmory.Modules
                 ray.origin = position;
                 ray.direction = velocity;
                 var altitude = FlightGlobals.getAltitudeAtPos(position + velocity * timeStep);
-                if (Physics.Raycast(ray, out hit, timeStep * velocity.magnitude, 9076737) || (!ignoreWater && altitude < 0)) // FIXME What colliders is this bit mask actually detecting? 2<<0, 2<<15, 2<<17, 2<<19, 2<<23?
+                if ((Physics.Raycast(ray, out hit, timeStep * velocity.magnitude, 9076737) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
+                    || (!ignoreWater && altitude < 0)) // FIXME What colliders is this bit mask actually detecting? 2<<0, 2<<15, 2<<17, 2<<19, 2<<23?
                 {
                     switch (stage)
                     {
@@ -3387,7 +3387,8 @@ namespace BDArmory.Modules
             UpdateTargetVessel();
             if (targetAcquired)
             {
-                updateAcceleration(targetVelocity, targetPosition, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
+                // updateAcceleration(targetVelocity, targetPosition, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
+                smoothTargetKinematics(targetPosition, targetVelocity, targetAcceleration, lastTargetAcquisitionType != targetAcquisitionType || (targetAcquisitionType == TargetAcquisitionType.Visual && lastVisualTargetVessel != visualTargetVessel));
             }
 
             RunTrajectorySimulation();
@@ -3763,6 +3764,7 @@ namespace BDArmory.Modules
                         }
                     }
                     targetVelocity = visualTargetVessel.rb_velocity;
+                    targetAcceleration = visualTargetVessel.acceleration;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Visual;
                     return;
@@ -3774,6 +3776,7 @@ namespace BDArmory.Modules
                     targetRadius = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.GetRadius() : 35f;
                     targetPosition = weaponManager.slavedPosition;
                     targetVelocity = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.rb_velocity : (weaponManager.slavedVelocity - Krakensbane.GetFrameVelocityV3f());
+                    targetAcceleration = weaponManager.slavedTarget.vessel != null ? weaponManager.slavedTarget.vessel.acceleration : weaponManager.slavedAcceleration;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Slaved;
                     return;
@@ -3790,6 +3793,7 @@ namespace BDArmory.Modules
                     {
                         targetVelocity = targetData.vessel != null ? targetData.vessel.rb_velocity : targetVelocity;
                         targetPosition = targetData.vessel.CoM;
+                        targetAcceleration = targetData.vessel.acceleration;
                         targetRadius = targetData.vessel.GetRadius();
                     }
                     targetAcquired = true;
@@ -3836,6 +3840,7 @@ namespace BDArmory.Modules
                         targetRadius = tgt.GetRadius();
                         targetPosition = tgt.CoM;
                         targetVelocity = tgt.rb_velocity;
+                        targetAcceleration = tgt.acceleration;
                     }
                     targetAcquisitionType = TargetAcquisitionType.AutoProxy;
                 }
@@ -3878,6 +3883,44 @@ namespace BDArmory.Modules
                 targetAcceleration = Vector3.ProjectOnPlane(targetAcceleration, VectorUtils.GetUpDirection(position));
             // Debug.Log("DEBUG " + Time.time.ToString("0.00") + " targetAcceleration: " + targetAcceleration.ToString("G3") + ", V_diff: " + (targetVelocity - targetVelocityPrevious).ToString("G3") + ", smoothing: (" + velocitySmoothingFactor.ToString("G3") + ", " + accelerationSmoothingFactor.ToString("G3") + "), Δt: " + (Time.time - lastGoodTargetTime));
             targetVelocityPrevious = target_rb_velocity;
+        }
+
+        /// <summary>
+        /// Apply Brown's double exponential smoothing to the target velocity and acceleration values to smooth out noise.
+        /// The smoothing factor depends on the distance to the target.
+        /// </summary>
+        /// <param name="position"></param>
+        /// <param name="velocity"></param>
+        /// <param name="acceleration"></param>
+        /// <param name="reset"></param>
+        void smoothTargetKinematics(Vector3 position, Vector3 velocity, Vector3 acceleration, bool reset = false)
+        {
+            // Floating objects need vertical smoothing.
+            float altitude = (float)FlightGlobals.currentMainBody.GetAltitude(position);
+            if (altitude < 12 && altitude > -10)
+                acceleration = Vector3.ProjectOnPlane(acceleration, VectorUtils.GetUpDirection(position));
+
+            var distance = Vector3.Distance(position, part.transform.position);
+            var alpha = Mathf.Max(1f - Mathf.Sqrt(distance) / 512f, 0.1f);
+            var beta = alpha * alpha;
+            if (!reset)
+            {
+                targetVelocityS1 = alpha * velocity + (1f - alpha) * targetVelocityS1;
+                targetVelocityS2 = alpha * targetVelocityS1 + (1f - alpha) * targetVelocityS2;
+                targetVelocity = 2f * targetVelocityS1 - targetVelocityS2;
+                targetAccelerationS1 = beta * acceleration + (1f - beta) * targetAccelerationS1;
+                targetAccelerationS2 = beta * targetAccelerationS1 + (1f - beta) * targetAccelerationS2;
+                targetAcceleration = 2f * targetAccelerationS1 - targetAccelerationS2;
+            }
+            else
+            {
+                targetVelocityS1 = velocity;
+                targetVelocityS2 = velocity;
+                targetVelocity = velocity;
+                targetAccelerationS1 = acceleration;
+                targetAccelerationS2 = acceleration;
+                targetAcceleration = acceleration;
+            }
         }
 
         void UpdateGUIWeaponState()

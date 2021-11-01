@@ -63,7 +63,7 @@ namespace BDArmory.FX
         {
             if (lineOfSightHits == null) { lineOfSightHits = new RaycastHit[100]; }
             if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
-            if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[100]; }
+            if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[1000]; }
             if (IgnoreParts == null) { IgnoreParts = new List<Part>(); }
             if (IgnoreBuildings == null) { IgnoreBuildings = new List<DestructibleBuilding>(); }
         }
