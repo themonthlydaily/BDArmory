@@ -31,7 +31,7 @@ namespace BDArmory.Core
 
                 if (part != null)
                 {
-                    part.explode();
+                    part.explode(); // This calls part.Die() internally.
                 }
             } while (ExplodingPartsQueue.Count > 0);
         }

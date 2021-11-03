@@ -426,7 +426,6 @@ namespace BDArmory.FX
                 {
                     float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivalent);
                     using (var blastHits = Physics.OverlapSphere(parentPart.transform.position, blastRadius, 9076737).AsEnumerable().GetEnumerator())
-                    {
                         while (blastHits.MoveNext())
                         {
                             if (blastHits.Current == null) continue;
@@ -435,9 +434,9 @@ namespace BDArmory.FX
                                 Part partHit = blastHits.Current.GetComponentInParent<Part>();
                                 if (partHit == null) continue;
                                 if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                                if (partHit != null && partHit.mass > 0)
+                                if (partHit.Modules.GetModule<HitpointTracker>().Hitpoints <= 0) continue; // Ignore parts that are already dead.
+                                if (partHit.Rigidbody != null && partHit.mass > 0)
                                 {
-                                    Rigidbody rb = partHit.Rigidbody;
                                     Vector3 distToG0 = parentPart.transform.position - partHit.transform.position;
 
                                     Ray LoSRay = new Ray(parentPart.transform.position, partHit.transform.position - parentPart.transform.position);
@@ -448,7 +447,6 @@ namespace BDArmory.FX
                                         Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
                                         if (p == partHit)
                                         {
-                                            if (rb == null) return;
                                             BulletHitFX.AttachFire(hit.point, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
@@ -463,14 +461,18 @@ namespace BDArmory.FX
                                 Debug.LogWarning("[BDArmory.FireFX]: Exception thrown in Detonate: " + e.Message + "\n" + e.StackTrace);
                             }
                         }
-                    }
                 }
                 if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
                     ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "Fuel");
                     if (BDArmorySettings.RUNWAY_PROJECT_ROUND != 42)
                     {
-                        if (tntFuel > 0 || tntMP > 0) parentPart.Destroy();
+                        if (tntFuel > 0 || tntMP > 0)
+                        {
+                            var tmpParentPart = parentPart; // Temporarily store the parent part so we can destroy it without destroying ourselves.
+                            Deactivate();
+                            tmpParentPart.Destroy();
+                        }
                     }
                 }
             }

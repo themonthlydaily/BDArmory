@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using BDArmory.Core;
+using BDArmory.Core.Module;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.UI;
@@ -418,7 +418,7 @@ namespace BDArmory.FX
         public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel)
 
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS)
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS && hitPart.Modules.GetModule<HitpointTracker>().Hitpoints > 0)
             {
                 if (leakFXPool == null)
                     leakFXPool = FuelLeakFX.CreateLeakFXPool("BDArmory/FX/FuelLeakFX/model");
@@ -489,7 +489,7 @@ namespace BDArmory.FX
         }
         public static void AttachFire(Vector3 hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool enginefire = false, bool surfaceFire = false)
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED)
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED && hitPart.Modules.GetModule<HitpointTracker>().Hitpoints > 0)
             {
                 if (FireFXPool == null)
                     FireFXPool = FireFX.CreateFireFXPool("BDArmory/FX/FireFX/model");

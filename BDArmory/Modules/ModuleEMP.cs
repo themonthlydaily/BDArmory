@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Text;
+using UnityEngine;
 
 namespace BDArmory.Modules
 {
@@ -39,6 +40,14 @@ namespace BDArmory.Modules
                     }
                 }
             }
+        }
+
+        public override string GetInfo()
+        {
+            StringBuilder output = new StringBuilder();
+            output.Append(System.Environment.NewLine);
+            output.AppendLine($"- EMP Blast Radius: {proximity} m");
+            return output.ToString();
         }
     }
 }
