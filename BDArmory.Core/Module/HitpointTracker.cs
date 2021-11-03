@@ -592,9 +592,6 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 var sphereSurface = 4 * Mathf.PI * sphereRadius * sphereRadius;
                 var thickness = 0.1f;// * part.GetTweakScaleMultiplier(); // Tweakscale scales mass as r^3 insted of 0.1*r^2, however it doesn't take the increased volume of the hull into account when scaling resource amounts.
                 var structuralVolume = Mathf.Max(sphereSurface * thickness, 1e-3f); // Prevent 0 volume, just in case. structural volume is 10cm * surface area of equivalent sphere.
-                // var sphere = 4f / 3f * Mathf.PI * sphereRadius * sphereRadius * sphereRadius;
-                // var structuralVolume = Mathf.Max(sphere * 0.1f, 1e-6f); // Structural volume is 10% of actual volume.
-                //var structuralVolume = ((partSize.x * partSize.y * partSize.z) * sizeAdjust);
                 bool clampHP = false;
 
                 var density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
