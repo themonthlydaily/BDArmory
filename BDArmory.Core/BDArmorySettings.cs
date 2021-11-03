@@ -38,7 +38,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool INFINITE_AMMO = false;
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistentSettingsField] public static bool EJECT_SHELLS = true;
-        [BDAPersistentSettingsField] public static bool VESSEL_RELATIVE_BULLET_CHECKS = true;
+        [BDAPersistentSettingsField] public static bool VESSEL_RELATIVE_BULLET_CHECKS = false;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool DRAW_AIMERS = true;
         [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;
