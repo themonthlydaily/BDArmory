@@ -37,6 +37,7 @@ namespace BDArmory.Modules
         {
             Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and " + (BDArmorySettings.KERBAL_SAFETY > 1 ? "fully" : "partially") + " enabled." : ", but currently disabled."));
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
+            GameEvents.onVesselLoaded.Add(CheckVesselForKerbals);
             evaKerbalsToMonitor = new List<KerbalEVA>();
             if (BDArmorySettings.KERBAL_SAFETY > 0)
                 CheckAllVesselsForKerbals();
@@ -45,6 +46,7 @@ namespace BDArmory.Modules
         public void OnDestroy()
         {
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
+            GameEvents.onVesselLoaded.Remove(CheckVesselForKerbals);
         }
 
         public void HandleSceneChange(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
@@ -62,16 +64,7 @@ namespace BDArmory.Modules
             Debug.Log("[BDArmory.KerbalSafety]: Enabling kerbal safety.");
             foreach (var ks in kerbals.Values)
                 ks.AddHandlers();
-            if (BDArmorySettings.RUNWAY_PROJECT)
-            {
-                switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
-                {
-                    case 32: // Nuclear engines
-                    case 33: // Rapid deployment II
-                        GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
-                        break;
-                }
-            }
+            GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
             CheckAllVesselsForKerbals(); // Check for new vessels that were added while we weren't active.
         }
 
@@ -86,16 +79,7 @@ namespace BDArmory.Modules
                 ks.RemoveHandlers();
             }
             kerbals.Clear();
-            if (BDArmorySettings.RUNWAY_PROJECT)
-            {
-                switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
-                {
-                    case 32: // Nuclear engines round
-                    case 33: // Rapid deployment II
-                        GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
-                        break;
-                }
-            }
+            GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
         }
 
         public void CheckAllVesselsForKerbals()
@@ -120,7 +104,9 @@ namespace BDArmory.Modules
                 {
                     if (crew == null) continue;
                     if (kerbals.ContainsKey(crew.displayName)) continue; // Already managed.
-                    var ks = part.gameObject.GetComponent<KerbalSafety>();
+                    KerbalSafety ks = null;
+                    var ksList = part.gameObject.GetComponents<KerbalSafety>();
+                    foreach (var k in ksList) { if (k.kerbalName == crew.name) { ks = k; break; } }
                     if (ks == null) { ks = part.gameObject.AddComponent<KerbalSafety>(); }
                     StartCoroutine(ks.Configure(crew, part));
                 }
@@ -239,7 +225,8 @@ namespace BDArmory.Modules
                     if (kerbals.ContainsKey(crew.displayName))
                     {
                         kerbals[crew.displayName].recovered = true;
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Recovering " + kerbals[crew.displayName].kerbalName + ".");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            Debug.Log("[BDArmory.KerbalSafety]: Recovering " + kerbals[crew.displayName].kerbalName + ".");
                         kerbals[crew.displayName].RemoveHandlers();
                     }
                 }
@@ -301,26 +288,26 @@ namespace BDArmory.Modules
         /// <summary>
         /// Begin managing a crew member in a part.
         /// </summary>
-        /// <param name="crew">The proto crew member.</param>
-        /// <param name="part">The part.</param>
-        public IEnumerator Configure(ProtoCrewMember crew, Part part)
+        /// <param name="c">The proto crew member.</param>
+        /// <param name="p">The part.</param>
+        public IEnumerator Configure(ProtoCrewMember c, Part p)
         {
-            if (crew == null)
+            if (c == null)
             {
                 Debug.LogError("[BDArmory.KerbalSafety]: Cannot manage null crew.");
                 Destroy(this);
                 yield break;
             }
-            if (part == null)
+            if (p == null)
             {
                 Debug.LogError("[BDArmory.KerbalSafety]: Crew cannot exist outside of a part.");
                 Destroy(this);
                 yield break;
             }
-            while (part.vessel != null && (!part.vessel.loaded || part.vessel.packed)) yield return new WaitForFixedUpdate(); // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
-            if (part.vessel == null) yield break;
-            kerbalName = crew.displayName;
-            this.crew = crew;
+            while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return new WaitForFixedUpdate(); // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
+            if (p.vessel == null) yield break;
+            kerbalName = c.displayName;
+            this.crew = c;
             switch (BDArmorySettings.KERBAL_SAFETY_INVENTORY)
             {
                 case 1:
@@ -330,16 +317,16 @@ namespace BDArmory.Modules
                     this.crew.ResetInventory(false); // Reset the inventory to just a chute.
                     break;
             }
-            this.part = part;
-            if (part.IsKerbalEVA())
+            this.part = p;
+            if (p.IsKerbalEVA())
             {
-                this.kerbalEVA = part.GetComponent<KerbalEVA>();
+                this.kerbalEVA = p.GetComponent<KerbalEVA>();
                 if (kerbalEVA.IsSeated())
                 {
                     bool found = false;
-                    foreach (var s in VesselModuleRegistry.GetModules<KerbalSeat>(part.vessel))
+                    foreach (var s in VesselModuleRegistry.GetModules<KerbalSeat>(p.vessel))
                     {
-                        if (s.Occupant == part)
+                        if (s.Occupant == p)
                         {
                             seat = s;
                             found = true;
@@ -362,8 +349,9 @@ namespace BDArmory.Modules
             }
             AddHandlers();
             KerbalSafetyManager.Instance.kerbals.Add(kerbalName, this);
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Managing the safety of " + kerbalName + (ejected ? " on EVA" : " in " + part.vessel.vesselName) + ".");
-            OnVesselModified(part.vessel); // Immediately check the vessel.
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDArmory.KerbalSafety]: Managing the safety of " + kerbalName + (ejected ? " on EVA" : " in " + p.vessel.vesselName) + ".");
+            OnVesselModified(p.vessel); // Immediately check the vessel.
         }
 
         private void ConfigureKerbalEVA(KerbalEVA kerbalEVA)
@@ -456,19 +444,22 @@ namespace BDArmory.Modules
         {
             if (ejected) return; // We've already ejected.
             if (part == null || part.vessel == null) return; // The vessel is gone, don't try to do anything.
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Ejection triggered for " + kerbalName + " in " + part);
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDArmory.KerbalSafety]: Ejection triggered for " + kerbalName + " in " + part);
             if (kerbalEVA != null)
             {
                 if (kerbalEVA.isActiveAndEnabled) // Otherwise, they've been killed already and are being cleaned up by KSP.
                 {
                     if (seat != null && kerbalEVA.IsSeated()) // Leave the seat.
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is leaving their seat on " + seat.part.vessel.vesselName + ".");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is leaving their seat on " + seat.part.vessel.vesselName + ".");
                         seat.LeaveSeat(new KSPActionParam(KSPActionGroup.Abort, KSPActionType.Activate));
                     }
                     else
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " has already left their seat.");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " has already left their seat.");
                     }
                     StartCoroutine(DelayedChuteDeployment());
                     StartCoroutine(RecoverWhenPossible());
@@ -479,13 +470,13 @@ namespace BDArmory.Modules
                 if (BDArmorySettings.KERBAL_SAFETY < 2) return;
                 if (!ProcessEjection(part)) // All exits were blocked by something.
                 {
-                    if (!EjectFromOtherPart()) // Look for other airlocks to spawn from.
-                    {
-                        message = kerbalName + " failed to eject from " + part.vessel.vesselName + ", all exits were blocked. R.I.P.";
-                        // BDACompetitionMode.Instance.competitionStatus.Add(message);
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + message);
-
-                    }
+                    // if (!EjectFromOtherPart()) // Look for other airlocks to spawn from.
+                    // {
+                    message = kerbalName + " failed to eject from " + part.vessel.vesselName + ", all exits were blocked. R.I.P.";
+                    // BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        Debug.Log("[BDArmory.KerbalSafety]: " + message);
+                    // }
                 }
             }
             else
@@ -504,9 +495,10 @@ namespace BDArmory.Modules
                 if (toPart.CrewCapacity > 0 && !FlightEVA.hatchInsideFairing(toPart) && !FlightEVA.HatchIsObstructed(toPart, toPart.airlock))
                 {
                     var crewTransfer = CrewTransfer.Create(fromPart, crew, OnDialogDismiss);
-                    if (crewTransfer.validParts.Contains(toPart))
+                    if (crewTransfer != null && crewTransfer.validParts.Contains(toPart))
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Transferring " + kerbalName + " from " + fromPart + " to " + toPart + " then ejecting.");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            Debug.Log("[BDArmory.KerbalSafety]: Transferring " + kerbalName + " from " + fromPart + " to " + toPart + " then ejecting.");
                         crewTransfer.MoveCrewTo(toPart);
                         if (ProcessEjection(toPart))
                             return true;
@@ -534,7 +526,8 @@ namespace BDArmory.Modules
                     crew.KerbalRef.state = Kerbal.States.BAILED_OUT;
                     fromPart.vessel.RemoveCrew(crew);
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " ejected from " + fromPart.vessel.vesselName + " at " + fromPart.vessel.radarAltitude.ToString("0.00") + "m with velocity " + fromPart.vessel.Velocity().magnitude.ToString("0.00") + "m/s (vertical: " + fromPart.vessel.verticalSpeed + $")");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " ejected from " + fromPart.vessel.vesselName + " at " + fromPart.vessel.radarAltitude.ToString("0.00") + "m with velocity " + fromPart.vessel.Velocity().magnitude.ToString("0.00") + "m/s (vertical: " + fromPart.vessel.verticalSpeed + $")");
                 kerbalEVA.autoGrabLadderOnStart = false; // Don't grab the vessel.
                 kerbalEVA.StartNonCollidePeriod(5f, 1f, fromPart, fromPart.airlock);
                 KerbalSafetyManager.Instance.ManageNewlyEjectedKerbal(kerbalEVA, fromPart.vessel.Velocity());
@@ -554,12 +547,13 @@ namespace BDArmory.Modules
         /// <param name="vessel">The vessel that was modified.</param>
         public void OnVesselModified(Vessel vessel)
         {
+            if (this == null) return;
             if (vessel == null || !vessel.loaded) return;
             if (part.vessel == vessel) // It's this vessel.
             {
                 if (kerbalEVA != null)
                 {
-                    if (kerbalEVA.isActiveAndEnabled && gameObject.activeSelf) // We can't start coroutines if the gameObect isn't active.
+                    if (kerbalEVA.isActiveAndEnabled)
                     {
                         if (vessel.parts.Count == 1) // It's a falling kerbal.
                         {
@@ -583,7 +577,8 @@ namespace BDArmory.Modules
                     }
                     else
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " was not active (probably dead and being cleaned up by KSP already).");
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " was not active (probably dead and being cleaned up by KSP already).");
                         OnDestroy();
                     }
                 }
@@ -612,14 +607,16 @@ namespace BDArmory.Modules
             kerbalEVA.vessel.altimeterDisplayState = AltimeterDisplayState.AGL;
             if (chute != null && !kerbalEVA.IsSeated() && !kerbalEVA.vessel.LandedOrSplashed) // Check that the kerbal hasn't regained their seat or already landed.
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is falling, deploying halo parachute at " + kerbalEVA.vessel.radarAltitude + "m.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is falling, deploying halo parachute at " + kerbalEVA.vessel.radarAltitude + "m.");
                 if (chute.deploymentState != ModuleParachute.deploymentStates.SEMIDEPLOYED)
                     chute.deploymentState = ModuleParachute.deploymentStates.STOWED; // Reset the deployment state.
                 chute.deployAltitude = 30f;
                 chute.Deploy();
             }
             if (kerbalEVA.vessel.LandedOrSplashed)
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: " + kerbalEVA.vessel.vesselName + " has already landed, not deploying chute.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.KerbalSafety]: " + kerbalEVA.vessel.vesselName + " has already landed, not deploying chute.");
             if (FlightGlobals.ActiveVessel == kerbalEVA.vessel)
                 LoadedVesselSwitcher.Instance.TriggerSwitchVessel(1f);
         }
@@ -638,7 +635,8 @@ namespace BDArmory.Modules
             yield return new WaitForSeconds(delay);
             if (seat != null)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Found " + kerbalName + " in a combat chair just falling, ejecting.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.KerbalSafety]: Found " + kerbalName + " in a combat chair just falling, ejecting.");
                 seat.LeaveSeat(new KSPActionParam(KSPActionGroup.Abort, KSPActionType.Activate));
                 ejected = true;
                 StartCoroutine(DelayedChuteDeployment());
@@ -670,10 +668,12 @@ namespace BDArmory.Modules
             yield return new WaitUntil(() => kerbalEVA == null || FlightGlobals.ActiveVessel != kerbalEVA.vessel);
             if (kerbalEVA == null)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.LogError("[BDArmory.KerbalSafety]: " + kerbalName + " on EVA is MIA.");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.LogError("[BDArmory.KerbalSafety]: " + kerbalName + " on EVA is MIA.");
                 yield break;
             }
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Recovering " + kerbalName + ".");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log("[BDArmory.KerbalSafety]: Recovering " + kerbalName + ".");
             recovered = true;
             ShipConstruction.RecoverVesselFromFlight(kerbalEVA.vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
         }
