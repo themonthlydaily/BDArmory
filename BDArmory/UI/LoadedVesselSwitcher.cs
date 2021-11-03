@@ -388,6 +388,7 @@ namespace BDArmory.UI
 
             float height = _titleHeight;
             float vesselButtonWidth = BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin - (!BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE || BDArmorySettings.TAG_MODE ? 6f : 5f) * _buttonHeight;
+            float teamMargin = (!BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE && weaponManagers.All(tm => tm.Value.Count() == 1)) ? 0 : _margin;
 
             // Show all the active vessels
             if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_SORTING)
@@ -430,7 +431,7 @@ namespace BDArmory.UI
                     }
                     foreach (var teamManager in orderedTeamManagers)
                     {
-                        height += _margin;
+                        height += teamMargin;
                         bool teamNameShowing = false;
                         foreach (var weaponManager in teamManager.Item2)
                         {
@@ -461,7 +462,7 @@ namespace BDArmory.UI
             else // Regular sorting.
                 foreach (var teamManagers in weaponManagers.ToList()) // Use a copy as something seems to be modifying the list occassionally.
                 {
-                    height += _margin;
+                    height += teamMargin;
                     bool teamNameShowing = false;
                     foreach (var weaponManager in teamManagers.Value)
                     {
@@ -1235,7 +1236,7 @@ namespace BDArmory.UI
             if (!vesselTraceEnabled) return;
             vesselTraceEnabled = false;
             Debug.Log("[BDArmory.LoadedVesselSwitcher]: Stopping vessel tracing.");
-            var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs/VesselTraces";
+            var folder = Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "Logs", "VesselTraces");
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
             foreach (var vesselName in vesselTraces.Keys)

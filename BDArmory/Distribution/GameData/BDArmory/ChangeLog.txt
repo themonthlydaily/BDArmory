@@ -1,25 +1,66 @@
-﻿SI new stuff Dev branch 10/30/21
-FIXES
-	-Subsection targeting GUI label no longer reverts to COM
-	-Armor will no longer take damage when using Paintball Mode
-	-Paintballs will no longer overpenetrate if base ammo type is armor piercing
-	-Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit
-	-Armor panel armor values no longer vary based on part orientation
-	-Armor Panel buoyancy fixed
-	-Rockets no longer calculate shrapnel hits twice
-	-Fixes unit conversion error in armor spalling calcs
-	-Bullet Penetration calc now properly takes angle of impact into account
+﻿FIXES
+- Fix BDA part category placement to be usable on low resolution screens.
+- Don't add explosive forces when paintball mode is enabled.
+- Armor will no longer take damage when using Paintball Mode
+- Subsection targeting GUI label no longer reverts to COM
+- Paintballs will no longer overpenetrate if base ammo type is armor piercing
+- Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit
+- Armor panel armor values no longer vary based on part orientation
+- Armor Panel buoyancy fixed
+- Rockets no longer calculate shrapnel hits twice
+- Fixes unit conversion error in armor spalling calcs
+- Bullet Penetration calc now properly takes angle of impact into account
+- Minimal seat filling should fill the first non-weapon crewed command part, not the first non-weapon crewed part.
+- Iteratively refine the aiming point (measured to take 2-3 iterations typically) to avoid the turret premature firing issue.
+- Fix issue of NaN appearing in bullet damage.
+- Add a check for failing to load the tournament state.
+- Some fixes for continuous spawning, but it's still misbehaving.
+- Apply hull modifier to proc wings also.
+- Use the OS-dependent directory separator char for player-visible paths (fixes team names containing the 'AutoSpawn' folder in Windows).
+- Replace ', ' with ',' in the summary.csv file for teams for consistent team member naming.
+
 IMPROVEMENTS
-	-Armor panel thickness now starts at 25, can be increased up to old maximums
+- General:
+	- Update the tournament parser to sort teams by wins, have the same column order in the csv as in the console and include cumulative score per round results.
+	- Use RemoveVessel in VesselSpawner.cs for removing spectators for more consistent removal.
+	- Disable guard mode on aerial spawn to be consistent with competition start sequence (in case there's a delay between spawning and starting where someone activated guard mode on AG10).
+- UI:
+	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short teamnames are used.
+	- Remove unused "fire in range" toggle from weapon UI.
+	- Add a UTC timestamp to the clock.
+  - Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage
+  - In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor
+ 	- Clarifies armor debugging statements
+- Countermeasures:
+	- Add separate countermeasure settings to the weapons manager for chaff.
+	- Update default values for flares and chaff to be more effective.
+	- Lower default chaff factor to slightly nerf chaff performance.
+	- Add Vessel-Relative Bullet Checks for more accurate bullet checks that work in high-velocity environments (enabled by default).
+	- Replace smoothing of target velocity and acceleration with Brown's double exponential smoothing for improved aiming, particularly at longer ranges.
+- Armor:
+  -Armor panel thickness now starts at 25, can be increased up to old maximums
 	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field
 	-Bullets will now only hit (and deal damage to) armor panels once
-	-In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor
 	-Armor Panel HP now directly proportional to armor integrety
-	-Clarifies armor debugging statements
 	-ModuleReactiveArmor has been rebuilt and now works
 	-Adds Reactive Armor example part
-	-Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage
+  
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Vessel-Relative Bullet Checks in advacned Gameplay settings.  
 
+v1.4.11.2
+FIXES 
+	- Fix Intake Battle Damage issue.
+	- Intake Battle Damage now clamped to a minimum of 1/4 original intake area.
+	- AP rounds that penetrate multiple parts now only register a single 'hit' for scoring.
+	- Fixes Nuke FX scale and scaling.
+IMPROVEMENTS
+	- Adds Armour Reset toggle to BDA settings menu to reset craft armor/hull material to defaults.
+	- Missiles can now use in-flight animations with the 'flightAnimationName =' field.
+	- Adds config fields to BDModuleNuke for setting custom FX/sound.
+	- Nukes now have Editor info cards.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Added Armor Reset toggle.
 
 v1.4.11.1
 FIXES
@@ -43,7 +84,7 @@ FIXES
 	- EMPs from nukes will no longer repeatedly fry a hit vessel.
 IMPROVEMENTS
 	- General:
-		- Add optional persistant FX for smoke/debris from explosions.
+		- Add optional persistent FX for smoke/debris from explosions.
 		- Explosions will now damage a part if detonating inside it.
 		- Adds generic FX spawner.
 		- Renames RWPS3R2NukeModule to BDModuleNuke, and expands it into a missile-usable module.
@@ -143,6 +184,8 @@ IMPROVEMENTS
 		- Expand the low altitude GM kill limit to depths of -10km.
 		- A clearer message when a tournament stops due to spawning/competition start failures.
 		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles.
+	- RWP:
+		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
 	- Internal:
 		- Adjust camera weights for picking a better vessel to switch to.
 		- Add a IsUnderwater vessel extension.
@@ -177,7 +220,7 @@ FIXES
 	- When setting HP of parts, use an alternate approach to getting volume based on partSize when GetAverageBoundSize gives ridiculous results. Failing that, just base it on mass. (Fixes HP on TweakScale and AP+ parts.)
 	- Actually run the armour and hull setup functions in flight mode.
 	- Add conformal decal exception to HP/Armor visualizer.
-	- Make rendering of RCS snapshots and HP/Armour visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
+	- Make rendering of RCS snapshots and HP/Armor visualisers in the editor wait for ship changes to finish being triggered before rendering to reduce unnecessary renders causing flickering.
 	- Various fixes for shrapnel damage.
 	- Fix penetration velocity reduction.
 	- Fix barrage mode not cycling through singlebarrel weapons.
