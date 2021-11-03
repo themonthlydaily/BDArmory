@@ -2351,7 +2351,7 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            if (missilesAway > maxMissilesOnTarget)
+            if (guardMode && (missilesAway > maxMissilesOnTarget))
             {
                 return;
             }
