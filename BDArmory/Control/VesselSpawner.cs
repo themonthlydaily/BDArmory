@@ -301,7 +301,6 @@ namespace BDArmory.Control
                 yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
                 {
-                    RemoveVessel(FlightGlobals.ActiveVessel);
                     LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
                     yield return new WaitForFixedUpdate();
                 }

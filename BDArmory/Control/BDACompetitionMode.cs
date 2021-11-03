@@ -898,6 +898,10 @@ namespace BDArmory.Control
         Rect statusRectShadow;
         Rect clockRect;
         Rect clockRectShadow;
+        GUIStyle dateStyle;
+        GUIStyle dateStyleShadow;
+        Rect dateRect;
+        Rect dateRectShadow;
         string guiStatusString;
         #endregion
 
@@ -926,9 +930,13 @@ namespace BDArmory.Control
                     var gTime = (float)(Planetarium.GetUniversalTime() - (competitionIsActive ? competitionStartTime : competitionPreStartTime));
                     var minutes = Mathf.FloorToInt(gTime / 60);
                     var seconds = gTime % 60;
-                    string pTime = minutes.ToString("0") + ":" + seconds.ToString("00.00");
+                    // string pTime = minutes.ToString("0") + ":" + seconds.ToString("00.00");
+                    string pTime = $"{minutes:0}:{seconds:00.00}";
                     GUI.Label(clockRectShadow, pTime, statusStyleShadow);
                     GUI.Label(clockRect, pTime, statusStyle);
+                    string pDate = DateTime.UtcNow.ToString("yyyy-MM-dd\nHH:mm:ss") + " UTC";
+                    GUI.Label(dateRectShadow, pDate, dateStyleShadow);
+                    GUI.Label(dateRect, pDate, dateStyle);
                 }
 
                 // Messages
@@ -986,26 +994,36 @@ namespace BDArmory.Control
             statusStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
             statusStyle.fontStyle = FontStyle.Bold;
             statusStyle.alignment = TextAnchor.UpperLeft;
+            dateStyle = new GUIStyle(statusStyle);
             if (BDArmorySetup.GAME_UI_ENABLED)
             {
                 clockRect = new Rect(10, 42, 100, 30);
+                dateRect = new Rect(100, 38, 100, 20);
                 statusRect = new Rect(30, 80, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
                 statusStyle.fontSize = 22;
+                dateStyle.fontSize = 14;
             }
             else
             {
                 clockRect = new Rect(10, 6, 80, 20);
+                dateRect = new Rect(10, 26, 100, 20);
                 statusRect = new Rect(80, 6, Screen.width - 80, Mathf.FloorToInt(Screen.height / 2));
                 statusStyle.fontSize = 14;
+                dateStyle.fontSize = 10;
             }
             clockRectShadow = new Rect(clockRect);
             clockRectShadow.x += 2;
             clockRectShadow.y += 2;
+            dateRectShadow = new Rect(dateRect);
+            dateRectShadow.x += 2;
+            dateRectShadow.y += 2;
             statusRectShadow = new Rect(statusRect);
             statusRectShadow.x += 2;
             statusRectShadow.y += 2;
             statusStyleShadow = new GUIStyle(statusStyle);
             statusStyleShadow.normal.textColor = new Color(0, 0, 0, 0.75f);
+            dateStyleShadow = new GUIStyle(dateStyle);
+            dateStyleShadow.normal.textColor = new Color(0, 0, 0, 0.75f);
         }
 
         void OnDestroy()

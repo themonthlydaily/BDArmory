@@ -400,6 +400,8 @@ namespace BDArmory.Core.Module
 
         private void OnDestroy()
         {
+            if (bottom != null) bottom = null;
+            if (top != null) top = null;
             GameEvents.onEditorShipModified.Remove(ShipModified);
             GameEvents.onPartDie.Remove(OnPartDie);
         }
