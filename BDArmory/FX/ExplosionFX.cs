@@ -389,7 +389,7 @@ namespace BDArmory.FX
                             }
                         }                                
                         if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
-                            intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmor));
+                            intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmour));
                     }
                 }
 
