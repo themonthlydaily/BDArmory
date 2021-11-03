@@ -300,7 +300,7 @@ namespace BDArmory.Core.Extension
 
         public static bool HasArmor(this Part p)
         {
-            return p.GetArmorThickness() > 15f;
+            return Mathf.FloorToInt(p.GetArmorThickness()) > 0f;
         }
 
         public static bool GetFireFX(this Part p)
@@ -339,6 +339,11 @@ namespace BDArmory.Core.Extension
         {
             if (p == null) return 0f;
             return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+        }
+        public static float GetArmorMaxThickness(this Part p)
+        {
+            if (p == null) return 0f;
+            return Dependencies.Get<DamageService>().GetPartMaxArmor_svc(p);
         }
         public static float GetArmorDensity(this Part p)
         {
@@ -490,6 +495,7 @@ namespace BDArmory.Core.Extension
                 part.Modules.Contains("ModuleWheelBase") ||
                 part.Modules.Contains("KSPWheelBase") ||
                 part.gameObject.GetComponentUpwards<KerbalEVA>() ||
+                part.Modules.Contains("ModuleReactiveArmor") ||
                 part.Modules.Contains("ModuleDCKShields") ||
                 part.Modules.Contains("ModuleShieldGenerator")
                 )

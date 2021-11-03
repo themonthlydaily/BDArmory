@@ -90,7 +90,11 @@ namespace BDArmory.Core.Services
             float armor_ = Mathf.Max(1, p.Modules.GetModule<HitpointTracker>().Armor);
             return armor_;
         }
-
+        public override float GetPartMaxArmor_svc(Part p)
+        {
+            float armor_ = Mathf.Max(1, p.Modules.GetModule<HitpointTracker>().StartingArmor);
+            return armor_;
+        }
         public override float GetMaxPartDamage_svc(Part p)
         {
             return p.Modules.GetModule<HitpointTracker>().GetMaxHitpoints();

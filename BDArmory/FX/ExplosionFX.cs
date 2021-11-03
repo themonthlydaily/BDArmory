@@ -372,6 +372,22 @@ namespace BDArmory.FX
                         if (FlightGlobals.currentMainBody != null && hit.collider.gameObject == FlightGlobals.currentMainBody.gameObject) return false; // Terrain hit. Full absorption. Should avoid NREs in the following.
                         var partHP = partHit.Damage();
                         var partArmour = partHit.GetArmorThickness();
+                        var RA = partHit.FindModuleImplementing<ModuleReactiveArmor>();
+                        if (RA != null)
+                        {
+                            if (RA.NXRA)
+                            {
+                                partArmour *= RA.armorModifier;
+                            }
+                            else
+                            {
+                                if (((ExplosionSource == ExplosionSourceType.Bullet || ExplosionSource == ExplosionSourceType.Rocket) && (Caliber > RA.sensitivity && distance < 0.1f)) ||   //bullet/rocket hit
+                                    ((ExplosionSource == ExplosionSourceType.Missile || ExplosionSource == ExplosionSourceType.BattleDamage) && (distance < Power/2))) //or close range detonation likely to trigger ERA
+                                {
+                                    partArmour = 300 * RA.armorModifier;
+                                }
+                            }
+                        }                                
                         if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
                             intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmour));
                     }
@@ -542,33 +558,52 @@ namespace BDArmory.FX
                         part.AddInstagibDamage();
                         //Debug.Log("[ExplosionFX] applying instagib!");
                     }
-                    if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
+                    var RA = part.FindModuleImplementing<ModuleReactiveArmor>();
+
+                    if (RA != null && !RA.NXRA && (ExplosionSource == ExplosionSourceType.Bullet || ExplosionSource == ExplosionSourceType.Rocket) && (Caliber > RA.sensitivity && realDistance < 0.1f)) //bullet/rocket hit
                     {
-                        damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
+                        RA.UpdateSectionScales();
                     }
-                    if (damage > 0) //else damage from spalling done in CalcExplArmorDamage
+                    else
                     {
-                        if (BDArmorySettings.BATTLEDAMAGE)
+                        if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
                         {
-                            Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
+                            if (RA != null && !RA.NXRA) //blast wave triggers RA; detonate all remaining RA sections
+                            {
+                                for (int i = 0; i < RA.sectionsRemaining; i++)
+                                {
+                                    RA.UpdateSectionScales();
+                                }
+                            }
+                            else
+                            {
+                                damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
+                            }
                         }
-                        // Update scoring structures
-                        var aName = eventToExecute.SourceVesselName; // Attacker
-                        var tName = part.vessel.GetName(); // Target
-                        switch (ExplosionSource)
+                        if (damage > 0) //else damage from spalling done in CalcExplArmorDamage
                         {
-                            case ExplosionSourceType.Bullet:
-                                BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage);
-                                break;
-                            case ExplosionSourceType.Rocket:
-                                BDACompetitionMode.Instance.Scores.RegisterRocketDamage(aName, tName, damage);
-                                break;
-                            case ExplosionSourceType.Missile:
-                                BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
-                                break;
-                            case ExplosionSourceType.BattleDamage:
-                                BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, part.vessel, damage);
-                                break;
+                            if (BDArmorySettings.BATTLEDAMAGE)
+                            {
+                                Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
+                            }
+                            // Update scoring structures
+                            var aName = eventToExecute.SourceVesselName; // Attacker
+                            var tName = part.vessel.GetName(); // Target
+                            switch (ExplosionSource)
+                            {
+                                case ExplosionSourceType.Bullet:
+                                    BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage);
+                                    break;
+                                case ExplosionSourceType.Rocket:
+                                    BDACompetitionMode.Instance.Scores.RegisterRocketDamage(aName, tName, damage);
+                                    break;
+                                case ExplosionSourceType.Missile:
+                                    BDACompetitionMode.Instance.Scores.RegisterMissileDamage(aName, tName, damage);
+                                    break;
+                                case ExplosionSourceType.BattleDamage:
+                                    BDACompetitionMode.Instance.Scores.RegisterBattleDamage(aName, part.vessel, damage);
+                                    break;
+                            }
                         }
                     }
                 }

@@ -1,4 +1,27 @@
-﻿v1.4.11.1
+﻿SI new stuff Dev branch 10/30/21
+FIXES
+	-Subsection targeting GUI label no longer reverts to COM
+	-Armor will no longer take damage when using Paintball Mode
+	-Paintballs will no longer overpenetrate if base ammo type is armor piercing
+	-Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit
+	-Armor panel armor values no longer vary based on part orientation
+	-Armor Panel buoyancy fixed
+	-Rockets no longer calculate shrapnel hits twice
+	-Fixes unit conversion error in armor spalling calcs
+	-Bullet Penetration calc now properly takes angle of impact into account
+IMPROVEMENTS
+	-Armor panel thickness now starts at 25, can be increased up to old maximums
+	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field
+	-Bullets will now only hit (and deal damage to) armor panels once
+	-In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor
+	-Armor Panel HP now directly proportional to armor integrety
+	-Clarifies armor debugging statements
+	-ModuleReactiveArmor has been rebuilt and now works
+	-Adds Reactive Armor example part
+	-Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage
+
+
+v1.4.11.1
 FIXES
 IMPROVEMENTS
 	- Adds AIR-2 Genie example weapon.

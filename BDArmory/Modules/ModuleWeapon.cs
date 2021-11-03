@@ -393,6 +393,8 @@ namespace BDArmory.Modules
 
         public int ProjectileCount = 1;
 
+        public bool SabotRound = false;
+
         [KSPField]
         public bool BeltFed = true; //draws from an ammo bin; default behavior
 
@@ -1715,6 +1717,7 @@ namespace BDArmory.Modules
                                     else
                                     {
                                         pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
+                                        pBullet.sabot = SabotRound;
                                     }
                                     if (impulseWeapon)
                                     {
@@ -4124,6 +4127,14 @@ namespace BDArmory.Modules
                 tracerStartWidth = caliber / 300;
                 tracerEndWidth = caliber / 750;
                 nonTracerWidth = caliber / 500;
+                if (((((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19) + 1) * 10) > caliber * 4))
+                {
+                    SabotRound = true;
+                }
+                else
+                {
+                    SabotRound = false;
+                }
                 SelectedAmmoType = bulletInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
                 if (!useCustomBelt)
                 {

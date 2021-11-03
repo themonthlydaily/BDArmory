@@ -27,9 +27,14 @@ namespace BDArmory.Core.Module
         UI_FloatRange(minValue = 0f, maxValue = 200, stepIncrement = 1f, scene = UI_Scene.All)]
         public float Armor = 10f; //settable Armor thickness availible for editing in the SPH?VAB
 
+        [KSPField(advancedTweakable = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorThickness")]//armor Thickness
+        public float Armour = 10f;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Hitpoints
-UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.All, maxValue = 100, minValue = 0, requireFullControl = false)]
+UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.Flight, maxValue = 100, minValue = 0, requireFullControl = false)]
         public float ArmorRemaining;
+
+        public float StartingArmor;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_Armor_ArmorType"),//Armor Types
         UI_FloatRange(minValue = 1, maxValue = 999, stepIncrement = 1, scene = UI_Scene.All)]
@@ -105,7 +110,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public float Cost;
 
         private bool startsArmored = false;
-        public bool Armorpanel => startsArmored;
+        public bool ArmorPanel = false;
         //Part vars
         private float partMass = 0f;
         public Vector3 partSize;
@@ -238,6 +243,11 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 isProcWing = true;
             }
+            StartingArmor = Armor;
+            if (part.name.ToLower().Contains("armor"))
+            {
+                ArmorPanel = true;
+            }
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (BDArmorySettings.RESET_ARMOUR)
@@ -254,9 +264,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     //armorField.maxValue = Armor;
                 }
                 part.RefreshAssociatedWindows();
-
             }
-            if (HighLogic.LoadedSceneIsEditor)
+            if (HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor)
             {
                 int typecount = 0;
                 for (int i = 0; i < ArmorInfo.armorNames.Count; i++)
@@ -269,8 +278,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActive = false;
+                    Fields["guiHullTypeString"].guiActiveEditor = false;
+                    Fields["guiHullTypeString"].guiActive = false;                    
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
+                    //UI_ProgressBar Armorleft = (UI_ProgressBar)Fields["ArmorRemaining"].uiControlFlight;
+                    //Armorleft.scene = UI_Scene.None;
                 }
                 if (part.IsMissile())
                 {
@@ -300,7 +313,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     IgnoreForArmorSetup = true;
                     SetHullMass();
                 }
-                if (ArmorThickness > 10) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
+                if (ArmorThickness > 10 || ArmorPanel) //Set to 10, Cerulean's HP MM patches all have armorThickness 10 fields
                 {
                     startsArmored = true;
                     if (Armor > 10 && Armor != ArmorThickness)
@@ -378,6 +391,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     }
                 }
             }
+            Armour = Armor;
             StartCoroutine(DelayedOnStart()); // Delay updating mass, armour, hull and HP so mods like proc wings and tweakscale get the right values.
             // if (HighLogic.LoadedSceneIsFlight)
             // {
@@ -667,7 +681,11 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     hitpoints = maxHitPoints;
                 }
             }
-
+            if (ArmorPanel)
+            {
+                Hitpoints = ArmorRemaining * armorVolume * 10;
+                hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
+            }
             if (hitpoints <= 0) hitpoints = HpRounding;
             if (!_finished_setting_up && _armorConfigured && _hullConfigured) _hpConfigured = true;
             return hitpoints;
@@ -711,6 +729,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public void AddDamage(float partdamage, bool overcharge = false)
         {
             if (isAI) return;
+            if (ArmorPanel)
+            {
+                return;
+            }
 
             partdamage = Mathf.Max(partdamage, 0f) * -1;
             Hitpoints += (partdamage / defenseMutator); //why not just go -= partdamage?
@@ -749,19 +771,26 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public void ReduceArmor(float massToReduce) //incoming massToreduce should be cm3
         {
-            //how do I wantto do this? have armor usethe thickness, which gets slwly wittled away?
-            //or have an armor remaining % slimiar to HP, that is reduced, and pen calcs are changed to always use set thickness, but with (100- currentArmor%) % chance of allowing rounds through?
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * (Density / 1000000000))); //g/m3
             }
             float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
             Armor -= (reduceMass / armorMass) * Armor; //now properly reduces armor thickness
-            ArmorRemaining = (1 - (reduceMass / armorMass)) * 100;
             if (Armor < 0)
             {
                 Armor = 0;
                 ArmorRemaining = 0;
+            }
+            ArmorRemaining = Armor / StartingArmor * 100;
+            Armour = Armor;
+            if (ArmorPanel)
+            {
+                Hitpoints = ArmorRemaining * armorVolume * 10;
+                if (Armor <= 0)
+                {
+                    DestroyPart();
+                }
             }
             armorMass -= reduceMass; //tons
             if (armorMass < 0)
@@ -773,7 +802,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public void overrideArmorSetFromConfig()
         {
             ArmorSet = true;
-            if (ArmorThickness > 10) //primarily panels, but any thing that starts with more than default armor
+            if (ArmorThickness > 10 || ArmorPanel) //primarily panels, but any thing that starts with more than default armor
             {
                 startsArmored = true;
                 if (Armor > 10 && Armor != ArmorThickness) //if settings modified and loading in from craft fiel
@@ -828,7 +857,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 if ((ArmorTypeNum - 1) > ArmorInfo.armorNames.Count) //in case of trying to load a craft using a mod armor type that isn't installed and having a armorTypeNum larger than the index size
                 {
-                    if (startsArmored)
+                    if (startsArmored || ArmorPanel)
                     {
                         if (ArmorTypeNum == 1)
                         {
@@ -1029,7 +1058,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         {
             StringBuilder output = new StringBuilder();
             output.Append(Environment.NewLine);
-            if (startsArmored)
+            if (startsArmored || ArmorPanel)
             {
                 output.AppendLine($"Starts Armoured");
                 output.AppendLine($" - Armor Mass: {armorMass}");

@@ -34,7 +34,6 @@ namespace BDArmory.FX
         private float fireIntensity = 0;
         private float tntMassEquivalent = 0;
         public bool surfaceFire = false;
-        private int fireDmgFloor = 1000; // FIXME This is assigned but its value is never used.
         private bool isSRB = false;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
@@ -72,15 +71,6 @@ namespace BDArmory.FX
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
             var hullmat = parentPart.FindModuleImplementing<HitpointTracker>();
-            if (hullmat != null)
-            {
-                if (hullmat.HullTypeNum == 1) fireDmgFloor = 350;
-                else if (hullmat.HullTypeNum == 2) fireDmgFloor = 1000; //993c melting point of Aluminium
-                else
-                {
-                    fireDmgFloor = 1700; //~1500c, melting point of mild steel
-                }
-            }
             solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
             if (engine != null)
             {

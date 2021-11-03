@@ -115,6 +115,7 @@ namespace BDArmory.Bullets
         public bool hasDetonated = false;
         public bool hasRicocheted = false;
         public bool fuzeTriggered = false;
+        private Part CurrentPart = null;
 
         public int penTicker = 0;
 
@@ -142,10 +143,6 @@ namespace BDArmory.Bullets
             startPosition = transform.position;
             currentSpeed = currentVelocity.magnitude; // this is the velocity used for drag estimations (only), use total velocity, not muzzle velocity
 
-            if ((((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19) + 1) / (caliber / 10)) > 4)
-            {
-                sabot = true; //assume any round more than 4 calibers long is a sabot round; using DU as density as this give a minimum possible length, and any round more than 4 calibers assuming Du is likely a sabot
-            }
             if (explosive)
             {
                 HERatio = Mathf.Clamp(tntMass / (bulletMass < tntMass ? tntMass * 1.25f : bulletMass), 0.01f, 0.95f);
@@ -237,6 +234,8 @@ namespace BDArmory.Bullets
         {
             sourceVessel = null;
             sourceWeapon = null;
+            CurrentPart = null;
+            sabot = false;
         }
 
         void OnDestroy()
@@ -491,7 +490,6 @@ namespace BDArmory.Bullets
                         {
                             return true;
                         }
-
                         hit = hitsEnu.Current;
                         hitPart = null;
                         hitEVA = null;
@@ -508,6 +506,8 @@ namespace BDArmory.Bullets
 
                         if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
                         if (hitPart != null && hitPart == sourceWeapon) continue; // Ignore weapon that fired the bullet.
+                        if (hitPart != null && (hitPart == CurrentPart && CurrentPart.name.ToLower().Contains("armor"))) continue; //only have bullet hit armor panels once - no back armor to hit if penetration
+                        CurrentPart = hitPart;
                         if (hitEVA != null)
                         {
                             hitPart = hitEVA.part;
@@ -576,10 +576,13 @@ namespace BDArmory.Bullets
                             ME.massMod += massMod;
                             ME.duration += BDArmorySettings.WEAPON_FX_DURATION;
                         }
-                        if (impulse != 0 && hitPart.rb != null)
+                        if (impulse != 0 && hitPart.rb != null || BDArmorySettings.PAINTBALL_MODE)
                         {
                             distanceTraveled += hit.distance;
-                            hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Acceleration);
+                            if (impulse != 0 && hitPart.rb != null)
+                            {
+                                hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Acceleration);
+                            }
                             ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, true);
                             KillBullet();
                             return true; //impulse rounds shouldn't penetrate/do damage
@@ -600,7 +603,7 @@ namespace BDArmory.Bullets
                             float Density = Armor.Density;
                             if (BDArmorySettings.DRAW_ARMOR_LABELS)
                             {
-                                Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
+                                Debug.Log("[PooledBullet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
                             }
                             float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(bulletMass, impactSpeed);
                             float armorStrength = ProjectileUtils.CalculateArmorStrength(caliber, thickness, Ductility, Strength, Density, safeTemp, hitPart);
@@ -610,17 +613,55 @@ namespace BDArmory.Bullets
                             {
                                 newCaliber = ProjectileUtils.CalculateDeformation(armorStrength, bulletEnergy, caliber, impactSpeed, hardness, Density, HERatio, apBulletMod);
                             }
-                            //else //REA tie-in? Ways sabots can fail: 1)get deflected - Active PRotection System interception, REA: sabot hitting at an angle; if still mostly perpendicular, impact, but with a bonus to thickness from oblique impact
-                            //if too far deflected, then impact with side of sabot intead of point, massive increase to 'caliber'
-                            //2) sabot shattered  - energetic REA, ??: sabot is now much shorter, substantial decrease to bulletmass (which will be interpreted as a reduction in sabot length in pen calcs)
-                            //{
-                            //    newCaliber = 
-                            //}
-                            //calculate penetration
                             penetration = ProjectileUtils.CalculatePenetration(caliber, newCaliber, bulletMass, impactSpeed, Ductility, Density, Strength, thickness, apBulletMod, sabot);
                             caliber = newCaliber; //update bullet with new caliber post-deformation(if any)
-                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration);
-                            ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactSpeed, sourceVesselName, ExplosionSourceType.Bullet);
+                            penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness);
+                            //Reactive Armor calcs
+                            //Round has managed to punch through front plate of RA, triggering RA
+                            //if NXRA, will activate on anything that can pen front plate
+
+                            var RA = hitPart.FindModuleImplementing<ModuleReactiveArmor>();
+                            if (RA != null)
+                            {
+                                if (penetrationFactor > 1)
+                                {
+                                    float thicknessModifier = RA.armorModifier;
+                                    if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PooledBullet] Beginning Reactive Armor Hit; NXRA: "+ RA.NXRA + "; thickness Mod: " + RA.armorModifier);
+                                    if (RA.NXRA) //non-explosive RA, always active
+                                    {
+                                        thickness *= thicknessModifier;
+                                    }
+                                    else
+                                    {
+                                        if (sabot)
+                                        {
+                                            if (hitAngle < 80) //ERA isn't going to do much against near-perpendicular hits
+                                            {
+                                                caliber = (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1); //increase caliber to sim sabot hitting perpendicualr instead of point-first
+                                                bulletMass /= 2; //sunder sabot
+                                                //RA isn't going to stop sabot, but underlying part's armor will (probably)
+                                                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PooledBullet] Sabot caliber and mass now: " + caliber + ", " + bulletMass);
+                                                RA.UpdateSectionScales();
+                                            }
+                                        }
+                                        else //standard rounds
+                                        {
+                                            if (caliber >= RA.sensitivity) //big enough round to trigger RA
+                                            {
+                                                thickness *= thicknessModifier;
+                                                if (fuzeType == BulletFuzeTypes.Delay || fuzeType == BulletFuzeTypes.Penetrating || fuzeType == BulletFuzeTypes.None) //non-explosive impact
+                                                {
+                                                    RA.UpdateSectionScales(); //detonate RA section
+                                                    //explosive impacts handled in ExplosionFX
+                                                    //if explosive and contact fuze, kill bullet?
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness); //RA stop round?
+                            }
+                            else ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactSpeed, sourceVesselName, ExplosionSourceType.Bullet);
                         }
                         else
                         {
@@ -713,8 +754,9 @@ namespace BDArmory.Bullets
                             }
                             else
                             {
-								ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
+								ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult/2, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
                             }
+
                             //Delay and Penetrating Fuze bullets that penetrate should explode shortly after
                             //if penetration is very great, they will have moved on                            
                             //if (explosive && penetrationFactor < 3 || !viableBullet)
