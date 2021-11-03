@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using BDArmory.Core;
+using BDArmory.Core.Utils;
 using BDArmory.Core.Extension;
 using BDArmory.FX;
 using BDArmory.Parts;
@@ -127,6 +128,9 @@ namespace BDArmory.Bullets
 
         static RaycastHit[] hits;
         static RaycastHit[] reverseHits;
+        static Collider[] overlapSphereColliders;
+        static List<RaycastHit> allHits;
+        static Dictionary<Vessel, float> rayLength;
         private Vector3[] linePositions = new Vector3[2];
 
         private double distanceTraveled = 0;
@@ -136,6 +140,9 @@ namespace BDArmory.Bullets
         {
             if (hits == null) { hits = new RaycastHit[100]; }
             if (reverseHits == null) { reverseHits = new RaycastHit[100]; }
+            if (overlapSphereColliders == null) { overlapSphereColliders = new Collider[1000]; }
+            if (allHits == null) { allHits = new List<RaycastHit>(); }
+            if (rayLength == null) { rayLength = new Dictionary<Vessel, float>(); }
         }
 
         void OnEnable()
@@ -189,7 +196,9 @@ namespace BDArmory.Bullets
             {
                 bulletTrail.positionCount = linePositions.Length;
             }
-            linePositions[0] = transform.position;
+            linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()) * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime);
+            // linePositions[0] = transform.position + currentVelocity * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime;
+            // linePositions[0] = transform.position + (currentVelocity + 0.5f * Time.fixedDeltaTime * FlightGlobals.getGeeForceAtPosition(transform.position)) * Time.fixedDeltaTime; // DEBUG Show the bullet path over the next fixedDeltaTime.
             linePositions[1] = transform.position;
             bulletTrail.SetPositions(linePositions);
 
@@ -284,6 +293,8 @@ namespace BDArmory.Bullets
             {
                 // visual tracer velocity is relative to the observer
                 linePositions[0] = transform.position + ((currentVelocity - FlightGlobals.ActiveVessel.Velocity()) * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime);
+                // linePositions[0] = transform.position + currentVelocity * tracerDeltaFactor * 0.45f * Time.fixedDeltaTime;
+                // linePositions[0] = transform.position + (currentVelocity + 0.5f * Time.fixedDeltaTime * FlightGlobals.getGeeForceAtPosition(transform.position)) * Time.fixedDeltaTime; // DEBUG Show the bullet path over the next fixedDeltaTime.
             }
             else
             {
@@ -316,8 +327,7 @@ namespace BDArmory.Bullets
                 }
             }
             */
-            if (CheckBulletCollision(Time.fixedDeltaTime))
-                return;
+            if (CheckBulletCollisions(TimeWarp.fixedDeltaTime)) return;
 
             MoveBullet(Time.fixedDeltaTime);
 
@@ -440,6 +450,145 @@ namespace BDArmory.Bullets
             return currentVelocity;
         }
 
+        public bool CheckBulletCollisions(float period)
+        {
+            //reset our hit variables to default state
+            hasPenetrated = true;
+            hasDetonated = false;
+            hasRicocheted = false;
+            //penTicker = 0;
+            currPosition = transform.position;
+            allHits.Clear();
+            rayLength.Clear();
+
+            if (BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS)
+            {
+                CheckBulletCollisionWithVessels(period);
+                CheckBulletCollisionWithScenery(period);
+                using (var hitsEnu = allHits.OrderBy(x => x.distance).GetEnumerator()) // Check all hits in order of distance.
+                    while (hitsEnu.MoveNext()) if (BulletHitAnalysis(hitsEnu.Current, period)) return true;
+                return false;
+            }
+            else
+                return CheckBulletCollision(period);
+        }
+
+        /// <summary>
+        /// This performs checks using the relative velocity to each vessel within the range of the movement of the bullet.
+        /// This is particularly relevant at high velocities (e.g., in orbit) where the sideways velocity of co-moving objects causes a complete miss.
+        /// </summary>
+        /// <param name="period"></param>
+        /// <returns></returns>
+        public void CheckBulletCollisionWithVessels(float period)
+        {
+            if (!BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS) return;
+            List<Vessel> nearbyVessels = new List<Vessel>();
+
+            var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
+            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(transform.position, currentVelocity.magnitude * period * 2f, overlapSphereColliders, layerMask); // Overlapsphere of 2*period assuming that vessels are moving at similar speeds to the bullet.
+            if (overlapSphereColliderCount == overlapSphereColliders.Length)
+            {
+                overlapSphereColliders = Physics.OverlapSphere(transform.position, currentVelocity.magnitude * period * 2f, layerMask);
+                overlapSphereColliderCount = overlapSphereColliders.Length;
+            }
+
+            using (var hitsEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
+            {
+                while (hitsEnu.MoveNext())
+                {
+                    if (hitsEnu.Current == null) continue;
+                    try
+                    {
+                        Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
+                        if (partHit == null) continue;
+                        if (partHit.vessel == sourceVessel) continue;
+                        if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                        if (partHit.vessel != null && !nearbyVessels.Contains(partHit.vessel)) nearbyVessels.Add(partHit.vessel);
+                    }
+                    catch (Exception e) // ignored
+                    {
+                        Debug.LogWarning("[BDArmory.PooledBullet]: Exception thrown in CheckBulletCollisionWithVessels: " + e.Message + "\n" + e.StackTrace);
+                    }
+                }
+            }
+            foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - transform.position).sqrMagnitude))
+            {
+                CheckBulletCollisionWithVessel(period, vessel);
+            }
+        }
+
+        public void CheckBulletCollisionWithVessel(float period, Vessel vessel)
+        {
+            var relativeVelocity = currentVelocity - (Vector3)vessel.Velocity();
+            float dist = relativeVelocity.magnitude * period;
+            bulletRay = new Ray(currPosition, relativeVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
+            var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA);
+
+            var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, layerMask);
+            if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
+            {
+                hits = Physics.RaycastAll(bulletRay, dist, layerMask);
+                hitCount = hits.Length;
+            }
+
+            var reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + relativeVelocity * period, -relativeVelocity), reverseHits, dist, layerMask);
+            if (reverseHitCount == reverseHits.Length)
+            {
+                reverseHits = Physics.RaycastAll(new Ray(currPosition + relativeVelocity * period, -relativeVelocity), dist, layerMask);
+                reverseHitCount = reverseHits.Length;
+            }
+            for (int i = 0; i < reverseHitCount; ++i)
+            { reverseHits[i].distance = dist - reverseHits[i].distance; }
+
+            if (hitCount + reverseHitCount > 0)
+            {
+                bool hitFound = false;
+                Part hitPart;
+                using (var hit = hits.Take(hitCount).AsEnumerable().GetEnumerator())
+                    while (hit.MoveNext())
+                    {
+                        hitPart = hit.Current.collider.gameObject.GetComponentInParent<Part>();
+                        if (hitPart == null) continue;
+                        if (hitPart.vessel == vessel) allHits.Add(hit.Current);
+                        if (!hitFound) hitFound = true;
+                    }
+                using (var hit = reverseHits.Take(reverseHitCount).AsEnumerable().GetEnumerator())
+                    while (hit.MoveNext())
+                    {
+                        hitPart = hit.Current.collider.gameObject.GetComponentInParent<Part>();
+                        if (hitPart == null) continue;
+                        if (hitPart.vessel == vessel) allHits.Add(hit.Current);
+                        if (!hitFound) hitFound = true;
+                    }
+                if (hitFound) rayLength[vessel] = dist;
+            }
+        }
+
+        public void CheckBulletCollisionWithScenery(float period)
+        {
+            float dist = currentVelocity.magnitude * period;
+            bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
+            var layerMask = (int)(LayerMasks.Scenery);
+
+            var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, layerMask);
+            if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
+            {
+                hits = Physics.RaycastAll(bulletRay, dist, layerMask);
+                hitCount = hits.Length;
+            }
+            allHits.AddRange(hits.Take(hitCount));
+
+            var reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, layerMask);
+            if (reverseHitCount == reverseHits.Length)
+            {
+                reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, layerMask);
+                reverseHitCount = reverseHits.Length;
+            }
+            for (int i = 0; i < reverseHitCount; ++i)
+            { reverseHits[i].distance = dist - reverseHits[i].distance; }
+            allHits.AddRange(reverseHits.Take(reverseHitCount));
+        }
+
         /// <summary>
         /// Check for bullet collision in the upcoming period. 
         /// This also performs a raycast in reverse to detect collisions from rays starting within an object.
@@ -448,27 +597,20 @@ namespace BDArmory.Bullets
         /// <returns>true if a collision is detected, false otherwise.</returns>
         public bool CheckBulletCollision(float period)
         {
-            //reset our hit variables to default state
-            hasPenetrated = true;
-            hasDetonated = false;
-            hasRicocheted = false;
-            //penTicker = 0;
-            currPosition = transform.position;
-
             float dist = currentVelocity.magnitude * period;
             bulletRay = new Ray(currPosition, currentVelocity + 0.5f * period * FlightGlobals.getGeeForceAtPosition(transform.position));
-            var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, 9076737);
+            var layerMask = (int)(LayerMasks.Parts | LayerMasks.EVA | LayerMasks.Scenery);
+            var hitCount = Physics.RaycastNonAlloc(bulletRay, hits, dist, layerMask);
             if (hitCount == hits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
-                hits = Physics.RaycastAll(bulletRay, dist, 9076737);
+                hits = Physics.RaycastAll(bulletRay, dist, layerMask);
                 hitCount = hits.Length;
             }
-            int reverseHitCount = 0;
 
-            reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, 9076737);
+            var reverseHitCount = Physics.RaycastNonAlloc(new Ray(currPosition + currentVelocity * period, -currentVelocity), reverseHits, dist, layerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, 9076737);
+                reverseHits = Physics.RaycastAll(new Ray(currPosition + currentVelocity * period, -currentVelocity), dist, layerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
@@ -477,16 +619,23 @@ namespace BDArmory.Bullets
             if (hitCount + reverseHitCount > 0)
             {
                 var orderedHits = hits.Take(hitCount).Concat(reverseHits.Take(reverseHitCount)).OrderBy(x => x.distance);
+                using (var hit = orderedHits.GetEnumerator())
+                    while (hit.MoveNext()) if (BulletHitAnalysis(hit.Current, period)) return true;
+            }
+            return false;
+        }
 
-                using (var hitsEnu = orderedHits.GetEnumerator())
-                {
-                    RaycastHit hit;
-                    Part hitPart;
-                    KerbalEVA hitEVA;
-
-                    while (hitsEnu.MoveNext())
-                    {
-                        if (!hasPenetrated || hasRicocheted || hasDetonated)
+        /// <summary>
+        /// Internals of the bullet collision hits loop in CheckBulletCollision so it can also be called from CheckBulletCollisionWithVessel.
+        /// </summary>
+        /// <param name="hit">The raycast hit.</param>
+        /// <param name="vesselHit">Whether the hit is a vessel hit or not.</param>
+        /// <param name="dist">The distance the bullet moved in the current reference frame.</param>
+        /// <param name="period">The period the bullet moved for.</param>
+        /// <returns>true if the bullet hits and dies, false otherwise.</returns>
+        bool BulletHitAnalysis(RaycastHit hit, float period)
+        {
+            if (!hasPenetrated || hasRicocheted || hasDetonated)
                         {
                             return true;
                         }
@@ -754,7 +903,7 @@ namespace BDArmory.Bullets
                             }
                             else
                             {
-								ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult/2, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
+								                ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult/2, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
                             }
 
                             //Delay and Penetrating Fuze bullets that penetrate should explode shortly after
@@ -822,11 +971,9 @@ namespace BDArmory.Bullets
                             distanceTraveled += hit.distance;
                             return true;
                         }
-                    }//end While
-                }//end enumerator
-            }//end of hits
             return false;
         }
+
         IEnumerator DelayedDetonationRoutine()
         {
             yield return new WaitForEndOfFrame();
@@ -892,7 +1039,6 @@ namespace BDArmory.Bullets
                     }
                 }
             }
-
             return detonate;
         }
 
