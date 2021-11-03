@@ -652,7 +652,7 @@ namespace BDArmory.Bullets
                 Debug.Log("[BDArmory.PooledBullet]:NullReferenceException for Ballistic Hit: " + e.Message);
                 return true;
             }
-
+            
             if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) return false; // Ignore ignored parts.
             if (hitPart != null && hitPart == sourceWeapon) return false; // Ignore weapon that fired the bullet.
             if (hitPart != null && (hitPart == CurrentPart && CurrentPart.name.ToLower().Contains("armor"))) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
@@ -713,6 +713,7 @@ namespace BDArmory.Bullets
                     return true;
                 }
             }
+            if (hitPart==null) return false; // Hits below here are part hits.
 
             //Standard Pipeline Hitpoints, Armor and Explosives
             impactSpeed = impactVelocity.magnitude;

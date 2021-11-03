@@ -185,7 +185,7 @@ namespace BDArmory.Misc
                         caliberModifier = 2;
                     }
                     spallCaliber = caliber * (caliberModifier / 2);
-                    spallMass = (spallCaliber * spallCaliber * Mathf.PI/400) * (thickness/10) * (density / 1000000) / 1000;
+                    spallMass = (spallCaliber * spallCaliber * Mathf.PI / 400) * (thickness / 10) * (density / 1000000) / 1000;
                     if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
                         Debug.Log("[BDArmory.ProjectileUtils]: " + hitPart + ", " + hitPart.vessel.GetName() + ": Armor spalling! Diameter: " + spallCaliber + "; mass: " + spallMass + "g");
@@ -305,7 +305,7 @@ namespace BDArmory.Misc
                 else //srf detonation
                 {
                     shrapnelCount = frangibility * 0.4f;
-                }                
+                }
                 //shrapnelCount *= (float)(radiativeArea / 3); //shrapnelhits/part
                 float shrapnelMass = ((projmass * (1 - HERatio)) / frangibility) * shrapnelCount;
                 float damage;
@@ -519,13 +519,13 @@ namespace BDArmory.Misc
                         {
                             if (ductility < 0.05f && hardness < 500) //flexible, non-ductile materials aren't going to absorb or deflect blast;
                             {
-								return false;
+                                return false;
                                 //but at least they aren't going to be taking much armor damage
                             }
                         }
                         if (blowthroughFactor > 0.66)
                         {
-                            if (ductility < 0.05f) 
+                            if (ductility < 0.05f)
                             {
                                 var volumeToReduce = (Mathf.CeilToInt(spallArea / 500) * Mathf.CeilToInt(spallArea / 500)) * (50 * 50) * ((float)hitPart.GetArmorMaxThickness() / 10); //cm3
                                 //total failue of 50x50cm armor tile(s)
@@ -568,8 +568,8 @@ namespace BDArmory.Misc
                                 }
                             }
                             return true;
-                        } 
-                    }                 
+                        }
+                    }
                 }
             }
             return false;
@@ -673,7 +673,7 @@ namespace BDArmory.Misc
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: Bullet Deformation modifier " + newCaliber);
                 }
                 newCaliber *= caliber;
-                Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: bullet now " + (newCaliber) + " mm");
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: bullet now " + (newCaliber) + " mm");
                 return newCaliber;
             }
         }
@@ -687,7 +687,7 @@ namespace BDArmory.Misc
                 density = 19;
             }
             float bulletLength = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * density) + 1) * 10; //srf.Area in mmm2 x density of lead to get mass per 1 cm length of bullet / total mass to get total length,
-                                                                                                                                     //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
+                                                                                                                        //+ 10 to accound for ogive/mushroom head post-deformation instead of perfect cylinder
             if (newCaliber > (bulletLength * 2)) //has the bullet flattened into a disc, and is no longer a viable penetrator?
             {
                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
@@ -710,7 +710,7 @@ namespace BDArmory.Misc
             float penetration;
             //bullet's deformed, penetration using larger crosssection  
             //if (impactVel > 1500 && caliber < 30) //hypervelocity KE penetrators, for convenience, assume any round moving this fast is made of Tungsten/Depleted ranium
-            if (impactVel > 1500) 
+            if (impactVel > 1500)
             {
                 //caliber in mm, converted to length in cm, converted to mm                
                 float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * (sabot ? 19 : 11.34f)) + 1) * 10;
