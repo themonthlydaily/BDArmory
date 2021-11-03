@@ -22,6 +22,7 @@ namespace BDArmory.Modules
         public Dictionary<string, KerbalSafety> kerbals; // The kerbals being managed.
         List<KerbalEVA> evaKerbalsToMonitor;
         bool isEnabled = false;
+        public Vessel activeVesselBeforeEject = null;
         #endregion
 
         public void Awake()
@@ -38,6 +39,7 @@ namespace BDArmory.Modules
             Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and " + (BDArmorySettings.KERBAL_SAFETY > 1 ? "fully" : "partially") + " enabled." : ", but currently disabled."));
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
             GameEvents.onVesselLoaded.Add(CheckVesselForKerbals);
+            GameEvents.onVesselSwitching.Add(OnVesselSwitch);
             evaKerbalsToMonitor = new List<KerbalEVA>();
             if (BDArmorySettings.KERBAL_SAFETY > 0)
                 CheckAllVesselsForKerbals();
@@ -120,15 +122,14 @@ namespace BDArmory.Modules
             newKerbalsAwaitingCheck.Add(kerbal);
             StartCoroutine(ManageNewlyEjectedKerbalCoroutine(kerbal));
             StartCoroutine(ManuallyMoveKerbalEVACoroutine(kerbal, velocity, 2f));
+            if (activeVesselBeforeEject != null && activeVesselBeforeEject != FlightGlobals.ActiveVessel) { LoadedVesselSwitcher.Instance.ForceSwitchVessel(activeVesselBeforeEject); }
         }
 
         IEnumerator ManageNewlyEjectedKerbalCoroutine(KerbalEVA kerbal)
         {
             var kerbalName = kerbal.vessel.vesselName;
-            while (kerbal != null && !kerbal.Ready)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            var wait = new WaitForFixedUpdate();
+            while (kerbal != null && !kerbal.Ready) yield return wait;
             if (kerbal != null && kerbal.vessel != null)
             {
                 CheckVesselForKerbals(kerbal.vessel);
@@ -152,6 +153,7 @@ namespace BDArmory.Modules
             var gee = (Vector3)FlightGlobals.getGeeForceAtPosition(kerbal.transform.position);
             var verticalSpeed = Vector3.Dot(-gee.normalized, velocity);
             float verticalSpeedAdjustment = 0f;
+            var wait = new WaitForFixedUpdate();
             var position = kerbal.vessel.GetWorldPos3D();
             if (kerbal.vessel.radarAltitude + verticalSpeed * Time.fixedDeltaTime < 2f) // Crashed into terrain, explode upwards.
             {
@@ -195,7 +197,8 @@ namespace BDArmory.Modules
                 kerbal.vessel.IgnoreSpeed(1);
                 kerbal.vessel.SetPosition(position);
                 kerbal.vessel.SetWorldVelocity(velocity);
-                yield return new WaitForFixedUpdate();
+                yield return wait;
+                if (activeVesselBeforeEject != null && activeVesselBeforeEject != FlightGlobals.ActiveVessel) { LoadedVesselSwitcher.Instance.ForceSwitchVessel(activeVesselBeforeEject); }
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.KerbalSafety]: Setting " + kerbal.vessel.vesselName + "'s position to " + position.ToString("0.00") + " (" + kerbal.vessel.GetWorldPos3D().ToString("0.00") + ", altitude: " + kerbal.vessel.radarAltitude.ToString("0.00") + ") and velocity to " + velocity.magnitude.ToString("0.00") + " (" + kerbal.vessel.Velocity().magnitude.ToString("0.00") + ", " + verticalSpeed.ToString("0.00") + "m/s vertically, adjusted by " + verticalSpeedAdjustment.ToString("0.00") + "m/s)." + " (offset: " + !FloatingOrigin.Offset.IsZero() + ", frameVel: " + !Krakensbane.GetFrameVelocity().IsZero() + ")" + " " + Krakensbane.GetFrameVelocityV3f().ToString("0.0") + ", corr: " + Krakensbane.GetLastCorrection().ToString("0.0"));
             }
             if (kerbal != null && kerbal.vessel != null)
@@ -206,7 +209,7 @@ namespace BDArmory.Modules
             {
                 for (int count = 0; kerbal != null && kerbal.isActiveAndEnabled && kerbal.vessel != null && kerbal.vessel.isActiveAndEnabled && count < 10; ++count)
                 {
-                    yield return new WaitForFixedUpdate();
+                    yield return wait;
                     Debug.Log("[BDArmory.KerbalSafety]: Tracking " + kerbal.vessel.vesselName + "'s position to " + kerbal.vessel.GetWorldPos3D().ToString("0.00") + " (altitude: " + kerbal.vessel.radarAltitude.ToString("0.00") + ") and velocity to " + kerbal.vessel.Velocity().magnitude.ToString("0.00") + " (" + kerbal.vessel.verticalSpeed.ToString("0.00") + "m/s vertically." + " (offset: " + !FloatingOrigin.Offset.IsZero() + ", frameVel: " + !Krakensbane.GetFrameVelocity().IsZero() + ")" + " " + Krakensbane.GetFrameVelocityV3f().ToString("0.0") + ", corr: " + Krakensbane.GetLastCorrection().ToString("0.0"));
                 }
             }
@@ -256,6 +259,19 @@ namespace BDArmory.Modules
                     fromTo.host.gameObject.SetActive(false);
                     fromTo.host.Die();
                 }
+            }
+        }
+
+        void OnVesselSwitch(Vessel from, Vessel to)
+        {
+            var weaponManagers = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList();
+            if (weaponManagers.Contains(VesselModuleRegistry.GetMissileFire(to))) // New vessel is an active competitor.
+            {
+                activeVesselBeforeEject = to;
+            }
+            else if (weaponManagers.Contains(VesselModuleRegistry.GetMissileFire(from))) // Old vessel is an active competitor.
+            {
+                activeVesselBeforeEject = from;
             }
         }
     }
@@ -518,6 +534,7 @@ namespace BDArmory.Modules
         private bool ProcessEjection(Part fromPart)
         {
             kerbalEVA = FlightEVA.fetch.spawnEVA(crew, fromPart, fromPart.airlock, true);
+            if (KerbalSafetyManager.Instance.activeVesselBeforeEject != null && KerbalSafetyManager.Instance.activeVesselBeforeEject != FlightGlobals.ActiveVessel) { LoadedVesselSwitcher.Instance.ForceSwitchVessel(KerbalSafetyManager.Instance.activeVesselBeforeEject); }
             if (kerbalEVA != null && kerbalEVA.vessel != null)
             {
                 CameraManager.Instance.SetCameraFlight();
