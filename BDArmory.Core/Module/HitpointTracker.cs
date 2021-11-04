@@ -252,16 +252,13 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 if (BDArmorySettings.RESET_ARMOUR)
                 {
-                    HullTypeNum = 2;
                     IgnoreForArmorSetup = true;
                     ArmorSetup(null, null);
-                    SetHullMass();
                 }
-                else
+                if (BDArmorySettings.RESET_HULL)
                 {
-                    //UI_FloatRange armorField = (UI_FloatRange)Fields["Armor"].uiControlFlight;
-                    //Once started the max value of the field should be the initial one
-                    //armorField.maxValue = Armor;
+                    HullTypeNum = 2;
+                    SetHullMass();
                 }
                 part.RefreshAssociatedWindows();
             }
@@ -272,7 +269,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 {
                     typecount++;
                 }
-                if ((part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule") || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR)
+                if (part.name == "bdPilotAI" || part.name == "bdShipAI" || part.name == "missileController" || part.name == "bdammGuidanceModule")
                 {
                     isAI = true;
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
@@ -300,10 +297,19 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     Fields["ArmorTypeNum"].guiActiveEditor = false;
                     ATrangeEditor.maxValue = 1;
                 }
+                if (BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR)
+                {
+                    Fields["ArmorTypeNum"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActiveEditor = false;
+                    Fields["guiArmorTypeString"].guiActive = false;
+                    Fields["armorCost"].guiActiveEditor = false;
+                    Fields["armorMass"].guiActiveEditor = false;
+                    ATrangeEditor.maxValue = 1;
+                }
                 UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
                 HTrangeEditor.onFieldChanged = HullModified;
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || isAI)
+                if (part.IsMissile() || part.IsWeapon() || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL)
                 {
                     HullTypeNum = 2;
                     HTrangeEditor.minValue = 2;
@@ -732,6 +738,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             if (isAI) return;
             if (ArmorPanel)
             {
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitPointTracker] AddDamage(), hit part is armor panel, returning");
                 return;
             }
 
@@ -1011,7 +1018,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
             if (IgnoreForArmorSetup) return;
-            if (isAI) HullTypeNum = 1;
+            if (isAI || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
             if (part.isEngine() && HullTypeNum < 2) //can armor engines, but not make them out of wood.
             {
                 HullTypeNum = 2;
