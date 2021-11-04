@@ -412,6 +412,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         private void OnDestroy()
         {
+            if (bottom != null) bottom = null;
+            if (top != null) top = null;
             GameEvents.onEditorShipModified.Remove(ShipModified);
             GameEvents.onPartDie.Remove(OnPartDie);
         }
