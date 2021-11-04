@@ -147,13 +147,13 @@ namespace BDArmory.Misc
 
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
-                Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]:" + hitPart + ", " + hitPart.vessel.GetName() + ": Armor penetration = " + penetration + "mm | Thickness = " + thickness + "mm");
+                Debug.Log("[BDArmory.ProjectileUtils{Armor Penetration}]:" + hitPart + ", " + hitPart.vessel.GetName() + ": Armor penetration = " + penetration + "mm | Thickness = " + thickness + "mm");
             }
             if (penetrationFactor < 1)
             {
                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                 {
-                    Debug.Log("[BDArmory.ProjectileUtils{Calc Penetration}]: Bullet Stopped by Armor");
+                    Debug.Log("[BDArmory.ProjectileUtils{Armor Penetration}]: Bullet Stopped by Armor");
                 }
             }
             return penetrationFactor;
