@@ -1,15 +1,15 @@
 ﻿FIXES
 - Fix BDA part category placement to be usable on low resolution screens.
 - Don't add explosive forces when paintball mode is enabled.
-- Armor will no longer take damage when using Paintball Mode
-- Subsection targeting GUI label no longer reverts to COM
-- Paintballs will no longer overpenetrate if base ammo type is armor piercing
-- Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit
-- Armor panel armor values no longer vary based on part orientation
-- Armor Panel buoyancy fixed
-- Rockets no longer calculate shrapnel hits twice
-- Fixes unit conversion error in armor spalling calcs
-- Bullet Penetration calc now properly takes angle of impact into account
+- Armor will no longer take damage when using Paintball Mode.
+- Subsection targeting GUI label no longer reverts to CoM.
+- Paintballs will no longer overpenetrate if base ammo type is armor piercing.
+- Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit.
+- Armor panel armor values no longer vary based on part orientation.
+- Armor Panel buoyancy fixed.
+- Rockets no longer calculate shrapnel hits twice.
+- Fixes unit conversion error in armor spalling calcs.
+- Bullet Penetration calc now properly takes angle of impact into account.
 - Minimal seat filling should fill the first non-weapon crewed command part, not the first non-weapon crewed part.
 - Iteratively refine the aiming point (measured to take 2-3 iterations typically) to avoid the turret premature firing issue.
 - Fix issue of NaN appearing in bullet damage.
@@ -18,6 +18,7 @@
 - Apply hull modifier to proc wings also.
 - Use the OS-dependent directory separator char for player-visible paths (fixes team names containing the 'AutoSpawn' folder in Windows).
 - Replace ', ' with ',' in the summary.csv file for teams for consistent team member naming.
+- Rework the extending code to remove the spaghetti and fix the bug where the plane would extend in a straight line from ground targets without AI control.
 
 IMPROVEMENTS
 - General:
@@ -28,9 +29,10 @@ IMPROVEMENTS
 	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short teamnames are used.
 	- Remove unused "fire in range" toggle from weapon UI.
 	- Add a UTC timestamp to the clock.
-	- Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage
-	- In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor
- 	- Clarifies armor debugging statements
+	- Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage.
+	- In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor.
+ 	- Clarifies armor debugging statements.
+	- Armor Reset toggle split into separate Armor Reset and Hull Reset toggles.
 - AI:
 	- Add a 0.5s cool-down to the AI toggling the afterburner for when the hysteresis is insufficient.
 - Countermeasures:
@@ -40,15 +42,16 @@ IMPROVEMENTS
 	- Add Vessel-Relative Bullet Checks for more accurate bullet checks that work in high-velocity environments (enabled by default).
 	- Replace smoothing of target velocity and acceleration with Brown's double exponential smoothing for improved aiming, particularly at longer ranges.
 - Armor:
-	-Armor panel thickness now starts at 25, can be increased up to old maximums
-	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field
-	-Bullets will now only hit (and deal damage to) armor panels once
-	-Armor Panel HP now directly proportional to armor integrety
-	-ModuleReactiveArmor has been rebuilt and now works
-	-Adds Reactive Armor example part
+	-Armor panel thickness now starts at 25, can be increased up to old maximums.
+	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field.
+	-Bullets will now only hit (and deal damage to) armor panels once.
+	-Armor Panel HP now directly proportional to armor integrity.
+	-ModuleReactiveArmor has been rebuilt and now works.
+	-Adds Reactive Armor example part.
   
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Vessel-Relative Bullet Checks in advanced Gameplay settings.  
+	- Armor Reset toggle split into separate Armor Reset and Hull Reset toggles.
 
 v1.4.11.2
 FIXES 
