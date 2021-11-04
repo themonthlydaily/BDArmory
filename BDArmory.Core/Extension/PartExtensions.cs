@@ -342,14 +342,14 @@ namespace BDArmory.Core.Extension
             if (float.IsNaN(armorthickness))
             {
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is NaN");
-                armorthickness = 1;
+                return 0f;
             }
             else
             {
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
+                return armorthickness;
             }
             //return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
-            return armorthickness;
         }
         public static float GetArmorMaxThickness(this Part p)
         {

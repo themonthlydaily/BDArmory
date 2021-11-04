@@ -410,13 +410,19 @@ namespace BDArmory.Misc
             }
             else
             {
-                spallArea = ((float)hitPart.radiativeArea / 3) * 10000;
+                spallArea = (!double.IsNaN(hitPart.radiativeArea) ? (float)hitPart.radiativeArea : hitPart.GetArea() / 3) *10000;
             }
+            if (BDArmorySettings.DRAW_ARMOR_LABELS && double.IsNaN(hitPart.radiativeArea))
+            {
+                Debug.Log("[BDArmory.ProjectileUtils{CalculateExplosiveArmorDamage}]: radiative area of part " + hitPart + " was NaN, using approximate area " + spallArea + " instead.");
+            }
+
             float spallMass;
             float damage;
             var Armor = hitPart.FindModuleImplementing<HitpointTracker>();
             if (Armor != null)
             {
+                if (Armor.ArmorTypeNum == 1) return false;//ArmorType "None"
                 float ductility = Armor.Ductility;
                 float hardness = Armor.Hardness;
                 float Strength = Armor.Strength;
