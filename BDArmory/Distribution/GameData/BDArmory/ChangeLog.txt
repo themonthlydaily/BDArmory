@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.12.0
+FIXES
 - Fix BDA part category placement to be usable on low resolution screens.
 - Don't add explosive forces when paintball mode is enabled.
 - Armor will no longer take damage when using Paintball Mode.
