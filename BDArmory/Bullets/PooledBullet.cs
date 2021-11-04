@@ -652,7 +652,7 @@ namespace BDArmory.Bullets
                 Debug.Log("[BDArmory.PooledBullet]:NullReferenceException for Ballistic Hit: " + e.Message);
                 return true;
             }
-
+            
             if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) return false; // Ignore ignored parts.
             if (hitPart != null && hitPart == sourceWeapon) return false; // Ignore weapon that fired the bullet.
             if (hitPart != null && (hitPart == CurrentPart && CurrentPart.name.ToLower().Contains("armor"))) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
@@ -713,6 +713,7 @@ namespace BDArmory.Bullets
                     return true;
                 }
             }
+            if (hitPart==null) return false; // Hits below here are part hits.
 
             //Standard Pipeline Hitpoints, Armor and Explosives
             impactSpeed = impactVelocity.magnitude;
@@ -872,7 +873,7 @@ namespace BDArmory.Bullets
                         StopCoroutine(DelayedDetonationRoutine());
                     }
                     ExplosiveDetonation(hitPart, hit, bulletRay);
-                    ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
+                    ProjectileUtils.ApplyScore(hitPart, sourceVesselName, distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
                     hasDetonated = true;
                     KillBullet();
                     return true;
@@ -1022,7 +1023,7 @@ namespace BDArmory.Bullets
                         try
                         {
                             Part partHit = hitsEnu.Current.GetComponentInParent<Part>();
-                            if (partHit == null) continue;
+                            if (partHit == null || partHit.vessel == null) continue;
                             if (partHit.vessel == sourceVessel) continue;
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
 

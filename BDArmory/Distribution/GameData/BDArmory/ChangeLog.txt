@@ -28,9 +28,11 @@ IMPROVEMENTS
 	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short teamnames are used.
 	- Remove unused "fire in range" toggle from weapon UI.
 	- Add a UTC timestamp to the clock.
-  - Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage
-  - In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor
+	- Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage
+	- In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor
  	- Clarifies armor debugging statements
+- AI:
+	- Add a 0.5s cool-down to the AI toggling the afterburner for when the hysteresis is insufficient.
 - Countermeasures:
 	- Add separate countermeasure settings to the weapons manager for chaff.
 	- Update default values for flares and chaff to be more effective.
@@ -38,7 +40,7 @@ IMPROVEMENTS
 	- Add Vessel-Relative Bullet Checks for more accurate bullet checks that work in high-velocity environments (enabled by default).
 	- Replace smoothing of target velocity and acceleration with Brown's double exponential smoothing for improved aiming, particularly at longer ranges.
 - Armor:
-  -Armor panel thickness now starts at 25, can be increased up to old maximums
+	-Armor panel thickness now starts at 25, can be increased up to old maximums
 	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field
 	-Bullets will now only hit (and deal damage to) armor panels once
 	-Armor Panel HP now directly proportional to armor integrety
@@ -46,7 +48,7 @@ IMPROVEMENTS
 	-Adds Reactive Armor example part
   
 ADDED/REMOVED/CHANGED SETTINGS VALUES
-	- Vessel-Relative Bullet Checks in advacned Gameplay settings.  
+	- Vessel-Relative Bullet Checks in advanced Gameplay settings.  
 
 v1.4.11.2
 FIXES 
