@@ -385,6 +385,21 @@ namespace BDArmory.Modules
             }
         }
 
+        public ModuleWeapon previousGun
+        {
+            get
+            {
+                if (previousSelectedWeapon != null && (previousSelectedWeapon.GetWeaponClass() == WeaponClasses.Gun || previousSelectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || previousSelectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
+                {
+                    return previousSelectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         public bool underAttack;
         float underAttackLastNotified = 0f;
         public bool underFire;
@@ -798,11 +813,14 @@ namespace BDArmory.Modules
             set
             {
                 if (sw == value) return;
+                previousSelectedWeapon = sw;
                 sw = value;
                 selectedWeaponString = GetWeaponName(value);
                 UpdateSelectedWeaponState();
             }
         }
+
+        IBDWeapon previousSelectedWeapon { get; set; }
 
         [KSPAction("Fire Missile")]
         public void AGFire(KSPActionParam param)
@@ -1889,8 +1907,7 @@ namespace BDArmory.Modules
                     if (targetDist < Mathf.Max(radius * 2, 800f) &&
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
-                        pilotAI.RequestExtend(guardTarget.CoM, guardTarget);
-                        pilotAI.extendingReason = "Too close to bomb";
+                        pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "too close to bomb");
                         break;
                     }
                     yield return null;
@@ -1919,8 +1936,7 @@ namespace BDArmory.Modules
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
-                                pilotAI.RequestExtend(guardTarget.CoM, guardTarget);
-                                pilotAI.extendingReason = "Bombs away!";
+                                pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "bombs away!");
                             }
                         }
                     }
@@ -4598,7 +4614,7 @@ namespace BDArmory.Modules
                 if (target != null && !target.isMissile)
                     if (pilotAI && pilotAI.IsExtending && target.Vessel != pilotAI.extendTarget)
                     {
-                        pilotAI.StopExtending(); // Only stop extending if the target is different from the extending target
+                        pilotAI.StopExtending("changed target"); // Only stop extending if the target is different from the extending target
                     }
                 currentTarget = target;
                 guardTarget = target.Vessel;

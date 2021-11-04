@@ -276,7 +276,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActive = false;
                     Fields["guiHullTypeString"].guiActiveEditor = false;
-                    Fields["guiHullTypeString"].guiActive = false;                    
+                    Fields["guiHullTypeString"].guiActive = false;
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
                     //UI_ProgressBar Armorleft = (UI_ProgressBar)Fields["ArmorRemaining"].uiControlFlight;

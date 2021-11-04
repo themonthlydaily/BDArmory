@@ -513,7 +513,7 @@ namespace BDArmory.Bullets
             }
             foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - transform.position).sqrMagnitude))
             {
-                CheckBulletCollisionWithVessel(period, vessel);
+                CheckBulletCollisionWithVessel(period, vessel); // FIXME Convert this to use RaycastCommand to do all the raycasts in parallel.
             }
         }
 
