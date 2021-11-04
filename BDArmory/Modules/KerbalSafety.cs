@@ -12,6 +12,7 @@ using BDArmory.UI;
 
 namespace BDArmory.Modules
 {
+    public enum KerbalSafetyLevel { Off, Partial, Full };
     // A class to manage the safety of kerbals in BDA.
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class KerbalSafetyManager : MonoBehaviour
@@ -23,6 +24,7 @@ namespace BDArmory.Modules
         List<KerbalEVA> evaKerbalsToMonitor;
         bool isEnabled = false;
         public Vessel activeVesselBeforeEject = null;
+        public KerbalSafetyLevel safetyLevel { get { return (KerbalSafetyLevel)BDArmorySettings.KERBAL_SAFETY; } }
         #endregion
 
         public void Awake()
@@ -36,13 +38,11 @@ namespace BDArmory.Modules
 
         public void Start()
         {
-            Debug.Log("[BDArmory.KerbalSafety]: Safety manager started" + (BDArmorySettings.KERBAL_SAFETY > 0 ? " and " + (BDArmorySettings.KERBAL_SAFETY > 1 ? "fully" : "partially") + " enabled." : ", but currently disabled."));
+            Debug.Log($"[BDArmory.KerbalSafety]: Safety manager started with level {safetyLevel}, but currently disabled.");
             GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
             GameEvents.onVesselLoaded.Add(CheckVesselForKerbals);
             GameEvents.onVesselSwitching.Add(OnVesselSwitch);
             evaKerbalsToMonitor = new List<KerbalEVA>();
-            if (BDArmorySettings.KERBAL_SAFETY > 0)
-                CheckAllVesselsForKerbals();
         }
 
         public void OnDestroy()
@@ -61,6 +61,7 @@ namespace BDArmory.Modules
 
         public void EnableKerbalSafety()
         {
+            if (safetyLevel == KerbalSafetyLevel.Off) return;
             if (isEnabled) return;
             isEnabled = true;
             Debug.Log("[BDArmory.KerbalSafety]: Enabling kerbal safety.");
@@ -86,18 +87,25 @@ namespace BDArmory.Modules
 
         public void CheckAllVesselsForKerbals()
         {
-            newKerbalsAwaitingCheck.Clear();
-            evaKerbalsToMonitor.Clear();
-            foreach (var vessel in FlightGlobals.Vessels)
+            if (isEnabled)
             {
-                if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
-                CheckVesselForKerbals(vessel);
+                newKerbalsAwaitingCheck.Clear();
+                evaKerbalsToMonitor.Clear();
+                foreach (var vessel in FlightGlobals.Vessels)
+                {
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.vesselType)) continue;
+                    CheckVesselForKerbals(vessel);
+                }
+            }
+            else
+            {
+                EnableKerbalSafety();
             }
         }
 
         public void CheckVesselForKerbals(Vessel vessel)
         {
-            if (BDArmorySettings.KERBAL_SAFETY == 0) return;
+            if (safetyLevel == KerbalSafetyLevel.Off) return;
             if (vessel == null) return;
             foreach (var part in vessel.parts)
             {
@@ -401,7 +409,7 @@ namespace BDArmory.Modules
         public void OnDestroy()
         {
             StopAllCoroutines();
-            if (BDArmorySettings.KERBAL_SAFETY > 0 && !recovered && BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off && !recovered && BDArmorySettings.DRAW_DEBUG_LABELS)
             {
                 Debug.Log("[BDArmory.KerbalSafety]: " + kerbalName + " is MIA. Ejected: " + ejected + ", deployed chute: " + deployingChute);
             }
@@ -483,7 +491,7 @@ namespace BDArmory.Modules
             }
             else if (crew != null && part.protoModuleCrew.Contains(crew) && !FlightEVA.hatchInsideFairing(part)) // Eject from a cockpit.
             {
-                if (BDArmorySettings.KERBAL_SAFETY < 2) return;
+                if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Full) return;
                 if (!ProcessEjection(part)) // All exits were blocked by something.
                 {
                     // if (!EjectFromOtherPart()) // Look for other airlocks to spawn from.

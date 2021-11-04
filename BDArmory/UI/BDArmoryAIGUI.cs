@@ -66,7 +66,7 @@ namespace BDArmory.UI
 
         void Awake()
         {
-            if (Instance!=null) Destroy(Instance);
+            if (Instance != null) Destroy(Instance);
             Instance = this;
             BDArmorySetup.WindowRectAI = new Rect(BDArmorySetup.WindowRectAI.x, BDArmorySetup.WindowRectAI.y, WindowWidth, WindowHeight);
         }
