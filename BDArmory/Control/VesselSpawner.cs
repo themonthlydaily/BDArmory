@@ -522,8 +522,21 @@ namespace BDArmory.Control
             var finalSpawnPositions = new Dictionary<string, Vector3d>();
             var finalSpawnRotations = new Dictionary<string, Quaternion>();
             {
+                var startTime = Time.time;
                 // Sometimes if a vessel camera switch occurs, the craft appears unloaded for a couple of frames. This avoids NREs for control surfaces triggered by the change in reference transform.
-                while (spawnedVessels.Values.All(vessel => vessel.Item1 != null && (vessel.Item1.ReferenceTransform == null || vessel.Item1.rootPart == null || vessel.Item1.rootPart.GetReferenceTransform() == null))) yield return new WaitForFixedUpdate();
+                while (spawnedVessels.Values.All(vessel => vessel.Item1 != null && (vessel.Item1.ReferenceTransform == null || vessel.Item1.rootPart == null || vessel.Item1.rootPart.GetReferenceTransform() == null)) && (Time.time - startTime < 1f)) yield return new WaitForFixedUpdate();
+                foreach (var vessel in spawnedVessels.Values.Select(sv => sv.Item1))
+                {
+                    if (vessel == null) continue;
+                    if (vessel.rootPart == null)
+                    {
+                        message = $"{vessel.vesselName} has no root part!";
+                        Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                        BDACompetitionMode.Instance.competitionStatus.Add(message);
+                        continue;
+                    }
+                    vessel.SetReferenceTransform(vessel.rootPart); // Set the reference transform to the root part's transform.
+                }
             }
             foreach (var vesselName in spawnedVessels.Keys)
             {
