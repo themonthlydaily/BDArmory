@@ -777,14 +777,26 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * (Density / 1000000000))); //g/m3
             }
             float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
-            Armor -= (reduceMass / armorMass) * Armor; //now properly reduces armor thickness
-            if (Armor < 0)
+            if (armorMass > 0)
             {
-                Armor = 0;
-                ArmorRemaining = 0;
+                Armor -= (reduceMass / armorMass) * Armor; //now properly reduces armor thickness
+                if (Armor < 0)
+                {
+                    Armor = 0;
+                    ArmorRemaining = 0;
+                }
+                else ArmorRemaining = Armor / StartingArmor * 100;
+                Armour = Armor;
             }
-            else ArmorRemaining = Armor / StartingArmor * 100;
-            Armour = Armor;
+            else
+            {
+                if (Armor < 0)
+                {
+                    Armor = 0;
+                    ArmorRemaining = 0;
+                    Armour = Armor;
+                }
+            }
             if (ArmorPanel)
             {
                 Hitpoints = ArmorRemaining * armorVolume * 10;
@@ -794,7 +806,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 }
             }
             armorMass -= reduceMass; //tons
-            if (armorMass < 0)
+            if (armorMass <= 0)
             {
                 armorMass = 0;
             }
