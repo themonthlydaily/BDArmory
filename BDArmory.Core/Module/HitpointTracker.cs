@@ -315,7 +315,9 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     HTrangeEditor.minValue = 2;
                     HTrangeEditor.maxValue = 2;
                     Fields["HullTypeNum"].guiActiveEditor = false;
+                    Fields["HullTypeNum"].guiActive = false;
                     Fields["guiHullTypeString"].guiActiveEditor = false;
+                    Fields["guiHullTypeString"].guiActive = false;
                     IgnoreForArmorSetup = true;
                     SetHullMass();
                 }
@@ -1019,7 +1021,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         {
             if (IgnoreForArmorSetup) return;
             if (isAI || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
-            if (part.isEngine() && HullTypeNum < 2) //can armor engines, but not make them out of wood.
+            if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
             {
                 HullTypeNum = 2;
             }
