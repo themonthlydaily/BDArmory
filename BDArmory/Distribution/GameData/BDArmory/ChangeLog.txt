@@ -1,8 +1,14 @@
-﻿FIXES
+﻿v1.4.12.1
+FIXES
 - Fix NRE in PooledRockets.
+- Fix stack overflow in detonating SRBs.
+- Fix ordering of Gameplay settings.
+- Fix localisation for new Reset Material toggle.
+- Take a copy of the collider list from overlapSphereColliders to avoid potential issues since it's static and ProcessingBlastSphere can be called recursively.
 IMPROVEMENTS
 - General:
 	- Reduce the weighting of rocket hits in the parsing script.
+	- Add some more debugging to inter-competition debug statements.
 
 v1.4.12.0
 FIXES
