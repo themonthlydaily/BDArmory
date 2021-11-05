@@ -118,7 +118,7 @@ namespace BDArmory.Misc
                     }
                 }
             }
-            //Propulsaion Damage
+            //Propulsion Damage
             if (BDArmorySettings.BD_PROPULSION)
             {
                 BattleDamageTracker tracker = part.gameObject.AddOrGetComponent<BattleDamageTracker>();
@@ -189,10 +189,13 @@ namespace BDArmory.Misc
                             {
                                 if (tracker.isSRB) //SRB is lit, and casing integrity fails due to damage; boom
                                 {
-                                    var Rupture = part.GetComponent<ModuleCASE>();
-                                    if (Rupture == null) Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
-                                    Rupture.CASELevel = 0;
-                                    Rupture.DetonateIfPossible();
+                                    if (tracker.SRBFuelled)
+                                    {
+                                        var Rupture = part.GetComponent<ModuleCASE>();
+                                        if (Rupture == null) Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
+                                        Rupture.CASELevel = 0;
+                                        Rupture.DetonateIfPossible();
+                                    }
                                 }
                                 else
                                 {

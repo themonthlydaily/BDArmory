@@ -381,11 +381,11 @@ namespace BDArmory.FX
                 PartResource fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 float tntFuel = 0, tntOx = 0, tntMP = 0, tntEC = 0;
-                if (fuel != null)
+                if (fuel != null && fuel.amount > 0)
                 {
                     tntFuel = (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f)) / 2);
                     tntMassEquivalent += tntFuel;
-                    if (fuel != null && ox != null)
+                    if (fuel != null && (ox != null && ox.amount > 0))
                     {
                         tntOx = (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f)) / 2);
                         tntMassEquivalent += tntOx;
@@ -397,7 +397,7 @@ namespace BDArmory.FX
                     }
                 }
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
-                if (mp != null)
+                if (mp != null && mp.amount > 0)
                 {
                     tntMP = (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f)) / 3);
                     tntMassEquivalent += tntMP;
@@ -408,7 +408,7 @@ namespace BDArmory.FX
                 }
                 tntMassEquivalent /= 6f; //make this not have a 1 to 1 ratio of fuelmass -> tntmass
                 PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
-                if (ec != null)
+                if (ec != null && ec.amount > 0)
                 {
                     tntEC = ((float)ec.maxAmount / 5000); //fix for cockpit batteries weighing a tonne+
                     tntMassEquivalent += tntEC;
