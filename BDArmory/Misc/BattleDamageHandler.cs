@@ -189,7 +189,8 @@ namespace BDArmory.Misc
                             {
                                 if (tracker.isSRB) //SRB is lit, and casing integrity fails due to damage; boom
                                 {
-                                    var Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
+                                    var Rupture = part.GetComponent<ModuleCASE>();
+                                    if (Rupture == null) Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
                                     Rupture.CASELevel = 0;
                                     Rupture.DetonateIfPossible();
                                 }
@@ -227,7 +228,7 @@ namespace BDArmory.Misc
                         intake.intakeSpeed = Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
                         intake.area -= (tracker.origIntakeArea * (((tracker.oldDamagePercent - part.GetDamagePercentage()) * HEBonus) * BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
-                        intake.area = Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea/4), 99999); //even shredded intake ducting will still get some air to engines
+                        intake.area = Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea / 4), 99999); //even shredded intake ducting will still get some air to engines
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Orig Area: " + tracker.origIntakeArea + "; Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed + "; intake damage: " + (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)));
                     }
                 }
