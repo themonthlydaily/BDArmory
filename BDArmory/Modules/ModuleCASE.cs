@@ -149,6 +149,7 @@ namespace BDArmory.Modules
             var vesselName = vessel != null ? vessel.vesselName : null;
             Vector3 direction = default(Vector3);
             GetBlastRadius();
+            if (ammoExplosionYield <= 0) return;
             if (CASELevel != 2) //a considerable quantity of explosives and propellants just detonated inside your ship
             {
                 if (CASELevel == 0)
