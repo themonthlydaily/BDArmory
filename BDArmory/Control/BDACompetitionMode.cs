@@ -3549,6 +3549,11 @@ namespace BDArmory.Control
             strings.Add("GameObjects: " + FindObjectsOfType<GameObject>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(GameObject)).Length);
             strings.Add($"FlightState ProtoVessels: {HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).Count()} active of {HighLogic.CurrentGame.flightState.protoVessels.Count}");
             Debug.Log("DEBUG " + string.Join(", ", strings));
+
+            strings.Clear();
+            foreach (var pool in FindObjectsOfType<ObjectPool>())
+                strings.Add($"{pool.poolObjectName}:{pool.size}");
+            Debug.Log("DEBUG Object Pools: " + string.Join(", ", strings));
         }
 
         public void RunDebugChecks()
