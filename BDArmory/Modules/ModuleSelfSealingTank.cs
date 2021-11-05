@@ -89,7 +89,7 @@ namespace BDArmory.Modules
             if (engine != null)
             {
                 Events["ToggleTankOption"].guiActiveEditor = false;
-                if (solid != null && engine.throttleLocked && !engine.allowShutdown)
+                if (solid != null && solid.amount > 4 && engine.throttleLocked && !engine.allowShutdown)
                 {
                     part.RemoveModule(this); //don't add firebottles to SRBs
                 }
