@@ -255,7 +255,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     IgnoreForArmorSetup = true;
                     ArmorSetup(null, null);
                 }
-                if (BDArmorySettings.RESET_HULL)
+                if (BDArmorySettings.RESET_HULL || ArmorPanel)
                 {
                     HullTypeNum = 2;
                     SetHullMass();
@@ -309,7 +309,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
                 HTrangeEditor.onFieldChanged = HullModified;
                 //if part is an engine/fueltank don't allow wood construction/mass reduction
-                if (part.IsMissile() || part.IsWeapon() || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL)
+                if (part.IsMissile() || part.IsWeapon() || ArmorPanel || isAI || BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_HULL)
                 {
                     HullTypeNum = 2;
                     HTrangeEditor.minValue = 2;
@@ -1020,7 +1020,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
             if (IgnoreForArmorSetup) return;
-            if (isAI || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
+            if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
             if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
             {
                 HullTypeNum = 2;
