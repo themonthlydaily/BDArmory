@@ -1,4 +1,17 @@
-﻿v1.4.12.1
+﻿v1.4.12.2
+FIXES
+- Fix negative HP issue with Reactive Armor.
+- Fix CalcShrapnelDamage potentially reporting a negative number for damage.
+- Add some recursion checks to ModuleCase.
+- Add check to prevent setting Weapon material to Wood.
+- Can no longer change Armor Panel hull material.
+- SRBs no longer explode when empty if BattleDamage enabled.
+- Fixes Fuel Tank explosion yield increasing when associated resource(s) is empty.
+- Empty Ammo boxes will no longer explode when destroyed.
+IMPROVEMENTS
+- Re-add Firebottles, SelfSealing Tank option to Making History Soyuz tank.
+
+v1.4.12.1
 FIXES
 - Fix stack overflow in CASE explosions from detonating SRBs.
 - Fix NRE in PooledRockets.
