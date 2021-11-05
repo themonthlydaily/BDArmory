@@ -264,7 +264,7 @@ namespace BDArmory.Modules
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !(VesselSpawner.Instance != null && VesselSpawner.Instance.vesselsSpawning))
             {
-                DetonateIfPossible();
+                if (!hasDetonated) DetonateIfPossible();
             }
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
         }
@@ -295,7 +295,7 @@ namespace BDArmory.Modules
                 {
                     if (this.part.temperature > 900) //ammo cooks off, part is too hot
                     {
-                        DetonateIfPossible();
+                        if (!hasDetonated) DetonateIfPossible();
                     }
                 }
             }
