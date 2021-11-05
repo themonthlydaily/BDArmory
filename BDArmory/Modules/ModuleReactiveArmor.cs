@@ -86,7 +86,7 @@ namespace BDArmory.Modules
                 {
                     HP.Hitpoints = Mathf.Clamp(HP.Hitpoints, -1, sectionsRemaining * 300f); //clamp max HP to remaiing sections instead of flat hp reduction
                 }
-                if (HP < 0) part.Destroy();
+                if (HP.Hitpoints < 0) part.Destroy();
             }
             for (int i = 0; i < sectionsCount; i++)
             {
