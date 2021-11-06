@@ -816,6 +816,14 @@ namespace BDArmory.Control
                     yield return new WaitForFixedUpdate();
                 }
             }
+
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                foreach (var vesselName in spawnedVessels.Keys)
+                {
+                    CheckAIWMPlacement(spawnedVessels[vesselName].Item1);
+                }
+            }
             #endregion
 
             Debug.Log("[BDArmory.VesselSpawner]: Vessel spawning " + (vesselSpawnSuccess ? "SUCCEEDED!" : "FAILED! " + spawnFailureReason));
@@ -1634,6 +1642,40 @@ namespace BDArmory.Control
                     RemoveVessel(vessel);
                 }
             }
+        }
+
+        public bool CheckAIWMPlacement(Vessel vessel)
+        {
+            var message = "";
+            List<string> failureStrings = new List<string>();
+            var AI = VesselModuleRegistry.GetBDModulePilotAI(vessel, true);
+            var WM = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (AI == null) message = " has no AI";
+            if (WM == null) message += (AI == null ? " or WM" : " has no WM");
+            if (AI != null || WM != null)
+            {
+                int count = 0;
+                if (AI != null && (AI.part.parent == null || AI.part.vessel.rootPart != AI.part.parent))
+                {
+                    message += (WM == null ? " and its AI" : "'s AI");
+                    ++count;
+                }
+                if (WM != null && (WM.part.parent == null || WM.part.vessel.rootPart != WM.part.parent))
+                {
+                    message += (AI == null ? " and its WM" : (count > 0 ? " and WM" : "'s WM"));
+                    ++count;
+                };
+                if (count > 0) message += (count > 1 ? " are" : " is") + " not attached to its root part";
+            }
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                message = $"{vessel.vesselName}" + message + ".";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                return false;
+            }
+            return true;
         }
 
         #region Actual spawning of individual craft
