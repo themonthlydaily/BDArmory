@@ -1430,7 +1430,7 @@ namespace BDArmory.Control
         [Serializable]
         public class SpawnConfig
         {
-            public SpawnConfig(double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
+            public SpawnConfig(double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string folder = "", List<string> craftFiles = null)
             {
                 this.latitude = latitude;
                 this.longitude = longitude;
@@ -1443,7 +1443,7 @@ namespace BDArmory.Control
                 this.numberOfTeams = numberOfTeams;
                 this.teamCounts = teamCounts; if (teamCounts != null) this.numberOfTeams = this.teamCounts.Count;
                 this.teamsSpecific = teamsSpecific;
-                this.folder = folder;
+                this.folder = folder ?? "";
                 this.craftFiles = craftFiles;
             }
             public SpawnConfig(SpawnConfig other)
@@ -1473,7 +1473,7 @@ namespace BDArmory.Control
             public int numberOfTeams = 0; // Number of teams (or FFA, Folders or Inf). For evenly (as possible) splitting vessels into teams.
             public List<int> teamCounts; // List of team numbers. For unevenly splitting vessels into teams based on their order in the tournament state file for the round. E.g., when spawning from folders.
             public List<List<string>> teamsSpecific; // Dictionary of vessels and teams. For splitting specific vessels into specific teams.
-            public string folder = null;
+            public string folder = "";
             public List<string> craftFiles = null;
         }
 
