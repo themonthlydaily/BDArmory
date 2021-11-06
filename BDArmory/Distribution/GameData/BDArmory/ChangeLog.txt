@@ -1,4 +1,8 @@
-﻿v1.4.12.2
+﻿FIXES
+- Sanitise null strings in paths.
+- Fix armor panels reverting to 2 thickness.
+
+v1.4.12.2
 FIXES
 - Fix negative HP issue with Reactive Armor.
 - Fix CalcShrapnelDamage potentially reporting a negative number for damage.
