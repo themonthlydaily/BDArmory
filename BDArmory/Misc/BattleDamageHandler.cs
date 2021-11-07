@@ -17,7 +17,7 @@ namespace BDArmory.Misc
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
             {
-                if (!BDArmorySettings.ALLOW_S4R2_BD)
+                if (!BDArmorySettings.ALLOW_ZOMBIE_BD)
                 {
                     if (part.vessel.rootPart != null)
                     {

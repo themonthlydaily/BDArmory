@@ -19,7 +19,7 @@ namespace BDArmory.Core.Extension
                 {
                     if (p != p.vessel.rootPart)
                     {
-                        damage *= BDArmorySettings.S4R2_DMG_MULT;
+                        damage *= BDArmorySettings.ZOMBIE_DMG_MULT;
                     }
                 }
             }
@@ -127,7 +127,7 @@ namespace BDArmory.Core.Extension
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }
@@ -217,7 +217,7 @@ namespace BDArmory.Core.Extension
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }
