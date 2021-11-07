@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.12.3
+FIXES
 - Sanitise null strings in paths.
 - Fix armor panels reverting to 2 thickness.
 - Fix some errors in the MM patch for parts.
