@@ -2,6 +2,8 @@
 - Sanitise null strings in paths.
 - Fix armor panels reverting to 2 thickness.
 - Fix some errors in the MM patch for parts.
+IMPROVEMENTS
+- Better in-game and log messages for when a competition fails to start due to a vessel disappearing.
 
 v1.4.12.2
 FIXES
