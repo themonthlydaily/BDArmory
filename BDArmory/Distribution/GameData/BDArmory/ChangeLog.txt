@@ -4,6 +4,7 @@
 - Fix some errors in the MM patch for parts.
 IMPROVEMENTS
 - Better in-game and log messages for when a competition fails to start due to a vessel disappearing.
+- (RWP only) Add in-game reminder for AI and WM not attached to the root part.
 
 v1.4.12.2
 FIXES
