@@ -2420,7 +2420,7 @@ namespace BDArmory.Modules
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
-            if (vessel == null) return;
+            if (vessel == null || !vessel.loaded) return;
 
             using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
@@ -5234,7 +5234,7 @@ namespace BDArmory.Modules
 
         public void UpdateMaxGunRange(Vessel v)
         {
-            if (v != vessel || vessel == null || !part.isActiveAndEnabled) return;
+            if (v != vessel || vessel == null || !vessel.loaded || !part.isActiveAndEnabled) return;
             VesselModuleRegistry.OnVesselModified(v);
             List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
             maxGunRange = 10f;
