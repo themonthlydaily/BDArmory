@@ -1506,7 +1506,7 @@ namespace BDArmory.Modules
             targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
             if (throttleOverride >= 0)
-                AdjustThrottle(maxSpeed, false, true, throttleOverride);
+                AdjustThrottle(maxSpeed, false, true, false, throttleOverride);
             else
                 AdjustThrottle(maxSpeed, false, true);
 
@@ -1912,11 +1912,12 @@ namespace BDArmory.Modules
         }
 
         //sends target speed to speedController
-        void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true, float throttleOverride = -1f)
+        void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true, bool forceAfterburner = false, float throttleOverride = -1f)
         {
             speedController.targetSpeed = targetSpeed;
             speedController.useBrakes = useBrakes;
             speedController.allowAfterburner = allowAfterburner;
+            speedController.forceAfterburner = forceAfterburner;
             speedController.throttleOverride = throttleOverride;
         }
 
@@ -1984,7 +1985,7 @@ namespace BDArmory.Modules
 
                         if (weaponManager.isFlaring)
                             if (!hasABEngines)
-                                AdjustThrottle(maxSpeed, false, useAB, 0.66f);
+                                AdjustThrottle(maxSpeed, false, useAB, false, 0.66f);
                             else
                                 AdjustThrottle(maxSpeed, false, useAB);
                         else

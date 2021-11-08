@@ -12,6 +12,7 @@ namespace BDArmory.Control
         public float throttleOverride = -1f;
         public bool useBrakes = true;
         public bool allowAfterburner = true;
+        public bool forceAfterburner = false;
 
         //[KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "ThrottleFactor"),
         //	UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = .5f, scene = UI_Scene.All)]
@@ -162,14 +163,14 @@ namespace BDArmory.Control
                 while (mmes.MoveNext())
                 {
                     if (mmes.Current == null) continue;
-                    if (allowAfterburner && accel < requestAccel * 0.2f)
+                    if (allowAfterburner && (forceAfterburner || accel < requestAccel * 0.2f))
                     {
                         if (mmes.Current.runningPrimary)
                         {
                             mmes.Current.Events["ModeEvent"].Invoke();
                         }
                     }
-                    else if (!allowAfterburner || accel > requestAccel * 1.5f)
+                    else if (!allowAfterburner || (!forceAfterburner && accel > requestAccel * 1.5f))
                     {
                         if (!mmes.Current.runningPrimary)
                         {
