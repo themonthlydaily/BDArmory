@@ -213,7 +213,7 @@ namespace BDArmory.UI
         {
             if (BDTISettings.TEAMICONS)
             {
-                UpdateList();
+                UpdateList(true);
             }
         }
         private void Update()
@@ -229,7 +229,7 @@ namespace BDArmory.UI
             }
         }
         public Dictionary<String, Color> ColorAssignments = new Dictionary<string, Color>();
-        private void UpdateList()
+        private void UpdateList(bool fromModifiedEvent = false)
         {
             weaponManagers.Clear();
 
@@ -238,6 +238,7 @@ namespace BDArmory.UI
                 {
                     if (v.Current == null || !v.Current.loaded || v.Current.packed) continue;
                     if (VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
+                    if (fromModifiedEvent) VesselModuleRegistry.OnVesselModified(v.Current, true);
                     var wms = VesselModuleRegistry.GetMissileFire(v.Current, true);
                     if (wms != null)
                     {
