@@ -257,6 +257,7 @@ namespace BDArmory.UI
                                 if (!BDTISetup.Instance.ColorAssignments.ContainsKey(wm.Current.Team.Name)) continue; // Ignore entries that haven't been updated yet.
                                 Teamcolor = BDTISetup.Instance.ColorAssignments[wm.Current.Team.Name];
                                 IconUIStyle.normal.textColor = Teamcolor;
+                                size = wm.Current.vessel.vesselType == VesselType.Debris ? 20 : 40;
                                 if (wm.Current.vessel.isActiveVessel)
                                 {
                                     if (BDTISettings.THREATICON)
@@ -268,6 +269,20 @@ namespace BDArmory.UI
                                         if (RelPos.magnitude >= BDTISettings.DISTANCE_THRESHOLD)
                                         {
                                             DrawThreatIndicator(wm.Current.vessel.CoM, wm.Current.currentTarget.Vessel.CoM, Teamcolor);
+                                        }
+                                    }
+                                    if (BDTISettings.SHOW_SELF)
+                                    {
+                                        icon = GetIconForVessel(wm.Current.vessel);
+                                        DrawOnScreenIcon(wm.Current.vessel.CoM, icon, new Vector2((size * BDTISettings.ICONSCALE), (size * BDTISettings.ICONSCALE)), Teamcolor, true);
+                                        if (BDTISettings.VESSELNAMES)
+                                        {
+                                            Vector2 guiPos;
+                                            if (BDGUIUtils.WorldToGUIPos(wm.Current.vessel.CoM, out guiPos))
+                                            {
+                                                Rect nameRect = new Rect((guiPos.x + (24 * BDTISettings.ICONSCALE)), guiPos.y - 4, 100, 32);
+                                                GUI.Label(nameRect, wm.Current.vessel.vesselName, IconUIStyle);
+                                            }
                                         }
                                     }
                                 }
@@ -297,41 +312,7 @@ namespace BDArmory.UI
                                             UoM = "m";
                                             UIdist = distance.ToString("0.0");
                                         }
-                                        if ((wm.Current.vessel.vesselType == VesselType.Ship && !wm.Current.vessel.Splashed) || wm.Current.vessel.vesselType == VesselType.Plane)
-                                        {
-                                            icon = BDTISetup.Instance.TextureIconPlane;
-                                        }
-                                        else if (wm.Current.vessel.vesselType == VesselType.Base || wm.Current.vessel.vesselType == VesselType.Lander)
-                                        {
-                                            icon = BDTISetup.Instance.TextureIconBase;
-                                        }
-                                        else if (wm.Current.vessel.vesselType == VesselType.Rover)
-                                        {
-                                            icon = BDTISetup.Instance.TextureIconRover;
-                                        }
-                                        else if (wm.Current.vessel.vesselType == VesselType.Probe)
-                                        {
-                                            icon = BDTISetup.Instance.TextureIconProbe;
-                                        }
-                                        else if (wm.Current.vessel.vesselType == VesselType.Ship && wm.Current.vessel.Splashed)
-                                        {
-                                            icon = BDTISetup.Instance.TextureIconShip;
-                                            if (wm.Current.vessel.vesselType == VesselType.Ship && wm.Current.vessel.altitude < -10)
-                                            {
-                                                icon = BDTISetup.Instance.TextureIconSub;
-                                            }
-                                        }
-                                        else if (wm.Current.vessel.vesselType == VesselType.Debris)
-                                        {
-                                            icon = BDTISetup.Instance.TextureIconDebris;
-                                            size = 20;
-                                            IconUIStyle.normal.textColor = XKCDColors.Grey;
-                                            Teamcolor = XKCDColors.Grey;
-                                        }
-                                        else
-                                        {
-                                            icon = BDTISetup.Instance.TextureIconGeneric;
-                                        }
+                                        icon = GetIconForVessel(wm.Current.vessel);
                                         DrawOnScreenIcon(wm.Current.vessel.CoM, icon, new Vector2((size * BDTISettings.ICONSCALE), (size * BDTISettings.ICONSCALE)), Teamcolor, true);
                                         if (BDTISettings.THREATICON)
                                         {
@@ -430,6 +411,46 @@ namespace BDArmory.UI
                             }
                     }
             }
+        }
+
+        Texture2D GetIconForVessel(Vessel v)
+        {
+            Texture2D icon;
+            if ((v.vesselType == VesselType.Ship && !v.Splashed) || v.vesselType == VesselType.Plane)
+            {
+                icon = BDTISetup.Instance.TextureIconPlane;
+            }
+            else if (v.vesselType == VesselType.Base || v.vesselType == VesselType.Lander)
+            {
+                icon = BDTISetup.Instance.TextureIconBase;
+            }
+            else if (v.vesselType == VesselType.Rover)
+            {
+                icon = BDTISetup.Instance.TextureIconRover;
+            }
+            else if (v.vesselType == VesselType.Probe)
+            {
+                icon = BDTISetup.Instance.TextureIconProbe;
+            }
+            else if (v.vesselType == VesselType.Ship && v.Splashed)
+            {
+                icon = BDTISetup.Instance.TextureIconShip;
+                if (v.vesselType == VesselType.Ship && v.altitude < -10)
+                {
+                    icon = BDTISetup.Instance.TextureIconSub;
+                }
+            }
+            else if (v.vesselType == VesselType.Debris)
+            {
+                icon = BDTISetup.Instance.TextureIconDebris;
+                IconUIStyle.normal.textColor = XKCDColors.Grey;
+                Teamcolor = XKCDColors.Grey;
+            }
+            else
+            {
+                icon = BDTISetup.Instance.TextureIconGeneric;
+            }
+            return icon;
         }
     }
 }
