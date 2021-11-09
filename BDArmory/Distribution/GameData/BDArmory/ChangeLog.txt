@@ -1,4 +1,13 @@
-﻿v1.4.12.3
+﻿FIXES
+- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect.
+- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue.)
+- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
+- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
+- Fix paintball mode not applying decals due to impulse weapons check.
+IMPROVEMENTS
+- Add "Show Self" option to Team Icons (icon + name only).
+
+v1.4.12.3
 FIXES
 - Sanitise null strings in paths.
 - Fix armor panels reverting to 2 thickness.
