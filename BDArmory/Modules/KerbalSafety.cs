@@ -20,8 +20,8 @@ namespace BDArmory.Modules
         #region Definitions
         static public KerbalSafetyManager Instance; // static instance for dealing with global stuff.
 
-        public Dictionary<string, KerbalSafety> kerbals; // The kerbals being managed.
-        List<KerbalEVA> evaKerbalsToMonitor;
+        public Dictionary<string, KerbalSafety> kerbals = new Dictionary<string, KerbalSafety>(); // The kerbals being managed.
+        List<KerbalEVA> evaKerbalsToMonitor = new List<KerbalEVA>();
         bool isEnabled = false;
         public Vessel activeVesselBeforeEject = null;
         public KerbalSafetyLevel safetyLevel { get { return (KerbalSafetyLevel)BDArmorySettings.KERBAL_SAFETY; } }
@@ -32,23 +32,16 @@ namespace BDArmory.Modules
             if (Instance != null)
                 Destroy(Instance);
             Instance = this;
-
-            kerbals = new Dictionary<string, KerbalSafety>();
         }
 
         public void Start()
         {
             Debug.Log($"[BDArmory.KerbalSafety]: Safety manager started with level {safetyLevel}, but currently disabled.");
-            GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
-            GameEvents.onVesselLoaded.Add(CheckVesselForKerbals);
-            GameEvents.onVesselSwitching.Add(OnVesselSwitch);
-            evaKerbalsToMonitor = new List<KerbalEVA>();
         }
 
         public void OnDestroy()
         {
-            GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
-            GameEvents.onVesselLoaded.Remove(CheckVesselForKerbals);
+            DisableKerbalSafety();
         }
 
         public void HandleSceneChange(GameEvents.FromToAction<GameScenes, GameScenes> fromTo)
@@ -68,6 +61,9 @@ namespace BDArmory.Modules
             foreach (var ks in kerbals.Values)
                 ks.AddHandlers();
             GameEvents.onVesselSOIChanged.Add(EatenByTheKraken);
+            GameEvents.onGameSceneSwitchRequested.Add(HandleSceneChange);
+            GameEvents.onVesselLoaded.Add(CheckVesselForKerbals);
+            GameEvents.onVesselSwitching.Add(OnVesselSwitch);
             CheckAllVesselsForKerbals(); // Check for new vessels that were added while we weren't active.
         }
 
@@ -83,6 +79,9 @@ namespace BDArmory.Modules
             }
             kerbals.Clear();
             GameEvents.onVesselSOIChanged.Remove(EatenByTheKraken);
+            GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
+            GameEvents.onVesselLoaded.Remove(CheckVesselForKerbals);
+            GameEvents.onVesselSwitching.Remove(OnVesselSwitch);
         }
 
         public void CheckAllVesselsForKerbals()
