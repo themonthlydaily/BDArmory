@@ -127,6 +127,7 @@ namespace BDArmory.Control
                             while (selectedFiles.Count > 0)
                             {
                                 rounds[roundIndex].Add(rounds[roundIndex].Count, new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
@@ -159,6 +160,7 @@ namespace BDArmory.Control
                         foreach (var combination in Combinations(vesselCount, vesselsPerHeat))
                         {
                             heatList.Add(new VesselSpawner.SpawnConfig(
+                                BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
@@ -292,6 +294,7 @@ namespace BDArmory.Control
                             while (selectedTeams.Count > 0)
                             {
                                 rounds[roundIndex].Add(rounds[roundIndex].Count, new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
@@ -330,6 +333,7 @@ namespace BDArmory.Control
                             {
                                 var selectedCraft = SelectTeamCraft(combination.Select(i => teamsIndex[i]).ToList(), vesselsPerTeam); // Vessel selection for a team can vary between rounds if the number of vessels in a team doesn't match the vesselsPerTeam parameter.
                                 heatList.Add(new VesselSpawner.SpawnConfig(
+                                    BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
@@ -462,6 +466,7 @@ namespace BDArmory.Control
                         roundConfig.DeserializeTeams();
                         if (!rounds.ContainsKey(roundConfig.round)) rounds.Add(roundConfig.round, new Dictionary<int, VesselSpawner.SpawnConfig>());
                         rounds[roundConfig.round].Add(roundConfig.heat, new VesselSpawner.SpawnConfig(
+                            roundConfig.worldIndex,
                             roundConfig.latitude,
                             roundConfig.longitude,
                             roundConfig.altitude,

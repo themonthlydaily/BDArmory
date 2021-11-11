@@ -15,9 +15,9 @@ namespace BDArmory.Misc
         public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc)
         {
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
-                if (!BDArmorySettings.ALLOW_S4R2_BD)
+                if (!BDArmorySettings.ALLOW_ZOMBIE_BD)
                 {
                     if (part.vessel.rootPart != null)
                     {
@@ -187,11 +187,15 @@ namespace BDArmory.Misc
                         {
                             if (engine.EngineIgnited)
                             {
-                                if (tracker.isSRB) //SRB is lit, and casing integrity fails due to damage; boom
+                                if (tracker.isSRB && tracker.SRBFuelled) //SRB is lit, and casing integrity fails due to damage; boom
                                 {
-                                    var Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
-                                    Rupture.CASELevel = 0;
-                                    Rupture.DetonateIfPossible();
+                                    var Rupture = part.GetComponent<ModuleCASE>();
+                                    if (Rupture == null)
+                                    {
+                                        Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
+                                        Rupture.CASELevel = 0;
+                                        Rupture.DetonateIfPossible(); //don't detonate if CASe already present
+                                    }
                                 }
                                 else
                                 {

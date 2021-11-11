@@ -84,7 +84,7 @@ namespace BDArmory.Modules
                 var HP = part.FindModuleImplementing<HitpointTracker>();
                 if (HP != null)
                 {
-                    HP.Hitpoints -= 300f;
+                    HP.Hitpoints = Mathf.Clamp(HP.Hitpoints, 0, sectionsRemaining * 300f);
                 }
             }
             for (int i = 0; i < sectionsCount; i++)

@@ -30,9 +30,9 @@ namespace BDArmory.Core
                 if (!field.Current.IsDefined(typeof(BDAPersistentSettingsField), false)) continue;
 
                 var fieldValue = field.Current.GetValue(null);
-                if (fieldValue.GetType() == typeof(Vector2d))
+                if (fieldValue.GetType() == typeof(Vector3d))
                 {
-                    settings.SetValue(field.Current.Name, ((Vector2d)fieldValue).ToString("G"), true);
+                    settings.SetValue(field.Current.Name, ((Vector3d)fieldValue).ToString("G"), true);
                 }
                 else if (fieldValue.GetType() == typeof(List<string>))
                 {
@@ -115,13 +115,14 @@ namespace BDArmory.Core
                     };
                     return rectVal;
                 }
-                else if (type == typeof(Vector2d))
+                else if (type == typeof(Vector3d))
                 {
-                    char[] charsToTrim = { '(', ')', ' ' };
+                    char[] charsToTrim = { '[', ']', ' ' };
                     string[] strings = value.Trim(charsToTrim).Split(',');
                     double x = double.Parse(strings[0]);
                     double y = double.Parse(strings[1]);
-                    return new Vector2d(x, y);
+                    double z = double.Parse(strings[2]);
+                    return new Vector3d(x, y, z);
                 }
                 else if (type == typeof(List<string>))
                 {

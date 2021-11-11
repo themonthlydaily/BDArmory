@@ -132,7 +132,7 @@ namespace BDArmory.Control
         float radius;
         float initialSpeed = -100f;
         double spawnRate;
-        Vector2d geoCoords;
+        Vector3d geoCoords;
         Vector3d spawnPoint;
         Vector3d upDirection;
         Vector3d refDirection;
@@ -257,7 +257,7 @@ namespace BDArmory.Control
         /// <summary>
         /// Spawn asteroid rain.
         /// </summary>
-        public void SpawnRain(Vector2d geoCoords)
+        public void SpawnRain(Vector3d geoCoords)
         {
             Reset();
             this.geoCoords = geoCoords;
@@ -617,7 +617,7 @@ namespace BDArmory.Control
 
         float altitude;
         float radius;
-        Vector2d geoCoords;
+        Vector3d geoCoords;
         Vector3d spawnPoint;
         Vector3d upDirection;
         Vector3d refDirection;
@@ -681,7 +681,7 @@ namespace BDArmory.Control
         /// <param name="_altitude">The maximum altitude AGL of the field, minimum altitude AGL is 50m.</param>
         /// <param name="_radius">The radius of the field from the spawn point.</param>
         /// <param name="_geoCoords">The spawn point (centre) of the field.</param>
-        public void SpawnField(int numberOfAsteroids, float altitude, float radius, Vector2d geoCoords)
+        public void SpawnField(int numberOfAsteroids, float altitude, float radius, Vector3d geoCoords)
         {
             Reset();
 

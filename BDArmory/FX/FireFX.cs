@@ -121,7 +121,7 @@ namespace BDArmory.FX
                             engine.Shutdown();
                             enginerestartTime = Time.time;
                         }
-                        burnTime = 10;
+                        burnTime = 4;
                         Misc.Misc.RefreshAssociatedWindows(parentPart);
                         Debug.Log("[FireFX] firebottles remaining in " + parentPart.name + ": " + FBX.FireBottles);
                     }
@@ -132,8 +132,8 @@ namespace BDArmory.FX
                             if (parentPart.vessel.verticalSpeed < 30) //not diving/trying to climb. With the vessel registry, could also grab AI state to add a !evading check
                             {
                                 engine.Shutdown();
-                                enginerestartTime = Time.time + 10;
-                                burnTime = 20;
+                                enginerestartTime = Time.time + 5;
+                                burnTime = 10;
                             }
                             //though if it is diving, then there isn't a second call to cycle engines. Add an Ienumerator to check once every couple sec?
                         }
@@ -229,16 +229,19 @@ namespace BDArmory.FX
                             }
                             else
                             {
-                                if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
+                                if (fuel.amount > 0)
                                 {
-                                    fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
-                                    fuel.amount -= fireIntensity;
-                                    burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
-                                }
-                                else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
-                                {
-                                    Detonate();
-                                    return;
+                                    if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
+                                    {
+                                        fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                        fuel.amount -= fireIntensity;
+                                        burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
+                                    }
+                                    else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
+                                    {
+                                        Detonate();
+                                        return;
+                                    }
                                 }
                                 else
                                 {
@@ -335,12 +338,11 @@ namespace BDArmory.FX
                     {
                         parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
-                    ////////////////////////////////////////////////
 
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
-            if ((!hasFuel && disableTime < 0 && burnTime < 0) || (burnTime > 0 && disableTime < 0 && Time.time - startTime > burnTime))
+            if (disableTime < 0 && (!hasFuel || (burnTime > 0 && Time.time - startTime > burnTime)))
             {
                 disableTime = Time.time; //grab time when emission stops
                 foreach (var pe in pEmitters)
@@ -359,7 +361,7 @@ namespace BDArmory.FX
             {
                 Deactivate();
             }
-            if (engine != null && enginerestartTime > 0 && Time.time - 10 > enginerestartTime)
+            if (engine != null && enginerestartTime > 0 && Time.time - burnTime > enginerestartTime)
             {
                 engine.Activate();
                 enginerestartTime = -1;
@@ -367,7 +369,11 @@ namespace BDArmory.FX
             ////////////////////////////////////////////
             if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
             {
-                gameObject.SetActive(false); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+                Deactivate(); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+            }
+			if (surfaceFire && parentPart.vessel.speed > 120) //blow out surface fires if moving fast enough
+            {
+                burnTime = 5; //only fuel+oxy or monoprop fires in vac/non-oxy atmo
             }
         }
 
@@ -381,11 +387,11 @@ namespace BDArmory.FX
                 PartResource fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 float tntFuel = 0, tntOx = 0, tntMP = 0, tntEC = 0;
-                if (fuel != null)
+                if (fuel != null && fuel.amount > 0)
                 {
                     tntFuel = (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f)) / 2);
                     tntMassEquivalent += tntFuel;
-                    if (fuel != null && ox != null)
+                    if (fuel != null && (ox != null && ox.amount > 0))
                     {
                         tntOx = (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f)) / 2);
                         tntMassEquivalent += tntOx;
@@ -397,7 +403,7 @@ namespace BDArmory.FX
                     }
                 }
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
-                if (mp != null)
+                if (mp != null && mp.amount > 0)
                 {
                     tntMP = (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f)) / 3);
                     tntMassEquivalent += tntMP;
@@ -408,7 +414,7 @@ namespace BDArmory.FX
                 }
                 tntMassEquivalent /= 6f; //make this not have a 1 to 1 ratio of fuelmass -> tntmass
                 PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
-                if (ec != null)
+                if (ec != null && ec.amount > 0)
                 {
                     tntEC = ((float)ec.maxAmount / 5000); //fix for cockpit batteries weighing a tonne+
                     tntMassEquivalent += tntEC;

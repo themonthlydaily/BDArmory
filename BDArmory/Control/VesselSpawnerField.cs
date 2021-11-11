@@ -9,9 +9,9 @@ namespace BDArmory.Control
     public class SpawnLocation
     {
         public string name;
-        public Vector2d location;
+        public Vector3d location;
 
-        public SpawnLocation(string _name, Vector2d _location) { name = _name; location = _location; }
+		public SpawnLocation(string _name, Vector3d _location) { name = _name; location = _location; }
         public override string ToString() { return name + ", " + location.ToString("G6"); }
     }
 
@@ -19,55 +19,53 @@ namespace BDArmory.Control
     public class VesselSpawnerField : Attribute
     {
         public VesselSpawnerField() { }
-
+        //static Dictionary<String, SpawnLocation> defaultLocations = new Dictionary<string, SpawnLocation>{
         static List<SpawnLocation> defaultLocations = new List<SpawnLocation>{
-            new SpawnLocation("KSC", new Vector2d(-0.04762, -74.8593)),
-            new SpawnLocation("Inland KSC", new Vector2d(20.5939, -146.567)),
-            new SpawnLocation("Desert Runway", new Vector2d(-6.44958, -144.038)),
-            new SpawnLocation("Kurgan's spot", new Vector2d(-28.4595, -9.15156)),
-            new SpawnLocation("Alpine Lake", new Vector2d(-23.48, 119.83)),
-            new SpawnLocation("Big Canyon", new Vector2d(6.97865, -170.804)),
-            new SpawnLocation("Bowl 1", new Vector2d(35.6559, -77.4941)),
-            new SpawnLocation("Bowl 2", new Vector2d(3.8744, -78.0039)),
-            new SpawnLocation("Bowl 3", new Vector2d(0.268284, -80.5195)),
-            new SpawnLocation("Bowl 4", new Vector2d(-2.962, 179.91)),
-            new SpawnLocation("Bowl 5", new Vector2d(47.16, 134.08)),
-            new SpawnLocation("Canyon", new Vector2d(-52.7592, -4.71081)),
-            new SpawnLocation("Colorado", new Vector2d(41.715, 82.29)),
-            new SpawnLocation("Crater Isle", new Vector2d(8.159, 179.65)),
-            new SpawnLocation("Crater Lake", new Vector2d(-18.86, 66.47)),
-            new SpawnLocation("Crater Sea", new Vector2d(7.213, -177.34)),
-            new SpawnLocation("East Peninsula", new Vector2d(-1.57, -39.12)),
-            new SpawnLocation("Great Lake", new Vector2d(-31.958, 81.654)),
-            new SpawnLocation("Half-pipe", new Vector2d(-21.1388, 72.6437)),
-            new SpawnLocation("Ice field", new Vector2d(80.3343, -32.0119)),
-            new SpawnLocation("Kermau-Sur-Mer", new Vector2d(33.911, -172.26)),
-            new SpawnLocation("Land Bridge", new Vector2d(-48.055, 13.33)),
-            new SpawnLocation("Lonely Mt", new Vector2d(24.48, -116.444)),
-            new SpawnLocation("Manley Delta", new Vector2d(39.0705, -136.193)),
-            new SpawnLocation("Manley Valley", new Vector2d(45.6, -137.3)),
-            new SpawnLocation("Marshlands", new Vector2d(16.83, -162.813)),
-            new SpawnLocation("Mountain Bowl", new Vector2d(21.772, -112.569)),
-            new SpawnLocation("Mtn. Springs", new Vector2d(30.6516, -40.6589)),
-            new SpawnLocation("Oasis", new Vector2d(10.5383, -121.837)),
-            new SpawnLocation("Oyster Bay", new Vector2d(8.342, 85.613)),
-            new SpawnLocation("Penninsula", new Vector2d(-1.2664, -106.896)),
-            new SpawnLocation("Pyramids", new Vector2d(-6.4743, -141.662)),
-            new SpawnLocation("Src of deNile", new Vector2d(28.8112, -134.795)),
-            new SpawnLocation("Suez", new Vector2d(10.955, -96.9358)),
-            new SpawnLocation("The Scar", new Vector2d(16.88, 50.48)),
-            new SpawnLocation("Western Approach", new Vector2d(0.2, -84.26)),
-            new SpawnLocation("White Cliffs", new Vector2d(25.689, -144.14)),
-            new SpawnLocation("Ice Floe 1", new Vector2d(-73.0986, -114.983)),
-            new SpawnLocation("Ice Floe 2", new Vector2d(-71.0594, 60.3108)),
+            new SpawnLocation("KSC", new Vector3d(-0.04762, -74.8593, 1)),
+            new SpawnLocation("Inland KSC", new Vector3d(20.5939, -146.567, 1)),
+            new SpawnLocation("Desert Runway", new Vector3d(-6.44958, -144.038,  1)),
+            new SpawnLocation("Kurgan's spot", new Vector3d(-28.4595, -9.15156,  1)),
+            new SpawnLocation("Alpine Lake", new Vector3d(-23.48, 119.83,  1)),
+            new SpawnLocation("Big Canyon", new Vector3d(6.97865, -170.804,  1)),
+            new SpawnLocation("Bowl 1", new Vector3d(35.6559, -77.4941,  1)),
+            new SpawnLocation("Bowl 2", new Vector3d(3.8744, -78.0039,  1)),
+            new SpawnLocation("Bowl 3", new Vector3d(0.268284, -80.5195,  1)),
+            new SpawnLocation("Bowl 4", new Vector3d(-2.962, 179.91,  1)),
+            new SpawnLocation("Bowl 5", new Vector3d(47.16, 134.08,  1)),
+            new SpawnLocation("Canyon", new Vector3d(-52.7592, -4.71081,  1)),
+            new SpawnLocation("Colorado", new Vector3d(41.715, 82.29,  1)),
+            new SpawnLocation("Crater Isle", new Vector3d(8.159, 179.65,  1)),
+            new SpawnLocation("Crater Lake", new Vector3d(-18.86, 66.47,  1)),
+            new SpawnLocation("Crater Sea", new Vector3d(7.213, -177.34,  1)),
+            new SpawnLocation("East Peninsula", new Vector3d(-1.57, -39.12, 1)),
+            new SpawnLocation("Great Lake", new Vector3d(-31.958, 81.654,  1)),
+            new SpawnLocation("Half-pipe", new Vector3d(-21.1388, 72.6437,  1)),
+            new SpawnLocation("Ice field", new Vector3d(80.3343, -32.0119,  1)),
+            new SpawnLocation("Kermau-Sur-Mer", new Vector3d(33.911, -172.26,  1)),
+            new SpawnLocation("Land Bridge", new Vector3d(-48.055, 13.33,  1)),
+            new SpawnLocation("Lonely Mt", new Vector3d(24.48, -116.444,  1)),
+            new SpawnLocation("Manley Delta", new Vector3d(39.0705, -136.193,  1)),
+            new SpawnLocation("Manley Valley", new Vector3d(45.6, -137.3,  1)),
+            new SpawnLocation("Marshlands", new Vector3d(16.83, -162.813,  1)),
+            new SpawnLocation("Mountain Bowl", new Vector3d(21.772, -112.569,  1)),
+            new SpawnLocation("Mtn. Springs", new Vector3d(30.6516, -40.6589,  1)),
+            new SpawnLocation("Oasis", new Vector3d(10.5383, -121.837,  1)),
+            new SpawnLocation("Oyster Bay", new Vector3d(8.342, 85.613,  1)),
+            new SpawnLocation("Penninsula", new Vector3d(-1.2664, -106.896,  1)),
+            new SpawnLocation("Pyramids", new Vector3d(-6.4743, -141.662,  1)),
+            new SpawnLocation("Src of deNile", new Vector3d(28.8112, -134.795,  1)),
+            new SpawnLocation("Suez", new Vector3d(10.955, -96.9358,  1)),
+            new SpawnLocation("The Scar", new Vector3d(16.88, 50.48,  1)),
+            new SpawnLocation("Western Approach", new Vector3d(0.2, -84.26,  1)),
+            new SpawnLocation("White Cliffs", new Vector3d(25.689, -144.14,  1)),
+            new SpawnLocation("Ice Floe 1", new Vector3d(-73.0986, -114.983,  1)),
+            new SpawnLocation("Ice Floe 2", new Vector3d(-71.0594, 60.3108,  1)),
         };
-
         public static void Save()
         {
             ConfigNode fileNode = ConfigNode.Load(VesselSpawner.spawnLocationsCfg);
             if (fileNode == null)
                 fileNode = new ConfigNode();
-
             if (!fileNode.HasNode("Config"))
                 fileNode.AddNode("Config");
 
@@ -130,6 +128,7 @@ namespace BDArmory.Control
                         var parsedValue = (SpawnLocation)ParseValue(typeof(SpawnLocation), spawnLocation);
                         if (parsedValue != null)
                         {
+                            //Debug.Log("[VSFDEBUG] parsing spawn location: " + parsedValue.ToString());
                             VesselSpawner.spawnLocations.Add(parsedValue);
                         }
                     }
@@ -157,16 +156,14 @@ namespace BDArmory.Control
                 {
                     return Boolean.Parse(value);
                 }
-                else if (type == typeof(Vector2d))
+                else if (type == typeof(Vector3d))
                 {
-                    char[] charsToTrim = { '(', ')', ' ' };
+                    char[] charsToTrim = { '[', ']', ' ' };
                     string[] strings = value.Trim(charsToTrim).Split(',');
-                    if (strings.Length == 2)
-                    {
-                        double x = double.Parse(strings[0]);
-                        double y = double.Parse(strings[1]);
-                        return new Vector2d(x, y);
-                    }
+                    double x = double.Parse(strings[0]);
+                    double y = double.Parse(strings[1]);
+                    double z = double.Parse(strings[2]);
+                    return new Vector3d(x, y, z);
                 }
                 else if (type == typeof(SpawnLocation))
                 {
@@ -174,7 +171,7 @@ namespace BDArmory.Control
                     if (parts.Length == 2)
                     {
                         var name = (string)ParseValue(typeof(string), parts[0]);
-                        var location = (Vector2d)ParseValue(typeof(Vector2d), parts[1]);
+                        var location = (Vector3d)ParseValue(typeof(Vector3d), parts[1]);
                         if (name != null && location != null)
                             return new SpawnLocation(name, location);
                     }

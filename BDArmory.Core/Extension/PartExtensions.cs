@@ -13,13 +13,13 @@ namespace BDArmory.Core.Extension
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
                 if (p.vessel.rootPart != null)
                 {
                     if (p != p.vessel.rootPart)
                     {
-                        damage *= BDArmorySettings.S4R2_DMG_MULT;
+                        damage *= BDArmorySettings.ZOMBIE_DMG_MULT;
                     }
                 }
             }
@@ -121,13 +121,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
                 {
                     if (p.vessel.rootPart != null)
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }
@@ -147,7 +147,7 @@ namespace BDArmory.Core.Extension
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
             /*
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -211,13 +211,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
                 {
                     if (p.vessel.rootPart != null)
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }

@@ -120,7 +120,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistentSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistentSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
-        [BDAPersistentSettingsField] public static float S4R2_DMG_MULT = 0.1f;
+        [BDAPersistentSettingsField] public static float ZOMBIE_DMG_MULT = 0.1f;
 
         // FX
         [BDAPersistentSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
@@ -162,6 +162,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
         [BDAPersistentSettingsField] public static bool MUTATOR_MODE = false;
+        [BDAPersistentSettingsField] public static bool ZOMBIE_MODE = false;
 
         //Battle Damage settings
         [BDAPersistentSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.
@@ -189,7 +190,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
         [BDAPersistentSettingsField] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
         [BDAPersistentSettingsField] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
-        [BDAPersistentSettingsField] public static bool ALLOW_S4R2_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
 
         // Remote logging
         [BDAPersistentSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle
@@ -202,7 +203,8 @@ namespace BDArmory.Core
 
         // Spawner settings
         [BDAPersistentSettingsField] public static bool SHOW_SPAWN_OPTIONS = true;                 // Show spawn options.
-        [BDAPersistentSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016); // Spawning coordinates on a planetary body.
+        [BDAPersistentSettingsField] public static Vector3d VESSEL_SPAWN_GEOCOORDS = new Vector3d(0.05096, -74.8016, 1); // Spawning coordinates on a planetary body.
+        [BDAPersistentSettingsField] public static int VESSEL_SPAWN_WORLDINDEX = 0;
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_ALTITUDE = 5f;               // Spawning altitude above the surface.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE_FACTOR = 20f;       // Scale factor for the size of the spawning circle.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE = 10f;              // Radius of the size of the spawning circle.

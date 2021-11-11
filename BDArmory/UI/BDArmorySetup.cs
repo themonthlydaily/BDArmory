@@ -183,7 +183,7 @@ namespace BDArmory.UI
                 return _SystemMaxMemory;
             }
         }
-
+        string CheatCodeGUI = "";
         //competition mode
         string compDistGui = "1000";
 
@@ -2700,13 +2700,20 @@ namespace BDArmory.UI
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateHitMultiplier")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER})", leftLabel);//Fire Rate Hit Multiplier
                             BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
-                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                        CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI);
+                        if (CheatCodeGUI == "ZombieMode")
                         {
-                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.S4R2_DMG_MULT})", leftLabel);//"S4R2 Non-headshot Dmg Mult"
-                            BDArmorySettings.S4R2_DMG_MULT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.S4R2_DMG_MULT, 0.05f, 0.95f) * 100f) / 100f;
+                            BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE;
+                            CheatCodeGUI = "";
+                        }
+                        //BDArmorySettings.ZOMBIE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ZOMBIE_MODE, Localizer.Format("#LOC_BDArmory_settings_ZombieMode"));
+                        if (BDArmorySettings.ZOMBIE_MODE)
+                        {
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.ZOMBIE_DMG_MULT})", leftLabel);//"S4R2 Non-headshot Dmg Mult"
+                            BDArmorySettings.ZOMBIE_DMG_MULT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ZOMBIE_DMG_MULT, 0.05f, 0.95f) * 100f) / 100f;
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
-                                BDArmorySettings.ALLOW_S4R2_BD = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.ALLOW_S4R2_BD, Localizer.Format("#LOC_BDArmory_Settings_BD_ZombieMode"));//"Allow battle Damage"
+                                BDArmorySettings.ALLOW_ZOMBIE_BD = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.ALLOW_ZOMBIE_BD, Localizer.Format("#LOC_BDArmory_Settings_BD_ZombieMode"));//"Allow battle Damage"
                             }
                         }
                     }

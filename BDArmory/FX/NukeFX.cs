@@ -54,6 +54,7 @@ namespace BDArmory.FX
         List<DestructibleBuilding> explosionEventsBuildingAdded = new List<DestructibleBuilding>();
         Dictionary<string, int> explosionEventsVesselsHit = new Dictionary<string, int>();
 
+        private float EMPRadius = 100;
 
         static RaycastHit[] lineOfSightHits;
         static RaycastHit[] reverseHits;
@@ -91,6 +92,17 @@ namespace BDArmory.FX
                     lastValidAtmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
                                        FlightGlobals.getExternalTemperature(transform.position));
                 hasDetonated = false;
+            }
+            //EMP output increases as the sqrt of yield (determined power) and prompt gamma output (~0.5% of yield) 
+            //srf detonation is capped to about 16km, < 10km alt electrons qucikly absorbed by atmo.
+            //above 10km, emp radius can easily reach 100s of km. But that's no fun, so...
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 10000)
+            {
+                EMPRadius = Mathf.Sqrt(yield) * 100;
+            }
+            else
+            {
+                EMPRadius = Mathf.Sqrt(yield) * 1000;
             }
         }
 
@@ -389,7 +401,8 @@ namespace BDArmory.FX
                         {
                             EMP = (ModuleDrainEC)part.vessel.rootPart.AddModule("ModuleDrainEC");
                         }
-                        EMP.incomingDamage = (((thermalRadius * 2) - realDistance) * 1); //this way craft at edge of blast might only get disabled instead of bricked
+						EMP.incomingDamage = ((EMPRadius / realDistance) * 100); //this way craft at edge of blast might only get disabled instead of bricked
+                        //work on a better EMP damage value, in case of configs with very large thermalRadius
                         EMP.softEMP = false;
                     }
                 }

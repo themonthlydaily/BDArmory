@@ -27,8 +27,7 @@ namespace BDArmory.Modules
         public void ToggleTankOption()
         {
             SSTank = !SSTank;
-
-            if (SSTank == false)
+            if (!SSTank)
             {
                 Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_On");//"Enable self-sealing tank"
 
@@ -37,7 +36,7 @@ namespace BDArmory.Modules
                     {
                         if (resource.Current == null) continue;
                         resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.11112);
-                        resource.Current.amount = resource.Current.maxAmount;
+                        resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
                     }
             }
             else
@@ -49,10 +48,46 @@ namespace BDArmory.Modules
                     {
                         if (resource.Current == null) continue;
                         resource.Current.maxAmount *= 0.9;
-                        resource.Current.amount = resource.Current.maxAmount;
+                        resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
                     }
             }
             Misc.Misc.RefreshAssociatedWindows(part);
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
+
+                    var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (tank == null) continue;
+
+                    tank.SSTank = SSTank;
+
+                    if (!SSTank)
+                    {
+                        tank.Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_On");//"Enable self-sealing tank"
+
+                        using (IEnumerator<PartResource> resource = pSym.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
+                            {
+                                if (resource.Current == null) continue;
+                                resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.11112);
+                                resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                            }
+                    }
+                    else
+                    {
+                        tank.Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_Off");//"Disable self-sealing tank"
+
+                        using (IEnumerator<PartResource> resource = pSym.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
+                            {
+                                if (resource.Current == null) continue;
+                                resource.Current.maxAmount *= 0.9;
+                                resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                            }
+                    }
+                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                }      
         }
 
         [KSPField(advancedTweakable = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_AddedMass")]//CASE mass
@@ -73,6 +108,8 @@ namespace BDArmory.Modules
         PartResource solid;
         public bool isOnFire = false;
 
+        public bool externallyCalled = false;
+
         public void Start()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -88,12 +125,22 @@ namespace BDArmory.Modules
             var engine = part.FindModuleImplementing<ModuleEngines>();
             if (engine != null)
             {
-                Events["ToggleTankOption"].guiActiveEditor = false;
-                if (solid != null && engine.throttleLocked && !engine.allowShutdown)
+                if (solid != null && fuel != null && solid.maxAmount < fuel.maxAmount && engine.throttleLocked && !engine.allowShutdown) //tanks with integrated seperatrons
+                { }
+                else
                 {
                     part.RemoveModule(this); //don't add firebottles to SRBs
                 }
+
             }
+			if (!SSTank)
+			{
+				Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_On");//"Enable self-sealing tank"
+			}
+			else
+			{
+				Events["ToggleTankOption"].guiName = Localizer.Format("#LOC_BDArmory_SSTank_Off");//"Disable self-sealing tank"
+			}
         }
         public override void OnLoad(ConfigNode node)
         {
@@ -111,13 +158,13 @@ namespace BDArmory.Modules
                 {
                     if (part.vessel != null)
                     {
+                        FBSetup(null, null);
                         var SSTString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleSelfSealingTank", "SSTank");
                         if (!string.IsNullOrEmpty(SSTString))
                         {
                             try
                             {
                                 SSTank = bool.Parse(SSTString);
-                                FBSetup(null, null);
                             }
                             catch (Exception e)
                             {
@@ -138,11 +185,29 @@ namespace BDArmory.Modules
         }
         void FBSetup(BaseField field, object obj)
         {
+            if (externallyCalled) return;
+
             FBmass = (0.01f * FireBottles);
             FBRemaining = FireBottles;
             partmass = FBmass;
-            //part.mass = partmass;
-            Misc.Misc.RefreshAssociatedWindows(part);
+            //part.transform.localScale = (Vector3.one * (origScale + (CASELevel/10)));
+            //Debug.Log("[BDArmory.ModuleCASE] part.mass = " + part.mass + "; CASElevel = " + CASELevel + "; CASEMass = " + CASEmass + "; Scale = " + part.transform.localScale);
+
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
+
+                    var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (tank == null) continue;
+                    tank.externallyCalled = true;
+                    tank.FBmass = FBmass;
+                    tank.FBRemaining = FBRemaining;
+                    tank.partmass = partmass;
+                    tank.externallyCalled = false;
+                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                }
+                Misc.Misc.RefreshAssociatedWindows(part);
         }
         public override string GetInfo()
         {
@@ -165,9 +230,9 @@ namespace BDArmory.Modules
             {
                 if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
                 {
-                    if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
+                    if (!isOnFire)
                     {
-                        if (!isOnFire)
+                        if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
                         {
                             string fireStarter;
                             var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
@@ -180,7 +245,7 @@ namespace BDArmory.Modules
                                 fireStarter = part.vessel.GetName();
                             }
                             BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
-                            Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
                             isOnFire = true;
                         }
                     }

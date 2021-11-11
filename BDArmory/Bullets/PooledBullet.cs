@@ -735,6 +735,10 @@ namespace BDArmory.Bullets
                     hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Acceleration);
                 }
                 ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, true);
+                if (BDArmorySettings.BULLET_HITS)
+                {
+                    BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, false, caliber, 0, team);
+                }
                 KillBullet();
                 return true; //impulse rounds shouldn't penetrate/do damage
             }
