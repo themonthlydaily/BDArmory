@@ -23,7 +23,7 @@ namespace BDArmory.Control
 
         bool controlEnabled;
 
-        private float[] priorAccels = new float[50]; // average of last 20 acceleration values, prevents super fast toggling of afterburner
+        private float[] priorAccels = new float[50]; // average of last 50 acceleration values, prevents super fast toggling of afterburner
 
         //[KSPField(guiActive = true, guiName = "Thrust")]
         public float debugThrust;
@@ -152,7 +152,7 @@ namespace BDArmory.Control
 
             float accel = maxThrust / vesselMass; // This assumes that all thrust is in the same direction.
 
-            // calculate average acceleration over last 20 frames
+            // calculate average acceleration over last 50 frames
             float averageAccel = accel;
             for (int i = 48; i >= 0; i--)
             {
