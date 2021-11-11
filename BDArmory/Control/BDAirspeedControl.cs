@@ -171,6 +171,7 @@ namespace BDArmory.Control
 
             possibleAccel += accel; // This assumes that the acceleration from engines is in the same direction as the original possibleAccel.
             forceAfterburner = (afterburnerPriority == 100f);
+            allowAfterburner = allowAfterburner && (afterburnerPriority != 0f);
 
             //use multimode afterburner for extra accel if lacking
             using (List<MultiModeEngine>.Enumerator mmes = multiModeEngines.GetEnumerator())
