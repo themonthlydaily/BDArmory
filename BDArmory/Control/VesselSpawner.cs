@@ -412,7 +412,7 @@ namespace BDArmory.Control
                     catch { vessel = null; }
                     if (vessel == null)
                     {
-                        var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length);
+                        var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length + 1);
                         Debug.LogWarning("[BDArmory.VesselSpawner]: Failed to spawn craft " + craftName);
                         failedVessels += "\n  -  " + craftName;
                         continue;
@@ -458,7 +458,7 @@ namespace BDArmory.Control
                         catch { vessel = null; }
                         if (vessel == null)
                         {
-                            var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length);
+                            var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length + 1);
                             Debug.Log("[BDArmory.VesselSpawner]: Failed to spawn craft " + craftName);
                             failedVessels += "\n  -  " + craftName;
                             continue;
@@ -1109,7 +1109,7 @@ namespace BDArmory.Control
                         catch { vessel = null; }
                         if (vessel == null)
                         {
-                            var craftName = craftURL.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length);
+                            var craftName = craftURL.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length + 1);
                             Debug.Log("[BDArmory.VesselSpawner]: Failed to spawn craft " + craftName);
                             failedVessels += "\n  -  " + craftName;
                             continue;
@@ -1781,9 +1781,11 @@ namespace BDArmory.Control
                     default:
                         throw new IndexOutOfRangeException("Invalid Fill Seats value");
                 }
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42) // Fly the Unfriendly Skies
+                { crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity).ToList(); }
                 foreach (var part in crewParts)
                 {
-                    int crewToAdd = BDArmorySettings.VESSEL_SPAWN_FILL_SEATS > 0 ? part.CrewCapacity - part.protoModuleCrew.Count : 1;
+                    int crewToAdd = (BDArmorySettings.VESSEL_SPAWN_FILL_SEATS > 0 || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)) ? part.CrewCapacity - part.protoModuleCrew.Count : 1;
                     for (int crewCount = 0; crewCount < crewToAdd; ++crewCount)
                     {
                         // Create the ProtoCrewMember
