@@ -5,6 +5,7 @@
 - Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
 - Fix paintball mode not applying decals due to impulse weapons check.
 - Fix the length of the substring in debug message for vessels that fail to spawn.
+- Remove the previous conditions for the RWP S4R2 condition as they aren't being used for S4R2.
 IMPROVEMENTS
 - Add "Show Self" option to Team Icons (icon + name only).
 - Apply the S4R2 'fill seats' condition to vessel spawning.
