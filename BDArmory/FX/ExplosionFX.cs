@@ -172,7 +172,7 @@ namespace BDArmory.FX
                 overlapSphereColliders = Physics.OverlapSphere(Position, Range, 9076737);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
-            using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).GetEnumerator())
+            using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).ToList().GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())
                 {

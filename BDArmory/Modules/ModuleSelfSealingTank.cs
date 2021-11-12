@@ -129,7 +129,7 @@ namespace BDArmory.Modules
                 { }
                 else
                 {
-                    part.RemoveModule(this); //don't add firebottles to SRBs
+                    part.RemoveModule(this); //don't add firebottles to SRBs, but allow for the S1.5.5 MH soyuz tank with integrated seperatrons
                 }
 
             }

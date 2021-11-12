@@ -513,7 +513,7 @@ namespace BDArmory.Bullets
             }
             foreach (var vessel in nearbyVessels.OrderBy(v => (v.transform.position - transform.position).sqrMagnitude))
             {
-                CheckBulletCollisionWithVessel(period, vessel);
+                CheckBulletCollisionWithVessel(period, vessel); // FIXME Convert this to use RaycastCommand to do all the raycasts in parallel.
             }
         }
 
@@ -652,7 +652,7 @@ namespace BDArmory.Bullets
                 Debug.Log("[BDArmory.PooledBullet]:NullReferenceException for Ballistic Hit: " + e.Message);
                 return true;
             }
-            
+
             if (hitPart != null && ProjectileUtils.IsIgnoredPart(hitPart)) return false; // Ignore ignored parts.
             if (hitPart != null && hitPart == sourceWeapon) return false; // Ignore weapon that fired the bullet.
             if (hitPart != null && (hitPart == CurrentPart && CurrentPart.name.ToLower().Contains("armor"))) return false; //only have bullet hit armor panels once - no back armor to hit if penetration
@@ -713,7 +713,7 @@ namespace BDArmory.Bullets
                     return true;
                 }
             }
-            if (hitPart==null) return false; // Hits below here are part hits.
+            if (hitPart == null) return false; // Hits below here are part hits.
 
             //Standard Pipeline Hitpoints, Armor and Explosives
             impactSpeed = impactVelocity.magnitude;
@@ -727,13 +727,11 @@ namespace BDArmory.Bullets
                 ME.massMod += massMod;
                 ME.duration += BDArmorySettings.WEAPON_FX_DURATION;
             }
-            if (impulse != 0 && hitPart.rb != null || BDArmorySettings.PAINTBALL_MODE)
+            if (impulse != 0 && hitPart.rb != null)
             {
                 distanceTraveled += hit.distance;
-                if (impulse != 0 && hitPart.rb != null)
-                {
-                    hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Acceleration);
-                }
+                if (!BDArmorySettings.PAINTBALL_MODE)
+                { hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Acceleration); }
                 ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, true);
                 if (BDArmorySettings.BULLET_HITS)
                 {

@@ -278,7 +278,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     Fields["guiArmorTypeString"].guiActiveEditor = false;
                     Fields["guiArmorTypeString"].guiActive = false;
                     Fields["guiHullTypeString"].guiActiveEditor = false;
-                    Fields["guiHullTypeString"].guiActive = false;                    
+                    Fields["guiHullTypeString"].guiActive = false;
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
                     //UI_ProgressBar Armorleft = (UI_ProgressBar)Fields["ArmorRemaining"].uiControlFlight;
@@ -626,13 +626,14 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: Hitpoint Calc" + part.name + " | Density : " + density);
 
                         var structuralMass = density * structuralVolume; //this just means hp = mass if the density is within the limits.
-                                                                         //biger things need more hp; but things that are denser, should also have more hp, so it's a bit mroe complicated than have hp = volume * hp mult
-                                                                         //hp = (volume * Hp mult) * density mod?
-                                                                         //lets take some examples; 3 identical size parts, mk1 cockpit(930kg), mk1 stuct tube (100kg), mk1 LF tank (250kg)
-                                                                         //if, say, a Hp mod of 300, so 2.55m3 * 300 = 765 -> 800hp
-                                                                         //cockpit has a density of ~364, fueltank of 98, struct tube of 39
-                                                                         //density can't be linear scalar. Cuberoot? would need to reduce hp mult.
-                                                                         //2.55 * 100* 364^1/3 = 1785, 2.55 * 100 * 98^1/3 = 1157, 2.55 * 100 * 39^1/3 = 854
+
+                        //biger things need more hp; but things that are denser, should also have more hp, so it's a bit mroe complicated than have hp = volume * hp mult
+                        //hp = (volume * Hp mult) * density mod?
+                        //lets take some examples; 3 identical size parts, mk1 cockpit(930kg), mk1 stuct tube (100kg), mk1 LF tank (250kg)
+                        //if, say, a Hp mod of 300, so 2.55m3 * 300 = 765 -> 800hp
+                        //cockpit has a density of ~364, fueltank of 98, struct tube of 39
+                        //density can't be linear scalar. Cuberoot? would need to reduce hp mult.
+                        //2.55 * 100* 364^1/3 = 1785, 2.55 * 100 * 98^1/3 = 1157, 2.55 * 100 * 39^1/3 = 854
 
                         // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitpointTracker]: " + part.name + " structural Volume: " + structuralVolume + "; density: " + density);
                         //3. final calculations

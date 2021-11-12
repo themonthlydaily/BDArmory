@@ -412,7 +412,7 @@ namespace BDArmory.Control
                     catch { vessel = null; }
                     if (vessel == null)
                     {
-                        var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length);
+                        var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length + 1);
                         Debug.LogWarning("[BDArmory.VesselSpawner]: Failed to spawn craft " + craftName);
                         failedVessels += "\n  -  " + craftName;
                         continue;
@@ -458,7 +458,7 @@ namespace BDArmory.Control
                         catch { vessel = null; }
                         if (vessel == null)
                         {
-                            var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length);
+                            var craftName = craftUrl.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length + 1);
                             Debug.Log("[BDArmory.VesselSpawner]: Failed to spawn craft " + craftName);
                             failedVessels += "\n  -  " + craftName;
                             continue;
@@ -816,6 +816,14 @@ namespace BDArmory.Control
                     yield return new WaitForFixedUpdate();
                 }
             }
+
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                foreach (var vesselName in spawnedVessels.Keys)
+                {
+                    CheckAIWMPlacement(spawnedVessels[vesselName].Item1);
+                }
+            }
             #endregion
 
             Debug.Log("[BDArmory.VesselSpawner]: Vessel spawning " + (vesselSpawnSuccess ? "SUCCEEDED!" : "FAILED! " + spawnFailureReason));
@@ -1101,7 +1109,7 @@ namespace BDArmory.Control
                         catch { vessel = null; }
                         if (vessel == null)
                         {
-                            var craftName = craftURL.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length);
+                            var craftName = craftURL.Substring(Path.Combine(Environment.CurrentDirectory, "AutoSpawn", spawnConfig.folder).Length + 1);
                             Debug.Log("[BDArmory.VesselSpawner]: Failed to spawn craft " + craftName);
                             failedVessels += "\n  -  " + craftName;
                             continue;
@@ -1430,7 +1438,7 @@ namespace BDArmory.Control
         [Serializable]
         public class SpawnConfig
         {
-            public SpawnConfig(int worldIndex, double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string folder = null, List<string> craftFiles = null)
+            public SpawnConfig(int worldIndex, double latitude, double longitude, double altitude, float distance, bool absDistanceOrFactor, float easeInSpeed = 1f, bool killEverythingFirst = true, bool assignTeams = true, int numberOfTeams = 0, List<int> teamCounts = null, List<List<string>> teamsSpecific = null, string folder = "", List<string> craftFiles = null)
             {
                 this.worldIndex = worldIndex;
                 this.latitude = latitude;
@@ -1444,7 +1452,7 @@ namespace BDArmory.Control
                 this.numberOfTeams = numberOfTeams;
                 this.teamCounts = teamCounts; if (teamCounts != null) this.numberOfTeams = this.teamCounts.Count;
                 this.teamsSpecific = teamsSpecific;
-                this.folder = folder;
+                this.folder = folder ?? "";
                 this.craftFiles = craftFiles;
             }
             public SpawnConfig(SpawnConfig other)
@@ -1476,7 +1484,7 @@ namespace BDArmory.Control
             public int numberOfTeams = 0; // Number of teams (or FFA, Folders or Inf). For evenly (as possible) splitting vessels into teams.
             public List<int> teamCounts; // List of team numbers. For unevenly splitting vessels into teams based on their order in the tournament state file for the round. E.g., when spawning from folders.
             public List<List<string>> teamsSpecific; // Dictionary of vessels and teams. For splitting specific vessels into specific teams.
-            public string folder = null;
+            public string folder = "";
             public List<string> craftFiles = null;
         }
 
@@ -1585,7 +1593,7 @@ namespace BDArmory.Control
             ++removeVesselsPending;
             if (vessel != FlightGlobals.ActiveVessel && vessel.vesselType != VesselType.SpaceObject)
             {
-                if (KerbalSafetyManager.Instance.safetyLevel!=KerbalSafetyLevel.Off)
+                if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
                     KerbalSafetyManager.Instance.RecoverVesselNow(vessel);
                 else
                     ShipConstruction.RecoverVesselFromFlight(vessel.protoVessel, HighLogic.CurrentGame.flightState, true);
@@ -1637,6 +1645,40 @@ namespace BDArmory.Control
                     RemoveVessel(vessel);
                 }
             }
+        }
+
+        public bool CheckAIWMPlacement(Vessel vessel)
+        {
+            var message = "";
+            List<string> failureStrings = new List<string>();
+            var AI = VesselModuleRegistry.GetBDModulePilotAI(vessel, true);
+            var WM = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (AI == null) message = " has no AI";
+            if (WM == null) message += (AI == null ? " or WM" : " has no WM");
+            if (AI != null || WM != null)
+            {
+                int count = 0;
+                if (AI != null && (AI.part.parent == null || AI.part.vessel.rootPart != AI.part.parent))
+                {
+                    message += (WM == null ? " and its AI" : "'s AI");
+                    ++count;
+                }
+                if (WM != null && (WM.part.parent == null || WM.part.vessel.rootPart != WM.part.parent))
+                {
+                    message += (AI == null ? " and its WM" : (count > 0 ? " and WM" : "'s WM"));
+                    ++count;
+                };
+                if (count > 0) message += (count > 1 ? " are" : " is") + " not attached to its root part";
+            }
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                message = $"{vessel.vesselName}" + message + ".";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                return false;
+            }
+            return true;
         }
 
         #region Actual spawning of individual craft
@@ -1742,9 +1784,11 @@ namespace BDArmory.Control
                     default:
                         throw new IndexOutOfRangeException("Invalid Fill Seats value");
                 }
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42) // Fly the Unfriendly Skies
+                { crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity).ToList(); }
                 foreach (var part in crewParts)
                 {
-                    int crewToAdd = BDArmorySettings.VESSEL_SPAWN_FILL_SEATS > 0 ? part.CrewCapacity - part.protoModuleCrew.Count : 1;
+                    int crewToAdd = (BDArmorySettings.VESSEL_SPAWN_FILL_SEATS > 0 || (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)) ? part.CrewCapacity - part.protoModuleCrew.Count : 1;
                     for (int crewCount = 0; crewCount < crewToAdd; ++crewCount)
                     {
                         // Create the ProtoCrewMember

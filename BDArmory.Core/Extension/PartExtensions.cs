@@ -14,6 +14,7 @@ namespace BDArmory.Core.Extension
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+            //if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -64,7 +65,7 @@ namespace BDArmory.Core.Extension
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
             /*
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -122,6 +123,7 @@ namespace BDArmory.Core.Extension
             else
             {
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+                //if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
                 {
                     if (p.vessel.rootPart != null)
                     {
@@ -148,6 +150,7 @@ namespace BDArmory.Core.Extension
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
             /*
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+            //if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -212,6 +215,7 @@ namespace BDArmory.Core.Extension
             else
             {
                 if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+                //if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
                 {
                     if (p.vessel.rootPart != null)
                     {

@@ -572,7 +572,7 @@ namespace BDArmory.Bullets
                             if (partHit == null || partHit.vessel == null) continue;
                             if (partHit.vessel == sourceVessel) continue;
                             if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                            var aName = sourceVessel.GetName(); //proxi detonated rocket scoring
+                            var aName = sourceVesselName; //proxi detonated rocket scoring
                             var tName = partHit.vessel.GetName();
 
                             BDACompetitionMode.Instance.Scores.RegisterRocketHit(aName, tName, 1);

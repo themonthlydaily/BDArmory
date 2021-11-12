@@ -86,6 +86,7 @@ namespace BDArmory.Modules
                 {
                     HP.Hitpoints = Mathf.Clamp(HP.Hitpoints, 0, sectionsRemaining * 300f);
                 }
+                if (HP.Hitpoints < 0) part.Destroy();
             }
             for (int i = 0; i < sectionsCount; i++)
             {

@@ -79,6 +79,7 @@ namespace BDArmory.Control
          */
         public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat, int tournamentStyle)
         {
+            folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.FFA;
             var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);
@@ -202,6 +203,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool Generate(string folder, int numberOfRounds, int teamsPerHeat, int vesselsPerTeam, int numberOfTeams, int tournamentStyle)
         {
+            folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.Teams;
             var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);

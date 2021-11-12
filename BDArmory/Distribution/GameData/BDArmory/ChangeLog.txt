@@ -1,15 +1,64 @@
 ﻿FIXES
+- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect (post-stall behaviour near terrain).
+- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
+- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
+- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
+- Fix paintball mode not applying decals due to impulse weapons check.
+- Fix the length of the substring in debug message for vessels that fail to spawn.
+- Remove the previous conditions for the RWP S4R2 condition as they aren't being used for S4R2.
+IMPROVEMENTS
+- Add "Show Self" option to Team Icons (icon + name only).
+- Apply the S4R2 'fill seats' condition to vessel spawning.
+- Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
+
+v1.4.12.3
+FIXES
+- Sanitise null strings in paths.
+- Fix armor panels reverting to 2 thickness.
+- Fix some errors in the MM patch for parts.
+IMPROVEMENTS
+- Better in-game and log messages for when a competition fails to start due to a vessel disappearing.
+- (RWP only) Add in-game reminder for AI and WM not attached to the root part.
+
+v1.4.12.2
+FIXES
+- Fix negative HP issue with Reactive Armor.
+- Fix CalcShrapnelDamage potentially reporting a negative number for damage.
+- Add some recursion checks to ModuleCase.
+- Add check to prevent setting Weapon material to Wood.
+- Can no longer change Armor Panel hull material.
+- SRBs no longer explode when empty if BattleDamage enabled.
+- Fixes Fuel Tank explosion yield increasing when associated resource(s) is empty.
+- Empty Ammo boxes will no longer explode when destroyed.
+IMPROVEMENTS
+- Re-add Firebottles, SelfSealing Tank option to Making History Soyuz tank.
+
+v1.4.12.1
+FIXES
+- Fix stack overflow in CASE explosions from detonating SRBs.
+- Fix NRE in PooledRockets.
+- Fix ordering of Gameplay settings.
+- Fix localisation for new Reset Material toggle.
+- Take a copy of the collider list from overlapSphereColliders to avoid potential issues since it's static and ProcessingBlastSphere can be called recursively.
+IMPROVEMENTS
+- General:
+	- Reduce the weighting of rocket hits in the parsing script.
+	- Add some more debugging to inter-competition debug statements.
+
+v1.4.12.0
+FIXES
+- Sort the protoVessel part list during spawning to fix the badly rooted vessel spawning bug.
 - Fix BDA part category placement to be usable on low resolution screens.
 - Don't add explosive forces when paintball mode is enabled.
-- Armor will no longer take damage when using Paintball Mode
-- Subsection targeting GUI label no longer reverts to COM
-- Paintballs will no longer overpenetrate if base ammo type is armor piercing
-- Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit
-- Armor panel armor values no longer vary based on part orientation
-- Armor Panel buoyancy fixed
-- Rockets no longer calculate shrapnel hits twice
-- Fixes unit conversion error in armor spalling calcs
-- Bullet Penetration calc now properly takes angle of impact into account
+- Armor will no longer take damage when using Paintball Mode.
+- Subsection targeting GUI label no longer reverts to CoM.
+- Paintballs will no longer overpenetrate if base ammo type is armor piercing.
+- Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit.
+- Armor panel armor values no longer vary based on part orientation.
+- Armor Panel buoyancy fixed.
+- Rockets no longer calculate shrapnel hits twice.
+- Fixes unit conversion error in armor spalling calcs.
+- Bullet Penetration calc now properly takes angle of impact into account.
 - Minimal seat filling should fill the first non-weapon crewed command part, not the first non-weapon crewed part.
 - Iteratively refine the aiming point (measured to take 2-3 iterations typically) to avoid the turret premature firing issue.
 - Fix issue of NaN appearing in bullet damage.
@@ -18,6 +67,7 @@
 - Apply hull modifier to proc wings also.
 - Use the OS-dependent directory separator char for player-visible paths (fixes team names containing the 'AutoSpawn' folder in Windows).
 - Replace ', ' with ',' in the summary.csv file for teams for consistent team member naming.
+- Rework the extending code to remove the spaghetti and fix the bug where the plane would extend in a straight line from ground targets without AI control.
 
 IMPROVEMENTS
 - General:
@@ -25,12 +75,13 @@ IMPROVEMENTS
 	- Use RemoveVessel in VesselSpawner.cs for removing spectators for more consistent removal.
 	- Disable guard mode on aerial spawn to be consistent with competition start sequence (in case there's a delay between spawning and starting where someone activated guard mode on AG10).
 - UI:
-	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short teamnames are used.
+	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short team names are used.
 	- Remove unused "fire in range" toggle from weapon UI.
 	- Add a UTC timestamp to the clock.
-	- Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage
-	- In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor
- 	- Clarifies armor debugging statements
+	- Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage.
+	- In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor.
+ 	- Clarifies armor debugging statements.
+	- Armor Reset toggle split into separate Armor Reset and Hull Reset toggles.
 - AI:
 	- Add a 0.5s cool-down to the AI toggling the afterburner for when the hysteresis is insufficient.
 - Countermeasures:
@@ -40,15 +91,16 @@ IMPROVEMENTS
 	- Add Vessel-Relative Bullet Checks for more accurate bullet checks that work in high-velocity environments (enabled by default).
 	- Replace smoothing of target velocity and acceleration with Brown's double exponential smoothing for improved aiming, particularly at longer ranges.
 - Armor:
-	-Armor panel thickness now starts at 25, can be increased up to old maximums
-	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field
-	-Bullets will now only hit (and deal damage to) armor panels once
-	-Armor Panel HP now directly proportional to armor integrety
-	-ModuleReactiveArmor has been rebuilt and now works
-	-Adds Reactive Armor example part
+	-Armor panel thickness now starts at 25, can be increased up to old maximums.
+	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field.
+	-Bullets will now only hit (and deal damage to) armor panels once.
+	-Armor Panel HP now directly proportional to armor integrity.
+	-ModuleReactiveArmor has been rebuilt and now works.
+	-Adds Reactive Armor example part.
   
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 	- Vessel-Relative Bullet Checks in advanced Gameplay settings.  
+	- Armor Reset toggle split into separate Armor Reset and Hull Reset toggles.
 
 v1.4.11.2
 FIXES 

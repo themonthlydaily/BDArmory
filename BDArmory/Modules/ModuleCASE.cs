@@ -360,7 +360,7 @@ namespace BDArmory.Modules
                 {
                     if (this.part.temperature > 900) //ammo cooks off, part is too hot
                     {
-                        DetonateIfPossible();
+                        if (!hasDetonated) DetonateIfPossible();
                     }
                 }
             }

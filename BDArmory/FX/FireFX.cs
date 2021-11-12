@@ -190,7 +190,7 @@ namespace BDArmory.FX
                                 hasFuel = false;
                             }
                             solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
-                            if (solid != null)
+                            if (solid != null && solid.amount > 0)
                             {
                                 if (solid.amount < solid.maxAmount * 0.66f)
                                 {
