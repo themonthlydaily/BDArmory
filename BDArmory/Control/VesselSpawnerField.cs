@@ -60,6 +60,23 @@ namespace BDArmory.Control
             new SpawnLocation("White Cliffs", new Vector3d(25.689, -144.14,  1)),
             new SpawnLocation("Ice Floe 1", new Vector3d(-73.0986, -114.983,  1)),
             new SpawnLocation("Ice Floe 2", new Vector3d(-71.0594, 60.3108,  1)),
+            new SpawnLocation("Joolian Skies", new Vector3d(0.05096, -74.8016, 8)),
+            new SpawnLocation("Great Sea", new Vector3d(0.05096, -74.8016, 9)),
+            new SpawnLocation("Impact Basin", new Vector3d(15.667, -65.1566, 9)),
+            new SpawnLocation("Crater Cove", new Vector3d(34.7921, 161.095, 9)),
+            new SpawnLocation("Battle Pond", new Vector3d(1.33667, 150.643, 9)),
+            new SpawnLocation("Tri-Eye Isle", new Vector3d(5.16308, -169.655, 9)),
+            new SpawnLocation("Bayou", new Vector3d(33.306, -130.172, 5)),
+            new SpawnLocation("Poison Pond", new Vector3d(33.3616, -67.2242, 5)),
+            new SpawnLocation("Crater Isle", new Vector3d(6.03858, 2.62539, 5)),
+            new SpawnLocation("Sunken Crater", new Vector3d(23.1178, -42.8307, 5)),
+            new SpawnLocation("Bowl 1", new Vector3d(36.0241, 105.294, 5)),
+            new SpawnLocation("Polar Bowl", new Vector3d(45.9978, 115.843, 6)),
+            new SpawnLocation("Grand Canyon", new Vector3d(9.32963, 167.071, 6)),
+            new SpawnLocation("Grand Canal", new Vector3d(-0.08521, -60.6124, 6)),
+            new SpawnLocation("Polar Bowl 2", new Vector3d(-53.655, -32.4155, 6)),
+
+
         };
         public static void Save()
         {
