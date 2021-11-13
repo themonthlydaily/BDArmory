@@ -15,6 +15,7 @@ parser.add_argument('-s', '--score', action='store_false', help="Compute scores.
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
 parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1.5,1,2e-3,3,1,5e-3,1e-5,0.1,2e-3,2e-5,0,0.5,0.01,1e-7,0,5e-2,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
+parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't display cumulative scores at the end.")
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
 parser.add_argument('--show-weights', action='store_true', help="Display the score weights.")
 args = parser.parse_args()
@@ -446,7 +447,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     strings.append(f"{team}{' '*(name_length-len(team))}\t{teamWins[team]}\t{teamDraws[team]}\t{teamDeaths[team]}\t{summary['teams'][team]}")
 
             # Per round cumulative score
-            if args.score:
+            if args.score and not args.no_cumulative:
                 name_length = max([len(name) for name in per_round_scores.keys()] + [23])
                 strings.append(f"\nName \\ Cumulative Score{' '*(name_length-23)}\t" + "\t".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
                 strings.append('\n'.join(f"{craft}:{' '*(name_length-len(craft))}\t" + "\t".join(f"{s:>7.3g}" for s in cumsum(per_round_scores[craft])) for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True)))
@@ -463,7 +464,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     f.write('\n' + ','.join([str(v) for v in (team, teamWins[team], teamDraws[team], teamDeaths[team], summary['teams'][team].replace(", ", ","))]))
 
                 # Write per round cumulative score results to summary.csv file.
-                if args.score:
+                if args.score and not args.no_cumulative:
                     f.write(f"\n\nName \\ Cumulative Score Per Round," + ",".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
                     for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True):
                         f.write(f"\n{craft}," + ",".join(f"{s:.3g}" for s in cumsum(per_round_scores[craft])))
