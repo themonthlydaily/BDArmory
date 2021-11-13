@@ -10,6 +10,7 @@ IMPROVEMENTS
 - Add "Show Self" option to Team Icons (icon + name only).
 - Apply the S4R2 'fill seats' condition to vessel spawning.
 - Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
+- Add a --show-weights option to the tournament parsing script to show the current weights of the various components of the score.
 
 v1.4.12.3
 FIXES
