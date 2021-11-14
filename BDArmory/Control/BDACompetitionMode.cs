@@ -496,8 +496,6 @@ namespace BDArmory.Control
         public void LogResults(string CompetitionID, string message = "", string tag = "")
         {
             var logStrings = new List<string>();
-
-            // get everyone who's still alive
             logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime) + "s (of " + (BDArmorySettings.COMPETITION_DURATION * 60d) + "s) at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
             // Find out who's still alive
@@ -593,6 +591,10 @@ namespace BDArmory.Control
                     }
                 }
             }
+
+            // Report survivors to Remote Orchestration
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackSurvivors(Players.Where(player => ScoreData[player].deathOrder == -1).ToList()); }
 
             // Who shot who.
             foreach (var player in Players)
