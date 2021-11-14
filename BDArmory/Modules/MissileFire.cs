@@ -1263,7 +1263,7 @@ namespace BDArmory.Modules
 
         void ClampVisualRange()
         {
-            guardRange = Mathf.Clamp(guardRange, 0, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
+            guardRange = Mathf.Clamp(guardRange, BDArmorySettings.RUNWAY_PROJECT ? 20000 : 0, BDArmorySettings.MAX_GUARD_VISUAL_RANGE);
         }
 
         void OnGUI()
