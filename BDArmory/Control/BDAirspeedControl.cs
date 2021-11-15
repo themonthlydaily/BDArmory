@@ -12,8 +12,7 @@ namespace BDArmory.Control
         public float throttleOverride = -1f;
         public bool useBrakes = true;
         public bool allowAfterburner = true;
-        double afterburnerCoolDownPeriod = 0.5; // Cool-down to prevent rapid toggling of the afterburner when the hysteresis is insufficient.
-        double afterburnerLastToggled = -1;
+        public bool forceAfterburner = false;
 
         //[KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "ThrottleFactor"),
         //	UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = .5f, scene = UI_Scene.All)]
@@ -164,20 +163,18 @@ namespace BDArmory.Control
                 while (mmes.MoveNext())
                 {
                     if (mmes.Current == null) continue;
-                    if (allowAfterburner && accel < requestAccel * 0.2f && Time.time - afterburnerLastToggled > afterburnerCoolDownPeriod)
+                    if (allowAfterburner && (forceAfterburner || accel < requestAccel * 0.2f))
                     {
                         if (mmes.Current.runningPrimary)
                         {
                             mmes.Current.Events["ModeEvent"].Invoke();
-                            afterburnerLastToggled = Time.time;
                         }
                     }
-                    else if (!allowAfterburner || accel > requestAccel * 1.5f && Time.time - afterburnerLastToggled > afterburnerCoolDownPeriod)
+                    else if (!allowAfterburner || (!forceAfterburner && accel > requestAccel * 1.5f))
                     {
                         if (!mmes.Current.runningPrimary)
                         {
                             mmes.Current.Events["ModeEvent"].Invoke();
-                            afterburnerLastToggled = Time.time;
                         }
                     }
                 }

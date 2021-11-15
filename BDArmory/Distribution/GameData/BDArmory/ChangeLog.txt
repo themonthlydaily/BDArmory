@@ -1,4 +1,18 @@
-﻿v1.4.12.3
+﻿FIXES
+- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect (post-stall behaviour near terrain).
+- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
+- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
+- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
+- Fix paintball mode not applying decals due to impulse weapons check.
+- Fix the length of the substring in debug message for vessels that fail to spawn.
+- Remove the previous conditions for the RWP S4R2 condition as they aren't being used for S4R2.
+IMPROVEMENTS
+- Add "Show Self" option to Team Icons (icon + name only).
+- Apply the S4R2 'fill seats' condition to vessel spawning.
+- Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
+- Add a --show-weights option to the tournament parsing script to show the current weights of the various components of the score.
+
+v1.4.12.3
 FIXES
 - Sanitise null strings in paths.
 - Fix armor panels reverting to 2 thickness.

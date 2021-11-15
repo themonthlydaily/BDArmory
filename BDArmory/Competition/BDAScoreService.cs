@@ -1060,6 +1060,13 @@ namespace BDArmory.Competition
             }
         }
 
+        // Register survivors in case they didn't really do anything and didn't get registered until now.
+        public void TrackSurvivors(List<string> survivors)
+        {
+            foreach (var survivor in survivors)
+                activePlayers.Add(survivor);
+        }
+
         public string Status()
         {
             return status.ToString();
