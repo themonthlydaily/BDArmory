@@ -24,7 +24,6 @@ namespace BDArmory.FX
         }
 
         private float disableTime = -1;
-        private float enginerestartTime = -1;
         private float _highestEnergy = 1;
         public float burnTime = -1;
         private float burnScale = -1;
@@ -113,9 +112,12 @@ namespace BDArmory.FX
                 {
                     ModuleSelfSealingTank FBX;
                     FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
+                    FBX.Extinguishtank();
+                    if (FBX.InertTank) burnTime = 0;
+                    /*
                     if (FBX.FireBottles > 0)
                     {
-                        FBX.FireBottles -= 1;
+                        //FBX.FireBottles -= 1;
                         if (engine != null && engine.EngineIgnited && engine.allowRestart)
                         {
                             engine.Shutdown();
@@ -138,6 +140,7 @@ namespace BDArmory.FX
                             //though if it is diving, then there isn't a second call to cycle engines. Add an Ienumerator to check once every couple sec?
                         }
                     }
+                    */
                 }
             }
         }
@@ -361,11 +364,6 @@ namespace BDArmory.FX
             {
                 Deactivate();
             }
-            if (engine != null && enginerestartTime > 0 && Time.time - burnTime > enginerestartTime)
-            {
-                engine.Activate();
-                enginerestartTime = -1;
-            }
             ////////////////////////////////////////////
             if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
             {
@@ -513,11 +511,6 @@ namespace BDArmory.FX
         {
             if (gameObject.activeInHierarchy)
             {
-                var SST = parentPart.FindModuleImplementing<ModuleSelfSealingTank>();
-                if (SST != null)
-                {
-                    SST.isOnFire = false;
-                }
                 disableTime = -1;
                 parentPart = null;
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.

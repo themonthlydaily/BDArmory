@@ -75,8 +75,6 @@ namespace BDArmory.Control
             new SpawnLocation("Grand Canyon", new Vector3d(9.32963, 167.071, 6)),
             new SpawnLocation("Grand Canal", new Vector3d(-0.08521, -60.6124, 6)),
             new SpawnLocation("Polar Bowl 2", new Vector3d(-53.655, -32.4155, 6)),
-
-
         };
         public static void Save()
         {
