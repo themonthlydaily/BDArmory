@@ -253,11 +253,11 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 if (BDArmorySettings.RESET_ARMOUR)
                 {
-                    IgnoreForArmorSetup = true;
                     ArmorSetup(null, null);
                 }
                 if (BDArmorySettings.RESET_HULL || ArmorPanel)
                 {
+                    IgnoreForArmorSetup = true;
                     HullTypeNum = 2;
                     SetHullMass();
                 }
