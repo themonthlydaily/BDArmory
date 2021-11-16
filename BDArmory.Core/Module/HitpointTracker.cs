@@ -608,12 +608,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         var structuralVolume = Mathf.Max(sphereSurface * thickness, 1e-3f); // Prevent 0 volume, just in case. structural volume is 10cm * surface area of equivalent sphere.
                         bool clampHP = false;
 
-                        var density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
+                        var density = (partMass * 1000f) / structuralVolume;
                         if (density > 1e5f || density < 10)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} extreme density detected: {density}! Trying alternate approach based on partSize.");
                             structuralVolume = (partSize.x * partSize.y + partSize.x * partSize.z + partSize.y * partSize.z) * 2f * sizeAdjust * Mathf.PI / 6f * 0.1f; // Box area * sphere/cube ratio * 10cm. We use sphere/cube ratio to get similar results as part.GetAverageBoundSize().
-                            density = ((partMass + HullmassAdjust) * 1000f) / structuralVolume;
+                            density = (partMass * 1000f) / structuralVolume;
                             if (density > 1e5f || density < 10)
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: {part.name} still has extreme density: {density}! Setting HP based only on mass instead.");
@@ -642,7 +642,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         if (clampHP)
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.HitpointTracker]: Clamping hitpoints for part {part.name} from {hitpoints} to {hitpointMultiplier * (partMass + HullmassAdjust) * 333f}");
-                            hitpoints = hitpointMultiplier * (partMass + HullmassAdjust) * 333f;
+                            hitpoints = hitpointMultiplier * partMass * 333f;
                         }
                         // SuicidalInsanity B9 patch //should this come before the hp clamping?
                         if (isProcWing)
