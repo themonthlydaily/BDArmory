@@ -2328,6 +2328,8 @@ namespace BDArmory.UI
                         BDArmorySettings.KERBAL_SAFETY_INVENTORY = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.KERBAL_SAFETY_INVENTORY, 0f, 2f));
                     }
                 }
+                BDArmorySettings.HACK_INTAKES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HACK_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_IntakeHack"));// Hack Intakes
+
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
                     BDArmorySettings.DEFAULT_FFA_TARGETING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.DEFAULT_FFA_TARGETING, Localizer.Format("#LOC_BDArmory_Settings_DefaultFFATargeting"));// Free-for-all combat style
@@ -3127,6 +3129,10 @@ namespace BDArmory.UI
                                 case 33:
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
                                     break;
+								case 50:
+                                    startCompetitionText = "Start Orbital Drop Deploment";
+                                    //startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
+                                    break;
                             }
                         }
                         if (GUI.Button(SLineRect(++line), startCompetitionText))//"Start Competition"
@@ -3139,6 +3145,9 @@ namespace BDArmory.UI
                                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                                 {
                                     case 33:
+                                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                                        break;
+                                    case 50: //FIXME later
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     default:

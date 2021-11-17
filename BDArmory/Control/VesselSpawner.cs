@@ -614,6 +614,11 @@ namespace BDArmory.Control
                         MM = (BDAMutator)vessel.rootPart.AddModule("BDAMutator");
                     }
                 }
+                if (BDArmorySettings.HACK_INTAKES)
+                {
+                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                        intake.checkForOxygen = false;
+                }
                 Debug.Log("[BDArmory.VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
             }
             #endregion
@@ -1310,6 +1315,11 @@ namespace BDArmory.Control
                                     MM.EnableMutator(); //random mutator
                                 }
                             }
+                        }
+                        if (BDArmorySettings.HACK_INTAKES)
+                        {
+                            foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                                intake.checkForOxygen = false;
                         }
                     }
                 }

@@ -72,7 +72,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
         [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;
         [BDAPersistentSettingsField] public static bool PERSISTENT_FX = false;
-        [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
+		[BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
+        [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
 
         // General slider settings
         [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -204,8 +205,8 @@ namespace BDArmory.Core
 
         // Spawner settings
         [BDAPersistentSettingsField] public static bool SHOW_SPAWN_OPTIONS = true;                 // Show spawn options.
-        [BDAPersistentSettingsField] public static Vector3d VESSEL_SPAWN_GEOCOORDS = new Vector3d(0.05096, -74.8016, 1); // Spawning coordinates on a planetary body.
-        [BDAPersistentSettingsField] public static int VESSEL_SPAWN_WORLDINDEX = 0;
+        [BDAPersistentSettingsField] public static Vector3d VESSEL_SPAWN_GEOCOORDS = new Vector3d(0.05096, -74.8016, 1); // Spawning coordinates on a planetary body; Lat, Lon, world index
+        [BDAPersistentSettingsField] public static int VESSEL_SPAWN_WORLDINDEX = 1;
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_ALTITUDE = 5f;               // Spawning altitude above the surface.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE_FACTOR = 20f;       // Scale factor for the size of the spawning circle.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE = 10f;              // Radius of the size of the spawning circle.

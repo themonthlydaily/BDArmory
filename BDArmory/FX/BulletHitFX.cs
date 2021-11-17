@@ -440,7 +440,7 @@ namespace BDArmory.FX
 							int ammoMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
 							if (explosive)
 							{
-								ammoMod = 33; //33% chance of starting fires from HE rounds
+								ammoMod = 20; //20% chance of starting fires from HE rounds
 							}
 							if (incendiary)
 							{

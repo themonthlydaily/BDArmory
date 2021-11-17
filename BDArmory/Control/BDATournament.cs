@@ -823,6 +823,9 @@ namespace BDArmory.Control
                     case 33:
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
+                    case 50: //FIXME later
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                        break;
                     default:
                         BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
                         break;

@@ -238,7 +238,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public override void OnStart(StartState state)
         {
-            if (part == null) return;
+			if (part == null) return;
+            Debug.Log("[ARMOR RESET DEBUG] Reset_armor: " + BDArmorySettings.RESET_ARMOUR + "; Reset_Hull: " + BDArmorySettings.RESET_HULL);
             isEnabled = true;
             if (part.name.Contains("B9.Aero.Wing.Procedural"))
             {
@@ -253,13 +254,13 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 if (BDArmorySettings.RESET_ARMOUR)
                 {
-                    IgnoreForArmorSetup = true;
-                    ArmorSetup(null, null);
+					ArmorSetup(null, null);
                 }
                 if (BDArmorySettings.RESET_HULL || ArmorPanel)
                 {
+                    IgnoreForArmorSetup = true;
                     HullTypeNum = 2;
-                    SetHullMass();
+					SetHullMass();
                 }
 
                 part.RefreshAssociatedWindows();
@@ -306,7 +307,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     Fields["guiArmorTypeString"].guiActive = false;
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
-                    ATrangeEditor.maxValue = 1;
+					ATrangeEditor.maxValue = 1;
                 }
                 UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
                 HTrangeEditor.onFieldChanged = HullModified;
@@ -958,7 +959,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
-            _armorConfigured = true;
+			_armorConfigured = true;
         }
 
         public void SetArmor()
@@ -1024,20 +1025,20 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
-            if (IgnoreForArmorSetup) return;
+			if (IgnoreForArmorSetup) return;
             if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
             if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
             {
                 HullTypeNum = 2;
             }
-            if (isProcWing)
-            {
-                StartCoroutine(WaitForHullSetup());
-            }
-            else
-            {
-                SetHullMass();
-            }
+			if (isProcWing)
+			{
+				StartCoroutine(WaitForHullSetup());
+			}
+			else
+			{
+				SetHullMass();
+			}
         }
         IEnumerator WaitForHullSetup()
         {

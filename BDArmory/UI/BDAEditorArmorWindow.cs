@@ -50,10 +50,13 @@ namespace BDArmory.UI
         private float maxThickness = 60;
         private bool Visualizer = false;
         private bool HPvisualizer = false;
+        private bool HullVisualizer = false;
         private bool oldVisualizer = false;
         private bool oldHPvisualizer = false;
+        private bool oldHullVisualizer = false;
         private bool refreshVisualizer = false;
         private bool refreshHPvisualizer = false;
+        private bool refreshHullvisualizer = true;
         private bool isWood = false;
         private bool isSteel = false;
         private bool isAluminium = true;
@@ -129,10 +132,11 @@ namespace BDArmory.UI
                 {
                     CalcArmor = true;
                 }
-                if (Visualizer || HPvisualizer)
+                if (Visualizer || HPvisualizer || HullVisualizer)
                 {
                     refreshVisualizer = true;
                     refreshHPvisualizer = true;
+                    refreshHullvisualizer = true;
                 }
                 shipModifiedfromCalcArmor = false;
             }
@@ -184,6 +188,7 @@ namespace BDArmory.UI
             CalcArmor = false;
             Visualizer = false;
             HPvisualizer = false;
+            HullVisualizer = false;
             Visualize();
         }
 
@@ -219,27 +224,54 @@ namespace BDArmory.UI
             float line = 1.5f;
 
             style.fontStyle = FontStyle.Normal;
-            HPvisualizer = GUI.Toggle(new Rect(10, line * lineHeight, 280, lineHeight), HPvisualizer, Localizer.Format("#LOC_BDArmory_ArmorHPVisualizer"), HPvisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-            line += 1.5f;
-            if (!BDArmorySettings.RESET_ARMOUR)
+
+            if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHPVisualizer"), HPvisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
-                Visualizer = GUI.Toggle(new Rect(10, line * lineHeight, 280, lineHeight), Visualizer, Localizer.Format("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-                line += 2;
-                if (Visualizer && HPvisualizer && !oldVisualizer && oldHPvisualizer)
-                {
-                    HPvisualizer = false;
-                    oldHPvisualizer = false;
-                }
-                if (Visualizer && HPvisualizer && oldVisualizer && !oldHPvisualizer)
+                HPvisualizer = !HPvisualizer;
+                if (HPvisualizer)
                 {
                     Visualizer = false;
-                    oldVisualizer = false;
+                    HullVisualizer = false;
                 }
-                if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer))
-                {
-                    Visualize();
-                }
+            }
+            line += 1.25f;
 
+
+            if (!BDArmorySettings.RESET_ARMOUR)
+            {
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                {
+                    Visualizer = !Visualizer;
+                    if (Visualizer)
+                    {
+                        HPvisualizer = false;
+                        HullVisualizer = false;
+                    }
+                }
+                line += 1.25f;
+            }
+
+            if (!BDArmorySettings.RESET_HULL)
+            {
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHullVisualizer"), HullVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                {
+                    HullVisualizer = !HullVisualizer;
+                    if (HullVisualizer)
+                    {
+                        HPvisualizer = false;
+                        Visualizer = false;
+                    }
+                }
+                line += 1.5f;
+            }
+
+            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer))
+            {
+                Visualize();
+            }
+
+            if (!BDArmorySettings.RESET_ARMOUR)
+            {
                 GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorThickness") + ": " + Thickness + "mm", style);
                 line++;
                 if (!useNumField)
@@ -496,7 +528,7 @@ namespace BDArmory.UI
         {
             if (EditorLogic.RootPart == null)
                 return;
-            if (Visualizer || HPvisualizer)
+            if (Visualizer || HPvisualizer || HullVisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
@@ -509,6 +541,10 @@ namespace BDArmory.UI
                             if (Visualizer)
                             {
                                 VisualizerColor = Color.HSVToRGB(a.ArmorTypeNum / (ArmorInfo.armors.Count + 1), (a.Armor / maxThickness), 1f);
+                            }
+                            if (HullVisualizer)
+                            {
+                                VisualizerColor = Color.HSVToRGB(a.HullTypeNum / 3, 1, 1f);
                             }
                             var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {
@@ -543,7 +579,7 @@ namespace BDArmory.UI
                         }
                     }
             }
-            if (!Visualizer && !HPvisualizer)
+            if (!Visualizer && !HPvisualizer && !HullVisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
@@ -620,8 +656,10 @@ namespace BDArmory.UI
             }
             oldVisualizer = Visualizer;
             oldHPvisualizer = HPvisualizer;
+            oldHullVisualizer = HullVisualizer;
             refreshVisualizer = false;
             refreshHPvisualizer = false;
+            refreshHullvisualizer = false;
         }
 
         /// <summary>

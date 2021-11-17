@@ -1224,21 +1224,26 @@ namespace BDArmory.Control
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
                 }
-                if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
+				if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
+				{
+					var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+					if (MM == null)
+					{
+						MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+					}
+					if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+					{
+						MM.EnableMutator(currentMutator);
+					}
+					if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
+					{
+						MM.EnableMutator(); //random mutator
+					}
+				}
+                if (BDArmorySettings.HACK_INTAKES)
                 {
-                    var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
-                    if (MM == null)
-                    {
-                        MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
-                    }
-                    if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
-                    {
-                        MM.EnableMutator(currentMutator);
-                    }
-                    if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
-                    {
-                        MM.EnableMutator(); //random mutator
-                    }
+                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
+                        intake.checkForOxygen = false;
                 }
             }
 
@@ -1725,6 +1730,19 @@ namespace BDArmory.Control
                             // "0:EnableGM", // t=60, Activate the killer GM
                         };
                         break;
+                    case 50: //change this later
+                        commandSequence = new List<string>{
+                            "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
+                            "0:ActionGroup:16:0", // t=0, Retract gear (if it's not retracted)
+                            "0:hackGravity:10", // t=0, Increase gravity to 10x
+                            "0:ActivateEngines", // t=0, Activate engines
+                            "30:hackGravity:1", //t=30, Reset gravity
+                            "0:TogglePilot:1", // t=30, Activate pilots
+                            "0:ToggleGuard:1", // t=30, Activate guard mode (attack)
+                            "5:RemoveDebris", // t=35, Remove any other debris and spectators
+                            // "0:EnableGM", // t=60, Activate the killer GM
+                        };
+                        break;
                     default: // Same as S3R3 for now, until we do something different.
                         commandSequence = new List<string>{
                             "0:MassTrim", // t=0, mass trim
@@ -2154,11 +2172,16 @@ namespace BDArmory.Control
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
                             foreach (var pilot in GetAllPilots())
                             {
-                                if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
+								if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
+								{
+									if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
+									foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
+										engine.Activate();
+								}
+                                if (BDArmorySettings.HACK_INTAKES)
                                 {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
-                                    foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
-                                        engine.Activate();
+                                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
+                                        intake.checkForOxygen = false;
                                 }
                             }
                             break;
@@ -2167,6 +2190,17 @@ namespace BDArmory.Control
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Performing mass trim.");
                             DoRapidDeploymentMassTrim();
+                            break;
+                        }
+                    case "hackGravity":
+                        {
+                            if (parts.Count() == 3)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adjusting gravity to " + parts[2] + "x.");
+                                double grav = double.Parse(parts[2]);
+                                PhysicsGlobals.GraviticForceMultiplier = grav;
+                                VehiclePhysics.Gravity.Refresh();                                
+                            }
                             break;
                         }
                     default:
