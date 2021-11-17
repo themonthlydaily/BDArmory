@@ -239,7 +239,6 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public override void OnStart(StartState state)
         {
 			if (part == null) return;
-            Debug.Log("[ARMOR RESET DEBUG] Reset_armor: " + BDArmorySettings.RESET_ARMOUR + "; Reset_Hull: " + BDArmorySettings.RESET_HULL);
             isEnabled = true;
             if (part.name.Contains("B9.Aero.Wing.Procedural"))
             {

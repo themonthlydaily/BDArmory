@@ -26,7 +26,7 @@ namespace BDArmory.UI
         private GUIContent[] planetGUI;
         private GUIContent planetText;
         private BDGUIComboBox planetBox;
-        private int previous_index = -1;
+        private int previous_index = 1;
         private bool planetslist = false;
         int selected_index = 1;
         #endregion
@@ -422,7 +422,7 @@ namespace BDArmory.UI
                 {
                     VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
                 }
-                selected_index = planetBox.Show();
+				selected_index = planetBox.Show();
                 line +=1.3f;
                 if (planetBox.isOpen)
                 {
@@ -438,7 +438,11 @@ namespace BDArmory.UI
                     }
                     previous_index = selected_index;
                 }
-
+                if (selected_index == -1)
+                {
+                    selected_index = 1;
+                    previous_index = 1;
+                }
                 ////////////////////
                 int i = 0;
                 foreach (var spawnLocation in VesselSpawner.spawnLocations)

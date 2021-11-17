@@ -133,7 +133,7 @@ namespace BDArmory.Bullets
         static Dictionary<Vessel, float> rayLength;
         private Vector3[] linePositions = new Vector3[2];
 
-        private List<Part> partsHit;
+        private List<Part> partsHit = new List<Part>();
 
         private double distanceTraveled = 0;
         public double DistanceTraveled { get { return distanceTraveled; } }
