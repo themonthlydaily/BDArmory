@@ -120,7 +120,9 @@ namespace BDArmory.Modules
                                 }
                                 else
                                 {
-                                    weapon.Current.projectileColor = mutatorInfo.iconColor;
+                                    var WM = VesselModuleRegistry.GetMissileFire(part.vessel, true);
+                                    string color = $"{Mathf.RoundToInt(BDTISetup.Instance.ColorAssignments[WM.Team.Name].r * 255)},{Mathf.RoundToInt(BDTISetup.Instance.ColorAssignments[WM.Team.Name].g * 255)},{Mathf.RoundToInt(BDTISetup.Instance.ColorAssignments[WM.Team.Name].b * 255)},{Mathf.RoundToInt(BDTISetup.Instance.ColorAssignments[WM.Team.Name].a * 255)}";
+                                    weapon.Current.projectileColor = color;
                                 }
                                 weapon.Current.SetupLaserSpecifics();
                                 weapon.Current.pulseLaser = true;
