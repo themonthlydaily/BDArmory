@@ -1,16 +1,34 @@
-﻿FIXES
-- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect (post-stall behaviour near terrain).
-- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
-- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
-- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
-- Fix paintball mode not applying decals due to impulse weapons check.
-- Fix the length of the substring in debug message for vessels that fail to spawn.
-- Remove the previous conditions for the RWP S4R2 condition as they aren't being used for S4R2.
+﻿v1.4.12.4
+FIXES
+- Internal:
+	- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
+	- Use a different function to reset the crew's inventory as the other one wasn't working properly.
+	- Register survivors with the remote orchestration in case they're didn't get registered for anything else.
+	- Also catch the LES as a SRB in ModuleSelfSealingTank.
+- AI:
+	- Fix off-by-one-physics-frame error in FlyToTarget that was affecting aiming (especially noticeable for lasers).
+	- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect (post-stall behaviour near terrain).
+	- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
+	- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
+	- Fix NRE in targeting info caused by moving spawning point with a vessel that has a current target.
+- UI:
+	- Fix paintball mode not applying decals due to impulse weapons check.
+	- Fix the length of the substring in debug message for vessels that fail to spawn.
+	- Fix check in ExplosionFX for in-game messages about explosions (removes the rocket strike spam).
+- RWP:
+	- Remove the previous conditions for the RWP S4R2 condition as they aren't being used for S4R2.
 IMPROVEMENTS
-- Add "Show Self" option to Team Icons (icon + name only).
-- Apply the S4R2 'fill seats' condition to vessel spawning.
-- Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
-- Add a --show-weights option to the tournament parsing script to show the current weights of the various components of the score.
+- UI:
+	- Add "Show Self" option to Team Icons (icon + name only).
+- Internal:
+	- Use warning level log entries for issues with the BDAScoreClient. Expand debug message to include stage number.
+	- Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
+- RWP:
+	- Apply the S4R2 'fill seats' condition to vessel spawning.
+- Tournaments:
+	- Store unfinished tournament state files in 'PluginData/Unfinished Tournaments/' and remove them when they're finished. (Copy them to the usual tournament.state file when in the KSC screen to resume them.)
+	- Add a --show-weights option to the tournament parsing script to show the current weights of the various components of the score.
+	- Add an option to the parsing script to not show the cumulative scores by round.
 
 v1.4.12.3
 FIXES
