@@ -89,7 +89,7 @@ namespace BDArmory.Modules
             if (engine != null)
             {
                 //Events["ToggleTankOption"].guiActiveEditor = false; //gets removed with module removal, unnecessary
-                if (solid != null && solid.maxAmount > 4.5f && engine.throttleLocked && !engine.allowShutdown)
+                if (solid != null && solid.maxAmount > 4.5f && engine.throttleLocked) //  && !engine.allowShutdown
                 {
                     part.RemoveModule(this); //don't add firebottles to SRBs, but allow for the S1.5.5 MH soyuz tank with integrated seperatrons
                 }
