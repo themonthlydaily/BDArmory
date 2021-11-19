@@ -369,7 +369,7 @@ namespace BDArmory.FX
             {
                 Deactivate(); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
             }
-			if (surfaceFire && parentPart.vessel.speed > 120) //blow out surface fires if moving fast enough
+			if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough
             {
                 burnTime = 5; //only fuel+oxy or monoprop fires in vac/non-oxy atmo
             }

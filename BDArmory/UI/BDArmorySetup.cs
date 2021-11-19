@@ -2705,7 +2705,12 @@ namespace BDArmory.UI
                         CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI); //if we need super-secret stuff
                         if (CheatCodeGUI == "ZombieMode")
                         {
-                            BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE;
+                            BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE; //sticking this here until we figure out a better home for it
+                            CheatCodeGUI = "";
+                        }
+                        if (CheatCodeGUI == "DiscoInferno")
+                        {
+                            BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
                             CheatCodeGUI = "";
                         }
                         //BDArmorySettings.ZOMBIE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ZOMBIE_MODE, Localizer.Format("#LOC_BDArmory_settings_ZombieMode"));

@@ -126,7 +126,7 @@ namespace BDArmory.Modules
                 return finalAimTarget.IsZero() ? 1f : 1f - 0.5f * theta * theta; // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
             }
         }
-        private Vector3 targetPosition;
+        public Vector3 targetPosition;
         private Vector3 targetVelocity;  // local frame velocity
         private Vector3 targetAcceleration; // local frame
         private Vector3 targetVelocityPrevious; // for acceleration calculation
@@ -198,7 +198,7 @@ namespace BDArmory.Modules
             }
         }
 
-        bool pointingAtSelf; //true if weapon is pointing at own vessel
+        public bool pointingAtSelf; //true if weapon is pointing at own vessel
         bool userFiring;
         Vector3 laserPoint;
         public bool slaved;
@@ -479,6 +479,7 @@ namespace BDArmory.Modules
         float beamScoreTime = 0.2f; //frequency of score accumulation for beam lasers, currently 5x/sec
         float BeamTracker = 0; // timer for scoring shots fired for beams
         float ScoreAccumulator = 0; //timer for scoring shots hit for beams
+        bool grow = true;
         LineRenderer[] laserRenderers;
         LineRenderer trajectoryRenderer;
         List<Vector3> trajectoryPoints;
@@ -1957,198 +1958,215 @@ namespace BDArmory.Modules
         }
         private void LaserBeam(string vesselname)
         {
-            for (int i = 0; i < fireTransforms.Length; i++)
-            {
-                if ((!useRippleFire || !pulseLaser || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
+			for (int i = 0; i < fireTransforms.Length; i++)
+			{
+				if ((!useRippleFire || !pulseLaser || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
+				{
+					float damage = laserDamage;
+					float initialDamage = damage * 0.425f;
+					Transform tf = fireTransforms[i];
+					LineRenderer lr = laserRenderers[i];
+					Vector3 rayDirection = tf.forward;
+
+					Vector3 targetDirection = Vector3.zero; //autoTrack enhancer
+					Vector3 targetDirectionLR = tf.forward;
+					if (pulseLaser)
+					{
+						rayDirection = VectorUtils.GaussianDirectionDeviation(tf.forward, maxDeviation / 2);
+						targetDirectionLR = rayDirection.normalized;
+					}
+					else if ((((visualTargetVessel != null && visualTargetVessel.loaded) || slaved) && (turret && (turret.yawRange > 0 && turret.maxPitch > 0))) // causes laser to snap to target CoM if close enough. changed to only apply to turrets
+						&& Vector3.Angle(rayDirection, targetDirection) < 0.25f) //it turret and within .25 deg, snap to target
+					{
+						//targetDirection = targetPosition + (relativeVelocity * Time.fixedDeltaTime) * 2 - tf.position;
+						targetDirection = targetPosition - tf.position;
+						rayDirection = targetDirection;
+						targetDirectionLR = targetDirection.normalized;
+					}
+					Ray ray = new Ray(tf.position, rayDirection);
+					lr.useWorldSpace = false;
+					lr.SetPosition(0, Vector3.zero);
+					var hits = Physics.RaycastAll(ray, maxTargetingRange, 9076737);
+					if (hits.Length > 0) // Find the first valid hit.
+					{
+						var orderedHits = hits.OrderBy(x => x.distance);
+						using (var hitsEnu = orderedHits.GetEnumerator())
+						{
+							while (hitsEnu.MoveNext())
+							{
+								var hitPart = hitsEnu.Current.collider.gameObject.GetComponentInParent<Part>();
+								if (hitPart == null) continue;
+								if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+								break;
+							}
+							var hit = hitsEnu.Current;
+							lr.useWorldSpace = true;
+							laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
+
+							lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
+							lr.SetPosition(1, laserPoint);
+
+							KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+							Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
+
+							if (p && p.vessel && p.vessel != vessel)
+							{
+								float distance = hit.distance;
+								//Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
+								if (electroLaser)
+								{
+									var mdEC = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+									if (mdEC == null)
+									{
+										p.vessel.rootPart.AddModule("ModuleDrainEC");
+									}
+									var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
+									if (!pulseLaser)
+									{
+										emp.incomingDamage += (ECPerShot / 1000);
+									}
+									else
+									{
+										emp.incomingDamage += (ECPerShot / 20);
+									}
+									emp.softEMP = true;
+								}
+								else if (impulseWeapon)
+								{
+									if (!pulseLaser)
+									{
+										damage = Impulse * TimeWarp.fixedDeltaTime;
+									}
+									else
+									{
+										damage = Impulse;
+									}
+									if (p.rb != null && p.rb.mass > 0)
+									{
+										if (Impulse > 0)
+										{
+											p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+										}
+										else
+										{
+											p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
+										}
+									}
+								}
+								else
+								{
+									HitpointTracker armor = p.GetComponent<HitpointTracker>();
+									initialDamage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
+
+									if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
+									{
+										damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (Mathf.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
+									}  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
+									else
+									{
+										damage = initialDamage;
+										if (!pulseLaser)
+										{
+											damage = initialDamage * TimeWarp.fixedDeltaTime;
+										}
+									}
+									p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
+									p.AddDamage(damage);
+									if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
+
+								}
+								if (HEpulses)
+								{
+									ExplosionFx.CreateExplosion(hit.point,
+												   (laserDamage / 30000),
+												   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
+								}
+								if (HeatRay)
+								{
+									using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+									{
+										while (hitsEnu2.MoveNext())
+										{
+											KerbalEVA kerb = hitsEnu2.Current.gameObject.GetComponentUpwards<KerbalEVA>();
+											Part hitP = kerb ? kerb.part : hitsEnu2.Current.GetComponentInParent<Part>();
+											if (hitP == null) continue;
+											if (ProjectileUtils.IsIgnoredPart(hitP)) continue;
+											if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
+											{
+												//p.AddDamage(damage);
+												p.AddSkinThermalFlux(damage);
+											}
+										}
+									}
+								}
+								if (graviticWeapon)
+								{
+									if (p.rb != null && p.rb.mass > 0)
+									{
+										float duration = BDArmorySettings.WEAPON_FX_DURATION;
+										if (!pulseLaser)
+										{
+											duration = BDArmorySettings.WEAPON_FX_DURATION * TimeWarp.fixedDeltaTime;
+										}
+										var ME = p.FindModuleImplementing<ModuleMassAdjust>();
+										if (ME == null)
+										{
+											ME = (ModuleMassAdjust)p.AddModule("ModuleMassAdjust");
+										}
+										ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
+										ME.duration += duration;
+									}
+								}
+								//if (cycleTexture)
+								if (electroLaser)
+								{
+									UpdateLaserSpecifics(false, false, true, false);
+								}
+								if (instagib)
+								{
+									p.AddInstagibDamage();
+									ExplosionFx.CreateExplosion(hit.point,
+												   (1), "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
+								}
+								var aName = vesselname;
+								var tName = p.vessel.GetName();
+								if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
+								{
+									if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
+									{
+										ScoreAccumulator = 0;
+										BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
+										if (!pulseLaser) if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false);
+									}
+									else
+									{
+										ScoreAccumulator += TimeWarp.fixedDeltaTime;
+									}
+								}
+
+								if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
+								{
+									BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0, weaponManager.Team.Name);
+								}
+							}
+						}
+					}
+					else
+					{
+						laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
+						lr.SetPosition(1, laserPoint);
+					}
+				}
+                if (BDArmorySettings.DISCO_MODE)
                 {
-                    float damage = laserDamage;
-                    Transform tf = fireTransforms[i];
-                    LineRenderer lr = laserRenderers[i];
-                    Vector3 rayDirection = tf.forward;
-
-                    Vector3 targetDirection = Vector3.zero; //autoTrack enhancer
-                    Vector3 targetDirectionLR = tf.forward;
-                    if (pulseLaser)
-                    {
-                        rayDirection = VectorUtils.GaussianDirectionDeviation(tf.forward, maxDeviation / 2);
-                        targetDirectionLR = rayDirection.normalized;
-                    }
-                    else if ((((visualTargetVessel != null && visualTargetVessel.loaded) || slaved) && (turret && (turret.yawRange > 0 && turret.maxPitch > 0))) // causes laser to snap to target CoM if close enough. changed to only apply to turrets
-                        && Vector3.Angle(rayDirection, targetDirection) < 0.25f) //it turret and within .25 deg, snap to target
-                    {
-                        //targetDirection = targetPosition + (relativeVelocity * Time.fixedDeltaTime) * 2 - tf.position;
-                        targetDirection = targetPosition - tf.position;
-                        rayDirection = targetDirection;
-                        targetDirectionLR = targetDirection.normalized;
-                    }
-                    Ray ray = new Ray(tf.position, rayDirection);
-                    lr.useWorldSpace = false;
-                    lr.SetPosition(0, Vector3.zero);
-                    var hits = Physics.RaycastAll(ray, maxTargetingRange, 9076737);
-                    if (hits.Length > 0) // Find the first valid hit.
-                    {
-                        var orderedHits = hits.OrderBy(x => x.distance);
-                        using (var hitsEnu = orderedHits.GetEnumerator())
-                        {
-                            while (hitsEnu.MoveNext())
-                            {
-                                var hitPart = hitsEnu.Current.collider.gameObject.GetComponentInParent<Part>();
-                                if (hitPart == null) continue;
-                                if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
-                                break;
-                            }
-                            var hit = hitsEnu.Current;
-                            lr.useWorldSpace = true;
-                            laserPoint = hit.point + (targetVelocity * Time.fixedDeltaTime);
-
-                            lr.SetPosition(0, tf.position + (part.rb.velocity * Time.fixedDeltaTime));
-                            lr.SetPosition(1, laserPoint);
-
-                            KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
-                            Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
-
-                            if (p && p.vessel && p.vessel != vessel)
-                            {
-                                float distance = hit.distance;
-                                //Scales down the damage based on the increased surface area of the area being hit by the laser. Think flashlight on a wall.
-                                if (electroLaser)
-                                {
-                                    var mdEC = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                                    if (mdEC == null)
-                                    {
-                                        p.vessel.rootPart.AddModule("ModuleDrainEC");
-                                    }
-                                    var emp = p.vessel.rootPart.FindModuleImplementing<ModuleDrainEC>();
-                                    if (!pulseLaser)
-                                    {
-                                        emp.incomingDamage += (ECPerShot / 1000);
-                                    }
-                                    else
-                                    {
-                                        emp.incomingDamage += (ECPerShot / 20);
-                                    }
-                                    emp.softEMP = true;
-                                }
-                                else if (impulseWeapon)
-                                {
-                                    if (!pulseLaser)
-                                    {
-                                        damage = Impulse * TimeWarp.fixedDeltaTime;
-                                    }
-                                    else
-                                    {
-                                        damage = Impulse;
-                                    }
-                                    if (p.rb != null && p.rb.mass > 0)
-                                    {
-                                        if (Impulse > 0)
-                                        {
-                                            p.rb.AddForceAtPosition((p.transform.position - tf.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
-                                        }
-                                        else
-                                        {
-                                            p.rb.AddForceAtPosition((tf.position - p.transform.position).normalized * (float)damage, p.transform.position, ForceMode.Acceleration);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    HitpointTracker armor = p.GetComponent<HitpointTracker>();
-                                    float initialDamage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
-
-                                    if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
-                                    {
-                                        damage = (initialDamage * (pulseLaser ? 1 : TimeWarp.fixedDeltaTime)) * Mathf.Clamp((1 - (Mathf.Sqrt(armor.Diffusivity * (armor.Density / 1000)) * armor.ArmorThickness) / initialDamage), 0.005f, 1); //old calc lacked a clamp, could potentially become negative damage
-                                    }  //clamps laser damage to not go negative, allow some small amount of bleedthrough - ~30 Be/Steel will negate ABL, ~62 Ti, 42 DU
-                                    else
-                                    {
-                                        damage = initialDamage;
-                                        if (!pulseLaser)
-                                        {
-                                            damage = initialDamage * TimeWarp.fixedDeltaTime;
-                                        }
-                                    }
-                                    p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
-                                    p.AddDamage(damage);
-                                }
-                                if (HEpulses)
-                                {
-                                    ExplosionFx.CreateExplosion(hit.point,
-                                                   (laserDamage / 30000),
-                                                   explModelPath, explSoundPath, ExplosionSourceType.Bullet, 1, null, vessel.vesselName, null);
-                                }
-                                if (HeatRay)
-                                {
-                                    using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
-                                    {
-                                        while (hitsEnu2.MoveNext())
-                                        {
-                                            KerbalEVA kerb = hitsEnu2.Current.gameObject.GetComponentUpwards<KerbalEVA>();
-                                            Part hitP = kerb ? kerb.part : hitsEnu2.Current.GetComponentInParent<Part>();
-                                            if (hitP == null) continue;
-                                            if (ProjectileUtils.IsIgnoredPart(hitP)) continue;
-                                            if (hitP && hitP != p && hitP.vessel && hitP.vessel != vessel)
-                                            {
-                                                //p.AddDamage(damage);
-                                                p.AddSkinThermalFlux(damage);
-                                            }
-                                        }
-                                    }
-                                }
-                                if (graviticWeapon)
-                                {
-                                    if (p.rb != null && p.rb.mass > 0)
-                                    {
-                                        float duration = BDArmorySettings.WEAPON_FX_DURATION;
-                                        if (!pulseLaser)
-                                        {
-                                            duration = BDArmorySettings.WEAPON_FX_DURATION * TimeWarp.fixedDeltaTime;
-                                        }
-                                        var ME = p.FindModuleImplementing<ModuleMassAdjust>();
-                                        if (ME == null)
-                                        {
-                                            ME = (ModuleMassAdjust)p.AddModule("ModuleMassAdjust");
-                                        }
-                                        ME.massMod += (massAdjustment * TimeWarp.fixedDeltaTime);
-                                        ME.duration += duration;
-                                    }
-                                }
-                                //if (BDArmorySettings.INSTAKILL) p.Destroy();
-                                if (instagib)
-                                {
-                                    p.AddInstagibDamage();
-                                    ExplosionFx.CreateExplosion(hit.point,
-                                                   (1), "BDArmory/Models/explosion/explosion", explSoundPath, ExplosionSourceType.Bullet, 0, null, vessel.vesselName, null);
-                                }
-                                var aName = vesselname;
-                                var tName = p.vessel.GetName();
-                                if (BDACompetitionMode.Instance.Scores.RegisterBulletDamage(aName, tName, damage))
-                                {
-                                    if (pulseLaser || (!pulseLaser && ScoreAccumulator > beamScoreTime)) // Score hits with pulse lasers or when the score accumulator is sufficient.
-                                    {
-                                        ScoreAccumulator = 0;
-                                        BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
-                                    }
-                                    else
-                                    {
-                                        ScoreAccumulator += TimeWarp.fixedDeltaTime;
-                                    }
-                                }
-
-                                if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
-                                {
-                                    BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0, weaponManager.Team.Name);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
-                        lr.SetPosition(1, laserPoint);
-                    }
+                    projectileColorC = Color.HSVToRGB(Mathf.Lerp(tracerEndWidth, grow ? 1 : 0, 0.35f), 1, 1);
+                    tracerStartWidth = Mathf.Lerp(tracerStartWidth, grow ? 1 : 0.05f, 0.35f); //add new tracerGrowWidth field?
+                    tracerEndWidth = Mathf.Lerp(tracerEndWidth, grow ? 1 : 0.05f, 0.35f); //add new tracerGrowWidth field?
+                    if (grow && tracerStartWidth > 0.95) grow = false;
+                    if (!grow && tracerStartWidth < 0.06f) grow = true;
+                    UpdateLaserSpecifics(true, false, false, true);
                 }
-            }
+			}
         }
         public void SetupLaserSpecifics()
         {
@@ -2181,6 +2199,34 @@ namespace BDArmory.Modules
                 laserRenderers[i].SetPosition(1, Vector3.zero);
                 laserRenderers[i].useWorldSpace = false;
                 laserRenderers[i].enabled = false;
+            }
+        }
+        public void UpdateLaserSpecifics(bool newColor, bool newTex, bool offsetTex, bool newWidth)
+        {
+			if (laserRenderers == null)
+			{
+				return;
+			}
+            for (int i = 0; i < fireTransforms.Length; i++)
+            {
+                if (newColor)
+                {
+                    laserRenderers[i].material.SetColor("_TintColor", projectileColorC); //change beam to new color
+                }
+                if (newTex)
+                {
+                    laserRenderers[i].material.mainTexture = GameDatabase.Instance.GetTexture(laserTexturePath, false); //add support for multiple tex patchs, randomly cycle through
+                    laserRenderers[i].material.SetTextureScale("_MainTex", new Vector2(0.01f, 1));
+                }
+                if (offsetTex)
+                {
+                    laserRenderers[i].material.SetTextureOffset("_MainTex", new Vector2(UnityEngine.Random.Range(0, 32), 0)); //new offset for things like lightning textures
+                }
+                if (newWidth)
+                {
+                    laserRenderers[i].startWidth = tracerStartWidth;
+                    laserRenderers[i].endWidth = tracerEndWidth;
+                }
             }
         }
         #endregion
@@ -3300,6 +3346,8 @@ namespace BDArmory.Modules
         {
             return fixedLeadOffset;
         }
+
+        public float targetCosAngle;
         void CheckAIAutofire()
         {
             //autofiring with AI
@@ -3313,7 +3361,7 @@ namespace BDArmory.Modules
 
                 Vector3 targetRelPos = finalAimTarget - fireTransform.position;
                 Vector3 aimDirection = fireTransform.forward;
-                float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
+                targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
                 var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
 
                 if (eWeaponType != WeaponTypes.Rocket) //guns/lasers

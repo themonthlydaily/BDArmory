@@ -1316,7 +1316,7 @@ namespace BDArmory.Modules
 
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
         {
-            Vector3 target = v.CoM;
+            Vector3 target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
             MissileBase missile = null;
             Vector3 vectorToTarget = v.transform.position - vesselTransform.position;
             float distanceToTarget = vectorToTarget.magnitude;
@@ -1383,7 +1383,6 @@ namespace BDArmory.Modules
                         float magnifier = Mathf.Clamp(targetAngVel, 1f, 2f);
                         magnifier += ((magnifier - 1f) * Mathf.Sin(Time.time * 0.75f));
                         target -= magnifier * leadOffset;
-
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20)
                         {
@@ -1426,7 +1425,7 @@ namespace BDArmory.Modules
                         }
                         else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0)
                         {
-                            target = v.CoM;
+                            target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
                         }
                     }
                 }
