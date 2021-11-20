@@ -1,4 +1,11 @@
-﻿v1.4.12.4
+﻿v1.4.12.6
+FIXES
+- Add a check for tournamentState.rounds being null when checking whether to resume a tournament. (Fixes failure to generate tournaments under some conditions.)
+
+v1.4.12.5
+Re-release due to not having recompiled the release version before releasing it.
+
+v1.4.12.4
 FIXES
 - Internal:
 	- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
