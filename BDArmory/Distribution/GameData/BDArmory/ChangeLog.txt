@@ -1,4 +1,7 @@
-﻿v1.4.12.6
+﻿IMPROVEMENTS
+- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+
+v1.4.12.6
 FIXES
 - Add a check for tournamentState.rounds being null when checking whether to resume a tournament. (Fixes failure to generate tournaments under some conditions.)
 
