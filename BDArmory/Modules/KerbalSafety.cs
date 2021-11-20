@@ -327,9 +327,15 @@ namespace BDArmory.Modules
                 Destroy(this);
                 yield break;
             }
-            while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return new WaitForFixedUpdate(); // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
+            var wait = new WaitForFixedUpdate();
+            while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return wait; // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
             if (p.vessel == null) yield break;
             kerbalName = c.displayName;
+            if (KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName)) // Already managed
+            {
+                Destroy(this);
+                yield break;
+            }
             this.crew = c;
             switch (BDArmorySettings.KERBAL_SAFETY_INVENTORY)
             {
