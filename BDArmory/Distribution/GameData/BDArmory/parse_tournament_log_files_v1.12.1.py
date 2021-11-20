@@ -17,6 +17,7 @@ parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1.5,1,2e-3,3,1,
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't display cumulative scores at the end.")
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
+parser.add_argument('-z', '--zero-lowest-score', action='store_true', help="Shift the scores so that the lowest is 0.")
 parser.add_argument('--show-weights', action='store_true', help="Display the score weights.")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
@@ -299,6 +300,10 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                 weights[19] * craft['battleDamage'] +
                 weights[20] * craft['HPremaining']
             })
+        if args.zero_lowest_score:
+            offset = min(craft['score'] for craft in summary['craft'].values())
+            for craft in summary['craft'].values():
+                craft['score'] -= offset
 
     if not args.no_files and len(summary['craft']) > 0:
         with open(tournamentDir / 'summary.json', 'w') as outFile:
