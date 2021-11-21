@@ -361,18 +361,25 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                             len([1 for heat in round.values() for data in heat['craft'].values() if 'cleanMissileKillBy' in data and data['cleanMissileKillBy'] == craft]),  # Missiles
                             len([1 for heat in round.values() for data in heat['craft'].values() if 'cleanRamKillBy' in data and data['cleanRamKillBy'] == craft]),  # Rams
                         ),
-                        'assists': len([1 for heat in round.values() for data in heat['craft'].values() if data['state'] == 'DEAD' and any(field in data and craft in data[field] for field in ('hitsBy', 'rocketPartsHitBy', 'missilePartsHitBy', 'rammedPartsLostBy')) and not any((field in data and data[field] == craft) for field in ('cleanKillBy', 'cleanRocketKillBy', 'cleanMissileKillBy', 'cleanRamKillBy'))]),
+                        'assists': len([1 for heat in round.values() for data in heat['craft'].values() if data['state'] == 'DEAD' and any(field in data and craft in data[field] for field in ('hitsBy', 'rocketPartsHitBy', 'missilePartsHitBy', 'rammedPartsLostBy')) and not any((field in data) for field in ('cleanKillBy', 'cleanRocketKillBy', 'cleanMissileKillBy', 'cleanRamKillBy'))]),
                         'hits': sum([heat['craft'][craft]['hits'] for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]),
+                        'hitsTaken': sum([sum(heat['craft'][craft]['hitsBy'].values()) for heat in round.values() if craft in heat['craft'] and 'hitsBy' in heat['craft'][craft]]),
                         'bulletDamage': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('bulletDamageBy',) if field in data and craft in data[field]]),
+                        'bulletDamageTaken': sum([sum(heat['craft'][craft]['bulletDamageBy'].values()) for heat in round.values() if craft in heat['craft'] and 'bulletDamageBy' in heat['craft'][craft]]),
                         'rocketHits': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('rocketHitsBy',) if field in data and craft in data[field]]),
                         'rocketHitsTaken': sum([sum(heat['craft'][craft]['rocketHitsBy'].values()) for heat in round.values() if craft in heat['craft'] and 'rocketHitsBy' in heat['craft'][craft]]),
                         'rocketPartsHit': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('rocketPartsHitBy',) if field in data and craft in data[field]]),
+                        'rocketPartsHitTaken': sum([sum(heat['craft'][craft]['rocketPartsHitBy'].values()) for heat in round.values() if craft in heat['craft'] and 'rocketPartsHitBy' in heat['craft'][craft]]),
                         'rocketDamage': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('rocketDamageBy',) if field in data and craft in data[field]]),
+                        'rocketDamageTaken': sum([sum(heat['craft'][craft]['rocketDamageBy'].values()) for heat in round.values() if craft in heat['craft'] and 'rocketDamageBy' in heat['craft'][craft]]),
                         'missileHits': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('missileHitsBy',) if field in data and craft in data[field]]),
                         'missileHitsTaken': sum([sum(heat['craft'][craft]['missileHitsBy'].values()) for heat in round.values() if craft in heat['craft'] and 'missileHitsBy' in heat['craft'][craft]]),
                         'missilePartsHit': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('missilePartsHitBy',) if field in data and craft in data[field]]),
+                        'missilePartsHitTaken': sum([sum(heat['craft'][craft]['missilePartsHitBy'].values()) for heat in round.values() if craft in heat['craft'] and 'missilePartsHitBy' in heat['craft'][craft]]),
                         'missileDamage': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('missileDamageBy',) if field in data and craft in data[field]]),
+                        'missileDamageTaken': sum([sum(heat['craft'][craft]['missileDamageBy'].values()) for heat in round.values() if craft in heat['craft'] and 'missileDamageBy' in heat['craft'][craft]]),
                         'ramScore': sum([data[field][craft] for heat in round.values() for data in heat['craft'].values() for field in ('rammedPartsLostBy',) if field in data and craft in data[field]]),
+                        'ramScoreTaken': sum([sum(heat['craft'][craft]['rammedPartsLostBy'].values()) for heat in round.values() if craft in heat['craft'] and 'rammedPartsLostBy' in heat['craft'][craft]]),
                         'battleDamage': sum([data[field][craft] for heat in round.values() for player, data in heat['craft'].items() if player != craft for field in ('battleDamageBy',) if field in data and craft in data[field]]),
                         'battleDamageTaken': sum([sum(heat['craft'][craft]['battleDamageBy'].values()) for heat in round.values() if craft in heat['craft'] and 'battleDamageBy' in heat['craft'][craft]]),
                         'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
@@ -391,18 +398,25 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     weights[6] * scores[round]['cleanKills'][0] +
                     weights[7] * scores[round]['assists'] +
                     weights[8] * scores[round]['hits'] +
-                    weights[9] * scores[round]['bulletDamage'] +
-                    weights[10] * scores[round]['rocketHits'] +
-                    weights[11] * scores[round]['rocketPartsHit'] +
-                    weights[12] * scores[round]['rocketDamage'] +
+                    weights[9] * scores[round]['hitsTaken'] +
+                    weights[10] * scores[round]['bulletDamage'] +
+                    weights[11] * scores[round]['bulletDamageTaken'] +
+                    weights[12] * scores[round]['rocketHits'] +
                     weights[13] * scores[round]['rocketHitsTaken'] +
-                    weights[14] * scores[round]['missileHits'] +
-                    weights[15] * scores[round]['missilePartsHit'] +
-                    weights[16] * scores[round]['missileDamage'] +
-                    weights[17] * scores[round]['missileHitsTaken'] +
-                    weights[18] * scores[round]['ramScore'] +
-                    weights[19] * scores[round]['battleDamage'] +
-                    weights[20] * scores[round]['HPremaining']
+                    weights[14] * scores[round]['rocketPartsHit'] +
+                    weights[15] * scores[round]['rocketPartsHitTaken'] +
+                    weights[16] * scores[round]['rocketDamage'] +
+                    weights[17] * scores[round]['rocketDamageTaken'] +
+                    weights[18] * scores[round]['missileHits'] +
+                    weights[19] * scores[round]['missileHitsTaken'] +
+                    weights[20] * scores[round]['missilePartsHit'] +
+                    weights[21] * scores[round]['missilePartsHitTaken'] +
+                    weights[22] * scores[round]['missileDamage'] +
+                    weights[23] * scores[round]['missileDamageTaken'] +
+                    weights[24] * scores[round]['ramScore'] +
+                    weights[25] * scores[round]['ramScoreTaken'] +
+                    weights[26] * scores[round]['battleDamage'] +
+                    weights[27] * scores[round]['HPremaining']
                     for round in range(len(scores))]
                 for craft, scores in per_round_summary.items()
             }
@@ -466,7 +480,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             if args.score and not args.no_cumulative:
                 name_length = max([len(name) for name in per_round_scores.keys()] + [23])
                 strings.append(f"\nName \\ Cumulative Score{' '*(name_length-23)}\t" + "\t".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
-                strings.append('\n'.join(f"{craft}:{' '*(name_length-len(craft))}\t" + "\t".join(f"{s:>7.3g}" for s in cumsum(per_round_scores[craft])) for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True)))
+                strings.append('\n'.join(f"{craft}:{' '*(name_length-len(craft))}\t" + "\t".join(f"{s:>7.3f}" for s in cumsum(per_round_scores[craft])) for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True)))
 
             # Print stuff to the console.
             for string in strings:
