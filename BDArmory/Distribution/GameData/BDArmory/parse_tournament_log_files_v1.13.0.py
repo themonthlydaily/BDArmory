@@ -13,7 +13,7 @@ parser.add_argument('-q', '--quiet', action='store_true', help="Don't print resu
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="0.1,0,0,-1,1,2e-3,2,1,5e-3,2e-3,1e-5,1e-5,0.1,0.05,2e-3,1e-3,2e-5,1e-5,0.1,0.05,0.01,0.005,1e-7,1e-7,0.05,0.02,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
+parser.add_argument('-w', '--weights', type=str, default="0.1,0,0,-1,1,2e-3,2,1,5e-3,2e-3,1e-5,1e-5,0.1,0.05,2e-3,1e-3,2e-5,2e-5,0.1,0.05,0.01,0.005,1e-7,1e-7,0.05,0.02,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't display cumulative scores at the end.")
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
@@ -156,7 +156,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     elif field.startswith('HEADSHOTROCKETS:'):
                         _, craft, killer = field.split(':', 2)
                         tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRocketKillBy': killer})
-                    elif field.startswith('HEADSHOTMISSILE:'):
+                    elif field.startswith('HEADSHOTMISSILES:'):
                         _, craft, killer = field.split(':', 2)
                         tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
                     elif field.startswith('HEADSHOTRAMMING:'):
@@ -168,7 +168,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     elif field.startswith('KILLSTEALROCKETS:'):
                         _, craft, killer = field.split(':', 2)
                         tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRocketKillBy': killer})
-                    elif field.startswith('KILLSTEALMISSILE:'):
+                    elif field.startswith('KILLSTEALMISSILES:'):
                         _, craft, killer = field.split(':', 2)
                         tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
                     elif field.startswith('KILLSTEALRAMMING:'):
@@ -311,7 +311,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                 weights[26] * craft['battleDamage'] +
                 weights[27] * craft['HPremaining']
             })
-        if args.zero_lowest_score:
+        if args.zero_lowest_score and len(summary['craft']) > 0:
             offset = min(craft['score'] for craft in summary['craft'].values())
             for craft in summary['craft'].values():
                 craft['score'] -= offset
