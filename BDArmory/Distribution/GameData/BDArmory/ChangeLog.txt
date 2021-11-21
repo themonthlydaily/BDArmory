@@ -1,5 +1,15 @@
-﻿IMPROVEMENTS
-- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+﻿FIXES
+- Tournaments:
+	- Fix some typos and bugs in assist counting in the local tournament parser.
+	- Clear rocket dictionaries between heats. Compute assists under the same conditions for local and remote tournaments.
+IMPROVEMENTS
+- Tournaments:
+	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+	- Add taken counts to the summaries.
+	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+	- Adjust rocket parts hit and damage fields to match ruby schema in the remote orchestration.
+- Kerbal Safety:
+	- Reconfigure inventories when the kerbal inventory slider is adjusted.
 
 v1.4.12.6
 FIXES
