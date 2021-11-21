@@ -198,12 +198,12 @@ namespace BDArmory.Competition
         public int mis_parts_in;
         public double mis_dmg_out;
         public double mis_dmg_in;
-        public int rocket_strikes_out;
-        public int rocket_strikes_in;
-        public int rocket_parts_out;
-        public int rocket_parts_in;
-        public double rocket_dmg_out;
-        public double rocket_dmg_in;
+        public int roc_strikes_out;
+        public int roc_strikes_in;
+        public int roc_parts_out;
+        public int roc_parts_in;
+        public double roc_dmg_out;
+        public double roc_dmg_in;
         public int assists;
         public int kills;
         public int deaths;
