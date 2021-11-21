@@ -439,7 +439,7 @@ namespace BDArmory.Control
             {
                 ScoreData[vesselName].aliveState = AliveState.AssistedKill;
 
-                if (BDArmorySettings.REMOTE_LOGGING_ENABLED && ScoreData[vesselName].gmKillReason == GMKillReason.None) // Don't count kills by the GM remotely.
+                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
 

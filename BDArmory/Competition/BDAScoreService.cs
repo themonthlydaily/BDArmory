@@ -304,6 +304,10 @@ namespace BDArmory.Competition
             killsOnTarget.Clear();
             longestHitDistance.Clear();
             longestHitWeapon.Clear();
+            rocketDamageIn.Clear();
+            rocketDamageOut.Clear();
+            rocketPartsIn.Clear();
+            rocketPartsOut.Clear();
             missileDamageIn.Clear();
             missileDamageOut.Clear();
             missilePartsIn.Clear();
@@ -1023,7 +1027,7 @@ namespace BDArmory.Competition
             activePlayers.Add(target);
 
             IncrementKill(attacker, target);
-            ComputeAssists(target, attacker, 30);
+            // ComputeAssists(target, attacker, 30);
         }
 
         private void IncrementKill(string attacker, string target)
