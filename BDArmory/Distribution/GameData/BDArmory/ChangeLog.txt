@@ -2,6 +2,8 @@
 - Tournaments:
 	- Fix some typos and bugs in assist counting in the local tournament parser.
 	- Clear rocket dictionaries between heats. Compute assists under the same conditions for local and remote tournaments.
+	- Cause a spawn failure instead of throwing an exception so that tournaments can retry spawning.
+
 IMPROVEMENTS
 - Tournaments:
 	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
@@ -10,6 +12,9 @@ IMPROVEMENTS
 	- Adjust rocket parts hit and damage fields to match ruby schema in the remote orchestration.
 - Kerbal Safety:
 	- Reconfigure inventories when the kerbal inventory slider is adjusted.
+- AI:
+	- Add additional control "Afterburner Priority" for afterburner toggling under Speed category of AI. Default value of 50. 0 and AI will not use AB, 100 and AI will always use AB.
+	- Vary AB hysteresis based on "Afterburner Priority" setting using an exponential average to smooth the vessel's TWR (lag factor of 0.5s) to judge whether AI should toggle AB vs. using instantaneous acceleration.
 
 v1.4.12.6
 FIXES
