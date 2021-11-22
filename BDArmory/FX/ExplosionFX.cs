@@ -229,7 +229,7 @@ namespace BDArmory.FX
             }
             if (explosionEventsVesselsHit.Count > 0)
             {
-                if (ExplosionSource != ExplosionSourceType.Bullet || ExplosionSource != ExplosionSourceType.Rocket)
+                if (ExplosionSource != ExplosionSourceType.Rocket) // Bullet explosions aren't registered in explosionEventsVesselsHit.
                 {
                     string message = "";
                     foreach (var vesselName in explosionEventsVesselsHit.Keys)
