@@ -335,6 +335,7 @@ namespace BDArmory.Targeting
             float finalThrust = 0;
 
             var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v);
+            if (engines == null) return 0;
             using (var engine = engines.GetEnumerator())
                 while (engine.MoveNext())
                 {
@@ -381,6 +382,7 @@ namespace BDArmory.Targeting
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
             var weapons = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel);
+            if (weapons == null) return 0;
             using (var weapon = weapons.GetEnumerator())
                 while (weapon.MoveNext())
                 {
