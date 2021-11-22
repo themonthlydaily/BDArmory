@@ -186,6 +186,9 @@ namespace BDArmory.Control
 
             if (ScoreData[victim].rocketHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].rocketHitCounts[attacker]; }
             else { ScoreData[victim].rocketHitCounts[attacker] = 1; }
+
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackRocketStrike(attacker, victim); }
             return true;
         }
         /// <summary>
@@ -220,7 +223,7 @@ namespace BDArmory.Control
             ScoreData[victim].damageTypesTaken.Add(DamageFrom.Rockets);
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); } // FIXME Add tracker for rocket hits.
+            { BDAScoreService.Instance.TrackRocketParts(attacker, victim, partsHit); }
             return true;
         }
         /// <summary>
@@ -239,7 +242,7 @@ namespace BDArmory.Control
             else { ScoreData[victim].damageFromRockets[attacker] = damage; }
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-            { BDAScoreService.Instance.TrackMissileDamage(attacker, victim, damage); } // FIXME Add tracker for rocket damage.
+            { BDAScoreService.Instance.TrackRocketDamage(attacker, victim, damage); }
             return true;
         }
         /// <summary>
@@ -317,6 +320,9 @@ namespace BDArmory.Control
 
             if (ScoreData[victim].missileHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].missileHitCounts[attacker]; }
             else { ScoreData[victim].missileHitCounts[attacker] = 1; }
+
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackMissileStrike(attacker, victim); }
             return true;
         }
         /// <summary>
@@ -433,7 +439,7 @@ namespace BDArmory.Control
             {
                 ScoreData[vesselName].aliveState = AliveState.AssistedKill;
 
-                if (BDArmorySettings.REMOTE_LOGGING_ENABLED && ScoreData[vesselName].gmKillReason == GMKillReason.None) // Don't count kills by the GM remotely.
+                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
 
