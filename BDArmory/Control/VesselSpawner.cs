@@ -525,16 +525,28 @@ namespace BDArmory.Control
                 var startTime = Time.time;
                 // Sometimes if a vessel camera switch occurs, the craft appears unloaded for a couple of frames. This avoids NREs for control surfaces triggered by the change in reference transform.
                 while (spawnedVessels.Values.All(vessel => vessel.Item1 != null && (vessel.Item1.ReferenceTransform == null || vessel.Item1.rootPart == null || vessel.Item1.rootPart.GetReferenceTransform() == null)) && (Time.time - startTime < 1f)) yield return new WaitForFixedUpdate();
+                var nullVessels = spawnedVessels.Where(kvp => kvp.Value.Item1 == null).Select(kvp => kvp.Key).ToList();
+                if (nullVessels.Count() > 0)
+                {
+                    message = string.Join(", ", nullVessels) + " disappeared during spawning!";
+                    Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    vesselsSpawning = false;
+                    spawnFailureReason = SpawnFailureReason.VesselLostParts;
+                    yield break;
+                }
+                var noRootVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.rootPart == null).Select(kvp => kvp.Key).ToList();
+                if (noRootVessels.Count() > 0)
+                {
+                    message = string.Join(", ", noRootVessels) + " had no root part during spawning!";
+                    Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    vesselsSpawning = false;
+                    spawnFailureReason = SpawnFailureReason.VesselLostParts;
+                    yield break;
+                }
                 foreach (var vessel in spawnedVessels.Values.Select(sv => sv.Item1))
                 {
-                    if (vessel == null) continue;
-                    if (vessel.rootPart == null)
-                    {
-                        message = $"{vessel.vesselName} has no root part!";
-                        Debug.Log("[BDArmory.VesselSpawner]: " + message);
-                        BDACompetitionMode.Instance.competitionStatus.Add(message);
-                        continue;
-                    }
                     vessel.SetReferenceTransform(vessel.rootPart); // Set the reference transform to the root part's transform.
                 }
             }
