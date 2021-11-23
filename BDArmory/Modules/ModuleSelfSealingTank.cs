@@ -465,13 +465,15 @@ namespace BDArmory.Modules
         }
         void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && vessel != null && !vessel.packed && !BDArmorySetup.GameIsPaused)
-            {
+            if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
+            if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
+            if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
+
                 if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
                 {                    
                     if (!isOnFire && !InertTank)
                     {
-                        if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
+                        if ((fuel != null && fuel.amount > 0) && part.temperature > 493) //autoignition temp of kerosene is 220 c
                         {
                             string fireStarter;
                             var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
@@ -495,8 +497,7 @@ namespace BDArmory.Modules
                             enginerestartTime = -1;
                             engine.Activate();
                         }
-                    }
-                }
+                    }                
             }
         }
     }

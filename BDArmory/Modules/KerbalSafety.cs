@@ -281,6 +281,15 @@ namespace BDArmory.Modules
                 activeVesselBeforeEject = from;
             }
         }
+
+        public void ReconfigureInventories()
+        {
+            if (isEnabled)
+            {
+                foreach (var kerbal in kerbals.Values)
+                { kerbal.ReconfigureInventory(); }
+            }
+        }
     }
 
     public class KerbalSafety : MonoBehaviour
@@ -327,9 +336,15 @@ namespace BDArmory.Modules
                 Destroy(this);
                 yield break;
             }
-            while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return new WaitForFixedUpdate(); // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
+            var wait = new WaitForFixedUpdate();
+            while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return wait; // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
             if (p.vessel == null) yield break;
             kerbalName = c.displayName;
+            if (KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName)) // Already managed
+            {
+                Destroy(this);
+                yield break;
+            }
             this.crew = c;
             switch (BDArmorySettings.KERBAL_SAFETY_INVENTORY)
             {
@@ -385,10 +400,18 @@ namespace BDArmory.Modules
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
                 DisableConstructionMode(kerbalEVA);
-                if (BDArmorySettings.KERBAL_SAFETY_INVENTORY == 2)
-                    RemoveJetpack(kerbalEVA);
+                if (BDArmorySettings.KERBAL_SAFETY_INVENTORY > 0) kerbalEVA.ModuleInventoryPartReference.SetInventoryDefaults();
+                if (BDArmorySettings.KERBAL_SAFETY_INVENTORY == 2) RemoveJetpack(kerbalEVA);
             }
         }
+
+        public void ReconfigureInventory()
+        {
+            if (BDArmorySettings.KERBAL_SAFETY_INVENTORY == 0) return;
+            if (crew != null) crew.ResetInventory(BDArmorySettings.KERBAL_SAFETY_INVENTORY == 1);
+            if (kerbalEVA != null) ConfigureKerbalEVA(kerbalEVA);
+        }
+
         private void DisableConstructionMode(KerbalEVA kerbalEVA)
         {
             if (kerbalEVA.InConstructionMode)
