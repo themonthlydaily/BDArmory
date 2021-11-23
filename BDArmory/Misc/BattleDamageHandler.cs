@@ -437,7 +437,7 @@ namespace BDArmory.Misc
                     }
                 }
             }
-            if(BDArmorySettings.BD_PILOT_KILLS)    
+            if (BDArmorySettings.BD_PILOT_KILLS)
             {
                 bool canKill = true;
                 var armorglass = part.FindModuleImplementing<ModuleSelfSealingTank>();

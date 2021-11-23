@@ -2703,25 +2703,27 @@ namespace BDArmory.UI
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateHitMultiplier")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER})", leftLabel);//Fire Rate Hit Multiplier
                             BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
-                        CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI); //if we need super-secret stuff
-                        if (CheatCodeGUI == "ZombieMode")
+                        if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI))) //if we need super-secret stuff
                         {
-                            BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE; //sticking this here until we figure out a better home for it
-                            CheatCodeGUI = "";
-                        }
-                        if (CheatCodeGUI == "DiscoInferno")
-                        {
-                            BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
-                            CheatCodeGUI = "";
+                            if (CheatCodeGUI == "ZombieMode")
+                            {
+                                BDArmorySettings.ZOMBIE_MODE = !BDArmorySettings.ZOMBIE_MODE; //sticking this here until we figure out a better home for it
+                                CheatCodeGUI = "";
+                            }
+                            else if (CheatCodeGUI == "DiscoInferno")
+                            {
+                                BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
+                                CheatCodeGUI = "";
+                            }
                         }
                         //BDArmorySettings.ZOMBIE_MODE = GUI.Toggle(SLeftRect(++line), BDArmorySettings.ZOMBIE_MODE, Localizer.Format("#LOC_BDArmory_settings_ZombieMode"));
                         if (BDArmorySettings.ZOMBIE_MODE)
                         {
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.ZOMBIE_DMG_MULT})", leftLabel);//"S4R2 Non-headshot Dmg Mult"
 
-                        //if (BDArmorySettings.RUNWAY_PROJECT_ROUND == -1) // FIXME Set when the round is actually run! Also check for other "RUNWAY_PROJECT_ROUND == -1" checks.
-                        //{
-                        //    GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.ZOMBIE_DMG_MULT})", leftLabel);//"Zombie Non-headshot Dmg Mult"
+                            //if (BDArmorySettings.RUNWAY_PROJECT_ROUND == -1) // FIXME Set when the round is actually run! Also check for other "RUNWAY_PROJECT_ROUND == -1" checks.
+                            //{
+                            //    GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.ZOMBIE_DMG_MULT})", leftLabel);//"Zombie Non-headshot Dmg Mult"
 
                             BDArmorySettings.ZOMBIE_DMG_MULT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ZOMBIE_DMG_MULT, 0.05f, 0.95f) * 100f) / 100f;
                             if (BDArmorySettings.BATTLEDAMAGE)
@@ -3137,7 +3139,7 @@ namespace BDArmory.UI
                                 case 33:
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
                                     break;
-								case 50:
+                                case 50: // FIXME temporary index, to be assigned later
                                     startCompetitionText = "Start Orbital Drop Deploment";
                                     //startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
                                     break;
@@ -3155,7 +3157,7 @@ namespace BDArmory.UI
                                     case 33:
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
-                                    case 50: //FIXME later
+                                    case 50: // FIXME temporary index, to be assigned later
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     default:

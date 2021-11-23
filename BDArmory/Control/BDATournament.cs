@@ -841,7 +841,7 @@ namespace BDArmory.Control
                     case 33:
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
-                    case 50: //FIXME later
+                    case 50: // FIXME temporary index, to be assigned later
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     default:

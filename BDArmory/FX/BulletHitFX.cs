@@ -430,36 +430,36 @@ namespace BDArmory.FX
                 var leak = hitPart.FindModuleImplementing<ModuleDrainFuel>();
                 if (leak != null) //only apply one leak to engines
                 {
-					if (!hitPart.isEngine())
-                    {                       
+                    if (!hitPart.isEngine())
+                    {
                         leak.drainDuration += (20 * BDArmorySettings.BD_TANK_LEAK_TIME);
                         leak.drainRate += ((caliber / 100) * BDArmorySettings.BD_TANK_LEAK_RATE);
 
-						if (BDArmorySettings.BD_FIRES_ENABLED)
-						{
-							int ammoMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
-							if (explosive)
-							{
-								ammoMod = 20; //20% chance of starting fires from HE rounds
-							}
-							if (incendiary)
-							{
-								ammoMod = 90; //90% chance of starting fires from inc rounds
-							}
-							double Diceroll = UnityEngine.Random.Range(0, 100);
-							if (Diceroll <= ammoMod)
-							{	
-								int leakcount = 0;
-								foreach (var existingLeakFX in hitPart.GetComponentsInChildren<FuelLeakFX>())
-								{
-									existingLeakFX.lifeTime = 0; //kill leakFX, start fire
-									leakcount++;
-								}
-								leak.drainDuration = 0;
-								AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
-							}
-						}
-					}
+                        if (BDArmorySettings.BD_FIRES_ENABLED)
+                        {
+                            int ammoMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
+                            if (explosive)
+                            {
+                                ammoMod = 20; //20% chance of starting fires from HE rounds
+                            }
+                            if (incendiary)
+                            {
+                                ammoMod = 90; //90% chance of starting fires from inc rounds
+                            }
+                            double Diceroll = UnityEngine.Random.Range(0, 100);
+                            if (Diceroll <= ammoMod)
+                            {
+                                int leakcount = 0;
+                                foreach (var existingLeakFX in hitPart.GetComponentsInChildren<FuelLeakFX>())
+                                {
+                                    existingLeakFX.lifeTime = 0; //kill leakFX, start fire
+                                    leakcount++;
+                                }
+                                leak.drainDuration = 0;
+                                AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
+                            }
+                        }
+                    }
                 }
                 else
                 {

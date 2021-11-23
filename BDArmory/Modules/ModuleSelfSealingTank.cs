@@ -114,35 +114,35 @@ namespace BDArmory.Modules
                 Fields["FireBottles"].guiActiveEditor = false;
                 Fields["FBRemaining"].guiActive = false;
             }
-            partmass = (FISmass + ArmorMass + FBmass);            
+            partmass = (FISmass + ArmorMass + FBmass);
             Misc.Misc.RefreshAssociatedWindows(part);
-			using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
-				while (pSym.MoveNext())
-				{
-					if (pSym.Current == null) continue;
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
 
-					var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
-					if (tank == null) continue;
+                    var tank = pSym.Current.FindModuleImplementing<ModuleSelfSealingTank>();
+                    if (tank == null) continue;
 
-					tank.InertTank = InertTank;
+                    tank.InertTank = InertTank;
 
-					if (!InertTank)
-					{
-						tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Add Fuel Inerting System"
-						tank.FISmass = 0;
+                    if (!InertTank)
+                    {
+                        tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Add Fuel Inerting System"
+                        tank.FISmass = 0;
                         tank.Fields["FireBottles"].guiActiveEditor = false;
                         tank.Fields["FBRemaining"].guiActive = false;
                     }
-					else
-					{
-						tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_Off");//"Remove Fuel Inerting System"
-						tank.FISmass = 0.15f;
-						tank.Fields["FireBottles"].guiActiveEditor = true;
-						tank.Fields["FBRemaining"].guiActive = true;
-					}
-					tank.partmass = (tank.FISmass + tank.ArmorMass + tank.FBmass);
-					Misc.Misc.RefreshAssociatedWindows(pSym.Current);
-				}
+                    else
+                    {
+                        tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_Off");//"Remove Fuel Inerting System"
+                        tank.FISmass = 0.15f;
+                        tank.Fields["FireBottles"].guiActiveEditor = true;
+                        tank.Fields["FBRemaining"].guiActive = true;
+                    }
+                    tank.partmass = (tank.FISmass + tank.ArmorMass + tank.FBmass);
+                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                }
             if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
         }
@@ -275,7 +275,7 @@ namespace BDArmory.Modules
             }
             if (!InertTank)
             {
-				Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Enable self-sealing tank"
+                Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Enable self-sealing tank"
                 FISmass = 0;
             }
             else
@@ -325,7 +325,7 @@ namespace BDArmory.Modules
                         {
                             try
                             {
-								InertTank = bool.Parse(InertString);
+                                InertTank = bool.Parse(InertString);
                                 FISmass = InertTank ? 0.15f : 0;
                                 //partmass += FISmass;
                             }
@@ -336,7 +336,7 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-							InertTank = false;
+                            InertTank = false;
                             FISmass = 0;
                         }
                         var cockpitString = ConfigNodeUtils.FindPartModuleConfigNodeValue(part.partInfo.partConfig, "ModuleSelfSealingTank", "armoredCockpit");
@@ -355,7 +355,7 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-							armoredCockpit = false;
+                            armoredCockpit = false;
                             ArmorMass = 0;
                         }
                         if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
@@ -472,7 +472,7 @@ namespace BDArmory.Modules
             if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
             {
                 if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
-                {                    
+                {
                     if (!isOnFire && !InertTank)
                     {
                         if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
