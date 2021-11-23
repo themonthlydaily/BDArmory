@@ -1847,7 +1847,14 @@ namespace BDArmory.Modules
             {
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
-
+            if (BDArmorySetup.GameIsPaused)
+            {
+                if (audioSource.isPlaying)
+                {
+                    audioSource.Stop();
+                }
+                return false;
+            }
             float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
@@ -1862,7 +1869,7 @@ namespace BDArmory.Modules
             {
                 if (CanFire(chargeAmount))
                 {
-                    if (oneShotSound && pulseLaser)
+                    if (oneShotSound)
                     {
                         audioSource.Stop();
                         audioSource.PlayOneShot(fireSound);
