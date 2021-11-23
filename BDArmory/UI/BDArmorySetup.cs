@@ -2325,7 +2325,8 @@ namespace BDArmory.UI
                                 break;
                         }
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_KerbalSafetyInventory")}:  ({inventory})", leftLabel); // Kerbal Safety inventory
-                        BDArmorySettings.KERBAL_SAFETY_INVENTORY = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.KERBAL_SAFETY_INVENTORY, 0f, 2f));
+                        if (BDArmorySettings.KERBAL_SAFETY_INVENTORY != (BDArmorySettings.KERBAL_SAFETY_INVENTORY = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.KERBAL_SAFETY_INVENTORY, 0f, 2f))))
+                        { KerbalSafetyManager.Instance.ReconfigureInventories(); }
                     }
                 }
                 BDArmorySettings.HACK_INTAKES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HACK_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_IntakeHack"));// Hack Intakes
@@ -2956,6 +2957,8 @@ namespace BDArmory.UI
                         }
                     }
                 }
+                if (GUI.Button(SLeftRect(++line), "Test vessel position timing."))
+                { StartCoroutine(TestVesselPositionTiming()); }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
                     QuitKSP();
@@ -3399,6 +3402,41 @@ namespace BDArmory.UI
             HighLogic.LoadScene(GameScenes.MAINMENU);
             Application.Quit();
         }
+
+        IEnumerator TestVesselPositionTiming()
+        {
+            var wait = new WaitForFixedUpdate();
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.ObscenelyEarly, ObscenelyEarly);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Early, Early);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Precalc, Precalc);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Earlyish, Earlyish);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Normal, Normal);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FashionablyLate, FashionablyLate);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FlightIntegrator, FlightIntegrator);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Late, Late);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
+            yield return wait;
+            yield return wait;
+            yield return wait;
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.ObscenelyEarly, ObscenelyEarly);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Early, Early);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Precalc, Precalc);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Earlyish, Earlyish);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Normal, Normal);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.FashionablyLate, FashionablyLate);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.FlightIntegrator, FlightIntegrator);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Late, Late);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
+        }
+        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
 #endif
     }
 }

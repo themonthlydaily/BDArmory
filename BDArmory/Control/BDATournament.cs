@@ -564,7 +564,7 @@ namespace BDArmory.Control
         #region Flags and Variables
         TournamentState tournamentState;
         public const string defaultStateFile = "GameData/BDArmory/PluginData/tournament.state";
-        string stateFile = defaultStateFile;//"GameData/BDArmory/PluginData/tournament.state";
+        string stateFile = defaultStateFile;
         string message;
         private Coroutine runTournamentCoroutine;
         public TournamentStatus tournamentStatus = TournamentStatus.Stopped;
@@ -638,10 +638,18 @@ namespace BDArmory.Control
         }
 
         // Save tournament state to disk
-        bool SaveTournamentState()
+        bool SaveTournamentState(bool backup = false)
         {
-            if (tournamentState.SaveState(stateFile))
-                message = "Tournament state saved to " + stateFile;
+            var saveTo = stateFile;
+            if (backup)
+            {
+                var saveToDir = Path.GetDirectoryName(defaultStateFile);
+                saveToDir = Path.Combine(saveToDir, "Unfinished Tournaments");
+                if (!Directory.Exists(saveToDir)) Directory.CreateDirectory(saveToDir);
+                saveTo = Path.ChangeExtension(Path.Combine(saveToDir, Path.GetFileName(stateFile)), $".state-{tournamentID}");
+            }
+            if (tournamentState.SaveState(saveTo))
+                message = "Tournament state saved to " + saveTo;
             else
                 message = "Failed to save tournament state.";
             Debug.Log("[BDArmory.BDATournament]: " + message);
@@ -652,6 +660,14 @@ namespace BDArmory.Control
 
         public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, int tournamentStyle = 0, string stateFile = "")
         {
+            if (tournamentState != null && tournamentState.rounds != null)
+            {
+                heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+                if (heatsRemaining > 0 && heatsRemaining < numberOfRounds * numberOfHeats) // Started, but incomplete tournament.
+                {
+                    SaveTournamentState(true);
+                }
+            }
             if (stateFile != "") this.stateFile = stateFile;
             tournamentState = new TournamentState();
             if (numberOfTeams == 0) // FFA
@@ -801,6 +817,8 @@ namespace BDArmory.Control
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             Debug.Log("[BDArmory.BDATournament]: " + message);
             tournamentStatus = TournamentStatus.Completed;
+            var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
+            if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
         }
 
         IEnumerator ExecuteHeat(int roundIndex, int heatIndex)
@@ -960,6 +978,8 @@ namespace BDArmory.Control
         string savesDir;
         string savegame;
         string save = "persistent";
+        string cleansave = "clean";
+        bool useCleanSave = true;
         string game;
         bool sceneLoaded = false;
 
@@ -1009,7 +1029,12 @@ namespace BDArmory.Control
                 {
                     var tournamentState = new TournamentState();
                     if (!tournamentState.LoadState(BDATournament.defaultStateFile)) yield break; // Failed to load
-                    savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
+                    savegame = Path.Combine(savesDir, tournamentState.savegame, cleansave + ".sfs"); // First check for a "clean" save file.
+                    if (!File.Exists(savegame))
+                    {
+                        useCleanSave = false;
+                        savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
+                    }
                     if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
                     {
                         incompleteTournament = true;
@@ -1054,7 +1079,7 @@ namespace BDArmory.Control
 
         bool LoadGame()
         {
-            var gameNode = GamePersistence.LoadSFSFile(save, game);
+            var gameNode = GamePersistence.LoadSFSFile(useCleanSave ? cleansave : save, game);
             if (gameNode == null)
             {
                 Debug.LogWarning($"[BDArmory.BDATournament]: Unable to load the save game: {savegame}");
@@ -1072,7 +1097,7 @@ namespace BDArmory.Control
             {
                 if (node != null)
                 { GameEvents.onGameStatePostLoad.Fire(node); }
-                GamePersistence.SaveGame(HighLogic.CurrentGame, save, game, SaveMode.OVERWRITE);
+                GamePersistence.SaveGame(HighLogic.CurrentGame, useCleanSave ? cleansave : save, game, SaveMode.OVERWRITE);
             }
             HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
             HighLogic.SaveFolder = game;

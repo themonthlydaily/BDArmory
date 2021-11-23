@@ -251,6 +251,11 @@ namespace BDArmory.Modules
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
             UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
         public float idleSpeed = 120f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_UseABPriority", //Use Afterburner Priority
+            groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+        public float useABPriority = 50f;
         #endregion
 
         #region Control Limits
@@ -1423,9 +1428,10 @@ namespace BDArmory.Modules
                                 steerMode = SteerModes.Aiming;
                             }
                         }
-                        else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0)
+                        else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is a long way away or behind us.
                         {
-                            target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
+                            //target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
+                            target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
                         }
                     }
                 }
@@ -1918,6 +1924,7 @@ namespace BDArmory.Modules
             speedController.allowAfterburner = allowAfterburner;
             speedController.forceAfterburner = forceAfterburner;
             speedController.throttleOverride = throttleOverride;
+            speedController.afterburnerPriority = useABPriority;
         }
 
         Vector3 threatRelativePosition;
