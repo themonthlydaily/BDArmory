@@ -13,7 +13,7 @@ namespace BDArmory.Control
         public int worldIndex;
 
         public SpawnLocation(string _name, Vector2d _location, int _worldIndex) { name = _name; location = _location; worldIndex = _worldIndex; }
-        public override string ToString() { return name + ", " + location.ToString("G6") + ", " + worldIndex.ToString(); }
+        public override string ToString() { return name + "; " + location.ToString("G6") + "; " + worldIndex.ToString(); }
     }
 
     [AttributeUsage(AttributeTargets.Field)]
