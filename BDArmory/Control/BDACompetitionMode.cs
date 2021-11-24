@@ -1738,7 +1738,7 @@ namespace BDArmory.Control
                             // "0:EnableGM", // t=60, Activate the killer GM
                         };
                         break;
-                    case 50: //change this later
+                    case 50: //change this later (Canyon race / waypoints)
                         commandSequence = new List<string>{
                             "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
                             "0:ActionGroup:16:0", // t=0, Retract gear (if it's not retracted)

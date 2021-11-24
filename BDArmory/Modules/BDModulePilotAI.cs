@@ -1430,7 +1430,6 @@ namespace BDArmory.Modules
                         }
                         else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is a long way away or behind us.
                         {
-                            //target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
                             target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
                         }
                     }

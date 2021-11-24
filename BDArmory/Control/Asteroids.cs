@@ -132,7 +132,7 @@ namespace BDArmory.Control
         float radius;
         float initialSpeed = -100f;
         double spawnRate;
-        Vector3d geoCoords;
+        Vector2d geoCoords;
         Vector3d spawnPoint;
         Vector3d upDirection;
         Vector3d refDirection;
@@ -260,7 +260,7 @@ namespace BDArmory.Control
         public void SpawnRain(Vector3d geoCoords)
         {
             Reset();
-            this.geoCoords = geoCoords;
+            this.geoCoords = new Vector2d(geoCoords.x, geoCoords.y);
             if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID && BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD) this.radius = 1000f; // Initial radius for spawn in case we don't have any planes yet.
             UpdateSettings(true);
             StartCoroutine(StartRain());
@@ -617,7 +617,7 @@ namespace BDArmory.Control
 
         float altitude;
         float radius;
-        Vector3d geoCoords;
+        Vector2d geoCoords;
         Vector3d spawnPoint;
         Vector3d upDirection;
         Vector3d refDirection;
@@ -692,7 +692,7 @@ namespace BDArmory.Control
 
             this.altitude = altitude;
             this.radius = radius;
-            this.geoCoords = geoCoords;
+            this.geoCoords = new Vector2d(geoCoords.x, geoCoords.y);
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             refDirection = Math.Abs(Vector3.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.

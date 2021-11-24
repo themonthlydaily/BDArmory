@@ -742,7 +742,7 @@ namespace BDArmory.Control
                                     break;
                                 case VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
                                     BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", trying again with increased altitude.");
-                                    tournamentState.rounds[roundIndex][heatIndex].altitude = Math.Min(tournamentState.rounds[roundIndex][heatIndex].altitude + 3, 10); // Increase the spawning altitude and try again.
+                                    if (tournamentState.rounds[roundIndex][heatIndex].altitude < 10) tournamentState.rounds[roundIndex][heatIndex].altitude = Math.Min(tournamentState.rounds[roundIndex][heatIndex].altitude + 3, 10); // Increase the spawning altitude for ground spawns and try again.
                                     break;
                                 case VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
                                     BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", trying again.");
@@ -841,7 +841,7 @@ namespace BDArmory.Control
                     case 33:
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
-                    case 50: //FIXME later
+                    case 50: // FIXME temporary index, to be assigned later
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     default:
