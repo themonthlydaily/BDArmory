@@ -61,6 +61,7 @@ namespace BDArmory.UI
         //dependency checks
         bool ModuleManagerLoaded = false;
         bool PhysicsRangeExtenderLoaded = false;
+        PropertyInfo PREModEnabledField = null;
 
         //EVENTS
         public delegate void VolumeChange();
@@ -142,6 +143,8 @@ namespace BDArmory.UI
         public List<string> mutators = new List<string>();
         bool[] mutators_selected;
 
+        List<string> dependencyWarnings = new List<string>();
+        double dependencyLastCheckTime = 0;
 
         //gui styles
         GUIStyle centerLabel;
@@ -492,7 +495,7 @@ namespace BDArmory.UI
             redErrorStyle = new GUIStyle(BDGuiSkin.label);
             redErrorStyle.normal.textColor = Color.red;
             redErrorStyle.fontStyle = FontStyle.Bold;
-            redErrorStyle.fontSize = 22;
+            redErrorStyle.fontSize = 24;
             redErrorStyle.alignment = TextAnchor.UpperCenter;
 
             redErrorShadowStyle = new GUIStyle(redErrorStyle);
@@ -510,7 +513,19 @@ namespace BDArmory.UI
                             break;
 
                         case "PhysicsRangeExtender":
-                            PhysicsRangeExtenderLoaded = true;
+                            foreach (var t in a.Current.GetTypes())
+                            {
+                                if (t != null && t.Name == "PreSettings")
+                                {
+                                    var PREInstance = FindObjectOfType(t);
+                                    foreach (var propInfo in t.GetProperties(BindingFlags.Public | BindingFlags.Static))
+                                        if (propInfo != null && propInfo.Name == "ModEnabled")
+                                        {
+                                            PREModEnabledField = propInfo;
+                                            PhysicsRangeExtenderLoaded = true;
+                                        }
+                                }
+                            }
                             break;
 
                         case "BDArmory":
@@ -805,22 +820,27 @@ namespace BDArmory.UI
             {
                 //gpsWindowRect = GUI.Window(424333, gpsWindowRect, GPSWindow, "", GUI.skin.box);
                 BDGUIUtils.UseMouseEventInRect(WindowRectGps);
-                List<GPSTargetInfo>.Enumerator coord =
-                  BDATargetManager.GPSTargetList(ActiveWeaponManager.Team).GetEnumerator();
-                while (coord.MoveNext())
-                {
-                    BDGUIUtils.DrawTextureOnWorldPos(coord.Current.worldPos, Instance.greenDotTexture, new Vector2(8, 8), 0);
-                }
-                coord.Dispose();
+                using (var coord = BDATargetManager.GPSTargetList(ActiveWeaponManager.Team).GetEnumerator())
+                    while (coord.MoveNext())
+                    {
+                        BDGUIUtils.DrawTextureOnWorldPos(coord.Current.worldPos, Instance.greenDotTexture, new Vector2(8, 8), 0);
+                    }
             }
 
-            // big error messages for missing dependencies
-            if (ModuleManagerLoaded && PhysicsRangeExtenderLoaded) return;
-            string message = (ModuleManagerLoaded ? "Physics Range Extender" : "Module Manager") + " is missing. BDA will not work properly.";
-            GUI.Label(new Rect(0 + 2, Screen.height / 6 + 2, Screen.width, 100),
-              message, redErrorShadowStyle);
-            GUI.Label(new Rect(0, Screen.height / 6, Screen.width, 100),
-              message, redErrorStyle);
+            if (Time.time - dependencyLastCheckTime > (dependencyWarnings.Count() == 0 ? 60 : 5)) // Only check once per minute if no issues are found, otherwise 5s.
+            {
+                dependencyLastCheckTime = Time.time;
+                dependencyWarnings.Clear();
+                if (!ModuleManagerLoaded) dependencyWarnings.Add("Module Manager dependency is missing!");
+                if (!PhysicsRangeExtenderLoaded) dependencyWarnings.Add("Physics Range Extender dependency is missing!");
+                else if (BDACompetitionMode.Instance != null && (BDACompetitionMode.Instance.competitionIsActive || BDACompetitionMode.Instance.competitionStarting) && !(bool)PREModEnabledField.GetValue(null)) dependencyWarnings.Add("Physics Range Extender is disabled!");
+                if (dependencyWarnings.Count() > 0) dependencyWarnings.Add("BDArmory will not work properly.");
+            }
+            if (dependencyWarnings.Count() > 0)
+            {
+                GUI.Label(new Rect(Screen.width / 2 - 300 + 2, Screen.height / 6 + 2, 600, 100), string.Join("\n", dependencyWarnings), redErrorShadowStyle);
+                GUI.Label(new Rect(Screen.width / 2 - 300, Screen.height / 6, 600, 100), string.Join("\n", dependencyWarnings), redErrorStyle);
+            }
         }
 
         public bool hasVesselSwitcher = false;
