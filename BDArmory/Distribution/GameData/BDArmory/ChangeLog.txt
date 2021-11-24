@@ -16,7 +16,6 @@ IMPROVEMENTS
 	- Add additional control "Afterburner Priority" for afterburner toggling under Speed category of AI. Default value of 50. 0 and AI will not use AB, 100 and AI will always use AB.
 	- Vary AB hysteresis based on "Afterburner Priority" setting using an exponential average to smooth the vessel's TWR (lag factor of 0.5s) to judge whether AI should toggle AB vs. using instantaneous acceleration.
 
-
 FIXES
 -Fix SSTs being addable to engines
 -Fix SST not showing on/off status on load
@@ -29,6 +28,7 @@ FIXES
 -Fix RESET_ARMOR resetting hull material
 -Fix Steel parts gaining more than the 1.75x HP mult they should be getting
 -Fix AI aim offset being offset
+-Fix Audio cutting out when trying to fire lasers using looping SFX
 
 IMPROVEMENTS
 -Armor GUI submenu functionality based on current HP/Armor/Hull Reset toggle settings
@@ -46,6 +46,7 @@ IMPROVEMENTS
 -Adds Armored Cockpit option to cockpits to reduce/prevent pilot Kill battledamage
 -Default Guard Range increased to 20km
 -Add option for laser mutators to use Team Color for beam color
+-Improves infolink descriptions of target priority settings
 
 ADDITIONS
 -Add off-world spawning to Spawn menu
@@ -54,7 +55,7 @@ ADDITIONS
 -ZombieMode option moved to cheat mode access
 -Add secret Disco Mode
 -Enabling the Runway Project toggle will clamp guard range to a minimum of 20km
--Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards
+-Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards (request from SirJohn)
 -Adds Intake Hack setting to autohack intakes to work in non-O2 atmos
 
 
