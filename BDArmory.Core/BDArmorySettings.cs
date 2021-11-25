@@ -72,8 +72,9 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool DISPLAY_COMPETITION_STATUS_WITH_HIDDEN_UI = false; // Display the competition status when using the "hidden UI"
         [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;
         [BDAPersistentSettingsField] public static bool PERSISTENT_FX = false;
-		[BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
+        [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
         [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
+        [BDAPersistentSettingsField] public static bool COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = false; // Close the settings window when clicking the start competition button.
 
         // General slider settings
         [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes

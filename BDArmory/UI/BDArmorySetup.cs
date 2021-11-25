@@ -2996,6 +2996,8 @@ namespace BDArmory.UI
             {
                 line += 0.2f;
 
+                BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = GUI.Toggle(SLineRect(++line), BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START, Localizer.Format("#LOC_BDArmory_Settings_CompetitionCloseSettingsOnCompetitionStart"));
+
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
                     GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_DebrisCleanUpDelay")}:  ({BDArmorySettings.DEBRIS_CLEANUP_DELAY}s)", leftLabel); // Debris Clean-up delay
@@ -3129,8 +3131,7 @@ namespace BDArmory.UI
                     if (GUI.Button(SRightButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_StartCompetitionNow"))) // Start competition NOW button.
                     {
                         BDACompetitionMode.Instance.StartCompetitionNow();
-                        // SaveConfig();
-                        // windowSettingsEnabled = false;
+                        if (BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START) CloseSettingsWindow();
                     }
                 }
                 else
@@ -3145,8 +3146,7 @@ namespace BDArmory.UI
                                 System.IO.Directory.CreateDirectory(vesselPath);
                             }
                             BDAScoreService.Instance.Configure(vesselPath, BDArmorySettings.COMPETITION_HASH);
-                            // SaveConfig();
-                            // windowSettingsEnabled = false;
+                            if (BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START) CloseSettingsWindow();
                         }
                     }
                     else
@@ -3187,8 +3187,7 @@ namespace BDArmory.UI
                             }
                             else
                                 BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
-                            // SaveConfig();
-                            // windowSettingsEnabled = false;
+                            if (BDArmorySettings.COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START) CloseSettingsWindow();
                         }
                     }
                 }
@@ -3212,6 +3211,13 @@ namespace BDArmory.UI
             BDGUIUtils.RepositionWindow(ref WindowRectSettings);
             BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
+
+        void CloseSettingsWindow()
+        {
+            SaveConfig();
+            windowSettingsEnabled = false;
+        }
+
         internal static void ResizeRwrWindow(float rwrScale)
         {
             BDArmorySettings.RWR_WINDOW_SCALE = rwrScale;

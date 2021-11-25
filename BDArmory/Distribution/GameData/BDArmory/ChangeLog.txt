@@ -9,6 +9,7 @@ IMPROVEMENTS
 	- Allow BDGUIComboBox to be relocated/resized.
 -UI:
 	- Add check for disabled PRE when competitions are active.
+	- Add a toggle in the Competition Settings section for closing the settings when clicking the start competition button.
 - Tournaments:
 	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
 	- Add taken counts to the summaries.
