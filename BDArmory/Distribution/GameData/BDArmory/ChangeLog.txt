@@ -25,6 +25,7 @@ IMPROVEMENTS
 	- Vary AB hysteresis based on "Afterburner Priority" setting using an exponential average to smooth the vessel's TWR (lag factor of 0.5s) to judge whether AI should toggle AB vs. using instantaneous acceleration.
 - Spawning:
 	- Respawn the spawn probe when showing the spawn point if the active vessel has been destroyed.
+	- Use the backup location 'KSP/Ships/SPH' as a fall-back for the spawn probe location as CKAN puts it there.
 
 FIXES
 -Fix SSTs being addable to engines
