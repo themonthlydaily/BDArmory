@@ -10,6 +10,7 @@ IMPROVEMENTS
 -UI:
 	- Add check for disabled PRE when competitions are active.
 	- Add a toggle in the Competition Settings section for closing the settings when clicking the start competition button.
+	- Add a check for the number of AIs and WMs when starting a RWP competition and give an in-game message if there's not one of each.
 - Tournaments:
 	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
 	- Add taken counts to the summaries.
