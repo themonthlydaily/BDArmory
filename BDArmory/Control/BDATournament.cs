@@ -465,6 +465,7 @@ namespace BDArmory.Control
                     if (strings[i].Length > 0)
                     {
                         var roundConfig = JsonUtility.FromJson<RoundConfig>(strings[i]);
+                        if (!strings[i].Contains("worldIndex")) roundConfig.worldIndex = 1; // Default old tournament states to be on Kerbin.
                         roundConfig.DeserializeTeams();
                         if (!rounds.ContainsKey(roundConfig.round)) rounds.Add(roundConfig.round, new Dictionary<int, VesselSpawner.SpawnConfig>());
                         rounds[roundConfig.round].Add(roundConfig.heat, new VesselSpawner.SpawnConfig(
