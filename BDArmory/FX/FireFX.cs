@@ -360,18 +360,18 @@ namespace BDArmory.FX
                     pe.minSize = burnScale * 1.2f;
                 }
             }
+            if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough
+            {
+                burnTime = 5; //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+            }
+            // Note: the following can set the parentPart to null.
             if (disableTime > 0 && Time.time - disableTime > _highestEnergy) //wait until last emitted particle has finished
             {
                 Deactivate();
             }
-            ////////////////////////////////////////////
             if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
             {
                 Deactivate(); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
-            }
-			if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough
-            {
-                burnTime = 5; //only fuel+oxy or monoprop fires in vac/non-oxy atmo
             }
         }
 
