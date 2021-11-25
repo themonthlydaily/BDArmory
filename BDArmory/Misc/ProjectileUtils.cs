@@ -70,7 +70,7 @@ namespace BDArmory.Misc
         public static HashSet<string> IgnoredPartNames = new HashSet<string> { "bdPilotAI", "bdShipAI", "missileController", "bdammGuidanceModule" };
         public static bool IsIgnoredPart(Part part) { return ProjectileUtils.IgnoredPartNames.Contains(part.partInfo.name); }
 
-        public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit)
+        public static void ApplyDamage(Part hitPart, RaycastHit hit, float multiplier, float penetrationfactor, float caliber, float projmass, float impactVelocity, float DmgMult, double distanceTraveled, bool explosive, bool incendiary, bool hasRichocheted, Vessel sourceVessel, string name, string team, ExplosionSourceType explosionSource, bool firstHit, bool partAlreadyHit, bool cockpitPen)
         {
             //hitting a vessel Part
             //No struts, they cause weird bugs :) -BahamutoD
@@ -89,7 +89,7 @@ namespace BDArmory.Misc
 
             if (BDArmorySettings.BATTLEDAMAGE)
             {
-                BattleDamageHandler.CheckDamageFX(hitPart, caliber, penetrationfactor, explosive, incendiary, sourceVessel.GetName(), hit);
+                BattleDamageHandler.CheckDamageFX(hitPart, caliber, penetrationfactor, explosive, incendiary, sourceVessel.GetName(), hit, partAlreadyHit, cockpitPen);
             }
             // Debug.Log("DEBUG Ballistic damage to " + hitPart + ": " + damage + ", calibre: " + caliber + ", multiplier: " + multiplier + ", pen: " + penetrationfactor);
 
@@ -162,13 +162,13 @@ namespace BDArmory.Misc
         {
             ///<summary>
             /// Calculate damage to armor from kinetic impact based on armor mechanical properties
-            /// Sufficient penetration b bullet will result in armor spalling or failure 
+            /// Sufficient penetration b bullet will result in armor spalling or failure
             /// </summary>
             float thickness = (float)hitPart.GetArmorThickness();
             if (thickness <= 0) return; //No armor present to spall/damage
 
             double volumeToReduce = -1;
-            float caliberModifier = 1; //how many calibers wide is the armor loss/spall?       
+            float caliberModifier = 1; //how many calibers wide is the armor loss/spall?
             float spallMass = 0;
             float spallCaliber = 1;
             //Spalling/Armor damage
@@ -178,7 +178,7 @@ namespace BDArmory.Misc
                 {
                     if (thickness < 2 * caliber)
                     {
-                        caliberModifier = 4;                    // - bullet capped by necked material, add to caliber/bulletmass                        
+                        caliberModifier = 4;                    // - bullet capped by necked material, add to caliber/bulletmass
                     }
                     else
                     {
@@ -349,7 +349,7 @@ namespace BDArmory.Misc
                             }
                             else
                             {
-                                if (thickness < (shrapnelThickness * 1.7))//armor cracks; 
+                                if (thickness < (shrapnelThickness * 1.7))//armor cracks;
                                 {
                                     volumeToReduce = ((Mathf.CeilToInt(caliber / 500) * Mathf.CeilToInt(caliber / 500)) * (50 * 50) * ((float)hitPart.GetArmorMaxThickness() / 10)); //cm3
                                     hitPart.ReduceArmor(volumeToReduce);
@@ -410,7 +410,7 @@ namespace BDArmory.Misc
             }
             else
             {
-                spallArea = (!double.IsNaN(hitPart.radiativeArea) ? (float)hitPart.radiativeArea : hitPart.GetArea() / 3) *10000;
+                spallArea = (!double.IsNaN(hitPart.radiativeArea) ? (float)hitPart.radiativeArea : hitPart.GetArea() / 3) * 10000;
             }
             if (BDArmorySettings.DRAW_ARMOR_LABELS && double.IsNaN(hitPart.radiativeArea))
             {
@@ -466,7 +466,7 @@ namespace BDArmory.Misc
                             ApplyScore(hitPart, sourcevessel, 0, damage, "Spalling", explosionSource);
                         }
                         //else soft enough to not spall. Armor has suffered some deformation, though, weakening it.
-                        hitPart.ReduceArmor(spallArea * (thickness / 30)); //cm3 
+                        hitPart.ReduceArmor(spallArea * (thickness / 30)); //cm3
                         if (BDArmorySettings.BATTLEDAMAGE)
                         {
                             BattleDamageHandler.CheckDamageFX(hitPart, spallArea, blowthroughFactor, false, false, sourcevessel, hit);
@@ -489,7 +489,7 @@ namespace BDArmory.Misc
                                 ApplyScore(hitPart, sourcevessel, 0, damage, "Armor Shatter", explosionSource);
                             }
                             //soft stuff like Aramid not likely to cause major damage
-                            hitPart.ReduceArmor(volumeToReduce); //cm3                                                                                                      
+                            hitPart.ReduceArmor(volumeToReduce); //cm3
 
                             if (BDArmorySettings.DRAW_ARMOR_LABELS)
                             {
@@ -542,7 +542,7 @@ namespace BDArmory.Misc
                                     ApplyScore(hitPart, sourcevessel, 0, damage, "Armor Shatter", explosionSource);
                                 }
                                 //soft stuff like Aramid not likely to cause major damage
-                                hitPart.ReduceArmor(volumeToReduce); //cm3                                                                                                      
+                                hitPart.ReduceArmor(volumeToReduce); //cm3
 
                                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                                 {
@@ -634,7 +634,7 @@ namespace BDArmory.Misc
             yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * Strength * (Density / 7850f) * thickness;
             //assumes bullet is perfect cyl, modded by ductility spreading impact over larger area, times strength/cm2 for threshold energy required to penetrate armor material
             // Ductility is a measure of brittleness, the lower the brittleness, the more the material is willing to bend before fracturing, allowing energy to be spread over more area
-            if (Ductility > 0.25f) //up to a point, anyway. Stretch too much... 
+            if (Ductility > 0.25f) //up to a point, anyway. Stretch too much...
             {
                 yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
             }
@@ -661,7 +661,7 @@ namespace BDArmory.Misc
             {
                 //deform bullet from impact
                 if (yieldStrength < 1) yieldStrength = 1000;
-                float BulletDurabilityMod = ((1 - HEratio) * (caliber / 25)); //rounds that are larger, or have less HE, are structurally stronger and betterresist deformation
+                float BulletDurabilityMod = ((1 - HEratio) * (caliber / 25)); //rounds that are larger, or have less HE, are structurally stronger and betterresist deformation. Add in a hardness factor for sabots/DU rounds?
                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                 {
                     Debug.Log("[BDArmory.ProjectileUtils{Calc Deformation}]: yield:" + yieldStrength + "; Energy: " + bulletEnergy + "; caliber: " + caliber + "; impactVel: " + impactVel);
@@ -712,27 +712,25 @@ namespace BDArmory.Misc
             {
                 thickness = 1; //prevent divide by zero or other odd behavior
             }
-            //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor 
+            //the harder the material, the more the bullet is deformed, and the more energy it needs to expend to deform the armor
             float penetration;
-            //bullet's deformed, penetration using larger crosssection  
-            //if (impactVel > 1500 && caliber < 30) //hypervelocity KE penetrators, for convenience, assume any round moving this fast is made of Tungsten/Depleted ranium
-            if (impactVel > 1500)
+            //bullet's deformed, penetration using larger crosssection
+
             {
-                //caliber in mm, converted to length in cm, converted to mm                
+                //caliber in mm, converted to length in cm, converted to mm
                 float length = ((projMass * 1000) / ((newCaliber * newCaliber * Mathf.PI / 400) * (sabot ? 19 : 11.34f)) + 1) * 10;
-                penetration = length * Mathf.Sqrt((sabot ? 19000 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement 
+                //if (impactVel > 1500)
+                //penetration = length * Mathf.Sqrt((sabot ? 19000 : 11340) / Density); //at hypervelocity, impacts are akin to fluid displacement
                 //penetration in mm
-            }
-            else
-            {
+
                 var modifiedCaliber = (0.5f * caliber) + (0.5f * newCaliber) * (2f * Ductility * Ductility);
                 float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * Strength * (Density / 7850f) * thickness;
-                if (Ductility > 0.25f) //up to a point, anyway. Stretch too much... 
+                if (Ductility > 0.25f) //up to a point, anyway. Stretch too much...
                 {
                     yieldStrength *= 0.7f; //necking and point embrittlement reduce total tensile strength of material
                 }
-                penetration = ((Energy / yieldStrength) * thickness * APmod);
-
+                penetration = Mathf.Min(((Energy / yieldStrength) * thickness * APmod), length * Mathf.Sqrt((sabot ? 19000 : 11340) / Density));
+                //cap penetration to max possible pen depth from hypervelocity impact
             } //penetration in mm
             //apparently shattered projectiles add 30% to armor thickness; oblique impact beyond 55deg decreases effective thickness(splatted projectile digs in to plate instead of richochets)
 

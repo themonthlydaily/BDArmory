@@ -1,14 +1,112 @@
 ﻿FIXES
-- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect (post-stall behaviour near terrain).
-- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
-- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
-- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
-- Fix paintball mode not applying decals due to impulse weapons check.
-- Fix the length of the substring in debug message for vessels that fail to spawn.
+- Tournaments:
+	- Fix some typos and bugs in assist counting in the local tournament parser.
+	- Clear rocket dictionaries between heats. Compute assists under the same conditions for local and remote tournaments.
+	- Cause a spawn failure instead of throwing an exception so that tournaments can retry spawning.
+
 IMPROVEMENTS
-- Add "Show Self" option to Team Icons (icon + name only).
-- Apply the S4R2 'fill seats' condition to vessel spawning.
-- Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
+- Internal:
+	- Allow BDGUIComboBox to be relocated/resized.
+-UI:
+	- Add check for disabled PRE when competitions are active.
+	- Add a toggle in the Competition Settings section for closing the settings when clicking the start competition button.
+- Tournaments:
+	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+	- Add taken counts to the summaries.
+	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+	- Adjust rocket parts hit and damage fields to match ruby schema in the remote orchestration.
+	- Only adjust the altitude for failed spawns for ground spawns.
+	- Allow specifying both '-c' and tournament dir to parse the specified tournament dir as a collection (i.e., without the tournament folder structure).
+- Kerbal Safety:
+	- Reconfigure inventories when the kerbal inventory slider is adjusted.
+- AI:
+	- Add additional control "Afterburner Priority" for afterburner toggling under Speed category of AI. Default value of 50. 0 and AI will not use AB, 100 and AI will always use AB.
+	- Vary AB hysteresis based on "Afterburner Priority" setting using an exponential average to smooth the vessel's TWR (lag factor of 0.5s) to judge whether AI should toggle AB vs. using instantaneous acceleration.
+- Spawning:
+	- Respawn the spawn probe when showing the spawn point if the active vessel has been destroyed.
+
+FIXES
+-Fix SSTs being addable to engines
+-Fix SST not showing on/off status on load
+-Fix Paintball decals not appearing.
+-Fix AIR-2 Genie cost
+-Fix SelfSealTanks not respecting symmetry
+-fix fires not extinguishing if fuel < 0
+-Fix engine fire behavior, now capped to max one fire at a time
+-Fix Explosions not damaging buildings
+-Fix RESET_ARMOR resetting hull material
+-Fix Steel parts gaining more than the 1.75x HP mult they should be getting
+-Fix AI aim offset being offset
+-Fix Audio cutting out when trying to fire lasers using looping SFX
+
+IMPROVEMENTS
+-Armor GUI submenu functionality based on current HP/Armor/Hull Reset toggle settings
+-Adds Hull Material visualizer to SPH/VAB Armor GUI tool
+-Rework Nuke EMP radius calc; EMP radius at lower alt/lower yield is now much smaller
+-Fix SST maxing tank capacity when switching instead of simply adjusting maximum
+-Increases CASE cost at higher levels (mass increase, ammo capacity reduction)
+-Bullet penetration depth capped to hypervelocity penetration depth
+-Hits to Wings/controlSurfaces/Subsystems/cockpits with overpenetrating rounds will now only proc a single BattleDamage call
+-Fire chance from HE rounds reduced from 33% to 20%
+-Reduce firebottle extinguish delay time to 4 sec
+-Fires will no longer consume a firebottle per fire; on trigger, single firebottle will now extinguish all internal fires present on the part
+-Surface fires will now extinguish if vessel moving > 120m/s
+-Adds Fuel Inerting option to fuel tanks to prevent fires
+-Adds Armored Cockpit option to cockpits to reduce/prevent pilot Kill battledamage
+-Default Guard Range increased to 20km
+-Add option for laser mutators to use Team Color for beam color
+-Improves infolink descriptions of target priority settings
+
+ADDITIONS
+-Add off-world spawning to Spawn menu (spawn locations and tournaments get automatically upgraded).
+-Add ability to add custom spawn sites to spawn menu
+-Add Persistent UI button to Vessel Switcher to keep VS and Web Orchestration windows open when F2 UI toggled off
+-ZombieMode option moved to cheat mode access
+-Add secret Disco Mode
+-Enabling the Runway Project toggle will clamp guard range to a minimum of 20km
+-Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards (request from SirJohn)
+-Adds Intake Hack setting to autohack intakes to work in non-O2 atmos
+
+
+
+v1.4.12.6
+FIXES
+- Add a check for tournamentState.rounds being null when checking whether to resume a tournament. (Fixes failure to generate tournaments under some conditions.)
+
+v1.4.12.5
+Re-release due to not having recompiled the release version before releasing it.
+
+v1.4.12.4
+FIXES
+- Internal:
+	- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
+	- Use a different function to reset the crew's inventory as the other one wasn't working properly.
+	- Register survivors with the remote orchestration in case they're didn't get registered for anything else.
+	- Also catch the LES as a SRB in ModuleSelfSealingTank.
+- AI:
+	- Fix off-by-one-physics-frame error in FlyToTarget that was affecting aiming (especially noticeable for lasers).
+	- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect (post-stall behaviour near terrain).
+	- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
+	- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
+	- Fix NRE in targeting info caused by moving spawning point with a vessel that has a current target.
+- UI:
+	- Fix paintball mode not applying decals due to impulse weapons check.
+	- Fix the length of the substring in debug message for vessels that fail to spawn.
+	- Fix check in ExplosionFX for in-game messages about explosions (removes the rocket strike spam).
+- RWP:
+	- Remove the previous conditions for the RWP S4R2 condition as they aren't being used for S4R2.
+IMPROVEMENTS
+- UI:
+	- Add "Show Self" option to Team Icons (icon + name only).
+- Internal:
+	- Use warning level log entries for issues with the BDAScoreClient. Expand debug message to include stage number.
+	- Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
+- RWP:
+	- Apply the S4R2 'fill seats' condition to vessel spawning.
+- Tournaments:
+	- Store unfinished tournament state files in 'PluginData/Unfinished Tournaments/' and remove them when they're finished. (Copy them to the usual tournament.state file when in the KSC screen to resume them.)
+	- Add a --show-weights option to the tournament parsing script to show the current weights of the various components of the score.
+	- Add an option to the parsing script to not show the cumulative scores by round.
 
 v1.4.12.3
 FIXES

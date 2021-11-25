@@ -133,6 +133,8 @@ namespace BDArmory.Bullets
         static Dictionary<Vessel, float> rayLength;
         private Vector3[] linePositions = new Vector3[2];
 
+        private List<Part> partsHit = new List<Part>();
+
         private double distanceTraveled = 0;
         public double DistanceTraveled { get { return distanceTraveled; } }
 
@@ -245,6 +247,7 @@ namespace BDArmory.Bullets
             sourceWeapon = null;
             CurrentPart = null;
             sabot = false;
+            partsHit.Clear();
         }
 
         void OnDestroy()
@@ -672,7 +675,7 @@ namespace BDArmory.Bullets
                 }
                 else
                 {
-                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactSpeed, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, true);
+                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, bulletMass, impactSpeed, bulletDmgMult, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, true, true, true);
                 }
                 ExplosiveDetonation(hitPart, hit, bulletRay);
                 ProjectileUtils.StealResources(hitPart, sourceVessel, stealResources);
@@ -733,6 +736,10 @@ namespace BDArmory.Bullets
                 if (!BDArmorySettings.PAINTBALL_MODE)
                 { hitPart.rb.AddForceAtPosition(impactVelocity.normalized * impulse, hit.point, ForceMode.Acceleration); }
                 ProjectileUtils.ApplyScore(hitPart, sourceVessel.GetName(), distanceTraveled, 0, bullet.name, ExplosionSourceType.Bullet, true);
+                if (BDArmorySettings.BULLET_HITS)
+                {
+                    BulletHitFX.CreateBulletHit(hitPart, hit.point, hit, hit.normal, false, caliber, 0, team);
+                }
                 KillBullet();
                 return true; //impulse rounds shouldn't penetrate/do damage
             }
@@ -903,7 +910,9 @@ namespace BDArmory.Bullets
                 }
                 else
                 {
-                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true);
+                    float cockpitPen = (float)(16f * impactVelocity.magnitude * Mathf.Sqrt(bulletMass / 1000) / Mathf.Sqrt(caliber) * apBulletMod); //assuming a 20mm steel armor plate for cockpit armor
+                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, bulletMass, currentVelocity.magnitude, viableBullet ? bulletDmgMult : bulletDmgMult / 2, distanceTraveled, explosive, incendiary, hasRicocheted, sourceVessel, bullet.name, team, ExplosionSourceType.Bullet, penTicker > 0 ? false : true, partsHit.Contains(hitPart) ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
+                    //need to add a check for if the bullet has already struck the part, since it doesn't make sense for some battledamage to apply on the second hit from the bullet exiting the part - wings/ctrl srfs, pilot kills, subsystem damage
                 }
 
                 //Delay and Penetrating Fuze bullets that penetrate should explode shortly after
@@ -958,7 +967,7 @@ namespace BDArmory.Bullets
                 }
                 penTicker += 1;
             }
-
+            if (!partsHit.Contains(hitPart)) partsHit.Add(hitPart);
             //bullet should not go any further if moving too slowly after hit
             //smaller caliber rounds would be too deformed to do any further damage
             if (currentVelocity.magnitude <= 100 && hasPenetrated)

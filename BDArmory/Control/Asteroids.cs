@@ -257,10 +257,10 @@ namespace BDArmory.Control
         /// <summary>
         /// Spawn asteroid rain.
         /// </summary>
-        public void SpawnRain(Vector2d geoCoords)
+        public void SpawnRain(Vector3d geoCoords)
         {
             Reset();
-            this.geoCoords = geoCoords;
+            this.geoCoords = new Vector2d(geoCoords.x, geoCoords.y);
             if (BDArmorySettings.ASTEROID_RAIN_FOLLOWS_CENTROID && BDArmorySettings.ASTEROID_RAIN_FOLLOWS_SPREAD) this.radius = 1000f; // Initial radius for spawn in case we don't have any planes yet.
             UpdateSettings(true);
             StartCoroutine(StartRain());
@@ -681,7 +681,7 @@ namespace BDArmory.Control
         /// <param name="_altitude">The maximum altitude AGL of the field, minimum altitude AGL is 50m.</param>
         /// <param name="_radius">The radius of the field from the spawn point.</param>
         /// <param name="_geoCoords">The spawn point (centre) of the field.</param>
-        public void SpawnField(int numberOfAsteroids, float altitude, float radius, Vector2d geoCoords)
+        public void SpawnField(int numberOfAsteroids, float altitude, float radius, Vector3d geoCoords)
         {
             Reset();
 
@@ -692,7 +692,7 @@ namespace BDArmory.Control
 
             this.altitude = altitude;
             this.radius = radius;
-            this.geoCoords = geoCoords;
+            this.geoCoords = new Vector2d(geoCoords.x, geoCoords.y);
             spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
             refDirection = Math.Abs(Vector3.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.

@@ -29,6 +29,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
+        [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_PERSIST_UI = false;
         [BDAPersistentSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
         [BDAPersistentSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 350f;
 
@@ -72,6 +73,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;
         [BDAPersistentSettingsField] public static bool PERSISTENT_FX = false;
         [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
+        [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
+        [BDAPersistentSettingsField] public static bool COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = false; // Close the settings window when clicking the start competition button.
 
         // General slider settings
         [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -162,6 +165,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
         [BDAPersistentSettingsField] public static bool MUTATOR_MODE = false;
+        [BDAPersistentSettingsField] public static bool ZOMBIE_MODE = false;
+        [BDAPersistentSettingsField] public static bool DISCO_MODE = false;
 
         //Battle Damage settings
         [BDAPersistentSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.
@@ -202,7 +207,8 @@ namespace BDArmory.Core
 
         // Spawner settings
         [BDAPersistentSettingsField] public static bool SHOW_SPAWN_OPTIONS = true;                 // Show spawn options.
-        [BDAPersistentSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016); // Spawning coordinates on a planetary body.
+        [BDAPersistentSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016); // Spawning coordinates on a planetary body; Lat, Lon
+        [BDAPersistentSettingsField] public static int VESSEL_SPAWN_WORLDINDEX = 1;                // Spawning planetary body: world index
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_ALTITUDE = 5f;               // Spawning altitude above the surface.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE_FACTOR = 20f;       // Scale factor for the size of the spawning circle.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE = 10f;              // Radius of the size of the spawning circle.

@@ -19,7 +19,7 @@ namespace BDArmory.Core.Extension
 
         private static void ResetInventory_1_11(this ProtoCrewMember crew, bool withJetpack = false) // KSP has issues on older versions if this call is in the parent function.
         {
-            crew.SetDefaultInventory(); // Reset the inventory to a chute and a jetpack.
+            crew.KerbalInventoryModule.SetInventoryDefaults(); // Reset the inventory to a chute and a jetpack.
             if (!withJetpack)
             {
                 var inventory = crew.KerbalInventoryModule;

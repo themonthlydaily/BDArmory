@@ -23,7 +23,7 @@ namespace BDArmory.Control
 
         bool controlEnabled;
 
-        private float[] priorAccels = new float[50]; // average of last 50 acceleration values, prevents super fast toggling of afterburner
+        private float smoothedAccel = 0; // smoothed acceleration, prevents super fast toggling of afterburner
 
         //[KSPField(guiActive = true, guiName = "Thrust")]
         public float debugThrust;
@@ -152,16 +152,9 @@ namespace BDArmory.Control
 
             float accel = maxThrust / vesselMass; // This assumes that all thrust is in the same direction.
 
-            // calculate average acceleration over last 50 frames
-            float averageAccel = accel;
-            for (int i = 48; i >= 0; i--)
-            {
-                averageAccel += priorAccels[i];
-                priorAccels[i+1] = priorAccels[i]; // move prior accels one index
-            }
-            averageAccel = averageAccel / 50f; // Average of last 50 accels
-            priorAccels[0] = accel; // store current accel
-            
+            float alpha = 0.05f; // Approx 25 frame (0.5s) lag (similar to 50 frames moving average, but with more weight on recent values and much faster to calculate).
+            smoothedAccel = smoothedAccel * (1f - alpha) + alpha * accel;
+
             //estimate drag
             float estimatedCurrentAccel = finalThrust / vesselMass - GravAccel();
             Vector3 vesselAccelProjected = Vector3.Project(vessel.acceleration_immediate, vessel.velocityD.normalized);
@@ -178,14 +171,14 @@ namespace BDArmory.Control
                 while (mmes.MoveNext())
                 {
                     if (mmes.Current == null) continue;
-                    if (allowAfterburner && (forceAfterburner || averageAccel < requestAccel * (1.5f / (Mathf.Exp(100f / 27f) - 1f) * (Mathf.Exp(Mathf.Clamp(afterburnerPriority, 0f, 100f) / 27f) - 1f))))
+                    if (allowAfterburner && (forceAfterburner || smoothedAccel < requestAccel * (1.5f / (Mathf.Exp(100f / 27f) - 1f) * (Mathf.Exp(Mathf.Clamp(afterburnerPriority, 0f, 100f) / 27f) - 1f))))
                     {
                         if (mmes.Current.runningPrimary)
                         {
                             mmes.Current.Events["ModeEvent"].Invoke();
                         }
                     }
-                    else if (!allowAfterburner || (!forceAfterburner && averageAccel > requestAccel * (1f + 0.5f / (Mathf.Exp(50f / 25f) - 1f) * (Mathf.Exp(Mathf.Clamp(afterburnerPriority, 0f, 100f) / 25f) - 1f))))
+                    else if (!allowAfterburner || (!forceAfterburner && smoothedAccel > requestAccel * (1f + 0.5f / (Mathf.Exp(50f / 25f) - 1f) * (Mathf.Exp(Mathf.Clamp(afterburnerPriority, 0f, 100f) / 25f) - 1f))))
                     {
                         if (!mmes.Current.runningPrimary)
                         {

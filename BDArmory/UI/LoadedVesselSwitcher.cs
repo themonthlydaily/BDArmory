@@ -75,6 +75,8 @@ namespace BDArmory.UI
         private static GUIStyle ItVessel = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
         private static GUIStyle ItVesselSelected = new GUIStyle(BDArmorySetup.BDGuiSkin.box);
 
+        public static GUISkin VSPUISkin = HighLogic.Skin;
+
         private static System.Random rng;
 
         private void Awake()
@@ -273,7 +275,7 @@ namespace BDArmory.UI
         {
             if (_ready)
             {
-                if (_showGui && BDArmorySetup.GAME_UI_ENABLED)
+                if (_showGui && BDArmorySetup.GAME_UI_ENABLED || (BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI && !BDArmorySetup.GAME_UI_ENABLED))
                 {
                     string windowTitle = Localizer.Format("#LOC_BDArmory_BDAVesselSwitcher_Title");
                     if (BDArmorySettings.GRAVITY_HACKS)
@@ -304,7 +306,7 @@ namespace BDArmory.UI
         private void WindowVesselSwitcher(int id)
         {
             int numButtons = 10;
-            int numButtonsOnLeft = 4;
+            int numButtonsOnLeft = 5;
             GUI.DragWindow(new Rect(numButtonsOnLeft * _buttonHeight + _margin, 0f, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - numButtons * _buttonHeight - 3f * _margin, _titleHeight));
 
             if (GUI.Button(new Rect(0f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "><", BDArmorySetup.BDGuiSkin.button)) // Don't get so small that the buttons get hidden.
@@ -331,7 +333,11 @@ namespace BDArmory.UI
                 BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = !BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE;
                 BDArmorySetup.SaveConfig();
             }
-
+            if (GUI.Button(new Rect(4f * _buttonHeight + _margin, 4f, _buttonHeight, _buttonHeight), "UI", BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            {
+                BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI = !BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI;
+                BDArmorySetup.SaveConfig();
+            }
             if (GUI.Button(new Rect(BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 6 * _buttonHeight - _margin, 4, _buttonHeight, _buttonHeight), "M", BDACompetitionMode.Instance.killerGMenabled ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 if (Event.current.button == 1)

@@ -54,6 +54,7 @@ namespace BDArmory.FX
         List<DestructibleBuilding> explosionEventsBuildingAdded = new List<DestructibleBuilding>();
         Dictionary<string, int> explosionEventsVesselsHit = new Dictionary<string, int>();
 
+        private float EMPRadius = 100;
 
         static RaycastHit[] lineOfSightHits;
         static RaycastHit[] reverseHits;
@@ -91,6 +92,17 @@ namespace BDArmory.FX
                     lastValidAtmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(transform.position),
                                        FlightGlobals.getExternalTemperature(transform.position));
                 hasDetonated = false;
+            }
+            //EMP output increases as the sqrt of yield (determined power) and prompt gamma output (~0.5% of yield) 
+            //srf detonation is capped to about 16km, < 10km alt electrons qucikly absorbed by atmo.
+            //above 10km, emp radius can easily reach 100s of km. But that's no fun, so...
+            if (FlightGlobals.getAltitudeAtPos(transform.position) < 10000)
+            {
+                EMPRadius = Mathf.Sqrt(yield) * 100;
+            }
+            else
+            {
+                EMPRadius = Mathf.Sqrt(yield) * 1000;
             }
         }
 
@@ -137,56 +149,55 @@ namespace BDArmory.FX
                     try
                     {
                         Part partHit = hitCollidersEnu.Current.GetComponentInParent<Part>();
-                        if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                        if (partHit != null && partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
+                        if (partHit != null)
                         {
-                            var damaged = ProcessPartEvent(partHit, SourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded);
-                            // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
-                            if (damaged && BDACompetitionMode.Instance)
+                            if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
+                            if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
                             {
-                                bool registered = false;
-                                var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
-                                switch (ExplosionSource)
+                                var damaged = ProcessPartEvent(partHit, SourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded);
+                                // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
+                                if (damaged && BDACompetitionMode.Instance)
                                 {
-                                    case ExplosionSourceType.Missile:
-                                        if (BDACompetitionMode.Instance.Scores.RegisterMissileHit(SourceVesselName, damagedVesselName, 1))
-                                            registered = true;
-                                        break;
-                                }
-                                if (registered)
-                                {
-                                    if (explosionEventsVesselsHit.ContainsKey(damagedVesselName))
-                                        ++explosionEventsVesselsHit[damagedVesselName];
-                                    else
-                                        explosionEventsVesselsHit[damagedVesselName] = 1;
+                                    bool registered = false;
+                                    var damagedVesselName = partHit.vessel != null ? partHit.vessel.GetName() : null;
+                                    switch (ExplosionSource)
+                                    {
+                                        case ExplosionSourceType.Missile:
+                                            if (BDACompetitionMode.Instance.Scores.RegisterMissileHit(SourceVesselName, damagedVesselName, 1))
+                                                registered = true;
+                                            break;
+                                    }
+                                    if (registered)
+                                    {
+                                        if (explosionEventsVesselsHit.ContainsKey(damagedVesselName))
+                                            ++explosionEventsVesselsHit[damagedVesselName];
+                                        else
+                                            explosionEventsVesselsHit[damagedVesselName] = 1;
+                                    }
                                 }
                             }
                         }
                         else
                         {
-                            DestructibleBuilding building = hitCollidersEnu.Current.gameObject.GetComponentUpwards<DestructibleBuilding>();
-                            try
+                            DestructibleBuilding building = hitCollidersEnu.Current.GetComponentInParent<DestructibleBuilding>();
+                            if (building != null)
                             {
-                                //Debug.Log("[BDArmory.NukeFX] finding building hit, building is: " + building); //this is returning Null, FIXME later. will have to check, but I suspect ExplosionFX is also not finding buildings - SI
-                            }
-                            catch
-                            { //Debug.Log("[BDArmory.NukeFX] No building found"); 
-                            }
-                            if (building != null && !explosionEventsBuildingAdded.Contains(building))
-                            {
-                                //ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
-                                Ray ray = new Ray(Position, building.transform.position - Position);
-                                var distance = Vector3.Distance(building.transform.position, Position);
-                                RaycastHit rayHit;
-                                if (Physics.Raycast(ray, out rayHit, thermalRadius, 9076737))
+                                if (!explosionEventsBuildingAdded.Contains(building))
                                 {
-                                    DestructibleBuilding destructibleBuilding = rayHit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
-
-                                    distance = Vector3.Distance(Position, rayHit.point);
-                                    if (building.IsIntact)
+                                    //ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
+                                    Ray ray = new Ray(Position, building.transform.position - Position);
+                                    var distance = Vector3.Distance(building.transform.position, Position);
+                                    RaycastHit rayHit;
+                                    if (Physics.Raycast(ray, out rayHit, thermalRadius, 9076737))
                                     {
-                                        explosionEventsPreProcessing.Add(new BuildingNukeHitEvent() { Distance = Vector3.Distance(Position, rayHit.point), Building = building, TimeToImpact = distance / ExplosionVelocity });
-                                        explosionEventsBuildingAdded.Add(building);
+                                        DestructibleBuilding destructibleBuilding = rayHit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+
+                                        distance = Vector3.Distance(Position, rayHit.point);
+                                        if (building.IsIntact)
+                                        {
+                                            explosionEventsPreProcessing.Add(new BuildingNukeHitEvent() { Distance = distance, Building = building, TimeToImpact = distance / ExplosionVelocity });
+                                            explosionEventsBuildingAdded.Add(building);
+                                        }
                                     }
                                 }
                             }
@@ -389,7 +400,8 @@ namespace BDArmory.FX
                         {
                             EMP = (ModuleDrainEC)part.vessel.rootPart.AddModule("ModuleDrainEC");
                         }
-                        EMP.incomingDamage = (((thermalRadius * 2) - realDistance) * 1); //this way craft at edge of blast might only get disabled instead of bricked
+						EMP.incomingDamage = ((EMPRadius / realDistance) * 100); //this way craft at edge of blast might only get disabled instead of bricked
+                        //work on a better EMP damage value, in case of configs with very large thermalRadius
                         EMP.softEMP = false;
                     }
                 }

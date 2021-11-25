@@ -12,10 +12,11 @@ namespace BDArmory.Misc
 {
     class BattleDamageHandler
     {
-        public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc)
+        public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc, bool firsthit = true, bool cockpitPen = false)
         {
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+            //if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
                 if (!BDArmorySettings.ALLOW_ZOMBIE_BD)
                 {
@@ -43,7 +44,7 @@ namespace BDArmory.Misc
                     {
                         if (alreadyburning != null)
                         {
-                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
+                            if (!rubbertank.InertTank) BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                         }
                         else
                         {
@@ -187,7 +188,7 @@ namespace BDArmory.Misc
                         {
                             if (engine.EngineIgnited)
                             {
-                                if (tracker.isSRB) //SRB is lit, and casing integrity fails due to damage; boom
+                                if (tracker.isSRB && tracker.SRBFuelled) //SRB is lit, and casing integrity fails due to damage; boom
                                 {
                                     if (tracker.SRBFuelled)
                                     {
@@ -265,7 +266,7 @@ namespace BDArmory.Misc
                 }
             }
             //Aero Damage
-            if (BDArmorySettings.BD_AEROPARTS)
+            if (BDArmorySettings.BD_AEROPARTS && firsthit)
             {
                 float HEBonus = 1;
                 if (explosivedamage)
@@ -320,7 +321,7 @@ namespace BDArmory.Misc
                 }
             }
             //Subsystems
-            if (BDArmorySettings.BD_SUBSYSTEMS)
+            if (BDArmorySettings.BD_SUBSYSTEMS && firsthit)
             {
                 double Diceroll = UnityEngine.Random.Range(0, 100);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Subsystem DiceRoll: " + Diceroll + "; needs: " + damageChance);
@@ -397,7 +398,7 @@ namespace BDArmory.Misc
                 }
             }
             //Command parts
-            if (BDArmorySettings.BD_COCKPITS && penetrationFactor > 1.2f && part.GetDamagePercentage() < 0.9f) //lets have this be triggered by penetrative damage, not blast splash
+            if (BDArmorySettings.BD_COCKPITS && penetrationFactor > 1.2f && part.GetDamagePercentage() < 0.9f && firsthit) //lets have this be triggered by penetrative damage, not blast splash
             {
                 if (part.GetComponent<ModuleCommand>() != null)
                 {
@@ -436,9 +437,18 @@ namespace BDArmory.Misc
                     }
                 }
             }
-            if (part.protoModuleCrew.Count > 0 && penetrationFactor > 1.5f && part.GetDamagePercentage() < 0.95f)
+            if (BDArmorySettings.BD_PILOT_KILLS)
             {
-                if (BDArmorySettings.BD_PILOT_KILLS)
+                bool canKill = true;
+                var armorglass = part.FindModuleImplementing<ModuleSelfSealingTank>();
+                if (armorglass != null)
+                {
+                    if (armorglass.armoredCockpit && !cockpitPen) //round stopped by internal cockpit armor
+                    {
+                        canKill = false;
+                    }
+                }
+                if (canKill && part.protoModuleCrew.Count > 0 && penetrationFactor > 1.5f && part.GetDamagePercentage() < 0.95f && firsthit)
                 {
                     float PilotTAC = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE / part.mass), 0.01f, 100); //larger cockpits = greater volume = less chance any hit will pass through a region of volume containing a pilot
                     float killchance = UnityEngine.Random.Range(0, 100);

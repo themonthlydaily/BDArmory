@@ -353,6 +353,7 @@ namespace BDArmory.Evolution
         {
             var spawner = VesselSpawner.Instance;
             var spawnConfig = new VesselSpawner.SpawnConfig(
+                BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,

@@ -24,7 +24,6 @@ namespace BDArmory.FX
         }
 
         private float disableTime = -1;
-        private float enginerestartTime = -1;
         private float _highestEnergy = 1;
         public float burnTime = -1;
         private float burnScale = -1;
@@ -113,15 +112,18 @@ namespace BDArmory.FX
                 {
                     ModuleSelfSealingTank FBX;
                     FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
+                    FBX.Extinguishtank();
+                    if (FBX.InertTank) burnTime = 0;
+                    /*
                     if (FBX.FireBottles > 0)
                     {
-                        FBX.FireBottles -= 1;
+                        //FBX.FireBottles -= 1;
                         if (engine != null && engine.EngineIgnited && engine.allowRestart)
                         {
                             engine.Shutdown();
                             enginerestartTime = Time.time;
                         }
-                        burnTime = 10;
+                        burnTime = 4;
                         Misc.Misc.RefreshAssociatedWindows(parentPart);
                         Debug.Log("[FireFX] firebottles remaining in " + parentPart.name + ": " + FBX.FireBottles);
                     }
@@ -132,12 +134,13 @@ namespace BDArmory.FX
                             if (parentPart.vessel.verticalSpeed < 30) //not diving/trying to climb. With the vessel registry, could also grab AI state to add a !evading check
                             {
                                 engine.Shutdown();
-                                enginerestartTime = Time.time + 10;
-                                burnTime = 20;
+                                enginerestartTime = Time.time + 5;
+                                burnTime = 10;
                             }
                             //though if it is diving, then there isn't a second call to cycle engines. Add an Ienumerator to check once every couple sec?
                         }
                     }
+                    */
                 }
             }
         }
@@ -229,16 +232,19 @@ namespace BDArmory.FX
                             }
                             else
                             {
-                                if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
+                                if (fuel.amount > 0)
                                 {
-                                    fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
-                                    fuel.amount -= fireIntensity;
-                                    burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
-                                }
-                                else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
-                                {
-                                    Detonate();
-                                    return;
+                                    if (fuel.amount > (fuel.maxAmount * 0.15f) || (fuel.amount > 0 && fuel.amount < (fuel.maxAmount * 0.10f)))
+                                    {
+                                        fireIntensity = (burnRate * Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 4 * BDArmorySettings.BD_TANK_LEAK_RATE) * TimeWarp.deltaTime);
+                                        fuel.amount -= fireIntensity;
+                                        burnScale = Mathf.Clamp((float)((1 - (fuel.amount / fuel.maxAmount)) * 4), 0.1f * BDArmorySettings.BD_TANK_LEAK_RATE, 2 * BDArmorySettings.BD_TANK_LEAK_RATE);
+                                    }
+                                    else if (fuel.amount < (fuel.maxAmount * 0.15f) && fuel.amount > (fuel.maxAmount * 0.10f))
+                                    {
+                                        Detonate();
+                                        return;
+                                    }
                                 }
                                 else
                                 {
@@ -335,12 +341,11 @@ namespace BDArmory.FX
                     {
                         parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
-                    ////////////////////////////////////////////////
 
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
-            if ((!hasFuel && disableTime < 0 && burnTime < 0) || (burnTime > 0 && disableTime < 0 && Time.time - startTime > burnTime))
+            if (disableTime < 0 && (!hasFuel || (burnTime > 0 && Time.time - startTime > burnTime)))
             {
                 disableTime = Time.time; //grab time when emission stops
                 foreach (var pe in pEmitters)
@@ -359,15 +364,14 @@ namespace BDArmory.FX
             {
                 Deactivate();
             }
-            if (engine != null && enginerestartTime > 0 && Time.time - 10 > enginerestartTime)
-            {
-                engine.Activate();
-                enginerestartTime = -1;
-            }
             ////////////////////////////////////////////
             if (!FlightGlobals.currentMainBody.atmosphereContainsOxygen && (ox == null && mp == null))
             {
-                gameObject.SetActive(false); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+                Deactivate(); //only fuel+oxy or monoprop fires in vac/non-oxy atmo
+            }
+			if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough
+            {
+                burnTime = 5; //only fuel+oxy or monoprop fires in vac/non-oxy atmo
             }
         }
 
@@ -507,11 +511,6 @@ namespace BDArmory.FX
         {
             if (gameObject.activeInHierarchy)
             {
-                var SST = parentPart.FindModuleImplementing<ModuleSelfSealingTank>();
-                if (SST != null)
-                {
-                    SST.isOnFire = false;
-                }
                 disableTime = -1;
                 parentPart = null;
                 transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed when it does.

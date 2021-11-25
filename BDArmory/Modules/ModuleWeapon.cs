@@ -126,7 +126,7 @@ namespace BDArmory.Modules
                 return finalAimTarget.IsZero() ? 1f : 1f - 0.5f * theta * theta; // Approximation to cos(theta). (cos(x) = 1-x^2/2!+O(x^4))
             }
         }
-        private Vector3 targetPosition;
+        public Vector3 targetPosition;
         private Vector3 targetVelocity;  // local frame velocity
         private Vector3 targetAcceleration; // local frame
         private Vector3 targetVelocityPrevious; // for acceleration calculation
@@ -198,7 +198,7 @@ namespace BDArmory.Modules
             }
         }
 
-        bool pointingAtSelf; //true if weapon is pointing at own vessel
+        public bool pointingAtSelf; //true if weapon is pointing at own vessel
         bool userFiring;
         Vector3 laserPoint;
         public bool slaved;
@@ -479,6 +479,7 @@ namespace BDArmory.Modules
         float beamScoreTime = 0.2f; //frequency of score accumulation for beam lasers, currently 5x/sec
         float BeamTracker = 0; // timer for scoring shots fired for beams
         float ScoreAccumulator = 0; //timer for scoring shots hit for beams
+        bool grow = true;
         LineRenderer[] laserRenderers;
         LineRenderer trajectoryRenderer;
         List<Vector3> trajectoryPoints;
@@ -1846,7 +1847,14 @@ namespace BDArmory.Modules
             {
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
-
+            if (BDArmorySetup.GameIsPaused)
+            {
+                if (audioSource.isPlaying)
+                {
+                    audioSource.Stop();
+                }
+                return false;
+            }
             float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
@@ -1861,7 +1869,7 @@ namespace BDArmory.Modules
             {
                 if (CanFire(chargeAmount))
                 {
-                    if (oneShotSound && pulseLaser)
+                    if (oneShotSound)
                     {
                         audioSource.Stop();
                         audioSource.PlayOneShot(fireSound);
@@ -1962,6 +1970,7 @@ namespace BDArmory.Modules
                 if ((!useRippleFire || !pulseLaser || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
                 {
                     float damage = laserDamage;
+                    float initialDamage = damage * 0.425f;
                     Transform tf = fireTransforms[i];
                     LineRenderer lr = laserRenderers[i];
                     Vector3 rayDirection = tf.forward;
@@ -2054,7 +2063,7 @@ namespace BDArmory.Modules
                                 else
                                 {
                                     HitpointTracker armor = p.GetComponent<HitpointTracker>();
-                                    float initialDamage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
+                                    initialDamage = (laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * distance, 2)) * 0.425f);
 
                                     if (armor != null)// technically, lasers shouldn't do damage until armor gone, but that would require localized armor tracking instead of the monolithic model currently used                                              
                                     {
@@ -2070,6 +2079,8 @@ namespace BDArmory.Modules
                                     }
                                     p.ReduceArmor(damage / 10000); //really should be tied into diffuisvity, density, and SafeUseTemp - lasers would need to melt/ablate material away; needs to be in cm^3. Review later
                                     p.AddDamage(damage);
+                                    if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false); //beams will proc BD once every scoreAccumulatorTick
+
                                 }
                                 if (HEpulses)
                                 {
@@ -2113,7 +2124,11 @@ namespace BDArmory.Modules
                                         ME.duration += duration;
                                     }
                                 }
-                                //if (BDArmorySettings.INSTAKILL) p.Destroy();
+                                //if (cycleTexture)
+                                if (electroLaser)
+                                {
+                                    UpdateLaserSpecifics(false, false, true, false);
+                                }
                                 if (instagib)
                                 {
                                     p.AddInstagibDamage();
@@ -2128,6 +2143,7 @@ namespace BDArmory.Modules
                                     {
                                         ScoreAccumulator = 0;
                                         BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
+                                        if (!pulseLaser) if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false);
                                     }
                                     else
                                     {
@@ -2147,6 +2163,15 @@ namespace BDArmory.Modules
                         laserPoint = lr.transform.InverseTransformPoint((targetDirectionLR * maxTargetingRange) + tf.position);
                         lr.SetPosition(1, laserPoint);
                     }
+                }
+                if (BDArmorySettings.DISCO_MODE)
+                {
+                    projectileColorC = Color.HSVToRGB(Mathf.Lerp(tracerEndWidth, grow ? 1 : 0, 0.35f), 1, 1);
+                    tracerStartWidth = Mathf.Lerp(tracerStartWidth, grow ? 1 : 0.05f, 0.35f); //add new tracerGrowWidth field?
+                    tracerEndWidth = Mathf.Lerp(tracerEndWidth, grow ? 1 : 0.05f, 0.35f); //add new tracerGrowWidth field?
+                    if (grow && tracerStartWidth > 0.95) grow = false;
+                    if (!grow && tracerStartWidth < 0.06f) grow = true;
+                    UpdateLaserSpecifics(true, false, false, true);
                 }
             }
         }
@@ -2181,6 +2206,34 @@ namespace BDArmory.Modules
                 laserRenderers[i].SetPosition(1, Vector3.zero);
                 laserRenderers[i].useWorldSpace = false;
                 laserRenderers[i].enabled = false;
+            }
+        }
+        public void UpdateLaserSpecifics(bool newColor, bool newTex, bool offsetTex, bool newWidth)
+        {
+            if (laserRenderers == null)
+            {
+                return;
+            }
+            for (int i = 0; i < fireTransforms.Length; i++)
+            {
+                if (newColor)
+                {
+                    laserRenderers[i].material.SetColor("_TintColor", projectileColorC); //change beam to new color
+                }
+                if (newTex)
+                {
+                    laserRenderers[i].material.mainTexture = GameDatabase.Instance.GetTexture(laserTexturePath, false); //add support for multiple tex patchs, randomly cycle through
+                    laserRenderers[i].material.SetTextureScale("_MainTex", new Vector2(0.01f, 1));
+                }
+                if (offsetTex)
+                {
+                    laserRenderers[i].material.SetTextureOffset("_MainTex", new Vector2(UnityEngine.Random.Range(0, 32), 0)); //new offset for things like lightning textures
+                }
+                if (newWidth)
+                {
+                    laserRenderers[i].startWidth = tracerStartWidth;
+                    laserRenderers[i].endWidth = tracerEndWidth;
+                }
             }
         }
         #endregion
@@ -3300,6 +3353,8 @@ namespace BDArmory.Modules
         {
             return fixedLeadOffset;
         }
+
+        public float targetCosAngle;
         void CheckAIAutofire()
         {
             //autofiring with AI
@@ -3313,7 +3368,7 @@ namespace BDArmory.Modules
 
                 Vector3 targetRelPos = finalAimTarget - fireTransform.position;
                 Vector3 aimDirection = fireTransform.forward;
-                float targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
+                targetCosAngle = Vector3.Dot(aimDirection, targetRelPos.normalized);
                 var maxAutoFireCosAngle2 = targetAdjustedMaxCosAngle;
 
                 if (eWeaponType != WeaponTypes.Rocket) //guns/lasers

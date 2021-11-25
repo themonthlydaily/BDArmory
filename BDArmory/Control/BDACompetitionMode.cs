@@ -186,6 +186,9 @@ namespace BDArmory.Control
 
             if (ScoreData[victim].rocketHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].rocketHitCounts[attacker]; }
             else { ScoreData[victim].rocketHitCounts[attacker] = 1; }
+
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackRocketStrike(attacker, victim); }
             return true;
         }
         /// <summary>
@@ -220,7 +223,7 @@ namespace BDArmory.Control
             ScoreData[victim].damageTypesTaken.Add(DamageFrom.Rockets);
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-            { BDAScoreService.Instance.TrackMissileParts(attacker, victim, partsHit); } // FIXME Add tracker for rocket hits.
+            { BDAScoreService.Instance.TrackRocketParts(attacker, victim, partsHit); }
             return true;
         }
         /// <summary>
@@ -239,7 +242,7 @@ namespace BDArmory.Control
             else { ScoreData[victim].damageFromRockets[attacker] = damage; }
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
-            { BDAScoreService.Instance.TrackMissileDamage(attacker, victim, damage); } // FIXME Add tracker for rocket damage.
+            { BDAScoreService.Instance.TrackRocketDamage(attacker, victim, damage); }
             return true;
         }
         /// <summary>
@@ -317,6 +320,9 @@ namespace BDArmory.Control
 
             if (ScoreData[victim].missileHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].missileHitCounts[attacker]; }
             else { ScoreData[victim].missileHitCounts[attacker] = 1; }
+
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackMissileStrike(attacker, victim); }
             return true;
         }
         /// <summary>
@@ -433,7 +439,7 @@ namespace BDArmory.Control
             {
                 ScoreData[vesselName].aliveState = AliveState.AssistedKill;
 
-                if (BDArmorySettings.REMOTE_LOGGING_ENABLED && ScoreData[vesselName].gmKillReason == GMKillReason.None) // Don't count kills by the GM remotely.
+                if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
 
@@ -496,8 +502,6 @@ namespace BDArmory.Control
         public void LogResults(string CompetitionID, string message = "", string tag = "")
         {
             var logStrings = new List<string>();
-
-            // get everyone who's still alive
             logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime) + "s (of " + (BDArmorySettings.COMPETITION_DURATION * 60d) + "s) at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
             // Find out who's still alive
@@ -593,6 +597,10 @@ namespace BDArmory.Control
                     }
                 }
             }
+
+            // Report survivors to Remote Orchestration
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackSurvivors(Players.Where(player => ScoreData[player].deathOrder == -1).ToList()); }
 
             // Who shot who.
             foreach (var player in Players)
@@ -1224,21 +1232,26 @@ namespace BDArmory.Control
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
                 }
-                if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
+				if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
+				{
+					var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+					if (MM == null)
+					{
+						MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+					}
+					if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+					{
+						MM.EnableMutator(currentMutator);
+					}
+					if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
+					{
+						MM.EnableMutator(); //random mutator
+					}
+				}
+                if (BDArmorySettings.HACK_INTAKES)
                 {
-                    var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
-                    if (MM == null)
-                    {
-                        MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
-                    }
-                    if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
-                    {
-                        MM.EnableMutator(currentMutator);
-                    }
-                    if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
-                    {
-                        MM.EnableMutator(); //random mutator
-                    }
+                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
+                        intake.checkForOxygen = false;
                 }
             }
 
@@ -1725,6 +1738,19 @@ namespace BDArmory.Control
                             // "0:EnableGM", // t=60, Activate the killer GM
                         };
                         break;
+                    case 50: //change this later (Canyon race / waypoints)
+                        commandSequence = new List<string>{
+                            "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
+                            "0:ActionGroup:16:0", // t=0, Retract gear (if it's not retracted)
+                            "0:hackGravity:10", // t=0, Increase gravity to 10x
+                            "0:ActivateEngines", // t=0, Activate engines
+                            "30:hackGravity:1", //t=30, Reset gravity
+                            "0:TogglePilot:1", // t=30, Activate pilots
+                            "0:ToggleGuard:1", // t=30, Activate guard mode (attack)
+                            "5:RemoveDebris", // t=35, Remove any other debris and spectators
+                            // "0:EnableGM", // t=60, Activate the killer GM
+                        };
+                        break;
                     default: // Same as S3R3 for now, until we do something different.
                         commandSequence = new List<string>{
                             "0:MassTrim", // t=0, mass trim
@@ -2154,11 +2180,16 @@ namespace BDArmory.Control
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
                             foreach (var pilot in GetAllPilots())
                             {
-                                if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
+								if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
+								{
+									if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
+									foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
+										engine.Activate();
+								}
+                                if (BDArmorySettings.HACK_INTAKES)
                                 {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
-                                    foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
-                                        engine.Activate();
+                                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
+                                        intake.checkForOxygen = false;
                                 }
                             }
                             break;
@@ -2167,6 +2198,17 @@ namespace BDArmory.Control
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Performing mass trim.");
                             DoRapidDeploymentMassTrim();
+                            break;
+                        }
+                    case "hackGravity":
+                        {
+                            if (parts.Count() == 3)
+                            {
+                                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adjusting gravity to " + parts[2] + "x.");
+                                double grav = double.Parse(parts[2]);
+                                PhysicsGlobals.GraviticForceMultiplier = grav;
+                                VehiclePhysics.Gravity.Refresh();                                
+                            }
                             break;
                         }
                     default:
