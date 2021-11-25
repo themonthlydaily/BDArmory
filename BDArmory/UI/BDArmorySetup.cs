@@ -3160,8 +3160,7 @@ namespace BDArmory.UI
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
                                     break;
                                 case 50: // FIXME temporary index, to be assigned later
-                                    startCompetitionText = "Start Orbital Drop Deploment";
-                                    //startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
+                                    startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartOrbitalDeployment");
                                     break;
                             }
                         }
