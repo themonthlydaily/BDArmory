@@ -15,6 +15,7 @@ IMPROVEMENTS
 	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
 	- Adjust rocket parts hit and damage fields to match ruby schema in the remote orchestration.
 	- Only adjust the altitude for failed spawns for ground spawns.
+	- Allow specifying both '-c' and tournament dir to parse the specified tournament dir as a collection (i.e., without the tournament folder structure).
 - Kerbal Safety:
 	- Reconfigure inventories when the kerbal inventory slider is adjusted.
 - AI:
@@ -56,7 +57,7 @@ IMPROVEMENTS
 -Improves infolink descriptions of target priority settings
 
 ADDITIONS
--Add off-world spawning to Spawn menu
+-Add off-world spawning to Spawn menu (spawn locations and tournaments get automatically upgraded).
 -Add ability to add custom spawn sites to spawn menu
 -Add Persistent UI button to Vessel Switcher to keep VS and Web Orchestration windows open when F2 UI toggled off
 -ZombieMode option moved to cheat mode access
