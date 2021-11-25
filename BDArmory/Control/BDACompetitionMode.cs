@@ -1114,6 +1114,23 @@ namespace BDArmory.Control
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
+                if (BDArmorySettings.RUNWAY_PROJECT)
+                {
+                    foreach (var vessel in GetAllPilots().Select(p => p.vessel).ToList()) // Check for the number of AI and WM modules.
+                    {
+                        var numberOfAIs = VesselModuleRegistry.GetModuleCount<BDModulePilotAI>(vessel);
+                        var numberOfWMs = VesselModuleRegistry.GetModuleCount<MissileFire>(vessel);
+                        string message = null;
+                        if (numberOfAIs != 1 && numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs and {numberOfWMs} WMs";
+                        else if (numberOfAIs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs";
+                        else if (numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfWMs} WMs";
+                        if (message != null)
+                        {
+                            competitionStatus.Add(message);
+                            Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
+                        }
+                    }
+                }
             }
         }
 
@@ -1232,22 +1249,22 @@ namespace BDArmory.Control
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
                 }
-				if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
-				{
-					var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
-					if (MM == null)
-					{
-						MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
-					}
-					if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
-					{
-						MM.EnableMutator(currentMutator);
-					}
-					if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
-					{
-						MM.EnableMutator(); //random mutator
-					}
-				}
+                if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
+                {
+                    var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
+                    if (MM == null)
+                    {
+                        MM = (BDAMutator)pilot.vessel.rootPart.AddModule("BDAMutator");
+                    }
+                    if (BDArmorySettings.MUTATOR_APPLY_GLOBAL) //selected mutator applied globally
+                    {
+                        MM.EnableMutator(currentMutator);
+                    }
+                    if (BDArmorySettings.MUTATOR_APPLY_TIMER && !BDArmorySettings.MUTATOR_APPLY_GLOBAL) //mutator applied on a per-craft basis
+                    {
+                        MM.EnableMutator(); //random mutator
+                    }
+                }
                 if (BDArmorySettings.HACK_INTAKES)
                 {
                     foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
@@ -2180,12 +2197,12 @@ namespace BDArmory.Control
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
                             foreach (var pilot in GetAllPilots())
                             {
-								if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
-								{
-									if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
-									foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
-										engine.Activate();
-								}
+                                if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
+                                {
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
+                                    foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
+                                        engine.Activate();
+                                }
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
                                     foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
@@ -2207,7 +2224,7 @@ namespace BDArmory.Control
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Adjusting gravity to " + parts[2] + "x.");
                                 double grav = double.Parse(parts[2]);
                                 PhysicsGlobals.GraviticForceMultiplier = grav;
-                                VehiclePhysics.Gravity.Refresh();                                
+                                VehiclePhysics.Gravity.Refresh();
                             }
                             break;
                         }
