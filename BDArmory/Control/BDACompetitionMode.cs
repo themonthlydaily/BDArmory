@@ -1114,23 +1114,6 @@ namespace BDArmory.Control
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
-                if (BDArmorySettings.RUNWAY_PROJECT)
-                {
-                    foreach (var vessel in GetAllPilots().Select(p => p.vessel).ToList()) // Check for the number of AI and WM modules.
-                    {
-                        var numberOfAIs = VesselModuleRegistry.GetModuleCount<BDModulePilotAI>(vessel);
-                        var numberOfWMs = VesselModuleRegistry.GetModuleCount<MissileFire>(vessel);
-                        string message = null;
-                        if (numberOfAIs != 1 && numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs and {numberOfWMs} WMs";
-                        else if (numberOfAIs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs";
-                        else if (numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfWMs} WMs";
-                        if (message != null)
-                        {
-                            competitionStatus.Add(message);
-                            Debug.LogWarning("[BDArmory.BDACompetitionMode]: " + message);
-                        }
-                    }
-                }
             }
         }
 

@@ -873,6 +873,7 @@ namespace BDArmory.Control
             {
                 foreach (var vesselName in spawnedVessels.Keys)
                 {
+                    CheckAIWMCounts(spawnedVessels[vesselName].Item1);
                     CheckAIWMPlacement(spawnedVessels[vesselName].Item1);
                 }
             }
@@ -1736,6 +1737,21 @@ namespace BDArmory.Control
                 return false;
             }
             return true;
+        }
+
+        public void CheckAIWMCounts(Vessel vessel)
+        {
+            var numberOfAIs = VesselModuleRegistry.GetModuleCount<BDModulePilotAI>(vessel);
+            var numberOfWMs = VesselModuleRegistry.GetModuleCount<MissileFire>(vessel);
+            string message = null;
+            if (numberOfAIs != 1 && numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs and {numberOfWMs} WMs";
+            else if (numberOfAIs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs";
+            else if (numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfWMs} WMs";
+            if (message != null)
+            {
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogWarning("[BDArmory.VesselSpawner]: " + message);
+            }
         }
 
         #region Actual spawning of individual craft
