@@ -50,13 +50,26 @@ namespace BDArmory.Control
         GameObject spawnLocationCamera;
         Transform originalCameraParentTransform;
         float originalCameraNearClipPlane;
-        public void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false)
+        Coroutine delayedShowSpawnPointCoroutine;
+        public void ShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false, bool recurse = true)
         {
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); }
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); }
+            if (!spawning && (FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD))
+            {
+                if (!recurse)
+                {
+                    Debug.LogWarning($"[BDArmory.VesselSpawner]: No active vessel, unable to show spawn point.");
+                    return;
+                }
+                Debug.LogWarning($"[BDArmory.VesselSpawner]: Active vessel is dead or packed, spawning a new one.");
+                if (delayedShowSpawnPointCoroutine != null) { StopCoroutine(delayedShowSpawnPointCoroutine); delayedShowSpawnPointCoroutine = null; }
+                delayedShowSpawnPointCoroutine = StartCoroutine(DelayedShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning));
+                return;
+            }
             if (!spawning)
             {
-                FlightGlobals.fetch.SetVesselPosition(worldIndex != -1? worldIndex : FlightGlobals.currentMainBody.flightGlobalsIndex, latitude, longitude, Math.Max(5, altitude), FlightGlobals.ActiveVessel.vesselType == VesselType.Plane ? 0 : 90, 0, true, true);
+                FlightGlobals.fetch.SetVesselPosition(worldIndex != -1 ? worldIndex : FlightGlobals.currentMainBody.flightGlobalsIndex, latitude, longitude, Math.Max(5, altitude), FlightGlobals.ActiveVessel.vesselType == VesselType.Plane ? 0 : 90, 0, true, true);
                 FlightCamera.fetch.SetDistance(distance);
             }
             else
@@ -84,9 +97,31 @@ namespace BDArmory.Control
             }
         }
 
+        IEnumerator DelayedShowSpawnPoint(int worldIndex, double latitude, double longitude, double altitude = 0, float distance = 100, bool spawning = false)
+        {
+            var dummyVar = EditorFacility.None;
+            Vector3d dummySpawnCoords;
+            FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + 1000f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
+            Vessel spawnProbe = SpawnVesselFromCraftFile(Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "craft", "SpawnProbe.craft"), dummySpawnCoords, 0, 0f, out dummyVar);
+            spawnProbe.Landed = false;
+            // spawnProbe.situation = Vessel.Situations.FLYING;
+            // spawnProbe.IgnoreGForces(240);
+            yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
+            FlightGlobals.ForceSetActiveVessel(spawnProbe);
+            var wait = new WaitForFixedUpdate();
+            while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
+            {
+                spawnProbe.SetWorldVelocity(Vector3d.zero);
+                LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
+                yield return wait;
+            }
+            ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning, false);
+        }
+
         public void RevertSpawnLocationCamera(bool keepTransformValues = true)
         {
             if (!spawnLocationCamera.activeSelf) return;
+            if (delayedShowSpawnPointCoroutine != null) { StopCoroutine(delayedShowSpawnPointCoroutine); delayedShowSpawnPointCoroutine = null; }
             var flightCamera = FlightCamera.fetch;
             if (originalCameraParentTransform != null)
             {
@@ -838,6 +873,7 @@ namespace BDArmory.Control
             {
                 foreach (var vesselName in spawnedVessels.Keys)
                 {
+                    CheckAIWMCounts(spawnedVessels[vesselName].Item1);
                     CheckAIWMPlacement(spawnedVessels[vesselName].Item1);
                 }
             }
@@ -1697,10 +1733,25 @@ namespace BDArmory.Control
             {
                 message = $"{vessel.vesselName}" + message + ".";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                Debug.LogWarning("[BDArmory.VesselSpawner]: " + message);
                 return false;
             }
             return true;
+        }
+
+        public void CheckAIWMCounts(Vessel vessel)
+        {
+            var numberOfAIs = VesselModuleRegistry.GetModuleCount<BDModulePilotAI>(vessel);
+            var numberOfWMs = VesselModuleRegistry.GetModuleCount<MissileFire>(vessel);
+            string message = null;
+            if (numberOfAIs != 1 && numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs and {numberOfWMs} WMs";
+            else if (numberOfAIs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs";
+            else if (numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfWMs} WMs";
+            if (message != null)
+            {
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogWarning("[BDArmory.VesselSpawner]: " + message);
+            }
         }
 
         #region Actual spawning of individual craft

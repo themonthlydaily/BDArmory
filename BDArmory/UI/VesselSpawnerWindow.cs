@@ -121,7 +121,7 @@ namespace BDArmory.UI
                 { "lon", gameObject.AddComponent<NumericInputField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, -180, 180) },
                 { "alt", gameObject.AddComponent<NumericInputField>().Initialise(0, BDArmorySettings.VESSEL_SPAWN_ALTITUDE) },
             };
-            selected_index = FlightGlobals.currentMainBody.flightGlobalsIndex;
+            selected_index = FlightGlobals.currentMainBody != null ? FlightGlobals.currentMainBody.flightGlobalsIndex : 1;
         }
 
         private IEnumerator WaitForBdaSettings()
@@ -139,13 +139,11 @@ namespace BDArmory.UI
             planetGUI = new GUIContent[FlightGlobals.Bodies.Count];
             for (int i = 0; i < FlightGlobals.Bodies.Count; i++)
             {
-                //GUIContent gui = new GUIContent(ArmorInfo.armors[i].name);
                 GUIContent gui = new GUIContent(FlightGlobals.Bodies[i].name);
                 planetGUI[i] = gui;
             }
 
             planetText = new GUIContent();
-            //planetText.text = Localizer.Format("#LOC_BDArmory_ArmorSelect");
             planetText.text = "Select Planet";
         }
 
@@ -193,8 +191,7 @@ namespace BDArmory.UI
             spawnFields["alt"].tryParseValueNow();
             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnFields["lat"].currentValue;
             BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
-            BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = FlightGlobals.currentMainBody.flightGlobalsIndex; //selected_index?
-            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.z = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX;
+            BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = FlightGlobals.currentMainBody != null ? FlightGlobals.currentMainBody.flightGlobalsIndex : 1; //selected_index?
             BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
         }
 
@@ -375,17 +372,15 @@ namespace BDArmory.UI
                 spawnFields["lon"].tryParseValue(GUI.TextField(rects[1], spawnFields["lon"].possibleValue, 8));
                 spawnFields["alt"].tryParseValue(GUI.TextField(rects[2], spawnFields["alt"].possibleValue, 8));
                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x = spawnFields["lat"].currentValue;
-				BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
-				BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = FlightGlobals.currentMainBody.flightGlobalsIndex;
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = BDArmorySettings.VESSEL_SPAWN_WORLDINDEX;
-                //BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = FlightGlobals.currentMainBody.flightGlobalsIndex;
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y = spawnFields["lon"].currentValue;
+                BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = FlightGlobals.currentMainBody != null ? FlightGlobals.currentMainBody.flightGlobalsIndex : 1;
                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE = (float)spawnFields["alt"].currentValue;
 
                 txtName = GUI.TextField(SRightButtonRect(++line), txtName);
                 if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_SaveSpawnLoc"), BDArmorySetup.BDGuiSkin.button))
                 {
-                        string newName = string.IsNullOrEmpty(txtName.Trim()) ? "New Location" : txtName.Trim();
-                    VesselSpawner.spawnLocations.Add(new SpawnLocation(newName, new Vector3d(spawnFields["lat"].currentValue, spawnFields["lon"].currentValue, selected_index)));
+                    string newName = string.IsNullOrEmpty(txtName.Trim()) ? "New Location" : txtName.Trim();
+                    VesselSpawner.spawnLocations.Add(new SpawnLocation(newName, new Vector2d(spawnFields["lat"].currentValue, spawnFields["lon"].currentValue), selected_index));
                     VesselSpawnerField.Save();
                 }
 
@@ -415,15 +410,16 @@ namespace BDArmory.UI
                     FillPlanetList();
                     GUIStyle listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
                     listStyle.fixedHeight = 18; //make list contents slightly smaller
-                    planetBox = new BDGUIComboBox(new Rect(_margin, line * _lineHeight, (_windowWidth - 2 * _margin) / 2 - _margin / 4, _lineHeight), new Rect(_margin, line * _lineHeight, (_windowWidth - 2 * _margin) / 2 - _margin / 4, _lineHeight), planetText, planetGUI, _lineHeight * 6, listStyle);
+                    planetBox = new BDGUIComboBox(SLeftButtonRect(line), SLeftButtonRect(line), planetText, planetGUI, _lineHeight * 6, listStyle);
                     planetslist = true;
                 }
+                planetBox.UpdateRect(SLeftButtonRect(line));
+                selected_index = planetBox.Show();
                 if (GUI.Button(SRightButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_WarpHere"), BDArmorySetup.BDGuiSkin.button))
                 {
                     VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
                 }
-				selected_index = planetBox.Show();
-                line +=1.3f;
+                line += 1.3f;
                 if (planetBox.isOpen)
                 {
                     line += 6.3f;
@@ -447,19 +443,17 @@ namespace BDArmory.UI
                 int i = 0;
                 foreach (var spawnLocation in VesselSpawner.spawnLocations)
                 {
-                    if (spawnLocation.location.z == selected_index)
+                    if (spawnLocation.worldIndex != selected_index) continue;
+                    if (GUI.Button(SQuarterRect(line, i++), spawnLocation.name, BDArmorySetup.BDGuiSkin.button))
                     {
-                        if (GUI.Button(SQuarterRect(line, i++), spawnLocation.name, BDArmorySetup.BDGuiSkin.button))
-                        {
-                            BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
-                            BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = (int)spawnLocation.location.z;
-                            spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
-                            spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-                            VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
-                        }
+                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
+                        BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = spawnLocation.worldIndex;
+                        spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
+                        spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
+                        VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
                     }
                 }
-                line += (i - 1) / 4;
+                line += (int)((i - 1) / 4);
                 line += 0.3f;
             }
 

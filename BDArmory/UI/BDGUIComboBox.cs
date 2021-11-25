@@ -18,6 +18,7 @@ namespace BDArmory.UI
         private Vector2 scrollViewVector;
         private float comboxbox_height;
 
+
         public BDGUIComboBox(Rect rect, Rect buttonRect, GUIContent buttonContent, GUIContent[] listContent, float combo_height, GUIStyle listStyle)
         {
             this.rect = rect;
@@ -96,6 +97,14 @@ namespace BDArmory.UI
                 isClickedComboButton = false;
 
             return selectedItemIndex;
+        }
+
+        public void UpdateRect(Rect r)
+        {
+            if (r == rect) return;
+            buttonRect.x += r.x - rect.x;
+            buttonRect.y += r.y - rect.y;
+            rect = r;
         }
 
         public int SelectedItemIndex

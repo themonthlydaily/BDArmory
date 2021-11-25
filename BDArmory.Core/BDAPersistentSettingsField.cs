@@ -115,6 +115,14 @@ namespace BDArmory.Core
                     };
                     return rectVal;
                 }
+                else if (type == typeof(Vector2d))
+                {
+                    char[] charsToTrim = { '(', ')', ' ' };
+                    string[] strings = value.Trim(charsToTrim).Split(',');
+                    double x = double.Parse(strings[0]);
+                    double y = double.Parse(strings[1]);
+                    return new Vector2d(x, y);
+                }
                 else if (type == typeof(Vector3d))
                 {
                     char[] charsToTrim = { '[', ']', ' ' };
@@ -126,7 +134,7 @@ namespace BDArmory.Core
                 }
                 else if (type == typeof(List<string>))
                 {
-                    return value.Split(new string[] {"; "}, StringSplitOptions.RemoveEmptyEntries).ToList();
+                    return value.Split(new string[] { "; " }, StringSplitOptions.RemoveEmptyEntries).ToList();
                 }
             }
             catch (Exception e)

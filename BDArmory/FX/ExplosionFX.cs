@@ -184,7 +184,7 @@ namespace BDArmory.FX
                     if (partHit != null)
                     {
                         if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                        if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))                        
+                        if (partHit.mass > 0 && !explosionEventsPartsAdded.Contains(partHit))
                         {
                             var damaged = ProcessPartEvent(partHit, sourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded);
                             // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
@@ -388,12 +388,12 @@ namespace BDArmory.FX
                             else
                             {
                                 if (((ExplosionSource == ExplosionSourceType.Bullet || ExplosionSource == ExplosionSourceType.Rocket) && (Caliber > RA.sensitivity && distance < 0.1f)) ||   //bullet/rocket hit
-                                    ((ExplosionSource == ExplosionSourceType.Missile || ExplosionSource == ExplosionSourceType.BattleDamage) && (distance < Power/2))) //or close range detonation likely to trigger ERA
+                                    ((ExplosionSource == ExplosionSourceType.Missile || ExplosionSource == ExplosionSourceType.BattleDamage) && (distance < Power / 2))) //or close range detonation likely to trigger ERA
                                 {
                                     partArmour = 300 * RA.armorModifier;
                                 }
                             }
-                        }                                
+                        }
                         if (partHP > 0) // Ignore parts that are already dead but not yet removed from the game.
                             intermediateParts.Add(new Tuple<float, float, float>(hit.distance, partHP, partArmour));
                     }

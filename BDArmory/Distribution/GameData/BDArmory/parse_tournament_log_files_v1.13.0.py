@@ -22,7 +22,7 @@ parser.add_argument('--show-weights', action='store_true', help="Display the sco
 args = parser.parse_args()
 args.score = args.score or args.scores_only
 
-if args.current_dir:
+if args.current_dir and len(args.tournament) == 0:
     tournamentDirs = [Path('')]
 else:
     if len(args.tournament) == 0:
