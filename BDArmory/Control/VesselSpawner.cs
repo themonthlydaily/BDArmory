@@ -1733,7 +1733,7 @@ namespace BDArmory.Control
             {
                 message = $"{vessel.vesselName}" + message + ".";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                Debug.LogWarning("[BDArmory.VesselSpawner]: " + message);
                 return false;
             }
             return true;
