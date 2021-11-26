@@ -44,7 +44,7 @@ namespace BDArmory.Misc
                     {
                         if (alreadyburning != null)
                         {
-                            if (!rubbertank.InertTank) BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
+                            if (rubbertank == null || !rubbertank.InertTank) BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                         }
                         else
                         {
