@@ -1847,14 +1847,6 @@ namespace BDArmory.Modules
             {
                 chargeAmount = requestResourceAmount * TimeWarp.fixedDeltaTime;
             }
-            if (BDArmorySetup.GameIsPaused)
-            {
-                if (audioSource.isPlaying)
-                {
-                    audioSource.Stop();
-                }
-                return false;
-            }
             float timeGap = ((60 / roundsPerMinute) * fireTransforms.Length) * TimeWarp.CurrentRate; //this way weapon delivers stated RPM, not RPM * barrel num
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                 timeGap = ((60 / BDArmorySettings.FIRE_RATE_OVERRIDE) * fireTransforms.Length) * TimeWarp.CurrentRate;
@@ -1867,31 +1859,8 @@ namespace BDArmory.Modules
             if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
                 && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
             {
-                if (CanFire(chargeAmount))
-                {
-                    if (oneShotSound)
-                    {
-                        audioSource.Stop();
-                        audioSource.PlayOneShot(fireSound);
-                    }
-                    else
-                    {
-                        wasFiring = true;
-                        if (!audioSource.isPlaying)
-                        {
-                            audioSource.clip = fireSound;
-                            audioSource.loop = false;
-                            audioSource.time = 0;
-                            audioSource.Play();
-                        }
-                        else
-                        {
-                            if (audioSource.time >= fireSound.length)
-                            {
-                                audioSource.time = soundRepeatTime;
-                            }
-                        }
-                    }
+                if (CanFire(chargeAmount))                {
+                    
                     var aName = vessel.GetName();
                     if (pulseLaser)
                     {
@@ -1965,6 +1934,37 @@ namespace BDArmory.Modules
         }
         private void LaserBeam(string vesselname)
         {
+            if (BDArmorySetup.GameIsPaused)
+            {
+                if (audioSource.isPlaying)
+                {
+                    audioSource.Stop();
+                }
+                return;
+            }
+            if (oneShotSound)
+            {
+                audioSource.Stop();
+                audioSource.PlayOneShot(fireSound);
+            }
+            else
+            {
+                wasFiring = true;
+                if (!audioSource.isPlaying)
+                {
+                    audioSource.clip = fireSound;
+                    audioSource.loop = false;
+                    audioSource.time = 0;
+                    audioSource.Play();
+                }
+                else
+                {
+                    if (audioSource.time >= fireSound.length)
+                    {
+                        audioSource.time = soundRepeatTime;
+                    }
+                }
+            }
             for (int i = 0; i < fireTransforms.Length; i++)
             {
                 if ((!useRippleFire || !pulseLaser || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
