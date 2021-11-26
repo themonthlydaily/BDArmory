@@ -25,6 +25,8 @@ IMPROVEMENTS
 	- Rework Nuke EMP radius calc; EMP radius at lower alt/lower yield is now much smaller
 	- Bullet penetration depth capped to hypervelocity penetration depth
 	- Add option for laser mutators to use Team Color for beam color (set bulletType in the mutator config to "def")
+	- Add part and vessel to debug info for AddDamage and AddHealth.
+	- Add debug info for when fires get added if debug labels are enabled.
 - BattleDamage:
 	- Fix SelfSealingTanks maxing tank capacity when switching instead of simply adjusting maximum
 	- Increases CASE cost at higher levels (mass increase, ammo capacity reduction)
@@ -57,6 +59,7 @@ IMPROVEMENTS
 	- Default Guard Range increased to 20km
 - Spawning:
 	- Respawn the spawn probe when showing the spawn point if the active vessel has been destroyed.
+	- Use the backup location 'KSP/Ships/SPH' as a fall-back for the spawn probe location as CKAN puts it there.
 
 ADDITIONS
 - Add off-world spawning to Spawn menu (spawn locations and tournaments get automatically upgraded).
