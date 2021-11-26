@@ -3,16 +3,47 @@
 	- Fix some typos and bugs in assist counting in the local tournament parser.
 	- Clear rocket dictionaries between heats. Compute assists under the same conditions for local and remote tournaments.
 	- Cause a spawn failure instead of throwing an exception so that tournaments can retry spawning.
+- Craft:
+	- Fix SelfSealingTanks being addable to engines
+	- Fix SelfSealingTanks not showing on/off status on load
+	- Fix SelfSealingTanks not respecting symmetry
+	- fix fires not extinguishing if fuel < 0
+	- Fix engine fire behavior, now capped to max one fire at a time
+	- Fix Steel parts gaining more than the 1.75x HP they should be getting
+- AI:
+	- Fix AI aim offset being offset
+-General:
+	- Fix Paintball decals not appearing in paintball Mode
+	- Fix AIR-2 Genie cost	
+	- Fix Explosions/Nukes not damaging buildings
+	- Fix RESET_ARMOR resetting hull material	
+	- Fix Audio cutting out when firing lasers using looping SFX
 
 IMPROVEMENTS
 - Internal:
 	- Allow BDGUIComboBox to be relocated/resized.
+	- Rework Nuke EMP radius calc; EMP radius at lower alt/lower yield is now much smaller
+	- Bullet penetration depth capped to hypervelocity penetration depth
+	- Add option for laser mutators to use Team Color for beam color (set bulletType in the mutator config to "def")
 	- Add part and vessel to debug info for AddDamage and AddHealth.
 	- Add debug info for when fires get added if debug labels are enabled.
+- BattleDamage:
+	- Fix SelfSealingTanks maxing tank capacity when switching instead of simply adjusting maximum
+	- Increases CASE cost at higher levels (mass increase, ammo capacity reduction)
+	- Reduce firebottle extinguish delay time to 4 sec
+	- Fire chance from HE rounds reduced from 33% to 20%
+	- Hits to Wings/ControlSurfaces/Subsystems/Cockpits with overpenetrating rounds will now only proc a single BattleDamage event
+	- Fires will no longer consume a firebottle per fire; on trigger, single firebottle will now extinguish all internal fires present on the part
+	- Surface fires will now extinguish if vessel moving > 120m/s
+	- Adds Fuel Inerting option to fuel tanks to prevent fires
+	- Adds Armored Cockpit option to cockpits to reduce/prevent pilot Kill battledamage
 -UI:
 	- Add check for disabled PRE when competitions are active.
 	- Add a toggle in the Competition Settings section for closing the settings when clicking the start competition button.
 	- Add a check for the number of AIs and WMs during spawning (when RWP is enabled) and give an in-game message if there's not one of each.
+	- Armor GUI submenu functionality based on current HP/Armor/Hull Reset toggle settings
+	- Adds Hull Material visualizer to SPH/VAB Armor GUI tool
+	- Improves Weapon Manager GUI infolink descriptions of target priority settings
 - Tournaments:
 	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
 	- Add taken counts to the summaries.
@@ -25,51 +56,20 @@ IMPROVEMENTS
 - AI:
 	- Add additional control "Afterburner Priority" for afterburner toggling under Speed category of AI. Default value of 50. 0 and AI will not use AB, 100 and AI will always use AB.
 	- Vary AB hysteresis based on "Afterburner Priority" setting using an exponential average to smooth the vessel's TWR (lag factor of 0.5s) to judge whether AI should toggle AB vs. using instantaneous acceleration.
+	- Default Guard Range increased to 20km
 - Spawning:
 	- Respawn the spawn probe when showing the spawn point if the active vessel has been destroyed.
 	- Use the backup location 'KSP/Ships/SPH' as a fall-back for the spawn probe location as CKAN puts it there.
 
-FIXES
--Fix SSTs being addable to engines
--Fix SST not showing on/off status on load
--Fix Paintball decals not appearing.
--Fix AIR-2 Genie cost
--Fix SelfSealTanks not respecting symmetry
--fix fires not extinguishing if fuel < 0
--Fix engine fire behavior, now capped to max one fire at a time
--Fix Explosions not damaging buildings
--Fix RESET_ARMOR resetting hull material
--Fix Steel parts gaining more than the 1.75x HP mult they should be getting
--Fix AI aim offset being offset
--Fix Audio cutting out when trying to fire lasers using looping SFX
-
-IMPROVEMENTS
--Armor GUI submenu functionality based on current HP/Armor/Hull Reset toggle settings
--Adds Hull Material visualizer to SPH/VAB Armor GUI tool
--Rework Nuke EMP radius calc; EMP radius at lower alt/lower yield is now much smaller
--Fix SST maxing tank capacity when switching instead of simply adjusting maximum
--Increases CASE cost at higher levels (mass increase, ammo capacity reduction)
--Bullet penetration depth capped to hypervelocity penetration depth
--Hits to Wings/controlSurfaces/Subsystems/cockpits with overpenetrating rounds will now only proc a single BattleDamage call
--Fire chance from HE rounds reduced from 33% to 20%
--Reduce firebottle extinguish delay time to 4 sec
--Fires will no longer consume a firebottle per fire; on trigger, single firebottle will now extinguish all internal fires present on the part
--Surface fires will now extinguish if vessel moving > 120m/s
--Adds Fuel Inerting option to fuel tanks to prevent fires
--Adds Armored Cockpit option to cockpits to reduce/prevent pilot Kill battledamage
--Default Guard Range increased to 20km
--Add option for laser mutators to use Team Color for beam color
--Improves infolink descriptions of target priority settings
-
 ADDITIONS
--Add off-world spawning to Spawn menu (spawn locations and tournaments get automatically upgraded).
--Add ability to add custom spawn sites to spawn menu
--Add Persistent UI button to Vessel Switcher to keep VS and Web Orchestration windows open when F2 UI toggled off
--ZombieMode option moved to cheat mode access
--Add secret Disco Mode
--Enabling the Runway Project toggle will clamp guard range to a minimum of 20km
--Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards (request from SirJohn)
--Adds Intake Hack setting to autohack intakes to work in non-O2 atmos
+- Add off-world spawning to Spawn menu (spawn locations and tournaments get automatically upgraded).
+- Add ability to add custom spawn sites to spawn menu
+- Add Persistent UI button to Vessel Switcher to keep VS and Web Orchestration windows open when F2 UI toggled off
+- ZombieMode option moved to cheat mode access
+- Add secret Disco Mode
+- Enabling the Runway Project toggle will clamp guard range to a minimum of 20km
+- Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards (request from SirJohn)
+- Adds Intake Hack setting to autohack intakes to work in non-Oxygen atmospheres
 
 
 

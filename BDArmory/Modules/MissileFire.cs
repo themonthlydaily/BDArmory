@@ -1417,7 +1417,7 @@ namespace BDArmory.Modules
                         if (weaponHeatDebugStrings.Count > 0)
                         {
 							debugString.AppendLine("Weapon Heat:\n" + string.Join("\n", weaponHeatDebugStrings));
-                            debugString.AppendLine("laser debugging:\n" + string.Join("\n", weaponLaserDebugStrings));
+                            debugString.AppendLine("Aim debugging:\n" + string.Join("\n", weaponLaserDebugStrings));
                         }
                     }
                     GUI.Label(new Rect(200, Screen.height - 500, 600, 200), debugString.ToString());

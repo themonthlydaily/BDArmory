@@ -180,7 +180,7 @@ namespace BDArmory.Misc
                             {
                                 if (alreadyburning == null)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1, true);
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1);
                                 }
                             }
                         }
@@ -287,17 +287,17 @@ namespace BDArmory.Misc
                     }
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                 }
-                if (part.GetComponent<ModuleControlSurface>() != null && part.GetDamagePercentage() > 0.125f)
-                //if ( part.isControlSurface(aileron))?
+                if (BDArmorySettings.BD_CTRL_SRF && firsthit)
                 {
-                    ModuleControlSurface aileron;
-                    aileron = part.GetComponent<ModuleControlSurface>();
-                    if (aileron.deflectionLiftCoeff > ((part.mass * 2.5f) + liftDam)) //stock ctrl surface mass/lift ratio is 5
+                    if (part.GetComponent<ModuleControlSurface>() != null && part.GetDamagePercentage() > 0.125f)
+                    //if ( part.isControlSurface(aileron))?
                     {
-                        aileron.deflectionLiftCoeff -= liftDam;
-                    }
-                    if (BDArmorySettings.BD_CTRL_SRF)
-                    {
+                        ModuleControlSurface aileron;
+                        aileron = part.GetComponent<ModuleControlSurface>();
+                        if (aileron.deflectionLiftCoeff > ((part.mass * 2.5f) + liftDam)) //stock ctrl surface mass/lift ratio is 5
+                        {
+                            aileron.deflectionLiftCoeff -= liftDam;
+                        }
                         int Diceroll = (int)UnityEngine.Random.Range(0f, 100f);
                         if (explosivedamage)
                         {
@@ -309,12 +309,21 @@ namespace BDArmory.Misc
                         }
                         if (Diceroll <= (BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus))
                         {
-                            aileron.actuatorSpeed = 0;
-                            aileron.authorityLimiter = 0;
-                            aileron.ctrlSurfaceRange = 0;
-                            if (Diceroll <= ((BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus) / 2))
+                            if (aileron.actuatorSpeed > 3)
                             {
-                                BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 10);
+                                aileron.actuatorSpeed /= 2;
+                                aileron.authorityLimiter /= 2;
+                                aileron.ctrlSurfaceRange /= 2;
+                                if (Diceroll <= ((BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus) / 2))
+                                {
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 10);
+                                }
+                            }
+                            else
+                            {
+                                aileron.actuatorSpeed = 0;
+                                aileron.authorityLimiter = 0;
+                                aileron.ctrlSurfaceRange = 0;
                             }
                         }
                     }
@@ -388,7 +397,7 @@ namespace BDArmory.Misc
                         part.RemoveModule(cam);
                     }
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took subsystem damage");
-                    if (Diceroll <= (damageChance * 2))
+                    if (Diceroll <= (damageChance / 2))
                     {
                         if (incendiary)
                         {

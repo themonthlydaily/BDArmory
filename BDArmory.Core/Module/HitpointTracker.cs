@@ -238,7 +238,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public override void OnStart(StartState state)
         {
-			if (part == null) return;
+            if (part == null) return;
             isEnabled = true;
             if (part.name.Contains("B9.Aero.Wing.Procedural"))
             {
@@ -253,13 +253,13 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 if (BDArmorySettings.RESET_ARMOUR)
                 {
-					ArmorSetup(null, null);
+                    ArmorSetup(null, null);
                 }
                 if (BDArmorySettings.RESET_HULL || ArmorPanel)
                 {
                     IgnoreForArmorSetup = true;
                     HullTypeNum = 2;
-					SetHullMass();
+                    SetHullMass();
                 }
 
                 part.RefreshAssociatedWindows();
@@ -306,7 +306,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     Fields["guiArmorTypeString"].guiActive = false;
                     Fields["armorCost"].guiActiveEditor = false;
                     Fields["armorMass"].guiActiveEditor = false;
-					ATrangeEditor.maxValue = 1;
+                    ATrangeEditor.maxValue = 1;
                 }
                 UI_FloatRange HTrangeEditor = (UI_FloatRange)Fields["HullTypeNum"].uiControlEditor;
                 HTrangeEditor.onFieldChanged = HullModified;
@@ -413,7 +413,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         {
             yield return null;
             if (part == null) yield break;
-            partMass = part.mass;
+            partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
             _armorModified = true;
             _hullModified = true;
@@ -535,7 +535,11 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 var oldHullMassAdjust = HullMassAdjust; // We need to temporarily remove the HullmassAdjust and update the part.mass to get the correct value as KSP clamps the mass to > 1e-4.
                 HullMassAdjust = 0;
                 part.UpdateMass();
-                partMass = part.mass - armorMass - HullMassAdjust;
+                partMass = part.mass - armorMass - HullMassAdjust; //need to get ModuleSelfSealingTank mass adjustment. Could move the SST module to BDA.Core
+                if (isProcWing && part.Modules.Contains("ModuleSelfSealingTank"))
+                {
+
+                }
                 HullMassAdjust = oldHullMassAdjust; // Put the HullmassAdjust back so we can test against it when we update the hull mass.
                 if (oldPartMass != partMass)
                 {
@@ -652,10 +656,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                                 //procwing hp already modified by mass, because it is mass
                                 //so using base part mass is it can be properly modified my material HP mod below
                                 hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
+                                //unfortunately the same trick can't be used for FAR wings, so mass hack it is.
                             }
                             else
                             {
-                                hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                                //hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                                hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff, 2) * 700 * hitpointMultiplier * 0.333f; //this yields the same result, but not beholden to mass changes
                             } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
 
                         }
@@ -689,7 +695,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         }
                     }
                 }
-                else 
+                else
                 {
                     hitpoints = ArmorRemaining * armorVolume * 10;
                     hitpoints = Mathf.Round(hitpoints / HpRounding) * HpRounding;
@@ -958,7 +964,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
-			_armorConfigured = true;
+            _armorConfigured = true;
         }
 
         public void SetArmor()
@@ -1024,20 +1030,20 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
-			if (IgnoreForArmorSetup) return;
+            if (IgnoreForArmorSetup) return;
             if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
             if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
             {
                 HullTypeNum = 2;
             }
-			if (isProcWing)
-			{
-				StartCoroutine(WaitForHullSetup());
-			}
-			else
-			{
-				SetHullMass();
-			}
+            if (isProcWing)
+            {
+                StartCoroutine(WaitForHullSetup());
+            }
+            else
+            {
+                SetHullMass();
+            }
         }
         IEnumerator WaitForHullSetup()
         {

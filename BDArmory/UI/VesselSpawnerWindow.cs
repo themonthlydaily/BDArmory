@@ -144,7 +144,7 @@ namespace BDArmory.UI
             }
 
             planetText = new GUIContent();
-            planetText.text = "Select Planet";
+            planetText.text = Localizer.Format("#LOC_BDArmory_Settings_Planet");//"Select Planet"
         }
 
         private void Update()

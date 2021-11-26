@@ -130,15 +130,15 @@ namespace BDArmory.Modules
                     {
                         tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_On");//"Add Fuel Inerting System"
                         tank.FISmass = 0;
-                        tank.Fields["FireBottles"].guiActiveEditor = false;
-                        tank.Fields["FBRemaining"].guiActive = false;
+                        tank.Fields["FireBottles"].guiActiveEditor = true;
+                        tank.Fields["FBRemaining"].guiActive = true;
                     }
                     else
                     {
                         tank.Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_Off");//"Remove Fuel Inerting System"
                         tank.FISmass = 0.15f;
-                        tank.Fields["FireBottles"].guiActiveEditor = true;
-                        tank.Fields["FBRemaining"].guiActive = true;
+                        tank.Fields["FireBottles"].guiActiveEditor = false;
+                        tank.Fields["FBRemaining"].guiActive = false;
                     }
                     tank.partmass = (tank.FISmass + tank.ArmorMass + tank.FBmass);
                     Misc.Misc.RefreshAssociatedWindows(pSym.Current);
@@ -213,6 +213,7 @@ namespace BDArmory.Modules
         PartResource fuel;
         PartResource solid;
         public bool isOnFire = false;
+        bool procWing = false;
 
         public bool externallyCalled = false;
         ModuleEngines engine;
@@ -220,7 +221,11 @@ namespace BDArmory.Modules
         private float enginerestartTime = -1;
         public void Start()
         {
-            if (HighLogic.LoadedSceneIsEditor)
+            if (part.name.Contains("B9.Aero.Wing.Procedural")) //could add other proc parts here for similar support
+            {
+                procWing = true;
+            }
+                if (HighLogic.LoadedSceneIsEditor)
             {
                 UI_FloatRange FBEditor = (UI_FloatRange)Fields["FireBottles"].uiControlEditor;
                 FBEditor.onFieldChanged = FBSetup;
@@ -264,6 +269,15 @@ namespace BDArmory.Modules
                         }
                     }
                 }
+                if (fuel == null && solid == null)
+                {
+                    Events["ToggleTankOption"].guiActiveEditor = false;
+                    Events["ToggleInertOption"].guiActiveEditor = false;
+                    Fields["FireBottles"].guiActiveEditor = false;
+                    Fields["FBRemaining"].guiActive = false;
+                    Fields["partmass"].guiActiveEditor = false;
+                    FireBottles = 0;
+                }
             }
             if (!SSTank)
             {
@@ -286,6 +300,10 @@ namespace BDArmory.Modules
             partmass = (FISmass + ArmorMass + FBmass);
             if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (cockpit == null && engine == null && fuel == null) part.RemoveModule(this); //PWing with no tank
+            }
         }
         public override void OnLoad(ConfigNode node)
         {
@@ -394,6 +412,7 @@ namespace BDArmory.Modules
                 }
             Misc.Misc.RefreshAssociatedWindows(part);
         }
+
         public override string GetInfo()
         {
             StringBuilder output = new StringBuilder();
@@ -463,8 +482,47 @@ namespace BDArmory.Modules
                 firebottleRoutine = null;
             }
         }
+        private float updateTimer = 0;
         void Update()
         {
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                if (procWing)
+                {
+                    updateTimer -= Time.fixedDeltaTime;
+                    if (updateTimer < 0)
+                    {
+                        fuel = part.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
+                        if (fuel != null)
+                        {
+                            Events["ToggleTankOption"].guiActiveEditor = true;
+                            Events["ToggleInertOption"].guiActiveEditor = true;
+                            if (!InertTank)
+                            {
+                                Fields["FireBottles"].guiActiveEditor = true;
+                                Fields["FBRemaining"].guiActive = true;
+                            }
+                            else
+                            {
+                                Fields["FireBottles"].guiActiveEditor = false;
+                                Fields["FBRemaining"].guiActive = false;
+                            }
+                            Fields["partmass"].guiActiveEditor = true;
+                        }
+                        else
+                        {
+                            Events["ToggleTankOption"].guiActiveEditor = false;
+                            Events["ToggleInertOption"].guiActiveEditor = false;
+                            Fields["FireBottles"].guiActiveEditor = false;
+                            Fields["FBRemaining"].guiActive = false;
+                            Fields["partmass"].guiActiveEditor = false;
+                            InertTank = false;
+                            FireBottles = 0;
+                        }
+                        updateTimer = 0.5f; //doing it this way since PAw buttons don't seem to trigger onShipModified
+                    }
+                }
+            }
             if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
             if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
             if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
