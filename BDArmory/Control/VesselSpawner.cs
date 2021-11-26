@@ -21,6 +21,24 @@ namespace BDArmory.Control
         // Interesting spawn locations on Kerbin.
         public static string oldSpawnLocationsCfg = "GameData/BDArmory/spawn_locations.cfg";
         public static string spawnLocationsCfg = "GameData/BDArmory/PluginData/spawn_locations.cfg";
+        private static string _spawnProbeLocation = null;
+        public static string spawnProbeLocation
+        {
+            get
+            {
+                if (_spawnProbeLocation != null) return _spawnProbeLocation;
+                _spawnProbeLocation = Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "craft", "SpawnProbe.craft"); // SpaceDock location
+                if (!File.Exists(_spawnProbeLocation)) _spawnProbeLocation = Path.Combine(Environment.CurrentDirectory, "Ships", "SPH", "SpawnProbe.craft"); // CKAN location
+                if (!File.Exists(_spawnProbeLocation))
+                {
+                    _spawnProbeLocation = null;
+                    var message = "SpawnProbe.craft is missing. Your installation is likely corrupt.";
+                    BDACompetitionMode.Instance.competitionStatus.Add(message);
+                    Debug.LogError("[BDArmory.VesselSpawner]: " + message);
+                }
+                return _spawnProbeLocation;
+            }
+        }
         [VesselSpawnerField] public static bool UpdateSpawnLocations = true;
         [VesselSpawnerField] public static List<SpawnLocation> spawnLocations;
 
@@ -102,7 +120,7 @@ namespace BDArmory.Control
             var dummyVar = EditorFacility.None;
             Vector3d dummySpawnCoords;
             FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + 1000f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-            Vessel spawnProbe = SpawnVesselFromCraftFile(Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "craft", "SpawnProbe.craft"), dummySpawnCoords, 0, 0f, out dummyVar);
+            Vessel spawnProbe = SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0, 0f, out dummyVar);
             spawnProbe.Landed = false;
             // spawnProbe.situation = Vessel.Situations.FLYING;
             // spawnProbe.IgnoreGForces(240);
@@ -317,14 +335,8 @@ namespace BDArmory.Control
                 var dummyVar = EditorFacility.None;
                 Vector3d dummySpawnCoords;
                 FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position + 100f * (FlightCamera.fetch.transform.position - FlightGlobals.currentMainBody.transform.position).normalized, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-                if (!File.Exists(Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "craft", "SpawnProbe.craft")))
-                {
-                    message = "GameData/BDArmory/craft/SpawnProbe.craft is missing. Please create the craft (a simple octo2 probe core will do).";
-                    BDACompetitionMode.Instance.competitionStatus.Add(message);
-                    Debug.LogError("[BDArmory.VesselSpawner]: " + message);
-                    yield break;
-                }
-                Vessel spawnProbe = SpawnVesselFromCraftFile(Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "craft", "SpawnProbe.craft"), dummySpawnCoords, 0, 0f, out dummyVar);
+                if (spawnProbeLocation == null) yield break;
+                Vessel spawnProbe = SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0, 0f, out dummyVar);
                 if (spawnProbe == null)
                 {
                     message = "Failed to spawn SpawnProbe!";
@@ -873,6 +885,7 @@ namespace BDArmory.Control
             {
                 foreach (var vesselName in spawnedVessels.Keys)
                 {
+                    CheckAIWMCounts(spawnedVessels[vesselName].Item1);
                     CheckAIWMPlacement(spawnedVessels[vesselName].Item1);
                 }
             }
@@ -1624,14 +1637,8 @@ namespace BDArmory.Control
             var dummyVar = EditorFacility.None;
             Vector3d dummySpawnCoords;
             FlightGlobals.currentMainBody.GetLatLonAlt(FlightCamera.fetch.transform.position, out dummySpawnCoords.x, out dummySpawnCoords.y, out dummySpawnCoords.z);
-            if (!File.Exists(Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "craft", "SpawnProbe.craft")))
-            {
-                message = "GameData/BDArmory/craft/SpawnProbe.craft is missing. Please create the craft (a simple octo2 probe core will do).";
-                BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.LogError("[BDArmory.Asteroids]: " + message);
-                return null;
-            }
-            Vessel spawnProbe = SpawnVesselFromCraftFile(Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "craft", "SpawnProbe.craft"), dummySpawnCoords, 0, 0f, out dummyVar);
+            if (spawnProbeLocation == null) return null;
+            Vessel spawnProbe = SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0, 0f, out dummyVar);
             return spawnProbe;
         }
 
@@ -1732,10 +1739,25 @@ namespace BDArmory.Control
             {
                 message = $"{vessel.vesselName}" + message + ".";
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
-                Debug.Log("[BDArmory.VesselSpawner]: " + message);
+                Debug.LogWarning("[BDArmory.VesselSpawner]: " + message);
                 return false;
             }
             return true;
+        }
+
+        public void CheckAIWMCounts(Vessel vessel)
+        {
+            var numberOfAIs = VesselModuleRegistry.GetModuleCount<BDModulePilotAI>(vessel);
+            var numberOfWMs = VesselModuleRegistry.GetModuleCount<MissileFire>(vessel);
+            string message = null;
+            if (numberOfAIs != 1 && numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs and {numberOfWMs} WMs";
+            else if (numberOfAIs != 1) message = $"{vessel.vesselName} has {numberOfAIs} AIs";
+            else if (numberOfWMs != 1) message = $"{vessel.vesselName} has {numberOfWMs} WMs";
+            if (message != null)
+            {
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogWarning("[BDArmory.VesselSpawner]: " + message);
+            }
         }
 
         #region Actual spawning of individual craft
