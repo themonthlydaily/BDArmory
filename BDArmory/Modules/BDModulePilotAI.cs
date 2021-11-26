@@ -1799,7 +1799,7 @@ namespace BDArmory.Modules
             if (extending && extendParametersSet) return true; // Already extending.
 
             // Dropping a bomb.
-            if (weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
+            if (extending && weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
             {
                 extendDistance = 4500;
                 desiredMinAltitude = defaultAltitude;
