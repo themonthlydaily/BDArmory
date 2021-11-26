@@ -180,7 +180,7 @@ namespace BDArmory.Misc
                             {
                                 if (alreadyburning == null)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1, true);
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1);
                                 }
                             }
                         }

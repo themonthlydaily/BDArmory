@@ -164,6 +164,7 @@ namespace BDArmory.FX
             ox = null;
             ec = null;
             mp = null;
+            tntMassEquivalent = 0;
             fireIntensity = 1;
         }
 
@@ -253,7 +254,7 @@ namespace BDArmory.FX
                             }
                         }
                         ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
-                        if (ox != null)
+                        if (ox != null && fuel != null)
                         {
                             if (ox.amount > 0)
                             {
@@ -451,7 +452,7 @@ namespace BDArmory.FX
                                         Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
                                         if (p == partHit)
                                         {
-                                            BulletHitFX.AttachFire(hit.point, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
+                                            BulletHitFX.AttachFire(hit.point, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, true);
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
                                                 Debug.Log("[BDArmory.FireFX] " + this.parentPart.name + " hit by burning fuel");
@@ -483,7 +484,7 @@ namespace BDArmory.FX
             Deactivate();
         }
 
-        public void AttachAt(Part hitPart, Vector3 hit, Vector3 offset, string sourcevessel, float burnTime = -1)
+        public void AttachAt(Part hitPart, Vector3 hit, Vector3 offset, string sourcevessel)
         {
             if (hitPart == null) return;
             parentPart = hitPart;

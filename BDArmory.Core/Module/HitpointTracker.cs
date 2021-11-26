@@ -413,7 +413,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         {
             yield return null;
             if (part == null) yield break;
-            partMass = part.mass;
+            partMass = part.partInfo.partPrefab.mass;
             _updateMass = true;
             _armorModified = true;
             _hullModified = true;
@@ -535,7 +535,11 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 var oldHullMassAdjust = HullMassAdjust; // We need to temporarily remove the HullmassAdjust and update the part.mass to get the correct value as KSP clamps the mass to > 1e-4.
                 HullMassAdjust = 0;
                 part.UpdateMass();
-                partMass = part.mass - armorMass - HullMassAdjust;
+				partMass = part.mass - armorMass - HullMassAdjust; //need to get ModuleSelfSealingTank mass adjustment. Could move the SST module to BDA.Core
+                if (isProcWing && part.Modules.Contains("ModuleSelfSealingTank"))
+                {
+
+                }
                 HullMassAdjust = oldHullMassAdjust; // Put the HullmassAdjust back so we can test against it when we update the hull mass.
                 if (oldPartMass != partMass)
                 {
@@ -649,13 +653,15 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         {
                             if (part.Modules.Contains("FARWingAerodynamicModel") || part.Modules.Contains("FARControllableSurface"))
                             {
-                                //procwing hp already modified by mass, because it is mass
-                                //so using base part mass is it can be properly modified my material HP mod below
-                                hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
+								//procwing hp already modified by mass, because it is mass
+								//so using base part mass is it can be properly modified my material HP mod below
+								hitpoints = (partMass * 1000f) * 3.5f * hitpointMultiplier * 0.333f; //To account for FAR's Strength-mass Scalar.
+                                //unfortunately the same trick can't be used for FAR wings, so mass hack it is.
                             }
                             else
                             {
-                                hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                                //hitpoints = (partMass * 1000f) * 7f * hitpointMultiplier * 0.333f; // since wings are basically a 2d object, lets have mass be our scalar - afterall, 2x the mass will ~= 2x the surfce area
+                                hitpoints = (float)Math.Round(part.Modules.GetModule<ModuleLiftingSurface>().deflectionLiftCoeff, 2) * 700 * hitpointMultiplier * 0.333f; //this yields ame reqult, but not beholden to mass changes
                             } //breaks when pWings are made stupidly thick/large  //should really figure out a fix for that someday
 
                         }
