@@ -7,6 +7,8 @@
 IMPROVEMENTS
 - Internal:
 	- Allow BDGUIComboBox to be relocated/resized.
+	- Add part and vessel to debug info for AddDamage and AddHealth.
+	- Add debug info for when fires get added if debug labels are enabled.
 -UI:
 	- Add check for disabled PRE when competitions are active.
 	- Add a toggle in the Competition Settings section for closing the settings when clicking the start competition button.

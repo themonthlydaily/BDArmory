@@ -56,6 +56,7 @@ namespace BDArmory.FX
                 gameObject.SetActive(false);
                 return;
             }
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireFX]: Fire added to {parentPart.name}" + (parentPart.vessel != null ? $" on {parentPart.vessel.vesselName}" : ""));
             hasFuel = true;
             tntMassEquivalent = 0;
             startTime = Time.time;
