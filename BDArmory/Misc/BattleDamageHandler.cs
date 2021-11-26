@@ -325,7 +325,7 @@ namespace BDArmory.Misc
                                 aileron.authorityLimiter = 0;
                                 aileron.ctrlSurfaceRange = 0;
                             }
-                        }                        
+                        }
                     }
                 }
             }
