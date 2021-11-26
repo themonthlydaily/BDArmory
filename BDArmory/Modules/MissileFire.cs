@@ -1583,7 +1583,7 @@ namespace BDArmory.Modules
                 {
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     float attemptLockTime = Time.time;
@@ -1655,7 +1655,7 @@ namespace BDArmory.Modules
 
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     float attemptStartTime = Time.time;
@@ -1758,7 +1758,7 @@ namespace BDArmory.Modules
 
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     float attemptStartTime = Time.time;
@@ -1779,7 +1779,7 @@ namespace BDArmory.Modules
                 {
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     if (targetingPods.Count > 0) //if targeting pods are available, slew them onto target and lock.
@@ -2749,9 +2749,30 @@ namespace BDArmory.Modules
                             }
                         }
                 }
+                else if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
+                {
+                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
+                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int) customBayGroup]);
+                        openingBays = true;
+                        baysOpened.Add(customBayGroup);
+                    }
+                   else
+                   {
+                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
+                        {
+                            if ((bay <= 16) && (bay != customBayGroup)) // Only close custom bays
+                            {
+                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                                baysOpened.Remove(bay); // Bay is no longer open
+                            }
+                        }
+                   }
+                }
                 else
                 {
-                    using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
+                    using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator()) // Close normal bays
                         while (bay.MoveNext())
                         {
                             if (bay.Current == null) continue;
@@ -2768,11 +2789,20 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
+
+                    foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close custom bays
+                    {
+                        if (bay <= 16)// Only close custom bays
+                        {
+                            vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                            baysOpened.Remove(bay); // Bay is no longer open
+                        }
+                    }
                 }
             }
             else
             {
-                using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
+                using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator()) // Close normal bays
                     while (bay.MoveNext())
                     {
                         if (bay.Current == null) continue;
@@ -2789,6 +2819,15 @@ namespace BDArmory.Modules
                             }
                         }
                     }
+
+                foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close custom bays
+                {
+                    if (bay <= 16)// Only close custom bays
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                        baysOpened.Remove(bay); // Bay is no longer open
+                    }
+                }
             }
 
             return openingBays;
