@@ -385,6 +385,21 @@ namespace BDArmory.Modules
             }
         }
 
+        public ModuleWeapon previousGun
+        {
+            get
+            {
+                if (previousSelectedWeapon != null && (previousSelectedWeapon.GetWeaponClass() == WeaponClasses.Gun || previousSelectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || previousSelectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
+                {
+                    return previousSelectedWeapon.GetPart().FindModuleImplementing<ModuleWeapon>();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         public bool underAttack;
         float underAttackLastNotified = 0f;
         public bool underFire;
@@ -547,21 +562,33 @@ namespace BDArmory.Modules
         #endregion
 
         #region Countermeasure Settings
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing repetition
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMThreshold", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing time threshold
          UI_FloatRange(minValue = 1f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
         public float cmThreshold = 5f; // Works well
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing repetition
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing repetition
          UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
-        public float cmRepetition = 5f; // Prior default was 4
+        public float cmRepetition = 3f; // Prior default was 4
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing interval
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing interval
          UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float cmInterval = 0.2f; // Prior default was 0.6
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Countermeasure dispensing interval
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_CMWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Flare dispensing wait time
          UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float cmWaitTime = 1.0f; // Works well
+        public float cmWaitTime = 0.7f; // Works well
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffRepetition", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing repetition
+         UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = 1f, scene = UI_Scene.All)]
+        public float chaffRepetition = 2f; // Prior default was 4
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffInterval", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing interval
+         UI_FloatRange(minValue = 0.1f, maxValue = 1f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float chaffInterval = 0.5f; // Prior default was 0.6
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ChaffWaitTime", advancedTweakable = true, groupName = "cmSettings", groupDisplayName = "#LOC_BDArmory_Countermeasure_Settings", groupStartCollapsed = true),// Chaff dispensing wait time
+         UI_FloatRange(minValue = 0.1f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float chaffWaitTime = 0.6f; // Works well
         #endregion
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_IsVIP", advancedTweakable = true),// Is VIP, throwback to TF Classic (Hunted Game Mode)
@@ -786,11 +813,14 @@ namespace BDArmory.Modules
             set
             {
                 if (sw == value) return;
+                previousSelectedWeapon = sw;
                 sw = value;
                 selectedWeaponString = GetWeaponName(value);
                 UpdateSelectedWeaponState();
             }
         }
+
+        IBDWeapon previousSelectedWeapon { get; set; }
 
         [KSPAction("Fire Missile")]
         public void AGFire(KSPActionParam param)
@@ -993,6 +1023,11 @@ namespace BDArmory.Modules
                 GameEvents.onEditorPartDeleted.Add(UpdateMaxGunRange);
                 UpdateMaxGunRange(part);
             }
+            targetingString = (targetCoM ? Localizer.Format("#LOC_BDArmory_TargetCOM") + "; " : "")
+            + (targetMass ? Localizer.Format("#LOC_BDArmory_Mass") + "; " : "")
+            + (targetCommand ? Localizer.Format("#LOC_BDArmory_Command") + "; " : "")
+            + (targetEngine ? Localizer.Format("#LOC_BDArmory_Engines") + "; " : "")
+            + (targetWeapon ? Localizer.Format("#LOC_BDArmory_Weapons") + "; " : "");
         }
 
         void OnPartDie()
@@ -1201,6 +1236,7 @@ namespace BDArmory.Modules
 
         public override void OnFixedUpdate()
         {
+            if (vessel == null) return;
             if (guardMode && vessel.IsControllable)
             {
                 GuardMode();
@@ -1871,8 +1907,7 @@ namespace BDArmory.Modules
                     if (targetDist < Mathf.Max(radius * 2, 800f) &&
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
-                        pilotAI.RequestExtend(guardTarget.CoM, guardTarget);
-                        pilotAI.extendingReason = "Too close to bomb";
+                        pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "too close to bomb");
                         break;
                     }
                     yield return null;
@@ -1901,8 +1936,7 @@ namespace BDArmory.Modules
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
-                                pilotAI.RequestExtend(guardTarget.CoM, guardTarget);
-                                pilotAI.extendingReason = "Bombs away!";
+                                pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "bombs away!");
                             }
                         }
                     }
@@ -2104,7 +2138,7 @@ namespace BDArmory.Modules
         {
             if (!isChaffing && ThreatClosingTime(incomingMissileVessel) <= cmThreshold)
             {
-                StartCoroutine(ChaffRoutine((int)cmRepetition, cmInterval));
+                StartCoroutine(ChaffRoutine((int)chaffRepetition, chaffInterval));
             }
         }
 
@@ -2158,7 +2192,7 @@ namespace BDArmory.Modules
 
                 yield return new WaitForSeconds(interval);
             }
-            yield return new WaitForSeconds(cmWaitTime);
+            yield return new WaitForSeconds(chaffWaitTime);
             isChaffing = false;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " ending chaff routine");
         }
@@ -2333,7 +2367,7 @@ namespace BDArmory.Modules
             {
                 return;
             }
-            if (missilesAway > maxMissilesOnTarget)
+            if (guardMode && (missilesAway > maxMissilesOnTarget))
             {
                 return;
             }
@@ -2386,7 +2420,7 @@ namespace BDArmory.Modules
             targetMissiles = false;
             weaponTypesGround.Clear();
             weaponTypesSLW.Clear();
-            if (vessel == null) return;
+            if (vessel == null || !vessel.loaded) return;
 
             using (var weapon = VesselModuleRegistry.GetModules<IBDWeapon>(vessel).GetEnumerator())
                 while (weapon.MoveNext())
@@ -4580,7 +4614,7 @@ namespace BDArmory.Modules
                 if (target != null && !target.isMissile)
                     if (pilotAI && pilotAI.IsExtending && target.Vessel != pilotAI.extendTarget)
                     {
-                        pilotAI.StopExtending(); // Only stop extending if the target is different from the extending target
+                        pilotAI.StopExtending("changed target"); // Only stop extending if the target is different from the extending target
                     }
                 currentTarget = target;
                 guardTarget = target.Vessel;
@@ -5200,7 +5234,7 @@ namespace BDArmory.Modules
 
         public void UpdateMaxGunRange(Vessel v)
         {
-            if (v != vessel || vessel == null || !part.isActiveAndEnabled) return;
+            if (v != vessel || vessel == null || !vessel.loaded || !part.isActiveAndEnabled) return;
             VesselModuleRegistry.OnVesselModified(v);
             List<WeaponClasses> gunLikeClasses = new List<WeaponClasses> { WeaponClasses.Gun, WeaponClasses.DefenseLaser, WeaponClasses.Rocket };
             maxGunRange = 10f;

@@ -149,6 +149,7 @@ namespace BDArmory.Modules
             var vesselName = vessel != null ? vessel.vesselName : null;
             Vector3 direction = default(Vector3);
             GetBlastRadius();
+            if (ammoExplosionYield <= 0) return;
             if (CASELevel != 2) //a considerable quantity of explosives and propellants just detonated inside your ship
             {
                 if (CASELevel == 0)
@@ -264,7 +265,7 @@ namespace BDArmory.Modules
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !(VesselSpawner.Instance != null && VesselSpawner.Instance.vesselsSpawning))
             {
-                DetonateIfPossible();
+                if (!hasDetonated) DetonateIfPossible();
             }
             GameEvents.onGameSceneSwitchRequested.Remove(HandleSceneChange);
         }
@@ -295,7 +296,7 @@ namespace BDArmory.Modules
                 {
                     if (this.part.temperature > 900) //ammo cooks off, part is too hot
                     {
-                        DetonateIfPossible();
+                        if (!hasDetonated) DetonateIfPossible();
                     }
                 }
             }

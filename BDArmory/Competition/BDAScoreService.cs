@@ -345,7 +345,7 @@ namespace BDArmory.Competition
 
             // start timer coroutine for the duration specified in settings UI
             var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60d;
-            var message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
+            var message = $"Starting {(duration > 0 ? $"a {duration.ToString("F0")}s" : "an unlimited")} duration competition for stage {model.stage} heat {model.order}.";
             Debug.Log("[BDArmory.BDAScoreService]: " + message);
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             while (BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.sequencedCompetitionStarting)
@@ -878,6 +878,13 @@ namespace BDArmory.Competition
                 newKills.Add(target, 1);
                 killsOnTarget.Add(attacker, newKills);
             }
+        }
+
+        // Register survivors in case they didn't really do anything and didn't get registered until now.
+        public void TrackSurvivors(List<string> survivors)
+        {
+            foreach (var survivor in survivors)
+                activePlayers.Add(survivor);
         }
 
         public string Status()

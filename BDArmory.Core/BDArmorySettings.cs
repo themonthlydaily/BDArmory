@@ -38,6 +38,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool INFINITE_AMMO = false;
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistentSettingsField] public static bool EJECT_SHELLS = true;
+        [BDAPersistentSettingsField] public static bool VESSEL_RELATIVE_BULLET_CHECKS = false;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool DRAW_AIMERS = true;
         [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;
@@ -56,7 +57,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistentSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
         [BDAPersistentSettingsField] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
-        [BDAPersistentSettingsField] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor/ hull material of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor material of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static bool RESET_HULL = false;                     // Automatically reset hull material of parts of vessels when they're spawned in flight mode.
         [BDAPersistentSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
@@ -99,6 +101,10 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistentSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 256f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations.
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE = 10f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_CENTER = 20f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 5f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_BIAS = 0.16f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 2f;
 
         // Physics constants
         [BDAPersistentSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
@@ -114,7 +120,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistentSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistentSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
-        [BDAPersistentSettingsField] public static float S4R2_DMG_MULT = 0.1f;
+        [BDAPersistentSettingsField] public static float ZOMBIE_DMG_MULT = 0.1f;
 
         // FX
         [BDAPersistentSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
@@ -183,7 +189,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
         [BDAPersistentSettingsField] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
         [BDAPersistentSettingsField] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
-        [BDAPersistentSettingsField] public static bool ALLOW_S4R2_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
 
         // Remote logging
         [BDAPersistentSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle
@@ -264,5 +270,9 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static int EVOLUTION_MUTATIONS_PER_HEAT = 1;
         [BDAPersistentSettingsField] public static int EVOLUTION_HEATS_PER_GROUP = 1;
         [BDAPersistentSettingsField] public static bool AUTO_RESUME_EVOLUTION = false;             // Automatically load the game and start evolution with the last used settings/seeds. Note: this overrides the AUTO_RESUME_TOURNAMENT setting.
+
+        // Countermeasure constants
+        [BDAPersistentSettingsField] public static float FLARE_FACTOR = 1.6f;                       // Change this to make flares more or less effective, values close to or below 1.0 will cause flares to fail to decoy often
+        [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 0.6f;                       // Change this to make chaff more or less effective. Higher values will make chaff batter, lower values will make chaff worse.
     }
 }

@@ -13,13 +13,13 @@ namespace BDArmory.Core.Extension
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
                 if (p.vessel.rootPart != null)
                 {
                     if (p != p.vessel.rootPart)
                     {
-                        damage *= BDArmorySettings.S4R2_DMG_MULT;
+                        damage *= BDArmorySettings.ZOMBIE_DMG_MULT;
                     }
                 }
             }
@@ -64,7 +64,7 @@ namespace BDArmory.Core.Extension
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
             /*
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -121,13 +121,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
                 {
                     if (p.vessel.rootPart != null)
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }
@@ -147,7 +147,7 @@ namespace BDArmory.Core.Extension
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
             /*
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -211,13 +211,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
                 {
                     if (p.vessel.rootPart != null)
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }
@@ -300,7 +300,7 @@ namespace BDArmory.Core.Extension
 
         public static bool HasArmor(this Part p)
         {
-            return p.GetArmorThickness() > 15f;
+            return Mathf.FloorToInt(p.GetArmorThickness()) > 0f;
         }
 
         public static bool GetFireFX(this Part p)
@@ -338,7 +338,23 @@ namespace BDArmory.Core.Extension
         public static float GetArmorThickness(this Part p)
         {
             if (p == null) return 0f;
-            return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+            float armorthickness = Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+            if (float.IsNaN(armorthickness))
+            {
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is NaN");
+                return 0f;
+            }
+            else
+            {
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
+                return armorthickness;
+            }
+            //return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+        }
+        public static float GetArmorMaxThickness(this Part p)
+        {
+            if (p == null) return 0f;
+            return Dependencies.Get<DamageService>().GetPartMaxArmor_svc(p);
         }
         public static float GetArmorDensity(this Part p)
         {
@@ -490,6 +506,7 @@ namespace BDArmory.Core.Extension
                 part.Modules.Contains("ModuleWheelBase") ||
                 part.Modules.Contains("KSPWheelBase") ||
                 part.gameObject.GetComponentUpwards<KerbalEVA>() ||
+                part.Modules.Contains("ModuleReactiveArmor") ||
                 part.Modules.Contains("ModuleDCKShields") ||
                 part.Modules.Contains("ModuleShieldGenerator")
                 )

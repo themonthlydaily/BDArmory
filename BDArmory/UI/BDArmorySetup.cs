@@ -343,6 +343,7 @@ namespace BDArmory.UI
 
         void Awake()
         {
+            if (Instance != null) Destroy(Instance);
             Instance = this;
             if (!(HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor))
             {
@@ -380,11 +381,11 @@ namespace BDArmory.UI
             LoadConfig();
 
             // Ensure AutoSpawn folder exists.
-            if (!Directory.Exists(Environment.CurrentDirectory + "/AutoSpawn"))
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/AutoSpawn"); }
+            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")))
+            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")); }
             // Ensure GameData/Custom/Flags folder exists.
-            if (!Directory.Exists(Environment.CurrentDirectory + "/GameData/Custom/Flags"))
-            { Directory.CreateDirectory(Environment.CurrentDirectory + "/GameData/Custom/Flags"); }
+            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")))
+            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")); }
         }
 
         void Start()
@@ -1390,6 +1391,10 @@ namespace BDArmory.UI
                             {
                                 ActiveWeaponManager.targetCoM = false;
                             }
+                            if (!ActiveWeaponManager.targetCoM && (!ActiveWeaponManager.targetWeapon && !ActiveWeaponManager.targetEngine && !ActiveWeaponManager.targetCommand && !ActiveWeaponManager.targetMass))
+                            {
+                                ActiveWeaponManager.targetCoM = true;
+                            }
                         }
                         string Engineslabel = Localizer.Format("#LOC_BDArmory_Engines", (ActiveWeaponManager.targetEngine ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage Missile; True, False
                         if (GUI.Button(new Rect(leftIndent + ((contentWidth - (2 * leftIndent)) / 2), (TargetLines * entryHeight), ((contentWidth - (2 * leftIndent)) / 2), entryHeight),
@@ -1400,6 +1405,10 @@ namespace BDArmory.UI
                             if (ActiveWeaponManager.targetEngine)
                             {
                                 ActiveWeaponManager.targetCoM = false;
+                            }
+                            if (!ActiveWeaponManager.targetCoM && (!ActiveWeaponManager.targetWeapon && !ActiveWeaponManager.targetEngine && !ActiveWeaponManager.targetCommand && !ActiveWeaponManager.targetMass))
+                            {
+                                ActiveWeaponManager.targetCoM = true;
                             }
                         }
                         TargetLines += 1.1f;
@@ -1412,6 +1421,10 @@ namespace BDArmory.UI
                             if (ActiveWeaponManager.targetWeapon)
                             {
                                 ActiveWeaponManager.targetCoM = false;
+                            }
+                            if (!ActiveWeaponManager.targetCoM && (!ActiveWeaponManager.targetWeapon && !ActiveWeaponManager.targetEngine && !ActiveWeaponManager.targetCommand && !ActiveWeaponManager.targetMass))
+                            {
+                                ActiveWeaponManager.targetCoM = true;
                             }
                         }
                         string Masslabel = Localizer.Format("#LOC_BDArmory_Mass", (ActiveWeaponManager.targetMass ? Localizer.Format("#LOC_BDArmory_false") : Localizer.Format("#LOC_BDArmory_true")));//"Engage SLW; True, False
@@ -2288,28 +2301,15 @@ namespace BDArmory.UI
 
                 BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING, Localizer.Format("#LOC_BDArmory_Settings_AutoEnableVesselSwitching"));
                 { // Kerbal Safety
-                    string kerbalSafetyString;
-                    switch (BDArmorySettings.KERBAL_SAFETY)
+                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_KerbalSafety")}:  ({(KerbalSafetyLevel)BDArmorySettings.KERBAL_SAFETY})", leftLabel); // Kerbal Safety
+                    if (BDArmorySettings.KERBAL_SAFETY != (BDArmorySettings.KERBAL_SAFETY = BDArmorySettings.KERBAL_SAFETY = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.KERBAL_SAFETY, (float)KerbalSafetyLevel.Off, (float)KerbalSafetyLevel.Full))))
                     {
-                        case 1:
-                            kerbalSafetyString = "Partial";
-                            break;
-                        case 2:
-                            kerbalSafetyString = "Full";
-                            break;
-                        default:
-                            kerbalSafetyString = "Off";
-                            break;
-                    }
-                    GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_KerbalSafety")}:  ({kerbalSafetyString})", leftLabel); // Kerbal Safety
-                    if (BDArmorySettings.KERBAL_SAFETY != (BDArmorySettings.KERBAL_SAFETY = BDArmorySettings.KERBAL_SAFETY = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.KERBAL_SAFETY, 0f, 2f))))
-                    {
-                        if (BDArmorySettings.KERBAL_SAFETY > 0)
+                        if (BDArmorySettings.KERBAL_SAFETY != (int)KerbalSafetyLevel.Off)
                             KerbalSafetyManager.Instance.EnableKerbalSafety();
                         else
                             KerbalSafetyManager.Instance.DisableKerbalSafety();
                     }
-                    if (BDArmorySettings.KERBAL_SAFETY > 0)
+                    if (BDArmorySettings.KERBAL_SAFETY != (int)KerbalSafetyLevel.Off)
                     {
                         string inventory;
                         switch (BDArmorySettings.KERBAL_SAFETY_INVENTORY)
@@ -2340,6 +2340,8 @@ namespace BDArmory.UI
                     BDArmorySettings.RESET_HP = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_HP, Localizer.Format("#LOC_BDArmory_Settings_ResetHP"));
                     BDArmorySettings.BULLET_WATER_DRAG = GUI.Toggle(SLeftRect(++line), BDArmorySettings.BULLET_WATER_DRAG, Localizer.Format("#LOC_BDArmory_Settings_waterDrag"));// Underwater bullet drag
                     BDArmorySettings.RESET_ARMOUR = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_ARMOUR, Localizer.Format("#LOC_BDArmory_Settings_ResetArmor"));
+                    BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS = GUI.Toggle(SLeftRect(++line), BDArmorySettings.VESSEL_RELATIVE_BULLET_CHECKS, Localizer.Format("#LOC_BDArmory_Settings_VesselRelativeBulletChecks"));//"Vessel-Relative Bullet Checks"
+                    BDArmorySettings.RESET_HULL = GUI.Toggle(SRightRect(line), BDArmorySettings.RESET_HULL, Localizer.Format("#LOC_BDArmory_Settings_ResetHull")); //Reset Hull
                     BDArmorySettings.AUTO_RESUME_TOURNAMENT = GUI.Toggle(SLeftRect(++line), BDArmorySettings.AUTO_RESUME_TOURNAMENT, Localizer.Format("#LOC_BDArmory_Settings_AutoResumeTournaments")); // Auto-Resume Tournaments
                     if (BDArmorySettings.AUTO_RESUME_TOURNAMENT)
                     {
@@ -2689,16 +2691,22 @@ namespace BDArmory.UI
 
                         if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                         {
-                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRate")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE})", leftLabel);//Fire Rate Override
-                            BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE, 10f, 300f));
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateCenter")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER})", leftLabel);//Fire Rate Override Center
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER, 10f, 300f) / 5f) * 5f;
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateSpread")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD})", leftLabel);//Fire Rate Override Spread
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD, 0f, 50f));
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateBias")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS:G2})", leftLabel);//Fire Rate Override Bias
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS, 0f, 1f) * 50f) / 50f;
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateHitMultiplier")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER})", leftLabel);//Fire Rate Hit Multiplier
+                            BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
-                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                        if (BDArmorySettings.RUNWAY_PROJECT_ROUND == -1) // FIXME Set when the round is actually run! Also check for other "RUNWAY_PROJECT_ROUND == -1" checks.
                         {
-                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.S4R2_DMG_MULT})", leftLabel);//"S4R2 Non-headshot Dmg Mult"
-                            BDArmorySettings.S4R2_DMG_MULT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.S4R2_DMG_MULT, 0.05f, 0.95f) * 100f) / 100f;
+                            GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_zombieDmgMod")}:  ({BDArmorySettings.ZOMBIE_DMG_MULT})", leftLabel);//"Zombie Non-headshot Dmg Mult"
+                            BDArmorySettings.ZOMBIE_DMG_MULT = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.ZOMBIE_DMG_MULT, 0.05f, 0.95f) * 100f) / 100f;
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
-                                BDArmorySettings.ALLOW_S4R2_BD = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.ALLOW_S4R2_BD, Localizer.Format("#LOC_BDArmory_Settings_BD_ZombieMode"));//"Allow battle Damage"
+                                BDArmorySettings.ALLOW_ZOMBIE_BD = GUI.Toggle(SLeftRect(++line, 1), BDArmorySettings.ALLOW_ZOMBIE_BD, Localizer.Format("#LOC_BDArmory_Settings_BD_ZombieMode"));//"Allow battle Damage"
                             }
                         }
                     }
@@ -2909,6 +2917,28 @@ namespace BDArmory.UI
                 //     }
                 //     Debug.Log("DEBUG magnitude " + (Time.realtimeSinceStartup - now) / iters + "s/iter, out: " + test_out);
                 // }
+                if (GUI.Button(SLeftRect(++line), "Layer test"))
+                {
+                    for (int i = 0; i < 32; ++i)
+                    {
+                        // Vector3 mouseAim = new Vector3(Input.mousePosition.x / Screen.width, Input.mousePosition.y / Screen.height, 0);
+                        Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+                        RaycastHit hit;
+
+                        if (Physics.Raycast(ray, out hit, 1000f, (1 << i)))
+                        {
+                            var hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
+                            var hitEVA = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
+                            var hitBuilding = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+                            if (hitEVA != null) hitPart = hitEVA.part;
+                            if (hitPart != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitPart.name}.");
+                            else if (hitBuilding != null) Debug.Log($"DEBUG Bitmask at {i} hit {hitBuilding.name}");
+                            else Debug.Log($"DEBUG Bitmask at {i} hit {hit.collider.gameObject.name}");
+                        }
+                    }
+                }
+                if (GUI.Button(SLeftRect(++line), "Test vessel position timing."))
+                { StartCoroutine(TestVesselPositionTiming()); }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
                     QuitKSP();
@@ -3067,7 +3097,7 @@ namespace BDArmory.UI
                     {
                         if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RemoteSync"))) // Run Via Remote Orchestration
                         {
-                            string vesselPath = Environment.CurrentDirectory + $"/AutoSpawn";
+                            string vesselPath = Path.Combine(Environment.CurrentDirectory, "AutoSpawn");
                             if (!System.IO.Directory.Exists(vesselPath))
                             {
                                 System.IO.Directory.CreateDirectory(vesselPath);
@@ -3313,7 +3343,7 @@ namespace BDArmory.UI
             {
                 BDAWindowSettingsField.Save();
             }
-            if (windowSettingsEnabled)
+            if (windowSettingsEnabled || showVesselSpawnerGUI)
                 SaveConfig();
 
             GameEvents.onHideUI.Remove(HideGameUI);
@@ -3345,6 +3375,41 @@ namespace BDArmory.UI
             HighLogic.LoadScene(GameScenes.MAINMENU);
             Application.Quit();
         }
+
+        IEnumerator TestVesselPositionTiming()
+        {
+            var wait = new WaitForFixedUpdate();
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.ObscenelyEarly, ObscenelyEarly);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Early, Early);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Precalc, Precalc);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Earlyish, Earlyish);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Normal, Normal);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FashionablyLate, FashionablyLate);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.FlightIntegrator, FlightIntegrator);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.Late, Late);
+            TimingManager.FixedUpdateAdd(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
+            yield return wait;
+            yield return wait;
+            yield return wait;
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.ObscenelyEarly, ObscenelyEarly);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Early, Early);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Precalc, Precalc);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Earlyish, Earlyish);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Normal, Normal);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.FashionablyLate, FashionablyLate);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.FlightIntegrator, FlightIntegrator);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.Late, Late);
+            TimingManager.FixedUpdateRemove(TimingManager.TimingStage.BetterLateThanNever, BetterLateThanNever);
+        }
+        void ObscenelyEarly() { Debug.Log($"DEBUG {Time.time} ObscenelyEarly, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Early() { Debug.Log($"DEBUG {Time.time} Early, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Precalc() { Debug.Log($"DEBUG {Time.time} Precalc, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Earlyish() { Debug.Log($"DEBUG {Time.time} Earlyish, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Normal() { Debug.Log($"DEBUG {Time.time} Normal, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void FashionablyLate() { Debug.Log($"DEBUG {Time.time} FashionablyLate, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void FlightIntegrator() { Debug.Log($"DEBUG {Time.time} FlightIntegrator, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void Late() { Debug.Log($"DEBUG {Time.time} Late, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
+        void BetterLateThanNever() { Debug.Log($"DEBUG {Time.time} BetterLateThanNever, active vessel position: {FlightGlobals.ActiveVessel.transform.position.ToString("G6")}"); }
 #endif
     }
 }

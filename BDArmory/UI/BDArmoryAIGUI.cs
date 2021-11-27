@@ -12,7 +12,7 @@ using static BDArmory.UI.VesselSpawnerWindow;
 
 namespace BDArmory.UI
 {
-    [KSPAddon(KSPAddon.Startup.EveryScene, false)]
+    [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
     public class BDArmoryAIGUI : MonoBehaviour
     {
         //toolbar gui
@@ -66,6 +66,7 @@ namespace BDArmory.UI
 
         void Awake()
         {
+            if (Instance != null) Destroy(Instance);
             Instance = this;
             BDArmorySetup.WindowRectAI = new Rect(BDArmorySetup.WindowRectAI.x, BDArmorySetup.WindowRectAI.y, WindowWidth, WindowHeight);
         }
@@ -234,7 +235,7 @@ namespace BDArmory.UI
         void GetAI()
         {
             // Make sure we're synced between the sliders and input fields in case something changed just before the switch.
-            SyncInputFieldsNow(!NumFieldsEnabled);
+            SyncInputFieldsNow(NumFieldsEnabled);
             // Then, reset all the fields as this is only occurring on vessel change, so they need resetting anyway.
             ActivePilot = null;
             ActiveDriver = null;

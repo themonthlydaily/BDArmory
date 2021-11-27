@@ -34,7 +34,6 @@ namespace BDArmory.FX
         private float fireIntensity = 0;
         private float tntMassEquivalent = 0;
         public bool surfaceFire = false;
-        private int fireDmgFloor = 1000; // FIXME This is assigned but its value is never used.
         private bool isSRB = false;
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
@@ -72,15 +71,6 @@ namespace BDArmory.FX
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
             var hullmat = parentPart.FindModuleImplementing<HitpointTracker>();
-            if (hullmat != null)
-            {
-                if (hullmat.HullTypeNum == 1) fireDmgFloor = 350;
-                else if (hullmat.HullTypeNum == 2) fireDmgFloor = 1000; //993c melting point of Aluminium
-                else
-                {
-                    fireDmgFloor = 1700; //~1500c, melting point of mild steel
-                }
-            }
             solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
             if (engine != null)
             {
@@ -200,7 +190,7 @@ namespace BDArmory.FX
                                 hasFuel = false;
                             }
                             solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
-                            if (solid != null)
+                            if (solid != null && solid.amount > 0)
                             {
                                 if (solid.amount < solid.maxAmount * 0.66f)
                                 {
@@ -391,11 +381,11 @@ namespace BDArmory.FX
                 PartResource fuel = parentPart.Resources.Where(pr => pr.resourceName == "LiquidFuel").FirstOrDefault();
                 PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                 float tntFuel = 0, tntOx = 0, tntMP = 0, tntEC = 0;
-                if (fuel != null)
+                if (fuel != null && fuel.amount > 0)
                 {
                     tntFuel = (Mathf.Clamp((float)fuel.amount, ((float)fuel.maxAmount * 0.05f), ((float)fuel.maxAmount * 0.2f)) / 2);
                     tntMassEquivalent += tntFuel;
-                    if (fuel != null && ox != null)
+                    if (fuel != null && (ox != null && ox.amount > 0))
                     {
                         tntOx = (Mathf.Clamp((float)ox.amount, ((float)ox.maxAmount * 0.1f), ((float)ox.maxAmount * 0.3f)) / 2);
                         tntMassEquivalent += tntOx;
@@ -407,7 +397,7 @@ namespace BDArmory.FX
                     }
                 }
                 PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
-                if (mp != null)
+                if (mp != null && mp.amount > 0)
                 {
                     tntMP = (Mathf.Clamp((float)mp.amount, ((float)mp.maxAmount * 0.1f), ((float)mp.maxAmount * 0.3f)) / 3);
                     tntMassEquivalent += tntMP;
@@ -418,7 +408,7 @@ namespace BDArmory.FX
                 }
                 tntMassEquivalent /= 6f; //make this not have a 1 to 1 ratio of fuelmass -> tntmass
                 PartResource ec = parentPart.Resources.Where(pr => pr.resourceName == "ElectricCharge").FirstOrDefault();
-                if (ec != null)
+                if (ec != null && ec.amount > 0)
                 {
                     tntEC = ((float)ec.maxAmount / 5000); //fix for cockpit batteries weighing a tonne+
                     tntMassEquivalent += tntEC;
@@ -436,7 +426,6 @@ namespace BDArmory.FX
                 {
                     float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivalent);
                     using (var blastHits = Physics.OverlapSphere(parentPart.transform.position, blastRadius, 9076737).AsEnumerable().GetEnumerator())
-                    {
                         while (blastHits.MoveNext())
                         {
                             if (blastHits.Current == null) continue;
@@ -445,9 +434,9 @@ namespace BDArmory.FX
                                 Part partHit = blastHits.Current.GetComponentInParent<Part>();
                                 if (partHit == null) continue;
                                 if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                                if (partHit != null && partHit.mass > 0)
+                                if (partHit.Modules.GetModule<HitpointTracker>().Hitpoints <= 0) continue; // Ignore parts that are already dead.
+                                if (partHit.Rigidbody != null && partHit.mass > 0)
                                 {
-                                    Rigidbody rb = partHit.Rigidbody;
                                     Vector3 distToG0 = parentPart.transform.position - partHit.transform.position;
 
                                     Ray LoSRay = new Ray(parentPart.transform.position, partHit.transform.position - parentPart.transform.position);
@@ -458,7 +447,6 @@ namespace BDArmory.FX
                                         Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
                                         if (p == partHit)
                                         {
-                                            if (rb == null) return;
                                             BulletHitFX.AttachFire(hit.point, p, 1, SourceVessel, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distToG0.magnitude / blastRadius)), 1, false, true);
                                             if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                             {
@@ -473,14 +461,18 @@ namespace BDArmory.FX
                                 Debug.LogWarning("[BDArmory.FireFX]: Exception thrown in Detonate: " + e.Message + "\n" + e.StackTrace);
                             }
                         }
-                    }
                 }
                 if (tntMassEquivalent > 0) //don't explode if nothing to detonate if called from OnParentDestroy()
                 {
                     ExplosionFx.CreateExplosion(parentPart.transform.position, tntMassEquivalent, explModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 120, null, parentPart.vessel != null ? parentPart.vessel.vesselName : null, "Fuel");
                     if (BDArmorySettings.RUNWAY_PROJECT_ROUND != 42)
                     {
-                        if (tntFuel > 0 || tntMP > 0) parentPart.Destroy();
+                        if (tntFuel > 0 || tntMP > 0)
+                        {
+                            var tmpParentPart = parentPart; // Temporarily store the parent part so we can destroy it without destroying ourselves.
+                            Deactivate();
+                            tmpParentPart.Destroy();
+                        }
                     }
                 }
             }

@@ -5,6 +5,7 @@
 		public static string settingsConfigURL = "GameData/BDArmory/PluginData/settings.cfg";
 
 		[SettingsDataField] public static bool TEAMICONS = true;
+		[SettingsDataField] public static bool SHOW_SELF = false;
 		[SettingsDataField] public static bool TEAMNAMES = false;
 		[SettingsDataField] public static bool VESSELNAMES = true;
 		[SettingsDataField] public static bool SCORE = false;

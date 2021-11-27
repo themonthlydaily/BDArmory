@@ -88,10 +88,10 @@ namespace BDArmory.Modules
             var engine = part.FindModuleImplementing<ModuleEngines>();
             if (engine != null)
             {
-                Events["ToggleTankOption"].guiActiveEditor = false;
-                if (solid != null && engine.throttleLocked && !engine.allowShutdown)
+                //Events["ToggleTankOption"].guiActiveEditor = false; //gets removed with module removal, unnecessary
+                if (solid != null && solid.maxAmount > 4.5f && engine.throttleLocked) //  && !engine.allowShutdown
                 {
-                    part.RemoveModule(this); //don't add firebottles to SRBs
+                    part.RemoveModule(this); //don't add firebottles to SRBs, but allow for the S1.5.5 MH soyuz tank with integrated seperatrons
                 }
             }
         }
@@ -161,29 +161,27 @@ namespace BDArmory.Modules
         }
         void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && vessel != null && !vessel.packed && !BDArmorySetup.GameIsPaused)
+            if (!HighLogic.LoadedSceneIsFlight || !FlightGlobals.ready || BDArmorySetup.GameIsPaused) return; // Not in flight scene, not ready or paused.
+            if (vessel == null || vessel.packed || part == null) return; // Vessel or part is dead or packed.
+            if (!BDArmorySettings.BD_FIRES_ENABLED || !BDArmorySettings.BD_FIRE_HEATDMG) return; // Disabled.
+
+            if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
             {
-                if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
+                if (!isOnFire)
                 {
-                    if (((fuel != null && fuel.amount > 0) && part.temperature > 493) || ((solid != null && solid.amount > 0) && part.temperature > 600)) //autoignition temp of kerosene is 220 c
+                    string fireStarter;
+                    var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
+                    if (vesselFire != null)
                     {
-                        if (!isOnFire)
-                        {
-                            string fireStarter;
-                            var vesselFire = part.vessel.GetComponentInChildren<FireFX>();
-                            if (vesselFire != null)
-                            {
-                                fireStarter = vesselFire.SourceVessel;
-                            }
-                            else
-                            {
-                                fireStarter = part.vessel.GetName();
-                            }
-                            BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
-                            Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
-                            isOnFire = true;
-                        }
+                        fireStarter = vesselFire.SourceVessel;
                     }
+                    else
+                    {
+                        fireStarter = part.vessel.GetName();
+                    }
+                    BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.SelfSealingTank]: Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + (fuel != null ? fuel.amount : solid.amount) + "; temperature: " + part.temperature);
+                    isOnFire = true;
                 }
             }
         }

@@ -81,6 +81,15 @@ namespace BDArmory.Control
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
             if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].shotsFired;
+            if (BDArmorySettings.RUNWAY_PROJECT)
+            {
+                if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromShotThisFrame)
+                {
+                    BDArmorySettings.FIRE_RATE_OVERRIDE += Mathf.Round(VectorUtils.Gaussian() * BDArmorySettings.FIRE_RATE_OVERRIDE_SPREAD + (BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER - BDArmorySettings.FIRE_RATE_OVERRIDE) * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS * BDArmorySettings.FIRE_RATE_OVERRIDE_BIAS);
+                    BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Max(BDArmorySettings.FIRE_RATE_OVERRIDE, 10f);
+                    BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromShotThisFrame = true;
+                }
+            }
             return true;
         }
         /// <summary>
@@ -130,6 +139,13 @@ namespace BDArmory.Control
                     RegisterIsIT(attacker); // Register the attacker as now being IT.
                 }
             }
+
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41 && !BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame)
+            {
+                BDArmorySettings.FIRE_RATE_OVERRIDE = Mathf.Round(Mathf.Min(BDArmorySettings.FIRE_RATE_OVERRIDE * BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1200f));
+                BDACompetitionMode.Instance.s4r1FiringRateUpdatedFromHitThisFrame = true;
+            }
+
             return true;
         }
         /// <summary>
@@ -143,6 +159,11 @@ namespace BDArmory.Control
         {
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
+            if (float.IsNaN(damage))
+            {
+                Debug.LogError($"DEBUG {attacker} did NaN damage to {victim}!");
+                return false;
+            }
 
             if (ScoreData[victim].damageFromGuns.ContainsKey(attacker)) { ScoreData[victim].damageFromGuns[attacker] += damage; }
             else { ScoreData[victim].damageFromGuns[attacker] = damage; }
@@ -475,8 +496,6 @@ namespace BDArmory.Control
         public void LogResults(string CompetitionID, string message = "", string tag = "")
         {
             var logStrings = new List<string>();
-
-            // get everyone who's still alive
             logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Dumping Results" + (message != "" ? " " + message : "") + " after " + (int)(Planetarium.GetUniversalTime() - BDACompetitionMode.Instance.competitionStartTime) + "s (of " + (BDArmorySettings.COMPETITION_DURATION * 60d) + "s) at " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss zzz"));
 
             // Find out who's still alive
@@ -572,6 +591,10 @@ namespace BDArmory.Control
                     }
                 }
             }
+
+            // Report survivors to Remote Orchestration
+            if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            { BDAScoreService.Instance.TrackSurvivors(Players.Where(player => ScoreData[player].deathOrder == -1).ToList()); }
 
             // Who shot who.
             foreach (var player in Players)
@@ -717,7 +740,7 @@ namespace BDArmory.Control
             }
 
             // Dump the log results to a file
-            var folder = Environment.CurrentDirectory + "/GameData/BDArmory/Logs";
+            var folder = Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "Logs");
             if (BDATournament.Instance.tournamentStatus == TournamentStatus.Running)
             {
                 folder = Path.Combine(folder, "Tournament " + BDATournament.Instance.tournamentID, "Round " + BDATournament.Instance.currentRound);
@@ -877,6 +900,10 @@ namespace BDArmory.Control
         Rect statusRectShadow;
         Rect clockRect;
         Rect clockRectShadow;
+        GUIStyle dateStyle;
+        GUIStyle dateStyleShadow;
+        Rect dateRect;
+        Rect dateRectShadow;
         string guiStatusString;
         #endregion
 
@@ -905,9 +932,13 @@ namespace BDArmory.Control
                     var gTime = (float)(Planetarium.GetUniversalTime() - (competitionIsActive ? competitionStartTime : competitionPreStartTime));
                     var minutes = Mathf.FloorToInt(gTime / 60);
                     var seconds = gTime % 60;
-                    string pTime = minutes.ToString("0") + ":" + seconds.ToString("00.00");
+                    // string pTime = minutes.ToString("0") + ":" + seconds.ToString("00.00");
+                    string pTime = $"{minutes:0}:{seconds:00.00}";
                     GUI.Label(clockRectShadow, pTime, statusStyleShadow);
                     GUI.Label(clockRect, pTime, statusStyle);
+                    string pDate = DateTime.UtcNow.ToString("yyyy-MM-dd\nHH:mm:ss") + " UTC";
+                    GUI.Label(dateRectShadow, pDate, dateStyleShadow);
+                    GUI.Label(dateRect, pDate, dateStyle);
                 }
 
                 // Messages
@@ -934,6 +965,10 @@ namespace BDArmory.Control
                             competitionStatus.lastActiveVessel = vesselName;
                         }
                         guiStatusString += (string.IsNullOrEmpty(guiStatusString) ? "" : "\n") + currentVesselStatus;
+                        if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
+                        {
+                            guiStatusString += $"\nCurrent Firing Rate: {BDArmorySettings.FIRE_RATE_OVERRIDE} shots/min.";
+                        }
                     }
                 }
                 if (!BDArmorySetup.GAME_UI_ENABLED)
@@ -961,26 +996,36 @@ namespace BDArmory.Control
             statusStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.label);
             statusStyle.fontStyle = FontStyle.Bold;
             statusStyle.alignment = TextAnchor.UpperLeft;
+            dateStyle = new GUIStyle(statusStyle);
             if (BDArmorySetup.GAME_UI_ENABLED)
             {
                 clockRect = new Rect(10, 42, 100, 30);
+                dateRect = new Rect(100, 38, 100, 20);
                 statusRect = new Rect(30, 80, Screen.width - 130, Mathf.FloorToInt(Screen.height / 2));
                 statusStyle.fontSize = 22;
+                dateStyle.fontSize = 14;
             }
             else
             {
                 clockRect = new Rect(10, 6, 80, 20);
+                dateRect = new Rect(10, 26, 100, 20);
                 statusRect = new Rect(80, 6, Screen.width - 80, Mathf.FloorToInt(Screen.height / 2));
                 statusStyle.fontSize = 14;
+                dateStyle.fontSize = 10;
             }
             clockRectShadow = new Rect(clockRect);
             clockRectShadow.x += 2;
             clockRectShadow.y += 2;
+            dateRectShadow = new Rect(dateRect);
+            dateRectShadow.x += 2;
+            dateRectShadow.y += 2;
             statusRectShadow = new Rect(statusRect);
             statusRectShadow.x += 2;
             statusRectShadow.y += 2;
             statusStyleShadow = new GUIStyle(statusStyle);
             statusStyleShadow.normal.textColor = new Color(0, 0, 0, 0.75f);
+            dateStyleShadow = new GUIStyle(dateStyle);
+            dateStyleShadow.normal.textColor = new Color(0, 0, 0, 0.75f);
         }
 
         void OnDestroy()
@@ -1059,7 +1104,7 @@ namespace BDArmory.Control
                     else
                         StartCompetitionNow(BDArmorySettings.COMPETITION_START_NOW_AFTER * 10);
                 }
-                if (BDArmorySettings.KERBAL_SAFETY > 0)
+                if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
@@ -1124,6 +1169,7 @@ namespace BDArmory.Control
             rammingInformation = null; // Reset the ramming information.
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.Reset(); RemoveDebrisNow(); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.Reset(); RemoveDebrisNow(); }
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41) BDArmorySettings.FIRE_RATE_OVERRIDE = BDArmorySettings.FIRE_RATE_OVERRIDE_CENTER;
             finalGracePeriodStart = -1;
             competitionPreStartTime = Planetarium.GetUniversalTime();
             competitionStartTime = competitionIsActive ? Planetarium.GetUniversalTime() : -1;
@@ -1138,7 +1184,7 @@ namespace BDArmory.Control
         {
             competitionStarting = true;
             startTag = true; // Tag entry condition, should be true even if tag is not currently enabled, so if tag is enabled later in the competition it will function
-            competitionStatus.Set("Competition: Pilots are taking off.");
+            competitionStatus.Add("Competition: Pilots are taking off.");
             var pilots = new Dictionary<BDTeam, List<IBDAIControl>>();
             HashSet<IBDAIControl> readyToLaunch = new HashSet<IBDAIControl>();
             using (var loadedVessels = BDATargetManager.LoadedVessels.GetEnumerator())
@@ -1176,7 +1222,7 @@ namespace BDArmory.Control
                 }
                 if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                     foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
                         engine.Activate();
                 }
@@ -1227,14 +1273,17 @@ namespace BDArmory.Control
                     }
                     leaders.Add(pilotList.Current.Value[0]);
                 }
+            var leaderNames = leaders.Select(l => l.vessel.vesselName).ToList();
             while (leaders.Any(leader => leader == null || leader.weaponManager == null || leader.weaponManager.wingCommander == null || leader.weaponManager.wingCommander.weaponManager == null))
             {
                 yield return new WaitForFixedUpdate();
                 if (leaders.Any(leader => leader == null || leader.weaponManager == null))
                 {
-                    var message = "One of the team leaders disappeared during start-up, aborting.";
+                    var survivingLeaders = leaders.Where(l => l != null && l.weaponManager != null).Select(l => l.vessel.vesselName).ToList();
+                    var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
+                    var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
                     competitionStatus.Set("Competition: " + message);
-                    Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
+                    Debug.Log("[BDArmory.BDACompetitionMode]: 1. " + message);
                     competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                     StopCompetition();
                     yield break;
@@ -1258,17 +1307,17 @@ namespace BDArmory.Control
                         }
             }
 
-            using (var leader = leaders.GetEnumerator())
-                while (leader.MoveNext())
-                    if (leader.Current == null)
-                    {
-                        var message = "A leader vessel has disappeared during competition start-up, aborting.";
-                        competitionStatus.Set("Competition: " + message);
-                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
-                        competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
-                        StopCompetition();
-                        yield break;
-                    }
+            if (leaders.Any(leader => leader == null || leader.weaponManager == null))
+            {
+                var survivingLeaders = leaders.Where(l => l != null && l.weaponManager != null).Select(l => l.vessel.vesselName).ToList();
+                var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
+                var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
+                competitionStatus.Set("Competition: " + message);
+                Debug.Log("[BDArmory.BDACompetitionMode]: 2. " + message);
+                competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
+                StopCompetition();
+                yield break;
+            }
 
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
             if (BDArmorySettings.ASTEROID_RAIN) { AsteroidRain.Instance.SpawnRain(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
@@ -1285,7 +1334,9 @@ namespace BDArmory.Control
 
             for (var i = 0; i < leaders.Count; ++i)
             {
-                leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startDirection, FlightGlobals.currentMainBody));
+                var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(leaders[i].vessel, true); // Adjust initial fly-to point for terrain and default altitudes.
+                var startPosition = center + startDirection + (pilotAI != null ? (pilotAI.defaultAltitude - Misc.Misc.GetRadarAltitudeAtPos(center + startDirection, false)) * VectorUtils.GetUpDirection(center + startDirection) : Vector3.zero);
+                leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startPosition, FlightGlobals.currentMainBody));
                 startDirection = directionStep * startDirection;
             }
 
@@ -1299,17 +1350,17 @@ namespace BDArmory.Control
             {
                 waiting = false;
 
-                foreach (var leader in leaders)
-                    if (leader == null)
-                    {
-                        var message = "A leader vessel has disappeared during competition start-up, aborting.";
-                        competitionStatus.Set("Competition: " + message);
-                        Debug.Log("[BDArmory.BDACompetitionMode]: " + message);
-                        competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
-                        StopCompetition();
-                        yield break;
-                    }
-
+                if (leaders.Any(leader => leader == null || leader.weaponManager == null))
+                {
+                    var survivingLeaders = leaders.Where(l => l != null && l.weaponManager != null).Select(l => l.vessel.vesselName).ToList();
+                    var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
+                    var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
+                    competitionStatus.Set("Competition: " + message);
+                    Debug.Log("[BDArmory.BDACompetitionMode]: 3. " + message);
+                    competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
+                    StopCompetition();
+                    yield break;
+                }
 
                 foreach (var leader in leaders)
                 {
@@ -1324,8 +1375,17 @@ namespace BDArmory.Control
                         }
                         catch (Exception e)
                         {
+                            var message = "A team leader has disappeared during competition start-up, aborting.";
                             Debug.LogWarning("[BDArmory.BDACompetitionMode]: Exception thrown in DogfightCompetitionModeRoutine: " + e.Message + "\n" + e.StackTrace);
-                            competitionStatus.Set("Competition: A leader vessel has disappeared during competition start-up, aborting.");
+                            try
+                            {
+                                var survivingLeaders = leaders.Where(l => l != null && l.weaponManager != null).Select(l => l.vessel.vesselName).ToList();
+                                var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
+                                message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
+                            }
+                            catch (Exception e2) { Debug.LogWarning($"[BDArmory.BDACompetitionMode]: Exception gathering missing leader names:" + e2.Message); }
+                            competitionStatus.Set(message);
+                            Debug.Log("[BDArmory.BDACompetitionMode]: 4. " + message);
                             competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
                             StopCompetition();
                             yield break;
@@ -1428,6 +1488,7 @@ namespace BDArmory.Control
                 {
                     VesselModuleRegistry.OnVesselModified(vessel, true);
                     pilot = VesselModuleRegistry.GetModule<IBDAIControl>(vessel);
+                    if (pilot == null || pilot.weaponManager == null) continue; // Unfixable, ignore the vessel.
                 }
                 if (IsValidVessel(vessel) != InvalidVesselReason.None) continue;
                 if (pilot.weaponManager.Team.Neutral) continue; // Ignore the neutrals.
@@ -1626,6 +1687,8 @@ namespace BDArmory.Control
         #region Runway Project
         public bool killerGMenabled = false;
         public bool pinataAlive = false;
+        public bool s4r1FiringRateUpdatedFromShotThisFrame = false;
+        public bool s4r1FiringRateUpdatedFromHitThisFrame = false;
 
         public void StartRapidDeployment(float distance)
         {
@@ -1639,7 +1702,7 @@ namespace BDArmory.Control
                 GameEvents.onVesselCreate.Add(OnVesselModified);
                 if (BDArmorySettings.AUTO_ENABLE_VESSEL_SWITCHING)
                     LoadedVesselSwitcher.Instance.EnableAutoVesselSwitching(true);
-                if (BDArmorySettings.KERBAL_SAFETY > 0)
+                if (KerbalSafetyManager.Instance.safetyLevel != KerbalSafetyLevel.Off)
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 List<string> commandSequence;
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
@@ -2393,23 +2456,8 @@ namespace BDArmory.Control
                 else
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                        Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.GetName());
-                    if (vessel.vesselType == VesselType.SpaceObject)
-                    {
-                        if (BDArmorySettings.ASTEROID_RAIN && AsteroidRain.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
-                        if (BDArmorySettings.ASTEROID_FIELD && AsteroidField.IsManagedAsteroid(vessel)) yield break; // Don't remove asteroids when we're using them.
-                        var cometVessel = vessel.FindVesselModuleImplementing<CometVessel>();
-                        if (cometVessel) { Destroy(cometVessel); }
-                    }
-                    vessel.Die();
-                    // yield return new WaitForFixedUpdate();
-                    // if (vessel != null)
-                    // {
-                    //     var partsToKill = vessel.parts.ToList();
-                    //     foreach (var part in partsToKill)
-                    //         if (part != null)
-                    //             part.Die();
-                    // }
+                        Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.vesselName);
+                    yield return VesselSpawner.Instance.RemoveVesselCoroutine(vessel);
                 }
             }
             if (nonCompetitorsToRemove.Contains(vessel))
@@ -2436,6 +2484,8 @@ namespace BDArmory.Control
         {
             if (competitionIsActive)
                 LogRamming();
+            s4r1FiringRateUpdatedFromShotThisFrame = false;
+            s4r1FiringRateUpdatedFromHitThisFrame = false;
         }
 
         // the competition update system
@@ -2965,6 +3015,7 @@ namespace BDArmory.Control
         /// <param name="vessel"></param>
         public void AddPlayerToRammingInformation(Vessel vessel)
         {
+            if (rammingInformation == null) return; // Not set up yet.
             if (!rammingInformation.ContainsKey(vessel.vesselName)) // Vessel information hasn't been added to rammingInformation datastructure yet.
             {
                 rammingInformation.Add(vessel.vesselName, new RammingInformation { vesselName = vessel.vesselName, targetInformation = new Dictionary<string, RammingTargetInformation>() });
@@ -2992,6 +3043,7 @@ namespace BDArmory.Control
         /// <param name="player"></param>
         public void RemovePlayerFromRammingInformation(string player)
         {
+            if (rammingInformation == null) return; // Not set up yet.
             if (!rammingInformation.ContainsKey(player)) return; // Player isn't in the ramming information
             rammingInformation.Remove(player); // Remove the player.
             foreach (var otherVesselName in rammingInformation.Keys) // Remove the player's target information from the other players.
@@ -3513,6 +3565,11 @@ namespace BDArmory.Control
             strings.Add("GameObjects: " + FindObjectsOfType<GameObject>().Length + " active of " + Resources.FindObjectsOfTypeAll(typeof(GameObject)).Length);
             strings.Add($"FlightState ProtoVessels: {HighLogic.CurrentGame.flightState.protoVessels.Where(pv => pv.vesselRef != null).Count()} active of {HighLogic.CurrentGame.flightState.protoVessels.Count}");
             Debug.Log("DEBUG " + string.Join(", ", strings));
+
+            strings.Clear();
+            foreach (var pool in FindObjectsOfType<ObjectPool>())
+                strings.Add($"{pool.poolObjectName}:{pool.size}");
+            Debug.Log("DEBUG Object Pools: " + string.Join(", ", strings));
         }
 
         public void RunDebugChecks()

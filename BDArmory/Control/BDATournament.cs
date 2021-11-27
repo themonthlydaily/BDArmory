@@ -79,9 +79,10 @@ namespace BDArmory.Control
          */
         public bool Generate(string folder, int numberOfRounds, int vesselsPerHeat, int tournamentStyle)
         {
+            folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.FFA;
-            var abs_folder = Environment.CurrentDirectory + $"/AutoSpawn/{folder}";
+            var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files does not exist.";
@@ -200,9 +201,10 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool Generate(string folder, int numberOfRounds, int teamsPerHeat, int vesselsPerTeam, int numberOfTeams, int tournamentStyle)
         {
+            folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.Teams;
-            var abs_folder = Environment.CurrentDirectory + $"/AutoSpawn/{folder}";
+            var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files or team folders does not exist.";
@@ -234,7 +236,7 @@ namespace BDArmory.Control
             }
             else // Make teams from the folders under the spawn folder.
             {
-                var teamDirs = Directory.GetDirectories(Environment.CurrentDirectory + $"/AutoSpawn/{folder}");
+                var teamDirs = Directory.GetDirectories(abs_folder);
                 if (teamDirs.Length == 0) // Make teams from each vessel in the spawn folder.
                 {
                     numberOfTeams = -1; // Flag for treating craft files as folder names.
@@ -258,7 +260,7 @@ namespace BDArmory.Control
             vesselCount = craftFiles.Count;
             if (teamFiles.Count < 2)
             {
-                message = "Insufficient " + (numberOfTeams != 1 ? "craft files" : "folders") + " in 'AutoSpawn/" + folder + "' to generate a tournament.";
+                message = $"Insufficient {(numberOfTeams != 1 ? "craft files" : "folders")} in '{Path.Combine("AutoSpawn", folder)}' to generate a tournament.";
                 if (BDACompetitionMode.Instance) BDACompetitionMode.Instance.competitionStatus.Add(message);
                 Debug.Log("[BDArmory.BDATournament]: " + message);
                 return false;
@@ -557,7 +559,7 @@ namespace BDArmory.Control
         #region Flags and Variables
         TournamentState tournamentState;
         public const string defaultStateFile = "GameData/BDArmory/PluginData/tournament.state";
-        string stateFile = defaultStateFile;//"GameData/BDArmory/PluginData/tournament.state";
+        string stateFile = defaultStateFile;
         string message;
         private Coroutine runTournamentCoroutine;
         public TournamentStatus tournamentStatus = TournamentStatus.Stopped;
@@ -631,10 +633,18 @@ namespace BDArmory.Control
         }
 
         // Save tournament state to disk
-        bool SaveTournamentState()
+        bool SaveTournamentState(bool backup = false)
         {
-            if (tournamentState.SaveState(stateFile))
-                message = "Tournament state saved to " + stateFile;
+            var saveTo = stateFile;
+            if (backup)
+            {
+                var saveToDir = Path.GetDirectoryName(defaultStateFile);
+                saveToDir = Path.Combine(saveToDir, "Unfinished Tournaments");
+                if (!Directory.Exists(saveToDir)) Directory.CreateDirectory(saveToDir);
+                saveTo = Path.ChangeExtension(Path.Combine(saveToDir, Path.GetFileName(stateFile)), $".state-{tournamentID}");
+            }
+            if (tournamentState.SaveState(saveTo))
+                message = "Tournament state saved to " + saveTo;
             else
                 message = "Failed to save tournament state.";
             Debug.Log("[BDArmory.BDATournament]: " + message);
@@ -645,6 +655,14 @@ namespace BDArmory.Control
 
         public void SetupTournament(string folder, int rounds, int vesselsPerHeat = 0, int teamsPerHeat = 0, int vesselsPerTeam = 0, int numberOfTeams = 0, int tournamentStyle = 0, string stateFile = "")
         {
+            if (tournamentState != null && tournamentState.rounds != null)
+            {
+                heatsRemaining = tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum();
+                if (heatsRemaining > 0 && heatsRemaining < numberOfRounds * numberOfHeats) // Started, but incomplete tournament.
+                {
+                    SaveTournamentState(true);
+                }
+            }
             if (stateFile != "") this.stateFile = stateFile;
             tournamentState = new TournamentState();
             if (numberOfTeams == 0) // FFA
@@ -794,6 +812,8 @@ namespace BDArmory.Control
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             Debug.Log("[BDArmory.BDATournament]: " + message);
             tournamentStatus = TournamentStatus.Completed;
+            var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
+            if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
         }
 
         IEnumerator ExecuteHeat(int roundIndex, int heatIndex)
@@ -998,7 +1018,7 @@ namespace BDArmory.Control
                 if (File.Exists(BDATournament.defaultStateFile)) // Tournament state file exists.
                 {
                     var tournamentState = new TournamentState();
-                    tournamentState.LoadState(BDATournament.defaultStateFile);
+                    if (!tournamentState.LoadState(BDATournament.defaultStateFile)) yield break; // Failed to load
                     savegame = Path.Combine(savesDir, tournamentState.savegame, save + ".sfs");
                     if (File.Exists(savegame) && tournamentState.rounds.Select(r => r.Value.Count).Sum() - tournamentState.completed.Select(c => c.Value.Count).Sum() > 0) // Tournament state includes the savegame and has some rounds remaining —> Let's try resuming it! 
                     {

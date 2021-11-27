@@ -23,7 +23,9 @@ namespace BDArmory.Modules
         SteerModes steerMode = SteerModes.NormalFlight;
 
         bool extending;
-        double startedExtendingAt = 0;
+        bool extendParametersSet = false;
+        float extendDistance;
+        float desiredMinAltitude;
         public string extendingReason = "";
 
         bool requestedExtend;
@@ -34,19 +36,18 @@ namespace BDArmory.Modules
             get { return extending || requestedExtend; }
         }
 
-        public void StopExtending()
+        public void StopExtending(string reason)
         {
             extending = false;
             extendingReason = "";
-            startedExtendingAt = 0;
-            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " stopped extending due to request");
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} stopped extending due to {reason}.");
         }
 
-        public void RequestExtend(Vector3 tPosition, Vessel target = null)
+        public void RequestExtend(Vector3 tPosition, Vessel target = null, string reason = "requested")
         {
             requestedExtend = true;
             requestedExtendTpos = tPosition;
-            extendingReason = "Request";
+            extendingReason = reason;
             if (target != null)
                 extendTarget = target;
         }
@@ -1058,7 +1059,7 @@ namespace BDArmory.Modules
             CheckLandingGear();
             if (!vessel.LandedOrSplashed && (FlyAvoidTerrain(s) || (!ramming && FlyAvoidOthers(s))))
             { turningTimer = 0; }
-            else if ((belowMinAltitude && !(gainAltInhibited && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0)) && !BDArmorySettings.SF_REPULSOR) // If we're below minimum altitude, gain altitude unless we're being inhibited and gaining altitude.
+            else if (belowMinAltitude && !(gainAltInhibited || BDArmorySettings.SF_REPULSOR)) // If we're below minimum altitude, gain altitude unless we're being inhibited or the space friction repulsor field is enabled.
             {
                 if (initialTakeOff || command != PilotCommands.Follow)
                 {
@@ -1077,7 +1078,7 @@ namespace BDArmory.Modules
             AdjustPitchForGAndAoALimits(s);
 
             // Perform the check here since we're now allowing evading/engaging while below mininum altitude.
-            if (belowMinAltitude && vessel.radarAltitude > minAltitude && Vector3.Dot(vessel.Velocity() / vessel.srfSpeed, vessel.upAxis) > 0) // We're good.
+            if (belowMinAltitude && vessel.radarAltitude > minAltitude && Vector3.Dot(vessel.Velocity(), vessel.upAxis) > 0) // We're good.
             {
                 terrainAlertCoolDown = 1.0f; // 1s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
                 belowMinAltitude = false;
@@ -1097,13 +1098,7 @@ namespace BDArmory.Modules
         {
             SetStatus("Free");
 
-            if (requestedExtend)
-            {
-                requestedExtend = false;
-                if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
-                extending = true;
-                lastTargetPosition = requestedExtendTpos;
-            }
+            CheckExtend(ExtendChecks.RequestsOnly);
 
             // Calculate threat rating from any threats
             float minimumEvasionTime = minEvasionTime;
@@ -1156,7 +1151,7 @@ namespace BDArmory.Modules
                             {
                                 threatRelativePosition = missileThreat - vesselTransform.position;
                                 if (extending)
-                                    StopExtending(); // Don't keep trying to extend if under fire from missiles
+                                    StopExtending("missile threat"); // Don't keep trying to extend if under fire from missiles
                             }
                         }
 
@@ -1184,12 +1179,7 @@ namespace BDArmory.Modules
                     Vector3 targetVesselRelPos = targetVessel.vesselTransform.position - vesselTransform.position;
                     if (canExtend && vessel.altitude < defaultAltitude && Vector3.Angle(targetVesselRelPos, -upDirection) < 35) // Target is at a steep angle below us and we're below default altitude, extend to get a better angle instead of attacking now.
                     {
-                        //dangerous if low altitude and target is far below you - don't dive into ground!
-                        if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
-                        extending = true;
-                        extendingReason = "Too steeply below";
-                        lastTargetPosition = targetVessel.vesselTransform.position;
-                        extendTarget = targetVessel;
+                        RequestExtend(targetVessel.vesselTransform.position, targetVessel, "too steeply below");
                     }
 
                     if (Vector3.Angle(targetVessel.vesselTransform.position - vesselTransform.position, vesselTransform.up) > 35) // If target is outside of 35° cone ahead of us then keep flying straight.
@@ -1207,42 +1197,21 @@ namespace BDArmory.Modules
                     float targetVelFrac = (float)(targetVessel.srfSpeed / vessel.srfSpeed);      //this is the ratio of the target vessel's velocity to this vessel's srfSpeed in the forward direction; this allows smart decisions about when to break off the attack
 
                     float extendTargetDot = Mathf.Cos(extendTargetAngle * Mathf.Deg2Rad);
-                    if (canExtend && targetVelFrac < extendTargetVel && targetForwardDot < extendTargetDot && targetVesselRelPos.magnitude < extendTargetDist) // Default values: Target is outside of ~78° cone ahead, closer than 400m and slower than us, so we won't be able to turn to attack it now.
+                    if (canExtend && targetVelFrac < extendTargetVel && targetForwardDot < extendTargetDot && targetVesselRelPos.sqrMagnitude < extendTargetDist * extendTargetDist) // Default values: Target is outside of ~78° cone ahead, closer than 400m and slower than us, so we won't be able to turn to attack it now.
                     {
-                        if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
-                        extending = true;
-                        extendingReason = "Can't turn fast enough";
-                        lastTargetPosition = targetVessel.vesselTransform.position - vessel.Velocity();       //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
-                        extendTarget = targetVessel;
+                        RequestExtend(targetVessel.vesselTransform.position - vessel.Velocity(), targetVessel, "can't turn fast enough"); //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
                         weaponManager.ForceScan();
                     }
                     if (canExtend && turningTimer > 15)
                     {
-                        //extend if turning circles for too long
-                        RequestExtend(targetVessel.vesselTransform.position, targetVessel);
-                        extendingReason = "Turning too long";
+                        RequestExtend(targetVessel.vesselTransform.position, targetVessel, "turning too long"); //extend if turning circles for too long
                         turningTimer = 0;
                         weaponManager.ForceScan();
                     }
                 }
                 else //extend if too close for an air-to-ground attack
                 {
-                    float extendDistance;
-                    if (weaponManager.currentGun) // If using a gun, take the extend multiplier into account.
-                        extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
-                    else
-                        extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
-                    float srfDist = (GetSurfacePosition(targetVessel.transform.position) - GetSurfacePosition(vessel.transform.position)).sqrMagnitude;
-
-                    if (srfDist < extendDistance * extendDistance && Vector3.Angle(vesselTransform.up, targetVessel.transform.position - vessel.transform.position) > 45)
-                    {
-                        if (!extending) startedExtendingAt = Planetarium.GetUniversalTime();
-                        extending = true;
-                        extendingReason = "Surface target";
-                        lastTargetPosition = targetVessel.transform.position;
-                        extendTarget = targetVessel;
-                        weaponManager.ForceScan();
-                    }
+                    CheckExtend(ExtendChecks.AirToGroundOnly);
                 }
 
                 if (!extending)
@@ -1266,8 +1235,9 @@ namespace BDArmory.Modules
                 }
             }
 
-            if (extending)
+            if (CheckExtend())
             {
+                weaponManager.ForceScan();
                 evasiveTimer = 0;
                 SetStatus("Extending");
                 debugString.AppendLine($"Extending");
@@ -1346,7 +1316,7 @@ namespace BDArmory.Modules
 
         void FlyToTargetVessel(FlightCtrlState s, Vessel v)
         {
-            Vector3 target = v.CoM;
+            Vector3 target = AIUtils.PredictPosition(v, TimeWarp.fixedDeltaTime);//v.CoM;
             MissileBase missile = null;
             Vector3 vectorToTarget = v.transform.position - vesselTransform.position;
             float distanceToTarget = vectorToTarget.magnitude;
@@ -1413,7 +1383,6 @@ namespace BDArmory.Modules
                         float magnifier = Mathf.Clamp(targetAngVel, 1f, 2f);
                         magnifier += ((magnifier - 1f) * Mathf.Sin(Time.time * 0.75f));
                         target -= magnifier * leadOffset;
-
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20)
                         {
@@ -1441,11 +1410,11 @@ namespace BDArmory.Modules
 
                         if (v.LandedOrSplashed)
                         {
-                            if (distanceToTarget < weapon.maxTargetingRange + relativeVelocity) // Distance until starting to strafe plus 1s for changing speed.
+                            if (distanceToTarget < weapon.engageRangeMax + relativeVelocity) // Distance until starting to strafe plus 1s for changing speed.
                             {
-                                strafingDistance = Mathf.Max(0f, distanceToTarget - weapon.maxTargetingRange);
+                                strafingDistance = Mathf.Max(0f, distanceToTarget - weapon.engageRangeMax);
                             }
-                            if (distanceToTarget > defaultAltitude * 2.2f)
+                            if (distanceToTarget > weapon.engageRangeMax)
                             {
                                 target = FlightPosition(target, defaultAltitude);
                             }
@@ -1454,9 +1423,9 @@ namespace BDArmory.Modules
                                 steerMode = SteerModes.Aiming;
                             }
                         }
-                        else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0)
+                        else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is a long way away or behind us.
                         {
-                            target = v.CoM;
+                            target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
                         }
                     }
                 }
@@ -1507,8 +1476,7 @@ namespace BDArmory.Modules
                 && distanceToTarget < MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange
                 && vessel.srfSpeed > idleSpeed)
             {
-                RequestExtend(targetVessel.transform.position, targetVessel); // Get far enough away to use the missile.
-                extendingReason = "Too close for missile";
+                RequestExtend(targetVessel.transform.position, targetVessel, "too close for missile"); // Get far enough away to use the missile.
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -1537,7 +1505,7 @@ namespace BDArmory.Modules
             targetDirection = Vector3.RotateTowards(vessel.Velocity(), targetDirection, 15f * Mathf.Deg2Rad, 0).normalized;
 
             if (throttleOverride >= 0)
-                AdjustThrottle(maxSpeed, false, true, throttleOverride);
+                AdjustThrottle(maxSpeed, false, true, false, throttleOverride);
             else
                 AdjustThrottle(maxSpeed, false, true);
 
@@ -1801,66 +1769,105 @@ namespace BDArmory.Modules
             }
         }
 
-        void FlyExtend(FlightCtrlState s, Vector3 tPosition)
+        enum ExtendChecks { All, RequestsOnly, AirToGroundOnly };
+        bool CheckExtend(ExtendChecks checkType = ExtendChecks.All)
         {
-            if (weaponManager)
+            // Sanity checks.
+            if (weaponManager == null)
             {
-                if (weaponManager.TargetOverride)
-                {
-                    extending = false;
-                    extendingReason = "";
-                    startedExtendingAt = 0;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " stopped extending due to target override");
-                }
+                StopExtending("no weapon manager");
+                return false;
+            }
+            if (weaponManager.TargetOverride) // Target is overridden, follow others' instructions.
+            {
+                StopExtending("target override");
+                return false;
+            }
+            if (!extending) extendParametersSet = false; // Reset this flag for new extends.
+            if (requestedExtend)
+            {
+                requestedExtend = false;
+                extending = true;
+                lastTargetPosition = requestedExtendTpos;
+            }
+            if (checkType == ExtendChecks.RequestsOnly) return extending;
+            if (extending && extendParametersSet) return true; // Already extending.
 
-                float extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
-                float desiredMinAltitude = (float)vessel.radarAltitude + (defaultAltitude - (float)vessel.radarAltitude) * extendMult; // Desired minimum altitude after extending.
+            // Dropping a bomb.
+            if (weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
+            {
+                extendDistance = 4500;
+                desiredMinAltitude = defaultAltitude;
+                extendParametersSet = true;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to dropping a bomb!");
+                return true;
+            }
 
-                if (weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
+            // Ground targets.
+            if (targetVessel != null && targetVessel.LandedOrSplashed)
+            {
+                var selectedGun = weaponManager.currentGun;
+                if (selectedGun == null && weaponManager.selectedWeapon == null) selectedGun = weaponManager.previousGun;
+                if (selectedGun != null) // If using a gun or no weapon is selected, take the extend multiplier into account.
                 {
-                    extendDistance = 4500;
-                    desiredMinAltitude = defaultAltitude;
+                    extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
+                    desiredMinAltitude = minAltitude + 0.5f * selectedGun.engageRangeMax * extendMult; // Desired minimum altitude after extending. (30° attack vector plus min alt.)
                 }
-
-                if (targetVessel != null && !targetVessel.LandedOrSplashed) // We have a flying target, only extend a short distance and don't climb.
+                else
                 {
-                    extendDistance = 300 * extendMult; // The effect of this is generally to extend for only 1 frame.
-                    desiredMinAltitude = minAltitude;
+                    extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
+                    desiredMinAltitude = (float)vessel.radarAltitude + (defaultAltitude - (float)vessel.radarAltitude) * extendMult; // Desired minimum altitude after extending.
                 }
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " is extending for " + (Planetarium.GetUniversalTime() - startedExtendingAt) + "s due to \"" + extendingReason + "\" for distance " + extendDistance + ", expected time " + (extendDistance / vessel.srfSpeed) + "s");
-
-                Vector3 srfVector = Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection);
-                float srfDist = srfVector.magnitude;
-                if (srfDist < extendDistance) // Extend from position is closer (horizontally) than the extend distance.
+                float srfDist = (GetSurfacePosition(targetVessel.transform.position) - GetSurfacePosition(vessel.transform.position)).sqrMagnitude;
+                if (srfDist < extendDistance * extendDistance && Vector3.Angle(vesselTransform.up, targetVessel.transform.position - vessel.transform.position) > 45)
                 {
-                    Vector3 targetDirection = srfVector.normalized * extendDistance;
-                    Vector3 target = vessel.transform.position + targetDirection; // Target extend position horizontally.
-                    target = GetTerrainSurfacePosition(target) + (vessel.upAxis * Mathf.Min(defaultAltitude, MissileGuidance.GetRaycastRadarAltitude(vesselTransform.position))); // Adjust for terrain changes at target extend position.
-                    target = FlightPosition(target, desiredMinAltitude); // Further adjustments for speed, situation, etc. and desired minimum altitude after extending.
-                    if (regainEnergy)
-                    {
-                        RegainEnergy(s, target - vesselTransform.position);
-                        return;
-                    }
-                    else
-                    {
-                        FlyToPosition(s, target);
-                    }
-                }
-                else // We're far enough away, stop extending.
-                {
-                    extending = false;
-                    extendingReason = "";
-                    startedExtendingAt = 0;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " stopped extending due to gone far enough (" + srfDist + " of " + extendDistance + ")");
+                    extending = true;
+                    extendingReason = "Surface target";
+                    lastTargetPosition = targetVessel.transform.position;
+                    extendTarget = targetVessel;
+                    extendParametersSet = true;
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to a ground target.");
+                    return true;
                 }
             }
-            else // No weapon manager.
+            if (checkType == ExtendChecks.AirToGroundOnly) return false;
+
+            // Air target (from requests, where extendParameters haven't been set yet).
+            if (extending && extendTarget != null && !extendTarget.LandedOrSplashed) // We have a flying target, only extend a short distance and don't climb.
             {
-                extending = false;
-                extendingReason = "";
-                startedExtendingAt = 0;
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModulePilotAI]: " + vessel.vesselName + " stopped extending due to no weapon manager");
+                extendDistance = 300 * extendMult; // The effect of this is generally to extend for only 1 frame.
+                desiredMinAltitude = minAltitude;
+                extendParametersSet = true;
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to an air target ({extendingReason}).");
+                return true;
+            }
+
+            if (extending) StopExtending("no valid extend reason");
+            return false;
+        }
+
+        void FlyExtend(FlightCtrlState s, Vector3 tPosition)
+        {
+            Vector3 srfVector = Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection);
+            if (srfVector.sqrMagnitude < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
+            {
+                Vector3 targetDirection = srfVector.normalized * extendDistance;
+                Vector3 target = vessel.transform.position + targetDirection; // Target extend position horizontally.
+                target = GetTerrainSurfacePosition(target) + (vessel.upAxis * Mathf.Min(defaultAltitude, MissileGuidance.GetRaycastRadarAltitude(vesselTransform.position))); // Adjust for terrain changes at target extend position.
+                target = FlightPosition(target, desiredMinAltitude); // Further adjustments for speed, situation, etc. and desired minimum altitude after extending.
+                if (regainEnergy)
+                {
+                    RegainEnergy(s, target - vesselTransform.position);
+                    return;
+                }
+                else
+                {
+                    FlyToPosition(s, target);
+                }
+            }
+            else // We're far enough away, stop extending.
+            {
+                StopExtending($"gone far enough (" + srfVector.magnitude + " of " + extendDistance + ")");
             }
         }
 
@@ -1904,11 +1911,12 @@ namespace BDArmory.Modules
         }
 
         //sends target speed to speedController
-        void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true, float throttleOverride = -1f)
+        void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true, bool forceAfterburner = false, float throttleOverride = -1f)
         {
             speedController.targetSpeed = targetSpeed;
             speedController.useBrakes = useBrakes;
             speedController.allowAfterburner = allowAfterburner;
+            speedController.forceAfterburner = forceAfterburner;
             speedController.throttleOverride = throttleOverride;
         }
 
@@ -1976,7 +1984,7 @@ namespace BDArmory.Modules
 
                         if (weaponManager.isFlaring)
                             if (!hasABEngines)
-                                AdjustThrottle(maxSpeed, false, useAB, 0.66f);
+                                AdjustThrottle(maxSpeed, false, useAB, false, 0.66f);
                             else
                                 AdjustThrottle(maxSpeed, false, useAB);
                         else
@@ -2285,11 +2293,11 @@ namespace BDArmory.Modules
                 if (!BDArmorySettings.SPACE_HACKS) //no need to worry about stalling in null atmo
                 {
                     Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
-                    correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) / 2.0f * maxAngle * Mathf.Deg2Rad) * adjustmentFactor, 0.0f); // Rotate up to maxAngle/2 back towards horizontal depending on speed < 120m/s.
+                    correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) * 0.8f * maxAngle) * adjustmentFactor, 0.0f); // Rotate up to 0.8*maxAngle back towards horizontal depending on speed < 120m/s.
                 }
                 float alpha = Time.fixedDeltaTime * 2f; // 0.04 seems OK.
                 float beta = Mathf.Pow(1.0f - alpha, terrainAlertTickerThreshold);
-                terrainAlertCorrectionDirection = initialCorrection ? terrainAlertCorrectionDirection : (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames (if it's not the initial correction). (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
+                terrainAlertCorrectionDirection = initialCorrection ? correctionDirection : (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames (if it's not the initial correction) due to changing terrain. (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
                 FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
                 // Update status and book keeping.
                 SetStatus("Terrain (" + (int)terrainAlertDistance + "m)");

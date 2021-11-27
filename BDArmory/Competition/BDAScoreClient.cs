@@ -65,7 +65,7 @@ namespace BDArmory.Competition
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to get competition {0}: {1}", hash, webRequest.error));
+                    Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to get competition {0}: {1}", hash, webRequest.error));
                 }
             }
 
@@ -76,13 +76,13 @@ namespace BDArmory.Competition
         {
             if (response == null || "".Equals(response))
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Received empty competition response"));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Received empty competition response"));
                 return;
             }
             CompetitionModel competition = JsonUtility.FromJson<CompetitionModel>(response);
             if (competition == null)
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to parse competition: {0}", response));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to parse competition: {0}", response));
             }
             else
             {
@@ -111,7 +111,7 @@ namespace BDArmory.Competition
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to get heats for {0}: {1}", hash, webRequest.error));
+                    Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to get heats for {0}: {1}", hash, webRequest.error));
                 }
             }
 
@@ -122,14 +122,14 @@ namespace BDArmory.Competition
         {
             if (response == null || "".Equals(response))
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Received empty heat collection response"));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Received empty heat collection response"));
                 return;
             }
             List<HeatModel> collection = HeatModel.FromCsv(response);
             heats.Clear();
             if (collection == null)
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to parse heat collection: {0}", response));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to parse heat collection: {0}", response));
                 return;
             }
             foreach (HeatModel heatModel in collection)
@@ -160,7 +160,7 @@ namespace BDArmory.Competition
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to get players for {0}: {1}", hash, webRequest.error));
+                    Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to get players for {0}: {1}", hash, webRequest.error));
                 }
             }
 
@@ -171,14 +171,14 @@ namespace BDArmory.Competition
         {
             if (response == null || "".Equals(response))
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Received empty player collection response"));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Received empty player collection response"));
                 return;
             }
             List<PlayerModel> collection = PlayerModel.FromCsv(response);
             players.Clear();
             if (collection == null)
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to parse player collection: {0}", response));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to parse player collection: {0}", response));
                 return;
             }
             foreach (PlayerModel playerModel in collection)
@@ -187,7 +187,7 @@ namespace BDArmory.Competition
                 if (!players.ContainsKey(playerModel.id))
                     players.Add(playerModel.id, playerModel);
                 else
-                    Debug.Log("[BDArmory.BDAScoreClient] Player " + playerModel.id + " already exists in the competition.");
+                    Debug.LogWarning("[BDArmory.BDAScoreClient] Player " + playerModel.id + " already exists in the competition.");
             }
             Debug.Log(string.Format("[BDArmory.BDAScoreClient] Players: {0}", players.Count));
         }
@@ -212,7 +212,7 @@ namespace BDArmory.Competition
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to get vessels {0}/{1}: {2}", hash, heat, webRequest.error));
+                    Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to get vessels {0}/{1}: {2}", hash, heat, webRequest.error));
                 }
             }
 
@@ -230,7 +230,7 @@ namespace BDArmory.Competition
             vessels.Clear();
             if (collection == null)
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to parse vessel collection: {0}", response));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to parse vessel collection: {0}", response));
                 return;
             }
             foreach (VesselModel vesselModel in collection)
@@ -242,7 +242,7 @@ namespace BDArmory.Competition
                 }
                 else
                 {
-                    Debug.Log("[BDArmory.BDAScoreClient]: Vessel " + vesselModel.ToString() + " is already in the vessel list, skipping.");
+                    Debug.LogWarning("[BDArmory.BDAScoreClient]: Vessel " + vesselModel.ToString() + " is already in the vessel list, skipping.");
                 }
             }
             Debug.Log(string.Format("[BDArmory.BDAScoreClient] Vessels: {0}", vessels.Count));
@@ -271,7 +271,7 @@ namespace BDArmory.Competition
                 Debug.Log(string.Format("[BDArmory.BDAScoreClient] score reporting status: {0}", webRequest.downloadHandler.text));
                 if (webRequest.isHttpError)
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to post records: {0}", webRequest.error));
+                    Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to post records: {0}", webRequest.error));
                 }
             }
         }
@@ -313,7 +313,7 @@ namespace BDArmory.Competition
                     }
                     else
                     {
-                        Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to get craft for {0}: {1}", v.id, webRequest.error));
+                        Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to get craft for {0}: {1}", v.id, webRequest.error));
                     }
                 }
             }
@@ -326,7 +326,7 @@ namespace BDArmory.Competition
             PlayerModel p = players[vessel.player_id];
             if (p == null)
             {
-                Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to save craft for vessel {0}, player {1}", vessel.id, vessel.player_id));
+                Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to save craft for vessel {0}, player {1}", vessel.id, vessel.player_id));
                 return;
             }
 
@@ -340,7 +340,7 @@ namespace BDArmory.Competition
             }
             catch (Exception e)
             {
-                Debug.Log($"[BDArmory.BDAScoreClient]: Invalid filename: {e.Message}");
+                Debug.LogWarning($"[BDArmory.BDAScoreClient]: Invalid filename: {e.Message}");
                 filename = string.Format("{0}/Invalid filename {1}.craft", vesselPath, ++count);
                 System.IO.File.WriteAllBytes(filename, bytes);
             }
@@ -374,11 +374,11 @@ namespace BDArmory.Competition
                 yield return webRequest.SendWebRequest();
                 if (!webRequest.isHttpError)
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Started heat {1} in {0}", hash, heat.order));
+                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Started heat {1} in  stage {2} of {0}", hash, heat.order, heat.stage));
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to start heat {1} in {0}: {2}", hash, heat.order, webRequest.error));
+                    Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to start heat {1} in stage {2} of {0}: {3}", hash, heat.order, heat.stage, webRequest.error));
                 }
             }
 
@@ -402,11 +402,11 @@ namespace BDArmory.Competition
                 yield return webRequest.SendWebRequest();
                 if (!webRequest.isHttpError)
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Stopped heat {1} in {0}", hash, heat.order));
+                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Stopped heat {1} in stage {2} of {0}", hash, heat.order, heat.stage));
                 }
                 else
                 {
-                    Debug.Log(string.Format("[BDArmory.BDAScoreClient] Failed to stop heat {1} in {0}: {2}", hash, heat.order, webRequest.error));
+                    Debug.LogWarning(string.Format("[BDArmory.BDAScoreClient] Failed to stop heat {2} in stage {1} of {0}: {3}", hash, heat.stage, heat.order, webRequest.error));
                 }
             }
 

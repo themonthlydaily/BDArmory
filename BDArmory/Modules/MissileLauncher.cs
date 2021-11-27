@@ -2280,6 +2280,11 @@ namespace BDArmory.Modules
                     output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                     output.AppendLine($"- tnt Mass: {tntMass} kg");
                 }
+                else if (partModules.Current.moduleName == "ModuleEMP")
+                {
+                    float proximity = ((ModuleEMP)partModules.Current).proximity;
+                    output.AppendLine($"- EMP Blast Radius: {proximity} m");
+                }
                 else if (partModules.Current.moduleName == "BDModuleNuke")
                 {
                     float yield = ((BDModuleNuke)partModules.Current).yield;

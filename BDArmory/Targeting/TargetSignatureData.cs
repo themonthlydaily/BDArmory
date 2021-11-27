@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
@@ -149,6 +150,7 @@ namespace BDArmory.Targeting
                         // with ecm on better chaff effectiveness due to higher modifiedSignature
                         // higher speed -> missile decoyed further "behind" where the chaff drops (also means that for head-on engagements chaff is most like less effective!)
                         posDistortion = (vessel.GetSrfVelocity() * -1f * Mathf.Clamp(decoyFactor * decoyFactor, 0f, 0.5f)) + (UnityEngine.Random.insideUnitSphere * UnityEngine.Random.Range(targetInfo.radarModifiedSignature, targetInfo.radarModifiedSignature * targetInfo.radarModifiedSignature) * decoyFactor);
+                        posDistortion *= Mathf.Max(BDArmorySettings.CHAFF_FACTOR, 0f);
                     }
                 }
 
