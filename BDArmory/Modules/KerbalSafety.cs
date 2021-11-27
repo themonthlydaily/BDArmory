@@ -355,6 +355,8 @@ namespace BDArmory.Modules
                     this.crew.ResetInventory(false); // Reset the inventory to just a chute.
                     break;
             }
+            if (p.isKerbalSeat()) // We were given the seat instead of the EVA kerbal.
+            { p = p.GetComponent<KerbalSeat>().Occupant; }
             this.part = p;
             if (p.IsKerbalEVA())
             {

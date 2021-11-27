@@ -19,6 +19,7 @@
 	- Fix Explosions/Nukes not damaging buildings.
 	- Fix RESET_ARMOR resetting hull material.
 	- Fix Audio cutting out when firing lasers using looping SFX.
+	- Fix for KerbalSafety sometimes being given the KerbalSeat instead of the KerbalEVA as the part.
 
 IMPROVEMENTS
 - Internal:
