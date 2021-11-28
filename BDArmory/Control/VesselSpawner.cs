@@ -845,8 +845,7 @@ namespace BDArmory.Control
                             if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
-                                foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
-                                    engine.Activate();
+                                ActivateAllEngines(vessel);
                             }
                         }
 
@@ -893,6 +892,35 @@ namespace BDArmory.Control
 
             Debug.Log("[BDArmory.VesselSpawner]: Vessel spawning " + (vesselSpawnSuccess ? "SUCCEEDED!" : "FAILED! " + spawnFailureReason));
             vesselsSpawning = false;
+        }
+
+        public void ActivateAllEngines(Vessel vessel)
+        {
+            foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+            {
+                var mme = engine.part.FindModuleImplementing<MultiModeEngine>();
+                if (mme == null)
+                {
+                    engine.Activate();
+                }
+                else
+                {
+                    if (mme.runningPrimary)
+                    {
+                        if (!mme.PrimaryEngine.EngineIgnited)
+                        {
+                            mme.PrimaryEngine.Activate();
+                        }
+                    }
+                    else
+                    {
+                        if (!mme.SecondaryEngine.EngineIgnited)
+                        {
+                            mme.SecondaryEngine.Activate();
+                        }
+                    }
+                }
+            }
         }
 
         private bool vesselsSpawningOnceContinuously = false;
@@ -1314,8 +1342,7 @@ namespace BDArmory.Control
                             if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 Debug.Log("[BDArmory.VesselSpawner]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
-                                foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
-                                    engine.Activate();
+                                ActivateAllEngines(vessel);
                             }
                             if (BDArmorySettings.TAG_MODE && !string.IsNullOrEmpty(BDACompetitionMode.Instance.Scores.currentlyIT))
                             { weaponManager.SetTeam(BDTeam.Get("NO")); }
