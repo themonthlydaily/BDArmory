@@ -3,16 +3,19 @@
 	- Fix some typos and bugs in assist counting in the local tournament parser.
 	- Clear rocket dictionaries between heats. Compute assists under the same conditions for local and remote tournaments.
 	- Cause a spawn failure instead of throwing an exception so that tournaments can retry spawning.
-- Craft:
+- Craft/Battle Damage:
 	- Fix SelfSealingTanks being addable to engines.
 	- Fix SelfSealingTanks not showing on/off status on load.
 	- Fix SelfSealingTanks not respecting symmetry.
-	- fix fires not extinguishing if fuel < 0.
+	- Fix fires not extinguishing if fuel < 0.
 	- Fix engine fire behavior, now capped to max one fire at a time.
 	- Fix Steel parts gaining more than the 1.75x HP they should be getting.
+	- Fix fire generation on subsystem damage.
+	- Fixes non-fueltank fires not burning out and extinguishing after a period of time.
 - AI:
 	- Fix AI aim offset being offset.
 	- Only extend when a bomb is selected once extending is requested.
+	- Activate only the current mode of multi-modal engines.
 - General:
 	- Fix Paintball decals not appearing in paintball Mode.
 	- Fix AIR-2 Genie cost.
@@ -20,7 +23,6 @@
 	- Fix RESET_ARMOR resetting hull material.
 	- Fix Audio cutting out when firing lasers using looping SFX.
 	- Fix for KerbalSafety sometimes being given the KerbalSeat instead of the KerbalEVA as the part.
-
 IMPROVEMENTS
 - Internal:
 	- Allow BDGUIComboBox to be relocated/resized.
@@ -29,6 +31,8 @@ IMPROVEMENTS
 	- Add option for laser mutators to use Team Color for beam color (set bulletType in the mutator config to "def").
 	- Add part and vessel to debug info for AddDamage and AddHealth.
 	- Add debug info for when fires get added if debug labels are enabled.
+	- Slight buff to chaff factor.
+	- Add some missing localisations.
 - BattleDamage:
 	- Fix SelfSealingTanks maxing tank capacity when switching instead of simply adjusting maximum.
 	- Increases CASE cost at higher levels (mass increase, ammo capacity reduction).
@@ -39,6 +43,9 @@ IMPROVEMENTS
 	- Surface fires will now extinguish if vessel moving > 120m/s.
 	- Adds Fuel Inerting option to fuel tanks to prevent fires.
 	- Adds Armored Cockpit option to cockpits to reduce/prevent pilot Kill battledamage.
+	- Adds ProcWings support - can now add Firebottles/SelfSealing/Inerted tanks to Pwing fueltanks; Pwings with fuel can now catch on fire when shot.
+	- Adds missing BattleDamage 'Subsystem Damage' toggle.
+	- Makes BD to control surfaces less immediately debilitating.
 - UI:
 	- Add check for disabled PRE when competitions are active.
 	- Add a check for the number of AIs and WMs during spawning (when RWP is enabled) and give an in-game message if there's not one of each.
@@ -66,12 +73,13 @@ IMPROVEMENTS
 	- Add additional control "Afterburner Priority" for afterburner toggling under Speed category of AI. Default value of 50. 0 and AI will not use AB, 100 and AI will always use AB.
 	- Vary AB hysteresis based on "Afterburner Priority" setting using an exponential average to smooth the vessel's TWR (lag factor of 0.5s) to judge whether AI should toggle AB vs. using instantaneous acceleration.
 	- Default Guard Range increased to 20km.
+	- Allow custom/modded missile and bomb bays. Set which action group controls the bay toggling on the missile/bomb itself and the AI will automatically open and close the bay when dropping the ordnance.
+	- New default AI and WM settings.
 - Spawning:
 	- Respawn the spawn probe when showing the spawn point if the active vessel has been destroyed.
 	- Use the backup location 'KSP/Ships/SPH' as a fall-back for the spawn probe location as CKAN puts it there.
 - RWP:
 	- Enabling the Runway Project toggle will clamp guard range to a minimum of 20km.
-
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 - Adds Intake Hack setting to autohack intakes to work in non-Oxygen atmospheres.
 - Add a toggle in the Competition Settings section for closing the settings when clicking the start competition button.
