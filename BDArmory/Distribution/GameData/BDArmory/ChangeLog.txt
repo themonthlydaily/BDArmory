@@ -12,6 +12,7 @@
 	- Fix Steel parts gaining more than the 1.75x HP they should be getting.
 	- Fix fire generation on subsystem damage.
 	- Fixes non-fueltank fires not burning out and extinguishing after a period of time.
+	- Fix invalid cast and NRE for modular missiles.
 - AI:
 	- Fix AI aim offset being offset.
 	- Only extend when a bomb is selected once extending is requested.
