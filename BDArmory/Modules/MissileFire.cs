@@ -4029,8 +4029,7 @@ namespace BDArmory.Modules
                         if (candidateClass != WeaponClasses.Missile) continue;
                         if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
-                        bool EMP = ((MissileLauncher)item.Current).EMP;
-                        if (EMP && target.isDebilitated) continue;
+                        if (mlauncher != null && mlauncher.EMP && target.isDebilitated) continue;
 
                         if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                         float candidateTDPS = 0f;
