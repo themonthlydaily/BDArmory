@@ -163,7 +163,7 @@ namespace BDArmory.Control
             dragAccel = accelError;
 
             possibleAccel += accel; // This assumes that the acceleration from engines is in the same direction as the original possibleAccel.
-            forceAfterburner = (afterburnerPriority == 100f);
+            forceAfterburner = forceAfterburner || (afterburnerPriority == 100f);
             allowAfterburner = allowAfterburner && (afterburnerPriority != 0f);
 
             //use multimode afterburner for extra accel if lacking
