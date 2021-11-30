@@ -415,7 +415,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel)
+        public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel, bool inertTank)
         {
             if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS && hitPart.Modules.GetModule<HitpointTracker>().Hitpoints > 0)
             {
@@ -434,7 +434,7 @@ namespace BDArmory.FX
                         leak.drainDuration += (20 * BDArmorySettings.BD_TANK_LEAK_TIME);
                         leak.drainRate += ((caliber / 100) * BDArmorySettings.BD_TANK_LEAK_RATE);
 
-                        if (BDArmorySettings.BD_FIRES_ENABLED)
+                        if (BDArmorySettings.BD_FIRES_ENABLED && !inertTank)
                         {
                             int ammoMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
                             if (explosive)
