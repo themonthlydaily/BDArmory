@@ -37,6 +37,8 @@ IMPROVEMENTS
 	- Add debug info for when fires get added if debug labels are enabled.
 	- Slight buff to chaff factor.
 	- Add some missing localisations.
+	- Remove expensive Find call during spawning, since we already know which objects it needs to find.
+	- Only run more expensive debug checks on the debug version, not the release version.
 - BattleDamage:
 	- Fix SelfSealingTanks maxing tank capacity when switching instead of simply adjusting maximum.
 	- Increases CASE cost at higher levels (mass increase, ammo capacity reduction).
