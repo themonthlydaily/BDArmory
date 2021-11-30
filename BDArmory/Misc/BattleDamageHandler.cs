@@ -48,7 +48,7 @@ namespace BDArmory.Misc
                         }
                         else
                         {
-                            BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker);
+                            BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker, rubbertank.InertTank);
                         }
                     }
                 }
@@ -163,7 +163,7 @@ namespace BDArmory.Misc
                             var leak = part.GetComponentInChildren<FuelLeakFX>();
                             if (leak == null && !tracker.isSRB) //engine isn't a srb
                             {
-                                BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker);
+                                BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker, false);
                             }
                         }
                         if (part.GetDamagePercentage() < 0.50f || (part.GetDamagePercentage() < 0.625f && penetrationFactor > 2))
