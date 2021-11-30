@@ -195,10 +195,6 @@ namespace BDArmory.Control
             {
                 return false;
             }
-            if (!engine)
-            {
-                return false;
-            }
             return engine.primaryEngineID == "Dry" && engine.secondaryEngineID == "Wet";
         }
 

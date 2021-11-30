@@ -1229,8 +1229,7 @@ namespace BDArmory.Control
                 if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
-                    foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
-                        engine.Activate();
+                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
                 }
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
