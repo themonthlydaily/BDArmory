@@ -3614,7 +3614,9 @@ namespace BDArmory.Control
         public void RunDebugChecks()
         {
             CheckMemoryUsage();
+#if DEBUG
             CheckNumbersOfThings();
+#endif
         }
 
         public IEnumerator CheckGCPerformance()
