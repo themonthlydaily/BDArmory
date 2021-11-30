@@ -1925,6 +1925,7 @@ namespace BDArmory.Control
                     p.vessel = dummyVessel;
 
                     dummyProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, dummyProto, true));
+                    Destroy(p.gameObject); // Destroy the prefab.
                 }
                 foreach (ProtoPartSnapshot p in dummyProto.protoPartSnapshots)
                 {
@@ -2095,15 +2096,6 @@ namespace BDArmory.Control
             // Store the id for later use
             vesselData.id = protoVessel.vesselRef.id;
             // StartCoroutine(PlaceSpawnedVessel(protoVessel.vesselRef));
-
-            //destroy prefabs
-            foreach (Part p in FindObjectsOfType<Part>())
-            {
-                if (!p.vessel)
-                {
-                    Destroy(p.gameObject);
-                }
-            }
 
             return protoVessel.vesselRef;
         }
