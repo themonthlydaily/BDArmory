@@ -345,19 +345,19 @@ namespace BDArmory.Modules
                 Destroy(this);
                 yield break;
             }
-            this.crew = c;
+            crew = c;
             switch (BDArmorySettings.KERBAL_SAFETY_INVENTORY)
             {
                 case 1:
-                    this.crew.ResetInventory(true); // Reset the inventory to the default of a chute and a jetpack.
+                    crew.ResetInventory(true); // Reset the inventory to the default of a chute and a jetpack.
                     break;
                 case 2:
-                    this.crew.ResetInventory(false); // Reset the inventory to just a chute.
+                    crew.ResetInventory(false); // Reset the inventory to just a chute.
                     break;
             }
             if (p.isKerbalSeat()) // We were given the seat instead of the EVA kerbal.
             { p = p.GetComponent<KerbalSeat>().Occupant; }
-            this.part = p;
+            part = p;
             if (p.IsKerbalEVA())
             {
                 this.kerbalEVA = p.GetComponent<KerbalEVA>();
