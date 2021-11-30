@@ -59,6 +59,7 @@ IMPROVEMENTS
 	- Add off-world spawning to Spawn menu (spawn locations and tournaments get automatically upgraded).
 	- Add ability to add custom spawn sites to spawn menu.
 	- Add Persistent UI button to Vessel Switcher to keep VS and Web Orchestration windows open when F2 UI toggled off.
+	- Add an estimate of the current memory usage to the settings menu when Auto-Quit Memory Threshold is enabled.
 - Game Modes:
 	- Add secret Disco Mode.
 	- ZombieMode option moved to cheat mode access.

@@ -983,6 +983,20 @@ namespace BDArmory.Control
         bool useCleanSave = true;
         string game;
         bool sceneLoaded = false;
+        public static float memoryUsage
+        {
+            get
+            {
+                if (_memoryUsage > 0) return _memoryUsage;
+                _memoryUsage = UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong();
+                var gfxDriver = UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver();
+                _memoryUsage += gfxDriver > 0 ? gfxDriver : 5f * (1 << 30); // Use the GfxDriver memory usage if available, otherwise estimate it at 5GB (which is a little more than what I get with no extra visual mods at ~4.5GB).
+                _memoryUsage /= (1 << 30); // In GB.
+                return _memoryUsage;
+            }
+            set { _memoryUsage = 0; } // Reset condition for calculating it again.
+        }
+        static float _memoryUsage;
 
         void Awake()
         {
@@ -1113,7 +1127,7 @@ namespace BDArmory.Control
         public bool CheckMemoryUsage()
         {
             if ((!BDArmorySettings.AUTO_RESUME_TOURNAMENT && !BDArmorySettings.AUTO_RESUME_EVOLUTION) || BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > BDArmorySetup.SystemMaxMemory) return false; // Only trigger if Auto-Resume Tournaments is enabled and the Quit Memory Usage Threshold is set.
-            float memoryUsage = (UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong() + UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver()) / (1 << 30); // In GB.
+            memoryUsage = 0; // Trigger recalculation of memory usage.
             if (memoryUsage >= BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD)
             {
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.competitionStatus.Add("Quitting in 3s due to memory usage threshold reached.");
