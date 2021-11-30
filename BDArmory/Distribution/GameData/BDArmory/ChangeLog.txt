@@ -7,16 +7,19 @@
 	- Fix SelfSealingTanks being addable to engines.
 	- Fix SelfSealingTanks not showing on/off status on load.
 	- Fix SelfSealingTanks not respecting symmetry.
+	- Re-add ModuleSelfSealingTank to Cockpits (for armored cockpits).
 	- Fix fires not extinguishing if fuel < 0.
 	- Fix engine fire behavior, now capped to max one fire at a time.
 	- Fix Steel parts gaining more than the 1.75x HP they should be getting.
 	- Fix fire generation on subsystem damage.
 	- Fixes non-fueltank fires not burning out and extinguishing after a period of time.
+	- Fix inert tanks not catching all possible sources of fire generation.
 	- Fix invalid cast and NRE for modular missiles.
 - AI:
 	- Fix AI aim offset being offset.
 	- Only extend when a bomb is selected once extending is requested.
 	- Activate only the current mode of multi-modal engines.
+	- Release pilot AI from attack command if they have a target within gun range (fixes bug with very long-range guns not engaging targets at competition start), regardless of whether RWP toggle is on.
 - General:
 	- Fix Paintball decals not appearing in paintball Mode.
 	- Fix AIR-2 Genie cost.
