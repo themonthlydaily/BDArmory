@@ -67,6 +67,7 @@ IMPROVEMENTS
 	- ZombieMode option moved to cheat mode access.
 - Competitions:
 	- Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards (request from SirJohn).
+	- Distinguish between deliberate and accidental rams. Accidental rams don't contribute to the score.
 - Tournaments:
 	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
 	- Add taken counts to the summaries.
