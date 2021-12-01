@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.13.0
+FIXES
 - Tournaments:
 	- Fix some typos and bugs in assist counting in the local tournament parser.
 	- Clear rocket dictionaries between heats. Compute assists under the same conditions for local and remote tournaments.
