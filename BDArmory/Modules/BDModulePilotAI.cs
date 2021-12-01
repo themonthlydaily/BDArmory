@@ -252,10 +252,10 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 10f, maxValue = 200f, stepIncrement = 1.0f, scene = UI_Scene.All)]
         public float idleSpeed = 200f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_UseABPriority", advancedTweakable = true, //Use Afterburner Priority
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ABPriority", advancedTweakable = true, //Afterburner Priority
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1.0f, scene = UI_Scene.All)]
-        public float useABPriority = 50f;
+        public float ABPriority = 50f;
         #endregion
 
         #region Control Limits
@@ -1923,7 +1923,7 @@ namespace BDArmory.Modules
             speedController.allowAfterburner = allowAfterburner;
             speedController.forceAfterburner = forceAfterburner;
             speedController.throttleOverride = throttleOverride;
-            speedController.afterburnerPriority = useABPriority;
+            speedController.afterburnerPriority = ABPriority;
         }
 
         Vector3 threatRelativePosition;
