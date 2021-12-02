@@ -1,6 +1,7 @@
 ﻿FIXES
 IMPROVEMENTS
 - Apply/de-apply the intake hack when toggling the option in the settings.
+- Hack intakes (if enabled) on newly spawned vessels spawned by VesselMover or SPH→runway.
 ADDED/REMOVED/CHANGED SETTINGS VALUES
 
 v1.4.13.0

@@ -2354,6 +2354,7 @@ namespace BDArmory.UI
                 {
                     if (HighLogic.LoadedSceneIsFlight)
                     {
+                        VesselSpawner.Instance.HackIntakesOnNewVessels(BDArmorySettings.HACK_INTAKES);
                         if (BDArmorySettings.HACK_INTAKES) // Add the hack to all in-game intakes.
                         {
                             foreach (var vessel in FlightGlobals.Vessels)

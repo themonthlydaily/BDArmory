@@ -56,12 +56,14 @@ namespace BDArmory.Control
             spawnLocationCamera = new GameObject("StationaryCameraParent");
             spawnLocationCamera = (GameObject)Instantiate(spawnLocationCamera, Vector3.zero, Quaternion.identity);
             spawnLocationCamera.SetActive(false);
+            if (BDArmorySettings.HACK_INTAKES) HackIntakesOnNewVessels(true);
         }
 
         void OnDestroy()
         {
             VesselSpawnerField.Save();
             Destroy(spawnLocationCamera);
+            HackIntakesOnNewVessels(false);
         }
 
         #region Camera Adjustment
@@ -166,6 +168,97 @@ namespace BDArmory.Control
             foreach (var weaponManager in LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList())
             {
                 originalTeams[weaponManager.vessel.vesselName] = weaponManager.Team.Name;
+            }
+        }
+
+        public void ActivateAllEngines(Vessel vessel)
+        {
+            foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
+            {
+                var mme = engine.part.FindModuleImplementing<MultiModeEngine>();
+                if (mme == null)
+                {
+                    engine.Activate();
+                }
+                else
+                {
+                    if (mme.runningPrimary)
+                    {
+                        if (!mme.PrimaryEngine.EngineIgnited)
+                        {
+                            mme.PrimaryEngine.Activate();
+                        }
+                    }
+                    else
+                    {
+                        if (!mme.SecondaryEngine.EngineIgnited)
+                        {
+                            mme.SecondaryEngine.Activate();
+                        }
+                    }
+                }
+            }
+        }
+
+        public void HackIntakesOnNewVessels(bool enable)
+        {
+            if (enable)
+            {
+                GameEvents.onVesselLoaded.Add(HackIntakesEventHandler);
+                GameEvents.OnVesselRollout.Add(HackIntakes);
+            }
+            else
+            {
+                GameEvents.onVesselLoaded.Remove(HackIntakesEventHandler);
+                GameEvents.OnVesselRollout.Remove(HackIntakes);
+            }
+        }
+        void HackIntakesEventHandler(Vessel vessel) => HackIntakes(vessel, true);
+
+        public void HackIntakes(Vessel vessel, bool enable)
+        {
+            if (vessel == null || !vessel.loaded) return;
+            if (enable)
+            {
+                foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                    intake.checkForOxygen = false;
+            }
+            else
+            {
+                foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                {
+                    var checkForOxygen = ConfigNodeUtils.FindPartModuleConfigNodeValue(intake.part.partInfo.partConfig, "ModuleResourceIntake", "checkForOxygen");
+                    if (!string.IsNullOrEmpty(checkForOxygen)) // Use the default value from the part.
+                    {
+                        try
+                        {
+                            intake.checkForOxygen = bool.Parse(checkForOxygen);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[BDArmory.BDArmorySetup]: Failed to parse checkForOxygen configNode of {intake.name}: {e.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[BDArmory.BDArmorySetup]: No default value for checkForOxygen found in partConfig for {intake.name}, defaulting to true.");
+                        intake.checkForOxygen = true;
+                    }
+                }
+            }
+        }
+        public void HackIntakes(ShipConstruct ship) // This version only needs to enable the hack.
+        {
+            if (ship == null) return;
+            foreach (var part in ship.Parts)
+            {
+                var intakes = part.FindModulesImplementing<ModuleResourceIntake>();
+                if (intakes.Count() > 0)
+                {
+                    Debug.Log($"DEBUG Hacking intakes on {part.name} on {ship.shipName}");
+                    foreach (var intake in intakes)
+                        intake.checkForOxygen = false;
+                }
             }
         }
         #endregion
@@ -891,68 +984,6 @@ namespace BDArmory.Control
 
             Debug.Log("[BDArmory.VesselSpawner]: Vessel spawning " + (vesselSpawnSuccess ? "SUCCEEDED!" : "FAILED! " + spawnFailureReason));
             vesselsSpawning = false;
-        }
-
-        public void ActivateAllEngines(Vessel vessel)
-        {
-            foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
-            {
-                var mme = engine.part.FindModuleImplementing<MultiModeEngine>();
-                if (mme == null)
-                {
-                    engine.Activate();
-                }
-                else
-                {
-                    if (mme.runningPrimary)
-                    {
-                        if (!mme.PrimaryEngine.EngineIgnited)
-                        {
-                            mme.PrimaryEngine.Activate();
-                        }
-                    }
-                    else
-                    {
-                        if (!mme.SecondaryEngine.EngineIgnited)
-                        {
-                            mme.SecondaryEngine.Activate();
-                        }
-                    }
-                }
-            }
-        }
-
-        public void HackIntakes(Vessel vessel, bool enable)
-        {
-            if (vessel == null || !vessel.loaded) return;
-            if (enable)
-            {
-                foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
-                    intake.checkForOxygen = false;
-            }
-            else
-            {
-                foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
-                {
-                    var checkForOxygen = ConfigNodeUtils.FindPartModuleConfigNodeValue(intake.part.partInfo.partConfig, "ModuleResourceIntake", "checkForOxygen");
-                    if (!string.IsNullOrEmpty(checkForOxygen)) // Use the default value from the part.
-                    {
-                        try
-                        {
-                            intake.checkForOxygen = bool.Parse(checkForOxygen);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogError($"[BDArmory.BDArmorySetup]: Failed to parse checkForOxygen configNode of {intake.name}: {e.Message}");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[BDArmory.BDArmorySetup]: No default value for checkForOxygen found in partConfig for {intake.name}, defaulting to true.");
-                        intake.checkForOxygen = true;
-                    }
-                }
-            }
         }
 
         private bool vesselsSpawningOnceContinuously = false;
