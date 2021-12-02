@@ -65,7 +65,7 @@ IMPROVEMENTS
 	- Add an estimate of the current memory usage to the settings menu when Auto-Quit Memory Threshold is enabled.
 - Game Modes:
 	- Add secret Disco Mode.
-	- ZombieMode option moved to cheat mode access.
+	- Zombie Mode option moved to cheat mode access.
 - Competitions:
 	- Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards (request from SirJohn).
 	- Distinguish between deliberate and accidental rams. Accidental rams don't contribute to the score.
@@ -362,6 +362,9 @@ IMPROVEMENTS
 		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles.
 	- RWP:
 		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
+		- Add S4R2 RWP option Zombie Mode where only root part takes damage.
+			- Add non-headshot dmg multiplier slider to adjust how much damage non-root parts take.
+			- Add toggle to allow battledamage to occur on non-root parts.
 	- Internal:
 		- Adjust camera weights for picking a better vessel to switch to.
 		- Add a IsUnderwater vessel extension.
