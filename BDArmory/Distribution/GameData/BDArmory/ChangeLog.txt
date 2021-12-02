@@ -1,4 +1,9 @@
-﻿v1.4.13.0
+﻿FIXES
+IMPROVEMENTS
+- Apply/de-apply the intake hack when toggling the option in the settings.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+
+v1.4.13.0
 FIXES
 - Tournaments:
 	- Fix some typos and bugs in assist counting in the local tournament parser.

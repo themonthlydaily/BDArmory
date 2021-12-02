@@ -10,6 +10,7 @@ using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -2349,7 +2350,45 @@ namespace BDArmory.UI
                         { KerbalSafetyManager.Instance.ReconfigureInventories(); }
                     }
                 }
-                BDArmorySettings.HACK_INTAKES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HACK_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_IntakeHack"));// Hack Intakes
+                if (BDArmorySettings.HACK_INTAKES != (BDArmorySettings.HACK_INTAKES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HACK_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_IntakeHack"))))// Hack Intakes
+                {
+                    if (BDArmorySettings.HACK_INTAKES) // Add the hack to all in-game intakes.
+                    {
+                        foreach (var vessel in FlightGlobals.Vessels)
+                        {
+                            if (vessel == null || !vessel.loaded) continue;
+                            foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                                intake.checkForOxygen = false;
+                        }
+                    }
+                    else // Reset all the in-game intakes back to their part-defined settings.
+                    {
+                        foreach (var vessel in FlightGlobals.Vessels)
+                        {
+                            if (vessel == null || !vessel.loaded) continue;
+                            foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                            {
+                                var checkForOxygen = ConfigNodeUtils.FindPartModuleConfigNodeValue(intake.part.partInfo.partConfig, "ModuleResourceIntake", "checkForOxygen");
+                                if (!string.IsNullOrEmpty(checkForOxygen)) // Use the default value from the part.
+                                {
+                                    try
+                                    {
+                                        intake.checkForOxygen = bool.Parse(checkForOxygen);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Debug.LogError($"[BDArmory.BDArmorySetup]: Failed to parse checkForOxygen configNode of {intake.name}: {e.Message}");
+                                    }
+                                }
+                                else
+                                {
+                                    Debug.LogWarning($"[BDArmory.BDArmorySetup]: No default value for checkForOxygen found in partConfig for {intake.name}, defaulting to true.");
+                                    intake.checkForOxygen = true;
+                                }
+                            }
+                        }
+                    }
+                }
 
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
