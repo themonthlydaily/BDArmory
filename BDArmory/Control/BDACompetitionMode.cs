@@ -1249,8 +1249,7 @@ namespace BDArmory.Control
                 }
                 if (BDArmorySettings.HACK_INTAKES)
                 {
-                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
-                        intake.checkForOxygen = false;
+                    VesselSpawner.Instance.HackIntakes(pilot.vessel, true);
                 }
             }
 
@@ -2187,8 +2186,7 @@ namespace BDArmory.Control
                                 }
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
-                                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(pilot.vessel))
-                                        intake.checkForOxygen = false;
+                                    VesselSpawner.Instance.HackIntakes(pilot.vessel, true);
                                 }
                             }
                             break;

@@ -6,7 +6,7 @@ using System.Linq;
 using KSP.UI.Screens;
 using UnityEngine;
 using BDArmory.Core;
-using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.Modules;
 using BDArmory.Misc;
 using BDArmory.UI;
@@ -675,8 +675,7 @@ namespace BDArmory.Control
                 }
                 if (BDArmorySettings.HACK_INTAKES)
                 {
-                    foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
-                        intake.checkForOxygen = false;
+                    HackIntakes(vessel, true);
                 }
                 Debug.Log("[BDArmory.VesselSpawner]: Vessel " + vessel.vesselName + " spawned!");
             }
@@ -918,6 +917,39 @@ namespace BDArmory.Control
                         {
                             mme.SecondaryEngine.Activate();
                         }
+                    }
+                }
+            }
+        }
+
+        public void HackIntakes(Vessel vessel, bool enable)
+        {
+            if (vessel == null || !vessel.loaded) return;
+            if (enable)
+            {
+                foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                    intake.checkForOxygen = false;
+            }
+            else
+            {
+                foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
+                {
+                    var checkForOxygen = ConfigNodeUtils.FindPartModuleConfigNodeValue(intake.part.partInfo.partConfig, "ModuleResourceIntake", "checkForOxygen");
+                    if (!string.IsNullOrEmpty(checkForOxygen)) // Use the default value from the part.
+                    {
+                        try
+                        {
+                            intake.checkForOxygen = bool.Parse(checkForOxygen);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[BDArmory.BDArmorySetup]: Failed to parse checkForOxygen configNode of {intake.name}: {e.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[BDArmory.BDArmorySetup]: No default value for checkForOxygen found in partConfig for {intake.name}, defaulting to true.");
+                        intake.checkForOxygen = true;
                     }
                 }
             }
@@ -1405,8 +1437,7 @@ namespace BDArmory.Control
                         }
                         if (BDArmorySettings.HACK_INTAKES)
                         {
-                            foreach (var intake in VesselModuleRegistry.GetModules<ModuleResourceIntake>(vessel))
-                                intake.checkForOxygen = false;
+                            HackIntakes(vessel, true);
                         }
                     }
                 }
