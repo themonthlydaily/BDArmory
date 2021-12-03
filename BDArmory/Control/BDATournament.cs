@@ -132,7 +132,7 @@ namespace BDArmory.Control
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
@@ -165,7 +165,7 @@ namespace BDArmory.Control
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                 BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                 true, // Kill everything first.
@@ -300,7 +300,7 @@ namespace BDArmory.Control
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
@@ -339,7 +339,7 @@ namespace BDArmory.Control
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
