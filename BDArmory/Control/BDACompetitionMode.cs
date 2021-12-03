@@ -172,6 +172,13 @@ namespace BDArmory.Control
             { BDAScoreService.Instance.TrackDamage(attacker, victim, damage); }
             return true;
         }
+        public bool RegisterRocketFired(string shooter)
+        {
+            if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
+            if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
+            ++ScoreData[shooter].rocketsFired;
+            return true;
+        }
         /// <summary>
         /// Register individual rocket strikes.
         /// Note: this includes both kinetic and explosive strikes, so a single rocket may count for two strikes.
@@ -184,8 +191,8 @@ namespace BDArmory.Control
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
-            if (ScoreData[victim].rocketHitCounts.ContainsKey(attacker)) { ++ScoreData[victim].rocketHitCounts[attacker]; }
-            else { ScoreData[victim].rocketHitCounts[attacker] = 1; }
+            if (ScoreData[victim].rocketStrikeCounts.ContainsKey(attacker)) { ++ScoreData[victim].rocketStrikeCounts[attacker]; }
+            else { ScoreData[victim].rocketStrikeCounts[attacker] = 1; }
 
             if (BDArmorySettings.REMOTE_LOGGING_ENABLED)
             { BDAScoreService.Instance.TrackRocketStrike(attacker, victim); }
@@ -624,11 +631,11 @@ namespace BDArmory.Control
 
             // Who hit who with rockets.
             foreach (var player in Players)
-                if (ScoreData[player].rocketHitCounts.Count > 0)
+                if (ScoreData[player].rocketStrikeCounts.Count > 0)
                 {
                     string whoHitMeWithRockets = "[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: WHOHITWHOWITHROCKETS:" + player;
-                    foreach (var vesselName in ScoreData[player].rocketHitCounts.Keys)
-                        whoHitMeWithRockets += ":" + ScoreData[player].rocketHitCounts[vesselName] + ":" + vesselName;
+                    foreach (var vesselName in ScoreData[player].rocketStrikeCounts.Keys)
+                        whoHitMeWithRockets += ":" + ScoreData[player].rocketStrikeCounts[vesselName] + ":" + vesselName;
                     logStrings.Add(whoHitMeWithRockets);
                 }
 
@@ -725,7 +732,16 @@ namespace BDArmory.Control
 
             // Accuracy
             foreach (var player in Players)
-                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: ACCURACY:" + player + ":" + ScoreData[player].hits + "/" + ScoreData[player].shotsFired);
+            {
+                var rocketStrikes = 0;
+                foreach (var other in Players)
+                {
+                    if (other == player) continue;
+                    if (ScoreData[other].rocketStrikeCounts.ContainsKey(player))
+                        rocketStrikes += ScoreData[other].rocketStrikeCounts[player];
+                }
+                logStrings.Add("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: ACCURACY:" + player + ":" + ScoreData[player].hits + "/" + ScoreData[player].shotsFired + ":" + rocketStrikes + "/" + ScoreData[player].rocketsFired);
+            }
 
             // Time "IT" and kills while "IT" logging
             if (BDArmorySettings.TAG_MODE)
@@ -775,9 +791,10 @@ namespace BDArmory.Control
 
         #region Rockets
         public int totalDamagedPartsDueToRockets = 0; // Number of other vessels' parts damaged by this vessel due to rocket strikes.
+        public int rocketsFired = 0; // Number of rockets fired by this vessel.
         public Dictionary<string, float> damageFromRockets = new Dictionary<string, float>(); // Damage taken from rocket hits from other vessels.
         public Dictionary<string, int> rocketPartDamageCounts = new Dictionary<string, int>(); // Number of parts damaged by rocket hits from other vessels.
-        public Dictionary<string, int> rocketHitCounts = new Dictionary<string, int>(); // Number of rocket strikes from other vessels.
+        public Dictionary<string, int> rocketStrikeCounts = new Dictionary<string, int>(); // Number of rocket strikes from other vessels.
         #endregion
 
         #region Ramming

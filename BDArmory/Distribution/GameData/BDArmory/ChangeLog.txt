@@ -1,10 +1,13 @@
 ﻿FIXES
 - Fix comboboxes triggering force close on themselves when they should be opening.
+IMPROVEMENTS
+- Set the default evasionTimeThreshold to 0.1s.
 
 v1.4.13.1
 IMPROVEMENTS
 - Apply/de-apply the intake hack when toggling the option in the settings.
 - Hack intakes (if enabled) on newly spawned vessels spawned by VesselMover or SPH→runway.
+- Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
 
 v1.4.13.0
 FIXES

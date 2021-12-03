@@ -181,10 +181,12 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         _, craft, hp = field.split(':', 2)
                         tournamentData[round.name][heat.name]['craft'][craft].update({'HPremaining': float(hp)})
                     elif field.startswith('ACCURACY:'):
-                        _, craft, accuracy = field.split(':', 2)
+                        _, craft, accuracy, rocket_accuracy = field.split(':', 3)
                         hits, shots = accuracy.split('/')
+                        rocket_strikes, rockets_fired = rocket_accuracy.split('/')
                         accuracy = CalculateAccuracy(int(hits), int(shots))
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'accuracy': accuracy, 'hits': int(hits), 'shots': int(shots)})
+                        rocket_accuracy = CalculateAccuracy(int(rocket_strikes), int(rockets_fired))
+                        tournamentData[round.name][heat.name]['craft'][craft].update({'accuracy': accuracy, 'hits': int(hits), 'shots': int(shots), 'rocket_accuracy': rocket_accuracy, 'rocket_strikes': int(rocket_strikes), 'rockets_fired': int(rockets_fired)})
                     elif field.startswith('RESULT:'):
                         heat_result = field.split(':', 2)
                         result_type = heat_result[1]
@@ -259,6 +261,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                 'battleDamageTaken': sum([sum(heat['craft'][craft]['battleDamageBy'].values()) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'battleDamageBy' in heat['craft'][craft]]),
                 'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
                 'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
+                'rocket_accuracy': CalculateAccuracy(sum([heat['craft'][craft]['rocket_strikes'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'rocket_strikes' in heat['craft'][craft]]), sum([heat['craft'][craft]['rockets_fired'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'rockets_fired' in heat['craft'][craft]])),
             }
             for craft in craftNames
         },
@@ -384,6 +387,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'battleDamageTaken': sum([sum(heat['craft'][craft]['battleDamageBy'].values()) for heat in round.values() if craft in heat['craft'] and 'battleDamageBy' in heat['craft'][craft]]),
                         'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
                         'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
+                        'rocket_accuracy': CalculateAccuracy(sum([heat['craft'][craft]['rocket_strikes'] for heat in round.values() if craft in heat['craft'] and 'rocket_strikes' in heat['craft'][craft]]), sum([heat['craft'][craft]['rockets_fired'] for heat in round.values() if craft in heat['craft'] and 'rockets_fired' in heat['craft'][craft]])),
                     } for round in tournamentData.values()
                 ] for craft in craftNames
             }
@@ -423,7 +427,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 
         if not args.quiet:  # Write results to console
             strings = []
-            headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
+            headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
             if args.score:
                 headers.insert(1, 'Score')
             summary_strings = {'header': {field: field for field in headers}}
@@ -454,7 +458,8 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'Ram': f"{tmp['ramScore']}",
                         'BD dealt': f"{tmp['battleDamage']:.0f}",
                         'BD taken': f"{tmp['battleDamageTaken']:.0f}",
-                        'Acc%': f"{tmp['accuracy']:.2f}",
+                        'Acc%': f"{tmp['accuracy']:.3g}",
+                        'RktAcc%': f"{tmp['rocket_accuracy']:.3g}",
                         'HP%': f"{tmp['HPremaining']:.2f}",
                         'Dmg/Hit': f"{tmp['damage/hit']:.1f}",
                         'Hits/Sp': f"{tmp['hits/spawn']:.1f}",
