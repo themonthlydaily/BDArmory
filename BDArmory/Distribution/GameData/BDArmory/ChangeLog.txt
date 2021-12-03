@@ -1,5 +1,6 @@
 ﻿FIXES
 - Fix comboboxes triggering force close on themselves when they should be opening.
+- Use the correct spawn distance based on the spawn distance toggle for tournaments.
 IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
 
