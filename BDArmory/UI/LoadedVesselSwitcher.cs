@@ -1242,7 +1242,7 @@ namespace BDArmory.UI
             if (!vesselTraceEnabled) return;
             vesselTraceEnabled = false;
             Debug.Log("[BDArmory.LoadedVesselSwitcher]: Stopping vessel tracing.");
-            var folder = Path.Combine(Environment.CurrentDirectory, "GameData", "BDArmory", "Logs", "VesselTraces");
+            var folder = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Logs", "VesselTraces");
             if (!Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
             foreach (var vesselName in vesselTraces.Keys)

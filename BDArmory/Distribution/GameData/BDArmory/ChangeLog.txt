@@ -4,6 +4,7 @@
 - Don't extend from ground targets when using a weapon that doesn't target ground targets, immediately look for another target instead.
 IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
+- Make all custom paths relative to the KSP install directory to remove dependence on running location (PRE needs fixing for this to be usable though).
 
 v1.4.13.1
 IMPROVEMENTS
