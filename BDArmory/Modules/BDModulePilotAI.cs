@@ -1813,7 +1813,11 @@ namespace BDArmory.Modules
             {
                 var selectedGun = weaponManager.currentGun;
                 if (selectedGun == null && weaponManager.selectedWeapon == null) selectedGun = weaponManager.previousGun;
-                if (!selectedGun.engageGround) return false; // Don't extend from ground targets when using a weapon that can't target ground targets.
+                if (!selectedGun.engageGround) // Don't extend from ground targets when using a weapon that can't target ground targets.
+                {
+                    weaponManager.ForceScan(); // Look for another target instead.
+                    return false;
+                }
                 if (selectedGun != null) // If using a gun or no weapon is selected, take the extend multiplier into account.
                 {
                     extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
