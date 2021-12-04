@@ -1,6 +1,7 @@
 ﻿FIXES
 - Fix comboboxes triggering force close on themselves when they should be opening.
 - Use the correct spawn distance based on the spawn distance toggle for tournaments.
+- Don't extend from ground targets when using a weapon that doesn't target ground targets.
 IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
 

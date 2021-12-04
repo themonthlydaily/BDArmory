@@ -1813,6 +1813,7 @@ namespace BDArmory.Modules
             {
                 var selectedGun = weaponManager.currentGun;
                 if (selectedGun == null && weaponManager.selectedWeapon == null) selectedGun = weaponManager.previousGun;
+                if (!selectedGun.engageGround) return false; // Don't extend from ground targets when using a weapon that can't target ground targets.
                 if (selectedGun != null) // If using a gun or no weapon is selected, take the extend multiplier into account.
                 {
                     extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
@@ -2749,7 +2750,7 @@ namespace BDArmory.Modules
                     case 1:
                         if (dynamicDampingPitch)
                         {
-                            dynSteerDampingPitchValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingPitchFactor, DynamicDampingPitchMin, DynamicDampingPitchMax);
+                            dynSteerDampingPitchValue = GetDampingFactor(angleToTarget, dynamicSteerDampingPitchFactor, DynamicDampingPitchMin, DynamicDampingPitchMax);
                             PitchLabel = dynSteerDampingPitchValue.ToString();
                             return dynSteerDampingPitchValue;
                         }
@@ -2757,7 +2758,7 @@ namespace BDArmory.Modules
                     case 2:
                         if (dynamicDampingYaw)
                         {
-                            dynSteerDampingYawValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingYawFactor, DynamicDampingYawMin, DynamicDampingYawMax);
+                            dynSteerDampingYawValue = GetDampingFactor(angleToTarget, dynamicSteerDampingYawFactor, DynamicDampingYawMin, DynamicDampingYawMax);
                             YawLabel = dynSteerDampingYawValue.ToString();
                             return dynSteerDampingYawValue;
                         }
@@ -2765,7 +2766,7 @@ namespace BDArmory.Modules
                     case 3:
                         if (dynamicDampingRoll)
                         {
-                            dynSteerDampingRollValue = GetDampeningFactor(angleToTarget, dynamicSteerDampingRollFactor, DynamicDampingRollMin, DynamicDampingRollMax);
+                            dynSteerDampingRollValue = GetDampingFactor(angleToTarget, dynamicSteerDampingRollFactor, DynamicDampingRollMin, DynamicDampingRollMax);
                             RollLabel = dynSteerDampingRollValue.ToString();
                             return dynSteerDampingRollValue;
                         }
@@ -2789,13 +2790,13 @@ namespace BDArmory.Modules
             }
             else //if custom axis groups is disabled
             {
-                dynSteerDampingValue = GetDampeningFactor(defaultTargetPosition, dynamicSteerDampingFactor, DynamicDampingMin, DynamicDampingMax);
+                dynSteerDampingValue = GetDampingFactor(defaultTargetPosition, dynamicSteerDampingFactor, DynamicDampingMin, DynamicDampingMax);
                 DynamicDampingLabel = dynSteerDampingValue.ToString();
                 return dynSteerDampingValue;
             }
         }
 
-        private float GetDampeningFactor(float angleToTarget, float dynamicSteerDampingFactorAxis, float DynamicDampingMinAxis, float DynamicDampingMaxAxis)
+        private float GetDampingFactor(float angleToTarget, float dynamicSteerDampingFactorAxis, float DynamicDampingMinAxis, float DynamicDampingMaxAxis)
         {
             return Mathf.Clamp((float)(Math.Pow((180 - angleToTarget) / 180, dynamicSteerDampingFactorAxis) * (DynamicDampingMaxAxis - DynamicDampingMinAxis) + DynamicDampingMinAxis), Mathf.Min(DynamicDampingMinAxis, DynamicDampingMaxAxis), Mathf.Max(DynamicDampingMinAxis, DynamicDampingMaxAxis));
         }
