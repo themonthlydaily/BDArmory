@@ -4637,7 +4637,7 @@ namespace BDArmory.Modules
             return false;
         }
 
-        void SetTarget(TargetInfo target)
+        public void SetTarget(TargetInfo target)
         {
             if (target) // We have a target
             {

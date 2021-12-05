@@ -5,6 +5,9 @@
 IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
 - Make all custom paths relative to the KSP install directory to remove dependence on running location (PRE needs fixing for this to be usable though).
+- Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
+- Disable guard mode on spawned vessels during spawning and clear their current target.
+- Extend vessel easing during spawning until a vessel's cockpit is in the water (or it has stopped sinking) to allow it to settle a bit.
 
 v1.4.13.1
 IMPROVEMENTS
