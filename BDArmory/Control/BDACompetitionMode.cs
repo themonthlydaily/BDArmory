@@ -1242,6 +1242,7 @@ namespace BDArmory.Control
                 if (pilot.weaponManager.guardMode)
                 {
                     pilot.weaponManager.ToggleGuardMode();
+                    pilot.weaponManager.SetTarget(null);
                 }
                 if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {

@@ -748,14 +748,6 @@ namespace BDArmory.Control
                     }
                 }
                 vessel.SetPosition(finalSpawnPositions[vesselName]);
-                // Check that guard mode isn't enabled and disable it if it is.
-                var wm = vessel.FindPartModuleImplementing<MissileFire>();
-                if (wm != null && wm.guardMode)
-                {
-                    Debug.Log($"[BDArmory.VesselSpawner]: Disabling guardMode on {vessel.vesselName}.");
-                    wm.guardMode = false;
-                    wm.SetTarget(null);
-                }
                 if (BDArmorySettings.SPACE_HACKS)
                 {
                     var SF = vessel.rootPart.FindModuleImplementing<ModuleSpaceFriction>();
@@ -943,7 +935,13 @@ namespace BDArmory.Control
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
-                            if (weaponManager.guardMode) weaponManager.ToggleGuardMode(); // Disable guard mode (in case someone enabled it on AG10).
+                            if (weaponManager.guardMode)
+                            {
+                                Debug.Log($"[BDArmory.VesselSpawner]: Disabling guardMode on {vessel.vesselName}.");
+                                weaponManager.ToggleGuardMode(); // Disable guard mode (in case someone enabled it on AG10 or in the SPH).
+                                weaponManager.SetTarget(null);
+                            }
+
                             if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
