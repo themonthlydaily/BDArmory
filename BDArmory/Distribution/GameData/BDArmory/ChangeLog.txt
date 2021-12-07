@@ -2,12 +2,17 @@
 - Fix comboboxes triggering force close on themselves when they should be opening.
 - Use the correct spawn distance based on the spawn distance toggle for tournaments.
 - Don't extend from ground targets when using a weapon that doesn't target ground targets, immediately look for another target instead.
+- Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
+- Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.
+- Fix the bad check preventing competition start if a vessel doesn't take off.
+- Fix NRE in CheckEngage
 IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
 - Make all custom paths relative to the KSP install directory to remove dependence on running location (PRE needs fixing for this to be usable though).
 - Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
 - Disable guard mode on spawned vessels during spawning and clear their current target.
 - Extend vessel easing during spawning until a vessel's cockpit is in the water (or it has stopped sinking) to allow it to settle a bit.
+- Use more precision in the csv file for the cumulative scores.
 
 v1.4.13.1
 IMPROVEMENTS
