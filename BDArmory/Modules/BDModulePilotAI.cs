@@ -1813,7 +1813,7 @@ namespace BDArmory.Modules
             {
                 var selectedGun = weaponManager.currentGun;
                 if (selectedGun == null && weaponManager.selectedWeapon == null) selectedGun = weaponManager.previousGun;
-                if (!selectedGun.engageGround) // Don't extend from ground targets when using a weapon that can't target ground targets.
+                if (selectedGun != null && !selectedGun.engageGround) // Don't extend from ground targets when using a weapon that can't target ground targets.
                 {
                     weaponManager.ForceScan(); // Look for another target instead.
                     return false;
