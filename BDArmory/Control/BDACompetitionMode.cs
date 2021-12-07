@@ -1320,30 +1320,24 @@ namespace BDArmory.Control
                 leader.weaponManager.wingCommander.CommandAllFollow();
 
             //wait till the leaders are ready to engage (airborne for PilotAI)
-            bool ready = false;
-            while (!ready)
+            while (true)
             {
-                ready = true;
-                using (var leader = leaders.GetEnumerator())
-                    while (leader.MoveNext())
-                        if (leader.Current != null && !leader.Current.CanEngage())
-                        {
-                            ready = false;
-                            yield return new WaitForSeconds(1);
-                            break;
-                        }
-            }
-
-            if (leaders.Any(leader => leader == null || leader.weaponManager == null))
-            {
-                var survivingLeaders = leaders.Where(l => l != null && l.weaponManager != null).Select(l => l.vessel.vesselName).ToList();
-                var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
-                var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
-                competitionStatus.Set("Competition: " + message);
-                Debug.Log("[BDArmory.BDACompetitionMode]: 2. " + message);
-                competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
-                StopCompetition();
-                yield break;
+                if (leaders.Any(leader => leader == null || leader.weaponManager == null))
+                {
+                    var survivingLeaders = leaders.Where(l => l != null && l.weaponManager != null).Select(l => l.vessel.vesselName).ToList();
+                    var missingLeaders = leaderNames.Where(l => !survivingLeaders.Contains(l)).ToList();
+                    var message = "A team leader disappeared during competition start-up, aborting: " + string.Join(", ", missingLeaders);
+                    competitionStatus.Set("Competition: " + message);
+                    Debug.Log("[BDArmory.BDACompetitionMode]: 2. " + message);
+                    competitionStartFailureReason = CompetitionStartFailureReason.TeamLeaderDisappeared;
+                    StopCompetition();
+                    yield break;
+                }
+                if (leaders.All(leader => leader.CanEngage()))
+                {
+                    break;
+                }
+                yield return new WaitForSeconds(1);
             }
 
             if (BDArmorySettings.ASTEROID_FIELD) { AsteroidField.Instance.SpawnField(BDArmorySettings.ASTEROID_FIELD_NUMBER, BDArmorySettings.ASTEROID_FIELD_ALTITUDE, BDArmorySettings.ASTEROID_FIELD_RADIUS, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS); }
