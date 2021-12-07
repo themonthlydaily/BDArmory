@@ -334,6 +334,10 @@ namespace BDArmory.Control
                 VehiclePhysics.Gravity.Refresh();
             }
 
+            // If we're on another planetary body, first switch to the proper one.
+            if (spawnConfig.worldIndex != FlightGlobals.currentMainBody.flightGlobalsIndex)
+            { ShowSpawnPoint(spawnConfig.worldIndex, spawnConfig.latitude, spawnConfig.longitude, spawnConfig.altitude, 20); }
+
             vesselsSpawning = true; // Signal that we've started the spawning vessels routine.
             vesselSpawnSuccess = false; // Set our success flag to false for now.
             spawnFailureReason = SpawnFailureReason.None;
