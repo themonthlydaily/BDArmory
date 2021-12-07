@@ -1110,7 +1110,7 @@ namespace BDArmory.Modules
             threatRating = evasionThreshold + 1f; // Don't evade by default
             if (weaponManager != null)
             {
-                if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)
+                if (weaponManager.incomingMissileTime <= weaponManager.cmThreshold)
                 {
                     threatRating = 0f; // Allow entering evasion code if we're under missile fire
                     minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
@@ -1980,7 +1980,7 @@ namespace BDArmory.Modules
                         debugString.AppendLine($"Breaking from missile threat!");
 
                         // Break off at 90 deg to missile
-                        Vector3 threatDirection = weaponManager.incomingMissileVessel.transform.position - vesselTransform.position;
+                        Vector3 threatDirection = -1f * weaponManager.incomingMissileVessel.Velocity();
                         threatDirection = Vector3.ProjectOnPlane(threatDirection, upDirection);
                         float sign = Vector3.SignedAngle(threatDirection, Vector3.ProjectOnPlane(vessel.Velocity(), upDirection), upDirection);
                         Vector3 breakDirection = Vector3.ProjectOnPlane(Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection), upDirection);

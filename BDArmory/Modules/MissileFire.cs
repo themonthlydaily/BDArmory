@@ -298,6 +298,7 @@ namespace BDArmory.Modules
         public bool missileIsIncoming;
         public float incomingMissileLastDetected = 0;
         public float incomingMissileDistance = float.MaxValue;
+        public float incomingMissileTime = float.MaxValue;
         public Vessel incomingMissileVessel;
 
         //guard mode vars
@@ -1395,7 +1396,7 @@ namespace BDArmory.Modules
                     if (missileIsIncoming)
                     {
                         foreach (var incomingMissile in results.incomingMissiles)
-                            debugString.AppendLine("Incoming missile: " + (incomingMissile.vessel != null ? incomingMissile.vessel.vesselName + " @ " + incomingMissile.distance.ToString("0") + "m (" + ThreatClosingTime(incomingMissile.vessel).ToString("0.0") + "s)" : null));
+                            debugString.AppendLine("Incoming missile: " + (incomingMissile.vessel != null ? incomingMissile.vessel.vesselName + " @ " + incomingMissile.distance.ToString("0") + "m (" + incomingMissile.time.ToString("0.0") + "s)" : null));
                     }
                     if (underAttack) debugString.AppendLine("Under attack from " + (incomingThreatVessel != null ? incomingThreatVessel.vesselName : null));
                     if (underFire) debugString.AppendLine("Under fire from " + (priorGunThreatVessel != null ? priorGunThreatVessel.vesselName : null));
@@ -1569,6 +1570,7 @@ namespace BDArmory.Modules
         {
             yield return new WaitForSeconds(8);
             incomingMissileDistance = float.MaxValue;
+            incomingMissileTime = float.MaxValue;
         }
 
         IEnumerator GuardMissileRoutine()
@@ -5031,7 +5033,7 @@ namespace BDArmory.Modules
 
             if (results.foundMissile)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS && (!missileIsIncoming || results.missileThreatDistance < 1000f))
+                if (BDArmorySettings.DRAW_DEBUG_LABELS && (!missileIsIncoming || results.incomingMissiles[0].distance < 1000f))
                 {
                     foreach (var incomingMissile in results.incomingMissiles)
                         Debug.Log("[BDArmory.MissileFire]: " + vessel.vesselName + " incoming missile (" + incomingMissile.vessel.vesselName + " of type " + incomingMissile.guidanceType + " from " + (incomingMissile.weaponManager != null && incomingMissile.weaponManager.vessel != null ? incomingMissile.weaponManager.vessel.vesselName : "unknown") + ") found at distance " + incomingMissile.distance + "m");
@@ -5040,6 +5042,7 @@ namespace BDArmory.Modules
                 incomingMissileLastDetected = Time.time;
                 // Assign the closest missile as the main threat. FIXME In the future, we could do something more complex to handle all the incoming missiles.
                 incomingMissileDistance = results.incomingMissiles[0].distance;
+                incomingMissileTime = results.incomingMissiles[0].time;
                 incomingThreatPosition = results.incomingMissiles[0].position;
                 incomingThreatVessel = results.incomingMissiles[0].vessel;
                 incomingMissileVessel = results.incomingMissiles[0].vessel;
@@ -5077,6 +5080,7 @@ namespace BDArmory.Modules
             {
                 // FIXME these shouldn't be necessary if all checks against them are guarded by missileIsIncoming.
                 incomingMissileDistance = float.MaxValue;
+                incomingMissileTime = float.MaxValue;
                 incomingMissileVessel = null;
             }
 

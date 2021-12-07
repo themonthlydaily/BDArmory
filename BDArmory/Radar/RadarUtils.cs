@@ -1211,7 +1211,6 @@ namespace BDArmory.Radar
                 foundAGM = false,
                 firingAtMe = false,
                 missDistance = float.MaxValue,
-                missileThreatDistance = float.MaxValue,
                 threatVessel = null,
                 threatWeaponManager = null,
                 incomingMissiles = new List<IncomingMissile>()
@@ -1264,6 +1263,7 @@ namespace BDArmory.Radar
                                         {
                                             guidanceType = missileBase.TargetingMode,
                                             distance = Vector3.Distance(missileBase.part.transform.position, myWpnManager.part.transform.position),
+                                            time = AIUtils.ClosestTimeToCPA(missileBase.vessel, myWpnManager.vessel, 16f),
                                             position = missileBase.transform.position,
                                             vessel = missileBase.vessel,
                                             weaponManager = missileBase.SourceVessel != null ? VesselModuleRegistry.GetModule<MissileFire>(missileBase.SourceVessel) : null,
@@ -1313,12 +1313,18 @@ namespace BDArmory.Radar
                         }
                     }
                 }
-            // Sort incoming missiles.
+            // Sort incoming missiles by time
             if (results.incomingMissiles.Count > 0)
             {
                 results.foundMissile = true;
-                results.incomingMissiles.Sort(delegate (IncomingMissile m1, IncomingMissile m2) { return m1.distance.CompareTo(m2.distance); });
-                results.missileThreatDistance = results.incomingMissiles[0].distance;
+                results.incomingMissiles.Sort(delegate (IncomingMissile m1, IncomingMissile m2) { return m1.time.CompareTo(m2.time); });
+
+                // If the missile is further away than 16s (max time calculated), then sort by distance
+                if (results.incomingMissiles[0].time >= 16f)
+                {
+                    results.foundMissile = true;
+                    results.incomingMissiles.Sort(delegate (IncomingMissile m1, IncomingMissile m2) { return m1.distance.CompareTo(m2.distance); });
+                }
             }
 
             return results;

@@ -11,7 +11,6 @@ namespace BDArmory.Misc
         public bool foundHeatMissile;
         public bool foundRadarMissile;
         public bool foundAGM;
-        public float missileThreatDistance;
         public List<IncomingMissile> incomingMissiles; // List of incoming missiles sorted by distance.
         #endregion
 
@@ -28,6 +27,7 @@ namespace BDArmory.Misc
     {
         public MissileBase.TargetingModes guidanceType; // Missile guidance type
         public float distance; // Missile distance
+        public float time; // Time to CPA
         public Vector3 position; // Missile position
         public Vessel vessel; // Missile vessel
         public MissileFire weaponManager; // WM of source vessel for regular missiles or WM of missile for modular missiles.
