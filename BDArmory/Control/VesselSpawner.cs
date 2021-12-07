@@ -876,7 +876,7 @@ namespace BDArmory.Control
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
                             var vessel = spawnedVessels[vesselName].Item1;
-                            if (vessel.LandedOrSplashed && vessel.radarAltitude <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
+                            if (vessel.LandedOrSplashed && Misc.Misc.GetRadarAltitudeAtPos(vessel.transform.position) <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
                             {
                                 vesselsHaveLanded[vesselName] = 2;
                             }
