@@ -5,7 +5,9 @@
 - Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
 - Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.
 - Fix the bad check preventing competition start if a vessel doesn't take off.
-- Fix NRE in CheckEngage
+- Fix NRE in CheckEngage.
+- Remove extraneous trajectory simulation when firing a bullet.
+- Fix infinite recursion bug in the evolution engine.
 IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
 - Make all custom paths relative to the KSP install directory to remove dependence on running location (PRE needs fixing for this to be usable though).
@@ -13,6 +15,8 @@ IMPROVEMENTS
 - Disable guard mode on spawned vessels during spawning and clear their current target.
 - Extend vessel easing during spawning until a vessel's cockpit is in the water (or it has stopped sinking) to allow it to settle a bit.
 - Use more precision in the csv file for the cumulative scores.
+- Use CM threshold for determining missile closest approach instead of a fixed 2s value.
+- Maintain evolution state and properly add in support for auto-resuming evolutions.
 
 v1.4.13.1
 IMPROVEMENTS

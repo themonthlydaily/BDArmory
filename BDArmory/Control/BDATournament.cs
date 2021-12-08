@@ -7,7 +7,7 @@ using UnityEngine;
 using BDArmory.Core;
 using BDArmory.UI;
 using BDArmory.Misc;
-using KSP.Localization;
+using BDArmory.Evolution;
 
 namespace BDArmory.Control
 {
@@ -1037,7 +1037,21 @@ namespace BDArmory.Control
 
         IEnumerator AutoResumeTournament()
         {
-            if (!BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            EvolutionWorkingState evolutionState = null;
+            if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            {
+                evolutionState = BDAModuleEvolution.LoadState();
+                if (string.IsNullOrEmpty(evolutionState.savegame)) { Debug.Log($"DEBUG No savegame found in evolution state."); yield break; }
+                if (string.IsNullOrEmpty(evolutionState.evolutionId) || !File.Exists(Path.Combine(BDAModuleEvolution.configDirectory, evolutionState.evolutionId + ".cfg"))) { Debug.Log($"DEBUG No saved evolution configured."); yield break; }
+                savegame = Path.Combine(savesDir, evolutionState.savegame, cleansave + ".sfs"); // First check for a "clean" save file.
+                if (!File.Exists(savegame))
+                {
+                    useCleanSave = false;
+                    savegame = Path.Combine(savesDir, evolutionState.savegame, save + ".sfs");
+                }
+                game = evolutionState.savegame;
+            }
+            else
             {
                 // Check that there is an incomplete tournament, otherwise abort.
                 bool incompleteTournament = false;
@@ -1073,7 +1087,17 @@ namespace BDArmory.Control
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load flight scene."); yield break; }
             // Resume the tournament.
             yield return new WaitForSeconds(1);
-            if (!BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            {
+                tic = Time.time;
+                yield return new WaitWhile(() => (BDAModuleEvolution.Instance == null && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
+                if (BDAModuleEvolution.Instance == null) yield break;
+                BDArmorySetup.windowBDAToolBarEnabled = true;
+                BDArmorySetup.Instance.showVesselSwitcherGUI = true;
+                BDArmorySetup.Instance.showEvolutionGUI = true;
+                BDAModuleEvolution.Instance.ResumeEvolution(evolutionState);
+            }
+            else
             {
                 tic = Time.time;
                 yield return new WaitWhile(() => ((BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
@@ -1082,14 +1106,6 @@ namespace BDArmory.Control
                 BDArmorySetup.Instance.showVesselSwitcherGUI = true;
                 BDArmorySetup.Instance.showVesselSpawnerGUI = true;
                 BDATournament.Instance.RunTournament();
-            }
-            else
-            {
-                BDArmorySetup.windowBDAToolBarEnabled = true;
-                BDArmorySetup.Instance.showVesselSwitcherGUI = true;
-                Evolution.BDAModuleEvolution evolution = Evolution.BDAModuleEvolution.Instance;
-                if (evolution == null) yield break;
-                evolution.StartEvolution();
             }
         }
 
