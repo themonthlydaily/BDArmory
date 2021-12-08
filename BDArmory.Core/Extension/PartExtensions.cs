@@ -7,13 +7,22 @@ using UnityEngine;
 
 namespace BDArmory.Core.Extension
 {
-    public enum ExplosionSourceType { Other, Missile, Bullet };
+    public enum ExplosionSourceType { Other, Missile, Bullet, Rocket, BattleDamage };
     public static class PartExtensions
     {
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
-
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    if (p != p.vessel.rootPart)
+                    {
+                        damage *= BDArmorySettings.ZOMBIE_DMG_MULT;
+                    }
+                }
+            }
             //////////////////////////////////////////////////////////
             // Basic Add Hitpoints for compatibility (only used by lasers & fires)
             //////////////////////////////////////////////////////////
@@ -26,17 +35,43 @@ namespace BDArmory.Core.Extension
             {
                 Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory]: Standard Hitpoints Applied : " + damage);
+                    Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Applied to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {damage}");
+            }
+        }
+
+        public static void AddInstagibDamage(this Part p)
+        {
+            if (p.GetComponent<KerbalEVA>() != null)
+            {
+                p.Destroy();
+            }
+            else
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    p.vessel.rootPart.Destroy();
+                }
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log("[BDArmory.PartExtensions]: Instagib!");
             }
         }
 
         public static float AddExplosiveDamage(this Part p,
                                                float explosiveDamage,
                                                float caliber,
-                                               ExplosionSourceType sourceType)
+                                               ExplosionSourceType sourceType,
+                                               float multiplier = 1)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
-
+            /*
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    //if (p != p.vessel.rootPart) return 0f;
+                }
+            }
+            */
             float damage_ = 0f;
             //////////////////////////////////////////////////////////
             // Explosive Hitpoints
@@ -45,10 +80,19 @@ namespace BDArmory.Core.Extension
             switch (sourceType)
             {
                 case ExplosionSourceType.Missile:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage;
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_MISSILE * explosiveDamage * multiplier;
                     break;
-                default:
-                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * explosiveDamage;
+                case ExplosionSourceType.Rocket:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_ROCKET * explosiveDamage * multiplier;
+                    break;
+                case ExplosionSourceType.BattleDamage:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE * explosiveDamage;
+                    break;
+                case ExplosionSourceType.Bullet:
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * BDArmorySettings.EXP_DMG_MOD_BALLISTIC_NEW * explosiveDamage * multiplier;
+                    break;
+                default: // Other?
+                    damage_ = (BDArmorySettings.DMG_MULTIPLIER / 100) * explosiveDamage;
                     break;
             }
 
@@ -60,7 +104,9 @@ namespace BDArmory.Core.Extension
             if (p.HasArmor())
             {
                 float armorMass_ = p.GetArmorThickness();
-                float damageReduction = DamageReduction(armorMass_, damage_, sourceType, caliber);
+                float armorDensity_ = p.GetArmorDensity();
+                float armorStrength_ = p.GetArmorSrength();
+                float damageReduction = DamageReduction(armorMass_, armorDensity_, armorStrength_, damage_, sourceType, caliber);
 
                 damage_ = damageReduction;
             }
@@ -75,6 +121,16 @@ namespace BDArmory.Core.Extension
             }
             else
             {
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+                {
+                    if (p.vessel.rootPart != null)
+                    {
+                        if (p != p.vessel.rootPart)
+                        {
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
+                        }
+                    }
+                }
                 ApplyHitPoints(p, damage_);
             }
             return damage_;
@@ -86,19 +142,50 @@ namespace BDArmory.Core.Extension
                                                float multiplier,
                                                float penetrationfactor,
                                                float bulletDmgMult,
-                                               float impactVelocity)
+                                               float impactVelocity,
+                                               ExplosionSourceType sourceType)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
-
+            /*
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+            {
+                if (p.vessel.rootPart != null)
+                {
+                    if (p != p.vessel.rootPart) return 0f;
+                }
+            }
+            */
             //////////////////////////////////////////////////////////
             // Basic Kinetic Formula
             //////////////////////////////////////////////////////////
             //Hitpoints mult for scaling in settings
             //1e-4 constant for adjusting MegaJoules for gameplay
 
-            float damage_ = ((0.5f * (mass * Mathf.Pow(impactVelocity, 2)))
-                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult
-                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR);
+            float damage_;
+            switch (sourceType)
+            {
+                case ExplosionSourceType.Rocket:
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
+                    break;
+                case ExplosionSourceType.BattleDamage:
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
+                            * 1e-4f * BDArmorySettings.EXP_DMG_MOD_BATTLE_DAMAGE;
+                    break;
+                case ExplosionSourceType.Bullet:
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
+                    break;
+                default: // Other?    
+                    damage_ = (0.5f * (mass * impactVelocity * impactVelocity))
+                            * (BDArmorySettings.DMG_MULTIPLIER / 100) * bulletDmgMult * multiplier
+                            * 1e-4f * BDArmorySettings.BALLISTIC_DMG_FACTOR;
+                    break;
+            }
+
 
             var damage_before = damage_;
             //////////////////////////////////////////////////////////
@@ -108,7 +195,9 @@ namespace BDArmory.Core.Extension
             if (p.HasArmor())
             {
                 float armorMass_ = p.GetArmorThickness();
-                float damageReduction = DamageReduction(armorMass_, damage_, ExplosionSourceType.Bullet, caliber, penetrationfactor);
+                float armorDensity_ = p.GetArmorDensity();
+                float armorStrength_ = p.GetArmorSrength();
+                float damageReduction = DamageReduction(armorMass_, armorDensity_, armorStrength_, damage_, ExplosionSourceType.Bullet, caliber, penetrationfactor);
 
                 damage_ = damageReduction;
             }
@@ -122,7 +211,17 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                ApplyHitPoints(p, damage_, caliber, mass, mass, impactVelocity, penetrationfactor);
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+                {
+                    if (p.vessel.rootPart != null)
+                    {
+                        if (p != p.vessel.rootPart)
+                        {
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
+                        }
+                    }
+                }
+                ApplyHitPoints(p, damage_, caliber, mass, multiplier, impactVelocity, penetrationfactor);
             }
             return damage_;
         }
@@ -138,11 +237,23 @@ namespace BDArmory.Core.Extension
             Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage_);
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                Debug.Log("[BDArmory]: mass: " + mass + " caliber: " + caliber + " multiplier: " + multiplier + " velocity: " + impactVelocity + " penetrationfactor: " + penetrationfactor);
-                Debug.Log("[BDArmory]: Ballistic Hitpoints Applied : " + damage_);
+                Debug.Log("[BDArmory.PartExtensions]: mass: " + mass + " caliber: " + caliber + " multiplier: " + multiplier + " velocity: " + impactVelocity + " penetrationfactor: " + penetrationfactor);
+                Debug.Log("[BDArmory.PartExtensions]: Ballistic Hitpoints Applied to " + p.name + ": " + damage_);
             }
         }
-
+        public static void AddHealth(this Part p, float healing, bool overcharge = false)
+        {
+            if (p.GetComponent<KerbalEVA>() != null)
+            {
+                ApplyHitPoints(p.GetComponent<KerbalEVA>(), healing);
+            }
+            else
+            {
+                Dependencies.Get<DamageService>().AddHealthToPart_svc(p, healing, overcharge);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                    Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Restored to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {healing}");
+            }
+        }
         /// <summary>
         /// Explosive Hitpoint Damage
         /// </summary>
@@ -154,7 +265,7 @@ namespace BDArmory.Core.Extension
 
             Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: Explosive Hitpoints Applied to " + p.name + ": " + damage);
+                Debug.Log("[BDArmory.PartExtensions]: Explosive Hitpoints Applied to " + p.name + ": " + damage);
         }
 
         /// <summary>
@@ -168,7 +279,7 @@ namespace BDArmory.Core.Extension
 
             Dependencies.Get<DamageService>().AddDamageToKerbal_svc(kerbal, damage);
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: Hitpoints Applied to " + kerbal.name + ": " + damage);
+                Debug.Log("[BDArmory.PartExtensions]: Hitpoints Applied to " + kerbal.name + ": " + damage);
         }
 
         public static void AddForceToPart(Rigidbody rb, Vector3 force, Vector3 position, ForceMode mode)
@@ -177,8 +288,9 @@ namespace BDArmory.Core.Extension
             // Add The force to part
             //////////////////////////////////////////////////////////
 
+            if (rb == null || rb.mass == 0) return;
             rb.AddForceAtPosition(force, position, mode);
-            Debug.Log("[BDArmory]: Force Applied : " + force.magnitude);
+            Debug.Log("[BDArmory.PartExtensions]: Force Applied : " + force.magnitude);
         }
 
         public static void Destroy(this Part p)
@@ -188,7 +300,7 @@ namespace BDArmory.Core.Extension
 
         public static bool HasArmor(this Part p)
         {
-            return p.GetArmorThickness() > 15f;
+            return Mathf.FloorToInt(p.GetArmorThickness()) > 0f;
         }
 
         public static bool GetFireFX(this Part p)
@@ -214,19 +326,45 @@ namespace BDArmory.Core.Extension
         public static void ReduceArmor(this Part p, double massToReduce)
         {
             if (!p.HasArmor()) return;
-            massToReduce = Math.Max(0.10, Math.Round(massToReduce, 2));
+            //massToReduce = Math.Max(0.10, Math.Round(massToReduce, 2));
             Dependencies.Get<DamageService>().ReduceArmor_svc(p, (float)massToReduce);
 
-            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
-                Debug.Log("[BDArmory]: Armor Removed : " + massToReduce);
+                Debug.Log("[BDArmory.PartExtensions]: Armor volume Removed : " + massToReduce);
             }
         }
 
         public static float GetArmorThickness(this Part p)
         {
             if (p == null) return 0f;
-            return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+            float armorthickness = Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+            if (float.IsNaN(armorthickness))
+            {
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is NaN");
+                return 0f;
+            }
+            else
+            {
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
+                return armorthickness;
+            }
+            //return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+        }
+        public static float GetArmorMaxThickness(this Part p)
+        {
+            if (p == null) return 0f;
+            return Dependencies.Get<DamageService>().GetPartMaxArmor_svc(p);
+        }
+        public static float GetArmorDensity(this Part p)
+        {
+            if (p == null) return 0f;
+            return Dependencies.Get<DamageService>().GetArmorDensity_svc(p);
+        }
+        public static float GetArmorSrength(this Part p)
+        {
+            if (p == null) return 0f;
+            return Dependencies.Get<DamageService>().GetArmorStrength_svc(p);
         }
 
         public static float GetArmorPercentage(this Part p)
@@ -238,7 +376,7 @@ namespace BDArmory.Core.Extension
             return armor_ / maxArmor_;
         }
 
-        public static float GetDamagePercentatge(this Part p)
+        public static float GetDamagePercentage(this Part p)
         {
             if (p == null) return 0;
 
@@ -272,7 +410,10 @@ namespace BDArmory.Core.Extension
             return part.Modules.Contains("MissileBase") || part.Modules.Contains("MissileLauncher") ||
                    part.Modules.Contains("BDModularGuidance");
         }
-
+        public static bool IsWeapon(this Part part)
+        {
+            return part.Modules.Contains("ModuleWeapon");
+        }
         public static float GetArea(this Part part, bool isprefab = false, Part prefab = null)
         {
             var size = part.GetSize();
@@ -297,28 +438,60 @@ namespace BDArmory.Core.Extension
 
         public static Vector3 GetSize(this Part part)
         {
-            var size = part.GetComponentInChildren<MeshFilter>().mesh.bounds.size;
+            var meshFilter = part.GetComponentInChildren<MeshFilter>();
+            if (meshFilter == null)
+            {
+                Debug.LogWarning($"[BDArmory.PartExtension]: {part.name} has no MeshFilter! Returning zero size.");
+                return Vector3.zero;
+            }
+            var size = meshFilter.mesh.bounds.size;
 
             // if (part.name.Contains("B9.Aero.Wing.Procedural")) // Covered by SuicidalInsanity's patch.
             // {
             //     size = size * 0.1f;
             // }
 
+            float scaleMultiplier = part.GetTweakScaleMultiplier();
+            return size * scaleMultiplier;
+        }
+
+        private static bool tweakScaleChecked = false;
+        private static bool tweakScaleInstalled = false;
+        public static float GetTweakScaleMultiplier(this Part part)
+        {
             float scaleMultiplier = 1f;
-            if (part.Modules.Contains("TweakScale"))
+            if (!tweakScaleChecked)
+            {
+                foreach (var assy in AssemblyLoader.loadedAssemblies)
+                    if (assy.assembly.FullName.Contains("TweakScale"))
+                        tweakScaleInstalled = true;
+                tweakScaleChecked = true;
+            }
+            if (tweakScaleInstalled && part.Modules.Contains("TweakScale"))
             {
                 var tweakScaleModule = part.Modules["TweakScale"];
                 scaleMultiplier = tweakScaleModule.Fields["currentScale"].GetValue<float>(tweakScaleModule) /
                                   tweakScaleModule.Fields["defaultScale"].GetValue<float>(tweakScaleModule);
             }
-
-            return size * scaleMultiplier;
+            return scaleMultiplier;
         }
 
         public static bool IsAero(this Part part)
         {
-            return part.Modules.Contains("ModuleControlSurface") ||
-                   part.Modules.Contains("ModuleLiftingSurface");
+            if (part.Modules.Contains("ModuleLiftingSurface") || part.Modules.Contains("FARWingAerodynamicModel"))
+            {
+                if (part.name.Contains("mk2") || part.name.Contains("Mk2") || part.name.Contains("M2X") || part.name.Contains("HeatShield")) // don't grab Mk2 parts or heatshields. Caps-sensitive
+                {
+                    return false;
+                }
+                else return true;
+            }
+            else if (part.Modules.Contains("ModuleControlSurface") ||
+                   part.Modules.Contains("FARControllableSurface"))
+            {
+                return true;
+            }
+            else return false;
         }
 
         public static string GetExplodeMode(this Part part)
@@ -333,6 +506,7 @@ namespace BDArmory.Core.Extension
                 part.Modules.Contains("ModuleWheelBase") ||
                 part.Modules.Contains("KSPWheelBase") ||
                 part.gameObject.GetComponentUpwards<KerbalEVA>() ||
+                part.Modules.Contains("ModuleReactiveArmor") ||
                 part.Modules.Contains("ModuleDCKShields") ||
                 part.Modules.Contains("ModuleShieldGenerator")
                 )
@@ -360,7 +534,7 @@ namespace BDArmory.Core.Extension
                         case "Oxidizer":
                             if (resources.Current.amount > 1d) hasFuel = true;
                             break;
-                        case "Monopropellant":
+                        case "MonoPropellant":
                             if (resources.Current.amount > 1d) hasFuel = true;
                             break;
                     }
@@ -368,25 +542,34 @@ namespace BDArmory.Core.Extension
             return hasFuel;
         }
 
-        public static float DamageReduction(float armor, float damage, ExplosionSourceType sourceType, float caliber = 0, float penetrationfactor = 0)
+        public static float DamageReduction(float armor, float density, float strength, float damage, ExplosionSourceType sourceType, float caliber = 0, float penetrationfactor = 0)
         {
             float _damageReduction;
 
             switch (sourceType)
             {
                 case ExplosionSourceType.Missile:
-                    if (BDAMath.Between(armor, 100f, 200f))
+                    //damage *= Mathf.Clamp(-0.0005f * armor + 1.025f, 0f, 0.5f); // Cap damage reduction at 50% (armor = 1050)					
+                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
-                        damage *= 0.95f;
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000));
+                        Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
                     }
-                    else if (BDAMath.Between(armor, 200f, 400f))
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
+
+                    break;
+
+                case ExplosionSourceType.BattleDamage:
+                    //identical to missile for now, since fuel/ammo explosions can be mitigated by armor mass			
+                    if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
-                        damage *= 0.875f;
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000));
+                        Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
                     }
-                    else if (BDAMath.Between(armor, 400f, 500f))
-                    {
-                        damage *= 0.80f;
-                    }
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
+
                     break;
                 default:
                     if (!(penetrationfactor >= 1f))
@@ -406,22 +589,23 @@ namespace BDArmory.Core.Extension
 
                         //y=(98.34817*x)/(97.85935+x)
 
-                        _damageReduction = (113 * armor) / (154 + armor);
+                        _damageReduction = (113 * armor) / (154 + armor); //should look at this later, review?
 
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        if (BDArmorySettings.DRAW_ARMOR_LABELS)
                         {
-                            Debug.Log("[BDArmory]: Damage Before Reduction : " + damage / 100);
-                            Debug.Log("[BDArmory]: Damage Reduction : " + _damageReduction / 100);
-                            Debug.Log("[BDArmory]: Damage After Armor : " + (damage *= (_damageReduction / 100f)));
+                            Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
+                            Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 100 * (1 - Mathf.Clamp01((113f - _damageReduction) / 100f)));
+                            Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage *= Mathf.Clamp01((113f - _damageReduction) / 100f)));
                         }
 
-                        damage *= (_damageReduction / 100f);
+                        damage *= Mathf.Clamp01((113f - _damageReduction) / 100f);
                     }
                     break;
             }
 
             return damage;
         }
+
         public static bool isBattery(this Part part)
         {
             bool hasEC = false;
@@ -441,6 +625,33 @@ namespace BDArmory.Core.Extension
         public static Vector3 GetBoundsSize(Part part)
         {
             return PartGeometryUtil.MergeBounds(part.GetRendererBounds(), part.transform).size;
+        }
+
+        /// <summary>
+        /// KSP version dependent query of whether the part is a kerbal on EVA.
+        /// </summary>
+        /// <param name="part">Part to check.</param>
+        /// <returns>true if the part is a kerbal on EVA.</returns>
+        public static bool IsKerbalEVA(this Part part)
+        {
+            if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
+            {
+                return part.IsKerbalEVA_1_11();
+            }
+            else
+            {
+                return part.IsKerbalEVA_1_10();
+            }
+        }
+
+        private static bool IsKerbalEVA_1_11(this Part part) // KSP has issues on older versions if this call is in the parent function.
+        {
+            return part.isKerbalEVA();
+        }
+
+        private static bool IsKerbalEVA_1_10(this Part part)
+        {
+            return part.FindModuleImplementing<KerbalEVA>() != null;
         }
     }
 }

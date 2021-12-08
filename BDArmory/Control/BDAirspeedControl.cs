@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using BDArmory.Modules;
 
 namespace BDArmory.Control
 {
@@ -11,6 +12,8 @@ namespace BDArmory.Control
         public float throttleOverride = -1f;
         public bool useBrakes = true;
         public bool allowAfterburner = true;
+        public bool forceAfterburner = false;
+        public float afterburnerPriority = 50f;
 
         //[KSPField(isPersistant = false, guiActive = true, guiActiveEditor = false, guiName = "ThrottleFactor"),
         //	UI_FloatRange(minValue = 1f, maxValue = 20f, stepIncrement = .5f, scene = UI_Scene.All)]
@@ -19,6 +22,8 @@ namespace BDArmory.Control
         public Vessel vessel;
 
         bool controlEnabled;
+
+        private float smoothedAccel = 0; // smoothed acceleration, prevents super fast toggling of afterburner
 
         //[KSPField(guiActive = true, guiName = "Thrust")]
         public float debugThrust;
@@ -117,7 +122,7 @@ namespace BDArmory.Control
             float finalThrust = 0;
             multiModeEngines.Clear();
 
-            using (List<ModuleEngines>.Enumerator engines = vessel.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
+            using (var engines = VesselModuleRegistry.GetModules<ModuleEngines>(vessel).GetEnumerator())
                 while (engines.MoveNext())
                 {
                     if (engines.Current == null) continue;
@@ -147,6 +152,9 @@ namespace BDArmory.Control
 
             float accel = maxThrust / vesselMass; // This assumes that all thrust is in the same direction.
 
+            float alpha = 0.05f; // Approx 25 frame (0.5s) lag (similar to 50 frames moving average, but with more weight on recent values and much faster to calculate).
+            smoothedAccel = smoothedAccel * (1f - alpha) + alpha * accel;
+
             //estimate drag
             float estimatedCurrentAccel = finalThrust / vesselMass - GravAccel();
             Vector3 vesselAccelProjected = Vector3.Project(vessel.acceleration_immediate, vessel.velocityD.normalized);
@@ -155,20 +163,22 @@ namespace BDArmory.Control
             dragAccel = accelError;
 
             possibleAccel += accel; // This assumes that the acceleration from engines is in the same direction as the original possibleAccel.
+            forceAfterburner = forceAfterburner || (afterburnerPriority == 100f);
+            allowAfterburner = allowAfterburner && (afterburnerPriority != 0f);
 
             //use multimode afterburner for extra accel if lacking
             using (List<MultiModeEngine>.Enumerator mmes = multiModeEngines.GetEnumerator())
                 while (mmes.MoveNext())
                 {
                     if (mmes.Current == null) continue;
-                    if (allowAfterburner && accel < requestAccel * 0.2f)
+                    if (allowAfterburner && (forceAfterburner || smoothedAccel < requestAccel * (1.5f / (Mathf.Exp(100f / 27f) - 1f) * (Mathf.Exp(Mathf.Clamp(afterburnerPriority, 0f, 100f) / 27f) - 1f))))
                     {
                         if (mmes.Current.runningPrimary)
                         {
                             mmes.Current.Events["ModeEvent"].Invoke();
                         }
                     }
-                    else if (!allowAfterburner || accel > requestAccel * 1.5f)
+                    else if (!allowAfterburner || (!forceAfterburner && smoothedAccel > requestAccel * (1f + 0.5f / (Mathf.Exp(50f / 25f) - 1f) * (Mathf.Exp(Mathf.Clamp(afterburnerPriority, 0f, 100f) / 25f) - 1f))))
                     {
                         if (!mmes.Current.runningPrimary)
                         {
@@ -182,10 +192,6 @@ namespace BDArmory.Control
         private static bool IsAfterBurnerEngine(MultiModeEngine engine)
         {
             if (engine == null)
-            {
-                return false;
-            }
-            if (!engine)
             {
                 return false;
             }

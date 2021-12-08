@@ -12,6 +12,7 @@ namespace BDArmory.Bullets
         public float bulletMass { get; private set; }
         public float bulletVelocity { get; private set; }
         public bool explosive { get; private set; }
+        public bool incendiary { get; private set; }
         public float tntMass { get; private set; }
         public string fuzeType { get; private set; }
         public int subProjectileCount { get; private set; }
@@ -26,7 +27,7 @@ namespace BDArmory.Bullets
         public static BulletInfo defaultBullet;
 
         public BulletInfo(string name, float caliber, float bulletVelocity, float bulletMass,
-                          bool explosive, float tntMass, string fuzeType, float apBulletDmg,
+                          bool explosive, bool incendiary, float tntMass, string fuzeType, float apBulletDmg,
                           int subProjectileCount, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
         {
             this.name = name;
@@ -34,6 +35,7 @@ namespace BDArmory.Bullets
             this.bulletVelocity = bulletVelocity;
             this.bulletMass = bulletMass;
             this.explosive = explosive;
+            this.incendiary = incendiary;
             this.tntMass = tntMass;
             this.fuzeType = fuzeType;
             this.apBulletMod = apBulletDmg;
@@ -59,13 +61,14 @@ namespace BDArmory.Bullets
                     if (nodes[i].parent.name != "BD_Bullets") continue; // Ignore other config files.
                     node = nodes[i].config;
                     if (!node.HasValue("name") || (string)ParseField(nodes[i].config, "name", typeof(string)) != "def") continue; // Ignore other configs.
-                    Debug.Log("[BDArmory]: Parsing default bullet definition from " + nodes[i].parent.name);
+                    Debug.Log("[BDArmory.BulletInfo]: Parsing default bullet definition from " + nodes[i].parent.name);
                     defaultBullet = new BulletInfo(
                         "def",
                         (float)ParseField(node, "caliber", typeof(float)),
                         (float)ParseField(node, "bulletVelocity", typeof(float)),
                         (float)ParseField(node, "bulletMass", typeof(float)),
                         (bool)ParseField(node, "explosive", typeof(bool)),
+                        (bool)ParseField(node, "incendiary", typeof(bool)),
                         (float)ParseField(node, "tntMass", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
                         (float)ParseField(node, "apBulletMod", typeof(float)),
@@ -92,10 +95,10 @@ namespace BDArmory.Bullets
                     if (bulletNames.Contains(name_)) // Avoid duplicates.
                     {
                         if (nodes[i].parent.name != "BD_Bullets" || name_ != "def") // Don't report the default bullet definition as a duplicate.
-                            Debug.LogError("[BDArmory]: Bullet definition " + name_ + " from " + nodes[i].parent.name + " already exists, skipping.");
+                            Debug.LogError("[BDArmory.BulletInfo]: Bullet definition " + name_ + " from " + nodes[i].parent.name + " already exists, skipping.");
                         continue;
                     }
-                    Debug.Log("[BDArmory]: Parsing definition of bullet " + name_ + " from " + nodes[i].parent.name);
+                    Debug.Log("[BDArmory.BulletInfo]: Parsing definition of bullet " + name_ + " from " + nodes[i].parent.name);
                     bullets.Add(
                         new BulletInfo(
                             name_,
@@ -103,6 +106,7 @@ namespace BDArmory.Bullets
                             (float)ParseField(node, "bulletVelocity", typeof(float)),
                             (float)ParseField(node, "bulletMass", typeof(float)),
                             (bool)ParseField(node, "explosive", typeof(bool)),
+                            (bool)ParseField(node, "incendiary", typeof(bool)),
                             (float)ParseField(node, "tntMass", typeof(float)),
                             (string)ParseField(node, "fuzeType", typeof(string)),
                             (float)ParseField(node, "apBulletMod", typeof(float)),
@@ -117,7 +121,7 @@ namespace BDArmory.Bullets
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError("[BDArmory]: Error Loading Bullet Config '" + name_ + "' | " + e.ToString());
+                    Debug.LogError("[BDArmory.BulletInfo]: Error Loading Bullet Config '" + name_ + "' | " + e.ToString());
                 }
             }
         }
@@ -151,7 +155,7 @@ namespace BDArmory.Bullets
                 {
                     // Give a warning about the missing or invalid value, then use the default value using reflection to find the field.
                     var defaultValue = typeof(BulletInfo).GetProperty(field, BindingFlags.Public | BindingFlags.Instance).GetValue(defaultBullet);
-                    Debug.LogError("[BDArmory]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
+                    Debug.LogError("[BDArmory.BulletInfo]: Using default value of " + defaultValue.ToString() + " for " + field + " | " + e.ToString());
                     return defaultValue;
                 }
                 else

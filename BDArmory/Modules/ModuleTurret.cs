@@ -66,12 +66,12 @@ namespace BDArmory.Modules
 
             if (!pitchTransform)
             {
-                Debug.LogWarning(part.partInfo.title + " has no pitchTransform");
+                Debug.LogWarning("[BDArmory.ModuleTurret]: " + part.partInfo.title + " has no pitchTransform");
             }
 
             if (!yawTransform)
             {
-                Debug.LogWarning(part.partInfo.title + " has no yawTransform");
+                Debug.LogWarning("[BDArmory.ModuleTurret]: " + part.partInfo.title + " has no yawTransform");
             }
 
             if (!referenceTransform)
@@ -184,13 +184,12 @@ namespace BDArmory.Modules
             // clamp target yaw in a non-wobbly way
             if (Mathf.Abs(targetYawAngle) > yawRange / 2)
             {
-                var nonWooblyWay = Vector3.Dot(yawTransform.parent.right,
-                    targetDirection + referenceTransform.position - yawTransform.position);
+                var nonWooblyWay = Vector3.Dot(yawTransform.parent.right, targetDirection + referenceTransform.position - yawTransform.position);
                 if (float.IsNaN(nonWooblyWay)) return;
 
                 targetYawAngle = yawRange / 2 * Math.Sign(nonWooblyWay);
             }
-              
+
 
             float pitchError = (float)Vector3d.Angle(pitchComponent, yawNormal) - (float)Vector3d.Angle(referenceTransform.forward, yawNormal);
             float currentPitch = -pitchTransform.localEulerAngles.x.ToAngle(); // from current rotation transform

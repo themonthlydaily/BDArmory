@@ -132,7 +132,7 @@ namespace BDArmory.Misc
         {
             if (extraGUIRects == null)
             {
-                Debug.LogWarning("Trying to update a GUI rect for mouse position check, but Rect list is null.");
+                Debug.LogWarning("[BDArmory.Misc]: Trying to update a GUI rect for mouse position check, but Rect list is null.");
             }
 
             extraGUIRects[index] = rect;
@@ -328,12 +328,15 @@ namespace BDArmory.Misc
             return (KeyBinding)field.GetValue(null);
         }
 
-        public static float GetRadarAltitudeAtPos(Vector3 position)
+        public static float GetRadarAltitudeAtPos(Vector3 position, bool clamped = true)
         {
             double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(position);
             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(position);
             float altitude = (float)(FlightGlobals.currentMainBody.GetAltitude(position));
-            return Mathf.Clamp(altitude - (float)FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos), 0, altitude);
+            if (clamped)
+                return Mathf.Clamp(altitude - (float)FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos), 0, altitude);
+            else
+                return altitude - (float)FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
         }
 
         public static string JsonCompat(string json)
@@ -354,11 +357,11 @@ namespace BDArmory.Misc
 
         public static void ForceDeadVessel(Vessel v)
         {
-            Debug.Log("[BDArmory] GM Killed Vessel " + v.GetDisplayName());
-            foreach (MissileFire missileFire in v.FindPartModulesImplementing<MissileFire>())
+            Debug.Log("[BDArmory.Misc]: GM Killed Vessel " + v.GetDisplayName());
+            foreach (var missileFire in VesselModuleRegistry.GetModules<MissileFire>(v))
             {
                 PartExploderSystem.AddPartToExplode(missileFire.part);
-                ExplosionFx.CreateExplosion(missileFire.part.transform.position, 0.2f, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, missileFire.part);
+                ExplosionFx.CreateExplosion(missileFire.part.transform.position, 1f, explModelPath, explSoundPath, ExplosionSourceType.Other, 0, missileFire.part);
             }
         }
 

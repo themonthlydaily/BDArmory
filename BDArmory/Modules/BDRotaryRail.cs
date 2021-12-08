@@ -73,15 +73,7 @@ namespace BDArmory.Modules
             get
             {
                 if (wm && wm.vessel == vessel) return wm;
-                wm = null;
-                List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    wm = mf.Current;
-                    break;
-                }
-                mf.Dispose();
+                wm = VesselModuleRegistry.GetMissileFire(vessel, true);
                 return wm;
             }
         }
@@ -274,24 +266,22 @@ namespace BDArmory.Modules
             if (rails.Count == 0)
             {
                 rails.Add(part.FindModelTransform("railTransform"));
-                IEnumerator<Transform> t = part.FindModelTransforms("newRail").AsEnumerable().GetEnumerator();
-                while (t.MoveNext())
-                {
-                    if (t.Current == null) continue;
-                    rails.Add(t.Current);
-                }
-                t.Dispose();
+                using (var t = part.FindModelTransforms("newRail").AsEnumerable().GetEnumerator())
+                    while (t.MoveNext())
+                    {
+                        if (t.Current == null) continue;
+                        rails.Add(t.Current);
+                    }
             }
 
             for (int i = 1; i < rails.Count; i++)
             {
-                IEnumerator<Transform> t = rails[i].GetComponentsInChildren<Transform>().AsEnumerable().GetEnumerator();
-                while (t.MoveNext())
-                {
-                    if (t.Current == null) continue;
-                    t.Current.name = "deleted";
-                }
-                t.Dispose();
+                using (var t = rails[i].GetComponentsInChildren<Transform>().AsEnumerable().GetEnumerator())
+                    while (t.MoveNext())
+                    {
+                        if (t.Current == null) continue;
+                        t.Current.name = "deleted";
+                    }
                 Destroy(rails[i].gameObject);
             }
 
@@ -362,6 +352,18 @@ namespace BDArmory.Modules
             if (!HighLogic.LoadedSceneIsFlight) return;
             UpdateMissileChildren();
             RotateToIndex(railIndex, true);
+        }
+
+        void OnDestroy()
+        {
+            if (rails != null)
+            {
+                foreach (var rail in rails)
+                {
+                    if (rail != null && rail.gameObject != null)
+                    { Destroy(rail.gameObject); }
+                }
+            }
         }
 
         void OnAttach()
@@ -510,7 +512,7 @@ namespace BDArmory.Modules
                         return;
                     }
                 }
-                Debug.LogError("[BDRotaryRail]: No missiles found, but missile count is non-zero.");
+                Debug.LogError("[BDArmory.BDRotaryRail]: No missiles found, but missile count is non-zero.");
             }
         }
 

@@ -258,14 +258,7 @@ namespace BDArmory.Modules
             get
             {
                 if (wpmr != null && wpmr.vessel == vessel) return wpmr;
-                wpmr = null;
-                List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    wpmr = mf.Current;
-                }
-                mf.Dispose();
+                wpmr = VesselModuleRegistry.GetMissileFire(vessel, true);
                 return wpmr;
             }
             set { wpmr = value; }
@@ -307,19 +300,8 @@ namespace BDArmory.Modules
             EnsureVesselRadarData();
             radarEnabled = true;
 
-            List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (mf.MoveNext())
-            {
-                if (mf.Current == null) continue;
-                weaponManager = mf.Current;
-                if (vesselRadarData)
-                {
-                    vesselRadarData.weaponManager = mf.Current;
-                }
-                break;
-            }
-            mf.Dispose();
-
+            var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null && vesselRadarData != null) vesselRadarData.weaponManager = mf;
             UpdateToggleGuiName();
             vesselRadarData.AddRadar(this);
         }
@@ -454,7 +436,7 @@ namespace BDArmory.Modules
             // check for not updated legacy part:
             if ((canScan && (radarMinDistanceDetect == float.MaxValue)) || (canLock && (radarMinDistanceLockTrack == float.MaxValue)))
             {
-                Debug.Log("[BDArmory]: WARNING: " + part.name + " has legacy definition, missing new radarDetectionCurve and radarLockTrackCurve definitions! Please update for the part to be usable!");
+                Debug.Log("[BDArmory.ModuleRadar]: WARNING: " + part.name + " has legacy definition, missing new radarDetectionCurve and radarLockTrackCurve definitions! Please update for the part to be usable!");
             }
         }
 
@@ -470,7 +452,7 @@ namespace BDArmory.Modules
         IEnumerator StartUpRoutine()
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: StartupRoutine: " + radarName + " enabled: " + radarEnabled);
+                Debug.Log("[BDArmory.ModuleRadar]: StartupRoutine: " + radarName + " enabled: " + radarEnabled);
             while (!FlightGlobals.ready || vessel.packed)
             {
                 yield return null;
@@ -537,7 +519,7 @@ namespace BDArmory.Modules
 
                     if (locked)
                     {
-                        for (int i = 0; i < lockedTargets.Count; i++)
+                        for (int i = lockedTargets.Count - 1; i >= 0; --i) // We need to iterate backwards as UnlockTargetAt (in UpdateLock) can remove items from the lockedTargets list.
                         {
                             UpdateLock(i);
                         }
@@ -692,16 +674,16 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                if (targetVessel==null)
-                    Debug.Log("[BDArmory]: Trying to radar lock target with (" + radarName + ")");
+                if (targetVessel == null)
+                    Debug.Log("[BDArmory.ModuleRadar]: Trying to radar lock target with (" + radarName + ")");
                 else
-                    Debug.Log("[BDArmory]: Trying to radar lock target " + targetVessel.vesselName + " with (" + radarName + ")");
+                    Debug.Log("[BDArmory.ModuleRadar]: Trying to radar lock target " + targetVessel.vesselName + " with (" + radarName + ")");
             }
 
             if (currentLocks == maxLocks)
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory]: - Failed, this radar already has the maximum allowed targets locked.");
+                    Debug.Log("[BDArmory.ModuleRadar]: - Failed, this radar already has the maximum allowed targets locked.");
                 return false;
             }
 
@@ -722,7 +704,7 @@ namespace BDArmory.Modules
                     // If locked onto a vessel that was not our target, return false
                     if ((attemptedLocks[i].vessel != null) && (targetVessel != null) && (attemptedLocks[i].vessel != targetVessel))
                         return false;
-                    
+
                     if (!locked && !omnidirectional)
                     {
                         float targetAngle = VectorUtils.SignedAngle(referenceTransform.forward,
@@ -734,7 +716,7 @@ namespace BDArmory.Modules
                     currLocks = lockedTargets.Count;
 
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                        Debug.Log("[BDArmory]: - Acquired lock on target (" + attemptedLocks[i].vessel?.name + ")");
+                        Debug.Log("[BDArmory.ModuleRadar]: - Acquired lock on target (" + (attemptedLocks[i].vessel != null ? attemptedLocks[i].vessel.name : null) + ")");
 
                     vesselRadarData.AddRadarContact(this, lockedTarget, true);
                     vesselRadarData.UpdateLockedTargets();
@@ -743,7 +725,7 @@ namespace BDArmory.Modules
             }
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: - Failed to lock on target.");
+                Debug.Log("[BDArmory.ModuleRadar]: - Failed to lock on target.");
 
             return false;
         }
@@ -772,9 +754,7 @@ namespace BDArmory.Modules
         {
             TargetSignatureData lockedTarget = lockedTargets[index];
 
-            Vector3 targetPlanarDirection =
-                Vector3.ProjectOnPlane(lockedTarget.predictedPosition - referenceTransform.position,
-                    referenceTransform.up);
+            Vector3 targetPlanarDirection = Vector3.ProjectOnPlane(lockedTarget.predictedPosition - referenceTransform.position, referenceTransform.up);
             float lookAngle = Vector3.Angle(targetPlanarDirection, referenceTransform.forward);
             if (referenceTransform.InverseTransformPoint(lockedTarget.predictedPosition).x < 0)
             {
@@ -805,23 +785,22 @@ namespace BDArmory.Modules
             }
             //RadarUtils.ScanInDirection (new Ray (referenceTransform.position, lockedTarget.predictedPosition - referenceTransform.position), lockRotationAngle * 2, minLockedSignalThreshold, ref attemptedLocks, lockedSignalPersist, true, rwrType, radarSnapshot);
 
-            if (
-                Vector3.Angle(lockedTarget.position - referenceTransform.position,
-                    this.lockedTarget.position - referenceTransform.position) > multiLockFOV / 2)
+            if (Vector3.Angle(lockedTarget.position - referenceTransform.position, this.lockedTarget.position - referenceTransform.position) > multiLockFOV / 2)
             {
                 UnlockTargetAt(index, true);
                 return;
             }
 
-            RadarUtils.RadarUpdateLockTrack(
+            if (!RadarUtils.RadarUpdateLockTrack(
                 new Ray(referenceTransform.position, lockedTarget.predictedPosition - referenceTransform.position),
-                lockedTarget.predictedPosition, lockRotationAngle * 2, this, lockedSignalPersist, true, index, lockedTarget.vessel);
+                lockedTarget.predictedPosition, lockRotationAngle * 2, this, lockedSignalPersist, true, index, lockedTarget.vessel))
+            {
+                UnlockTargetAt(index, true);
+                return;
+            }
 
             //if still failed or out of FOV, unlock.
-            if (!lockedTarget.exists ||
-                (!omnidirectional &&
-                 Vector3.Angle(lockedTarget.position - referenceTransform.position, transform.up) >
-                 directionalFieldOfView / 2))
+            if (!lockedTarget.exists || (!omnidirectional && Vector3.Angle(lockedTarget.position - referenceTransform.position, transform.up) > directionalFieldOfView / 2))
             {
                 //UnlockAllTargets();
                 UnlockTargetAt(index, true);
@@ -857,7 +836,7 @@ namespace BDArmory.Modules
             }
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                Debug.Log("[BDArmory]: Radar Targets were cleared (" + radarName + ").");
+                Debug.Log("[BDArmory.ModuleRadar]: Radar Targets were cleared (" + radarName + ").");
         }
 
         public void SetActiveLock(TargetSignatureData target)
@@ -923,35 +902,33 @@ namespace BDArmory.Modules
 
         void SlaveTurrets()
         {
-            List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                if (mtc.Current == null) continue;
-                mtc.Current.slaveTurrets = false;
-            }
-            mtc.Dispose();
-
-            List<ModuleRadar>.Enumerator rad = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator();
-            while (rad.MoveNext())
-            {
-                if (rad.Current == null) continue;
-                rad.Current.slaveTurrets = false;
-            }
-            rad.Dispose();
-
-            slaveTurrets = true;
-        }
-
-        void UnslaveTurrets()
-        {
-            using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {
                     if (mtc.Current == null) continue;
                     mtc.Current.slaveTurrets = false;
                 }
 
-            using (List<ModuleRadar>.Enumerator rad = vessel.FindPartModulesImplementing<ModuleRadar>().GetEnumerator())
+            using (var rad = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
+                while (rad.MoveNext())
+                {
+                    if (rad.Current == null) continue;
+                    rad.Current.slaveTurrets = false;
+                }
+
+            slaveTurrets = true;
+        }
+
+        void UnslaveTurrets()
+        {
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    if (mtc.Current == null) continue;
+                    mtc.Current.slaveTurrets = false;
+                }
+
+            using (var rad = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
                 while (rad.MoveNext())
                 {
                     if (rad.Current == null) continue;
@@ -1042,7 +1019,7 @@ namespace BDArmory.Modules
                 using (var v = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (v.MoveNext())
                     {
-                        if (v.Current == null || !v.Current.loaded || v.Current == vessel) continue;
+                        if (v.Current == null || !v.Current.loaded || v.Current == vessel || VesselModuleRegistry.ignoredVesselTypes.Contains(v.Current.vesselType)) continue;
                         if (v.Current.id.ToString() != vesselID) continue;
                         VesselRadarData vrd = v.Current.gameObject.GetComponent<VesselRadarData>();
                         if (!vrd) continue;
@@ -1062,7 +1039,7 @@ namespace BDArmory.Modules
             }
             yield return null;
             vesselRadarData.LinkVRD(vrd);
-            Debug.Log("[BDArmory]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
+            Debug.Log("[BDArmory.ModuleRadar]: Radar data link recovered: Local - " + vessel.vesselName + ", External - " +
                       vrd.vessel.vesselName);
         }
 

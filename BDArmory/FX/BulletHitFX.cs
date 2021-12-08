@@ -1,14 +1,16 @@
-using System;
 using System.Collections.Generic;
 using BDArmory.Core;
+using BDArmory.Core.Module;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
+using BDArmory.UI;
 using BDArmory.Modules;
 using UniLinq;
 using UnityEngine;
 
 namespace BDArmory.FX
 {
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
     class Decal : MonoBehaviour
     {
         Part parentPart;
@@ -16,6 +18,7 @@ namespace BDArmory.FX
         {
             var template = GameDatabase.Instance.GetModel(modelPath);
             var decal = template.AddComponent<Decal>();
+            template.AddOrGetComponent<Renderer>();
             template.SetActive(false);
             return ObjectPool.CreateObjectPool(template, BDArmorySettings.MAX_NUM_BULLET_DECALS, false, true, 0, true);
         }
@@ -30,7 +33,21 @@ namespace BDArmory.FX
             parentPart.OnJustAboutToBeDestroyed += OnParentDestroy;
             gameObject.SetActive(true);
         }
+        public void SetColor(Color color)
+        {
+            var r = gameObject.GetComponentInChildren<Renderer>();
+            if (r != null)
+            {
+                r.material.shader = Shader.Find("KSP/Particles/Alpha Blended");
+                r.material.SetColor("_TintColor", color);
+                r.material.color = color;
+            }
+            else
+            {
+                Debug.Log("[PAINTBALL] no renderer found in decal");
+            }
 
+        }
         public void OnParentDestroy()
         {
             if (parentPart)
@@ -53,6 +70,8 @@ namespace BDArmory.FX
     {
         KSPParticleEmitter[] pEmitters;
         AudioSource audioSource;
+        enum AudioClipType { Ricochet1, Ricochet2, Ricochet3, BulletHit1, BulletHit2, BulletHit3, Artillery_Shot };
+        static Dictionary<AudioClipType, AudioClip> audioClips;
         AudioClip hitSound;
         float startTime;
         public bool ricochet;
@@ -67,6 +86,7 @@ namespace BDArmory.FX
         public static ObjectPool penetrationFXPool;
         public static ObjectPool leakFXPool;
         public static ObjectPool FireFXPool;
+        public static ObjectPool flameFXPool;
         public static Dictionary<Vessel, List<float>> PartsOnFire = new Dictionary<Vessel, List<float>>();
 
         public static int MaxFiresPerVessel = 3;
@@ -94,6 +114,7 @@ namespace BDArmory.FX
 
                 if (decalPool_paint3 == null)
                     decalPool_paint3 = Decal.CreateDecalPool("BDArmory/Models/bulletDecal/BulletDecal5");
+
             }
         }
 
@@ -131,9 +152,24 @@ namespace BDArmory.FX
                 penetrationFXTemplate.SetActive(false);
                 penetrationFXPool = ObjectPool.CreateObjectPool(penetrationFXTemplate, 10, true, true, 10f * Time.deltaTime, false);
             }
+            if (flameFXPool == null)
+            {
+                var flameTemplate = GameDatabase.Instance.GetModel("BDArmory/FX/FlameEffect2/model");
+                flameTemplate.AddComponent<DecalEmitterScript>();
+                DecalEmitterScript.shrinkRateFlame = 0.125f;
+                DecalEmitterScript.shrinkRateSmoke = 0.125f;
+                foreach (var pe in flameTemplate.GetComponentsInChildren<KSPParticleEmitter>())
+                {
+                    if (!pe.useWorldSpace) continue;
+                    var gpe = pe.gameObject.AddComponent<DecalGaplessParticleEmitter>();
+                    gpe.Emit = false;
+                }
+                flameTemplate.SetActive(false);
+                flameFXPool = ObjectPool.CreateObjectPool(flameTemplate, 10, true, true);
+            }
         }
 
-        public static void SpawnDecal(RaycastHit hit, Part hitPart, float caliber, float penetrationfactor)
+        public static void SpawnDecal(RaycastHit hit, Part hitPart, float caliber, float penetrationfactor, string team)
         {
             if (!BDArmorySettings.BULLET_DECALS) return;
             ObjectPool decalPool_;
@@ -172,9 +208,17 @@ namespace BDArmory.FX
             {
                 var decal = decalFront.GetComponentInChildren<Decal>();
                 decal.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f));
+
+                if (BDArmorySettings.PAINTBALL_MODE)
+                {
+                    if (team != null && BDTISetup.Instance.ColorAssignments.ContainsKey(team))
+                    {
+                        decal.SetColor(BDTISetup.Instance.ColorAssignments[team]);
+                    }
+                }
             }
             //back hole if fully penetrated
-            if (penetrationfactor >= 1)
+            if (penetrationfactor >= 1 && !BDArmorySettings.PAINTBALL_MODE)
             {
                 var decalBack = decalPool_.GetPooledObject();
                 if (decalBack != null && hitPart != null)
@@ -187,6 +231,7 @@ namespace BDArmory.FX
 
         private static bool CanFlamesBeAttached(Part hitPart)
         {
+            if (hitPart == null || hitPart.vessel == null) return false;
             if (!BDArmorySettings.FIRE_FX_IN_FLIGHT && !hitPart.vessel.LandedOrSplashed || !hitPart.HasFuel())
                 return false;
 
@@ -218,6 +263,33 @@ namespace BDArmory.FX
             return true;
         }
 
+        public static void CleanPartsOnFireInfo()
+        {
+            HashSet<Vessel> keysToRemove = new HashSet<Vessel>();
+            foreach (var key in PartsOnFire.Keys.ToList())
+            {
+                PartsOnFire[key] = PartsOnFire[key].Where(x => (Time.time - x) < FireLifeTimeInSeconds).ToList(); // Remove expired fires.
+                if (PartsOnFire[key].Count == 0) { keysToRemove.Add(key); } // Remove parts no longer on fire.
+            }
+            PartsOnFire = PartsOnFire.Where(kvp => kvp.Key != null && !keysToRemove.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value); // Remove null keys (vessels) and those with no parts on fire.
+        }
+
+        void Awake()
+        {
+            if (audioClips == null)
+            {
+                audioClips = new Dictionary<AudioClipType, AudioClip>{
+                    {AudioClipType.Ricochet1, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet1")},
+                    {AudioClipType.Ricochet2, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet1")},
+                    {AudioClipType.Ricochet3, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/ricochet3")},
+                    {AudioClipType.BulletHit1, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit1")},
+                    {AudioClipType.BulletHit2, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit2")},
+                    {AudioClipType.BulletHit3, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/bulletHit3")},
+                    {AudioClipType.Artillery_Shot, GameDatabase.Instance.GetAudioClip("BDArmory/Sounds/Artillery_Shot")},
+                };
+            }
+        }
+
         void OnEnable()
         {
             startTime = Time.time;
@@ -238,26 +310,44 @@ namespace BDArmory.FX
             {
                 if (caliber <= 30)
                 {
-                    string path = "BDArmory/Sounds/ricochet" + random;
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    switch (random)
+                    {
+                        case 1:
+                            hitSound = audioClips[AudioClipType.Ricochet1];
+                            break;
+                        case 2:
+                            hitSound = audioClips[AudioClipType.Ricochet2];
+                            break;
+                        case 3:
+                            hitSound = audioClips[AudioClipType.Ricochet3];
+                            break;
+                    }
                 }
                 else
                 {
-                    string path = "BDArmory/Sounds/Artillery_Shot";
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    hitSound = audioClips[AudioClipType.Artillery_Shot];
                 }
             }
             else
             {
                 if (caliber <= 30)
                 {
-                    string path = "BDArmory/Sounds/bulletHit" + random;
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    switch (random)
+                    {
+                        case 1:
+                            hitSound = audioClips[AudioClipType.BulletHit1];
+                            break;
+                        case 2:
+                            hitSound = audioClips[AudioClipType.BulletHit2];
+                            break;
+                        case 3:
+                            hitSound = audioClips[AudioClipType.BulletHit3];
+                            break;
+                    }
                 }
                 else
                 {
-                    string path = "BDArmory/Sounds/Artillery_Shot";
-                    hitSound = GameDatabase.Instance.GetAudioClip(path);
+                    hitSound = audioClips[AudioClipType.Artillery_Shot];
                 }
             }
 
@@ -288,18 +378,18 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateBulletHit(Part hitPart, Vector3 position, RaycastHit hit, Vector3 normalDirection, bool ricochet, float caliber, float penetrationfactor)
+        public static void CreateBulletHit(Part hitPart, Vector3 position, RaycastHit hit, Vector3 normalDirection, bool ricochet, float caliber, float penetrationfactor, string team)
         {
             if (decalPool_large == null || decalPool_small == null)
                 SetupShellPool();
             if (BDArmorySettings.PAINTBALL_MODE && decalPool_paint1 == null)
                 SetupShellPool();
-            if (bulletHitFXPool == null || penetrationFXPool == null)
+            if (bulletHitFXPool == null || penetrationFXPool == null || flameFXPool == null)
                 SetupBulletHitFXPool();
 
             if ((hitPart != null) && caliber != 0 && !hitPart.IgnoreDecal())
             {
-                SpawnDecal(hit, hitPart, caliber, penetrationfactor); //No bullet decals for laser or ricochet                
+                SpawnDecal(hit, hitPart, caliber, penetrationfactor, team); //No bullet decals for laser or ricochet                
             }
 
             GameObject newExplosion = (caliber <= 30 || BDArmorySettings.PAINTBALL_MODE) ? bulletHitFXPool.GetPooledObject() : penetrationFXPool.GetPooledObject();
@@ -325,11 +415,9 @@ namespace BDArmory.FX
             }
         }
 
-        // FIXME Use an object pool for flames?          
-
-        public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, string sourcevessel)
+        public static void AttachLeak(RaycastHit hit, Part hitPart, float caliber, bool explosive, bool incendiary, string sourcevessel, bool inertTank)
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS)
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_TANKS && hitPart.Modules.GetModule<HitpointTracker>().Hitpoints > 0)
             {
                 if (leakFXPool == null)
                     leakFXPool = FuelLeakFX.CreateLeakFXPool("BDArmory/FX/FuelLeakFX/model");
@@ -339,37 +427,38 @@ namespace BDArmory.FX
                 leakFX.transform.localScale = Vector3.one * (caliber / 10);
 
                 var leak = hitPart.FindModuleImplementing<ModuleDrainFuel>();
-                if (leak != null && !hitPart.isEngine()) //only apply one leak to engines
+                if (leak != null) //only apply one leak to engines
                 {
-                    if (BDArmorySettings.BD_FIRES_ENABLED)
-                    {
-                        int i;
-                        int explosiveMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
-                        if (explosive)
-                        {
-                            explosiveMod = 3; //33% chance of starting fires from HE rounds
-                            explosive = false;
-                        }
-                        i = UnityEngine.Random.Range(1, explosiveMod);
-                        if (i == 6)
-                        {
-                            explosive = true;
-                        }
-                        if (explosive)
-                        {
-                            foreach (var existingLeakFX in hitPart.GetComponentsInChildren<FuelLeakFX>())
-                            {
-                                existingLeakFX.lifeTime = 0; //kill leakFX, start fire
-                            }
-                            leak.drainDuration = 0;
-                            AttachFire(hit, hitPart, caliber, sourcevessel);
-                        }
-                    }
-                    else
+                    if (!hitPart.isEngine())
                     {
                         leak.drainDuration += (20 * BDArmorySettings.BD_TANK_LEAK_TIME);
+                        leak.drainRate += ((caliber / 100) * BDArmorySettings.BD_TANK_LEAK_RATE);
+
+                        if (BDArmorySettings.BD_FIRES_ENABLED && !inertTank)
+                        {
+                            int ammoMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
+                            if (explosive)
+                            {
+                                ammoMod = 20; //20% chance of starting fires from HE rounds
+                            }
+                            if (incendiary)
+                            {
+                                ammoMod = 90; //90% chance of starting fires from inc rounds
+                            }
+                            double Diceroll = UnityEngine.Random.Range(0, 100);
+                            if (Diceroll <= ammoMod)
+                            {
+                                int leakcount = 0;
+                                foreach (var existingLeakFX in hitPart.GetComponentsInChildren<FuelLeakFX>())
+                                {
+                                    existingLeakFX.lifeTime = 0; //kill leakFX, start fire
+                                    leakcount++;
+                                }
+                                leak.drainDuration = 0;
+                                AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
+                            }
+                        }
                     }
-                    leak.drainRate += ((caliber / 100) * BDArmorySettings.BD_TANK_LEAK_RATE);
                 }
                 else
                 {
@@ -384,25 +473,26 @@ namespace BDArmory.FX
                         leakFX.lifeTime = (100 * BDArmorySettings.BD_TANK_LEAK_TIME);
                     }
                 }
-                Debug.Log("[BDArmory]: BulletHit attaching fuel leak, drainrate: " + leak.drainRate);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit attaching fuel leak, drainrate: " + leak.drainRate);
 
                 fuelLeak.SetActive(true);
             }
         }
-        public static void AttachFire(RaycastHit hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1)
+        public static void AttachFire(Vector3 hit, Part hitPart, float caliber, string sourcevessel, float burntime = -1, int ignitedLeaks = 1, bool surfaceFire = false)
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED)
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_FIRES_ENABLED && hitPart.Modules.GetModule<HitpointTracker>().Hitpoints > 0)
             {
                 if (FireFXPool == null)
                     FireFXPool = FireFX.CreateFireFXPool("BDArmory/FX/FireFX/model");
                 var fire = FireFXPool.GetPooledObject();
                 var fireFX = fire.GetComponentInChildren<FireFX>();
+                fireFX.burnTime = burntime; //this apparently never got implemented... !?
                 fireFX.AttachAt(hitPart, hit, new Vector3(0.25f, 0f, 0f), sourcevessel);
-                fireFX.burnRate = ((caliber / 50) * BDArmorySettings.BD_TANK_LEAK_RATE);
+                fireFX.burnRate = (((caliber / 50) * BDArmorySettings.BD_TANK_LEAK_RATE) * ignitedLeaks);
+                fireFX.surfaceFire = surfaceFire;
                 //fireFX.transform.localScale = Vector3.one * (caliber/10);
 
-                Debug.Log("[BDArmory]: BulletHit fire, burn rate: " + fireFX.burnRate);
-
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BulletHitFX]: BulletHit fire, burn rate: " + fireFX.burnRate + "; Surface fire: " + surfaceFire);
                 fire.SetActive(true);
             }
         }
@@ -410,23 +500,15 @@ namespace BDArmory.FX
         {
             if (!CanFlamesBeAttached(hitPart)) return;
 
-            var modelUrl = "BDArmory/FX/FlameEffect2/model";
-
-            var flameObject = (GameObject)Instantiate(GameDatabase.Instance.GetModel(modelUrl), contactPoint, Quaternion.identity);
-
-            flameObject.SetActive(true);
-            flameObject.transform.SetParent(hitPart.transform);
-            flameObject.AddComponent<DecalEmitterScript>();
-
-            DecalEmitterScript.shrinkRateFlame = 0.125f;
-            DecalEmitterScript.shrinkRateSmoke = 0.125f;
-
-            foreach (var pe in flameObject.GetComponentsInChildren<KSPParticleEmitter>())
+            if (flameFXPool == null) SetupBulletHitFXPool();
+            var flameObject = flameFXPool.GetPooledObject();
+            if (flameObject == null)
             {
-                if (!pe.useWorldSpace) continue;
-                var gpe = pe.gameObject.AddComponent<DecalGaplessParticleEmitter>();
-                gpe.Emit = true;
+                Debug.LogError("[BDArmory.BulletHitFX]: flameFXPool gave a null flameObject!");
+                return;
             }
+            flameObject.transform.SetParent(hitPart.transform);
+            flameObject.SetActive(true);
         }
     }
 }

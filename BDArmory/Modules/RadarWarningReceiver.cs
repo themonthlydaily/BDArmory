@@ -139,24 +139,23 @@ namespace BDArmory.Modules
                 UpdateVolume();
                 BDArmorySetup.OnVolumeChange += UpdateVolume;
 
-                //float size = RwrDisplayRect.height + 20;
                 if (!WindowRectRWRInitialized)
                 {
-                    BDArmorySetup.WindowRectRwr = new Rect(40, Screen.height - RwrDisplayRect.height, RwrDisplayRect.height + BorderSize, RwrDisplayRect.height + BorderSize + HeaderSize);
+                    BDArmorySetup.WindowRectRwr = new Rect(BDArmorySetup.WindowRectRwr.x, BDArmorySetup.WindowRectRwr.y, RwrDisplayRect.height + BorderSize, RwrDisplayRect.height + BorderSize + HeaderSize);
+                    // BDArmorySetup.WindowRectRwr = new Rect(40, Screen.height - RwrDisplayRect.height, RwrDisplayRect.height + BorderSize, RwrDisplayRect.height + BorderSize + HeaderSize);
                     WindowRectRWRInitialized = true;
                 }
 
-                List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                while (mf.MoveNext())
-                {
-                    if (mf.Current == null) continue;
-                    mf.Current.rwr = this;
-                    if (!weaponManager)
+                using (var mf = VesselModuleRegistry.GetModules<MissileFire>(vessel).GetEnumerator())
+                    while (mf.MoveNext())
                     {
-                        weaponManager = mf.Current;
+                        if (mf.Current == null) continue;
+                        mf.Current.rwr = this; // Set the rwr on all weapon managers to this.
+                        if (!weaponManager)
+                        {
+                            weaponManager = mf.Current; // Set the first found weapon manager as the one in control.
+                        }
                     }
-                }
-                mf.Dispose();
                 //if (rwrEnabled) EnableRWR();
                 EnableRWR();
             }
@@ -211,8 +210,7 @@ namespace BDArmory.Modules
             if (weaponManager == null) return;
 
             float sqrDist = (part.transform.position - source).sqrMagnitude;
-            if (sqrDist < Mathf.Pow(BDArmorySettings.MAX_ENGAGEMENT_RANGE, 2) && sqrDist > Mathf.Pow(100, 2) &&
-                Vector3.Angle(direction, part.transform.position - source) < 15)
+            if (sqrDist < BDArmorySettings.MAX_ENGAGEMENT_RANGE * BDArmorySettings.MAX_ENGAGEMENT_RANGE && sqrDist > 10000f && Vector3.Angle(direction, part.transform.position - source) < 15f)
             {
                 StartCoroutine(
                     LaunchWarningRoutine(new TargetSignatureData(Vector3.zero,
@@ -285,7 +283,7 @@ namespace BDArmory.Modules
                     pingsData[openIndex] = new TargetSignatureData(Vector3.zero,
                         RadarUtils.WorldToRadar(source, referenceTransform, RwrDisplayRect, rwrDisplayRange), Vector3.zero,
                         true, (float)type);    // HACK! Evil misuse of signalstrength for the threat type!
-                    pingWorldPositions[openIndex] = source;
+                    pingWorldPositions[openIndex] = source; //FIXME source is improperly defined
                     StartCoroutine(PingLifeRoutine(openIndex, persistTime));
 
                     PlayWarningSound(type, (source - vessel.transform.position).sqrMagnitude);
@@ -357,8 +355,7 @@ namespace BDArmory.Modules
                 resizingWindow = false;
             }
 
-            BDArmorySetup.WindowRectRwr = GUI.Window(94353, BDArmorySetup.WindowRectRwr, WindowRwr,
-              "Radar Warning Receiver", GUI.skin.window);
+            BDArmorySetup.WindowRectRwr = GUI.Window(94353, BDArmorySetup.WindowRectRwr, WindowRwr, "Radar Warning Receiver", GUI.skin.window);
             BDGUIUtils.UseMouseEventInRect(RwrDisplayRect);
         }
 
@@ -459,6 +456,7 @@ namespace BDArmory.Modules
                 while (vessel.MoveNext())
                 {
                     if (vessel.Current == null || !vessel.Current.loaded) continue;
+                    if (VesselModuleRegistry.ignoredVesselTypes.Contains(vessel.Current.vesselType)) continue;
                     Vector3 dirToVessel = vessel.Current.transform.position - ray.origin;
                     if (Vector3.Angle(ray.direction, dirToVessel) < fov / 2)
                     {

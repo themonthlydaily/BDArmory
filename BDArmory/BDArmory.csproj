@@ -12,7 +12,7 @@
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <!-- <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>True</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>False</Optimize>
@@ -32,7 +32,7 @@
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
     <ConsolePause>False</ConsolePause>
-  </PropertyGroup>
+  </PropertyGroup> -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
@@ -40,7 +40,7 @@
     <DebugType>portable</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <!-- <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet> -->
     <LangVersion>default</LangVersion>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
@@ -48,9 +48,10 @@
     <OutputPath>bin\Release\</OutputPath>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>BasicCorrectnessRules.ruleset</CodeAnalysisRuleSet>
+    <!-- <CodeAnalysisRuleSet>BasicCorrectnessRules.ruleset</CodeAnalysisRuleSet> -->
     <Optimize>true</Optimize>
     <CodeAnalysisIgnoreGeneratedCode>false</CodeAnalysisIgnoreGeneratedCode>
+    <LangVersion>default</LangVersion>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
@@ -135,10 +136,12 @@
     <Compile Include="Competition\BDAScoreService.cs" />
     <Compile Include="Competition\RemoteOrchestrationWindow.cs" />
     <Compile Include="Control\AIUtils.cs" />
+    <Compile Include="Control\Asteroids.cs" />
     <Compile Include="Control\BDACompetitionMode.cs" />
     <Compile Include="Control\BDATournament.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
     <Compile Include="Control\IBDAIControl.cs" />
+    <Compile Include="Control\MutatorInfo.cs" />
     <Compile Include="Control\VesselSpawner.cs" />
     <Compile Include="Control\VesselSpawnerField.cs" />
     <Compile Include="CounterMeasure\CMChaff.cs" />
@@ -156,18 +159,20 @@
     <Compile Include="FX\ExplosionFX.cs" />
     <Compile Include="FX\FireFX.cs" />
     <Compile Include="FX\FuelLeakFX.cs" />
+    <Compile Include="FX\FXEmitter.cs" />
+    <Compile Include="FX\NukeFX.cs" />
     <Compile Include="FX\ParticleTurbulence.cs" />
     <Compile Include="FX\ShellCasing.cs" />
     <Compile Include="Guidances\BallisticGuidance.cs" />
     <Compile Include="Guidances\CruiseGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
     <Compile Include="Guidances\MissileGuidance.cs" />
+    <Compile Include="Misc\BattleDamageTracker.cs" />
     <Compile Include="Misc\BDAEditorTools.cs" />
     <Compile Include="Misc\BDAModuleInfos.cs" />
     <Compile Include="Misc\BDATooltips.cs" />
     <Compile Include="Misc\BDAcTools.cs" />
     <Compile Include="Misc\BDTeam.cs" />
-    <Compile Include="Misc\BahaTurretBullet.cs" />
     <Compile Include="Misc\BattleDamageHandler.cs" />
     <Compile Include="Misc\DecoupledBooster.cs" />
     <Compile Include="Misc\IBDWeapon.cs" />
@@ -175,6 +180,7 @@
     <Compile Include="Misc\Misc.cs" />
     <Compile Include="Misc\MissileLaunchParams.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
+    <Compile Include="Misc\ProjectileUtils.cs" />
     <Compile Include="Misc\RippleOption.cs" />
     <Compile Include="Misc\VectorUtils.cs" />
     <Compile Include="Misc\ViewScanResults.cs" />
@@ -182,6 +188,7 @@
     <Compile Include="Modules\Animation\BDALookConstraintUp.cs" />
     <Compile Include="Modules\Animation\BDAScaleByDistance.cs" />
     <Compile Include="Modules\BDAdjustableRail.cs" />
+    <Compile Include="Modules\BDAMutator.cs" />
     <Compile Include="Modules\BDExplosivePart.cs" />
     <Compile Include="Modules\BDGenericAIBase.cs" />
     <Compile Include="Modules\BDMMLauncher.cs" />
@@ -193,6 +200,7 @@
     <Compile Include="Modules\ClusterBomb.cs" />
     <Compile Include="Modules\EngageableWeapon.cs" />
     <Compile Include="Modules\IEngageService.cs" />
+    <Compile Include="Modules\KerbalSafety.cs" />
     <Compile Include="Modules\MissileBase.cs" />
     <Compile Include="Modules\MissileFire.cs" />
     <Compile Include="Modules\MissileLauncher.cs" />
@@ -200,14 +208,17 @@
     <Compile Include="Modules\ModuleAmmoSwitch.cs" />
     <Compile Include="Modules\ModuleCASE.cs" />
     <Compile Include="Modules\ModuleDrainEC.cs" />
+    <Compile Include="Modules\ModuleDrainIntakes.cs" />
     <Compile Include="Modules\ModuleDrainFuel.cs" />
     <Compile Include="Modules\ModuleECMJammer.cs" />
     <Compile Include="Modules\ModuleEMP.cs" />
+    <Compile Include="Modules\ModuleMassAdjust.cs" />
     <Compile Include="Modules\ModuleMissileRearm.cs" />
     <Compile Include="Modules\ModuleMovingPart.cs" />
     <Compile Include="Modules\ModuleRadar.cs" />
     <Compile Include="Modules\ModuleReactiveArmor.cs" />
     <Compile Include="Modules\ModuleSelfSealingTank.cs" />
+    <Compile Include="Modules\ModuleSpaceFriction.cs" />
     <Compile Include="Modules\ModuleSpaceRadar.cs" />
     <Compile Include="Modules\ModuleTargetingCamera.cs" />
     <Compile Include="Modules\ModuleTurret.cs" />
@@ -215,6 +226,8 @@
     <Compile Include="Modules\ModuleWeapon.cs" />
     <Compile Include="Modules\ModuleWingCommander.cs" />
     <Compile Include="Modules\RadarWarningReceiver.cs" />
+    <Compile Include="Modules\BDModuleNuke.cs" />
+    <Compile Include="Modules\VesselModuleRegistry.cs" />
     <Compile Include="Parts\GPSTargetInfo.cs" />
     <Compile Include="Parts\SeismicChargeFX.cs" />
     <Compile Include="Parts\TGPCamRotator.cs" />
@@ -228,10 +241,13 @@
     <Compile Include="Targeting\TargetInfo.cs" />
     <Compile Include="Targeting\TargetSignatureData.cs" />
     <Compile Include="UI\BDAEditorAnalysisWindow.cs" />
+    <Compile Include="UI\BDAEditorArmorWindow.cs" />
     <Compile Include="UI\BDAEditorCategory.cs" />
+    <Compile Include="UI\BDArmoryAIGUI.cs" />
     <Compile Include="UI\BDATargetManager.cs" />
     <Compile Include="UI\BDAWindowSettingsField.cs" />
     <Compile Include="UI\BDArmorySetup.cs" />
+    <Compile Include="UI\BDColorPicker.cs" />
     <Compile Include="UI\BDGUIComboBox.cs" />
     <Compile Include="UI\BDGUIUtils.cs" />
     <Compile Include="UI\BDInputInfo.cs" />
@@ -239,11 +255,29 @@
     <Compile Include="UI\BDInputUtils.cs" />
     <Compile Include="UI\BDKeyBinder.cs" />
     <Compile Include="UI\BDStagingAreaGauge.cs" />
+    <Compile Include="UI\BDAmmoSelector.cs" />
+    <Compile Include="UI\BDTargetSelector.cs" />
+    <Compile Include="UI\BDATeamIcons.cs" />
+    <Compile Include="UI\BDTISetup.cs" />
     <Compile Include="UI\BDTeamSelector.cs" />
+    <Compile Include="UI\BDTISettings.cs" />
+    <Compile Include="UI\BDTISettingsFields.cs" />
     <Compile Include="UI\IBDWMModule.cs" />
     <Compile Include="UI\KrakensbaneDebug.cs" />
     <Compile Include="UI\LoadedVesselSwitcher.cs" />
     <Compile Include="UI\VesselSpawnerWindow.cs" />
+    <Compile Include="Evolution\BDAEvolution.cs" />
+    <Compile Include="Evolution\EvolutionWindow.cs" />
+    <Compile Include="Evolution\VariantEngine.cs" />
+    <Compile Include="Evolution\VariantMutation.cs" />
+    <Compile Include="Evolution\PilotAIMutation.cs" />
+    <Compile Include="Evolution\PilotAINudgeMutation.cs" />
+    <Compile Include="Evolution\WeaponManagerMutation.cs" />
+    <Compile Include="Evolution\WeaponManagerNudgeMutation.cs" />
+    <Compile Include="Evolution\ControlSurfaceAxisNudgeMutation.cs" />
+    <Compile Include="Evolution\EngineGimbalAxisNudgeMutation.cs" />
+    <Compile Include="Evolution\ControlSurfaceNudgeMutation.cs" />
+    <Compile Include="Evolution\EngineGimbalNudgeMutation.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BDArmory.Core\BDArmory.Core.csproj">
@@ -265,6 +299,7 @@
     <None Include="Distribution\GameData\BDArmory\AssetBundles\bdarmoryshaders_windows.bundle" />
     <None Include="Distribution\GameData\BDArmory\ATM_BDArmory.cfg" />
     <None Include="Distribution\GameData\BDArmory\BDArmory.version" />
+    <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Armors.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Bullets.cfg" />
     <None Include="Distribution\GameData\BDArmory\BulletDefs\BD_Rockets.cfg" />
     <None Include="Distribution\GameData\BDArmory\craft\BDA - Test Plane - AA.craft" />
@@ -336,8 +371,6 @@
     <None Include="Distribution\GameData\BDArmory\Parts\aim-120\amraam.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aim-120\amraam_emp.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aim-120\model.mu" />
-    <None Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\AIM4FalconGAR2.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\AIM4FalconMK1.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\part.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\aiPilot\surface_ai.cfg" />
@@ -423,10 +456,8 @@
     <None Include="Distribution\GameData\BDArmory\Parts\jdamMk83\jdam.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\jdamMk83\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\m102.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\m102HE.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\m1Abrams\m1Abrams.cfg" />
-    <None Include="Distribution\GameData\BDArmory\Parts\m1Abrams\m1AbramsHE.cfg" />
     <None Include="Distribution\GameData\BDArmory\Parts\m1Abrams\model.mu" />
     <None Include="Distribution\GameData\BDArmory\Parts\m1Abrams\sounds\reload.ogg" />
     <None Include="Distribution\GameData\BDArmory\Parts\m1Abrams\sounds\shot.ogg" />
@@ -583,8 +614,6 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\adjustableRail\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\AGM86-17\AGM86-17.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aim-120\texture.png" />
-    <Content Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\texture.png" />
-    <Content Include="Distribution\GameData\BDArmory\Parts\AIM4Falcon\texture2.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aiPilot\SAI1.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\aiPilot\texture.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\AmmoBox\texture.png" />
@@ -635,10 +664,8 @@
     <Content Include="Distribution\GameData\BDArmory\Parts\jdamMk83\tex_jdam.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\muzzle.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\tex_m102.png" />
-    <Content Include="Distribution\GameData\BDArmory\Parts\m102Howitzer\tex_m102B2.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m1Abrams\muzzle.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m1Abrams\tex_abrams.png" />
-    <Content Include="Distribution\GameData\BDArmory\Parts\m1Abrams\tex_abramsB2.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m230ChainGun\muzzle.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m230ChainGun\smoke.png" />
     <Content Include="Distribution\GameData\BDArmory\Parts\m230ChainGun\texture.png" />

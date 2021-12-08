@@ -48,7 +48,7 @@ namespace BDArmory.UI
 
         private void OnGUI()
         {
-            if (!(showWindow && ready && BDArmorySetup.GAME_UI_ENABLED && BDArmorySettings.REMOTE_LOGGING_ENABLED))
+            if (!(showWindow && ready && (BDArmorySetup.GAME_UI_ENABLED || (BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI && !BDArmorySetup.GAME_UI_ENABLED)) && BDArmorySettings.REMOTE_LOGGING_ENABLED))
                 return;
 
             SetNewHeight(_windowHeight);
@@ -120,7 +120,7 @@ namespace BDArmory.UI
             switch (service.status)
             {
                 case BDAScoreService.StatusType.Waiting:
-                    statusLine = status + " " + (30 + service.retryFindStartedAt - Planetarium.GetUniversalTime()).ToString("0") + "s";
+                    statusLine = status + " " + (BDArmorySettings.REMOTE_INTERHEAT_DELAY - (Planetarium.GetUniversalTime() - service.retryFindStartedAt)).ToString("0") + "s";
                     break;
                 default:
                     statusLine = status;

@@ -42,7 +42,7 @@ namespace BDArmory.FX
                     EffectBehaviour.AddParticleEmitter(pe.Current);
                 }
         }
-        void onDisable()
+        void OnDisable()
         {
             BDArmorySetup.numberOfParticleEmitters--;
             foreach (var pe in pEmitters)
@@ -51,6 +51,7 @@ namespace BDArmory.FX
                     pe.emit = false;
                     EffectBehaviour.RemoveParticleEmitter(pe);
                 }
+            parentPart = null;
         }
         void Update()
         {
@@ -68,7 +69,7 @@ namespace BDArmory.FX
             }
             if (disableTime > 0 && Time.time - disableTime > _highestEnergy) //wait until last emitted particle has finished
             {
-                gameObject.SetActive(false);
+                Deactivate();
             }
         }
         public void AttachAt(Part hitPart, RaycastHit hit, Vector3 offset)
@@ -87,14 +88,17 @@ namespace BDArmory.FX
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                parentPart = null;
-                transform.parent = null;
-                gameObject.SetActive(false);
+                Deactivate();
             }
         }
-        public void OnDestroy()
+        void Deactivate()
         {
-            OnParentDestroy();
+            if (gameObject.activeInHierarchy)
+            {
+                parentPart = null;
+                transform.parent = null; // Detach ourselves from the parent transform so we don't get destroyed if it does.
+                gameObject.SetActive(false);
+            }
         }
     }
 }

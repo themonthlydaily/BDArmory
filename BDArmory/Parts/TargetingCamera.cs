@@ -96,22 +96,21 @@ namespace BDArmory.Parts
             }
 
             bool moduleFound = false;
-            List<ModuleTargetingCamera>.Enumerator mtc = v.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                Debug.Log("[BDArmory] : Vessel switched to vessel with targeting camera.  Refreshing camera state.");
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(v).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    Debug.Log("[BDArmory.TargetingCamera]: Vessel switched to vessel with targeting camera.  Refreshing camera state.");
 
-                if (mtc.Current.cameraEnabled)
-                {
-                    mtc.Current.DelayedEnable();
+                    if (mtc.Current.cameraEnabled)
+                    {
+                        mtc.Current.DelayedEnable();
+                    }
+                    else
+                    {
+                        mtc.Current.DisableCamera();
+                    }
+                    moduleFound = true;
                 }
-                else
-                {
-                    mtc.Current.DisableCamera();
-                }
-                moduleFound = true;
-            }
-            mtc.Dispose();
 
             if (!moduleFound)
             {
@@ -196,7 +195,7 @@ namespace BDArmory.Parts
         {
             if (!parentTransform)
             {
-                Debug.Log("Targeting camera tried setup but parent transform is null");
+                Debug.Log("[BDArmory.TargetingCamera]: Targeting camera tried setup but parent transform is null");
                 return;
             }
 
@@ -205,7 +204,7 @@ namespace BDArmory.Parts
                 cameraTransform = (new GameObject("targetCamObject")).transform;
             }
 
-            Debug.Log("Setting target camera parent");
+            Debug.Log("[BDArmory.TargetingCamera]: Setting target camera parent");
             cameraTransform.parent = parentTransform;
             cameraTransform.localPosition = Vector3.zero;
             cameraTransform.localRotation = Quaternion.identity;
@@ -304,7 +303,7 @@ namespace BDArmory.Parts
                     return cam;
                 }
             }
-            Debug.Log("Couldn't find " + cameraName);
+            Debug.Log("[BDArmory.TargetingCamera]: Couldn't find " + cameraName);
             return null;
         }
 
@@ -312,6 +311,14 @@ namespace BDArmory.Parts
         {
             ReadyForUse = false;
             GameEvents.onVesselChange.Remove(VesselChange);
+            if (cameras != null)
+            {
+                foreach (var camera in cameras)
+                {
+                    if (camera != null && camera.gameObject != null)
+                    { Destroy(camera.gameObject); }
+                }
+            }
         }
 
         public static bool IsTGPCamera(Camera c)

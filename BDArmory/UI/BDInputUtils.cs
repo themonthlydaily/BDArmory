@@ -1,4 +1,6 @@
 using UnityEngine;
+using System;
+using System.Collections;
 
 namespace BDArmory.UI
 {
@@ -103,8 +105,9 @@ namespace BDArmory.UI
                         return output;
                     }
                 }
-                catch (System.Exception)
+                catch (System.Exception e)
                 {
+                    Debug.LogWarning("[BDArmory.BDInputUtils]: Exception thrown in GetInputString: " + e.Message + "\n" + e.StackTrace);
                 }
             }
 
@@ -119,9 +122,10 @@ namespace BDArmory.UI
                         return inputString;
                     }
                 }
-                catch (UnityException)
+                catch (UnityException e)
                 {
-                    Debug.Log("Invalid mouse: " + inputString);
+                    Debug.Log("[BDArmory.BDInputUtils]: Invalid mouse: " + inputString);
+                    Debug.LogWarning("[BDArmory.BDInputUtils]: Exception thrown in GetInputString: " + e.Message + "\n" + e.StackTrace);
                 }
             }
 
@@ -138,8 +142,9 @@ namespace BDArmory.UI
                             return inputString;
                         }
                     }
-                    catch (UnityException)
+                    catch (UnityException e)
                     {
+                        Debug.LogWarning("[BDArmory.BDInputUtils]: Exception thrown in GetInputString: " + e.Message + "\n" + e.StackTrace);
                         return string.Empty;
                     }
                 }
@@ -156,6 +161,69 @@ namespace BDArmory.UI
         public static bool GetKeyDown(BDInputInfo input)
         {
             return input.inputString != string.Empty && Input.GetKeyDown(input.inputString);
+        }
+    }
+
+    /// <summary>
+    /// A class for more easily inputting numeric values in TextFields.
+    /// There's a 0.5s delay after the last keystroke before attempting to interpret the string as a double.
+    /// Explicit cast to lower precision types may be needed when assigning the current value.
+    /// </summary>
+    public class NumericInputField : MonoBehaviour
+    {
+        public NumericInputField Initialise(double l, double v, double minV = double.MinValue, double maxV = double.MaxValue) { lastUpdated = l; currentValue = v; minValue = minV; maxValue = maxV; return this; }
+        public double lastUpdated;
+        public string possibleValue = string.Empty;
+        private double _value;
+        public double currentValue { get { return _value; } set { _value = value; possibleValue = _value.ToString("G6"); } }
+        private double minValue;
+        public double maxValue;
+        private bool coroutineRunning = false;
+        private Coroutine coroutine;
+
+        public void tryParseValue(string v)
+        {
+            if (v != possibleValue)
+            {
+                lastUpdated = !string.IsNullOrEmpty(v) ? Time.time : Time.time + 0.5; // Give the empty string an extra 0.5s.
+                possibleValue = v;
+                if (!coroutineRunning)
+                {
+                    coroutine = StartCoroutine(UpdateValueCoroutine());
+                }
+            }
+        }
+
+        IEnumerator UpdateValueCoroutine()
+        {
+            coroutineRunning = true;
+            while (Time.time - lastUpdated < 0.5)
+                yield return new WaitForFixedUpdate();
+            tryParseCurrentValue();
+            coroutineRunning = false;
+            yield return new WaitForFixedUpdate();
+        }
+
+        void tryParseCurrentValue()
+        {
+            double newValue;
+            if (double.TryParse(possibleValue, out newValue))
+            {
+                currentValue = Math.Min(Math.Max(newValue, minValue), maxValue);
+                lastUpdated = Time.time;
+            }
+            possibleValue = currentValue.ToString("G6");
+        }
+
+        // Parse the current possible value immediately.
+        public void tryParseValueNow()
+        {
+            tryParseCurrentValue();
+            if (coroutineRunning)
+            {
+                StopCoroutine(coroutine);
+                coroutineRunning = false;
+            }
         }
     }
 }

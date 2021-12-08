@@ -71,30 +71,15 @@ namespace BDArmory.Guidances
                 Vector3.ProjectOnPlane(targetPosition - _missile.vessel.CoM, upDirection).normalized;
 
             // Ascending
-            _missile.debugString.Append("State=" + GuidanceState);
-            _missile.debugString.Append(Environment.NewLine);
-
+            _missile.debugString.AppendLine("State=" + GuidanceState);
             var missileAltitude = GetCurrentAltitude(_missile.vessel);
-            _missile.debugString.Append("Altitude=" + missileAltitude);
-            _missile.debugString.Append(Environment.NewLine);
-
-            _missile.debugString.Append("Apoapsis=" + _missile.vessel.orbit.ApA);
-            _missile.debugString.Append(Environment.NewLine);
-
-            _missile.debugString.Append("Future Altitude=" + _futureAltitude);
-            _missile.debugString.Append(Environment.NewLine);
-
-            _missile.debugString.Append("Pitch angle=" + _pitchAngle);
-            _missile.debugString.Append(Environment.NewLine);
-
-            _missile.debugString.Append("Pitch decision=" + PitchDecision);
-            _missile.debugString.Append(Environment.NewLine);
-
-            _missile.debugString.Append("lastVerticalSpeed=" + _lastVerticalSpeed);
-            _missile.debugString.Append(Environment.NewLine);
-
-            _missile.debugString.Append("verticalAcceleration=" + _verticalAcceleration);
-            _missile.debugString.Append(Environment.NewLine);
+            _missile.debugString.AppendLine("Altitude=" + missileAltitude);
+            _missile.debugString.AppendLine("Apoapsis=" + _missile.vessel.orbit.ApA);
+            _missile.debugString.AppendLine("Future Altitude=" + _futureAltitude);
+            _missile.debugString.AppendLine("Pitch angle=" + _pitchAngle);
+            _missile.debugString.AppendLine("Pitch decision=" + PitchDecision);
+            _missile.debugString.AppendLine("lastVerticalSpeed=" + _lastVerticalSpeed);
+            _missile.debugString.AppendLine("verticalAcceleration=" + _verticalAcceleration);
 
             GetTelemetryData();
 

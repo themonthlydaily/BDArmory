@@ -10,7 +10,7 @@ namespace BDArmory.Modules
 {
     public class ClusterBomb : PartModule
     {
-        List<GameObject> submunitions;
+        public List<GameObject> submunitions;
         List<GameObject> fairings;
         MissileLauncher missileLauncher;
 
@@ -190,7 +190,7 @@ namespace BDArmory.Modules
         {
             ContactPoint contact = col.contacts[0];
             Vector3 pos = contact.point;
-            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName);
+            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, -1, false, rb.mass * 1000);
         }
 
         void FixedUpdate()
@@ -222,9 +222,9 @@ namespace BDArmory.Modules
                     {
                         hitPart = hit.collider.gameObject.GetComponentInParent<Part>();
                     }
-                    catch (NullReferenceException)
+                    catch (NullReferenceException e)
                     {
-                        Debug.Log("[BDArmory]:NullReferenceException for Submunition Hit");
+                        Debug.LogWarning("[BDArmory.ClusterBomb]:NullReferenceException for Submunition Hit: " + e.Message);
                         return;
                     }
 
@@ -248,7 +248,7 @@ namespace BDArmory.Modules
 
         void Detonate(Vector3 pos)
         {
-            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName);
+            ExplosionFx.CreateExplosion(pos, blastForce, subExplModelPath, subExplSoundPath, ExplosionSourceType.Missile, 0, null, sourceVesselName, null, default, -1, false, rb.mass * 1000);
             Destroy(gameObject);
         }
 
@@ -259,7 +259,10 @@ namespace BDArmory.Modules
             {
                 building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[BDArmory.ClusterBomb]: Exception thrown in CheckBuildingHit: " + e.Message + "\n" + e.StackTrace);
+            }
 
             if (building != null && building.IsIntact)
             {

@@ -136,9 +136,7 @@ namespace BDArmory.Modules
             get
             {
                 if (!riTex)
-                {
-                    riTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollIndicator", false);
-                }
+                { riTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollIndicator", false); }
                 return riTex;
             }
         }
@@ -150,9 +148,7 @@ namespace BDArmory.Modules
             get
             {
                 if (!rrTex)
-                {
-                    rrTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollReference", false);
-                }
+                { rrTex = GameDatabase.Instance.GetTexture("BDArmory/Textures/rollReference", false); }
                 return rrTex;
             }
         }
@@ -164,17 +160,7 @@ namespace BDArmory.Modules
             get
             {
                 if (wpmr == null || wpmr.vessel != vessel)
-                {
-                    wpmr = null;
-                    List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-                    while (mf.MoveNext())
-                    {
-                        if (mf.Current)
-                            wpmr = mf.Current;
-                    }
-                    mf.Dispose();
-                }
-
+                { wpmr = VesselModuleRegistry.GetMissileFire(vessel, true); }
                 return wpmr;
             }
         }
@@ -207,7 +193,7 @@ namespace BDArmory.Modules
         {
             if (!TargetingCamera.Instance)
             {
-                Debug.Log("Tried to enable targeting camera, but camera instance is null.");
+                Debug.Log("[BDArmory.ModuleTargetingCamera]: Tried to enable targeting camera, but camera instance is null.");
                 return;
             }
             if (vessel.isActiveVessel)
@@ -245,7 +231,7 @@ namespace BDArmory.Modules
             {
                 if (!TargetingCamera.Instance)
                 {
-                    Debug.Log("Tried to disable targeting camera, but camera instance is null.");
+                    Debug.Log("[BDArmory.ModuleTargetingCamera]: Tried to disable targeting camera, but camera instance is null.");
                     return;
                 }
 
@@ -273,7 +259,7 @@ namespace BDArmory.Modules
 
         ModuleTargetingCamera FindNextActiveCamera()
         {
-            using (List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator())
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
                 while (mtc.MoveNext())
                 {
                     if (mtc.Current && mtc.Current.cameraEnabled)
@@ -312,7 +298,7 @@ namespace BDArmory.Modules
                 //GUI setup
                 if (!camRectInitialized)
                 {
-                    BDArmorySetup.WindowRectTargetingCam = new Rect(Screen.width - windowWidth, Screen.height - windowHeight, windowWidth, windowHeight);
+                    BDArmorySetup.WindowRectTargetingCam = new Rect(BDArmorySetup.WindowRectTargetingCam.x, BDArmorySetup.WindowRectTargetingCam.y, windowWidth, windowHeight);
                     camRectInitialized = true;
                 }
 
@@ -327,7 +313,7 @@ namespace BDArmory.Modules
 
                 if (cameraEnabled)
                 {
-                    Debug.Log("[BDArmory]: saved gtp: " + bodyRelativeGTP);
+                    Debug.Log("[BDArmory.ModuleTargetingCamera]: saved gtp: " + bodyRelativeGTP);
                     DelayedEnable();
                 }
             }
@@ -360,8 +346,8 @@ namespace BDArmory.Modules
             delayedEnabling = true;
 
             Vector3d savedGTP = bodyRelativeGTP;
-            Debug.Log("[BDArmory]: saved gtp: " + Misc.Misc.FormattedGeoPos(savedGTP, true));
-            Debug.Log("[BDArmory]: groundStabilized: " + groundStabilized);
+            Debug.Log("[BDArmory.ModuleTargetingCamera]: saved gtp: " + Misc.Misc.FormattedGeoPos(savedGTP, true));
+            Debug.Log("[BDArmory.ModuleTargetingCamera]: groundStabilized: " + groundStabilized);
 
             while (TargetingCamera.Instance == null)
             {
@@ -395,7 +381,7 @@ namespace BDArmory.Modules
             EnableCamera();
             if (groundStabilized)
             {
-                Debug.Log("[BDArmory]: Camera delayed enabled");
+                Debug.Log("[BDArmory.ModuleTargetingCamera]: Camera delayed enabled");
                 groundTargetPosition = VectorUtils.GetWorldSurfacePostion(savedGTP, vessel.mainBody);// vessel.mainBody.GetWorldSurfacePosition(bodyRelativeGTP.x, bodyRelativeGTP.y, bodyRelativeGTP.z);
                 Vector3 lookVector = groundTargetPosition - cameraParentTransform.position;
                 PointCameraModel(lookVector);
@@ -403,7 +389,7 @@ namespace BDArmory.Modules
             }
             delayedEnabling = false;
 
-            Debug.Log("[BDArmory]: post load saved gtp: " + bodyRelativeGTP);
+            Debug.Log("[BDArmory.ModuleTargetingCamera]: post load saved gtp: " + bodyRelativeGTP);
         }
 
         void PointCameraModel(Vector3 lookVector)
@@ -1130,12 +1116,11 @@ namespace BDArmory.Modules
 
         void SlaveTurrets()
         {
-            List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                mtc.Current.slaveTurrets = false;
-            }
-            mtc.Dispose();
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    mtc.Current.slaveTurrets = false;
+                }
 
             if (weaponManager && weaponManager.vesselRadarData)
             {
@@ -1147,12 +1132,11 @@ namespace BDArmory.Modules
 
         void UnslaveTurrets()
         {
-            List<ModuleTargetingCamera>.Enumerator mtc = vessel.FindPartModulesImplementing<ModuleTargetingCamera>().GetEnumerator();
-            while (mtc.MoveNext())
-            {
-                mtc.Current.slaveTurrets = false;
-            }
-            mtc.Dispose();
+            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
+                while (mtc.MoveNext())
+                {
+                    mtc.Current.slaveTurrets = false;
+                }
 
             if (weaponManager && weaponManager.vesselRadarData)
             {
@@ -1309,7 +1293,7 @@ namespace BDArmory.Modules
             debugSphere.transform.position = groundTargetPosition;
         }
 
-        void GroundStabilize()
+        public void GroundStabilize()
         {
             if (vessel.packed) return;
             StopResetting();
@@ -1405,7 +1389,7 @@ namespace BDArmory.Modules
                     {
                         KerbalEVA hitEVA = rayHit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                         Part p = hitEVA ? hitEVA.part : rayHit.collider.GetComponentInParent<Part>();
-                        if (p && p.vessel && p.vessel.Landed)
+                        if (p && p.vessel)
                         {
                             groundTargetPosition = p.vessel.CoM;
                         }
@@ -1491,6 +1475,7 @@ namespace BDArmory.Modules
             radarLock = false;
             StopResetting();
             ClearTarget();
+            if (cameraParentTransform == null) yield break;
             while (!stopPTPR && Vector3.Angle(cameraParentTransform.transform.forward, position - (cameraParentTransform.transform.position)) > 0.1f)
             {
                 Vector3 newForward = Vector3.RotateTowards(cameraParentTransform.transform.forward, position - cameraParentTransform.transform.position, 90 * Mathf.Deg2Rad * Time.fixedDeltaTime, 0);

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using BDArmory.Control;
 using BDArmory.Core;
+using BDArmory.Core.Extension;
 using BDArmory.Misc;
 using BDArmory.UI;
 using UnityEngine;
@@ -54,7 +55,7 @@ namespace BDArmory.Modules
 
         //settings
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_VehicleType"),//Vehicle type
-            UI_ChooseOption(options = new string[3] { "Land", "Amphibious", "Water" })]
+            UI_ChooseOption(options = new string[4] { "Stationary", "Land", "Water", "Amphibious" })]
         public string SurfaceTypeName = "Land";
 
         public AIUtils.VehicleMovementType SurfaceType
@@ -116,10 +117,10 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All),]
         public float AvoidMass = 0f;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
-            UI_ChooseOption(options = new string[3] { "Starboard", "Whatever", "Port" }, scene = UI_Scene.All),]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_PreferredBroadsideDirection", advancedTweakable = true),//Preferred broadside direction
+            UI_ChooseOption(options = new string[3] { "Port", "Whatever", "Starboard" }, scene = UI_Scene.All),]
         public string OrbitDirectionName = "Whatever";
-        readonly string[] orbitDirections = new string[3] { "Starboard", "Whatever", "Port" };
+        public readonly string[] orbitDirections = new string[3] { "Port", "Whatever", "Starboard" };
 
         [KSPField(isPersistant = true)]
         int sideSlipDirection = 0;
@@ -180,6 +181,12 @@ namespace BDArmory.Modules
 
         #region events
 
+        public override void OnStart(StartState state)
+        {
+            base.OnStart(state);
+            SetChooseOptions();
+        }
+
         public override void ActivatePilot()
         {
             base.ActivatePilot();
@@ -195,9 +202,7 @@ namespace BDArmory.Modules
 
             if (BroadsideAttack && sideSlipDirection == 0)
             {
-                sideSlipDirection = orbitDirections.IndexOf(OrbitDirectionName);
-                if (sideSlipDirection == 0)
-                    sideSlipDirection = UnityEngine.Random.Range(0, 2) > 1 ? 1 : -1;
+                SetBroadsideDirection(OrbitDirectionName);
             }
 
             leftPath = true;
@@ -212,6 +217,36 @@ namespace BDArmory.Modules
 
             if (motorControl)
                 motorControl.Deactivate();
+        }
+
+        public void SetChooseOptions()
+        {
+            UI_ChooseOption broadisdeEditor = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlEditor;
+            UI_ChooseOption broadisdeFlight = (UI_ChooseOption)Fields["OrbitDirectionName"].uiControlFlight;
+            UI_ChooseOption SurfaceEditor = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlEditor;
+            UI_ChooseOption SurfaceFlight = (UI_ChooseOption)Fields["SurfaceTypeName"].uiControlFlight;
+            broadisdeEditor.onFieldChanged = ChooseOptionsUpdated;
+            broadisdeFlight.onFieldChanged = ChooseOptionsUpdated;
+            SurfaceEditor.onFieldChanged = ChooseOptionsUpdated;
+            SurfaceFlight.onFieldChanged = ChooseOptionsUpdated;
+        }
+
+        public void ChooseOptionsUpdated(BaseField field, object obj)
+        {
+            this.part.RefreshAssociatedWindows();
+            if (BDArmoryAIGUI.Instance != null)
+            {
+                BDArmoryAIGUI.Instance.SetChooseOptionSliders();
+            }
+        }
+
+        public void SetBroadsideDirection(string direction)
+        {
+            if (!orbitDirections.Contains(direction)) return;
+            OrbitDirectionName = direction;
+            sideSlipDirection = orbitDirections.IndexOf(OrbitDirectionName) - 1;
+            if (sideSlipDirection == 0)
+                sideSlipDirection = UnityEngine.Random.value > 0.5f ? 1 : -1;
         }
 
         void Update()
@@ -300,10 +335,13 @@ namespace BDArmory.Modules
                 using (var vs = BDATargetManager.LoadedVessels.GetEnumerator())
                     while (vs.MoveNext())
                     {
-                        if (vs.Current == null || vs.Current == vessel) continue;
-                        if (!vs.Current.LandedOrSplashed || vs.Current.FindPartModuleImplementing<IBDAIControl>()?.commandLeader?.vessel == vessel
-                            || vs.Current.GetTotalMass() < AvoidMass)
-                            continue;
+                        if (vs.Current == null || vs.Current == vessel || vs.Current.GetTotalMass() < AvoidMass) continue;
+                        if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
+                        {
+                            var ibdaiControl = VesselModuleRegistry.GetModule<IBDAIControl>(vs.Current);
+                            if (!vs.Current.LandedOrSplashed || (ibdaiControl != null && ibdaiControl.commandLeader != null && ibdaiControl.commandLeader.vessel == vessel))
+                                continue;
+                        }
                         dodgeVector = PredictCollisionWithVessel(vs.Current, 5f * predictMult, 0.5f);
                         if (dodgeVector != null) break;
                     }
@@ -322,7 +360,7 @@ namespace BDArmory.Modules
             }
 
             // if bypass target is no longer relevant, remove it
-            if (bypassTarget != null && ((bypassTarget != targetVessel && bypassTarget != commandLeader?.vessel)
+            if (bypassTarget != null && ((bypassTarget != targetVessel && bypassTarget != (commandLeader != null ? commandLeader.vessel : null))
                 || (VectorUtils.GetWorldSurfacePostion(bypassTargetPos, vessel.mainBody) - bypassTarget.CoM).sqrMagnitude > 500000))
             {
                 bypassTarget = null;
@@ -342,7 +380,7 @@ namespace BDArmory.Modules
                     float distance = vecToTarget.magnitude;
                     // lead the target a bit, where 1km/s is a ballpark estimate of the average bullet velocity
                     float shotSpeed = 1000f;
-                    if (weaponManager?.selectedWeapon is ModuleWeapon wep)
+                    if ((weaponManager != null ? weaponManager.selectedWeapon : null) is ModuleWeapon wep)
                         shotSpeed = wep.bulletVelocity;
                     vecToTarget = targetVessel.PredictPosition(distance / shotSpeed) - vessel.CoM;
 
@@ -388,19 +426,22 @@ namespace BDArmory.Modules
                             else
                             {
                                 targetVelocity = CruiseSpeed / 10 + (MaxSpeed - CruiseSpeed / 10) * (distance - MinEngagementRange) / (MaxEngagementRange - MinEngagementRange); //slow down if inside engagement range to extend shooting opportunities
-                                switch (weaponManager?.selectedWeapon?.GetWeaponClass())
+                                if (weaponManager != null && weaponManager.selectedWeapon != null)
                                 {
-                                    case WeaponClasses.Gun:
-                                    case WeaponClasses.Rocket:
-                                    case WeaponClasses.DefenseLaser:
-                                        var gun = (ModuleWeapon)weaponManager.selectedWeapon;
-                                        if ((gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
-                                        {
-                                            aimingMode = true;
-                                            if (Vector3.Angle((Vector3)gun.FiringSolutionVector, vessel.transform.up) < 20)
-                                                targetDirection = (Vector3)gun.FiringSolutionVector;
-                                        }
-                                        break;                                   
+                                    switch (weaponManager.selectedWeapon.GetWeaponClass())
+                                    {
+                                        case WeaponClasses.Gun:
+                                        case WeaponClasses.Rocket:
+                                        case WeaponClasses.DefenseLaser:
+                                            var gun = (ModuleWeapon)weaponManager.selectedWeapon;
+                                            if ((gun.yawRange == 0 || gun.maxPitch == gun.minPitch) && gun.FiringSolutionVector != null)
+                                            {
+                                                aimingMode = true;
+                                                if (Vector3.Angle((Vector3)gun.FiringSolutionVector, vessel.transform.up) < 20)
+                                                    targetDirection = (Vector3)gun.FiringSolutionVector;
+                                            }
+                                            break;
+                                    }
                                 }
                             }
                             targetVelocity = Mathf.Clamp(targetVelocity, PoweredSteering ? CruiseSpeed / 5 : 0, MaxSpeed); // maintain a bit of speed if using powered steering
@@ -497,7 +538,7 @@ namespace BDArmory.Modules
 
         bool PanicModes()
         {
-            if (!vessel.LandedOrSplashed)
+            if (!vessel.LandedOrSplashed && !BDArmorySettings.SF_REPULSOR)
             {
                 targetVelocity = 0;
                 targetDirection = Vector3.ProjectOnPlane(vessel.srf_velocity, upDir);
@@ -613,8 +654,9 @@ namespace BDArmory.Modules
 
         public override bool IsValidFixedWeaponTarget(Vessel target)
             => !BroadsideAttack &&
-            (((target?.Splashed ?? false) && (SurfaceType & AIUtils.VehicleMovementType.Water) != 0)
-            || ((target?.Landed ?? false) && (SurfaceType & AIUtils.VehicleMovementType.Land) != 0))
+            (((target != null ? target.Splashed : false) && (SurfaceType & AIUtils.VehicleMovementType.Water) != 0) //boat targeting boat
+            || ((target != null ? target.Landed : false) && (SurfaceType & AIUtils.VehicleMovementType.Land) != 0) //vee targeting vee
+            || (((target != null && !target.LandedOrSplashed) && (SurfaceType & AIUtils.VehicleMovementType.Amphibious) != 0) && BDArmorySettings.SPACE_HACKS)) //repulsorcraft targeting repulsorcraft
             ; //valid if can traverse the same medium and using bow fire
 
         /// <returns>null if no collision, dodge vector if one detected</returns>

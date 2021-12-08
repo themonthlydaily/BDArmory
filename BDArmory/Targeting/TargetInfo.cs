@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Misc;
@@ -25,6 +26,11 @@ namespace BDArmory.Targeting
         public float radarJammingDistance;
         public bool alreadyScheduledRCSUpdate = false;
         public float radarMassAtUpdate = 0f;
+
+        public List<Part> targetWeaponList = new List<Part>();
+        public List<Part> targetEngineList = new List<Part>();
+        public List<Part> targetCommandList = new List<Part>();
+        public List<Part> targetMassList = new List<Part>();
 
         public bool isLandedOrSurfaceSplashed
         {
@@ -177,39 +183,23 @@ namespace BDArmory.Targeting
                     return;
                 }
             }
-            // IEnumerator otherInfo = vessel.gameObject.GetComponents<TargetInfo>().GetEnumerator();
-            // while (otherInfo.MoveNext())
-            // {
-            //     if ((object)otherInfo.Current != this)
-            //     {
-            //         Destroy(this);
-            //         return;
-            //     }
-            // }
 
             Team = null;
-            bool foundMf = false;
-            List<MissileFire>.Enumerator mf = vessel.FindPartModulesImplementing<MissileFire>().GetEnumerator();
-            while (mf.MoveNext())
+            var mf = VesselModuleRegistry.GetMissileFire(vessel, true);
+            if (mf != null)
             {
-                foundMf = true;
-                Team = mf.Current.Team;
-                weaponManager = mf.Current;
-                break;
+                Team = mf.Team;
+                weaponManager = mf;
             }
-            mf.Dispose();
-
-            if (!foundMf)
+            else
             {
-                List<MissileBase>.Enumerator ml = vessel.FindPartModulesImplementing<MissileBase>().GetEnumerator();
-                while (ml.MoveNext())
+                var ml = VesselModuleRegistry.GetMissileBase(vessel, true);
+                if (ml != null)
                 {
                     isMissile = true;
-                    MissileBaseModule = ml.Current;
-                    Team = ml.Current.Team;
-                    break;
+                    MissileBaseModule = ml;
+                    Team = ml.Team;
                 }
-                ml.Dispose();
             }
 
             vessel.OnJustAboutToBeDestroyed += AboutToBeDestroyed;
@@ -224,6 +214,8 @@ namespace BDArmory.Targeting
                 GameEvents.onVesselPartCountChanged.Add(VesselModified);
                 //massRoutine = StartCoroutine(MassRoutine());              // TODO: CHECK BEHAVIOUR AND SIDE EFFECTS!
             }
+            UpdateTargetPartList();
+            GameEvents.onVesselDestroy.Add(CleanFriendliesEngaging);
         }
 
         void OnPeaceEnabled()
@@ -237,6 +229,8 @@ namespace BDArmory.Targeting
             BDArmorySetup.OnPeaceEnabled -= OnPeaceEnabled;
             vessel.OnJustAboutToBeDestroyed -= AboutToBeDestroyed;
             GameEvents.onVesselPartCountChanged.Remove(VesselModified);
+            GameEvents.onVesselDestroy.Remove(CleanFriendliesEngaging);
+            BDATargetManager.RemoveTarget(this);
         }
 
         IEnumerator UpdateRCSDelayed()
@@ -244,19 +238,19 @@ namespace BDArmory.Targeting
             if (radarMassAtUpdate > 0)
             {
                 float massPercentageDifference = (radarMassAtUpdate - vessel.GetTotalMass()) / radarMassAtUpdate;
-                if (massPercentageDifference > 0.025f)
+                if ((massPercentageDifference > 0.025f) && (weaponManager) && (weaponManager.missilesAway == 0) && !weaponManager.guardFiringMissile)
                 {
                     alreadyScheduledRCSUpdate = true;
                     yield return new WaitForSeconds(1.0f);    // Wait for any explosions to finish
                     radarBaseSignatureNeedsUpdate = true;     // Update RCS if vessel mass changed by more than 2.5% after a part was lost
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.TargetInfo]: RCS mass update triggered for " + vessel.vesselName + ", difference: " + (massPercentageDifference * 100f).ToString("0.0"));
                 }
             }
         }
 
         void Update()
         {
-            if (!vessel)
+            if (vessel == null)
             {
                 AboutToBeDestroyed();
             }
@@ -270,6 +264,61 @@ namespace BDArmory.Targeting
             }
         }
 
+        public void UpdateTargetPartList()
+        {
+            targetCommandList.Clear();
+            targetWeaponList.Clear();
+            targetMassList.Clear();
+            targetEngineList.Clear();
+            //anything else? fueltanks? - could be useful if incindiary ammo gets implemented
+            //power generation? - radiators/generators - if doing CoaDE style fights/need reactors to power weapons
+
+            if (vessel == null) return;
+            using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
+                while (part.MoveNext())
+                {
+                    if (part.Current == null) continue;
+
+                    if (part.Current.FindModuleImplementing<ModuleWeapon>() || part.Current.FindModuleImplementing<MissileTurret>())
+                    {
+                        targetWeaponList.Add(part.Current);
+                    }
+
+                    if (part.Current.FindModuleImplementing<ModuleEngines>() || part.Current.FindModuleImplementing<ModuleEnginesFX>())
+                    {
+                        targetEngineList.Add(part.Current);
+                    }
+
+                    if (part.Current.FindModuleImplementing<ModuleCommand>() || part.Current.FindModuleImplementing<KerbalSeat>())
+                    {
+                        targetCommandList.Add(part.Current);
+                    }
+                    targetMassList.Add(part.Current);
+                }
+            targetMassList = targetMassList.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
+            targetMassList.Reverse(); //Order by mass is lightest to heaviest. We want H>L
+            if (targetMassList.Count > 10)
+                targetMassList.RemoveRange(10, (targetMassList.Count - 10)); //trim to max turret targets
+            targetCommandList = targetCommandList.OrderBy(w => w.mass).ToList();
+            targetCommandList.Reverse();
+            if (targetCommandList.Count > 10)
+                targetCommandList.RemoveRange(10, (targetCommandList.Count - 10));
+            targetEngineList = targetEngineList.OrderBy(w => w.mass).ToList();
+            targetEngineList.Reverse();
+            if (targetEngineList.Count > 10)
+                targetEngineList.RemoveRange(10, (targetEngineList.Count - 10));
+            targetWeaponList = targetWeaponList.OrderBy(w => w.mass).ToList();
+            targetWeaponList.Reverse();
+            if (targetWeaponList.Count > 10)
+                targetWeaponList.RemoveRange(10, (targetWeaponList.Count - 10));
+        }
+
+        void CleanFriendliesEngaging(Vessel v)
+        {
+            var toRemove = friendliesEngaging.Where(kvp => kvp.Value == null).Select(kvp => kvp.Key).ToList();
+            foreach (var key in toRemove)
+            { friendliesEngaging.Remove(key); }
+        }
         public int NumFriendliesEngaging(BDTeam team)
         {
             if (friendliesEngaging.TryGetValue(team, out var friendlies))
@@ -285,27 +334,29 @@ namespace BDArmory.Targeting
             float maxThrust = 0;
             float finalThrust = 0;
 
-            using (List<ModuleEngines>.Enumerator engines = v.FindPartModulesImplementing<ModuleEngines>().GetEnumerator())
-                while (engines.MoveNext())
+            var engines = VesselModuleRegistry.GetModules<ModuleEngines>(v);
+            if (engines == null) return 0;
+            using (var engine = engines.GetEnumerator())
+                while (engine.MoveNext())
                 {
-                    if (engines.Current == null) continue;
-                    if (!engines.Current.EngineIgnited) continue;
+                    if (engine.Current == null) continue;
+                    if (!engine.Current.EngineIgnited) continue;
 
-                    MultiModeEngine mme = engines.Current.part.FindModuleImplementing<MultiModeEngine>();
+                    MultiModeEngine mme = engine.Current.part.FindModuleImplementing<MultiModeEngine>();
                     if (IsAfterBurnerEngine(mme))
                     {
                         mme.autoSwitch = false;
                     }
 
-                    if (mme && mme.mode != engines.Current.engineID) continue;
-                    float engineThrust = engines.Current.maxThrust;
-                    if (engines.Current.atmChangeFlow)
+                    if (mme && mme.mode != engine.Current.engineID) continue;
+                    float engineThrust = engine.Current.maxThrust;
+                    if (engine.Current.atmChangeFlow)
                     {
-                        engineThrust *= engines.Current.flowMultiplier;
+                        engineThrust *= engine.Current.flowMultiplier;
                     }
-                    maxThrust += Mathf.Max(0f, engineThrust * (engines.Current.thrustPercentage / 100f)); // Don't include negative thrust percentage drives (Danny2462 drives) as they don't contribute to the thrust.
+                    maxThrust += Mathf.Max(0f, engineThrust * (engine.Current.thrustPercentage / 100f)); // Don't include negative thrust percentage drives (Danny2462 drives) as they don't contribute to the thrust.
 
-                    finalThrust += engines.Current.finalThrust;
+                    finalThrust += engine.Current.finalThrust;
                 }
             return maxThrust;
         }
@@ -330,7 +381,9 @@ namespace BDArmory.Targeting
             if (myMf == null) return 0;
             float thisDist = (position - myMf.transform.position).magnitude;
             float maxWepRange = 0;
-            using (List<ModuleWeapon>.Enumerator weapon = myMf.vessel.FindPartModulesImplementing<ModuleWeapon>().GetEnumerator())
+            var weapons = VesselModuleRegistry.GetModules<ModuleWeapon>(myMf.vessel);
+            if (weapons == null) return 0;
+            using (var weapon = weapons.GetEnumerator())
                 while (weapon.MoveNext())
                 {
                     if (weapon.Current == null) continue;
@@ -353,7 +406,7 @@ namespace BDArmory.Targeting
             float bodyGravity = (float)PhysicsGlobals.GravitationalAcceleration * (float)vessel.orbit.referenceBody.GeeASL; // Set gravity for calculations;
             float maxAccel = MaxThrust(vessel) / vessel.GetTotalMass(); // This assumes that all thrust is in the same direction.
             maxAccel = 0.1f * Mathf.Clamp(maxAccel / bodyGravity, 0f, 10f);
-            maxAccel = maxAccel == 0 ? -1 : maxAccel; // If max acceleration is zero (no engines), set to -1 for stronger target priority
+            maxAccel = maxAccel == 0f ? -1f : maxAccel; // If max acceleration is zero (no engines), set to -1 for stronger target priority
             return maxAccel; // Output is -1 or 0-1 (0.1 is equal to body gravity)
         }
 
@@ -388,8 +441,10 @@ namespace BDArmory.Targeting
             if (myMf == null || myMf.wingCommander == null || myMf.wingCommander.friendlies == null) return 0;
             float friendsEngaging = Mathf.Max(NumFriendliesEngaging(myMf.Team) - 1, 0);
             float teammates = myMf.wingCommander.friendlies.Count;
+            friendsEngaging = 1 - Mathf.Clamp(friendsEngaging / teammates, 0f, 1f);
+            friendsEngaging = friendsEngaging == 0f ? -1f : friendsEngaging;
             if (teammates > 0)
-                return 1 - Mathf.Clamp(friendsEngaging / teammates, 0f, 1f); // Ranges from 0 to 1
+                return friendsEngaging; // Range is -1, 0 to 1. -1 if all teammates are engaging target, between 0-1 otherwise depending on number of teammates engaging
             else
                 return 0; // No teammates
         }
@@ -398,31 +453,12 @@ namespace BDArmory.Targeting
         {
             if (mf == null || myMf == null) return 0;
             float firingAtMe = 0;
-            var pilotAI = myMf.vessel.FindPartModuleImplementing<BDModulePilotAI>(); // Get the pilot AI if the vessel has one.
             if (mf.vessel == myMf.incomingThreatVessel)
             {
-                if (myMf.missileIsIncoming)
+                if (myMf.missileIsIncoming || myMf.underFire || myMf.underAttack)
                     firingAtMe = 1f;
-                else if (myMf.underFire)
-                {
-                    if (pilotAI)
-                    {
-                        if (pilotAI.evasionThreshold > 0) // If there is an evasionThreshold, use it to calculate the threat, 0.5 is missDistance = evasionThreshold
-                        {
-                            float missDistance = Mathf.Clamp(myMf.incomingMissDistance, 0, pilotAI.evasionThreshold * 2f);
-                            firingAtMe = 1f - missDistance / (pilotAI.evasionThreshold * 2f); // Ranges from 0-1
-                        }
-                        else
-                            firingAtMe = 1f; // Otherwise threat is 1
-                    }
-                    else // SurfaceAI
-                    {
-                        firingAtMe = 1f;
-                    }
-                }
-
             }
-            return firingAtMe;
+            return firingAtMe; // Equals either 0 (not under attack) or 1 (under attack)
         }
 
         public float TargetPriAoD(MissileFire myMF)
@@ -441,6 +477,34 @@ namespace BDArmory.Targeting
                 float targetMass = mf.vessel.GetTotalMass();
                 float myMass = myMf.vessel.GetTotalMass();
                 return Mathf.Clamp(Mathf.Log10(targetMass / myMass) / 2f, -1, 1); // Ranges -1 to 1, -1 if we are 100 times as heavy as target, 1 target is 100 times as heavy as us
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public float TargetPriProtectVIP(MissileFire mf) // If target is attacking our VIP(s)
+        {
+            if (mf == null) return 0;
+            if ((mf.vessel != null) && (mf.currentTarget != null) && (mf.currentTarget.weaponManager != null))
+            {
+                bool attackingOurVIPs = mf.currentTarget.weaponManager.isVIP;
+                return ((attackingOurVIPs == true) ? 1 : -1); // Ranges -1 to 1, 1 if target is attacking our VIP(s), -1 if it is not
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public float TargetPriAttackVIP(MissileFire mf) // If target is enemy VIP
+        {
+            if (mf == null) return 0;
+            if (mf.vessel != null)
+            {
+                bool isVIP = mf.isVIP;
+                return ((isVIP == true) ? 1 : -1); // Ranges -1 to 1, 1 if target is an enemy VIP, -1 if it is not
             }
             else
             {
@@ -501,6 +565,7 @@ namespace BDArmory.Targeting
             {
                 if (!alreadyScheduledRCSUpdate)
                     StartCoroutine(UpdateRCSDelayed());
+                UpdateTargetPartList();
             }
         }
 
