@@ -1346,7 +1346,7 @@ namespace BDArmory.Radar
                 return (missile.HasFired && missile.TimeIndex > 1f && approaching &&
                             (
                                 (missile.TargetPosition - (mf.vessel.CoM + (mf.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
-                                mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, 2f) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                mf.vessel.PredictClosestApproachSqrSeparation(missile.vessel, mf.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
                                 withinRadarFOV // We are within radar FOV of missile boresight.
                             ));
             }
@@ -1373,7 +1373,7 @@ namespace BDArmory.Radar
                         return (missile.HasFired && missile.TimeIndex > 1f && approaching &&
                                     (
                                         (missile.TargetPosition - (wms.vessel.CoM + (wms.vessel.Velocity() * Time.fixedDeltaTime))).sqrMagnitude < missileBlastRadiusSqr || // Target position is within blast radius of missile.
-                                        wms.vessel.PredictClosestApproachSqrSeparation(missile.vessel, 2f) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
+                                        wms.vessel.PredictClosestApproachSqrSeparation(missile.vessel, wms.cmThreshold) < missileBlastRadiusSqr || // Closest approach is within blast radius of missile. 
                                         withinRadarFOV // We are within radar FOV of missile boresight.
                                     ));
                     }
