@@ -1765,7 +1765,6 @@ namespace BDArmory.Modules
                                     {
                                         // Debug.Log("DEBUG immediately hit after " + pBullet.DistanceTraveled + "m and time " + iTime);
                                     }
-                                    RunTrajectorySimulation();
                                 }
                                 //heat
 
