@@ -36,7 +36,7 @@ namespace BDArmory.Modules
                             {
                                 if (fuel.amount > 0)
                                 {
-                                    part.RequestResource("LiquidFuel", (double)(drainRate * Time.deltaTime));
+									part.RequestResource("LiquidFuel", (double)(drainRate * Time.fixedDeltaTime));                             
                                     fuelLeft++;
                                 }
                             }
@@ -48,7 +48,10 @@ namespace BDArmory.Modules
                         {
                             if (fuel.amount >= 0)
                             {
-                                part.RequestResource("LiquidFuel", ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime);
+                                //part.RequestResource("LiquidFuel", ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime);
+                                //is this draining form across vessel?  Trying alt method
+                                fuel.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime;
+                                fuel.amount = Mathf.Clamp((float)fuel.amount, 0, (float)fuel.maxAmount);
                                 fuelLeft++;
                             }
                         }
@@ -57,8 +60,10 @@ namespace BDArmory.Modules
                         {
                             if (ox.amount >= 0)
                             {
-                                part.RequestResource("Oxidizer", ((double)drainRate * Mathf.Clamp((float)ox.amount, 40, 400) / Mathf.Clamp((float)ox.maxAmount, 400, (float)ox.maxAmount) ) *  Time.deltaTime);
+                                //part.RequestResource("Oxidizer", ((double)drainRate * Mathf.Clamp((float)ox.amount, 40, 400) / Mathf.Clamp((float)ox.maxAmount, 400, (float)ox.maxAmount) ) *  Time.deltaTime);
                                 //more fuel = higher pressure, clamped at 400 since flow rate is constrained by outlet aperture, not fluid pressure
+                                ox.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime;
+                                ox.amount = Mathf.Clamp((float)ox.amount, 0, (float)ox.maxAmount);
                                 fuelLeft++;
                             }
                         }
@@ -68,6 +73,8 @@ namespace BDArmory.Modules
                             if (mp.amount >= 0)
                             {
                                 part.RequestResource("MonoPropellant", ((double)drainRate * Mathf.Clamp((float)mp.amount, 40, 400) / Mathf.Clamp((float)mp.maxAmount, 400, (float)mp.maxAmount)) * Time.deltaTime);
+                                mp.amount -= ((double)drainRate * Mathf.Clamp((float)fuel.amount, 40, 400) / Mathf.Clamp((float)fuel.maxAmount, 400, (float)fuel.maxAmount)) * Time.deltaTime;
+                                mp.amount = Mathf.Clamp((float)mp.amount, 0, (float)mp.maxAmount);
                                 fuelLeft++;
                             }
                         }
