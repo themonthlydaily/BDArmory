@@ -6,6 +6,7 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import Union
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -67,11 +68,20 @@ def cumsum(l):
         yield v
 
 
+def naturalSortKey(key: Union[str, Path]):
+    if isinstance(key, Path):
+        key = key.name
+    try:
+        return int(key.rsplit(' ')[1])  # If the key ends in an integer, split that off and use that as the sort key.
+    except:
+        return key  # Otherwise, just use the key.
+
+
 for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
     if tournamentNumber > 0 and not args.quiet:
         print("")
     tournamentData = {}
-    for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()) if not args.current_dir else (tournamentDir,):
+    for round in sorted((roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()), key=naturalSortKey) if not args.current_dir else (tournamentDir,):
         if not args.current_dir and len(round.name) == 0:
             continue
         tournamentData[round.name] = {}
