@@ -5,18 +5,26 @@
 - Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
 - Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.
 - Fix the bad check preventing competition start if a vessel doesn't take off.
-- Fix NRE in CheckEngage.
+- Fix NRE in CheckExtend.
 - Remove extraneous trajectory simulation when firing a bullet.
 - Fix infinite recursion bug in the evolution engine.
+- Compensate for the delay in calculating the effects of collisions and properly attribute deaths (including death order and time) due to ramming correctly.
+- Fix bug in part counting that was occassionally causing negative part counts in rams.
 IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
 - Make all custom paths relative to the KSP install directory to remove dependence on running location (PRE needs fixing for this to be usable though).
-- Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
-- Disable guard mode on spawned vessels during spawning and clear their current target.
-- Extend vessel easing during spawning until a vessel's cockpit is in the water (or it has stopped sinking) to allow it to settle a bit.
-- Use more precision in the csv file for the cumulative scores.
 - Use CM threshold for determining missile closest approach instead of a fixed 2s value.
-- Maintain evolution state and properly add in support for auto-resuming evolutions.
+- Parser:
+	- Use a more natural sorting order for rounds in the parser so the score-by-round is consistent.
+	- Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
+	- Use more precision in the csv file for the cumulative scores.
+- Spawning:
+	- Disable guard mode on spawned vessels during spawning and clear their current target (prevents using AG10 to activate guard mode earlier than should be allowed).
+	- Extend vessel easing during spawning until a vessel's cockpit is in the water (or it has stopped sinking) to allow it to settle a bit.
+- Evolution:
+	- Maintain evolution state and properly add in support for auto-resuming evolutions.
+	- Add current heat to the evolution window.
+	- Include rockets fired and rocket strikes in the evolution scoring metric.
 
 v1.4.13.1
 IMPROVEMENTS
