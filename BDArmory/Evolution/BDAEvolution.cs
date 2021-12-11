@@ -123,14 +123,17 @@ namespace BDArmory.Evolution
 
         // evolution id
         private string evolutionId = null;
-        public string GetId() { return evolutionId; }
+        public string EvolutionId { get { return evolutionId; } }
 
         // group id
         private int groupId = 0;
-        public int GetGroupId() { return groupId; }
+        public int GroupId { get { return groupId; } }
 
         // next variant id
         private int nextVariantId = 0;
+
+        private int heat = 0;
+        public int Heat { get { return heat; } }
 
         // private VariantOptions options;
 
@@ -285,6 +288,7 @@ namespace BDArmory.Evolution
 
         private void SaveState()
         {
+            if (spawnConfig==null) return; // No spawn config means it hasn't been runnning.
             spawnConfig.craftFiles = null; // We don't want to include the specific craft files in the spawn config.
             spawnConfig.teamCounts = null;
             var workingState = new EvolutionWorkingState
@@ -489,7 +493,7 @@ namespace BDArmory.Evolution
             var specialKills = new HashSet<AliveState> { AliveState.CleanKill, AliveState.HeadShot, AliveState.KillSteal };
 
             // run N tournaments and aggregate their scores
-            for (var k = 0; k < BDArmorySettings.EVOLUTION_HEATS_PER_GROUP; k++)
+            for (heat = 0; heat < BDArmorySettings.EVOLUTION_HEATS_PER_GROUP; heat++)
             {
                 var wait = new WaitForFixedUpdate();
                 spawnConfig.craftFiles = null; // We don't want to include the specific craft files in the spawn config.
@@ -542,19 +546,19 @@ namespace BDArmory.Evolution
                     }
                     if (aggregateScores[name].ContainsKey("hits"))
                     {
-                        aggregateScores[name]["hits"] += scoreData.hits;
+                        aggregateScores[name]["hits"] += scoreData.hits + scoreData.rocketStrikes;
                     }
                     else
                     {
-                        aggregateScores[name]["hits"] = scoreData.hits;
+                        aggregateScores[name]["hits"] = scoreData.hits + scoreData.rocketStrikes;
                     }
                     if (aggregateScores[name].ContainsKey("shots"))
                     {
-                        aggregateScores[name]["shots"] += scoreData.shotsFired;
+                        aggregateScores[name]["shots"] += scoreData.shotsFired + scoreData.rocketsFired;
                     }
                     else
                     {
-                        aggregateScores[name]["shots"] = scoreData.shotsFired;
+                        aggregateScores[name]["shots"] = scoreData.shotsFired + scoreData.rocketsFired;
                     }
                     Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, aggregateScores[name]["kills"], aggregateScores[name]["hits"], aggregateScores[name]["shots"]));
                 }
