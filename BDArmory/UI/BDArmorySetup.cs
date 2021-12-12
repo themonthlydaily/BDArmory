@@ -3008,6 +3008,11 @@ namespace BDArmory.UI
                 }
                 if (GUI.Button(SLeftRect(++line), "Test vessel position timing."))
                 { StartCoroutine(TestVesselPositionTiming()); }
+                if (GUI.Button(SLeftRect(++line), "FS engine status"))
+                {
+                    foreach (var vessel in FlightGlobals.VesselsLoaded)
+                        FireSpitter.CheckStatus(vessel);
+                }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
                     QuitKSP();
