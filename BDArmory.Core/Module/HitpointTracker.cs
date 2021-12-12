@@ -535,13 +535,13 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 var oldHullMassAdjust = HullMassAdjust; // We need to temporarily remove the HullmassAdjust and update the part.mass to get the correct value as KSP clamps the mass to > 1e-4.
                 HullMassAdjust = 0;
                 part.UpdateMass();
-				        //partMass = part.mass - armorMass - HullMassAdjust; //part mass is taken from the part.cfg val, not current part mass; this overrides that
+                //partMass = part.mass - armorMass - HullMassAdjust; //part mass is taken from the part.cfg val, not current part mass; this overrides that
                 //need to get ModuleSelfSealingTank mass adjustment. Could move the SST module to BDA.Core
                 if (isProcWing)
                 {
                     float Safetymass = 0;
                     if (part.Modules.Contains("ModuleSelfSealingTank"))
-                        {
+                    {
                         var SST = part.Modules["ModuleSelfSealingTank"];
                         Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST);
                     }
@@ -1070,7 +1070,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 HullMassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                HullCostAdjust = -Mathf.Max(part.partInfo.cost/2, part.partInfo.cost-500);//make wooden parts cheaper, somewhat.
+                HullCostAdjust = -Mathf.Max(part.partInfo.cost / 2, part.partInfo.cost - 500);//make wooden parts cheaper, somewhat.
             }
             else if (HullTypeNum == 2)
             {
