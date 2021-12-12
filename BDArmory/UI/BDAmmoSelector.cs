@@ -66,7 +66,7 @@ namespace BDArmory.UI
                 }
                 if (bulletInfo.explosive)
                 {
-                    if (bulletInfo.fuzeType.ToLower() != "none")
+                    if (bulletInfo.fuzeType.ToLower() == "flak" || bulletInfo.fuzeType.ToLower() == "proximity")
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Flak") + " ";
                     }
@@ -127,6 +127,9 @@ namespace BDArmory.UI
             if (GUI.Button(new Rect(width - 18, 2, 16, 16), "X"))
             {
                 open = false;
+                beltString = String.Empty;
+                GUIstring = String.Empty;
+                countString = String.Empty;
             }
             line ++;
             GUI.Label(new Rect(margin, line * buttonHeight, width - 2 * margin, buttonHeight), Localizer.Format("#LOC_BDArmory_Ammo_Belt"), labelStyle);
