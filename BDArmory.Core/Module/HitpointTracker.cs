@@ -535,10 +535,17 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 var oldHullMassAdjust = HullMassAdjust; // We need to temporarily remove the HullmassAdjust and update the part.mass to get the correct value as KSP clamps the mass to > 1e-4.
                 HullMassAdjust = 0;
                 part.UpdateMass();
-                //partMass = part.mass - armorMass - HullMassAdjust; //part mass is now taken from the part.cfg val, not current part mass; this overrides that
-                if (isProcWing && part.Modules.Contains("ModuleSelfSealingTank"))
+                //partMass = part.mass - armorMass - HullMassAdjust; //part mass is taken from the part.cfg val, not current part mass; this overrides that
+                //need to get ModuleSelfSealingTank mass adjustment. Could move the SST module to BDA.Core
+                if (isProcWing)
                 {
-
+                    float Safetymass = 0;
+                    if (part.Modules.Contains("ModuleSelfSealingTank"))
+                    {
+                        var SST = part.Modules["ModuleSelfSealingTank"];
+                        Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST);
+                    }
+                    partMass = part.mass - armorMass - HullMassAdjust - Safetymass;
                 }
                 HullMassAdjust = oldHullMassAdjust; // Put the HullmassAdjust back so we can test against it when we update the hull mass.
                 if (oldPartMass != partMass)
