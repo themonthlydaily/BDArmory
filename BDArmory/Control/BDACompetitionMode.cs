@@ -2850,7 +2850,7 @@ namespace BDArmory.Control
                     {
                         var timeOfDeath = now;
                         // If player was involved in a collision, we need to wait until the collision is resolved before registering the death.
-                        if (rammingInformation[player].targetInformation.Values.Any(other => other.collisionDetected))
+                        if (rammingInformation.ContainsKey(player) && rammingInformation[player].targetInformation.Values.Any(other => other.collisionDetected))
                         {
                             rammingInformation[player].timeOfDeath = rammingInformation[player].targetInformation.Values.Where(other => other.collisionDetected).Select(other => other.collisionDetectedTime).Max();
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: Delaying death of {player} due to being involved in a collision {now - rammingInformation[player].timeOfDeath}s ago at {rammingInformation[player].timeOfDeath - competitionStartTime:F3}.");
