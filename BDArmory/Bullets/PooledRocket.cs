@@ -142,11 +142,11 @@ namespace BDArmory.Bullets
             dragVector = new Vector3();
             SetupAudio();
 
-            // Log shots fired.
+            // Log rockets fired.
             if (this.sourceVessel)
             {
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the rocket hits.
-                BDACompetitionMode.Instance.Scores.RegisterShot(sourceVesselName);
+                BDACompetitionMode.Instance.Scores.RegisterRocketFired(sourceVesselName);
             }
             else
             {

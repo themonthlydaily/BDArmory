@@ -1,8 +1,10 @@
-﻿namespace BDArmory.UI
+﻿using System.IO;
+
+namespace BDArmory.UI
 {
 	public class BDTISettings
 	{
-		public static string settingsConfigURL = "GameData/BDArmory/PluginData/settings.cfg";
+		public static string settingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/settings.cfg");
 
 		[SettingsDataField] public static bool TEAMICONS = true;
 		[SettingsDataField] public static bool SHOW_SELF = false;

@@ -1765,7 +1765,6 @@ namespace BDArmory.Modules
                                     {
                                         // Debug.Log("DEBUG immediately hit after " + pBullet.DistanceTraveled + "m and time " + iTime);
                                     }
-                                    RunTrajectorySimulation();
                                 }
                                 //heat
 
@@ -1859,8 +1858,9 @@ namespace BDArmory.Modules
             if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
                 && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
             {
-                if (CanFire(chargeAmount))                {
-                    
+                if (CanFire(chargeAmount))
+                {
+
                     var aName = vessel.GetName();
                     if (pulseLaser)
                     {

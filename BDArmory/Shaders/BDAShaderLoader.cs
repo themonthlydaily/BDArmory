@@ -44,9 +44,7 @@ namespace BDArmory.Shaders
 
         private void Awake()
         {
-            _bundlePath = KSPUtil.ApplicationRootPath + "GameData" +
-                                                    Path.DirectorySeparatorChar +
-                                                    "BDArmory" + Path.DirectorySeparatorChar + "AssetBundles";
+            _bundlePath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "AssetBundles");
         }
 
         private void Start()

@@ -446,11 +446,19 @@ namespace BDArmory.UI
                     if (spawnLocation.worldIndex != selected_index) continue;
                     if (GUI.Button(SQuarterRect(line, i++), spawnLocation.name, BDArmorySetup.BDGuiSkin.button))
                     {
-                        BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
-                        BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = spawnLocation.worldIndex;
-                        spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
-                        spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-                        VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
+                        switch (Event.current.button)
+                        {
+                            case 1: // right click
+                                VesselSpawner.spawnLocations.Remove(spawnLocation);
+                                break;
+                            default:
+                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
+                                BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = spawnLocation.worldIndex;
+                                spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
+                                spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
+                                VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
+                                break;
+                        }
                     }
                 }
                 line += (int)((i - 1) / 4);

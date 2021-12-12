@@ -6,6 +6,7 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import Union
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -13,7 +14,7 @@ parser.add_argument('-q', '--quiet', action='store_true', help="Don't print resu
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="0.1,0,0,-1,1,2e-3,2,1,5e-3,2e-3,1e-5,1e-5,0.1,0.05,2e-3,1e-3,2e-5,2e-5,0.1,0.05,0.01,0.005,1e-7,1e-7,0.05,0.02,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
+parser.add_argument('-w', '--weights', type=str, default="0.1,0,0,-1,1,2e-3,2,1,2e-2,0,2e-4,1e-4,0.05,0,2e-3,0,1e-4,5e-5,0.5,0,0.01,0,2e-5,1e-5,0.01,0,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't display cumulative scores at the end.")
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
@@ -67,11 +68,20 @@ def cumsum(l):
         yield v
 
 
+def naturalSortKey(key: Union[str, Path]):
+    if isinstance(key, Path):
+        key = key.name
+    try:
+        return int(key.rsplit(' ')[1])  # If the key ends in an integer, split that off and use that as the sort key.
+    except:
+        return key  # Otherwise, just use the key.
+
+
 for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
     if tournamentNumber > 0 and not args.quiet:
         print("")
     tournamentData = {}
-    for round in sorted(roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()) if not args.current_dir else (tournamentDir,):
+    for round in sorted((roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()), key=naturalSortKey) if not args.current_dir else (tournamentDir,):
         if not args.current_dir and len(round.name) == 0:
             continue
         tournamentData[round.name] = {}
@@ -181,10 +191,12 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         _, craft, hp = field.split(':', 2)
                         tournamentData[round.name][heat.name]['craft'][craft].update({'HPremaining': float(hp)})
                     elif field.startswith('ACCURACY:'):
-                        _, craft, accuracy = field.split(':', 2)
+                        _, craft, accuracy, rocket_accuracy = field.split(':', 3)
                         hits, shots = accuracy.split('/')
+                        rocket_strikes, rockets_fired = rocket_accuracy.split('/')
                         accuracy = CalculateAccuracy(int(hits), int(shots))
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'accuracy': accuracy, 'hits': int(hits), 'shots': int(shots)})
+                        rocket_accuracy = CalculateAccuracy(int(rocket_strikes), int(rockets_fired))
+                        tournamentData[round.name][heat.name]['craft'][craft].update({'accuracy': accuracy, 'hits': int(hits), 'shots': int(shots), 'rocket_accuracy': rocket_accuracy, 'rocket_strikes': int(rocket_strikes), 'rockets_fired': int(rockets_fired)})
                     elif field.startswith('RESULT:'):
                         heat_result = field.split(':', 2)
                         result_type = heat_result[1]
@@ -259,6 +271,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                 'battleDamageTaken': sum([sum(heat['craft'][craft]['battleDamageBy'].values()) for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'battleDamageBy' in heat['craft'][craft]]),
                 'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
                 'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
+                'rocket_accuracy': CalculateAccuracy(sum([heat['craft'][craft]['rocket_strikes'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'rocket_strikes' in heat['craft'][craft]]), sum([heat['craft'][craft]['rockets_fired'] for round in tournamentData.values() for heat in round.values() if craft in heat['craft'] and 'rockets_fired' in heat['craft'][craft]])),
             }
             for craft in craftNames
         },
@@ -384,6 +397,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'battleDamageTaken': sum([sum(heat['craft'][craft]['battleDamageBy'].values()) for heat in round.values() if craft in heat['craft'] and 'battleDamageBy' in heat['craft'][craft]]),
                         'HPremaining': CalculateAvgHP(sum([heat['craft'][craft]['HPremaining'] for heat in round.values() if craft in heat['craft'] and 'HPremaining' in heat['craft'][craft] and heat['craft'][craft]['state'] == 'ALIVE']), len([1 for heat in round.values() if craft in heat['craft'] and heat['craft'][craft]['state'] == 'ALIVE'])),
                         'accuracy': CalculateAccuracy(sum([heat['craft'][craft]['hits'] for heat in round.values() if craft in heat['craft'] and 'hits' in heat['craft'][craft]]), sum([heat['craft'][craft]['shots'] for heat in round.values() if craft in heat['craft'] and 'shots' in heat['craft'][craft]])),
+                        'rocket_accuracy': CalculateAccuracy(sum([heat['craft'][craft]['rocket_strikes'] for heat in round.values() if craft in heat['craft'] and 'rocket_strikes' in heat['craft'][craft]]), sum([heat['craft'][craft]['rockets_fired'] for heat in round.values() if craft in heat['craft'] and 'rockets_fired' in heat['craft'][craft]])),
                     } for round in tournamentData.values()
                 ] for craft in craftNames
             }
@@ -423,7 +437,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 
         if not args.quiet:  # Write results to console
             strings = []
-            headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
+            headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
             if args.score:
                 headers.insert(1, 'Score')
             summary_strings = {'header': {field: field for field in headers}}
@@ -454,7 +468,8 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'Ram': f"{tmp['ramScore']}",
                         'BD dealt': f"{tmp['battleDamage']:.0f}",
                         'BD taken': f"{tmp['battleDamageTaken']:.0f}",
-                        'Acc%': f"{tmp['accuracy']:.2f}",
+                        'Acc%': f"{tmp['accuracy']:.3g}",
+                        'RktAcc%': f"{tmp['rocket_accuracy']:.3g}",
                         'HP%': f"{tmp['HPremaining']:.2f}",
                         'Dmg/Hit': f"{tmp['damage/hit']:.1f}",
                         'Hits/Sp': f"{tmp['hits/spawn']:.1f}",
@@ -480,7 +495,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             if args.score and not args.no_cumulative:
                 name_length = max([len(name) for name in per_round_scores.keys()] + [23])
                 strings.append(f"\nName \\ Cumulative Score{' '*(name_length-23)}\t" + "\t".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
-                strings.append('\n'.join(f"{craft}:{' '*(name_length-len(craft))}\t" + "\t".join(f"{s:>7.3f}" for s in cumsum(per_round_scores[craft])) for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True)))
+                strings.append('\n'.join(f"{craft}:{' '*(name_length-len(craft))}\t" + "\t".join(f"{s:>7.2f}" for s in cumsum(per_round_scores[craft])) for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True)))
 
             # Print stuff to the console.
             for string in strings:
@@ -497,7 +512,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                 if args.score and not args.no_cumulative:
                     f.write(f"\n\nName \\ Cumulative Score Per Round," + ",".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
                     for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True):
-                        f.write(f"\n{craft}," + ",".join(f"{s:.3g}" for s in cumsum(per_round_scores[craft])))
+                        f.write(f"\n{craft}," + ",".join(f"{s:.2f}" for s in cumsum(per_round_scores[craft])))
 
     else:
         print(f"No valid log files found in {tournamentDir}.")

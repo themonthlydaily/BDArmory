@@ -10,6 +10,7 @@ using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -384,11 +385,11 @@ namespace BDArmory.UI
             LoadConfig();
 
             // Ensure AutoSpawn folder exists.
-            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")))
-            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "AutoSpawn")); }
+            if (!Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")))
+            { Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn")); }
             // Ensure GameData/Custom/Flags folder exists.
-            if (!Directory.Exists(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")))
-            { Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, "GameData", "Custom", "Flags")); }
+            if (!Directory.Exists(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "Custom", "Flags")))
+            { Directory.CreateDirectory(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "Custom", "Flags")); }
         }
 
         void Start()
@@ -2349,7 +2350,29 @@ namespace BDArmory.UI
                         { KerbalSafetyManager.Instance.ReconfigureInventories(); }
                     }
                 }
-                BDArmorySettings.HACK_INTAKES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HACK_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_IntakeHack"));// Hack Intakes
+                if (BDArmorySettings.HACK_INTAKES != (BDArmorySettings.HACK_INTAKES = GUI.Toggle(SLeftRect(++line), BDArmorySettings.HACK_INTAKES, Localizer.Format("#LOC_BDArmory_Settings_IntakeHack"))))// Hack Intakes
+                {
+                    if (HighLogic.LoadedSceneIsFlight)
+                    {
+                        VesselSpawner.Instance.HackIntakesOnNewVessels(BDArmorySettings.HACK_INTAKES);
+                        if (BDArmorySettings.HACK_INTAKES) // Add the hack to all in-game intakes.
+                        {
+                            foreach (var vessel in FlightGlobals.Vessels)
+                            {
+                                if (vessel == null || !vessel.loaded) continue;
+                                VesselSpawner.Instance.HackIntakes(vessel, true);
+                            }
+                        }
+                        else // Reset all the in-game intakes back to their part-defined settings.
+                        {
+                            foreach (var vessel in FlightGlobals.Vessels)
+                            {
+                                if (vessel == null || !vessel.loaded) continue;
+                                VesselSpawner.Instance.HackIntakes(vessel, false);
+                            }
+                        }
+                    }
+                }
 
                 if (BDArmorySettings.ADVANDED_USER_SETTINGS)
                 {
@@ -2370,6 +2393,10 @@ namespace BDArmory.UI
                     {
                         GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_AutoQuitMemoryUsage")}:  ({(BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > SystemMaxMemory ? "Off" : $"{BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD}GB")})", leftLabel); // Auto-Quit Memory Threshold
                         BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD, 1f, SystemMaxMemory + 1));
+                        if (BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD <= SystemMaxMemory)
+                        {
+                            GUI.Label(SLineRect(++line, 1), $"{Localizer.Format("#LOC_BDArmory_Settings_CurrentMemoryUsageEstimate")}: {TournamentAutoResume.memoryUsage:F1}GB / {SystemMaxMemory}GB", leftLabel);
+                        }
                     }
                 }
 
@@ -3140,7 +3167,7 @@ namespace BDArmory.UI
                     {
                         if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_RemoteSync"))) // Run Via Remote Orchestration
                         {
-                            string vesselPath = Path.Combine(Environment.CurrentDirectory, "AutoSpawn");
+                            string vesselPath = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn");
                             if (!System.IO.Directory.Exists(vesselPath))
                             {
                                 System.IO.Directory.CreateDirectory(vesselPath);
@@ -3159,6 +3186,9 @@ namespace BDArmory.UI
                                 case 33:
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
                                     break;
+                                case 44:
+                                    startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_LowGravDeployment");
+                                    break;
                                 case 50: // FIXME temporary index, to be assigned later
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartOrbitalDeployment");
                                     break;
@@ -3174,6 +3204,9 @@ namespace BDArmory.UI
                                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                                 {
                                     case 33:
+                                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                                        break;
+                                    case 44:
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     case 50: // FIXME temporary index, to be assigned later
