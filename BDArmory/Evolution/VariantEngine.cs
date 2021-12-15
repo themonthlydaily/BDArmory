@@ -118,7 +118,7 @@ namespace BDArmory.Evolution
             string[] components = key.Split('/');
             if(components.Length != 3)
             {
-                Debug.Log(string.Format("Evolution VariantEngine Feedback {0} => {1}", key, weight));
+                Debug.Log($"[BDArmory.VariantEngine]: Evolution VariantEngine Feedback {key} => {weight}");
                 return;
             }
             string part = components[0], module = components[1], param = components[2];
@@ -126,13 +126,13 @@ namespace BDArmory.Evolution
 
             if( !SaveWeightMap() )
             {
-                Debug.Log("Evolution VariantEngine failed to save weight map");
+                Debug.Log("[BDArmory.VariantEngine]: Evolution VariantEngine failed to save weight map");
             }
         }
 
         private void BuildNodeMap(ConfigNode craft)
         {
-            Debug.Log("Evolution VariantEngine BuildNodeMap");
+            Debug.Log("[BDArmory.VariantEngine]: Evolution VariantEngine BuildNodeMap");
             nodeMap.Clear();
 
             // use a fifo queue to recurse through the tree
@@ -145,7 +145,7 @@ namespace BDArmory.Evolution
                 nodeQueue.RemoveAt(0);
                 if( nextNode == null )
                 {
-                    Debug.Log("Evolution VariantEngine weird null nextNode");
+                    Debug.Log("[BDArmory.VariantEngine]: Evolution VariantEngine weird null nextNode");
                     break;
                 }
 
@@ -156,7 +156,7 @@ namespace BDArmory.Evolution
                     var partName = nextNode.GetValue("part");
                     if (nodeMap.ContainsKey(partName))
                     {
-                        Debug.Log(string.Format("Evolution VariantEngine found duplicate part {0}", partName));
+                        Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine found duplicate part {0}", partName));
                         break;
                     }
                     nodeMap[partName] = nextNode;
@@ -191,7 +191,7 @@ namespace BDArmory.Evolution
 
         private void LoadWeightMap(ConfigNode weightMapNode)
         {
-            Debug.Log("Evolution VariantEngine LoadWeightMap");
+            Debug.Log("[BDArmory.VariantEngine]: Evolution VariantEngine LoadWeightMap");
             // start with a fresh map
             mutationWeightMap.Clear();
 
@@ -205,14 +205,14 @@ namespace BDArmory.Evolution
                 }
                 catch (Exception e)
                 {
-                    Debug.Log(string.Format("Evolution VariantEngine failed to parse value {0} for key {1}: {2}", value, key, e));
+                    Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine failed to parse value {0} for key {1}: {2}", value, key, e));
                 }
             }
         }
 
         private bool SaveWeightMap()
         {
-            Debug.Log(string.Format("Evolution VariantEngine SaveWeightMap to {0}", weightMapFile));
+            Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine SaveWeightMap to {0}", weightMapFile));
             ConfigNode weights = new ConfigNode();
             foreach (var key in mutationWeightMap.Keys)
             {
@@ -223,7 +223,7 @@ namespace BDArmory.Evolution
 
         private void InitializeWeightMap(ConfigNode craft, bool shouldRandomize = true)
         {
-            Debug.Log("Evolution VariantEngine InitializeWeightMap");
+            Debug.Log("[BDArmory.VariantEngine]: Evolution VariantEngine InitializeWeightMap");
             string[] paramModules = new string[] { "BDModulePilotAI", "MissileFire" };
             // start with a fresh map
             mutationWeightMap.Clear();
@@ -238,11 +238,11 @@ namespace BDArmory.Evolution
                 List<ConfigNode> foundModules = new List<ConfigNode>();
                 FindMatchingNode(part, "MODULE", foundModules);
                 var filteredModules = foundModules.Where(e => paramModules.Contains(e.GetValue("name"))).ToList();
-                //Debug.Log(string.Format("Evolution VariantEngine init part {0} found {1} modules", part.GetValue("part"), foundModules.Count));
+                // Debug.Log(string.Format("Evolution VariantEngine init part {0} found {1} modules", part.GetValue("part"), foundModules.Count));
                 foreach (var module in filteredModules)
                 {
                     var filteredValues = includedParams.Where(e => module.HasValue(e)).ToList();
-                    //Debug.Log(string.Format("Evolution VariantEngine init part {0} module {1} found {2} params", part.GetValue("part"), module.GetValue("name"), filteredValues.Count));
+                    // Debug.Log(string.Format("Evolution VariantEngine init part {0} module {1} found {2} params", part.GetValue("part"), module.GetValue("name"), filteredValues.Count));
                     foreach (var param in filteredValues)
                     {
                         var key = MutationKey(part.GetValue("part"), module.GetValue("name"), param);
@@ -259,7 +259,7 @@ namespace BDArmory.Evolution
 
             if ( shouldRandomize )
             {
-                Debug.Log(string.Format("Evolution VariantEngine randomizing weight map with {0} keys", mutationWeightMap.Count));
+                Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine randomizing weight map with {0} keys", mutationWeightMap.Count));
                 // randomize weights slightly
                 var keys = mutationWeightMap.Keys.ToList();
                 foreach (var key in keys)
@@ -282,7 +282,7 @@ namespace BDArmory.Evolution
                     // is it mirror or radial symmetry?
                     if (parentPartNode.GetValue("symMethod") == "Radial")
                     {
-                        Debug.Log(string.Format("Evolution VariantEngine RadialSymmetry for {0}", partName));
+                        Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine RadialSymmetry for {0}", partName));
                         // multiple other parts
                         List<string> symParts = parentPartNode.GetValues("sym").ToList();
                         symParts.Add(partName);
@@ -292,7 +292,7 @@ namespace BDArmory.Evolution
                     }
                     else
                     {
-                        Debug.Log(string.Format("Evolution VariantEngine MirrorSymmetry for {0}", partName));
+                        Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine MirrorSymmetry for {0}", partName));
                         // just one other part
                         var siblingPartName = parentPartNode.GetValue("sym");
                         string[] aggParts = new string[] { partName, siblingPartName };
@@ -303,7 +303,7 @@ namespace BDArmory.Evolution
                 }
                 else
                 {
-                    Debug.Log(string.Format("Evolution VariantEngine NoSymmetry for {0} with {1}", partName, parentPartNode.GetValues("sym")));
+                    Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine NoSymmetry for {0} with {1}", partName, parentPartNode.GetValues("sym")));
                     // no symmetry, just one part
                     var key = MutationKey(partName, moduleName, paramName);
                     mutationWeightMap[key] = 1.0f;
@@ -316,7 +316,7 @@ namespace BDArmory.Evolution
             var key = MutationKey(part, module, param);
             var clampedWeight = Math.Max(-1, Math.Min(weight, 1));
             var multiplier = 1.0f + (float)(2.0*Math.Atan(clampedWeight)/Math.PI);
-            Debug.Log(string.Format("Evolution VariantEngine Backpropagate {0} => {1} ({2})", key, clampedWeight, multiplier));
+            Debug.Log(string.Format("[BDArmory.VariantEngine]: Evolution VariantEngine Backpropagate {0} => {1} ({2})", key, clampedWeight, multiplier));
             mutationWeightMap[key] *= multiplier;
         }
 
