@@ -58,7 +58,7 @@ namespace BDArmory.Control
     [Serializable]
     public class TournamentState
     {
-        public static string defaultStateFile = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/tournament.state");
+        public static string defaultStateFile = Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "PluginData", "tournament.state"));
         public uint tournamentID;
         public string savegame;
         private List<string> craftFiles; // For FFA style tournaments.
@@ -1044,8 +1044,8 @@ namespace BDArmory.Control
             if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
             {
                 evolutionState = BDAModuleEvolution.LoadState();
-                if (string.IsNullOrEmpty(evolutionState.savegame)) { Debug.Log($"DEBUG No savegame found in evolution state."); yield break; }
-                if (string.IsNullOrEmpty(evolutionState.evolutionId) || !File.Exists(Path.Combine(BDAModuleEvolution.configDirectory, evolutionState.evolutionId + ".cfg"))) { Debug.Log($"DEBUG No saved evolution configured."); yield break; }
+                if (string.IsNullOrEmpty(evolutionState.savegame)) { Debug.Log($"[BDArmory.BDATournament]: No savegame found in evolution state."); yield break; }
+                if (string.IsNullOrEmpty(evolutionState.evolutionId) || !File.Exists(Path.Combine(BDAModuleEvolution.configDirectory, evolutionState.evolutionId + ".cfg"))) { Debug.Log($"[BDArmory.BDATournament]: No saved evolution configured."); yield break; }
                 savegame = Path.Combine(savesDir, evolutionState.savegame, cleansave + ".sfs"); // First check for a "clean" save file.
                 if (!File.Exists(savegame))
                 {

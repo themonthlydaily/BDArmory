@@ -820,7 +820,7 @@ namespace BDArmory.Control
                         CheckForRenamedVessels(spawnedVessels);
 
                         // Check that none of the vessels have lost parts.
-                        if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
+                        if (spawnedVessels.Any(kvp => kvp.Value.Item1 == null || kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                         {
                             var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
                             message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1 != null ? kvp.Value.Item1.vesselName : null));
@@ -866,6 +866,7 @@ namespace BDArmory.Control
             // Reset craft positions and rotations as sometimes KSP packs and unpacks vessels between frames and resets things!
             foreach (var vesselName in spawnedVessels.Keys)
             {
+                if (spawnedVessels[vesselName].Item1 == null) continue;
                 spawnedVessels[vesselName].Item1.SetPosition(finalSpawnPositions[vesselName]);
                 spawnedVessels[vesselName].Item1.SetRotation(finalSpawnRotations[vesselName]);
             }
