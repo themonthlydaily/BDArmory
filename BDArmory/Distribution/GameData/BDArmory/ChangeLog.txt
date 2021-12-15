@@ -17,6 +17,10 @@ IMPROVEMENTS
 	- Maintain evolution state and properly add in support for auto-resuming evolutions.
 	- Add current heat to the evolution window.
 	- Include rockets fired and rocket strikes in the evolution scoring metric.
+	- Update the set of parameters the evolution engine can modify for the latest pilot AI and remove invalid ones.
+	- Limit evolved control surface authority to 150% (i.e., in-game limits).
+- Spawning:
+	- Add some checks for missing vessels during post-spawning.
 
 v1.4.13.2
 FIXES
