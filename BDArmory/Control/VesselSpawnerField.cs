@@ -8,6 +8,9 @@ namespace BDArmory.Control
 {
     public class SpawnLocation
     {
+        public static string oldSpawnLocationsCfg = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/spawn_locations.cfg");
+        public static string spawnLocationsCfg = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/spawn_locations.cfg");
+
         public string name;
         public Vector2d location;
         public int worldIndex;
@@ -79,7 +82,7 @@ namespace BDArmory.Control
         };
         public static void Save()
         {
-            ConfigNode fileNode = ConfigNode.Load(VesselSpawner.spawnLocationsCfg);
+            ConfigNode fileNode = ConfigNode.Load(SpawnLocation.spawnLocationsCfg);
             if (fileNode == null)
                 fileNode = new ConfigNode();
             if (!fileNode.HasNode("Config"))
@@ -103,19 +106,19 @@ namespace BDArmory.Control
             foreach (var spawnLocation in VesselSpawner.spawnLocations)
                 spawnLocations.AddValue("LOCATION", spawnLocation.ToString());
 
-            if (!Directory.GetParent(VesselSpawner.spawnLocationsCfg).Exists)
-            { Directory.GetParent(VesselSpawner.spawnLocationsCfg).Create(); }
-            var success = fileNode.Save(VesselSpawner.spawnLocationsCfg);
-            if (success && File.Exists(VesselSpawner.oldSpawnLocationsCfg)) // Remove the old settings if it exists and the new settings were saved.
-            { File.Delete(VesselSpawner.oldSpawnLocationsCfg); }
+            if (!Directory.GetParent(SpawnLocation.spawnLocationsCfg).Exists)
+            { Directory.GetParent(SpawnLocation.spawnLocationsCfg).Create(); }
+            var success = fileNode.Save(SpawnLocation.spawnLocationsCfg);
+            if (success && File.Exists(SpawnLocation.oldSpawnLocationsCfg)) // Remove the old settings if it exists and the new settings were saved.
+            { File.Delete(SpawnLocation.oldSpawnLocationsCfg); }
         }
 
         public static void Load()
         {
-            ConfigNode fileNode = ConfigNode.Load(VesselSpawner.spawnLocationsCfg);
+            ConfigNode fileNode = ConfigNode.Load(SpawnLocation.spawnLocationsCfg);
             if (fileNode == null)
             {
-                fileNode = ConfigNode.Load(VesselSpawner.oldSpawnLocationsCfg); // Try the old location.
+                fileNode = ConfigNode.Load(SpawnLocation.oldSpawnLocationsCfg); // Try the old location.
             }
             VesselSpawner.spawnLocations = new List<SpawnLocation>();
             if (fileNode != null)

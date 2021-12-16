@@ -1,13 +1,14 @@
 using UnityEngine;
 
+using System.IO;
 using System.Collections.Generic;
 
 namespace BDArmory.Core
 {
     public class BDArmorySettings
     {
-        public static string oldSettingsConfigURL = "GameData/BDArmory/settings.cfg"; // Migrate from the old settings file to the new one in PluginData so that we don't invalidate the ModuleManager cache.
-        public static string settingsConfigURL = "GameData/BDArmory/PluginData/settings.cfg";
+        public static string oldSettingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/settings.cfg"); // Migrate from the old settings file to the new one in PluginData so that we don't invalidate the ModuleManager cache.
+        public static string settingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/settings.cfg");
         public static bool ready = false;
 
         // Settings section toggles
@@ -279,6 +280,6 @@ namespace BDArmory.Core
 
         // Countermeasure constants
         [BDAPersistentSettingsField] public static float FLARE_FACTOR = 1.6f;                       // Change this to make flares more or less effective, values close to or below 1.0 will cause flares to fail to decoy often
-        [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 0.6f;                       // Change this to make chaff more or less effective. Higher values will make chaff batter, lower values will make chaff worse.
+        [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 0.65f;                       // Change this to make chaff more or less effective. Higher values will make chaff batter, lower values will make chaff worse.
     }
 }

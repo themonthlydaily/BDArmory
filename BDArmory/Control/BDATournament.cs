@@ -7,7 +7,7 @@ using UnityEngine;
 using BDArmory.Core;
 using BDArmory.UI;
 using BDArmory.Misc;
-using KSP.Localization;
+using BDArmory.Evolution;
 
 namespace BDArmory.Control
 {
@@ -58,6 +58,7 @@ namespace BDArmory.Control
     [Serializable]
     public class TournamentState
     {
+        public static string defaultStateFile = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/tournament.state");
         public uint tournamentID;
         public string savegame;
         private List<string> craftFiles; // For FFA style tournaments.
@@ -82,7 +83,7 @@ namespace BDArmory.Control
             folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.FFA;
-            var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);
+            var abs_folder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files does not exist.";
@@ -132,7 +133,7 @@ namespace BDArmory.Control
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
@@ -165,7 +166,7 @@ namespace BDArmory.Control
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                 BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                 BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                 BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                 true, // Kill everything first.
@@ -206,7 +207,7 @@ namespace BDArmory.Control
             folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
             tournamentType = TournamentType.Teams;
-            var abs_folder = Path.Combine(Environment.CurrentDirectory, "AutoSpawn", folder);
+            var abs_folder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
             {
                 message = "Tournament folder (" + folder + ") containing craft files or team folders does not exist.";
@@ -300,7 +301,7 @@ namespace BDArmory.Control
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
@@ -339,7 +340,7 @@ namespace BDArmory.Control
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
                                     BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
                                     BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                    BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
                                     BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
                                     BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
                                     true, // Kill everything first.
@@ -564,8 +565,7 @@ namespace BDArmory.Control
 
         #region Flags and Variables
         TournamentState tournamentState;
-        public const string defaultStateFile = "GameData/BDArmory/PluginData/tournament.state";
-        string stateFile = defaultStateFile;
+        string stateFile;
         string message;
         private Coroutine runTournamentCoroutine;
         public TournamentStatus tournamentStatus = TournamentStatus.Stopped;
@@ -590,6 +590,7 @@ namespace BDArmory.Control
             if (Instance)
                 Destroy(Instance);
             Instance = this;
+            stateFile = TournamentState.defaultStateFile;
         }
 
         void Start()
@@ -644,7 +645,7 @@ namespace BDArmory.Control
             var saveTo = stateFile;
             if (backup)
             {
-                var saveToDir = Path.GetDirectoryName(defaultStateFile);
+                var saveToDir = Path.GetDirectoryName(TournamentState.defaultStateFile);
                 saveToDir = Path.Combine(saveToDir, "Unfinished Tournaments");
                 if (!Directory.Exists(saveToDir)) Directory.CreateDirectory(saveToDir);
                 saveTo = Path.ChangeExtension(Path.Combine(saveToDir, Path.GetFileName(stateFile)), $".state-{tournamentID}");
@@ -818,7 +819,7 @@ namespace BDArmory.Control
             BDACompetitionMode.Instance.competitionStatus.Add(message);
             Debug.Log("[BDArmory.BDATournament]: " + message);
             tournamentStatus = TournamentStatus.Completed;
-            var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
+            var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(TournamentState.defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
             if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
         }
 
@@ -840,6 +841,9 @@ namespace BDArmory.Control
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                 {
                     case 33:
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                        break;
+                    case 44:
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     case 50: // FIXME temporary index, to be assigned later
@@ -983,6 +987,20 @@ namespace BDArmory.Control
         bool useCleanSave = true;
         string game;
         bool sceneLoaded = false;
+        public static float memoryUsage
+        {
+            get
+            {
+                if (_memoryUsage > 0) return _memoryUsage;
+                _memoryUsage = UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong();
+                var gfxDriver = UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver();
+                _memoryUsage += gfxDriver > 0 ? gfxDriver : 5f * (1 << 30); // Use the GfxDriver memory usage if available, otherwise estimate it at 5GB (which is a little more than what I get with no extra visual mods at ~4.5GB).
+                _memoryUsage /= (1 << 30); // In GB.
+                return _memoryUsage;
+            }
+            set { _memoryUsage = 0; } // Reset condition for calculating it again.
+        }
+        static float _memoryUsage;
 
         void Awake()
         {
@@ -1022,14 +1040,28 @@ namespace BDArmory.Control
 
         IEnumerator AutoResumeTournament()
         {
-            if (!BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            EvolutionWorkingState evolutionState = null;
+            if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            {
+                evolutionState = BDAModuleEvolution.LoadState();
+                if (string.IsNullOrEmpty(evolutionState.savegame)) { Debug.Log($"DEBUG No savegame found in evolution state."); yield break; }
+                if (string.IsNullOrEmpty(evolutionState.evolutionId) || !File.Exists(Path.Combine(BDAModuleEvolution.configDirectory, evolutionState.evolutionId + ".cfg"))) { Debug.Log($"DEBUG No saved evolution configured."); yield break; }
+                savegame = Path.Combine(savesDir, evolutionState.savegame, cleansave + ".sfs"); // First check for a "clean" save file.
+                if (!File.Exists(savegame))
+                {
+                    useCleanSave = false;
+                    savegame = Path.Combine(savesDir, evolutionState.savegame, save + ".sfs");
+                }
+                game = evolutionState.savegame;
+            }
+            else
             {
                 // Check that there is an incomplete tournament, otherwise abort.
                 bool incompleteTournament = false;
-                if (File.Exists(BDATournament.defaultStateFile)) // Tournament state file exists.
+                if (File.Exists(TournamentState.defaultStateFile)) // Tournament state file exists.
                 {
                     var tournamentState = new TournamentState();
-                    if (!tournamentState.LoadState(BDATournament.defaultStateFile)) yield break; // Failed to load
+                    if (!tournamentState.LoadState(TournamentState.defaultStateFile)) yield break; // Failed to load
                     savegame = Path.Combine(savesDir, tournamentState.savegame, cleansave + ".sfs"); // First check for a "clean" save file.
                     if (!File.Exists(savegame))
                     {
@@ -1052,13 +1084,23 @@ namespace BDArmory.Control
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load space center scene."); yield break; }
             // Switch to flight mode.
             sceneLoaded = false;
-            FlightDriver.StartWithNewLaunch("GameData/BDArmory/craft/SpawnProbe.craft", "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
+            FlightDriver.StartWithNewLaunch(VesselSpawner.spawnProbeLocation, "GameData/Squad/Flags/default.png", FlightDriver.LaunchSiteName, new VesselCrewManifest()); // This triggers an error for SpaceCenterCamera2, but I don't see how to fix it and it doesn't appear to be harmful.
             tic = Time.time;
             yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load flight scene."); yield break; }
             // Resume the tournament.
             yield return new WaitForSeconds(1);
-            if (!BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
+            {
+                tic = Time.time;
+                yield return new WaitWhile(() => (BDAModuleEvolution.Instance == null && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
+                if (BDAModuleEvolution.Instance == null) yield break;
+                BDArmorySetup.windowBDAToolBarEnabled = true;
+                BDArmorySetup.Instance.showVesselSwitcherGUI = true;
+                BDArmorySetup.Instance.showEvolutionGUI = true;
+                BDAModuleEvolution.Instance.ResumeEvolution(evolutionState);
+            }
+            else
             {
                 tic = Time.time;
                 yield return new WaitWhile(() => ((BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
@@ -1067,14 +1109,6 @@ namespace BDArmory.Control
                 BDArmorySetup.Instance.showVesselSwitcherGUI = true;
                 BDArmorySetup.Instance.showVesselSpawnerGUI = true;
                 BDATournament.Instance.RunTournament();
-            }
-            else
-            {
-                BDArmorySetup.windowBDAToolBarEnabled = true;
-                BDArmorySetup.Instance.showVesselSwitcherGUI = true;
-                Evolution.BDAModuleEvolution evolution = Evolution.BDAModuleEvolution.Instance;
-                if (evolution == null) yield break;
-                evolution.StartEvolution();
             }
         }
 
@@ -1113,7 +1147,7 @@ namespace BDArmory.Control
         public bool CheckMemoryUsage()
         {
             if ((!BDArmorySettings.AUTO_RESUME_TOURNAMENT && !BDArmorySettings.AUTO_RESUME_EVOLUTION) || BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD > BDArmorySetup.SystemMaxMemory) return false; // Only trigger if Auto-Resume Tournaments is enabled and the Quit Memory Usage Threshold is set.
-            float memoryUsage = (UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong() + UnityEngine.Profiling.Profiler.GetMonoHeapSizeLong() + UnityEngine.Profiling.Profiler.GetAllocatedMemoryForGraphicsDriver()) / (1 << 30); // In GB.
+            memoryUsage = 0; // Trigger recalculation of memory usage.
             if (memoryUsage >= BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD)
             {
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.competitionStatus.Add("Quitting in 3s due to memory usage threshold reached.");

@@ -425,18 +425,18 @@ namespace BDArmory.Modules
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringInterval"),//Firing Interval
          UI_FloatRange(minValue = 0.5f, maxValue = 60f, stepIncrement = 0.5f, scene = UI_Scene.All)]
-        public float targetScanInterval = 3;
+        public float targetScanInterval = 1;
 
         // extension for feature_engagementenvelope: burst length for guns
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringBurstLength"),//Firing Burst Length
          UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = 0.05f, scene = UI_Scene.All)]
-        public float fireBurstLength = 0;
+        public float fireBurstLength = 1;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FiringTolerance"),//Firing Tolerance
         UI_FloatRange(minValue = 0f, maxValue = 4f, stepIncrement = 0.05f, scene = UI_Scene.All)]
-        public float AutoFireCosAngleAdjustment = 1.0f; //tune Autofire angle in WM GUI
+        public float AutoFireCosAngleAdjustment = 1.4f; //tune Autofire angle in WM GUI
 
-        public float adjustedAutoFireCosAngle = 0.99863f; //increased to 3 deg from 1, max increased to v1.3.8 default of 4
+        public float adjustedAutoFireCosAngle = 0.99970f; //increased to 3 deg from 1, max increased to v1.3.8 default of 4
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_FieldOfView"),//Field of View
          UI_FloatRange(minValue = 10f, maxValue = 360f, stepIncrement = 10f, scene = UI_Scene.All)]
@@ -446,7 +446,7 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_VisualRange"),//Visual Range
          UI_FloatRange(minValue = 100f, maxValue = 200000f, stepIncrement = 100f, scene = UI_Scene.All)]
         public float
-            guardRange = 20000f;
+            guardRange = 200000f;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_GunsRange"),//Guns Range
          UI_FloatRange(minValue = 0f, maxValue = 10000f, stepIncrement = 10f, scene = UI_Scene.All)]
@@ -503,22 +503,22 @@ namespace BDArmory.Modules
         private string targetBiasLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CurrentTargetBias");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CurrentTargetBias", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Current target bias
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetBias = 1.3f;
+        public float targetBias = 1.1f;
 
         private string targetRangeLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProximity");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProximity", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Range
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightRange = 0f;
+        public float targetWeightRange = 1f;
 
         private string targetATALabel = Localizer.Format("#LOC_BDArmory_TargetPriority_CloserAngleToTarget");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_CloserAngleToTarget", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Antenna Train Angle
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightATA = 0f;
+        public float targetWeightATA = 1f;
 
         private string targetAoDLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_AngleOverDistance");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_AngleOverDistance", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Angle/Distance
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightAoD = 2f;
+        public float targetWeightAoD = 0f;
 
         private string targetAccelLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetAcceleration");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetAcceleration", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target Acceleration
@@ -548,7 +548,7 @@ namespace BDArmory.Modules
         private string targetThreatLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetThreat");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetThreat", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Target threat
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
-        public float targetWeightThreat = 0f;
+        public float targetWeightThreat = 1f;
 
         private string targetProtectVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect VIPs
@@ -1434,7 +1434,7 @@ namespace BDArmory.Modules
                         }
                         if (weaponHeatDebugStrings.Count > 0)
                         {
-							debugString.AppendLine("Weapon Heat:\n" + string.Join("\n", weaponHeatDebugStrings));
+                            debugString.AppendLine("Weapon Heat:\n" + string.Join("\n", weaponHeatDebugStrings));
                             debugString.AppendLine("Aim debugging:\n" + string.Join("\n", weaponLaserDebugStrings));
                         }
                     }
@@ -1601,7 +1601,7 @@ namespace BDArmory.Modules
                 {
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     float attemptLockTime = Time.time;
@@ -1673,7 +1673,7 @@ namespace BDArmory.Modules
 
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     float attemptStartTime = Time.time;
@@ -1776,7 +1776,7 @@ namespace BDArmory.Modules
 
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     float attemptStartTime = Time.time;
@@ -1797,7 +1797,7 @@ namespace BDArmory.Modules
                 {
                     if (SetCargoBays())
                     {
-                        yield return new WaitForSeconds(1f);
+                        yield return new WaitForSeconds(2f);
                     }
 
                     if (targetingPods.Count > 0) //if targeting pods are available, slew them onto target and lock.
@@ -2772,9 +2772,30 @@ namespace BDArmory.Modules
                             }
                         }
                 }
+                else if (uint.Parse(CurrentMissile.customBayGroup) > 0) // Missile uses a custom bay, open it to fire
+                {
+                    uint customBayGroup = uint.Parse(CurrentMissile.customBayGroup);
+                    if (!baysOpened.Contains(customBayGroup)) // We haven't opened this bay yet
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)customBayGroup]);
+                        openingBays = true;
+                        baysOpened.Add(customBayGroup);
+                    }
+                    else
+                    {
+                        foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close other custom bays that might be open 
+                        {
+                            if (bay != customBayGroup)
+                            {
+                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                                baysOpened.Remove(bay); // Bay is no longer open
+                            }
+                        }
+                    }
+                }
                 else
                 {
-                    using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
+                    using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator()) // Close normal bays
                         while (bay.MoveNext())
                         {
                             if (bay.Current == null) continue;
@@ -2791,11 +2812,17 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
+
+                    foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close custom bays
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                        baysOpened.Remove(bay); // Bay is no longer open
+                    }
                 }
             }
             else
             {
-                using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator())
+                using (var bay = VesselModuleRegistry.GetModules<ModuleCargoBay>(vessel).GetEnumerator()) // Close normal bays
                     while (bay.MoveNext())
                     {
                         if (bay.Current == null) continue;
@@ -2812,6 +2839,12 @@ namespace BDArmory.Modules
                             }
                         }
                     }
+
+                foreach (var bay in baysOpened.Where(e => e <= 16).ToList()) // Close custom bays
+                {
+                    vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)bay]);
+                    baysOpened.Remove(bay); // Bay is no longer open
+                }
             }
 
             return openingBays;
@@ -4629,7 +4662,7 @@ namespace BDArmory.Modules
             return false;
         }
 
-        void SetTarget(TargetInfo target)
+        public void SetTarget(TargetInfo target)
         {
             if (target) // We have a target
             {

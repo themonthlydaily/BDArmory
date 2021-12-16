@@ -35,7 +35,7 @@ namespace BDArmory.Core.Extension
             {
                 Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory.PartExtensions]: Standard Hitpoints Applied : " + damage);
+                    Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Applied to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {damage}");
             }
         }
 
@@ -251,7 +251,7 @@ namespace BDArmory.Core.Extension
             {
                 Dependencies.Get<DamageService>().AddHealthToPart_svc(p, healing, overcharge);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory.PartExtensions]: Standard Hitpoints Restored : " + healing);
+                    Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Restored to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {healing}");
             }
         }
         /// <summary>
