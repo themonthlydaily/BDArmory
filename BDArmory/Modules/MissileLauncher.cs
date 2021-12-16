@@ -2279,6 +2279,7 @@ namespace BDArmory.Modules
                     float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
                     output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                     output.AppendLine($"- tnt Mass: {tntMass} kg");
+                    output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadType} warhead");
                 }
                 else if (partModules.Current.moduleName == "ModuleEMP")
                 {

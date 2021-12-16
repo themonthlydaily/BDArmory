@@ -59,6 +59,8 @@ namespace BDArmory.Modules
         public float CASELevel = 0; //tier of ammo storage. 0 = nothing, ammosplosion; 1 = base, ammosplosion contained(barely), 2 = blast safely shunted outside, minimal damage to surrounding parts
 
         private float oldCaseLevel = 0;
+
+        private List<double> resourceAmount = new List<double>();
         public void Start()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -71,6 +73,12 @@ namespace BDArmory.Modules
                 }
                 else
                 {
+                    using (IEnumerator<PartResource> resource = part.Resources.GetEnumerator())
+                        while (resource.MoveNext())
+                        {
+                            if (resource.Current == null) continue;
+                            resourceAmount.Add(resource.Current.maxAmount);
+                        }
                     UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["CASELevel"].uiControlEditor;
                     ATrangeEditor.onFieldChanged = CASESetup;
                     origMass = part.mass;
@@ -103,12 +111,17 @@ namespace BDArmory.Modules
 
             if (oldCaseLevel == 2 && CASELevel != oldCaseLevel)
             {
+                int i = 0;
                 using (IEnumerator<PartResource> resource = part.Resources.GetEnumerator())
                     while (resource.MoveNext())
                     {
                         if (resource.Current == null) continue;
-                        resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.25);
-                        resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                        //if (resource.Current.maxAmount < 80) //original value < 100, at risk of fractional amount
+                        {
+                            resource.Current.maxAmount = resourceAmount[i];
+                        }
+                        //else resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.25);
+                        i++;
                     }
             }
             if (oldCaseLevel != 2 && CASELevel == 2)
@@ -117,7 +130,8 @@ namespace BDArmory.Modules
                     while (resource.MoveNext())
                     {
                         if (resource.Current == null) continue;
-                        resource.Current.maxAmount *= 0.8;
+						resource.Current.maxAmount *= 0.8;
+                        resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount);
                         resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
                     }
             }

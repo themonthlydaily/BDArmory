@@ -88,6 +88,9 @@ namespace BDArmory.Modules
             Misc.Misc.RefreshAssociatedWindows(part);
         }
 
+        [KSPField] 
+        public string warheadType = "standard";
+
         [KSPField]
         public string explModelPath = "BDArmory/Models/explosion/explosion";
 
@@ -158,6 +161,16 @@ namespace BDArmory.Modules
             }
             */
             CalculateBlast();
+            switch (warheadType.ToLower()) //make sure this is a valid entry
+            {
+                case "continuousrod":
+                    break;
+                case "shapedcharge":
+                    break;
+                default:
+                    warheadType = "standard";
+                    break;
+            }
         }
 
         public void GuiSetup()
@@ -307,12 +320,12 @@ namespace BDArmory.Modules
             {
                 Vector3 direction = default(Vector3);
 
-                if (Shaped)
+                if (warheadType.ToLower() != "standard")
                 {
                     direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
                 }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1);
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1,false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
                 hasDetonated = true;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
             }
@@ -322,9 +335,15 @@ namespace BDArmory.Modules
         {
             if (!hasDetonated && Armed)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
+                Vector3 direction = default(Vector3);
+
+                if (warheadType.ToLower() != "standard")
+                {
+                    direction = (part.transform.position + part.rb.velocity * Time.deltaTime).normalized;
+                }
                 var sourceWeapon = part.FindModuleImplementing<EngageableWeapon>();
-                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 0, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null);
+                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDExplosivePart]: " + part + " (" + (uint)(part.GetInstanceID()) + ") from " + (sourcevessel != null ? sourcevessel.vesselName : null) + " detonating.");
+                ExplosionFx.CreateExplosion(part.transform.position, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Missile, 120, part, sourcevessel != null ? sourcevessel.vesselName : null, sourceWeapon != null ? sourceWeapon.GetShortName() : null, direction, -1, false, warheadType == "standard" ? part.mass : 0, -1, 1, warheadType);
                 hasDetonated = true;
                 part.Destroy();
             }

@@ -13,6 +13,7 @@ using UnityEngine;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Core.Module;
+using BDArmory.UI;
 
 namespace BDArmory.Bullets
 {
@@ -117,6 +118,10 @@ namespace BDArmory.Bullets
         public bool hasRicocheted = false;
         public bool fuzeTriggered = false;
         private Part CurrentPart = null;
+
+        public bool isAPSprojectile = false;
+        public PooledRocket tgtRocket = null;
+        public PooledBullet tgtShell = null;
 
         public int penTicker = 0;
 
@@ -239,6 +244,10 @@ namespace BDArmory.Bullets
             {
                 sourceVesselName = null;
             }
+            if (caliber > 60)
+            {
+                BDATargetManager.FiredBullets.Add(this);
+            }
         }
 
         void OnDisable()
@@ -248,6 +257,13 @@ namespace BDArmory.Bullets
             CurrentPart = null;
             sabot = false;
             partsHit.Clear();
+            if (caliber > 60)
+            {
+                BDATargetManager.FiredBullets.Remove(this);
+            }
+            isAPSprojectile = false;
+            tgtRocket = null;
+            tgtShell = null;
         }
 
         void OnDestroy()
@@ -757,6 +773,7 @@ namespace BDArmory.Bullets
                 float Strength = Armor.Strength;
                 float safeTemp = Armor.SafeUseTemp;
                 float Density = Armor.Density;
+                float mass = Armor.armorMass;
                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                 {
                     Debug.Log("[PooledBullet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density + "; thickness: " + thickness);
@@ -793,7 +810,7 @@ namespace BDArmory.Bullets
                             {
                                 if (hitAngle < 80) //ERA isn't going to do much against near-perpendicular hits
                                 {
-                                    caliber = (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1); //increase caliber to sim sabot hitting perpendicualr instead of point-first
+                                    caliber = Mathf.Sqrt((caliber * (((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19)) + 1) * 4) / Mathf.PI); //increase caliber to sim sabot hitting perpendicualr instead of point-first
                                     bulletMass /= 2; //sunder sabot
                                                      //RA isn't going to stop sabot, but underlying part's armor will (probably)
                                     if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PooledBullet] Sabot caliber and mass now: " + caliber + ", " + bulletMass);
@@ -817,7 +834,7 @@ namespace BDArmory.Bullets
                     }
                     penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness); //RA stop round?
                 }
-                else ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactSpeed, sourceVesselName, ExplosionSourceType.Bullet);
+                else ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactSpeed, sourceVesselName, ExplosionSourceType.Bullet, mass);
             }
             else
             {
@@ -1009,10 +1026,19 @@ namespace BDArmory.Bullets
         {
             bool detonate = false;
 
-            if (distanceFromStart <= 500f) return false;
+            if (distanceTraveled <= detonationRange * 2.5f && (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Timed)) return false; //bullet not past arming distance
 
             if (!explosive || tntMass <= 0) return false;
 
+            if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
+            {
+                if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange/2)
+                {
+                    if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                        Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
+                    return detonate = true;
+                }
+            }
             if (fuzeType == BulletFuzeTypes.Timed || fuzeType == BulletFuzeTypes.Flak)
             {
                 if (distanceFromStart > maxAirDetonationRange || distanceFromStart > defaultDetonationRange)
@@ -1111,7 +1137,6 @@ namespace BDArmory.Bullets
             // High Explosive Detonation
             ///////////////////////////////////////////////////////////////////////
             if (fuzeType == BulletFuzeTypes.None) return false;
-            if (distanceTraveled <= detonationRange * 2.5f && (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Timed)) return false; //bullet not past arming distance
             if (hitPart == null || hitPart.vessel != sourceVessel)
             {
                 //if bullet hits and is HE, detonate and kill bullet
@@ -1161,7 +1186,7 @@ namespace BDArmory.Bullets
             bulletTrail.endWidth = tracerEndWidth * factor * randomWidthScale;
         }
 
-        void KillBullet()
+        public void KillBullet()
         {
             gameObject.SetActive(false);
         }

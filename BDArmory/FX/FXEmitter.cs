@@ -15,6 +15,7 @@ namespace BDArmory.FX
         private float Power { get; set; }
         private float emitTime { get; set; }
         private float maxTime { get; set; }
+        private bool overrideLifeTime { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Direction { get; set; }
         public float TimeIndex => Time.time - StartTime;
@@ -75,7 +76,7 @@ namespace BDArmory.FX
         {
             if (!gameObject.activeInHierarchy) return;
 
-            if (!disabled && TimeIndex > emitTime && pEmitters != null)
+            if (!disabled && TimeIndex > (overrideLifeTime ? maxTime : emitTime) && pEmitters != null)
             {
                 foreach (var pe in pEmitters)
                 {
@@ -95,7 +96,7 @@ namespace BDArmory.FX
                 transform.position -= FloatingOrigin.OffsetNonKrakensbane;
             }
 
-            if (disabled && TimeIndex > particlesMaxEnergy)
+            if ((disabled || overrideLifeTime) && TimeIndex > particlesMaxEnergy)
             {
                 gameObject.SetActive(false);
                 return;
@@ -130,7 +131,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3), bool scaleEmitter = false)
+        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3), bool scaleEmitter = false, bool fixedLifetime = false)
         {
             CreateObjectPool(ModelPath, soundPath);
 
@@ -158,6 +159,7 @@ namespace BDArmory.FX
             eFx.Power = scale;
             eFx.emitTime = time;
             eFx.maxTime = lifeTime;
+            eFx.overrideLifeTime = fixedLifetime;
             eFx.pEmitters = newFX.GetComponentsInChildren<KSPParticleEmitter>();
             if (!String.IsNullOrEmpty(soundPath))
             {

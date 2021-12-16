@@ -113,7 +113,7 @@ namespace BDArmory.FX
                     ModuleSelfSealingTank FBX;
                     FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
                     FBX.Extinguishtank();
-                    if (FBX.InertTank) burnTime = 0;
+                    if (FBX.InertTank) burnTime = 0.05f; //check is looking for > 0, value of 0 not getting caught.
                     /*
                     if (FBX.FireBottles > 0)
                     {
@@ -357,8 +357,8 @@ namespace BDArmory.FX
             {
                 foreach (var pe in pEmitters)
                 {
-                    pe.maxSize = burnScale;
-                    pe.minSize = burnScale * 1.2f;
+                    pe.minSize = burnScale;
+                    pe.maxSize = burnScale * 1.2f;
                 }
             }
             if (disableTime > 0 && Time.time - disableTime > _highestEnergy) //wait until last emitted particle has finished

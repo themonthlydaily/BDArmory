@@ -455,6 +455,7 @@ namespace BDArmory.FX
                                     leakcount++;
                                 }
                                 leak.drainDuration = 0;
+                                Debug.Log("[BullethitFX] Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
                                 AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
                             }
                         }

@@ -611,9 +611,27 @@ namespace BDArmory.Modules
                         weapon.Current.visualTargetPart = null;
                         weapon.Current.autoFire = false;
                         weapon.Current.aiControlled = false;
+                        if (weapon.Current.isAPS)
+                        {
+                            weapon.Current.DisableWeapon();
+                            weapon.Current.aiControlled = false;
+                        }
                     }
                 weaponIndex = 0;
                 selectedWeapon = null;
+            }
+            else
+            {
+                using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                    while (weapon.MoveNext())
+                    {
+                        if (weapon.Current == null) continue;
+                        if (weapon.Current.isAPS)
+                        {
+                            weapon.Current.EnableWeapon();
+                            weapon.Current.aiControlled = true;
+                        }
+                    }
             }
         }
 
@@ -2450,7 +2468,12 @@ namespace BDArmory.Modules
                     {
                         continue;
                     }
-
+                    //dont add APS
+                    if ((weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser) &&
+                        weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>().isAPS)
+                    {
+                        continue;
+                    }
                     if (!alreadyAdded)
                     {
                         weaponTypes.Add(weapon.Current);
@@ -3996,14 +4019,15 @@ namespace BDArmory.Modules
                         if (candidateClass != WeaponClasses.Missile) continue;
                         if (missilesAway >= maxMissilesOnTarget) continue;// Max missiles are fired, try another weapon
                         MissileLauncher mlauncher = item.Current as MissileLauncher;
-                        bool EMP = ((MissileLauncher)item.Current).EMP;
-                        if (EMP && target.isDebilitated) continue;
 
-                        if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
                         float candidateTDPS = 0f;
 
                         if (mlauncher != null)
                         {
+                            bool EMP = ((MissileLauncher)item.Current).EMP;
+                            if (EMP && target.isDebilitated) continue;
+                            if (vessel.Splashed && (BDArmorySettings.BULLET_WATER_DRAG && FlightGlobals.getAltitudeAtPos(mlauncher.transform.position) < 0)) continue;
+
                             candidateTDPS = mlauncher.thrust + mlauncher.maxTurnRateDPS;
                         }
                         else
@@ -4398,7 +4422,7 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                    } //add waterspray FX for bullets hitting water - will need to build waterspray .mu, and make a short waterhitFX class (unless bullethit already covers this?) to run the anim and delete when done
+                    } 
             }
 
             // return result of weapon selection
@@ -4460,7 +4484,7 @@ namespace BDArmory.Modules
             if (!engageableWeapon.engageEnabled) return true;
             //if (distanceToTarget < engageableWeapon.GetEngagementRangeMin()) return false; //covered in weapon select logic
             //if (distanceToTarget > engageableWeapon.GetEngagementRangeMax()) return false;
-            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() * 1.1f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
+            if (distanceToTarget > (engageableWeapon.GetEngagementRangeMax() * 1.2f)) return false; //have Ai begin to preemptively lead target, instead of frantically doing so after weapon in range
 
             switch (weaponCandidate.GetWeaponClass())
             {
@@ -4838,7 +4862,7 @@ namespace BDArmory.Modules
             UpdateGuardViewScan();
 
             //setting turrets to guard mode
-            if (selectedWeapon != null && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
+            if (selectedWeapon != null && selectedWeapon != previousSelectedWeapon && (selectedWeapon.GetWeaponClass() == WeaponClasses.Gun || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser))
             {
                 //make this not have to go every frame
                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
@@ -4849,8 +4873,11 @@ namespace BDArmory.Modules
                         {
                             if (weapon.Current.turret != null && (weapon.Current.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) // Put other turrets into standby instead of disabling them if they have ammo.
                             {
-                                weapon.Current.StandbyWeapon();
-                                weapon.Current.aiControlled = true;
+                                if (!weapon.Current.isAPS)
+                                {
+                                    weapon.Current.StandbyWeapon();
+                                    weapon.Current.aiControlled = true;
+                                }
                             }
                             continue;
                         }
@@ -5545,16 +5572,18 @@ namespace BDArmory.Modules
                     if (weapon.Current == null) continue;
                     if (selectedWeapon == null)
                     {
-                        weapon.Current.DisableWeapon();
+                        if (!weapon.Current.isAPS) weapon.Current.DisableWeapon();
                     }
                     else if (weapon.Current.GetShortName() != selectedWeapon.GetShortName())
                     {
                         if (weapon.Current.turret != null && (weapon.Current.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) // Put turrets in standby (tracking only) mode instead of disabling them if they have ammo.
                         {
-                            weapon.Current.StandbyWeapon();
+                            if (!weapon.Current.isAPS) weapon.Current.StandbyWeapon();
                         }
                         else
-                            weapon.Current.DisableWeapon();
+                        {
+                            if (!weapon.Current.isAPS) weapon.Current.DisableWeapon();
+                        }
                     }
                     else
                     {

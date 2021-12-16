@@ -296,7 +296,7 @@ namespace BDArmory.FX
                             //scaling calc is roughly SqRt( 400 * (6x))
                             FXEmitter.CreateFX(transform.position, scale, flashModelPath, blastSoundPath, 0.3f, -1, default, true);
                             FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, blastSoundPath, 0.3f, -1, default, true);
-                            FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Max(30 * scale, 30f), default, true);
+                            FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
                         }
                         if (Misc.Misc.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
                         {
@@ -304,8 +304,8 @@ namespace BDArmory.FX
                             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
                             double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
 
-                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, plumeModelPath, blastSoundPath, 30f, Mathf.Max(30 * scale, 30f), default, true);
-                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, blastSoundPath, 1.5f, Mathf.Max(30 * scale, 30f), default, true) ;
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, plumeModelPath, blastSoundPath, Mathf.Clamp(30 * scale, 30f, 90f), Mathf.Clamp(30 * scale, 30f, 90f), default, true, true);
+                            FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true) ;
                         }
                     }
                     if (LightFx != null) LightFx.intensity -= 12 * Time.deltaTime;
@@ -405,7 +405,7 @@ namespace BDArmory.FX
                         EMP.softEMP = false;
                     }
                 }
-                double blastImpulse = Mathf.Pow(3.01f * 1100f / realDistance, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot * (radiativeArea / 3f);
+                double blastImpulse = Mathf.Pow(3.01f * 1100f / realDistance, 1.25f) * 6.894f * lastValidAtmDensity * yieldCubeRoot; // * (radiativeArea / 3f); pascals/m isn't going to increase if a larger surface area, it's still going go be same force
                 if (blastImpulse > 0)
                 {
                     if (rb != null && rb.mass > 0)
@@ -417,7 +417,7 @@ namespace BDArmory.FX
                         else
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.NukeTest]: Applying " + blastImpulse.ToString("0.0") + " impulse to " + part + " of mass " + part.mass + " at distance " + realDistance + "m");
-                            part.rb.AddForceAtPosition((part.transform.position - transform.position).normalized * (float)blastImpulse, part.transform.position, ForceMode.Impulse);
+                            part.rb.AddForceAtPosition((part.transform.position - transform.position).normalized * ((float)blastImpulse * (radiativeArea / 3f)), part.transform.position, ForceMode.Impulse);
                         }
                     }
                     // Add Reverse Negative Event
@@ -432,7 +432,7 @@ namespace BDArmory.FX
                     float damage = 0;
                     //float blastDamage = ((float)((yield * (45000000 * BDArmorySettings.EXP_DMG_MOD_MISSILE)) / (4f * Mathf.PI * realDistance * realDistance) * (radiativeArea / 2f)));
                     //this shouldn't scale linearly
-                    float blastDamage = (float)blastImpulse * BDArmorySettings.EXP_DMG_MOD_MISSILE;
+                    float blastDamage = (float)blastImpulse; //* BDArmorySettings.EXP_DMG_MOD_MISSILE; //DMG_Mod is substantially increasing blast radius above what it should be
                     if (float.IsNaN(blastDamage))
                     {
                         Debug.LogWarning("[BDArmory.NukeFX]: blast damage is NaN. distToG0: " + realDistance + ", yield: " + yield + ", part: " + part + ", radiativeArea: " + radiativeArea);
