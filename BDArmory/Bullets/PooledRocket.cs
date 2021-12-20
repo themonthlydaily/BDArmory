@@ -60,7 +60,7 @@ namespace BDArmory.Bullets
         float lifeTime = 10;
 
         Vector3 prevPosition;
-        Vector3 currPosition;
+        public Vector3 currPosition;
         Vector3 startPosition;
         bool startUnderwater = false;
         Ray RocketRay;
@@ -405,7 +405,7 @@ namespace BDArmory.Bullets
                                 float Strength = Armor.Strength;
                                 float safeTemp = Armor.SafeUseTemp;
                                 float Density = Armor.Density;
-                                float mass = Armor.armorMass;
+                                int armorType = (int)Armor.ArmorTypeNum;
                                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                                 {
                                     Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
@@ -446,7 +446,7 @@ namespace BDArmory.Bullets
                                     }
                                     penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness); //RA stop round?
                                 }
-                                else ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName(), ExplosionSourceType.Rocket, mass);
+                                else ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName(), ExplosionSourceType.Rocket, armorType);
 
                                 //calculate return bullet post-pen vel
                                 //calculate armor damage

@@ -76,12 +76,15 @@ namespace BDArmory.FX
         {
             if (!gameObject.activeInHierarchy) return;
 
-            if (!disabled && TimeIndex > (overrideLifeTime ? maxTime : emitTime) && pEmitters != null)
+            if (!disabled && TimeIndex > emitTime && pEmitters != null)
             {
-                foreach (var pe in pEmitters)
+                if (!overrideLifeTime)
                 {
-                    if (pe == null) continue;
-                    pe.emit = false;
+                    foreach (var pe in pEmitters)
+                    {
+                        if (pe == null) continue;
+                        pe.emit = false;
+                    }
                 }
                 disabled = true;
             }

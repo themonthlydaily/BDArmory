@@ -51,7 +51,6 @@ namespace BDArmory.FX
 
         static RaycastHit[] lineOfSightHits;
         static RaycastHit[] reverseHits;
-        Ray SCRay;
         static Collider[] overlapSphereColliders;
         public static List<Part> IgnoreParts;
         public static List<DestructibleBuilding> IgnoreBuildings;
@@ -175,6 +174,102 @@ namespace BDArmory.FX
                         break;
                 }
             }
+            if (warheadType == WarheadTypes.ShapedCharge)
+            {
+                Vector3 ShapedCEndPoint = Position + Direction * Range;
+                Ray SCRay = new Ray(Position, ShapedCEndPoint - Position);
+                var hits = Physics.RaycastAll(SCRay, Range, 9076737);
+                Debug.Log("[ExplosionFX] SC plasmaJet raycast hits: " + hits.Length);
+                if (hits.Length > 0)
+                {
+                    var orderedHits = hits.OrderBy(x => x.distance);
+
+                    using (var hitsEnu = orderedHits.GetEnumerator())
+                    {
+                        while (hitsEnu.MoveNext())
+                        {
+                            RaycastHit SChit = hitsEnu.Current;
+                            Part hitPart = null;
+
+                            hitPart = SChit.collider.gameObject.GetComponentInParent<Part>();
+
+                            if (hitPart != null)
+                            {
+                                if (ProjectileUtils.IsIgnoredPart(hitPart)) continue; // Ignore ignored parts.
+                                if (hitPart.vessel.GetName() == SourceVesselName) continue;  //avoid autohit;
+                                if (hitPart.mass > 0 && !explosionEventsPartsAdded.Contains(hitPart))
+                                {
+                                    var damaged = ProcessPartEvent(hitPart, sourceVesselName, explosionEventsPreProcessing, explosionEventsPartsAdded, true);
+                                    // If the explosion derives from a missile explosion, count the parts damaged for missile hit scores.
+                                    if (damaged && BDACompetitionMode.Instance)
+                                    {
+                                        bool registered = false;
+                                        var damagedVesselName = hitPart.vessel != null ? hitPart.vessel.GetName() : null;
+                                        switch (ExplosionSource)
+                                        {
+                                            case ExplosionSourceType.Rocket:
+                                                if (BDACompetitionMode.Instance.Scores.RegisterRocketHit(sourceVesselName, damagedVesselName, 1))
+                                                    registered = true;
+                                                break;
+                                            case ExplosionSourceType.Missile:
+                                                if (BDACompetitionMode.Instance.Scores.RegisterMissileHit(sourceVesselName, damagedVesselName, 1))
+                                                    registered = true;
+                                                break;
+                                        }
+                                        if (registered)
+                                        {
+                                            if (explosionEventsVesselsHit.ContainsKey(damagedVesselName))
+                                                ++explosionEventsVesselsHit[damagedVesselName];
+                                            else
+                                                explosionEventsVesselsHit[damagedVesselName] = 1;
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                DestructibleBuilding building = SChit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
+
+                                if (building != null)
+                                {
+                                    if (!explosionEventsBuildingAdded.Contains(building))
+                                    {
+                                        ProcessBuildingEvent(building, explosionEventsPreProcessing, explosionEventsBuildingAdded);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (BDArmorySettings.DRAW_DEBUG_LINES)
+                    {
+                        LineRenderer lr = new LineRenderer();
+                        lr = GetComponent<LineRenderer>();
+                        if (!lr)
+                        {
+                            lr = gameObject.AddComponent<LineRenderer>();
+                        }
+                        lr.enabled = true;
+                        lr.startWidth = .1f;
+                        lr.endWidth = 1;
+                        lr.SetPosition(0, Position);
+                        lr.SetPosition(1, orderedHits.LastOrDefault().point);
+                    }
+                }
+                if (BDArmorySettings.DRAW_DEBUG_LINES)
+                {
+                    LineRenderer lr = new LineRenderer();
+                    lr = GetComponent<LineRenderer>();
+                    if (!lr)
+                    {
+                        lr = gameObject.AddComponent<LineRenderer>();
+                    }
+                    lr.enabled = true;
+                    lr.startWidth = .1f;
+                    lr.endWidth = 1;
+                    lr.SetPosition(0, Position);
+                    lr.SetPosition(1, ShapedCEndPoint);
+                }
+            }
             var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(Position, Range, overlapSphereColliders, 9076737);
             if (overlapSphereColliderCount == overlapSphereColliders.Length)
             {
@@ -235,7 +330,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-            }
+            }            
             if (explosionEventsVesselsHit.Count > 0)
             {
                 if (ExplosionSource != ExplosionSourceType.Rocket) // Bullet explosions aren't registered in explosionEventsVesselsHit.
@@ -268,6 +363,7 @@ namespace BDArmory.FX
                     }
                 }
             }
+            Debug.Log("[BDArmory.ExplosionFX] explosion hit debugging; " + explosionEventsPartsAdded.Count + " parts detected by explosion");
             return explosionEventsPreProcessing;
         }
 
@@ -291,7 +387,7 @@ namespace BDArmory.FX
             }
         }
 
-        private bool ProcessPartEvent(Part part, string sourceVesselName, List<BlastHitEvent> eventList, List<Part> partsAdded)
+        private bool ProcessPartEvent(Part part, string sourceVesselName, List<BlastHitEvent> eventList, List<Part> partsAdded, bool angleOverride = false)
         {
             RaycastHit hit;
             float distance = 0;
@@ -311,7 +407,8 @@ namespace BDArmory.FX
                             HitPoint = hit.point,
                             Hit = hit,
                             SourceVesselName = sourceVesselName,
-                            IntermediateParts = intermediateParts
+                            IntermediateParts = intermediateParts,
+                            withinAngleofEffect = angleOverride ? true : (IsAngleAllowed(Direction, hit, part))
                         });
                     }
                     if (warheadType == WarheadTypes.Standard && ProjMass > 0 && distance <= Range * 2)
@@ -329,11 +426,12 @@ namespace BDArmory.FX
         {
             if (direction == default(Vector3))
             {
+                Debug.Log("[ExplosionFX] Default Direction param! " + p.name + " angle from explosion dir irrelevant!");
                 return true;
             }
             if (warheadType == WarheadTypes.ContinuousRod)
             {
-                Debug.Log("[ExplosionFX] part at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from explosion direction");
+                Debug.Log("[ExplosionFX] " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from CR explosion direction");
                 if (Vector3.Angle(direction, (hit.point - Position).normalized) >= 75 && Vector3.Angle(direction, (hit.point - Position).normalized) <= 105)
                 {
                     return true;
@@ -342,35 +440,8 @@ namespace BDArmory.FX
             }
             else
             {
-                if (warheadType == WarheadTypes.Standard)
-                {
-                    Debug.Log("[ExplosionFX] part at " + Vector3.Angle(direction, (hit.point - Position).normalized) + " angle from explosion direction");
-                    return (Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect);
-                }
-                if (warheadType == WarheadTypes.ShapedCharge) 
-                {
-                    SCRay = new Ray(Position, Direction * Range - Position);
-                    var hits = Physics.RaycastAll(SCRay, Range, 9076737);
-                    if (hits.Length > 0)
-                    {
-                        var orderedHits = hits.OrderBy(x => x.distance);
-
-                        using (var hitsEnu = orderedHits.GetEnumerator())
-                        {
-                            while (hitsEnu.MoveNext())
-                            {
-                                Part partHit = hitsEnu.Current.collider.GetComponentInParent<Part>();
-                                if (partHit == null) continue;
-                                if (ProjectileUtils.IsIgnoredPart(partHit)) continue; // Ignore ignored parts.
-                                if (partHit == p)
-                                {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-                return false;
+                Debug.Log("[ExplosionFX] " + p.name + " at " + Vector3.Angle(direction, (hit.point - Position).normalized) + $" angle from {warheadType} explosion direction");
+                return (Vector3.Angle(direction, (hit.point - Position).normalized) <= AngleOfEffect);
             }
         }
 
@@ -509,6 +580,50 @@ namespace BDArmory.FX
             }
         }
 
+        void OnGUI()
+        {
+            if (HighLogic.LoadedSceneIsFlight && BDArmorySettings.DRAW_DEBUG_LINES)
+            {
+                if (warheadType == WarheadTypes.ContinuousRod)
+                {
+                    if (explosionEventsPartsAdded.Count > 0)
+                    {
+                        for (int i = 0; i < explosionEventsPartsAdded.Count; i++)
+                        {
+                            RaycastHit hit;
+                            float distance;
+                            List<Tuple<float, float, float>> intermediateParts;
+
+                            try
+                            {
+                                Part part = explosionEventsPartsAdded[i];
+                                if (IsInLineOfSight(part, null, out hit, out distance, out intermediateParts))
+                                {
+                                    if (IsAngleAllowed(Direction, hit, explosionEventsPartsAdded[i]))
+                                    {
+                                        BDGUIUtils.DrawLineBetweenWorldPositions(Position, hit.point, 2, Color.blue);
+                                    }
+                                    if (distance < Range / 2)
+                                    {
+                                        BDGUIUtils.DrawLineBetweenWorldPositions(Position, hit.point, 2, Color.red);
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                Debug.Log("[BDArmory.ExplosioNFX] nullref in ContinuousRod Debug lines in  onGUI");
+                            }
+                        }
+                    }
+                }
+                if (warheadType == WarheadTypes.ShapedCharge)
+                {
+                    BDGUIUtils.DrawLineBetweenWorldPositions(Position, (Position + Direction * Range), 4, Color.green);
+                }
+            }
+        }
+
+
         private void ExecuteBuildingBlastEvent(BuildingBlastHitEvent eventToExecute)
         {
             //TODO: Review if the damage is sensible after so many changes
@@ -551,18 +666,20 @@ namespace BDArmory.FX
             if (!eventToExecute.IsNegativePressure)
             {
                 BlastInfo blastInfo;
-                bool withinAngleofEffect = false;
-                Debug.Log("[ExplosionFX] Beginning EPBE on " + part.name);
 
-                if (IsAngleAllowed(Direction, eventToExecute.Hit, part)) //within AoE of shapedCharge, or otherwise standard blast
+                if (eventToExecute.withinAngleofEffect) //within AoE of shaped warheads, or otherwise standard blast
                 {
                     blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, vesselMass * 1000f, Power, Range);
-                    withinAngleofEffect = true;
                 }
-                else //majority of force concentrated in blast cone for shapedCharge warheads, not going to apply much force to stuff outside 
+                else //majority of force concentrated in blast cone for shaped warheads, not going to apply much force to stuff outside 
                 {
-                    blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, vesselMass * 1000f, Power/4, Range/9);
+                    if (realDistance < Range / 2)
+                    {
+                        blastInfo = BlastPhysicsUtils.CalculatePartBlastEffects(part, realDistance, vesselMass * 1000f, Power / 4, Range / 2);
+                    }
+                    else return;
                 }
+                Debug.Log("[ExplosionFX] " + part.name + " Within AoE of detonation: " + eventToExecute.withinAngleofEffect);
                 // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armor in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
                 // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
                 var damageWithoutIntermediateParts = blastInfo.Damage;
@@ -633,7 +750,7 @@ namespace BDArmory.FX
                     }
                     else
                     {
-                        if ((warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.ContinuousRod) && withinAngleofEffect)
+                        if ((warheadType == WarheadTypes.ShapedCharge || warheadType == WarheadTypes.ContinuousRod) && eventToExecute.withinAngleofEffect)
                         {
                             float HitAngle = Vector3.Angle((eventToExecute.HitPoint + rb.velocity * TimeIndex - Position).normalized, -eventToExecute.Hit.normal);
                             float anglemultiplier = (float)Math.Cos(Math.PI * HitAngle / 180.0);
@@ -816,7 +933,8 @@ namespace BDArmory.FX
             eFx.dmgMult = dmgMutator;
             eFx.pEmitters = newExplosion.GetComponentsInChildren<KSPParticleEmitter>();
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
-            switch (type.ToLower())
+            type = type.ToLower();
+            switch (type)
             {
                 case "continuousrod":
                     eFx.warheadType = WarheadTypes.ContinuousRod;
@@ -833,6 +951,11 @@ namespace BDArmory.FX
                     eFx.warheadType = WarheadTypes.Standard;
                     eFx.AngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
                     break;
+            }
+            if (direction == default(Vector3))
+            {
+                eFx.warheadType = WarheadTypes.Standard;
+                Debug.Log("[BDArmory.ExplosionFX]: No direction param specified, defaulting warhead type!");
             }
             if (tntMassEquivalent <= 5)
             {
@@ -872,6 +995,7 @@ namespace BDArmory.FX
         public float NegativeForce { get; set; }
         public string SourceVesselName { get; set; }
         public List<Tuple<float, float, float>> IntermediateParts { get; set; } // distance, HP, armour
+        public bool withinAngleofEffect { get; set; }
     }
 
     internal class BuildingBlastHitEvent : BlastHitEvent
