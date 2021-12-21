@@ -26,7 +26,6 @@ namespace BDArmory.Modules
 
         private float updateTimer = 0;
         private float armorthickness = 1;
-        private float Oldthickness = 1;
 
         [KSPField]
         public string ArmorTransformName = "ArmorTransform"; //transform of armor panel mesh/box collider
@@ -185,17 +184,19 @@ namespace BDArmory.Modules
             }
         }
         /// //////////////////////////////////
-        //Borrowed from ProceduralParts
+        //Borrowed/modified from ProceduralParts
         public virtual void HandleLengthChange(float length, float oldLength)
         {
             float trans = length - oldLength;
 
-            MoveNode(N1, N1.position + (N1Transform.forward * (trans / 2)));
+            //MoveNode(N1, N1.position + (N1Transform.forward * (trans / 2)));
+            N1.position.z = N1.position.z + (trans / 2);
             if (N1.attachedPart is Part N1pushTarget)
             {
                 TranslatePart(N1pushTarget, N1Transform.forward * (trans / 2));
             }
-            MoveNode(N3, N3.position + (N3Transform.forward * (trans / 2)));
+            //MoveNode(N3, N3.position + (N3Transform.forward * (trans / 2)));
+            N3.position.z = N3.position.z + (-trans / 2); 
             if (N3.attachedPart is Part N3pushTarget)
             {
                 TranslatePart(N3pushTarget, -N3Transform.forward * (trans / 2));
@@ -220,12 +221,14 @@ namespace BDArmory.Modules
         public virtual void HandleWidthChange(float width, float oldWidth)
         {
             float trans = width - oldWidth;
-            MoveNode(N2, N2.position + (-N2Transform.right * (trans / 2)));
+            //MoveNode(N2, N2.position + (-N2Transform.right * (trans / 2)));
+            N2.position.x = N2.position.x + (-trans / 2); 
             if (N2.attachedPart is Part N2pushTarget)
             {
                 TranslatePart(N2pushTarget, -N2Transform.right * (trans / 2));
             }
-            MoveNode(N4, N4.position + (N4Transform.right * (trans / 2)));
+            //MoveNode(N4, N4.position + (N4Transform.right * (trans / 2)));
+            N4.position.x = N4.position.x + (trans / 2); 
             if (N4.attachedPart is Part N4pushTarget)
             {
                 TranslatePart(N4pushTarget, N4Transform.right * (trans / 2));
@@ -246,28 +249,7 @@ namespace BDArmory.Modules
             }
             
         }
-        private void MoveNode(AttachNode node, Vector3 destination) 
-        {
-            if (Vector3.Distance(node.position, destination) > 0.01f)
-            {
-                if (node.nodeTransform is Transform)
-                {
-                    node.nodeTransform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-                    node.nodeTransform.Translate(destination, Space.Self); //so lets try this method again - TESTME
-
-                    //Vector3 worldSpaceTranslation = part.transform.TransformVector(destination); //this isn't moving nodes, and I don't know why; gone through ProcParts code and I'm net seeing what I've missed
-                    //node.nodeTransform.transform.Translate(worldSpaceTranslation, Space.World);
-
-                    Debug.Log($"[BDAA] MoveNode() moved {node.id} from {node.position} to {destination} = {part.transform.TransformPoint(destination)} (worldspace) via transform translation");
-                }
-                else
-                {
-                    node.position = destination;
-                    Debug.Log($"[BDAA] MoveNode() moved {node.id} from {node.position} to {destination} = {part.transform.TransformPoint(destination)} (worldspace) via NodePos = destination ");
-                }
-                node.originalPosition = node.position;
-            }
-        }
+        
         public Part GetEldestParent(Part p) => (p.parent is null) ? p : GetEldestParent(p.parent);
         public void TranslatePart(Part pushTarget, Vector3 translation)
         {
