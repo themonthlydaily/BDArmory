@@ -116,7 +116,7 @@ namespace BDArmory.FX
                         emission.enabled = true;
                         EffectBehaviour.AddParticleEmitter(pe);
                     }
-
+                LightFx = gameObject.GetComponent<Light>();
                 LightFx.range = 0;
             }
         }
@@ -137,7 +137,6 @@ namespace BDArmory.FX
             explosionEventsPartsAdded.Clear();
             explosionEventsBuildingAdded.Clear();
             explosionEventsVesselsHit.Clear();
-
         }
 
         private void CalculateBlastEvents()
@@ -533,7 +532,7 @@ namespace BDArmory.FX
                 if (soundClip == null)
                 {
                     Debug.LogError("[BDArmory.ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
-                    soundClip = GameDatabase.Instance.GetAudioClip(ModuleWeapon.defaultExplSoundPath);
+                    soundClip = GameDatabase.Instance.GetAudioClip("BDArmory/Models/explosion/nuke/nukeBoom");
                 }
                 var eFx = templateFX.AddComponent<NukeFX>();
                 eFx.ExSound = soundClip;
@@ -541,6 +540,7 @@ namespace BDArmory.FX
                 eFx.audioSource.minDistance = 0;
                 eFx.audioSource.maxDistance = radius * 3;
                 eFx.audioSource.spatialBlend = 1;
+                eFx.audioSource.volume = 5;
                 eFx.LightFx = templateFX.AddComponent<Light>();
                 eFx.LightFx.color = Misc.Misc.ParseColor255("255,238,184,255");
                 eFx.LightFx.intensity = radius / 3;

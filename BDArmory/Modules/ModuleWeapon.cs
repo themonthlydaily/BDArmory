@@ -3240,7 +3240,7 @@ namespace BDArmory.Modules
                                         Debug.LogError("[BDArmory.ModuleWeapon]: NullReferenceException while simulating trajectory: " + e.Message);
                                     }
                                 }
-                                //else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. //not really an issue at present, since rockets will immediately detonate if fired underwater - SI
+                                //else if (FlightGlobals.getAltitudeAtPos(simCurrPos) < 0) // Note: this prevents aiming below sea-level. 
                                 //{
                                 //    bulletPrediction = simCurrPos;
                                 //   simulating = false;

@@ -176,10 +176,9 @@ namespace BDArmory.FX
             }
             if (warheadType == WarheadTypes.ShapedCharge)
             {
-                Vector3 ShapedCEndPoint = Position + Direction * Range;
-                Ray SCRay = new Ray(Position, ShapedCEndPoint - Position);
+                Ray SCRay = new Ray(Position, (Direction.normalized * Range));
                 var hits = Physics.RaycastAll(SCRay, Range, 9076737);
-                Debug.Log("[ExplosionFX] SC plasmaJet raycast hits: " + hits.Length);
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ExplosionFX] SC plasmaJet raycast hits: " + hits.Length);
                 if (hits.Length > 0)
                 {
                     var orderedHits = hits.OrderBy(x => x.distance);
@@ -240,34 +239,6 @@ namespace BDArmory.FX
                             }
                         }
                     }
-                    if (BDArmorySettings.DRAW_DEBUG_LINES)
-                    {
-                        LineRenderer lr = new LineRenderer();
-                        lr = GetComponent<LineRenderer>();
-                        if (!lr)
-                        {
-                            lr = gameObject.AddComponent<LineRenderer>();
-                        }
-                        lr.enabled = true;
-                        lr.startWidth = .1f;
-                        lr.endWidth = 1;
-                        lr.SetPosition(0, Position);
-                        lr.SetPosition(1, orderedHits.LastOrDefault().point);
-                    }
-                }
-                if (BDArmorySettings.DRAW_DEBUG_LINES)
-                {
-                    LineRenderer lr = new LineRenderer();
-                    lr = GetComponent<LineRenderer>();
-                    if (!lr)
-                    {
-                        lr = gameObject.AddComponent<LineRenderer>();
-                    }
-                    lr.enabled = true;
-                    lr.startWidth = .1f;
-                    lr.endWidth = 1;
-                    lr.SetPosition(0, Position);
-                    lr.SetPosition(1, ShapedCEndPoint);
                 }
             }
             var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(Position, Range, overlapSphereColliders, 9076737);
@@ -363,7 +334,6 @@ namespace BDArmory.FX
                     }
                 }
             }
-            Debug.Log("[BDArmory.ExplosionFX] explosion hit debugging; " + explosionEventsPartsAdded.Count + " parts detected by explosion");
             return explosionEventsPreProcessing;
         }
 
@@ -426,7 +396,7 @@ namespace BDArmory.FX
         {
             if (direction == default(Vector3))
             {
-                Debug.Log("[ExplosionFX] Default Direction param! " + p.name + " angle from explosion dir irrelevant!");
+                //Debug.Log("[ExplosionFX] Default Direction param! " + p.name + " angle from explosion dir irrelevant!");
                 return true;
             }
             if (warheadType == WarheadTypes.ContinuousRod)
@@ -618,7 +588,7 @@ namespace BDArmory.FX
                 }
                 if (warheadType == WarheadTypes.ShapedCharge)
                 {
-                    BDGUIUtils.DrawLineBetweenWorldPositions(Position, (Position + Direction * Range), 4, Color.green);
+                    BDGUIUtils.DrawLineBetweenWorldPositions(Position, (Position + (Direction.normalized * Range)), 4, Color.green);
                 }
             }
         }
@@ -952,7 +922,7 @@ namespace BDArmory.FX
                     eFx.AngleOfEffect = angle >= 0f ? Mathf.Clamp(angle, 0f, 180f) : 100f;
                     break;
             }
-            if (direction == default(Vector3))
+            if (direction == default(Vector3) && explosionSourceType == ExplosionSourceType.Missile)
             {
                 eFx.warheadType = WarheadTypes.Standard;
                 Debug.Log("[BDArmory.ExplosionFX]: No direction param specified, defaulting warhead type!");

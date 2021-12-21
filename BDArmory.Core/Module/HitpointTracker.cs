@@ -495,9 +495,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 {
                     HeartBleed();
                 }
-                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                if (ArmorTypeNum > 1 || ArmorPanel)
                 {
-                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    if (part.skinTemperature > SafeUseTemp * 1.5f)
+                    {
+                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    }
                 }
             }
         }

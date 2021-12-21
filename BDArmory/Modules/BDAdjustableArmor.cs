@@ -22,10 +22,10 @@ namespace BDArmory.Modules
         [KSPField]
         public bool isTriangularPanel = false;
 
-        public bool isCurvedPanel = false;
+        //public bool isCurvedPanel = false;
 
-        private float updateTimer = 0;
         private float armorthickness = 1;
+        private float Oldthickness = 1;
 
         [KSPField]
         public string ArmorTransformName = "ArmorTransform"; //transform of armor panel mesh/box collider
@@ -63,25 +63,26 @@ namespace BDArmory.Modules
                 armorTransforms[i].localScale = new Vector3(Width, Length, 1);
             }
             ThicknessTransform = part.FindModelTransform(ThicknessTransformName);
-            if (ThicknessTransform != null)
-            {
-                isCurvedPanel = true;
-            }
+            //if (ThicknessTransform != null)
+            //{
+            //    isCurvedPanel = true;
+            //}
             UI_FloatRange AWidth = (UI_FloatRange)Fields["Width"].uiControlEditor;
-            if (isCurvedPanel)
-            {
-                AWidth.maxValue = 4f;
-                AWidth.minValue = 0f;
-                AWidth.stepIncrement = 1;
-                Fields["Width"].guiName = "#LOC_BDArmory_CylArmorScale";
-            }
+            //if (isCurvedPanel)
+            //{
+            //    AWidth.maxValue = 4f;
+            //    AWidth.minValue = 0f;
+            //    AWidth.stepIncrement = 1;
+            //    Fields["Width"].guiName = "#LOC_BDArmory_CylArmorScale";
+            //}
             AWidth.onFieldChanged = AdjustWidth;
             UI_FloatRange ALength = (UI_FloatRange)Fields["Length"].uiControlEditor;
             ALength.onFieldChanged = AdjustLength;
             if (HighLogic.LoadedSceneIsEditor)
             {
-                armor = GetComponent<HitpointTracker>();
+                GameEvents.onEditorShipModified.Add(OnEditorShipModifiedEvent);
             }
+            armor = GetComponent<HitpointTracker>();
             N1 = part.FindAttachNode("Node1");
             N1.nodeType = AttachNode.NodeType.Stack;
             N1Transform = part.FindModelTransform(Node1Name);
@@ -98,11 +99,18 @@ namespace BDArmory.Modules
                 N4.nodeType = AttachNode.NodeType.Stack;
             }
         }
+        private void OnDestroy()
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                GameEvents.onEditorShipModified.Remove(OnEditorShipModifiedEvent);
+            }
+        }
 
         public void AdjustWidth(BaseField field, object obj)
         {
             Width = Mathf.Clamp(Width, 0.5f, 16f);
-            if (!isCurvedPanel)
+            //if (!isCurvedPanel)
             {
                 for (int i = 0; i < armorTransforms.Length; i++)
                 {
@@ -115,6 +123,7 @@ namespace BDArmory.Modules
                         sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length); //needs to be changed to use updatewitth() - FIXME later, future SI
                     }
             }
+            /*
             else
             {
                 for (int i = 0; i < armorTransforms.Length; i++)
@@ -128,8 +137,8 @@ namespace BDArmory.Modules
                         sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length);
                     }
             }
+            */
             updateArmorStats();
-            UpdateNodes(Mathf.Max(Mathf.CeilToInt(Length / 2), Mathf.CeilToInt(Width / 2)));
             HandleWidthChange(Width, OldWidth);
             OldWidth = Width;
         }
@@ -147,7 +156,6 @@ namespace BDArmory.Modules
                     sym.Current.FindModuleImplementing<BDAdjustableArmor>().UpdateScale(Width, Length);
                 }
             updateArmorStats();
-            UpdateNodes(Mathf.Max(Mathf.CeilToInt(Length / 2), Mathf.CeilToInt(Width / 2)));
             HandleLengthChange(Length, OldLength);
             OldLength = Length;
         }
@@ -156,13 +164,15 @@ namespace BDArmory.Modules
         {
             Width = width;
             Length = length;
-            if (!isCurvedPanel)
+            
+            //if (!isCurvedPanel)
             {
                 for (int i = 0; i < armorTransforms.Length; i++)
                 {
                     armorTransforms[i].localScale = new Vector3(Width, Length, Mathf.Clamp((armor.Armor / 10), 0.1f, 1500));
                 }
             }
+            /*
             else
             {
                 for (int i = 0; i < armorTransforms.Length; i++)
@@ -170,84 +180,100 @@ namespace BDArmory.Modules
                     armorTransforms[i].localScale = new Vector3(Width, Length, Width);
                 }
             }
+            */
             updateArmorStats();
-            UpdateNodes(Mathf.Max(Mathf.CeilToInt(Width / 2), Mathf.CeilToInt(length / 2)));
+            HandleWidthChange(Width, OldWidth);
+            HandleLengthChange(Length, OldLength);
         }
 
-        public void UpdateNodes(int size)
-        {
-            foreach (AttachNode node in part.attachNodes)
-            {
-                node.size = size;
-                node.breakingForce = size * 100;
-                node.breakingTorque = size * 100;
-            }
-        }
         /// //////////////////////////////////
         //Borrowed/modified from ProceduralParts
         public virtual void HandleLengthChange(float length, float oldLength)
         {
             float trans = length - oldLength;
 
-            //MoveNode(N1, N1.position + (N1Transform.forward * (trans / 2)));
             N1.position.z = N1.position.z + (trans / 2);
             if (N1.attachedPart is Part N1pushTarget)
             {
                 TranslatePart(N1pushTarget, N1Transform.forward * (trans / 2));
             }
-            //MoveNode(N3, N3.position + (N3Transform.forward * (trans / 2)));
-            N3.position.z = N3.position.z + (-trans / 2); 
-            if (N3.attachedPart is Part N3pushTarget)
+            N1.size = Mathf.CeilToInt(length / 2);
+            N1.breakingForce = length * 100;
+            N1.breakingTorque = length * 100;
+            if (!isTriangularPanel)
             {
-                TranslatePart(N3pushTarget, -N3Transform.forward * (trans / 2));
+                N3.position.z = N3.position.z + (-trans / 2);
+                if (N3.attachedPart is Part N3pushTarget)
+                {
+                    TranslatePart(N3pushTarget, -N3Transform.forward * (trans / 2));
+                }
+                N3.size = Mathf.CeilToInt(length / 2);
+                N3.breakingForce = length * 100;
+                N3.breakingTorque = length * 100;
             }
-            //nope, missing something; this isn't moving srfattach parts. maybe turn the bool into a within threshold test for stuff mounted on edges of plate
             foreach (Part p in part.children)
             {
                 if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
                 {
                     Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                    if (localSpace.z == (oldLength / 2) || localSpace.z == -(oldLength / 2))
+                    if (localSpace.z > 0.9f * (oldLength / 2))
                     {
-                        float ratio = length / oldLength;
-                        localSpace.z *= ratio;
-                        MovePartByAttachNode(node, localSpace); //this an be translatePart instead; just need to add some code to grab part if above/below, and if bounted on variable thickness face of plate
+                        //Debug.Log("[BDAA DEBUG] srfAttack detected on N1 edge, moving");
+                        TranslatePart(p, N1Transform.up * (trans / 2)); 
+                    }
+                    if (!isTriangularPanel)
+                    {
+                        if (localSpace.z < 0.9f * -(oldLength / 2))
+                        {
+                            //Debug.Log("[BDAA DEBUG] srfAttack detected on N3 edge, moving");
+                            TranslatePart(p, -N3Transform.up * (trans / 2));
+                        }
                     }
                 }
-            }
-            
+            }            
         }
    
         public virtual void HandleWidthChange(float width, float oldWidth)
         {
             float trans = width - oldWidth;
-            //MoveNode(N2, N2.position + (-N2Transform.right * (trans / 2)));
             N2.position.x = N2.position.x + (-trans / 2); 
             if (N2.attachedPart is Part N2pushTarget)
             {
                 TranslatePart(N2pushTarget, -N2Transform.right * (trans / 2));
             }
-            //MoveNode(N4, N4.position + (N4Transform.right * (trans / 2)));
-            N4.position.x = N4.position.x + (trans / 2); 
-            if (N4.attachedPart is Part N4pushTarget)
+            N2.size = Mathf.CeilToInt(width / 2);
+            N2.breakingForce = width * 100;
+            N2.breakingTorque = width * 100;
+            if (!isTriangularPanel)
             {
-                TranslatePart(N4pushTarget, N4Transform.right * (trans / 2));
+                N4.position.x = N4.position.x + (trans / 2);
+                if (N4.attachedPart is Part N4pushTarget)
+                {
+                    TranslatePart(N4pushTarget, N4Transform.right * (trans / 2));
+                }
+                N4.size = Mathf.CeilToInt(width / 2);
+                N4.breakingForce = width * 100;
+                N4.breakingTorque = width * 100;
             }
-            
+
             foreach (Part p in part.children)
             {
                 if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
                 {
                     Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                    if (localSpace.x == (oldWidth / 2) || localSpace.x == -(oldWidth / 2))
+                    if (localSpace.x < 0.9f * -(oldWidth / 2))
                     {
-                        float ratio = width / oldWidth;
-                        localSpace.x *= ratio;
-                        MovePartByAttachNode(node, localSpace); //this an be translatePart instead; just need to add some code to grab part if above/below, and if bounted on variable thickness face of plate
+                        TranslatePart(p, N2Transform.right * (trans / 2));
+                    }
+                    if (!isTriangularPanel)
+                    {
+                        if (localSpace.x > 0.9f * (oldWidth / 2))
+                        {
+                            TranslatePart(p, N4Transform.right * (trans / 2));
+                        }
                     }
                 }
-            }
-            
+            }            
         }
         
         public Part GetEldestParent(Part p) => (p.parent is null) ? p : GetEldestParent(p.parent);
@@ -266,23 +292,18 @@ namespace BDArmory.Modules
             // (ex: pushTarget is inverted, and our top node connects to its top node)
             Vector3 worldSpaceTranslation = part.transform.TransformVector(translation);
             pushTarget.transform.Translate(worldSpaceTranslation, Space.World);
-            //Will need to figure out surface-attached parts, these currently are not being affected - SI
-        }
-        public virtual void MovePartByAttachNode(AttachNode node, Vector3 coord)
-        {
-            Vector3 oldWorldSpace = node.owner.transform.TransformPoint(node.position);
-            Vector3 newWorldspace = part.transform.TransformPoint(coord);
-            node.owner.transform.Translate(newWorldspace - oldWorldSpace, Space.World);
         }
         /// ///////////////////////////
 
         public void updateArmorStats()
         {
+            /*
             if (isCurvedPanel)
             {
                 armor.armorVolume = (Length * (Mathf.Clamp(Width, 0.5f, 4) * Mathf.Clamp(Width, 0.5f, 4))); //gives surface area for 1/4 cyl srf area
             }
             else
+            */
             {
                 armor.armorVolume = (Width * Length);
                 if (isTriangularPanel)
@@ -294,46 +315,37 @@ namespace BDArmory.Modules
         }
         void UpdateThickness()
         {
-            armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);
-            if (!isCurvedPanel)
+            armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);            
+            //if (!isCurvedPanel)
             {
                 for (int i = 0; i < armorTransforms.Length; i++)
                 {
                     armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
                 }
             }
+            /*
             else
             {
                 ThicknessTransform.localScale = new Vector3(armorthickness, 1, armorthickness);
             }
-            /*
+            */
+            float ratio = (armorthickness - Oldthickness) / 100;
             foreach (Part p in part.children)
             {
                 if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
                 {
                     Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                    if (localSpace.y > part.transform.position.y)
+                    if (localSpace.y > Mathf.Abs(0.8f * ratio))
                     {
-                        float ratio = (armorthickness - Oldthickness) / 1000;
-                        localSpace.y += ratio;
-                        MovePartByAttachNode(node, localSpace); 
+                        TranslatePart(p, -armorTransforms[0].right * ratio);
                     }
                 }
-            }
-            Oldthickness = armorthickness;
-            */
+                Oldthickness = armorthickness;
+            }            
         }
-        private void Update()
+        private void OnEditorShipModifiedEvent(ShipConstruct data)
         {
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                updateTimer -= Time.fixedDeltaTime;
-                if (updateTimer < 0)
-                {
-                    UpdateThickness(); //see if EditorShipModified catches adjusting armor thickness, and if so, use that instead
-                    updateTimer = 0.5f;    //next update in half a sec only
-                }
-            }
+            UpdateThickness();
         }
     }
 }
