@@ -412,6 +412,7 @@ namespace BDArmory.Modules
             { nameof(maxSpeed), 3000f },
             { nameof(takeOffSpeed), 2000f },
             { nameof(minSpeed), 2000f },
+            { nameof(strafingSpeed), 2000f },
             { nameof(idleSpeed), 3000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
