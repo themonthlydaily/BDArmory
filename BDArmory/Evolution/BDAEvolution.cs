@@ -347,6 +347,8 @@ namespace BDArmory.Evolution
                 status = EvolutionStatus.ProcessingResults;
                 InterpretResults();
 
+                if (TournamentAutoResume.Instance != null && TournamentAutoResume.Instance.CheckMemoryUsage()) yield break; // Auto-Quit before the next variants are generated.
+
                 ++groupId;
             }
         }
