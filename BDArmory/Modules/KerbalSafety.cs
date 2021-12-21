@@ -338,7 +338,11 @@ namespace BDArmory.Modules
             }
             var wait = new WaitForFixedUpdate();
             while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return wait; // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
-            if (p.vessel == null) yield break;
+            if (p.vessel == null)
+            {
+                Destroy(this);
+                yield break;
+            }
             kerbalName = c.displayName;
             if (KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName)) // Already managed
             {
@@ -376,7 +380,9 @@ namespace BDArmory.Modules
                     if (!found)
                     {
                         Debug.LogWarning("[BDArmory.KerbalSafety]: Failed to find the kerbal seat that " + kerbalName + " occupies.");
-                        yield break;
+                        ejected = true;
+                        StartCoroutine(DelayedChuteDeployment());
+                        StartCoroutine(RecoverWhenPossible());
                     }
                 }
                 else // Free-falling EVA kerbal.
