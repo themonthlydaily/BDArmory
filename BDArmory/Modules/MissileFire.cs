@@ -4888,20 +4888,9 @@ namespace BDArmory.Modules
                         }
                         weapon.Current.EnableWeapon();
                         weapon.Current.aiControlled = true;
-                        /*
-                        if (weapon.Current.yawRange >= 5 && (weapon.Current.maxPitch - weapon.Current.minPitch) >= 5)
-                        {
-                            weapon.Current.maxAutoFireCosAngle = 1; //this is why turrets are sniper accurate, knock this down if turrets should be less aim-bot
-                            weapon.Current.FiringTolerance = 0; //setting this to 0 causes CheckAIAutofire() in ModuleWeapon to always return true; weapon will fire even if off target
-                        }
-                        else
-                        {
-                        */
-                            //weapon.Current.maxAutoFireCosAngle = vessel.LandedOrSplashed ? 0.9993908f : 0.9975641f; //2 : 4 degrees
-                            if (weapon.Current.FireAngleOverride) continue;// if a weapon-specific accuracy override is present
-                            weapon.Current.maxAutoFireCosAngle = adjustedAutoFireCosAngle; //user-adjustable from 0-2deg
-                            weapon.Current.FiringTolerance = AutoFireCosAngleAdjustment;
-                        //}
+                        if (weapon.Current.FireAngleOverride) continue; // if a weapon-specific accuracy override is present
+                        weapon.Current.maxAutoFireCosAngle = adjustedAutoFireCosAngle; //user-adjustable from 0-2deg
+                        weapon.Current.FiringTolerance = AutoFireCosAngleAdjustment;
                     }
             }
 
