@@ -1,8 +1,274 @@
-﻿FIXES
+﻿
+FIXES
+- Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
+- Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.
+- Fix the bad check preventing competition start if a vessel doesn't take off.
+- Fix NRE in CheckExtend.
+- Remove extraneous trajectory simulation when firing a bullet.
+- Fix infinite recursion bug in the evolution engine.
+- Compensate for the delay in calculating the effects of collisions and properly attribute deaths (including death order and time) due to ramming correctly.
+- Fix bug in part counting that was occassionally causing negative part counts in rams.
+- Handle EVA kerbal disappearing during KerbalSafety configuring.
+- Add null check to IsKerbalEVA extension.
+IMPROVEMENTS
+- Use CM threshold for determining missile closest approach instead of a fixed 2s value.
+- Add alternate max for strafingSpeed.
+- Parser:
+	- Use a more natural sorting order for rounds in the parser so the score-by-round is consistent.
+	- Use more precision in the csv file for the cumulative scores.
+- Evolution:
+	- Maintain evolution state and properly add in support for auto-resuming evolutions.
+	- Add current heat to the evolution window.
+	- Include rockets fired and rocket strikes in the evolution scoring metric.
+	- Update the set of parameters the evolution engine can modify for the latest pilot AI and remove invalid ones.
+	- Limit evolved control surface authority to 150% (i.e., in-game limits).
+	- Add auto-quit memory threshold between evolution groups.
+- Spawning:
+	- Add some checks for missing vessels during post-spawning.
+
+v1.4.13.2
+FIXES
+- Fix comboboxes triggering force close on themselves when they should be opening.
+- Use the correct spawn distance based on the spawn distance toggle for tournaments.
+- Don't extend from ground targets when using a weapon that doesn't target ground targets, immediately look for another target instead.
+IMPROVEMENTS
+- Set the default evasionTimeThreshold to 0.1s.
+- Make all custom paths relative to the KSP install directory to remove dependence on running location (PRE needs fixing for this to be usable though).
+- Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
+- Disable guard mode on spawned vessels during spawning and clear their current target (prevents using AG10 to activate guard mode earlier than should be allowed).
+- Extend vessel easing during spawning until a vessel's cockpit is in the water (or it has stopped sinking) to allow it to settle a bit.
+
+v1.4.13.1
+IMPROVEMENTS
+- Apply/de-apply the intake hack when toggling the option in the settings.
+- Hack intakes (if enabled) on newly spawned vessels spawned by VesselMover or SPH→runway.
+- Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
+
+v1.4.13.0
+FIXES
+- Tournaments:
+	- Fix some typos and bugs in assist counting in the local tournament parser.
+	- Clear rocket dictionaries between heats. Compute assists under the same conditions for local and remote tournaments.
+	- Cause a spawn failure instead of throwing an exception so that tournaments can retry spawning.
+- Craft/Battle Damage:
+	- Fix SelfSealingTanks being addable to engines.
+	- Fix SelfSealingTanks not showing on/off status on load.
+	- Fix SelfSealingTanks not respecting symmetry.
+	- Re-add ModuleSelfSealingTank to Cockpits (for armored cockpits).
+	- Fix fires not extinguishing if fuel < 0.
+	- Fix engine fire behavior, now capped to max one fire at a time.
+	- Fix Steel parts gaining more than the 1.75x HP they should be getting.
+	- Fix fire generation on subsystem damage.
+	- Fixes non-fueltank fires not burning out and extinguishing after a period of time.
+	- Fix inert tanks not catching all possible sources of fire generation.
+	- Fix invalid cast and NRE for modular missiles.
+- AI:
+	- Fix AI aim offset being offset.
+	- Only extend when a bomb is selected once extending is requested.
+	- Activate only the current mode of multi-modal engines.
+	- Release pilot AI from attack command if they have a target within gun range (fixes bug with very long-range guns not engaging targets at competition start), regardless of whether RWP toggle is on.
+- General:
+	- Fix Paintball decals not appearing in paintball Mode.
+	- Fix AIR-2 Genie cost.
+	- Fix Explosions/Nukes not damaging buildings.
+	- Fix RESET_ARMOR resetting hull material.
+	- Fix Audio cutting out when firing lasers using looping SFX.
+	- Fix for KerbalSafety sometimes being given the KerbalSeat instead of the KerbalEVA as the part.
+IMPROVEMENTS
+- Internal:
+	- Allow BDGUIComboBox to be relocated/resized.
+	- Rework Nuke EMP radius calc; EMP radius at lower alt/lower yield is now much smaller.
+	- Bullet penetration depth capped to hypervelocity penetration depth.
+	- Add option for laser mutators to use Team Color for beam color (set bulletType in the mutator config to "def").
+	- Add part and vessel to debug info for AddDamage and AddHealth.
+	- Add debug info for when fires get added if debug labels are enabled.
+	- Slight buff to chaff factor.
+	- Add some missing localisations.
+	- Remove expensive Find call during spawning, since we already know which objects it needs to find.
+	- Only run more expensive debug checks on the debug version, not the release version.
+- BattleDamage:
+	- Fix SelfSealingTanks maxing tank capacity when switching instead of simply adjusting maximum.
+	- Increases CASE cost at higher levels (mass increase, ammo capacity reduction).
+	- Reduce firebottle extinguish delay time to 4 sec.
+	- Fire chance from HE rounds reduced from 33% to 20%.
+	- Hits to Wings/ControlSurfaces/Subsystems/Cockpits with overpenetrating rounds will now only proc a single BattleDamage event.
+	- Fires will no longer consume a firebottle per fire; on trigger, single firebottle will now extinguish all internal fires present on the part.
+	- Surface fires will now extinguish if vessel moving > 120m/s.
+	- Adds Fuel Inerting option to fuel tanks to prevent fires.
+	- Adds Armored Cockpit option to cockpits to reduce/prevent pilot Kill battledamage.
+	- Adds ProcWings support - can now add Firebottles/SelfSealing/Inerted tanks to Pwing fueltanks; Pwings with fuel can now catch on fire when shot.
+	- Adds missing BattleDamage 'Subsystem Damage' toggle.
+	- Makes BD to control surfaces less immediately debilitating.
+- UI:
+	- Add check for disabled PRE when competitions are active.
+	- Add a check for the number of AIs and WMs during spawning (when RWP is enabled) and give an in-game message if there's not one of each.
+	- Armor GUI submenu functionality based on current HP/Armor/Hull Reset toggle settings.
+	- Adds Hull Material visualizer to SPH/VAB Armor GUI tool.
+	- Improves Weapon Manager GUI infolink descriptions of target priority settings.
+	- Add off-world spawning to Spawn menu (spawn locations and tournaments get automatically upgraded).
+	- Add ability to add custom spawn sites to spawn menu.
+	- Add Persistent UI button to Vessel Switcher to keep VS and Web Orchestration windows open when F2 UI toggled off.
+	- Add an estimate of the current memory usage to the settings menu when Auto-Quit Memory Threshold is enabled.
+- Game Modes:
+	- Add secret Disco Mode.
+	- Zombie Mode option moved to cheat mode access.
+- Competitions:
+	- Adds Orbital Deployment round start mode - craft are spawned at 80km, and gravity hacked to 10 for 30 sec to accelerate craft downwards (request from SirJohn).
+	- Distinguish between deliberate and accidental rams. Accidental rams don't contribute to the score.
+- Tournaments:
+	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+	- Add taken counts to the summaries.
+	- Add a '-z' option to the tournament parser to shift the scores so that the lowest is 0.
+	- Adjust rocket parts hit and damage fields to match ruby schema in the remote orchestration.
+	- Only adjust the altitude for failed spawns for ground spawns.
+	- Allow specifying both '-c' and tournament dir to parse the specified tournament dir as a collection (i.e., without the tournament folder structure).
+	- Rebalance the score weights in the parsing script.
+- Kerbal Safety:
+	- Reconfigure inventories when the kerbal inventory slider is adjusted.
+- AI:
+	- Add additional control "Afterburner Priority" for afterburner toggling under Speed category of AI. Default value of 50. 0 and AI will not use AB, 100 and AI will always use AB.
+	- Vary AB hysteresis based on "Afterburner Priority" setting using an exponential average to smooth the vessel's TWR (lag factor of 0.5s) to judge whether AI should toggle AB vs. using instantaneous acceleration.
+	- Default Guard Range increased to 20km.
+	- Allow custom/modded missile and bomb bays. Set which action group controls the bay toggling on the missile/bomb itself and the AI will automatically open and close the bay when dropping the ordnance.
+	- New default AI and WM settings.
+- Spawning:
+	- Respawn the spawn probe when showing the spawn point if the active vessel has been destroyed.
+	- Use the backup location 'KSP/Ships/SPH' as a fall-back for the spawn probe location as CKAN puts it there.
+- RWP:
+	- Enabling the Runway Project toggle will clamp guard range to a minimum of 20km.
+ADDED/REMOVED/CHANGED SETTINGS VALUES
+- Adds Intake Hack setting to autohack intakes to work in non-Oxygen atmospheres.
+- Add a toggle in the Competition Settings section for closing the settings when clicking the start competition button.
+
+v1.4.12.6
+FIXES
+- Add a check for tournamentState.rounds being null when checking whether to resume a tournament. (Fixes failure to generate tournaments under some conditions.)
+
+v1.4.12.5
+Re-release due to not having recompiled the release version before releasing it.
+
+v1.4.12.4
+FIXES
+- Internal:
+	- Don't update the VesselModuleRegistry for a vessel when it's not yet loaded. (Fixes the missing AI/WM issue when reverting/quickloading.)
+	- Use a different function to reset the crew's inventory as the other one wasn't working properly.
+	- Register survivors with the remote orchestration in case they're didn't get registered for anything else.
+	- Also catch the LES as a SRB in ModuleSelfSealingTank.
+- AI:
+	- Fix off-by-one-physics-frame error in FlyToTarget that was affecting aiming (especially noticeable for lasers).
+	- Remove extra Deg2Rad factor from low velocity correction to terrain avoidance so that it actually has an effect (post-stall behaviour near terrain).
+	- Revert the 0.5s afterburner change as it caused issues with multiple engines not toggling simultaneously.
+	- Sync the input fields the correct way on vessel switches (and loads). (Fixes the AI settings getting reset in flight mode when switching vessels.)
+	- Fix NRE in targeting info caused by moving spawning point with a vessel that has a current target.
+- UI:
+	- Fix paintball mode not applying decals due to impulse weapons check.
+	- Fix the length of the substring in debug message for vessels that fail to spawn.
+	- Fix check in ExplosionFX for in-game messages about explosions (removes the rocket strike spam).
+- RWP:
+	- Remove the previous conditions for the RWP S4R2 condition as they aren't being used for S4R2.
+IMPROVEMENTS
+- UI:
+	- Add "Show Self" option to Team Icons (icon + name only).
+- Internal:
+	- Use warning level log entries for issues with the BDAScoreClient. Expand debug message to include stage number.
+	- Register and de-register game events in Kerbal Safety so as not to interfere with kerbals until the first competition is started.
+- RWP:
+	- Apply the S4R2 'fill seats' condition to vessel spawning.
+- Tournaments:
+	- Store unfinished tournament state files in 'PluginData/Unfinished Tournaments/' and remove them when they're finished. (Copy them to the usual tournament.state file when in the KSC screen to resume them.)
+	- Add a --show-weights option to the tournament parsing script to show the current weights of the various components of the score.
+	- Add an option to the parsing script to not show the cumulative scores by round.
+
+v1.4.12.3
+FIXES
+- Sanitise null strings in paths.
+- Fix armor panels reverting to 2 thickness.
+- Fix some errors in the MM patch for parts.
+IMPROVEMENTS
+- Better in-game and log messages for when a competition fails to start due to a vessel disappearing.
+- (RWP only) Add in-game reminder for AI and WM not attached to the root part.
+
+v1.4.12.2
+FIXES
+- Fix negative HP issue with Reactive Armor.
+- Fix CalcShrapnelDamage potentially reporting a negative number for damage.
+- Add some recursion checks to ModuleCase.
+- Add check to prevent setting Weapon material to Wood.
+- Can no longer change Armor Panel hull material.
+- SRBs no longer explode when empty if BattleDamage enabled.
+- Fixes Fuel Tank explosion yield increasing when associated resource(s) is empty.
+- Empty Ammo boxes will no longer explode when destroyed.
+IMPROVEMENTS
+- Re-add Firebottles, SelfSealing Tank option to Making History Soyuz tank.
+
+v1.4.12.1
+FIXES
+- Fix stack overflow in CASE explosions from detonating SRBs.
+- Fix NRE in PooledRockets.
+- Fix ordering of Gameplay settings.
+- Fix localisation for new Reset Material toggle.
+- Take a copy of the collider list from overlapSphereColliders to avoid potential issues since it's static and ProcessingBlastSphere can be called recursively.
+IMPROVEMENTS
+- General:
+	- Reduce the weighting of rocket hits in the parsing script.
+	- Add some more debugging to inter-competition debug statements.
+
+v1.4.12.0
+FIXES
+- Sort the protoVessel part list during spawning to fix the badly rooted vessel spawning bug.
 - Fix BDA part category placement to be usable on low resolution screens.
 - Don't add explosive forces when paintball mode is enabled.
+- Armor will no longer take damage when using Paintball Mode.
+- Subsection targeting GUI label no longer reverts to CoM.
+- Paintballs will no longer overpenetrate if base ammo type is armor piercing.
+- Shatterable armor materials now properly take full armor loss amount each shattering hit, instead of a reducing amount every subsequent hit.
+- Armor panel armor values no longer vary based on part orientation.
+- Armor Panel buoyancy fixed.
+- Rockets no longer calculate shrapnel hits twice.
+- Fixes unit conversion error in armor spalling calcs.
+- Bullet Penetration calc now properly takes angle of impact into account.
+- Minimal seat filling should fill the first non-weapon crewed command part, not the first non-weapon crewed part.
+- Iteratively refine the aiming point (measured to take 2-3 iterations typically) to avoid the turret premature firing issue.
+- Fix issue of NaN appearing in bullet damage.
+- Add a check for failing to load the tournament state.
+- Some fixes for continuous spawning, but it's still misbehaving.
+- Apply hull modifier to proc wings also.
+- Use the OS-dependent directory separator char for player-visible paths (fixes team names containing the 'AutoSpawn' folder in Windows).
+- Replace ', ' with ',' in the summary.csv file for teams for consistent team member naming.
+- Rework the extending code to remove the spaghetti and fix the bug where the plane would extend in a straight line from ground targets without AI control.
+
 IMPROVEMENTS
+- General:
+	- Update the tournament parser to sort teams by wins, have the same column order in the csv as in the console and include cumulative score per round results.
+	- Use RemoveVessel in VesselSpawner.cs for removing spectators for more consistent removal.
+	- Disable guard mode on aerial spawn to be consistent with competition start sequence (in case there's a delay between spawning and starting where someone activated guard mode on AG10).
+- UI:
+	- Use a slightly more compact spacing in the vessel switcher when teams only have 1 vessel and short team names are used.
+	- Remove unused "fire in range" toggle from weapon UI.
+	- Add a UTC timestamp to the clock.
+	- Armor Tool GUI now lists comparative strength of material vs steel, and provides a general estimate of material effectiveness against various forms of damage.
+	- In Flight Armor GUI slider changed to Armor Integrity showing percent remaining armor.
+ 	- Clarifies armor debugging statements.
+	- Armor Reset toggle split into separate Armor Reset and Hull Reset toggles.
+- AI:
+	- Add a 0.5s cool-down to the AI toggling the afterburner for when the hysteresis is insufficient.
+- Countermeasures:
+	- Add separate countermeasure settings to the weapons manager for chaff.
+	- Update default values for flares and chaff to be more effective.
+	- Lower default chaff factor to slightly nerf chaff performance.
+	- Add Vessel-Relative Bullet Checks for more accurate bullet checks that work in high-velocity environments (enabled by default).
+	- Replace smoothing of target velocity and acceleration with Brown's double exponential smoothing for improved aiming, particularly at longer ranges.
+- Armor:
+	-Armor panel thickness now starts at 25, can be increased up to old maximums.
+	-Armor panel area (in m^2) can be set in .cfg via "armorVolume =" field.
+	-Bullets will now only hit (and deal damage to) armor panels once.
+	-Armor Panel HP now directly proportional to armor integrity.
+	-ModuleReactiveArmor has been rebuilt and now works.
+	-Adds Reactive Armor example part.
+  
 ADDED/REMOVED/CHANGED SETTINGS VALUES
+	- Vessel-Relative Bullet Checks in advanced Gameplay settings.  
+	- Armor Reset toggle split into separate Armor Reset and Hull Reset toggles.
 
 v1.4.11.2
 FIXES 
@@ -140,6 +406,11 @@ IMPROVEMENTS
 		- Expand the low altitude GM kill limit to depths of -10km.
 		- A clearer message when a tournament stops due to spawning/competition start failures.
 		- Small Warhead 'Detonate At Minimum Distance' toggle renamed to Warhead Trigger Distance, to avoid confusion when building modular missiles.
+	- RWP:
+		- Add S4R1 RWP option for globally adjusting the firing rate of weapons in-game.
+		- Add S4R2 RWP option Zombie Mode where only root part takes damage.
+			- Add non-headshot dmg multiplier slider to adjust how much damage non-root parts take.
+			- Add toggle to allow battledamage to occur on non-root parts.
 	- Internal:
 		- Adjust camera weights for picking a better vessel to switch to.
 		- Add a IsUnderwater vessel extension.

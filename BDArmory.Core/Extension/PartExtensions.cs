@@ -13,13 +13,13 @@ namespace BDArmory.Core.Extension
         public static void AddDamage(this Part p, float damage)
         {
             if (BDArmorySettings.PAINTBALL_MODE) return; // Don't add damage when paintball mode is enabled
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
                 if (p.vessel.rootPart != null)
                 {
                     if (p != p.vessel.rootPart)
                     {
-                        damage *= BDArmorySettings.S4R2_DMG_MULT;
+                        damage *= BDArmorySettings.ZOMBIE_DMG_MULT;
                     }
                 }
             }
@@ -35,7 +35,7 @@ namespace BDArmory.Core.Extension
             {
                 Dependencies.Get<DamageService>().AddDamageToPart_svc(p, damage);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory.PartExtensions]: Standard Hitpoints Applied : " + damage);
+                    Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Applied to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {damage}");
             }
         }
 
@@ -64,7 +64,7 @@ namespace BDArmory.Core.Extension
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
             /*
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -121,13 +121,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
                 {
                     if (p.vessel.rootPart != null)
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }
@@ -147,7 +147,7 @@ namespace BDArmory.Core.Extension
         {
             if (BDArmorySettings.PAINTBALL_MODE) return 0f; // Don't add damage when paintball mode is enabled
             /*
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             {
                 if (p.vessel.rootPart != null)
                 {
@@ -211,13 +211,13 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+                if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
                 {
                     if (p.vessel.rootPart != null)
                     {
                         if (p != p.vessel.rootPart)
                         {
-                            damage_ *= BDArmorySettings.S4R2_DMG_MULT;
+                            damage_ *= BDArmorySettings.ZOMBIE_DMG_MULT;
                         }
                     }
                 }
@@ -251,7 +251,7 @@ namespace BDArmory.Core.Extension
             {
                 Dependencies.Get<DamageService>().AddHealthToPart_svc(p, healing, overcharge);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
-                    Debug.Log("[BDArmory.PartExtensions]: Standard Hitpoints Restored : " + healing);
+                    Debug.Log($"[BDArmory.PartExtensions]: Standard Hitpoints Restored to {p.name}" + (p.vessel != null ? $" on {p.vessel.vesselName}" : "") + $" : {healing}");
             }
         }
         /// <summary>
@@ -300,7 +300,7 @@ namespace BDArmory.Core.Extension
 
         public static bool HasArmor(this Part p)
         {
-            return p.GetArmorThickness() > 15f;
+            return Mathf.FloorToInt(p.GetArmorThickness()) > 0f;
         }
 
         public static bool GetFireFX(this Part p)
@@ -338,7 +338,23 @@ namespace BDArmory.Core.Extension
         public static float GetArmorThickness(this Part p)
         {
             if (p == null) return 0f;
-            return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+            float armorthickness = Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+            if (float.IsNaN(armorthickness))
+            {
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is NaN");
+                return 0f;
+            }
+            else
+            {
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
+                return armorthickness;
+            }
+            //return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
+        }
+        public static float GetArmorMaxThickness(this Part p)
+        {
+            if (p == null) return 0f;
+            return Dependencies.Get<DamageService>().GetPartMaxArmor_svc(p);
         }
         public static float GetArmorDensity(this Part p)
         {
@@ -490,6 +506,7 @@ namespace BDArmory.Core.Extension
                 part.Modules.Contains("ModuleWheelBase") ||
                 part.Modules.Contains("KSPWheelBase") ||
                 part.gameObject.GetComponentUpwards<KerbalEVA>() ||
+                part.Modules.Contains("ModuleReactiveArmor") ||
                 part.Modules.Contains("ModuleDCKShields") ||
                 part.Modules.Contains("ModuleShieldGenerator")
                 )
@@ -617,6 +634,7 @@ namespace BDArmory.Core.Extension
         /// <returns>true if the part is a kerbal on EVA.</returns>
         public static bool IsKerbalEVA(this Part part)
         {
+            if (part == null) return false;
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
                 return part.IsKerbalEVA_1_11();

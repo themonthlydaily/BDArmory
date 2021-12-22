@@ -12,12 +12,13 @@ namespace BDArmory.Misc
 {
     class BattleDamageHandler
     {
-        public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc)
+        public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc, bool firsthit = true, bool cockpitPen = false)
         {
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
-            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 42)
+            if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
+            //if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
-                if (!BDArmorySettings.ALLOW_S4R2_BD)
+                if (!BDArmorySettings.ALLOW_ZOMBIE_BD)
                 {
                     if (part.vessel.rootPart != null)
                     {
@@ -43,11 +44,11 @@ namespace BDArmory.Misc
                     {
                         if (alreadyburning != null)
                         {
-                            BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
+                            if (rubbertank == null || !rubbertank.InertTank) BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker);
                         }
                         else
                         {
-                            BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker);
+                            BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker, rubbertank != null ? rubbertank.InertTank : false);
                         }
                     }
                 }
@@ -118,7 +119,7 @@ namespace BDArmory.Misc
                     }
                 }
             }
-            //Propulsaion Damage
+            //Propulsion Damage
             if (BDArmorySettings.BD_PROPULSION)
             {
                 BattleDamageTracker tracker = part.gameObject.AddOrGetComponent<BattleDamageTracker>();
@@ -162,7 +163,7 @@ namespace BDArmory.Misc
                             var leak = part.GetComponentInChildren<FuelLeakFX>();
                             if (leak == null && !tracker.isSRB) //engine isn't a srb
                             {
-                                BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker);
+                                BulletHitFX.AttachLeak(hitLoc, part, caliber, explosivedamage, incendiary, attacker, false);
                             }
                         }
                         if (part.GetDamagePercentage() < 0.50f || (part.GetDamagePercentage() < 0.625f && penetrationFactor > 2))
@@ -179,7 +180,7 @@ namespace BDArmory.Misc
                             {
                                 if (alreadyburning == null)
                                 {
-                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1, true);
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, -1, 1);
                                 }
                             }
                         }
@@ -187,11 +188,15 @@ namespace BDArmory.Misc
                         {
                             if (engine.EngineIgnited)
                             {
-                                if (tracker.isSRB) //SRB is lit, and casing integrity fails due to damage; boom
+                                if (tracker.isSRB && tracker.SRBFuelled) //SRB is lit, and casing integrity fails due to damage; boom
                                 {
-                                    var Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
-                                    Rupture.CASELevel = 0;
-                                    Rupture.DetonateIfPossible();
+                                    if (tracker.SRBFuelled)
+                                    {
+                                        var Rupture = part.GetComponent<ModuleCASE>();
+                                        if (Rupture == null) Rupture = (ModuleCASE)part.AddModule("ModuleCASE");
+                                        Rupture.CASELevel = 0;
+                                        Rupture.DetonateIfPossible();
+                                    }
                                 }
                                 else
                                 {
@@ -227,7 +232,7 @@ namespace BDArmory.Misc
                         intake.intakeSpeed = Mathf.Clamp((float)intake.intakeSpeed, 0, 99999);
 
                         intake.area -= (tracker.origIntakeArea * (((tracker.oldDamagePercent - part.GetDamagePercentage()) * HEBonus) * BDArmorySettings.BD_PROP_DAM_RATE)); //HE does bonus damage
-                        intake.area = Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea/4), 99999); //even shredded intake ducting will still get some air to engines
+                        intake.area = Mathf.Clamp((float)intake.area, ((float)tracker.origIntakeArea / 4), 99999); //even shredded intake ducting will still get some air to engines
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Intake damage: Orig Area: " + tracker.origIntakeArea + "; Current Area: " + intake.area + "; Intake Speed: " + intake.intakeSpeed + "; intake damage: " + (1 - ((((tracker.oldDamagePercent - part.GetDamagePercentage())) * HEBonus) / BDArmorySettings.BD_PROP_DAM_RATE)));
                     }
                 }
@@ -261,7 +266,7 @@ namespace BDArmory.Misc
                 }
             }
             //Aero Damage
-            if (BDArmorySettings.BD_AEROPARTS)
+            if (BDArmorySettings.BD_AEROPARTS && firsthit)
             {
                 float HEBonus = 1;
                 if (explosivedamage)
@@ -282,17 +287,17 @@ namespace BDArmory.Misc
                     }
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                 }
-                if (part.GetComponent<ModuleControlSurface>() != null && part.GetDamagePercentage() > 0.125f)
-                //if ( part.isControlSurface(aileron))?
+                if (BDArmorySettings.BD_CTRL_SRF && firsthit)
                 {
-                    ModuleControlSurface aileron;
-                    aileron = part.GetComponent<ModuleControlSurface>();
-                    if (aileron.deflectionLiftCoeff > ((part.mass * 2.5f) + liftDam)) //stock ctrl surface mass/lift ratio is 5
+                    if (part.GetComponent<ModuleControlSurface>() != null && part.GetDamagePercentage() > 0.125f)
+                    //if ( part.isControlSurface(aileron))?
                     {
-                        aileron.deflectionLiftCoeff -= liftDam;
-                    }
-                    if (BDArmorySettings.BD_CTRL_SRF)
-                    {
+                        ModuleControlSurface aileron;
+                        aileron = part.GetComponent<ModuleControlSurface>();
+                        if (aileron.deflectionLiftCoeff > ((part.mass * 2.5f) + liftDam)) //stock ctrl surface mass/lift ratio is 5
+                        {
+                            aileron.deflectionLiftCoeff -= liftDam;
+                        }
                         int Diceroll = (int)UnityEngine.Random.Range(0f, 100f);
                         if (explosivedamage)
                         {
@@ -304,19 +309,28 @@ namespace BDArmory.Misc
                         }
                         if (Diceroll <= (BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus))
                         {
-                            aileron.actuatorSpeed = 0;
-                            aileron.authorityLimiter = 0;
-                            aileron.ctrlSurfaceRange = 0;
-                            if (Diceroll <= ((BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus) / 2))
+                            if (aileron.actuatorSpeed > 3)
                             {
-                                BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 10);
+                                aileron.actuatorSpeed /= 2;
+                                aileron.authorityLimiter /= 2;
+                                aileron.ctrlSurfaceRange /= 2;
+                                if (Diceroll <= ((BDArmorySettings.BD_DAMAGE_CHANCE * HEBonus) / 2))
+                                {
+                                    BulletHitFX.AttachFire(hitLoc.point, part, caliber, attacker, 10);
+                                }
+                            }
+                            else
+                            {
+                                aileron.actuatorSpeed = 0;
+                                aileron.authorityLimiter = 0;
+                                aileron.ctrlSurfaceRange = 0;
                             }
                         }
                     }
                 }
             }
             //Subsystems
-            if (BDArmorySettings.BD_SUBSYSTEMS)
+            if (BDArmorySettings.BD_SUBSYSTEMS && firsthit)
             {
                 double Diceroll = UnityEngine.Random.Range(0, 100);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: Subsystem DiceRoll: " + Diceroll + "; needs: " + damageChance);
@@ -383,7 +397,7 @@ namespace BDArmory.Misc
                         part.RemoveModule(cam);
                     }
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took subsystem damage");
-                    if (Diceroll <= (damageChance * 2))
+                    if (Diceroll <= (damageChance / 2))
                     {
                         if (incendiary)
                         {
@@ -393,7 +407,7 @@ namespace BDArmory.Misc
                 }
             }
             //Command parts
-            if (BDArmorySettings.BD_COCKPITS && penetrationFactor > 1.2f && part.GetDamagePercentage() < 0.9f) //lets have this be triggered by penetrative damage, not blast splash
+            if (BDArmorySettings.BD_COCKPITS && penetrationFactor > 1.2f && part.GetDamagePercentage() < 0.9f && firsthit) //lets have this be triggered by penetrative damage, not blast splash
             {
                 if (part.GetComponent<ModuleCommand>() != null)
                 {
@@ -432,9 +446,18 @@ namespace BDArmory.Misc
                     }
                 }
             }
-            if (part.protoModuleCrew.Count > 0 && penetrationFactor > 1.5f && part.GetDamagePercentage() < 0.95f)
+            if (BDArmorySettings.BD_PILOT_KILLS)
             {
-                if (BDArmorySettings.BD_PILOT_KILLS)
+                bool canKill = true;
+                var armorglass = part.FindModuleImplementing<ModuleSelfSealingTank>();
+                if (armorglass != null)
+                {
+                    if (armorglass.armoredCockpit && !cockpitPen) //round stopped by internal cockpit armor
+                    {
+                        canKill = false;
+                    }
+                }
+                if (canKill && part.protoModuleCrew.Count > 0 && penetrationFactor > 1.5f && part.GetDamagePercentage() < 0.95f && firsthit)
                 {
                     float PilotTAC = Mathf.Clamp((BDArmorySettings.BD_DAMAGE_CHANCE / part.mass), 0.01f, 100); //larger cockpits = greater volume = less chance any hit will pass through a region of volume containing a pilot
                     float killchance = UnityEngine.Random.Range(0, 100);

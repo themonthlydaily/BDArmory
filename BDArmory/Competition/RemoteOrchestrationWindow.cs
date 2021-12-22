@@ -48,7 +48,7 @@ namespace BDArmory.UI
 
         private void OnGUI()
         {
-            if (!(showWindow && ready && BDArmorySetup.GAME_UI_ENABLED && BDArmorySettings.REMOTE_LOGGING_ENABLED))
+            if (!(showWindow && ready && (BDArmorySetup.GAME_UI_ENABLED || (BDArmorySettings.VESSEL_SWITCHER_PERSIST_UI && !BDArmorySetup.GAME_UI_ENABLED)) && BDArmorySettings.REMOTE_LOGGING_ENABLED))
                 return;
 
             SetNewHeight(_windowHeight);

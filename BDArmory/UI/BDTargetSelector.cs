@@ -47,7 +47,7 @@ namespace BDArmory.UI
             height += buttonGap;
             Rect CoMRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
             GUIStyle CoMStyle = targetWeaponManager.targetCoM ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
-
+            //FIXME - switch these over to toggles instead of buttons; identified issue with weapon/engine targeting no sawing?
             if (GUI.Button(CoMRect, Localizer.Format("#LOC_BDArmory_TargetCOM"), CoMStyle))
             {
                 targetWeaponManager.targetCoM = !targetWeaponManager.targetCoM;
@@ -94,6 +94,10 @@ namespace BDArmory.UI
                 {
                     targetWeaponManager.targetCoM = false;
                 }
+                if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
+                {
+                    targetWeaponManager.targetCoM = true;
+                }
             }
             height += buttonHeight;
 
@@ -108,6 +112,10 @@ namespace BDArmory.UI
                 {
                     targetWeaponManager.targetCoM = false;
                 }
+                if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
+                {
+                    targetWeaponManager.targetCoM = true;
+                }
             }
             height += buttonHeight;
 
@@ -121,6 +129,10 @@ namespace BDArmory.UI
                 if (targetWeaponManager.targetWeapon)
                 {
                     targetWeaponManager.targetCoM = false;
+                }
+                if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
+                {
+                    targetWeaponManager.targetCoM = true;
                 }
             }
             height += buttonHeight;
@@ -149,12 +161,6 @@ namespace BDArmory.UI
                         height);
                     window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
                     Misc.Misc.UpdateGUIRect(window, guiCheckIndex);
-
-                    if (!targetWeaponManager.targetCoM && (!targetWeaponManager.targetWeapon && !targetWeaponManager.targetEngine && !targetWeaponManager.targetCommand && !targetWeaponManager.targetMass))
-                    {
-                        targetWeaponManager.targetMass = true;
-                        targetWeaponManager.targetingString = Localizer.Format("#LOC_BDArmory_Mass");
-                    }
             }
         }
 

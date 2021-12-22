@@ -1,13 +1,14 @@
 using UnityEngine;
 
+using System.IO;
 using System.Collections.Generic;
 
 namespace BDArmory.Core
 {
     public class BDArmorySettings
     {
-        public static string oldSettingsConfigURL = "GameData/BDArmory/settings.cfg"; // Migrate from the old settings file to the new one in PluginData so that we don't invalidate the ModuleManager cache.
-        public static string settingsConfigURL = "GameData/BDArmory/PluginData/settings.cfg";
+        public static string oldSettingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/settings.cfg"); // Migrate from the old settings file to the new one in PluginData so that we don't invalidate the ModuleManager cache.
+        public static string settingsConfigURL = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/settings.cfg");
         public static bool ready = false;
 
         // Settings section toggles
@@ -29,6 +30,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float VESSEL_SWITCHER_WINDOW_WIDTH = 500f;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_SORTING = false;
         [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE = false;
+        [BDAPersistentSettingsField] public static bool VESSEL_SWITCHER_PERSIST_UI = false;
         [BDAPersistentSettingsField] public static float VESSEL_SPAWNER_WINDOW_WIDTH = 480f;
         [BDAPersistentSettingsField] public static float EVOLUTION_WINDOW_WIDTH = 350f;
 
@@ -38,6 +40,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool INFINITE_AMMO = false;
         [BDAPersistentSettingsField] public static bool BULLET_HITS = true;
         [BDAPersistentSettingsField] public static bool EJECT_SHELLS = true;
+        [BDAPersistentSettingsField] public static bool VESSEL_RELATIVE_BULLET_CHECKS = false;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool DRAW_AIMERS = true;
         [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;
@@ -56,7 +59,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool AUTONOMOUS_COMBAT_SEATS = false;          // Enable/disable seats without kerbals.
         [BDAPersistentSettingsField] public static bool DESTROY_UNCONTROLLED_WMS = false;         // Automatically destroy the WM if there's no kerbal or drone core controlling it.
         [BDAPersistentSettingsField] public static bool RESET_HP = false;                         // Automatically reset HP of parts of vessels when they're spawned in flight mode.
-        [BDAPersistentSettingsField] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor/ hull material of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static bool RESET_ARMOUR = false;                     // Automatically reset Armor material of parts of vessels when they're spawned in flight mode.
+        [BDAPersistentSettingsField] public static bool RESET_HULL = false;                     // Automatically reset hull material of parts of vessels when they're spawned in flight mode.
         [BDAPersistentSettingsField] public static int KERBAL_SAFETY = 1;                         // Try to save kerbals by ejecting/leaving seats and deploying parachutes.
         [BDAPersistentSettingsField] public static bool TRACE_VESSELS_DURING_COMPETITIONS = false; // Trace vessel positions and rotations during competitions.
         [BDAPersistentSettingsField] public static bool DUMB_IR_SEEKERS = false;                  // IR missiles will go after hottest thing they can see
@@ -70,6 +74,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool BULLET_WATER_DRAG = true;
         [BDAPersistentSettingsField] public static bool PERSISTENT_FX = false;
         [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
+        [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
+        [BDAPersistentSettingsField] public static bool COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = false; // Close the settings window when clicking the start competition button.
 
         // General slider settings
         [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -99,6 +105,10 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float SMOKE_DEFLECTION_FACTOR = 10f;
         [BDAPersistentSettingsField] public static float BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER = 256f;      // Multiplier of fixedDeltaTime for the large scale steps of ballistic trajectory simulations.
         [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE = 10f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_CENTER = 20f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_SPREAD = 5f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_BIAS = 0.16f;
+        [BDAPersistentSettingsField] public static float FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = 2f;
 
         // Physics constants
         [BDAPersistentSettingsField] public static float GLOBAL_LIFT_MULTIPLIER = 0.25f;
@@ -114,7 +124,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float EXP_IMP_MOD = 0.25f;
         [BDAPersistentSettingsField] public static bool EXTRA_DAMAGE_SLIDERS = false;
         [BDAPersistentSettingsField] public static float WEAPON_FX_DURATION = 15;               //how long do weapon secondary effects(EMP/choker/gravitic/etc) last
-        [BDAPersistentSettingsField] public static float S4R2_DMG_MULT = 0.1f;
+        [BDAPersistentSettingsField] public static float ZOMBIE_DMG_MULT = 0.1f;
 
         // FX
         [BDAPersistentSettingsField] public static bool FIRE_FX_IN_FLIGHT = false;
@@ -156,6 +166,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_CENTROID = true;
         [BDAPersistentSettingsField] public static bool ASTEROID_RAIN_FOLLOWS_SPREAD = true;
         [BDAPersistentSettingsField] public static bool MUTATOR_MODE = false;
+        [BDAPersistentSettingsField] public static bool ZOMBIE_MODE = false;
+        [BDAPersistentSettingsField] public static bool DISCO_MODE = false;
 
         //Battle Damage settings
         [BDAPersistentSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.
@@ -183,7 +195,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
         [BDAPersistentSettingsField] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
         [BDAPersistentSettingsField] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
-        [BDAPersistentSettingsField] public static bool ALLOW_S4R2_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
 
         // Remote logging
         [BDAPersistentSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle
@@ -196,7 +208,8 @@ namespace BDArmory.Core
 
         // Spawner settings
         [BDAPersistentSettingsField] public static bool SHOW_SPAWN_OPTIONS = true;                 // Show spawn options.
-        [BDAPersistentSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016); // Spawning coordinates on a planetary body.
+        [BDAPersistentSettingsField] public static Vector2d VESSEL_SPAWN_GEOCOORDS = new Vector2d(0.05096, -74.8016); // Spawning coordinates on a planetary body; Lat, Lon
+        [BDAPersistentSettingsField] public static int VESSEL_SPAWN_WORLDINDEX = 1;                // Spawning planetary body: world index
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_ALTITUDE = 5f;               // Spawning altitude above the surface.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE_FACTOR = 20f;       // Scale factor for the size of the spawning circle.
         [BDAPersistentSettingsField] public static float VESSEL_SPAWN_DISTANCE = 10f;              // Radius of the size of the spawning circle.
@@ -267,6 +280,6 @@ namespace BDArmory.Core
 
         // Countermeasure constants
         [BDAPersistentSettingsField] public static float FLARE_FACTOR = 1.6f;                       // Change this to make flares more or less effective, values close to or below 1.0 will cause flares to fail to decoy often
-        [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 0.6f;                       // Change this to make chaff more or less effective. Higher values will make chaff batter, lower values will make chaff worse.
+        [BDAPersistentSettingsField] public static float CHAFF_FACTOR = 0.65f;                       // Change this to make chaff more or less effective. Higher values will make chaff batter, lower values will make chaff worse.
     }
 }
