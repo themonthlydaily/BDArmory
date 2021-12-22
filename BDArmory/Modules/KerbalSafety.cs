@@ -603,7 +603,7 @@ namespace BDArmory.Modules
         public void OnVesselModified(Vessel vessel)
         {
             if (this == null) return;
-            if (vessel == null || !vessel.loaded) return;
+            if (part == null || vessel == null || !vessel.loaded) return;
             if (part.vessel == vessel) // It's this vessel.
             {
                 if (kerbalEVA != null)
