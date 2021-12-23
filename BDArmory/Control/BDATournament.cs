@@ -595,6 +595,7 @@ namespace BDArmory.Control
 
         void Start()
         {
+            BDArmorySettings.LAST_USED_SAVEGAME = HighLogic.SaveFolder;
             StartCoroutine(LoadStateWhenReady());
         }
 
@@ -1040,6 +1041,7 @@ namespace BDArmory.Control
 
         IEnumerator AutoResumeTournament()
         {
+            bool generateNewTournament = false;
             EvolutionWorkingState evolutionState = null;
             if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
             {
@@ -1074,7 +1076,21 @@ namespace BDArmory.Control
                         game = tournamentState.savegame;
                     }
                 }
-                if (!incompleteTournament) yield break;
+                if (!incompleteTournament && BDArmorySettings.AUTO_GENERATE_TOURNAMENT_ON_RESUME) // Generate a new tournament based on the current settings.
+                {
+                    generateNewTournament = true;
+                    game = BDArmorySettings.LAST_USED_SAVEGAME;
+                    savegame = Path.Combine(savesDir, game, cleansave + ".sfs"); // First check for a "clean" save file.
+                    if (!File.Exists(savegame))
+                    {
+                        useCleanSave = false;
+                        savegame = Path.Combine(savesDir, game, save + ".sfs");
+                    }
+                    if (File.Exists(savegame)) // Found a usable savegame and we assume the generated tournament will be usable. (It should just show error messages in-game otherwise.)
+                        incompleteTournament = true;
+                }
+                if (!incompleteTournament)
+                    yield break;
             }
             // Load saved game.
             var tic = Time.time;
@@ -1103,6 +1119,20 @@ namespace BDArmory.Control
             else
             {
                 tic = Time.time;
+                if (generateNewTournament)
+                {
+                    yield return new WaitWhile(() => (BDATournament.Instance == null && Time.time - tic < 10)); // Wait for the BDATournament instance to be started or time out.
+                    if (BDATournament.Instance == null) yield break;
+                    BDATournament.Instance.SetupTournament(
+                        BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION,
+                        BDArmorySettings.TOURNAMENT_ROUNDS,
+                        BDArmorySettings.TOURNAMENT_VESSELS_PER_HEAT,
+                        BDArmorySettings.TOURNAMENT_TEAMS_PER_HEAT,
+                        BDArmorySettings.TOURNAMENT_VESSELS_PER_TEAM,
+                        BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS,
+                        BDArmorySettings.TOURNAMENT_STYLE
+                    );
+                }
                 yield return new WaitWhile(() => ((BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) && Time.time - tic < 10)); // Wait for the tournament to be loaded or time out.
                 if (BDATournament.Instance == null || BDATournament.Instance.tournamentID == 0) yield break;
                 BDArmorySetup.windowBDAToolBarEnabled = true;
