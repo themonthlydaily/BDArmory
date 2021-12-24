@@ -15,6 +15,7 @@ IMPROVEMENTS
 	- Use CM threshold for determining missile closest approach instead of a fixed 2s value.
 	- Add alternate max for strafingSpeed.
 	- Switch turrets to use the Firing Angle instead of needing to be directly on-target.
+	- Added a nonlinear oscillation ("Evasion/Extension Nonlinearity" in the pilot AI) when extending or evading to avoid going in a straight line.
 - Parser:
 	- Use a more natural sorting order for rounds in the parser so the score-by-round is consistent.
 	- Use more precision in the csv file for the cumulative scores.
