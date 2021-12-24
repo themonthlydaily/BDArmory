@@ -175,6 +175,7 @@
     <Compile Include="Misc\BDTeam.cs" />
     <Compile Include="Misc\BattleDamageHandler.cs" />
     <Compile Include="Misc\DecoupledBooster.cs" />
+    <Compile Include="Misc\FireSpitter.cs" />
     <Compile Include="Misc\IBDWeapon.cs" />
     <Compile Include="Misc\KSPForceApplier.cs" />
     <Compile Include="Misc\Misc.cs" />

@@ -8,15 +8,28 @@ FIXES
 - Fix infinite recursion bug in the evolution engine.
 - Compensate for the delay in calculating the effects of collisions and properly attribute deaths (including death order and time) due to ramming correctly.
 - Fix bug in part counting that was occassionally causing negative part counts in rams.
+- Handle EVA kerbal disappearing during KerbalSafety configuring.
+- Add null check to IsKerbalEVA extension.
 IMPROVEMENTS
-- Use CM threshold for determining missile closest approach instead of a fixed 2s value.
+- AI/WM:
+	- Use CM threshold for determining missile closest approach instead of a fixed 2s value.
+	- Add alternate max for strafingSpeed.
+	- Switch turrets to use the Firing Angle instead of needing to be directly on-target.
+	- Added a nonlinear oscillation ("Evasion/Extension Nonlinearity" in the pilot AI) when extending or evading to avoid going in a straight line.
 - Parser:
 	- Use a more natural sorting order for rounds in the parser so the score-by-round is consistent.
 	- Use more precision in the csv file for the cumulative scores.
+- Tournaments:
+	- Add option to auto-generate a tournament if auto-resuming and there isn't an incomplete tournament to run.
 - Evolution:
 	- Maintain evolution state and properly add in support for auto-resuming evolutions.
 	- Add current heat to the evolution window.
 	- Include rockets fired and rocket strikes in the evolution scoring metric.
+	- Update the set of parameters the evolution engine can modify for the latest pilot AI and remove invalid ones.
+	- Limit evolved control surface authority to 150% (i.e., in-game limits).
+	- Add auto-quit memory threshold between evolution groups.
+- Spawning:
+	- Add some checks for missing vessels during post-spawning.
 
 v1.4.13.2
 FIXES

@@ -634,6 +634,7 @@ namespace BDArmory.Core.Extension
         /// <returns>true if the part is a kerbal on EVA.</returns>
         public static bool IsKerbalEVA(this Part part)
         {
+            if (part == null) return false;
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
                 return part.IsKerbalEVA_1_11();
