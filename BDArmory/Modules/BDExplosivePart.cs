@@ -90,7 +90,7 @@ namespace BDArmory.Modules
 
         [KSPField] 
         public string warheadType = "standard";
-
+        public string warheadReportingName;
         [KSPField]
         public string explModelPath = "BDArmory/Models/explosion/explosion";
 
@@ -165,11 +165,14 @@ namespace BDArmory.Modules
             switch (warheadType) //make sure this is a valid entry
             {
                 case "continuousrod":
+                    warheadReportingName = "Continuous Rod";
                     break;
                 case "shapedcharge":
+                    warheadReportingName = "Shaped Charge";
                     break;
                 default:
                     warheadType = "standard";
+                    warheadReportingName = "Standard";
                     break;
             }
         }
