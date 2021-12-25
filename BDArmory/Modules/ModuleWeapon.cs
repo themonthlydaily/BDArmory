@@ -79,7 +79,7 @@ namespace BDArmory.Modules
         public enum APSTypes
         {
             Ballistic,
-            Missile,      
+            Missile,
             Omni
         }
         public WeaponStates weaponState = WeaponStates.Disabled;
@@ -885,7 +885,7 @@ namespace BDArmory.Modules
             {
                 Events["ToggleRipple"].guiActiveEditor = false;
                 Fields["useRippleFire"].guiActiveEditor = false;
-		useRippleFire = false;
+                useRippleFire = false;
             }
 
             if (eWeaponType != WeaponTypes.Rocket)//disable rocket RoF slider for non rockets 
@@ -3225,7 +3225,7 @@ namespace BDArmory.Modules
                                             simulating = false;
                                         }
                                         else
-                                        {                                             
+                                        {
                                             KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                             DestructibleBuilding building = hit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
                                             var part = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -4027,7 +4027,7 @@ namespace BDArmory.Modules
             if (Time.time - lastGoodTargetTime > Mathf.Max(roundsPerMinute / 60f, weaponManager.targetScanInterval))
             {
                 targetAcquisitionType = TargetAcquisitionType.None;
-            } 
+            }
 
             if (weaponManager && aiControlled)
             {
@@ -4138,13 +4138,13 @@ namespace BDArmory.Modules
                         targetPosition = visualTargetPart.transform.position;
                     }
                     targetVelocity -= Krakensbane.GetFrameVelocityV3f();
-                    Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + (MissileTgt != null ? MissileTgt.velocity : Vector3.zero));
-                    Debug.Log("[APS DEBUG] Lead Offset: " + fixedLeadOffset + ", FinalAimTgt: " + finalAimTarget + ", tgt CosAngle " + targetCosAngle + ", wpn CosAngle " + targetAdjustedMaxCosAngle + ", Wpn Autofire: " + autoFire);
-
                     targetRadius = 1;
-                    targetAcceleration = MissileTgt != null ? MissileTgt.velocity : Vector3.zero;
+                    targetAcceleration = MissileTgt != null && MissileTgt.Vessel != null ? MissileTgt.Vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
+
+                    Debug.Log("[APS DEBUG] tgtVelocity: " + tgtVelocity + "; tgtPosition: " + targetPosition + "; tgtAccel: " + targetAcceleration);
+                    Debug.Log("[APS DEBUG] Lead Offset: " + fixedLeadOffset + ", FinalAimTgt: " + finalAimTarget + ", tgt CosAngle " + targetCosAngle + ", wpn CosAngle " + targetAdjustedMaxCosAngle + ", Wpn Autofire: " + autoFire);
                     return;
                 }
                 //Need to get bullet trajectory - is it on a collision course? Moght be able to plug into the TimeToCPA to see if it's going to hit, and if not, ignore it
@@ -4160,8 +4160,8 @@ namespace BDArmory.Modules
             float delayTime = eWeaponType == WeaponTypes.Ballistic ? (targetDistance / bulletVelocity) : (eWeaponType == WeaponTypes.Rocket ? predictedFlightTime : -1);
             if (delayTime < 0)
             {
-                delayTime = rocket != null ? 0.5f : (shell.bulletMass * (1 - Mathf.Clamp(shell.tntMass / shell.bulletMass, 0f, 0.95f)/2)); //for shells, laser delay time is based on shell mass/HEratio. The heavier the shell, the mroe mass to burn through. Don't expect to stop sabots via laser APS
-				delayTime /= ((laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * targetDistance, 2)) * 0.425f) / 100);
+                delayTime = rocket != null ? 0.5f : (shell.bulletMass * (1 - Mathf.Clamp(shell.tntMass / shell.bulletMass, 0f, 0.95f) / 2)); //for shells, laser delay time is based on shell mass/HEratio. The heavier the shell, the mroe mass to burn through. Don't expect to stop sabots via laser APS
+                delayTime /= ((laserDamage / (1 + Mathf.PI * Mathf.Pow(tanAngle * targetDistance, 2)) * 0.425f) / 100);
                 if (delayTime < TimeWarp.fixedDeltaTime) delayTime = 0;
             }
             yield return new WaitForSeconds(delayTime);
