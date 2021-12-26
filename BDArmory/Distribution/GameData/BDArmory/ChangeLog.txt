@@ -1,4 +1,4 @@
-﻿
+﻿v1.4.14.0
 FIXES
 - Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
 - Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.
@@ -32,11 +32,14 @@ IMPROVEMENTS
 	- Armor type 'None' no longer takes damage/spalls.
 	- Armor Plates can now be set to armorType 'None', used as structural panels.
 	- Adds new BDAdjustableArmor module.
+	- Armor panels replaced with new procedural armor panels. Old panels moved to legacy to prevent breaking saved craft.
 - Weapons:
 	- Adds underwater rocket trajectory calcs to permit AI to aim underwater rocket weapons.
 	- Nuke damage falloff calcs corrected, blast radii no longer far larger than they should be.
 	- Nukes will no longer hit craft that have managed to get out of the blast zone before the blast wave arrives.
 	- Adds Clusterbomb rmb Info.
+	- Adds shaped charge and continuous rod warhead options to Rockets/Missiles/Bombs, use "warheadType = "shapedcharge" or "continuousrod" in the BDexplosivePart Module of the part.cfg, or setting "shaped = true" in the rocket config.
+	- BDA stock missiles updated with new warheads where appropriate - check RMB info in the editor.
 - Tournaments:
 	- Add option to auto-generate a tournament if auto-resuming and there isn't an incomplete tournament to run.
 - Parser:
