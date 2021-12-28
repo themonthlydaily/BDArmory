@@ -885,6 +885,7 @@ namespace BDArmory.Modules
             {
                 Events["ToggleRipple"].guiActiveEditor = false;
                 Fields["useRippleFire"].guiActiveEditor = false;
+		useRippleFire = false;
             }
 
             if (eWeaponType != WeaponTypes.Rocket)//disable rocket RoF slider for non rockets 
