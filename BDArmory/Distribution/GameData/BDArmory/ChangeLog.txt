@@ -55,10 +55,6 @@ IMPROVEMENTS
 - Spawning:
 	- Add some checks for missing vessels during post-spawning.
 
-Additions:
-- Implements previously-defunct 'shaped' var in rockets/missiles; rockets/missiles/bombs can now choose from standard, shaped charge, or continuous rod warheads. SC and CR warheads offer improved penetration, but limited conic/planar AoE compared to standard. Use the new field 'warheadType = ' (standard | shapedcharge | continuousrod) in BDExplosivepart, or 'shaped = true' in rocketdef.
-- Reworks existing stable of armor panels, replaces them with new omni-panels (old panels moved to legacy, still present to prevent breaking saved craft).
-
 v1.4.13.2
 FIXES
 - Fix comboboxes triggering force close on themselves when they should be opening.
