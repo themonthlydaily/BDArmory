@@ -448,7 +448,7 @@ namespace BDArmory.UI
                                 {
                                     BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManager.Item1];
                                 }
-                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDTISetup.TILabel);
+                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:" + (teamManager.Item1 != "Neutral" ? (weaponManager.Team.Neutral ? "(Neutral)" : ""): ""), BDTISetup.TILabel);
                                 teamNameShowing = true;
                                 height += _buttonHeight + _buttonGap;
                             }
@@ -475,7 +475,11 @@ namespace BDArmory.UI
                         if (weaponManager == null) continue;
                         if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE && !teamNameShowing)
                         {
-                            GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManagers.Key}:", BDArmorySetup.BDGuiSkin.label);
+                            if (BDTISetup.Instance.ColorAssignments.ContainsKey(teamManagers.Key))
+                            {
+                                BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManagers.Key];
+                            }
+                            GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManagers.Key}:" + (weaponManager.team != "Neutral" ? (weaponManager.Team.Neutral ? "(Neutral)" : "") : ""), BDTISetup.TILabel);
                             teamNameShowing = true;
                             height += _buttonHeight + _buttonGap;
                         }
@@ -758,7 +762,8 @@ namespace BDArmory.UI
                 }
                 else if (Event.current.button == 2)
                 {
-                    wm.SetTeam(BDTeam.Get("Neutral"));
+                    //wm.SetTeam(BDTeam.Get("Neutral"));
+                    wm.Team.Neutral = !wm.Team.Neutral;
                 }
                 else
                 {

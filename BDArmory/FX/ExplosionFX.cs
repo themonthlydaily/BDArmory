@@ -649,7 +649,7 @@ namespace BDArmory.FX
                     }
                     else return;
                 }
-                Debug.Log("[ExplosionFX] " + part.name + " Within AoE of detonation: " + eventToExecute.withinAngleofEffect);
+                //Debug.Log("[ExplosionFX] " + part.name + " Within AoE of detonation: " + eventToExecute.withinAngleofEffect);
                 // Overly simplistic approach: simply reduce damage by amount of HP/2 and Armor in the way. (HP/2 to simulate weak parts not fully blocking damage.) Does not account for armour reduction or angle of incidence of intermediate parts.
                 // A better approach would be to properly calculate the damage and pressure in CalculatePartBlastEffects due to the series of parts in the way.
                 var damageWithoutIntermediateParts = blastInfo.Damage;

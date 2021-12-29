@@ -436,14 +436,14 @@ namespace BDArmory.FX
 
                         if (BDArmorySettings.BD_FIRES_ENABLED && !inertTank)
                         {
-                            int ammoMod = 10; //10% chance of AP rounds starting fires from sparks/tracers/etc
+                            float ammoMod = BDArmorySettings.BD_FIRE_CHANCE_TRACER; //10% chance of AP rounds starting fires from sparks/tracers/etc
                             if (explosive)
                             {
-                                ammoMod = 20; //20% chance of starting fires from HE rounds
+                                ammoMod = BDArmorySettings.BD_FIRE_CHANCE_HE; //20% chance of starting fires from HE rounds
                             }
                             if (incendiary)
                             {
-                                ammoMod = 90; //90% chance of starting fires from inc rounds
+                                ammoMod = BDArmorySettings.BD_FIRE_CHANCE_INCENDIARY; //90% chance of starting fires from inc rounds
                             }
                             double Diceroll = UnityEngine.Random.Range(0, 100);
                             if (Diceroll <= ammoMod)
@@ -455,7 +455,7 @@ namespace BDArmory.FX
                                     leakcount++;
                                 }
                                 leak.drainDuration = 0;
-                                Debug.Log("[BullethitFX] Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
+                                //Debug.Log("[BullethitFX] Adding fire. HE? " + explosive + "; Inc? " + incendiary + "; inerttank? " + inertTank);
                                 AttachFire(hit.point, hitPart, caliber, sourcevessel, -1, leakcount);
                             }
                         }

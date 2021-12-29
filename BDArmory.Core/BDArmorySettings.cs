@@ -195,6 +195,9 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
         [BDAPersistentSettingsField] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
         [BDAPersistentSettingsField] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
+        [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
+        [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
+        [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
         [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
 
         // Remote logging
