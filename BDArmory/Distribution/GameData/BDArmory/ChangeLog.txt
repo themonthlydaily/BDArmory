@@ -1,4 +1,11 @@
-﻿v1.4.14.0
+﻿FIXES
+- Fix typo in 2x1 legacy armour panel.
+- Fixes Missile Turret Cost.
+- Fixes missile RMB warhead info.
+- Nukes no longer explode when destroyed (if engineCore = false, so S3R1 Chernobyl functionality still present, just not all the time).
+IMPROVEMENTS
+
+v1.4.14.0
 FIXES
 - Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
 - Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.
