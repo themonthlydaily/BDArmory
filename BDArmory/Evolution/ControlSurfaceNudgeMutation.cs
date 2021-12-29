@@ -62,6 +62,7 @@ namespace BDArmory.Evolution
             if (engine.NudgeNode(node, paramName, modifier))
             {
                 var value = existingValue * (1 + modifier);
+                value = Mathf.Clamp(value, -150f, 150f); // Clamp control surfaces to their limits (150%).
                 Debug.Log(string.Format("Evolution ControlSurfaceNudgeMutation mutated part {0}, module {1}, param {2}, existing: {3}, value: {4}", partName, moduleName, paramName, existingValue, value));
                 mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, existingValue, value));
             }

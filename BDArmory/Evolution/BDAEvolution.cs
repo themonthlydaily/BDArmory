@@ -207,7 +207,8 @@ namespace BDArmory.Evolution
             spawnConfig = state.spawnConfig;
             evolutionState = new EvolutionState(evolutionId, EvolutionStatus.Preparing, new List<VariantGroup>());
             var configFile = Path.Combine(configDirectory, evolutionId + ".cfg");
-            ConfigNode existing = ConfigNode.Load(configFile);
+            ConfigNode existing = null;
+            if (File.Exists(configFile)) existing = ConfigNode.Load(configFile);
             if (existing == null || !existing.HasNode("EVOLUTION"))
             {
                 Debug.Log($"[BDArmory.BDAEvolution]: No pre-existing evolution found, starting a new one.");
@@ -268,7 +269,8 @@ namespace BDArmory.Evolution
         private void CreateEvolutionConfig()
         {
             string configFile = string.Format("{0}/{1}.cfg", configDirectory, evolutionId);
-            ConfigNode existing = ConfigNode.Load(configFile);
+            ConfigNode existing = null;
+            if (File.Exists(configFile)) existing = ConfigNode.Load(configFile);
             if (existing == null)
             {
                 existing = new ConfigNode();
@@ -288,7 +290,7 @@ namespace BDArmory.Evolution
 
         private void SaveState()
         {
-            if (spawnConfig==null) return; // No spawn config means it hasn't been runnning.
+            if (spawnConfig == null) return; // No spawn config means it hasn't been runnning.
             spawnConfig.craftFiles = null; // We don't want to include the specific craft files in the spawn config.
             spawnConfig.teamCounts = null;
             var workingState = new EvolutionWorkingState
@@ -344,6 +346,8 @@ namespace BDArmory.Evolution
 
                 status = EvolutionStatus.ProcessingResults;
                 InterpretResults();
+
+                if (TournamentAutoResume.Instance != null && TournamentAutoResume.Instance.CheckMemoryUsage()) yield break; // Auto-Quit before the next variants are generated.
 
                 ++groupId;
             }
@@ -478,7 +482,7 @@ namespace BDArmory.Evolution
                 }
             }
 
-            string configFile = string.Format("{0}/{1}.cfg", configDirectory, evolutionId);
+            var configFile = Path.Combine(configDirectory, evolutionId + ".cfg");
             config.Save(configFile);
         }
 
