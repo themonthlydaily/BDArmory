@@ -171,6 +171,11 @@ namespace BDArmory.Control
             }
         }
 
+        public int CountActiveEngines(Vessel vessel)
+        {
+            return VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Where(engine => engine.EngineIgnited).ToList().Count + FireSpitter.CountActiveEngines(vessel);
+        }
+
         public void ActivateAllEngines(Vessel vessel)
         {
             foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
@@ -197,7 +202,8 @@ namespace BDArmory.Control
                         }
                     }
                 }
-            }            
+            }
+            FireSpitter.ActivateFSEngines(vessel);
         }
 
         public void HackIntakesOnNewVessels(bool enable)
@@ -814,7 +820,7 @@ namespace BDArmory.Control
                         CheckForRenamedVessels(spawnedVessels);
 
                         // Check that none of the vessels have lost parts.
-                        if (spawnedVessels.Any(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
+                        if (spawnedVessels.Any(kvp => kvp.Value.Item1 == null || kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]))
                         {
                             var offendingVessels = spawnedVessels.Where(kvp => kvp.Value.Item1.parts.Count < spawnedVesselPartCounts[kvp.Key]);
                             message = "One of the vessels lost parts after spawning: " + string.Join(", ", offendingVessels.Select(kvp => kvp.Value.Item1 != null ? kvp.Value.Item1.vesselName : null));
@@ -860,6 +866,7 @@ namespace BDArmory.Control
             // Reset craft positions and rotations as sometimes KSP packs and unpacks vessels between frames and resets things!
             foreach (var vesselName in spawnedVessels.Keys)
             {
+                if (spawnedVessels[vesselName].Item1 == null) continue;
                 spawnedVessels[vesselName].Item1.SetPosition(finalSpawnPositions[vesselName]);
                 spawnedVessels[vesselName].Item1.SetRotation(finalSpawnRotations[vesselName]);
             }
@@ -947,7 +954,7 @@ namespace BDArmory.Control
                                 weaponManager.SetTarget(null);
                             }
 
-                            if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                            if (CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                                 ActivateAllEngines(vessel);
@@ -1415,7 +1422,7 @@ namespace BDArmory.Control
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
-                            if (!VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                            if (CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 Debug.Log("[BDArmory.VesselSpawner]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                                 ActivateAllEngines(vessel);

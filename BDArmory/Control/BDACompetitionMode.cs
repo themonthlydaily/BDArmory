@@ -1189,6 +1189,13 @@ namespace BDArmory.Control
             sequencedCompetitionStarting = false;
             competitionStartTime = -1;
             competitionShouldBeRunning = false;
+            if (PhysicsGlobals.GraviticForceMultiplier != 1)
+            {
+                lastGravityMultiplier = 1f;
+                gravityMultiplier = 1f;
+                PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
+                VehiclePhysics.Gravity.Refresh();
+            }
             GameEvents.onCollision.Remove(AnalyseCollision);
             GameEvents.onVesselPartCountChanged.Remove(OnVesselModified);
             GameEvents.onVesselCreate.Remove(OnVesselModified);
@@ -1282,7 +1289,7 @@ namespace BDArmory.Control
                     pilot.weaponManager.ToggleGuardMode();
                     pilot.weaponManager.SetTarget(null);
                 }
-                if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+                if (VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                     VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
@@ -1789,13 +1796,26 @@ namespace BDArmory.Control
                     case 44: //S4R4 Eve Seaplane spawn
                         commandSequence = new List<string>{
                             "0:ActionGroup:13:1", // t=0, AG4 - Enable SAS
-                            "0:TogglePilot:1", // t=30, Activate pilots
+                            "0:ActionGroup:10:1", // t=0, AG10
+                            "0:TogglePilot:1", // t=0, Activate pilots
                             "0:ActivateEngines", // t=0, Activate engines
                             "0:ActionGroup:16:0", // t=0, Retract gear (if it's not retracted)
-                            "15:HackGravity:0.2", // t=15, Increase gravity to 10x
-                            "30:HackGravity:1", //t=45, Reset gravity
-                            "5:RemoveDebris", // t=50, Remove any other debris and spectators
-                            // "0:EnableGM", // t=60, Activate the killer GM
+                            "0:ToggleGuard:0", // t=0, Disable guard mode (for those who triggered it early)
+                            "24:HackGravity:0.9", // t=24, Lower gravity to 0.9x
+                            "2:HackGravity:0.8", // t=26, Lower gravity to 0.8x
+                            "2:HackGravity:0.7", // t=28, Lower gravity to 0.7x
+                            "2:HackGravity:0.6", // t=30, Lower gravity to 0.6x
+                            "2:HackGravity:0.5", // t=32, Lower gravity to 0.5x
+                            "2:HackGravity:0.4", // t=34, Lower gravity to 0.4x
+                            "2:HackGravity:0.3", // t=36, Lower gravity to 0.3x
+                            "2:HackGravity:0.2", // t=38, Lower gravity to 0.2x
+                            "2:HackGravity:0.1", // t=40, Lower gravity to 0.1x
+                            "5:HackGravity:0.25", //t=45, Raise gravity to 0.25x
+                            "5:HackGravity:0.5", //t=50, Raise gravity to 0.5x
+                            "5:HackGravity:0.75", //t=55, Raise gravity to 0.75x
+                            "5:HackGravity:1", //t=60, Reset gravity
+                            "0:RemoveDebris", // t=60, Remove any other debris and spectators
+                            "5:ToggleGuard:1", // t=65, Enable guard mode
                         };
                         break;
                     case 50: //change this later (orbital deployment)
@@ -2159,14 +2179,21 @@ namespace BDArmory.Control
                                 foreach (var pilot in pilots)
                                 {
                                     if (pilot.weaponManager != null && pilot.weaponManager.guardMode != newState)
+                                    {
                                         pilot.weaponManager.ToggleGuardMode();
+                                        if (!pilot.weaponManager.guardMode) pilot.weaponManager.SetTarget(null);
+                                    }
                                 }
                             }
                             else
                             {
                                 foreach (var pilot in pilots)
                                 {
-                                    if (pilot.weaponManager != null) pilot.weaponManager.ToggleGuardMode();
+                                    if (pilot.weaponManager != null)
+                                    {
+                                        pilot.weaponManager.ToggleGuardMode();
+                                        if (!pilot.weaponManager.guardMode) pilot.weaponManager.SetTarget(null);
+                                    }
                                     if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                                     {
                                         var MM = pilot.vessel.rootPart.FindModuleImplementing<BDAMutator>();
@@ -2240,13 +2267,12 @@ namespace BDArmory.Control
                     case "ActivateEngines":
                         {
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
-                            foreach (var pilot in GetAllPilots())
+                            foreach (var pilot in pilots)
                             {
-                                if (!VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel).Any(engine => engine.EngineIgnited)) // If the vessel didn't activate their engines on AG3, then activate all their engines and hope for the best.
+                                if (VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                                 {
-                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG3! Activating ALL their engines.");
-                                    foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(pilot.vessel))
-                                        engine.Activate();
+                                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
+                                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
                                 }
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
@@ -2850,7 +2876,7 @@ namespace BDArmory.Control
                     {
                         var timeOfDeath = now;
                         // If player was involved in a collision, we need to wait until the collision is resolved before registering the death.
-                        if (rammingInformation[player].targetInformation.Values.Any(other => other.collisionDetected))
+                        if (rammingInformation.ContainsKey(player) && rammingInformation[player].targetInformation.Values.Any(other => other.collisionDetected))
                         {
                             rammingInformation[player].timeOfDeath = rammingInformation[player].targetInformation.Values.Where(other => other.collisionDetected).Select(other => other.collisionDetectedTime).Max();
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDACompetitionMode:{CompetitionID}]: Delaying death of {player} due to being involved in a collision {now - rammingInformation[player].timeOfDeath}s ago at {rammingInformation[player].timeOfDeath - competitionStartTime:F3}.");

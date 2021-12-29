@@ -554,9 +554,9 @@ namespace BDArmory.Core.Extension
                     {
                         Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : "
                             + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
-                            + "; Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
+                            + "; Damage After Armor : " + (damage / (1 + (((strength * (density / 1000)) * armor) / 1000000))));
                     }
-                    damage /= (1 + (((strength * (density / 1000)) * armor) / 1000000)); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
+                    damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
 
                     break;
 
@@ -566,7 +566,7 @@ namespace BDArmory.Core.Extension
                     {
                         Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : "
                             + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
-                            + "; Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
+                            + "; Damage After Armor : " + (damage / (1 + (((strength * (density / 1000)) * armor) / 1000000))));
                     }
                     damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
 
@@ -595,7 +595,7 @@ namespace BDArmory.Core.Extension
                         {
                             Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage
                                 + "; Damage Reduction (%) : " + 100 * (1 - Mathf.Clamp01((113f - _damageReduction) / 100f))
-                                + "; Damage After Armor : " + (damage *= Mathf.Clamp01((113f - _damageReduction) / 100f)));
+                                + "; Damage After Armor : " + (damage * Mathf.Clamp01((113f - _damageReduction) / 100f)));
                         }
 
                         damage *= Mathf.Clamp01((113f - _damageReduction) / 100f);
@@ -634,6 +634,7 @@ namespace BDArmory.Core.Extension
         /// <returns>true if the part is a kerbal on EVA.</returns>
         public static bool IsKerbalEVA(this Part part)
         {
+            if (part == null) return false;
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
                 return part.IsKerbalEVA_1_11();

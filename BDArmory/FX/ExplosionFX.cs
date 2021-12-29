@@ -301,7 +301,7 @@ namespace BDArmory.FX
                         }
                     }
                 }
-            }            
+            }
             if (explosionEventsVesselsHit.Count > 0)
             {
                 if (ExplosionSource != ExplosionSourceType.Rocket) // Bullet explosions aren't registered in explosionEventsVesselsHit.
@@ -366,27 +366,27 @@ namespace BDArmory.FX
             {
                 //if (IsAngleAllowed(Direction, hit))
                 //{
-                    //Adding damage hit
-                    if (distance <= Range)//part within blast
+                //Adding damage hit
+                if (distance <= Range)//part within blast
+                {
+                    eventList.Add(new PartBlastHitEvent()
                     {
-                        eventList.Add(new PartBlastHitEvent()
-                        {
-                            Distance = distance,
-                            Part = part,
-                            TimeToImpact = distance / ExplosionVelocity,
-                            HitPoint = hit.point,
-                            Hit = hit,
-                            SourceVesselName = sourceVesselName,
-                            IntermediateParts = intermediateParts,
-                            withinAngleofEffect = angleOverride ? true : (IsAngleAllowed(Direction, hit, part))
-                        });
-                    }
-                    if (warheadType == WarheadTypes.Standard && ProjMass > 0 && distance <= Range * 2)
-                    {
-                        ProjectileUtils.CalculateShrapnelDamage(part, hit, Caliber, Power, distance, sourceVesselName, ExplosionSource, ProjMass); //part hit by shrapnel, but not pressure wave
-                    }
-                    partsAdded.Add(part);
-                    return true;
+                        Distance = distance,
+                        Part = part,
+                        TimeToImpact = distance / ExplosionVelocity,
+                        HitPoint = hit.point,
+                        Hit = hit,
+                        SourceVesselName = sourceVesselName,
+                        IntermediateParts = intermediateParts,
+                        withinAngleofEffect = angleOverride ? true : (IsAngleAllowed(Direction, hit, part))
+                    });
+                }
+                if (warheadType == WarheadTypes.Standard && ProjMass > 0 && distance <= Range * 2)
+                {
+                    ProjectileUtils.CalculateShrapnelDamage(part, hit, Caliber, Power, distance, sourceVesselName, ExplosionSource, ProjMass); //part hit by shrapnel, but not pressure wave
+                }
+                partsAdded.Add(part);
+                return true;
                 //}
             }
             return false;
@@ -426,7 +426,7 @@ namespace BDArmory.FX
         private bool IsInLineOfSight(Part part, Part explosivePart, out RaycastHit hit, out float distance, out List<Tuple<float, float, float>> intermediateParts)
         {
             Ray partRay = new Ray(Position, part.transform.position - Position);
-            
+
             var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, Range, 9076737);
             if (hitCount == lineOfSightHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
@@ -910,7 +910,7 @@ namespace BDArmory.FX
                     eFx.warheadType = WarheadTypes.ContinuousRod;
                     //eFx.AngleOfEffect = 165;
                     eFx.Caliber = caliber > 0 ? caliber / 4 : 30;
-                    eFx.ProjMass = 0.3f + (tntMassEquivalent/75);
+                    eFx.ProjMass = 0.3f + (tntMassEquivalent / 75);
                     break;
                 case "shapedcharge":
                     eFx.warheadType = WarheadTypes.ShapedCharge;
