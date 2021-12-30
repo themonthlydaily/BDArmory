@@ -82,6 +82,7 @@ namespace BDArmory.UI
                         switch (Event.current.button)
                         {
                             case 1: // right click
+                                if (teams.Current.Name != "Neutral" && teams.Current.Name != "A" && teams.Current.Name != "B")
                                 teams.Current.Neutral = !teams.Current.Neutral;
                                 break;
                             default:

@@ -763,7 +763,8 @@ namespace BDArmory.UI
                 else if (Event.current.button == 2)
                 {
                     //wm.SetTeam(BDTeam.Get("Neutral"));
-                    wm.Team.Neutral = !wm.Team.Neutral;
+                    //if (wm.Team.Name != "Neutral" && wm.Team.Name != "A" && wm.Team.Name != "B") wm.Team.Neutral = !wm.Team.Neutral;
+                    wm.NextTeam(true);
                 }
                 else
                 {
@@ -890,6 +891,7 @@ namespace BDArmory.UI
                 {
                     Debug.Log("[BDArmory.LoadedVesselSwitcher]: Vessel " + craftName + " was not specified to be part of a team, but is active. Assigning to team " + T.ToString() + ".");
                     weaponManagersByName[craftName].SetTeam(BDTeam.Get(T.ToString())); // Assign anyone who wasn't specified to a separate team.
+                    weaponManagersByName[craftName].Team.Neutral = false;
                 }
                 return;
             }
@@ -906,6 +908,7 @@ namespace BDArmory.UI
                         ++T;
                     }
                     weaponManager.SetTeam(BDTeam.Get(T.ToString())); // Otherwise, assign them to team T.
+                    weaponManager.Team.Neutral = false;
                     ++count;
                 }
                 return;

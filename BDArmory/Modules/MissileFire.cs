@@ -772,16 +772,29 @@ namespace BDArmory.Modules
 
         }
 
-        [KSPEvent(active = true, guiActiveEditor = true, guiActive = false)]
-        public void NextTeam()
+        [KSPEvent(active = true, guiActiveEditor = true, guiActive = false)] 
+        public void NextTeam(bool switchneutral = false) 
         {
-            var teamList = new List<string> { "A", "B" };
-            using (var teams = BDArmorySetup.Instance.Teams.GetEnumerator())
-                while (teams.MoveNext())
-                    if (!teamList.Contains(teams.Current.Key) && !teams.Current.Value.Neutral)
-                        teamList.Add(teams.Current.Key);
-            teamList.Sort();
-            SetTeam(BDTeam.Get(teamList[(teamList.IndexOf(Team.Name) + 1) % teamList.Count]));
+            if (!switchneutral) //standard switch behavior; don't switch to a neutral team
+            {
+                var teamList = new List<string> { "A", "B" };
+                using (var teams = BDArmorySetup.Instance.Teams.GetEnumerator())
+                    while (teams.MoveNext())
+                        if (!teamList.Contains(teams.Current.Key) && !teams.Current.Value.Neutral)
+                            teamList.Add(teams.Current.Key);
+                teamList.Sort();
+                SetTeam(BDTeam.Get(teamList[(teamList.IndexOf(Team.Name) + 1) % teamList.Count]));
+            }
+            else// alt-click; switch to first available neutral team
+            {
+                var neutralList = new List<string> { "Neutral" };
+                using (var teams = BDArmorySetup.Instance.Teams.GetEnumerator())
+                    while (teams.MoveNext())
+                        if (!neutralList.Contains(teams.Current.Key) && teams.Current.Value.Neutral)
+                            neutralList.Add(teams.Current.Key);
+                neutralList.Sort();
+                SetTeam(BDTeam.Get(neutralList[(neutralList.IndexOf(Team.Name) + 1) % neutralList.Count]));
+            }
         }
 
 
