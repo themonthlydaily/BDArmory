@@ -77,7 +77,7 @@ namespace BDArmory.UI
                     Rect buttonRect = new Rect(margin, height, width - 2 * margin, buttonHeight);
                     GUIStyle buttonStyle = (teams.Current == targetWeaponManager.Team) ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
-                    if (GUI.Button(buttonRect, teams.Current.Name + (teams.Current.Neutral ? "(Neutral)" : ""), buttonStyle))
+                    if (GUI.Button(buttonRect, teams.Current.Name + (teams.Current.Neutral ? (teams.Current.Name != "Neutral" ? "(Neutral)" : "") : ""), buttonStyle))
                     {
                         switch (Event.current.button)
                         {
