@@ -1857,6 +1857,10 @@ namespace BDArmory.Modules
             {
                 part.FindModuleImplementing<BDExplosivePart>().DetonateIfPossible();
             }
+            else if (part.FindModuleImplementing<BDModuleNuke>() != null)
+            {
+                part.FindModuleImplementing<BDModuleNuke>().Detonate();
+            }
             else //TODO: Remove this backguard compatibility
             {
                 Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;

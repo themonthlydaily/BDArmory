@@ -269,7 +269,7 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                if (fuel == null && solid == null)
+                else if (fuel == null && solid == null)
                 {
                     Events["ToggleTankOption"].guiActiveEditor = false;
                     Events["ToggleInertOption"].guiActiveEditor = false;
@@ -434,7 +434,7 @@ namespace BDArmory.Modules
         public void Extinguishtank()
         {
             isOnFire = true;
-            if (FireBottles > 0)
+            if (FireBottles > 0 || InertTank) //shouldn't be cathcing fire in the first place if interted, but just in case
             {
                 //if (engine != null && engine.EngineIgnited && engine.allowRestart)
                 //{
@@ -443,7 +443,14 @@ namespace BDArmory.Modules
                 //}
                 if (firebottleRoutine == null)
                 {
-                    firebottleRoutine = StartCoroutine(ExtinguishRoutine(4, true));
+                    if (InertTank)
+                    {
+                        firebottleRoutine = StartCoroutine(ExtinguishRoutine(0, false));
+                    }
+                    else
+                    {
+                        firebottleRoutine = StartCoroutine(ExtinguishRoutine(4, true));
+                    }
                     Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Firebottles remaining: " + FireBottles);
                 }
             }
@@ -477,6 +484,7 @@ namespace BDArmory.Modules
             if (useBottle)
             {
                 FireBottles--;
+                FBRemaining = FireBottles;
                 Misc.Misc.RefreshAssociatedWindows(part);
                 Debug.Log("[SelfSealingTank] Consuming firebottle. FB remaining: " + FireBottles);
                 isOnFire = false;
