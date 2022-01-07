@@ -1086,7 +1086,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 HullMassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                HullCostAdjust = -Mathf.Min((part.partInfo.cost - (float)resourceCost) / 2, part.partInfo.cost - 500);//make wooden parts cheaper, somewhat.
+                HullCostAdjust = Mathf.Max((part.partInfo.cost - (float)resourceCost) / 2, part.partInfo.cost - 500) - (part.partInfo.cost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
             }
             else if (HullTypeNum == 2)
             {
