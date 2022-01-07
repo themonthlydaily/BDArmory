@@ -51,6 +51,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public float HullMassAdjust = 0f;
         public float HullCostAdjust = 0f;
+        double resourceCost = 0;
 
         private bool IgnoreForArmorSetup = false;
 
@@ -407,6 +408,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             // {
             //     if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
             // }
+            CalculateDryCost();
         }
 
         IEnumerator DelayedOnStart()
@@ -550,6 +552,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     }
                     partMass = part.mass - armorMass - HullMassAdjust - Safetymass;
                 }
+                CalculateDryCost(); //recalc if modify event added a fueltank -resource swap, etc
                 HullMassAdjust = oldHullMassAdjust; // Put the HullmassAdjust back so we can test against it when we update the hull mass.
                 if (oldPartMass != partMass)
                 {
@@ -913,7 +916,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     else
                     {
                     */
-                        ArmorTypeNum = 1; //reset to 'None'
+                    ArmorTypeNum = 1; //reset to 'None'
                     //}
                 }
                 if (isAI || part.IsMissile() || BDArmorySettings.RESET_ARMOUR)
@@ -1083,7 +1086,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 HullMassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                HullCostAdjust = -Mathf.Max(part.partInfo.cost / 2, part.partInfo.cost - 500);//make wooden parts cheaper, somewhat.
+                HullCostAdjust = Mathf.Max((part.partInfo.cost - (float)resourceCost) / 2, part.partInfo.cost - 500) - (part.partInfo.cost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
             }
             else if (HullTypeNum == 2)
             {
@@ -1096,7 +1099,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 HullMassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                HullCostAdjust = Mathf.Min(part.partInfo.cost * 2, part.partInfo.cost + 1500); //make steel parts rather more expensive
+                HullCostAdjust = Mathf.Min((part.partInfo.cost - (float)resourceCost) * 2, (part.partInfo.cost - (float)resourceCost) + 1500); //make steel parts rather more expensive
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {
@@ -1108,6 +1111,36 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
             _hullConfigured = true;
+        }
+        private List<PartResource> GetResources()
+        {
+            List<PartResource> resources = new List<PartResource>();
+
+            foreach (PartResource resource in part.Resources)
+            {
+                if (!resources.Contains(resource)) { resources.Add(resource); }
+            }
+            return resources;
+        }
+        private void CalculateDryCost()
+        {
+            resourceCost = 0;
+            foreach (PartResource resource in GetResources())
+            {
+                var resources = part.Resources.ToList();
+                using (IEnumerator<PartResource> res = resources.GetEnumerator())
+                    while (res.MoveNext())
+                    {
+                        if (res.Current == null) continue;
+                        if (res.Current.resourceName == resource.resourceName)
+                        {
+                            if (res.Current.amount == res.Current.maxAmount) //only want tanks that start full, since those are the ones with parts cost modified to account for resource cost
+                            {
+                                resourceCost += res.Current.info.unitCost * res.Current.amount;
+                            }
+                        }
+                    }
+            }
         }
         #endregion Armor
         public override string GetInfo()
