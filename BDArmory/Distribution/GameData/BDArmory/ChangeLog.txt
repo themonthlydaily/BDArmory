@@ -1,4 +1,11 @@
-﻿v1.4.14.1
+﻿FIXES
+- Adds some checks for inerted tanks catching fire in some edge cases.
+- Fix firebottle gui not updating when they're used.
+- Make nukes detonate when fired.
+IMPROVEMENTS
+- Restore ability to add firebottles to engines.
+
+v1.4.14.1
 FIXES
 - Fix typo in 2x1 legacy armour panel.
 - Fixes missile turret Cost.
