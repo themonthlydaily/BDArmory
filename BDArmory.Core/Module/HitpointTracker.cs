@@ -916,7 +916,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     else
                     {
                     */
-                        ArmorTypeNum = 1; //reset to 'None'
+                    ArmorTypeNum = 1; //reset to 'None'
                     //}
                 }
                 if (isAI || part.IsMissile() || BDArmorySettings.RESET_ARMOUR)
@@ -1112,7 +1112,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             }
             _hullConfigured = true;
         }
-                private List<PartResource> GetResources()
+        private List<PartResource> GetResources()
         {
             List<PartResource> resources = new List<PartResource>();
 
@@ -1134,7 +1134,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         if (res.Current == null) continue;
                         if (res.Current.resourceName == resource.resourceName)
                         {
-                            if (res.Current.amount == res.Current.maxAmount) //only want tanks that start full, since those are the ones with parts cost modified to account forresource cost
+                            if (res.Current.amount == res.Current.maxAmount) //only want tanks that start full, since those are the ones with parts cost modified to account for resource cost
                             {
                                 resourceCost += res.Current.info.unitCost * res.Current.amount;
                             }
