@@ -172,7 +172,7 @@ namespace BDArmory.Modules
             GameEvents.onVesselCreate.Remove(CheckAttached);
         }
 
-        void Detonate()
+        public void Detonate()
         {
             if (hasDetonated || FlightGlobals.currentMainBody == null || VesselSpawner.Instance.vesselsSpawning) // Don't trigger on scene changes or during spawning.
             {
