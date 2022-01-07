@@ -1099,7 +1099,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 HullMassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                HullCostAdjust = Mathf.Min(part.partInfo.cost * 2, part.partInfo.cost + 1500); //make steel parts rather more expensive
+                HullCostAdjust = Mathf.Min((part.partInfo.cost - (float)resourceCost) * 2, (part.partInfo.cost - (float)resourceCost) + 1500); //make steel parts rather more expensive
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {
