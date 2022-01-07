@@ -1,4 +1,20 @@
-﻿v1.4.14.0
+﻿FIXES
+- Fix typo in 2x1 legacy armour panel.
+- Fixes missile turret Cost.
+- Fixes missile RMB warhead info.
+- Fixes NRE with proc armor parts on loading a craft.
+- Nukes no longer explode when destroyed (if engineCore = false, so S3R1 Chernobyl functionality still present, just not all the time).
+- Account for starting resource cost modifier to part cost, fix discount to reduce up to 500 from cost.
+IMPROVEMENTS
+- Restores ability to set custom tracer stats in weapon.cfg. Use "tracerOverrideWidth = true" in the cfg to use override values instead of dynamically determined tracer settings.
+- BattleDamage fire chance on hit now editable in the settings config.
+- Teams:
+	- Adds ability to set teams to neutral in team selector/VesselSwitcher/WM.
+	- Right clicking on the team button in the Team Selector/WM will toggle non-default teams (A, B, Neutral) neutral status.
+	- Right clicking on the [t] button to the right of a vessel button in the VS will open the Team Selector.
+	- Left click will switch to next combat team, mouse-3 will switch to next neutral team.
+
+v1.4.14.0
 FIXES
 - Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
 - Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.

@@ -23,7 +23,6 @@ namespace BDArmory.Modules
         public bool isTriangularPanel = false;
 
         //public bool isCurvedPanel = false;
-
         private float armorthickness = 1;
         private float Oldthickness = 1;
 
@@ -98,6 +97,14 @@ namespace BDArmory.Modules
                 N4Transform = part.FindModelTransform(Node4Name);
                 N4.nodeType = AttachNode.NodeType.Stack;
             }
+            UpdateThickness();
+        }
+        public override void OnLoad(ConfigNode node)
+        {
+            base.OnLoad(node);
+
+            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) return;
+            armor = GetComponent<HitpointTracker>();
         }
         private void OnDestroy()
         {
@@ -315,20 +322,29 @@ namespace BDArmory.Modules
         }
         void UpdateThickness()
         {
-            armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);            
-            //if (!isCurvedPanel)
+            if (armor != null && armorTransforms != null)
             {
-                for (int i = 0; i < armorTransforms.Length; i++)
+                armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);
+                //if (!isCurvedPanel)
                 {
-                    armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                    for (int i = 0; i < armorTransforms.Length; i++)
+                    {
+                        armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                    }
                 }
+                /*
+                else
+                {
+                    ThicknessTransform.localScale = new Vector3(armorthickness, 1, armorthickness);
+                }
+                */
             }
-            /*
             else
             {
-                ThicknessTransform.localScale = new Vector3(armorthickness, 1, armorthickness);
+                if (armor == null) Debug.Log("[BDAAdjustableArmor] No HitpointTracker found! aborting UpdateThickness()!");
+                if (armorTransforms == null) Debug.Log("[BDAAdjustableArmor] No ArmorTransform found! aborting UpdateThickness()!");
+                return;
             }
-            */
             float ratio = (armorthickness - Oldthickness) / 100;
             foreach (Part p in part.children)
             {
