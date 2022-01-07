@@ -1124,6 +1124,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         }
         private void CalculateDryCost()
         {
+            resourceCost = 0;
             foreach (PartResource resource in GetResources())
             {
                 var resources = part.Resources.ToList();
