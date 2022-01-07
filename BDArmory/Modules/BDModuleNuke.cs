@@ -93,7 +93,7 @@ namespace BDArmory.Modules
                 }
                 Sourcevessel = part.vessel.GetName();
 
-                part.OnJustAboutToBeDestroyed += Detonate;
+                if (engineCore) part.OnJustAboutToBeDestroyed += Detonate;
                 GameEvents.onVesselPartCountChanged.Add(CheckAttached);
                 GameEvents.onVesselCreate.Add(CheckAttached);
             }

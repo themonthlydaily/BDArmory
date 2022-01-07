@@ -571,6 +571,10 @@ namespace BDArmory.Modules
 
         [KSPField]
         public float tracerLuminance = 1.75f;
+
+        [KSPField]
+        public bool tracerOverrideWidth =false;
+
         int tracerIntervalCounter;
 
         [KSPField]
@@ -1310,7 +1314,7 @@ namespace BDArmory.Modules
         public string WeaponStatusdebug()
         {
             string status = "Weapon Type: ";
-
+            /*
             if (eWeaponType == WeaponTypes.Ballistic)
                 status += "Ballistic; BulletType: " + currentType;
             if (eWeaponType == WeaponTypes.Rocket)
@@ -1318,6 +1322,9 @@ namespace BDArmory.Modules
             if (eWeaponType == WeaponTypes.Laser)
                 status += "Laser";
             status += "; RoF: " + roundsPerMinute + "; deviation: " + maxDeviation + "; instagib = " + instagib;
+            */
+            status += "-Lead Offset: " + GetLeadOffset() + "; FinalAimTgt: " + finalAimTarget + "; tgt Pos: " + targetPosition + "; pointingAtSelf: " + pointingAtSelf + "; tgt CosAngle " + targetCosAngle + "; wpn CosAngle " + targetAdjustedMaxCosAngle + "; Wpn Autofire " + autoFire;
+
             return status;
         }
         void Update()
@@ -4565,9 +4572,12 @@ namespace BDArmory.Modules
                 ParseBulletDragType();
                 ParseBulletFuzeType(bulletInfo.fuzeType);
                 tntMass = bulletInfo.tntMass;
-                tracerStartWidth = caliber / 300;
-                tracerEndWidth = caliber / 750;
-                nonTracerWidth = caliber / 500;
+                if (!tracerOverrideWidth)
+                {
+                    tracerStartWidth = caliber / 300;
+                    tracerEndWidth = caliber / 750;
+                    nonTracerWidth = caliber / 500;
+                }
                 if (((((bulletMass * 1000) / ((caliber * caliber * Mathf.PI / 400) * 19) + 1) * 10) > caliber * 4))
                 {
                     SabotRound = true;

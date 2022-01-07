@@ -91,6 +91,7 @@ namespace BDArmory.Modules
         [KSPField] 
         public string warheadType = "standard";
         public string warheadReportingName;
+
         [KSPField]
         public string explModelPath = "BDArmory/Models/explosion/explosion";
 
@@ -161,20 +162,7 @@ namespace BDArmory.Modules
             }
             */
             CalculateBlast();
-            warheadType = warheadType.ToLower();
-            switch (warheadType) //make sure this is a valid entry
-            {
-                case "continuousrod":
-                    warheadReportingName = "Continuous Rod";
-                    break;
-                case "shapedcharge":
-                    warheadReportingName = "Shaped Charge";
-                    break;
-                default:
-                    warheadType = "standard";
-                    warheadReportingName = "Standard";
-                    break;
-            }
+            ParseWarheadType();
         }
 
         public void GuiSetup()
@@ -316,8 +304,24 @@ namespace BDArmory.Modules
 
             blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMass);
         }
-
-        public void DetonateIfPossible()
+        public void ParseWarheadType()
+        {
+            warheadType = warheadType.ToLower();
+            switch (warheadType) //make sure this is a valid entry
+            {
+                case "continuousrod":
+                    warheadReportingName = "Continuous Rod";
+                    break;
+                case "shapedcharge":
+                    warheadReportingName = "Shaped Charge";
+                    break;
+                default:
+                    warheadType = "standard";
+                    warheadReportingName = "Standard";
+                    break;
+            }
+        }
+    public void DetonateIfPossible()
         {
             if (part == null) return;
             if (!hasDetonated && Armed)

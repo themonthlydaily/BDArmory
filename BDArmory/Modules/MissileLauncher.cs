@@ -2276,8 +2276,12 @@ namespace BDArmory.Modules
                 if (partModules.Current == null) continue;
                 if (partModules.Current.moduleName == "BDExplosivePart")
                 {
-                    if (clusterbomb > 1) output.AppendLine("Cluster Bomb");
-                    output.AppendLine($"- Sub-Munition Count: {clusterbomb} ");
+                    ((BDExplosivePart)partModules.Current).ParseWarheadType();
+                    if (clusterbomb > 1)
+                    {
+                        output.AppendLine($"Cluster Bomb:");
+                        output.AppendLine($"- Sub-Munition Count: {clusterbomb} ");
+                    }
                     float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
                     output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                     output.AppendLine($"- tnt Mass: {tntMass} kg");
