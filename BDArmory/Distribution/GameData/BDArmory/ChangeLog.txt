@@ -7,6 +7,7 @@ IMPROVEMENTS
 - Tournaments:
 	- Add the savegame field to tournament.state on tournament generation.
 	- Add Auto-Quit at end of tournament hidden option (for automation).
+	- Add custom max number of rounds to tournaments (edit the settings.cfg file to set it).
 
 v1.4.14.1
 FIXES
