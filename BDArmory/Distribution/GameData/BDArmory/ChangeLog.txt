@@ -4,6 +4,9 @@
 - Make nukes detonate when fired.
 IMPROVEMENTS
 - Restore ability to add firebottles to engines.
+- Tournaments:
+	- Add the savegame field to tournament.state on tournament generation.
+	- Add Auto-Quit at end of tournament hidden option (for automation).
 
 v1.4.14.1
 FIXES
