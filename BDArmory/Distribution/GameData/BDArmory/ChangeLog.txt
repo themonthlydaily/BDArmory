@@ -6,8 +6,8 @@ IMPROVEMENTS
 - Restore ability to add firebottles to engines.
 - Tournaments:
 	- Add the savegame field to tournament.state on tournament generation.
-	- Add Auto-Quit at end of tournament hidden option (for automation).
-	- Add custom max number of rounds to tournaments (edit the settings.cfg file to set it).
+	- Add Auto-Quit at end of tournament hidden option (for automation: AUTO_QUIT_AT_END_OF_TOURNAMENT).
+	- Add custom max number of rounds to tournaments (edit the settings.cfg file to set it: TOURNAMENT_ROUNDS_CUSTOM).
 
 v1.4.14.1
 FIXES
