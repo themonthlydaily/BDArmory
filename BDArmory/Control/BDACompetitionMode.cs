@@ -3405,6 +3405,8 @@ namespace BDArmory.Control
                             rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
                             rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
                             rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
+                            rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
+                            rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
                             hitVessel = true;
                         }
                     }
