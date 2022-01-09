@@ -1134,10 +1134,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         if (res.Current == null) continue;
                         if (res.Current.resourceName == resource.resourceName)
                         {
-                            if (res.Current.amount == res.Current.maxAmount) //only want tanks that start full, since those are the ones with parts cost modified to account for resource cost
-                            {
-                                resourceCost += res.Current.info.unitCost * res.Current.amount;
-                            }
+                            resourceCost += res.Current.info.unitCost * res.Current.maxAmount; //turns out parts subtract res cost even if the tank starts empty
                         }
                     }
             }
