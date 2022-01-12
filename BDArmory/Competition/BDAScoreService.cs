@@ -274,9 +274,12 @@ namespace BDArmory.Competition
                     }
             }
 
-            status = StatusType.ReportingResults;
-            // report scores
-            yield return SendScores(hash, model);
+            if (competitionStarted) // Only report scores if the competition actually started.
+            {
+                status = StatusType.ReportingResults;
+                // report scores
+                yield return SendScores(hash, model);
+            }
 
             status = StatusType.StoppingHeat;
             // notify web service to stop heat
