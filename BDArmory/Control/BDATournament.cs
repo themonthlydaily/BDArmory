@@ -412,7 +412,8 @@ namespace BDArmory.Control
 
         Tuple<int, int> OptimiseVesselsPerHeat(int count)
         {
-            var options = count < 11 ? new List<int> { 8, 7, 6, 5 } : new List<int> { 8, 7, 6 };
+            if (BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y < BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x) BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y = BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x;
+            var options = count < 11 ? new List<int> { 8, 7, 6, 5 } : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1).Reverse().ToList();
             foreach (var val in options)
             {
                 if (count % val == 0)

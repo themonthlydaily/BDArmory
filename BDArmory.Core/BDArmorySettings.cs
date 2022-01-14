@@ -263,6 +263,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static int TOURNAMENT_ROUNDS = 1;                      // Rounds
         [BDAPersistentSettingsField] public static int TOURNAMENT_ROUNDS_CUSTOM = 1000;            // Custom number of rounds at right end of slider.
         [BDAPersistentSettingsField] public static int TOURNAMENT_VESSELS_PER_HEAT = 8;            // Vessels Per Heat
+        [BDAPersistentSettingsField] public static Vector2Int TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE = new Vector2Int(6, 8); // Automatic vessels per heat selection (inclusive range).
         [BDAPersistentSettingsField] public static int TOURNAMENT_TEAMS_PER_HEAT = 2;              // Teams Per Heat
         [BDAPersistentSettingsField] public static int TOURNAMENT_VESSELS_PER_TEAM = 2;            // Vessels Per Team
         [BDAPersistentSettingsField] public static bool TOURNAMENT_FULL_TEAMS = true;              // Full Teams
