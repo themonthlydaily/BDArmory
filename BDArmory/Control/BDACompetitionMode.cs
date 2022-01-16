@@ -494,6 +494,8 @@ namespace BDArmory.Control
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
 
+            if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN && VesselSpawner.Instance.vesselsSpawningContinuously) VesselSpawner.Instance.DumpContinuousSpawningScores();
+
             return true;
         }
 
@@ -1175,6 +1177,10 @@ namespace BDArmory.Control
         public void StopCompetition()
         {
             LogResults();
+            if (competitionIsActive && VesselSpawner.Instance.vesselsSpawningContinuously)
+            {
+                VesselSpawner.Instance.CancelVesselSpawn();
+            }
             if (competitionRoutine != null)
             {
                 StopCoroutine(competitionRoutine);
@@ -3037,7 +3043,7 @@ namespace BDArmory.Control
             }
             // Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
 
-            if (!VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.COMPETITION_DURATION > 0 && now - competitionStartTime >= BDArmorySettings.COMPETITION_DURATION * 60d)
+            if (BDArmorySettings.COMPETITION_DURATION > 0 && now - competitionStartTime >= BDArmorySettings.COMPETITION_DURATION * 60d)
             {
                 LogResults("due to out-of-time");
                 StopCompetition();
