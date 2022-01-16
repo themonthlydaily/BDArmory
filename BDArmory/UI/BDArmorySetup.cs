@@ -2749,6 +2749,7 @@ namespace BDArmory.UI
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateHitMultiplier")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER})", leftLabel);//Fire Rate Hit Multiplier
                             BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
+                        // if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 46) BDArmorySettings.NO_ENGINES = true;
                         if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI))) //if we need super-secret stuff
                         {
                             if (CheatCodeGUI == "ZombieMode")
@@ -2759,6 +2760,11 @@ namespace BDArmory.UI
                             else if (CheatCodeGUI == "DiscoInferno")
                             {
                                 BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
+                                CheatCodeGUI = "";
+                            }
+                            else if (CheatCodeGUI == "NoEngines")
+                            {
+                                BDArmorySettings.NO_ENGINES = !BDArmorySettings.NO_ENGINES;
                                 CheatCodeGUI = "";
                             }
                         }

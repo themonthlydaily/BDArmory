@@ -64,7 +64,7 @@ namespace BDArmory.Misc
             return hasFSEngine;
         }
 
-        public static void ActivateFSEngines(Vessel vessel)
+        public static void ActivateFSEngines(Vessel vessel, bool activate = true)
         {
             if (!hasFSEngine) return;
             foreach (var part in vessel.Parts)
@@ -73,8 +73,16 @@ namespace BDArmory.Misc
                 {
                     if (module.GetType() == FSEngineType || module.GetType().IsSubclassOf(FSEngineType))
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found {module} on {vessel.vesselName}, attempting to call 'Activate'.");
-                        FSEngineType.InvokeMember("Activate", BindingFlags.InvokeMethod, null, module, new object[] { }); // Note: this activates the engines, but the throttle on the engines aren't controlled unless they're on the active vessel.
+                        if (activate)
+                        {
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found {module} on {vessel.vesselName}, attempting to call 'Activate'.");
+                            FSEngineType.InvokeMember("Activate", BindingFlags.InvokeMethod, null, module, new object[] { }); // Note: this activates the engines, but the throttle on the engines aren't controlled unless they're on the active vessel.
+                        }
+                        else
+                        {
+                            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.FireSpitter]: Found {module} on {vessel.vesselName}, attempting to call 'Shutdown'.");
+                            FSEngineType.InvokeMember("Shutdown", BindingFlags.InvokeMethod, null, module, new object[] { });
+                        }
                     }
                 }
             }

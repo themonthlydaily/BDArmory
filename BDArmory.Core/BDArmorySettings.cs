@@ -168,6 +168,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool MUTATOR_MODE = false;
         [BDAPersistentSettingsField] public static bool ZOMBIE_MODE = false;
         [BDAPersistentSettingsField] public static bool DISCO_MODE = false;
+        [BDAPersistentSettingsField] public static bool NO_ENGINES = false;
 
         //Battle Damage settings
         [BDAPersistentSettingsField] public static bool BATTLEDAMAGE_TOGGLE = false;    // Main battle damage toggle.

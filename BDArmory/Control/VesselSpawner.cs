@@ -176,34 +176,43 @@ namespace BDArmory.Control
             return VesselModuleRegistry.GetModules<ModuleEngines>(vessel).Where(engine => engine.EngineIgnited).ToList().Count + FireSpitter.CountActiveEngines(vessel);
         }
 
-        public void ActivateAllEngines(Vessel vessel)
+        public void ActivateAllEngines(Vessel vessel, bool activate = true)
         {
             foreach (var engine in VesselModuleRegistry.GetModules<ModuleEngines>(vessel))
             {
                 var mme = engine.part.FindModuleImplementing<MultiModeEngine>();
                 if (mme == null)
                 {
-                    engine.Activate();
+                    if (activate) engine.Activate();
+                    else engine.Shutdown();
                 }
                 else
                 {
                     if (mme.runningPrimary)
                     {
-                        if (!mme.PrimaryEngine.EngineIgnited)
+                        if (activate && !mme.PrimaryEngine.EngineIgnited)
                         {
                             mme.PrimaryEngine.Activate();
+                        }
+                        else if (!activate && mme.PrimaryEngine.EngineIgnited)
+                        {
+                            mme.PrimaryEngine.Shutdown();
                         }
                     }
                     else
                     {
-                        if (!mme.SecondaryEngine.EngineIgnited)
+                        if (activate && !mme.SecondaryEngine.EngineIgnited)
                         {
                             mme.SecondaryEngine.Activate();
+                        }
+                        else if (!activate && mme.SecondaryEngine.EngineIgnited)
+                        {
+                            mme.SecondaryEngine.Shutdown();
                         }
                     }
                 }
             }
-            FireSpitter.ActivateFSEngines(vessel);
+            FireSpitter.ActivateFSEngines(vessel, activate);
         }
 
         public void HackIntakesOnNewVessels(bool enable)
@@ -954,10 +963,14 @@ namespace BDArmory.Control
                                 weaponManager.SetTarget(null);
                             }
 
-                            if (CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                            if (!BDArmorySettings.NO_ENGINES && CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                                 ActivateAllEngines(vessel);
+                            }
+                            else if (BDArmorySettings.NO_ENGINES && CountActiveEngines(vessel) > 0) // Vessel had some active engines. Turn them off if possible.
+                            {
+                                ActivateAllEngines(vessel, false);
                             }
                         }
 
@@ -1418,10 +1431,14 @@ namespace BDArmory.Control
                             vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[10]); // Modular Missiles use lower AGs (1-3) for staging, use a high AG number to not affect them
                             weaponManager.AI.ActivatePilot();
                             weaponManager.AI.CommandTakeOff();
-                            if (CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                            if (!BDArmorySettings.NO_ENGINES && CountActiveEngines(vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                             {
                                 Debug.Log("[BDArmory.VesselSpawner]: " + vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                                 ActivateAllEngines(vessel);
+                            }
+                            else if (BDArmorySettings.NO_ENGINES && CountActiveEngines(vessel) > 0) // Vessel had some active engines. Turn them off if possible.
+                            {
+                                ActivateAllEngines(vessel, false);
                             }
                             if (BDArmorySettings.TAG_MODE && !string.IsNullOrEmpty(BDACompetitionMode.Instance.Scores.currentlyIT))
                             { weaponManager.SetTeam(BDTeam.Get("NO")); }

@@ -1295,10 +1295,14 @@ namespace BDArmory.Control
                     pilot.weaponManager.ToggleGuardMode();
                     pilot.weaponManager.SetTarget(null);
                 }
-                if (VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+                if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                     VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
+                }
+                else if (BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
+                {
+                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel, false);
                 }
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
@@ -2275,10 +2279,14 @@ namespace BDArmory.Control
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
                             foreach (var pilot in pilots)
                             {
-                                if (VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                                if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                                 {
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
                                     VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
+                                }
+                                else if (BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
+                                {
+                                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel, false);
                                 }
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
