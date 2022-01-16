@@ -2285,8 +2285,8 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                // Finally, check the distance to sea-level as water doesn't act like a collider, so it's getting ignored.
-                if (vessel.mainBody.ocean)
+                // Finally, check the distance to sea-level as water doesn't act like a collider, so it's getting ignored. Also, for planets without surfaces.
+                if (vessel.mainBody.ocean || !vessel.mainBody.hasSolidSurface)
                 {
                     float sinTheta = Vector3.Dot(vessel.srf_vel_direction, upDirection); // sin(theta) (measured relative to the ocean surface).
                     if (sinTheta < 0f) // Heading downwards

@@ -772,8 +772,8 @@ namespace BDArmory.Modules
 
         }
 
-        [KSPEvent(active = true, guiActiveEditor = true, guiActive = false)] 
-        public void NextTeam(bool switchneutral = false) 
+        [KSPEvent(active = true, guiActiveEditor = true, guiActive = false)]
+        public void NextTeam(bool switchneutral = false)
         {
             if (!switchneutral) //standard switch behavior; don't switch to a neutral team
             {
@@ -4115,7 +4115,7 @@ namespace BDArmory.Modules
                         if (!CheckEngagementEnvelope(item.Current, distance)) continue;
                         // weapon usable, if missile continue looking for lasers/guns, else take it
                         WeaponClasses candidateClass = item.Current.GetWeaponClass();
-                        
+
                         if (candidateClass == WeaponClasses.DefenseLaser) //lasers would be a suboptimal choice for strafing attacks, but if nothing else available...
                         {
                             // For Atg, favour higher power/turreted
@@ -4521,7 +4521,7 @@ namespace BDArmory.Modules
                                 }
                             }
                         }
-                    } 
+                    }
             }
 
             // return result of weapon selection

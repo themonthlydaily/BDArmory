@@ -4148,7 +4148,7 @@ namespace BDArmory.Modules
                     }
                     targetVelocity -= Krakensbane.GetFrameVelocityV3f();
                     targetRadius = 1;
-                    targetAcceleration = MissileTgt != null && MissileTgt.Vessel != null ? MissileTgt.Vessel.acceleration : Vector3.zero;
+                    targetAcceleration = MissileTgt != null && MissileTgt.Vessel != null ? (Vector3)MissileTgt.Vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
 
