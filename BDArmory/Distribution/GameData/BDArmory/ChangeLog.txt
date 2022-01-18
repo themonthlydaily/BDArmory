@@ -2,12 +2,23 @@
 - Adds some checks for inerted tanks catching fire in some edge cases.
 - Fix firebottle gui not updating when they're used.
 - Make nukes detonate when fired.
+- Fixes for continuous spawning.
+- Only report scores to the remote API and stop the heat if the competition actually starts (avoids the empty result from a competition failing to start).
+- Register the collision detection time for the case where the other vessel has disappeared (fixes some invalid death times).
+- Move evolution path configuration from constructor to Awake to satisfy MonoBehaviour conditions.
+- Fix various NREs.
 IMPROVEMENTS
 - Restore ability to add firebottles to engines.
 - Tournaments:
 	- Add the savegame field to tournament.state on tournament generation.
 	- Add Auto-Quit at end of tournament hidden option (for automation: AUTO_QUIT_AT_END_OF_TOURNAMENT).
 	- Add custom max number of rounds to tournaments (edit the settings.cfg file to set it: TOURNAMENT_ROUNDS_CUSTOM).
+	- Make the auto-generated vessels-per-heat setting customisable (by editing the settings.cfg).
+	- Rename the summary plotting script and allow specifying the tournament folder.
+- Option for gliders. Specify 'NoEngines' in the RWP cheat-code box to toggle it for now, or just edit the settings.cfg file.
+- An updated continuous spawning log parser.
+- Adjust the ballistic trajectory simulation time-step multiplier based on the distance to the target to give improved debug lines/targeting line visuals.
+- Also avoid 0 altitude (terrain avoidance) for bodies without solid surfaces.
 
 v1.4.14.1
 FIXES
