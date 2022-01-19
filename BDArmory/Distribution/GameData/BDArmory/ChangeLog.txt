@@ -18,7 +18,12 @@ IMPROVEMENTS
 - Option for gliders. Specify 'NoEngines' in the RWP cheat-code box to toggle it for now, or just edit the settings.cfg file.
 - An updated continuous spawning log parser.
 - Adjust the ballistic trajectory simulation time-step multiplier based on the distance to the target to give improved debug lines/targeting line visuals.
-- Also avoid 0 altitude (terrain avoidance) for bodies without solid surfaces.
+- AI:
+	- Also avoid 0 altitude (terrain avoidance) for bodies without solid surfaces.
+	- Reworked the integral component of the PID to work as an actual PID again:
+		- The integral is no longer reset to 0 when the pitch error changes sign, nor decays with time.
+		- The integral is now vector valued to account for coupling between the yaw and pitch axes due to roll and the individual pitch and yaw components are projected out from this integral.
+		- The internal yaw damping factor is increased from 0.2 to 0.33 to keep the internal ratios between the axes consistent for each of the P, I and D components (1:0.33:0.1 for pitch:yaw:roll).
 
 v1.4.14.1
 FIXES
