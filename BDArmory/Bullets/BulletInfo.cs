@@ -35,8 +35,6 @@ namespace BDArmory.Bullets
         public static HashSet<string> bulletNames;
         public static BulletInfo defaultBullet;
 
-        public static List<string> tagsList;
-
         public BulletInfo(string name, string DisplayName, float caliber, float bulletVelocity, float bulletMass, 
                           bool explosive, bool incendiary, float tntMass, bool EMP, bool nuclear, bool beehive, string subMunitionType, float massMod, float impulse, string fuzeType, float apBulletDmg,
                           int subProjectileCount, string bulletDragTypeName, string projectileColor, string startColor, bool fadeColor)
@@ -103,7 +101,7 @@ namespace BDArmory.Bullets
                         (string)ParseField(node, "projectileColor", typeof(string)),
                         (string)ParseField(node, "startColor", typeof(string)),
                         (bool)ParseField(node, "fadeColor", typeof(bool))
-                    ); ;
+                    );
                     bullets.Add(defaultBullet);
                     bulletNames.Add("def");
                     break;
