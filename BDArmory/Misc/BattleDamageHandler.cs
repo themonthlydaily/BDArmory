@@ -38,9 +38,10 @@ namespace BDArmory.Misc
                     var rubbertank = part.FindModuleImplementing<ModuleSelfSealingTank>();
                     if (rubbertank != null)
                     {
-                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.5f) return;
+                        if (rubbertank.SSTank && part.GetDamagePercentage() > 0.5f)
+                            return;
                     }
-                    Debug.Log("[BDHandler] Hit on fueltank. SST = " + rubbertank.SSTank + "; inerting = " + rubbertank.InertTank);
+                    //Debug.Log("[BDHandler] Hit on fueltank. SST = " + rubbertank.SSTank + "; inerting = " + rubbertank.InertTank);
                     if (penetrationFactor > 1.2)
                     {
                         if (alreadyburning != null)

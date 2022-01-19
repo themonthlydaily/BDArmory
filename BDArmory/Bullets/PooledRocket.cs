@@ -484,7 +484,7 @@ namespace BDArmory.Bullets
                                 ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
 
                                 penTicker += 1;
-                                ProjectileUtils.CheckPartForExplosion(hitPart);
+                                //ProjectileUtils.CheckPartForExplosion(hitPart);
 
                                 if (explosive || !viableBullet)
                                 {

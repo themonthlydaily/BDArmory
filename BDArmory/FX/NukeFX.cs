@@ -295,8 +295,11 @@ namespace BDArmory.FX
                         {
                             //default model scaled for 20kt; yield = 20 = scale of 1
                             //scaling calc is roughly SqRt( 400 * (6x))
+                            if (!string.IsNullOrWhiteSpace(flashModelPath))
                             FXEmitter.CreateFX(transform.position, scale, flashModelPath, blastSoundPath, 0.3f, -1, default, true);
+                            if (!string.IsNullOrWhiteSpace(shockModelPath))
                             FXEmitter.CreateFX(transform.position, scale * lastValidAtmDensity, shockModelPath, blastSoundPath, 0.3f, -1, default, true);
+                            if (!string.IsNullOrWhiteSpace(blastModelPath))
                             FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
                         }
                         if (Misc.Misc.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
@@ -304,8 +307,9 @@ namespace BDArmory.FX
                             double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
                             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
                             double altitude = FlightGlobals.currentMainBody.TerrainAltitude(latitudeAtPos, longitudeAtPos);
-
+                            if (!string.IsNullOrWhiteSpace(plumeModelPath))
                             FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), Mathf.Clamp(scale, 0.01f, 3f), plumeModelPath, blastSoundPath, Mathf.Clamp(30 * scale, 30f, 90f), Mathf.Clamp(30 * scale, 30f, 90f), default, true, true);
+                            if (!string.IsNullOrWhiteSpace(debrisModelPath))
                             FXEmitter.CreateFX(FlightGlobals.currentMainBody.GetWorldSurfacePosition(latitudeAtPos, longitudeAtPos, altitude), scale, debrisModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true) ;
                         }
                     }
@@ -531,7 +535,7 @@ namespace BDArmory.FX
                 var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
                 if (soundClip == null)
                 {
-                    Debug.LogError("[BDArmory.ExplosionFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
+                    Debug.LogError("[BDArmory.NukeFX]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
                     soundClip = GameDatabase.Instance.GetAudioClip("BDArmory/Models/explosion/nuke/nukeBoom");
                 }
                 var eFx = templateFX.AddComponent<NukeFX>();
@@ -549,9 +553,9 @@ namespace BDArmory.FX
                 nukePool[key] = ObjectPool.CreateObjectPool(templateFX, 10, true, true, 0f, false);
             }
         }
-        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, float delay = 2.5f, float blastRadius = 750, float Yield = 0.05f,
-            float thermalShock = 0.05f, bool emp = true, string sourceWeaponName = "Nuke", string ModelPath = "BDArmory/Models/Mutators/NukeCore", string soundPath = "BDArmory/Models/explosion/nuke/nukeBoom", string blastSound = "BDArmory/Models/explosion/nuke/nukeBoom",
-            string flashModel = "BDArmory/Models/explosion/nuke/nukeFlash", string shockModel = "BDArmory/Models/explosion/nuke/nukeShock", string blastModel = "BDArmory/Models/explosion/nuke/nukeBlast", string plumeModel = "BDArmory/Models/explosion/nuke/nukePlume", string debrisModel = "BDArmory/Models/explosion/nuke/nukeScatter")
+        public static void CreateExplosion(Vector3 position, ExplosionSourceType explosionSourceType, string sourceVesselName, string sourceWeaponName = "Nuke",
+            float delay = 2.5f, float blastRadius = 750, float Yield = 0.05f, float thermalShock = 0.05f, bool emp = true, string blastSound = "", 
+            string flashModel = "", string shockModel = "", string blastModel = "", string plumeModel = "", string debrisModel = "", string ModelPath = "", string soundPath = "")
         {
             SetupPool(ModelPath, soundPath, blastRadius);
 
@@ -575,6 +579,7 @@ namespace BDArmory.FX
             eFx.plumeModelPath = plumeModel;
             eFx.debrisModelPath = debrisModel;
             eFx.blastSoundPath = blastSound;
+            Debug.Log("[NUKE FX DEBUG] blast model: " + blastModel);
 
             eFx.yield = Yield;
             eFx.fluence = thermalShock;

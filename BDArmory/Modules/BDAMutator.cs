@@ -334,10 +334,10 @@ namespace BDArmory.Modules
                         Accumulator += TimeWarp.fixedDeltaTime;
                     }
                 }
-                
+
             }
         }
-        void OnGUI() 
+        void OnGUI()
         {
             if (Event.current.type.Equals(EventType.Repaint))
             {
@@ -420,12 +420,14 @@ namespace BDArmory.Modules
                 }
             }
         }
-        void Detonate() 
+        void Detonate()
         {
             if (!Vengeance) return;
             if (!BDACompetitionMode.Instance.competitionIsActive) return;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDAMutator] triggering vengeance nuke");
-            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), 2.5f, 500, 0.05f, 0.05f, true, "Vengeance Explosion", "BDArmory/Models/Mutators/Vengence");
+            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, this.vessel.GetName(), "Vengeance Explosion", 2.5f, 300, 1.5f, 1.5f, true,
+                "BDArmory/Models/explosion/nuke/nukeBoom", "BDArmory/Models/explosion/nuke/nukeFlash", "BDArmory/Models/explosion/nuke/nukeShock", "BDArmory/Models/explosion/nuke/nukeBlast", "BDArmory/Models/explosion/nuke/nukePlume", "BDArmory/Models/explosion/nuke/nukeScatter",
+                  "BDArmory/Models/Mutators/Vengence", "");
         }
     }
 }

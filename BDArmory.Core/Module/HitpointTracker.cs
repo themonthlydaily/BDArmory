@@ -52,6 +52,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public float HullMassAdjust = 0f;
         public float HullCostAdjust = 0f;
 
+        double resourceCost = 0;
+
         private bool IgnoreForArmorSetup = false;
 
         private bool isAI = false;
@@ -215,14 +217,20 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 if (!_forceUpdateHitpointsUI && previousHitpoints == maxHitPoints_) return;
 
                 //Add Hitpoints
-                UI_ProgressBar damageFieldFlight = (UI_ProgressBar)Fields["Hitpoints"].uiControlFlight;
-                damageFieldFlight.maxValue = maxHitPoints_;
-                damageFieldFlight.minValue = 0f;
-
-                UI_ProgressBar damageFieldEditor = (UI_ProgressBar)Fields["Hitpoints"].uiControlEditor;
-                damageFieldEditor.maxValue = maxHitPoints_;
-                damageFieldEditor.minValue = 0f;
-
+                if (!ArmorPanel)
+                {
+                    UI_ProgressBar damageFieldFlight = (UI_ProgressBar)Fields["Hitpoints"].uiControlFlight;
+                    damageFieldFlight.maxValue = maxHitPoints_;
+                    damageFieldFlight.minValue = 0f;
+                    UI_ProgressBar damageFieldEditor = (UI_ProgressBar)Fields["Hitpoints"].uiControlEditor;
+                    damageFieldEditor.maxValue = maxHitPoints_;
+                    damageFieldEditor.minValue = 0f;
+                }
+                else
+                {
+                    Fields["Hitpoints"].guiActive = false;
+                    Fields["Hitpoints"].guiActiveEditor = false;
+                }
                 Hitpoints = maxHitPoints_;
                 ArmorRemaining = 100;
                 if (!ArmorSet) overrideArmorSetFromConfig();
@@ -407,6 +415,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             // {
             //     if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
             // }
+            CalculateDryCost();
         }
 
         IEnumerator DelayedOnStart()
@@ -550,6 +559,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     }
                     partMass = part.mass - armorMass - HullMassAdjust - Safetymass;
                 }
+                CalculateDryCost(); //recalc if modify event added a fueltank -resource swap, etc
                 HullMassAdjust = oldHullMassAdjust; // Put the HullmassAdjust back so we can test against it when we update the hull mass.
                 if (oldPartMass != partMass)
                 {
@@ -970,9 +980,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             }
             if (ArmorTypeNum == 1 && ArmorPanel)
             {
-                armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
+                armorMass = (Armor / 1000) * armorVolume * Density / 1000;
                 guiArmorTypeString = "Aluminium";
                 SelectedArmorType = "None";
+                armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost;
             }
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
             if (OldArmorType != ArmorTypeNum || oldArmorMass != armorMass)
@@ -1083,7 +1094,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 HullMassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                HullCostAdjust = -Mathf.Max(part.partInfo.cost / 2, part.partInfo.cost - 500);//make wooden parts cheaper, somewhat.
+                HullCostAdjust = Mathf.Max(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) / 2, (part.partInfo.cost + part.partInfo.variant.Cost) - 500) - ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost);//make wooden parts up to 500 funds cheaper
+                //this returns cost of base variant, yielding part vairaints that are discounted by 50% or 500 of base varaint cost, not current variant. method to get currently selected variant?
             }
             else if (HullTypeNum == 2)
             {
@@ -1096,7 +1108,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 HullMassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                HullCostAdjust = Mathf.Min(part.partInfo.cost * 2, part.partInfo.cost + 1500); //make steel parts rather more expensive
+                HullCostAdjust = Mathf.Min(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) * 2, ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) + 1500); //make steel parts rather more expensive
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {
@@ -1108,6 +1120,33 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
             _hullConfigured = true;
+        }
+        private List<PartResource> GetResources()
+        {
+            List<PartResource> resources = new List<PartResource>();
+
+            foreach (PartResource resource in part.Resources)
+            {
+                if (!resources.Contains(resource)) { resources.Add(resource); }
+            }
+            return resources;
+        }
+        private void CalculateDryCost()
+        {
+            resourceCost = 0;
+            foreach (PartResource resource in GetResources())
+            {
+                var resources = part.Resources.ToList();
+                using (IEnumerator<PartResource> res = resources.GetEnumerator())
+                    while (res.MoveNext())
+                    {
+                        if (res.Current == null) continue;
+                        if (res.Current.resourceName == resource.resourceName)
+                        {
+                            resourceCost += res.Current.info.unitCost * res.Current.maxAmount;
+                        }
+                    }
+            }
         }
         #endregion Armor
         public override string GetInfo()

@@ -211,7 +211,6 @@
     <Compile Include="Modules\ModuleCASE.cs" />
     <Compile Include="Modules\ModuleDrainEC.cs" />
     <Compile Include="Modules\ModuleDrainIntakes.cs" />
-    <Compile Include="Modules\ModuleDrainFuel.cs" />
     <Compile Include="Modules\ModuleECMJammer.cs" />
     <Compile Include="Modules\ModuleEMP.cs" />
     <Compile Include="Modules\ModuleMassAdjust.cs" />

@@ -21,7 +21,7 @@ namespace BDArmory.FX
         public float TimeIndex => Time.time - StartTime;
 
         private bool disabled = true;
-        public static string defaultModelPath = "BDArmory/Models/explosion/flakSmoke";
+        public static string defaultModelPath = "BDArmory/Models/explosion/explosion";
         public static string defaultSoundPath = "BDArmory/Sounds/explode1";
         private float particlesMaxEnergy;
         private float maxEnergy;
@@ -121,6 +121,11 @@ namespace BDArmory.FX
                 if (!String.IsNullOrEmpty(soundPath))
                 {
                     var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
+                    if (soundClip == null)
+                    {
+                        Debug.LogError("[BDArmory.FXBase]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
+                        soundClip = GameDatabase.Instance.GetAudioClip(defaultSoundPath);
+                    }
 
                     eFx.ExSound = soundClip;
                     eFx.audioSource = FXTemplate.AddComponent<AudioSource>();

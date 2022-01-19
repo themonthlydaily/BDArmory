@@ -61,16 +61,10 @@ namespace BDArmory.FX
             tntMassEquivalent = 0;
             startTime = Time.time;
             engine = parentPart.FindModuleImplementing<ModuleEngines>();
-            var leak = parentPart.FindModuleImplementing<ModuleDrainFuel>();
-            if (leak != null)
-            {
-                leak.drainDuration = 0;
-            }
             foreach (var existingLeakFX in parentPart.GetComponentsInChildren<FuelLeakFX>())
             {
                 existingLeakFX.lifeTime = 0; //kill leak FX
             }
-            var hullmat = parentPart.FindModuleImplementing<HitpointTracker>();
             solid = parentPart.Resources.Where(pr => pr.resourceName == "SolidFuel").FirstOrDefault();
             if (engine != null)
             {
@@ -380,6 +374,7 @@ namespace BDArmory.FX
         void Detonate()
         {
             if (surfaceFire) return;
+            if (!BDArmorySettings.BD_FIRE_FUELEX) return;
             if (!parentPart.partName.Contains("exploding"))
             {
                 bool excessFuel = false;

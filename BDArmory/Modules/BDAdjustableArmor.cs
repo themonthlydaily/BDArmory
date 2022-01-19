@@ -325,6 +325,7 @@ namespace BDArmory.Modules
             if (armor != null && armorTransforms != null)
             {
                 armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);
+                if (isTriangularPanel && part.isMirrored) armorthickness = Mathf.Abs(armorthickness) * -1;
                 //if (!isCurvedPanel)
                 {
                     for (int i = 0; i < armorTransforms.Length; i++)
