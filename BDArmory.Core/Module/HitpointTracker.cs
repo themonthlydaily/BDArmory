@@ -53,8 +53,6 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         public float HullCostAdjust = 0f;
         double resourceCost = 0;
 
-        double resourceCost = 0;
-
         private bool IgnoreForArmorSetup = false;
 
         private bool isAI = false;

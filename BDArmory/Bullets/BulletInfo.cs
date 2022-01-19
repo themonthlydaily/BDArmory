@@ -122,7 +122,7 @@ namespace BDArmory.Bullets
                             Debug.LogError("[BDArmory.BulletInfo]: Bullet definition " + name_ + " from " + nodes[i].parent.name + " already exists, skipping.");
                         continue;
                     }
-
+                    Debug.Log("[BDArmory.BulletInfo]: Parsing definition of bullet " + name_ + " from " + nodes[i].parent.name);
                     bullets.Add(
                         new BulletInfo(
                             name_,
