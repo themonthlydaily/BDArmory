@@ -124,6 +124,7 @@ namespace BDArmory.Modules
 
         //used by AI to lead moving targets
         private float targetDistance = 8000f;
+        private float origTargetDistance = 8000f;
         public float targetRadius = 35f; // Radius of target 2° @ 1km.
         public float targetAdjustedMaxCosAngle
         {
@@ -594,7 +595,7 @@ namespace BDArmory.Modules
         public float tracerLuminance = 1.75f;
 
         [KSPField]
-        public bool tracerOverrideWidth =false;
+        public bool tracerOverrideWidth = false;
 
         int tracerIntervalCounter;
 
@@ -3084,6 +3085,7 @@ namespace BDArmory.Modules
                 //aim assist
                 Vector3 originalTarget = targetPosition;
                 targetDistance = Vector3.Distance(targetPosition, fireTransform.parent.position);
+                origTargetDistance = targetDistance;
 
                 if ((BDArmorySettings.AIM_ASSIST || aiControlled) && eWeaponType == WeaponTypes.Ballistic)//Gun targeting
                 {
@@ -3212,7 +3214,7 @@ namespace BDArmory.Modules
                             simStartPos = simCurrPos;
                             break;
                         case WeaponTypes.Ballistic:
-                            simDeltaTime = Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER; // With leap-frog, we can use a higher time-step and still get better accuracy than forward Euler (what was used before).
+                            simDeltaTime = Mathf.Clamp(Mathf.Min(maxTargetingRange, Mathf.Max(targetDistance, origTargetDistance)) / simVelocity.magnitude / 2f, Time.fixedDeltaTime, Time.fixedDeltaTime * BDArmorySettings.BALLISTIC_TRAJECTORY_SIMULATION_MULTIPLIER); // With leap-frog, we can use a higher time-step and still get better accuracy than forward Euler (what was used before). Always take at least 2 steps though.
                             break;
                         default:
                             simDeltaTime = Time.fixedDeltaTime * 8f; // Roughly what it was before. Note: no current classes drop through to here.
@@ -4251,8 +4253,8 @@ namespace BDArmory.Modules
                     }
                     targetVelocity -= Krakensbane.GetFrameVelocityV3f();
                     targetRadius = 1;
-                    targetAcceleration = Vector3.zero;
-                    if (MissileTgt != null && MissileTgt.Vessel != null) targetAcceleration = MissileTgt.Vessel.acceleration;
+
+                    targetAcceleration = MissileTgt != null && MissileTgt.Vessel != null ? (Vector3)MissileTgt.Vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
 

@@ -82,6 +82,7 @@ namespace BDArmory.Control
         {
             folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
+            savegame = HighLogic.SaveFolder;
             tournamentType = TournamentType.FFA;
             var abs_folder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
@@ -206,6 +207,7 @@ namespace BDArmory.Control
         {
             folder ??= ""; // Sanitise null strings.
             tournamentID = (uint)DateTime.UtcNow.Subtract(new DateTime(2020, 1, 1)).TotalSeconds;
+            savegame = HighLogic.SaveFolder;
             tournamentType = TournamentType.Teams;
             var abs_folder = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", folder);
             if (!Directory.Exists(abs_folder))
@@ -410,7 +412,8 @@ namespace BDArmory.Control
 
         Tuple<int, int> OptimiseVesselsPerHeat(int count)
         {
-            var options = count < 11 ? new List<int> { 8, 7, 6, 5 } : new List<int> { 8, 7, 6 };
+            if (BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y < BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x) BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y = BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x;
+            var options = count < 11 ? new List<int> { 8, 7, 6, 5 } : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1).Reverse().ToList();
             foreach (var val in options)
             {
                 if (count % val == 0)
@@ -822,6 +825,15 @@ namespace BDArmory.Control
             tournamentStatus = TournamentStatus.Completed;
             var partialStatePath = Path.ChangeExtension(Path.Combine(Path.GetDirectoryName(TournamentState.defaultStateFile), "Unfinished Tournaments", Path.GetFileName(stateFile)), $".state-{tournamentID}");
             if (File.Exists(partialStatePath)) File.Delete(partialStatePath); // Remove the now completed tournament state file.
+
+            if (BDArmorySettings.AUTO_RESUME_TOURNAMENT && BDArmorySettings.AUTO_QUIT_AT_END_OF_TOURNAMENT && TournamentAutoResume.Instance != null)
+            {
+                TournamentAutoResume.Instance.AutoQuit(5);
+                message = "Quitting KSP in 5s due to reaching the end of a tournament.";
+                BDACompetitionMode.Instance.competitionStatus.Add(message);
+                Debug.LogWarning("[BDArmory.BDATournament]: " + message);
+                yield break;
+            }
         }
 
         IEnumerator ExecuteHeat(int roundIndex, int heatIndex)
@@ -1182,18 +1194,20 @@ namespace BDArmory.Control
             {
                 if (BDACompetitionMode.Instance != null) BDACompetitionMode.Instance.competitionStatus.Add("Quitting in 3s due to memory usage threshold reached.");
                 Debug.LogWarning($"[BDArmory.BDATournament]: Quitting KSP due to reaching Auto-Quit Memory Threshold: {memoryUsage} / {BDArmorySettings.QUIT_MEMORY_USAGE_THRESHOLD}GB");
-                StartCoroutine(AutoQuit(3)); // Trigger quit in 3s to give the tournament coroutine time to stop and the message to be shown.
+                StartCoroutine(AutoQuitCoroutine(3)); // Trigger quit in 3s to give the tournament coroutine time to stop and the message to be shown.
                 return true;
             }
             return false;
         }
+
+        public void AutoQuit(float delay = 1) => StartCoroutine(AutoQuitCoroutine(delay));
 
         /// <summary>
         /// Automatically quit KSP after a delay.
         /// </summary>
         /// <param name="delay"></param>
         /// <returns></returns>
-        IEnumerator AutoQuit(float delay = 1)
+        IEnumerator AutoQuitCoroutine(float delay = 1)
         {
             yield return new WaitForSeconds(delay);
             HighLogic.LoadScene(GameScenes.MAINMENU);

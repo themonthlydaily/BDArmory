@@ -2304,7 +2304,7 @@ namespace BDArmory.Modules
                     output.AppendLine($"- Max radius: {radius} m");
                 }
                 else continue;
-                    break;
+                break;
             }
             partModules.Dispose();
 

@@ -1,9 +1,50 @@
-﻿FIXES
-- Fix typo in 2x1 legacy armour panel.
-- Fixes Missile Turret Cost.
-- Fixes missile RMB warhead info.
-- Nukes no longer explode when destroyed (if engineCore = false, so S3R1 Chernobyl functionality still present, just not all the time).
+﻿v1.4.15.0
+FIXES
+- Adds some checks for inerted tanks catching fire in some edge cases.
+- Fix firebottle gui not updating when they're used.
+- Make nukes detonate when fired.
+- Fixes for continuous spawning.
+- Only report scores to the remote API and stop the heat if the competition actually starts (avoids the empty result from a competition failing to start).
+- Register the collision detection time for the case where the other vessel has disappeared (fixes some invalid death times).
+- Move evolution path configuration from constructor to Awake to satisfy MonoBehaviour conditions.
+- Fix various NREs.
 IMPROVEMENTS
+- General:
+	- Option for forcing gliders. Specify 'NoEngines' in the RWP cheat-code box to toggle it for now, or just edit the settings.cfg file.
+	- An updated continuous spawning log parser.
+	- Adjust the ballistic trajectory simulation time-step multiplier based on the distance to the target to give improved debug lines/targeting line visuals.
+- AI:
+	- Also avoid 0 altitude (terrain avoidance) for bodies without solid surfaces or oceans (i.e., Jool).
+	- Reworked the integral component of the PID to work as an actual PID again:
+		- The integral is no longer reset to 0 when the pitch error changes sign, nor decays with time.
+		- The integral is now vector valued to account for coupling between the yaw and pitch axes due to roll and the individual pitch and yaw components are projected out from this integral.
+		- The maximum contribution to the steering from the integral component is 1 (similar to the magnitude of the individual components before this change, but larger than the original 0.2 prior to the previous change).
+		- The internal yaw damping factor is increased from 0.2 to 0.33 to keep the internal ratios between the axes consistent for each of the P, I and D components (1:0.33:0.1 for pitch:yaw:roll).
+- Tournaments:
+	- Add the savegame field to tournament.state on tournament generation.
+	- Add Auto-Quit at end of tournament hidden option (for automation: AUTO_QUIT_AT_END_OF_TOURNAMENT).
+	- Add custom max number of rounds to tournaments (edit the settings.cfg file to set it: TOURNAMENT_ROUNDS_CUSTOM).
+	- Make the auto-generated vessels-per-heat setting customisable (by editing the settings.cfg).
+	- Rename the summary plotting script and allow specifying the tournament folder.
+- Battle Damage:
+	- Restore ability to add firebottles to engines.
+
+v1.4.14.1
+FIXES
+- Fix typo in 2x1 legacy armour panel.
+- Fixes missile turret Cost.
+- Fixes missile RMB warhead info.
+- Fixes NRE with proc armor parts on loading a craft.
+- Nukes no longer explode when destroyed (if engineCore = false, so S3R1 Chernobyl functionality still present, just not all the time).
+- Account for starting resource cost modifier to part cost, fix discount to reduce up to 500 from cost.
+IMPROVEMENTS
+- Restores ability to set custom tracer stats in weapon.cfg. Use "tracerOverrideWidth = true" in the cfg to use override values instead of dynamically determined tracer settings.
+- BattleDamage fire chance on hit now editable in the settings config.
+- Teams:
+	- Adds ability to set teams to neutral in team selector/VesselSwitcher/WM.
+	- Right clicking on the team button in the Team Selector/WM will toggle non-default teams (A, B, Neutral) neutral status.
+	- Right clicking on the [t] button to the right of a vessel button in the VS will open the Team Selector.
+	- Left click will switch to next combat team, mouse-3 will switch to next neutral team.
 
 v1.4.14.0
 FIXES
