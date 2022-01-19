@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.15.0
+FIXES
 - Adds some checks for inerted tanks catching fire in some edge cases.
 - Fix firebottle gui not updating when they're used.
 - Make nukes detonate when fired.
@@ -8,22 +9,25 @@
 - Move evolution path configuration from constructor to Awake to satisfy MonoBehaviour conditions.
 - Fix various NREs.
 IMPROVEMENTS
-- Restore ability to add firebottles to engines.
+- General:
+	- Option for forcing gliders. Specify 'NoEngines' in the RWP cheat-code box to toggle it for now, or just edit the settings.cfg file.
+	- An updated continuous spawning log parser.
+	- Adjust the ballistic trajectory simulation time-step multiplier based on the distance to the target to give improved debug lines/targeting line visuals.
+- AI:
+	- Also avoid 0 altitude (terrain avoidance) for bodies without solid surfaces or oceans (i.e., Jool).
+	- Reworked the integral component of the PID to work as an actual PID again:
+		- The integral is no longer reset to 0 when the pitch error changes sign, nor decays with time.
+		- The integral is now vector valued to account for coupling between the yaw and pitch axes due to roll and the individual pitch and yaw components are projected out from this integral.
+		- The maximum contribution to the steering from the integral component is 1 (similar to the magnitude of the individual components before this change, but larger than the original 0.2 prior to the previous change).
+		- The internal yaw damping factor is increased from 0.2 to 0.33 to keep the internal ratios between the axes consistent for each of the P, I and D components (1:0.33:0.1 for pitch:yaw:roll).
 - Tournaments:
 	- Add the savegame field to tournament.state on tournament generation.
 	- Add Auto-Quit at end of tournament hidden option (for automation: AUTO_QUIT_AT_END_OF_TOURNAMENT).
 	- Add custom max number of rounds to tournaments (edit the settings.cfg file to set it: TOURNAMENT_ROUNDS_CUSTOM).
 	- Make the auto-generated vessels-per-heat setting customisable (by editing the settings.cfg).
 	- Rename the summary plotting script and allow specifying the tournament folder.
-- Option for gliders. Specify 'NoEngines' in the RWP cheat-code box to toggle it for now, or just edit the settings.cfg file.
-- An updated continuous spawning log parser.
-- Adjust the ballistic trajectory simulation time-step multiplier based on the distance to the target to give improved debug lines/targeting line visuals.
-- AI:
-	- Also avoid 0 altitude (terrain avoidance) for bodies without solid surfaces.
-	- Reworked the integral component of the PID to work as an actual PID again:
-		- The integral is no longer reset to 0 when the pitch error changes sign, nor decays with time.
-		- The integral is now vector valued to account for coupling between the yaw and pitch axes due to roll and the individual pitch and yaw components are projected out from this integral.
-		- The internal yaw damping factor is increased from 0.2 to 0.33 to keep the internal ratios between the axes consistent for each of the P, I and D components (1:0.33:0.1 for pitch:yaw:roll).
+- Battle Damage:
+	- Restore ability to add firebottles to engines.
 
 v1.4.14.1
 FIXES
