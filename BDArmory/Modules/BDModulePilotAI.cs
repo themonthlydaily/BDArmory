@@ -541,12 +541,10 @@ namespace BDArmory.Modules
         float lastPitchInput;
 
         //Controller Integral
+        Vector3 directionIntegral;
         float pitchIntegral;
         float yawIntegral;
         float rollIntegral;
-        int lastPitchErrorSign;
-        int lastYawErrorSign;
-        int lastRollErrorSign;
 
         //instantaneous turn radius and possible acceleration from lift
         //properties can be used so that other AI modules can read this for future maneuverability comparisons between craft
@@ -1124,7 +1122,7 @@ namespace BDArmory.Modules
             evading = false;
             if (weaponManager != null)
             {
-                if (weaponManager.ThreatClosingTime(weaponManager.incomingMissileVessel) <= weaponManager.cmThreshold)
+                if (weaponManager.incomingMissileTime <= weaponManager.cmThreshold)
                 {
                     threatRating = 0f; // Allow entering evasion code if we're under missile fire
                     minimumEvasionTime = 0f; //  Trying to evade missile threats when they don't exist will result in NREs
@@ -1398,10 +1396,10 @@ namespace BDArmory.Modules
                         Vector3 leadOffset = weapon.GetLeadOffset();
 
                         float targetAngVel = Vector3.Angle(v.transform.position - vessel.transform.position, v.transform.position + (vessel.Velocity()) - vessel.transform.position);
-                        debugString.AppendLine($"targetAngVel: {targetAngVel}");
                         float magnifier = Mathf.Clamp(targetAngVel, 1f, 2f);
                         magnifier += ((magnifier - 1f) * Mathf.Sin(Time.time * 0.75f));
-                        target -= magnifier * leadOffset;
+                        debugString.AppendLine($"targetAngVel: {targetAngVel:F4}, magnifier: {magnifier:F2}");
+                        target -= magnifier * leadOffset; // The effect of this is to exagerate the lead if the angular velocity is > 1
                         angleToTarget = Vector3.Angle(vesselTransform.up, target - vesselTransform.position);
                         if (distanceToTarget < weaponManager.gunRange && angleToTarget < 20)
                         {
@@ -1573,11 +1571,11 @@ namespace BDArmory.Modules
             Vector3 localAngVel = vessel.angularVelocity;
             //test
             Vector3 currTargetDir = (targetPosition - vesselTransform.position).normalized;
-            if (steerMode == SteerModes.NormalFlight)
-            {
-                float gRotVel = ((10f * maxAllowedGForce) / ((float)vessel.srfSpeed));
-                //currTargetDir = Vector3.RotateTowards(prevTargetDir, currTargetDir, gRotVel*Mathf.Deg2Rad, 0);
-            }
+            // if (steerMode == SteerModes.NormalFlight) // This block was doing nothing... what was it originally for?
+            // {
+            //     float gRotVel = ((10f * maxAllowedGForce) / ((float)vessel.srfSpeed));
+            //     //currTargetDir = Vector3.RotateTowards(prevTargetDir, currTargetDir, gRotVel*Mathf.Deg2Rad, 0);
+            // }
             if (IsExtending || IsEvading) // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
             {
                 var squigglySquidTime = 90f * (float)vessel.missionTime + 8f * Mathf.Sin((float)vessel.missionTime * 6.28f) + 16f * Mathf.Sin((float)vessel.missionTime * 3.14f); // Vary the rate around 90°/s to be more unpredictable.
@@ -1730,69 +1728,57 @@ namespace BDArmory.Modules
             // Limit Bank Angle, this should probably be re-worked using quaternions or something like that, SignedAngle doesn't work well for angles > 90
             Vector3 horizonNormal = Vector3.ProjectOnPlane(vessel.transform.position - vessel.mainBody.transform.position, vesselTransform.up);
             float bankAngle = Vector3.SignedAngle(horizonNormal, rollTarget, vesselTransform.up);
-
-            // FlightGlobals.ActiveVessel.mainBody.transform.position - this.vessel.transform.position;
             if ((Mathf.Abs(bankAngle) > maxBank) && (maxBank != 180))
                 rollTarget = Vector3.RotateTowards(horizonNormal, rollTarget, maxBank / 180 * Mathf.PI, 0.0f);
-
             bankAngle = Vector3.SignedAngle(horizonNormal, rollTarget, vesselTransform.up);
-            // debugString.AppendLine($"Bank Angle: " + bankAngle);
-
-            //v/q
-            float dynamicAdjustment = Mathf.Clamp(16 * (float)(vessel.srfSpeed / vessel.dynamicPressurekPa), 0, 1.2f);
 
             float rollError = Misc.Misc.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
-            debugString.AppendLine(String.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
-            debugString.AppendLine($"finalMaxSteer: {finalMaxSteer}");
-
-            float steerRoll = (steerMult * 0.0015f * rollError);
-            float rollDamping = (.10f * SteerDamping(Mathf.Abs(rollError), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 3) * -localAngVel.y);
-            steerRoll -= rollDamping;
-            steerRoll *= dynamicAdjustment;
-
             if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && evasiveTimer == 0 && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or evading or avoiding other vessels as we need a quick reaction
             {
                 //premature dive fix
                 pitchError = pitchError * Mathf.Clamp01((21 - Mathf.Exp(Mathf.Abs(rollError) / 30)) / 20);
             }
 
-            float steerPitch = (0.015f * steerMult * pitchError) - (SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x);
-            float steerYaw = (0.005f * steerMult * yawError) - (SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming ? (180f / 25f) : 4f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * 0.2f * -localAngVel.z);
+            #region PID calculations
+            // FIXME Why are there various constants in here that mess with the scaling of the PID in the various axes? Ratios between the axes are 1:0.33:0.1
+            float pitchProportional = 0.015f * steerMult * pitchError;
+            float yawProportional = 0.005f * steerMult * yawError;
+            float rollProportional = 0.0015f * steerMult * rollError;
 
-            pitchIntegral = Mathf.Clamp(0.995f * pitchIntegral + pitchError * Time.deltaTime / 90f, -1f, 1f);
-            yawIntegral = Mathf.Clamp(0.995f * yawIntegral + yawError * Time.deltaTime / 90f, -1f, 1f);
-            rollIntegral = Mathf.Clamp(0.995f * rollIntegral + rollError * Time.deltaTime / 90f, -1f, 1f);
+            float pitchDamping = SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x;
+            float yawDamping = 0.33f * SteerDamping(Mathf.Abs(yawError * (steerMode == SteerModes.Aiming ? (180f / 25f) : 4f)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 2) * -localAngVel.z;
+            float rollDamping = 0.1f * SteerDamping(Mathf.Abs(rollError), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 3) * -localAngVel.y;
 
-            pitchIntegral = lastPitchErrorSign != Math.Sign(pitchError) ? 0 : pitchIntegral;
-            yawIntegral = lastYawErrorSign != Math.Sign(yawError) ? 0 : yawIntegral;
-            rollIntegral = lastRollErrorSign != Math.Sign(rollError) ? 0 : rollIntegral;
+            // For the integral, we track the vector of the pitch and yaw in the 2D plane of the vessel's forward pointing vector so that the pitch and yaw components translate between the axes when the vessel rolls.
+            directionIntegral = Vector3.ProjectOnPlane(directionIntegral + (pitchError * -vesselTransform.forward + yawError * vesselTransform.right) * Time.deltaTime, vesselTransform.up);
+            if (directionIntegral.sqrMagnitude > 1f) directionIntegral = directionIntegral.normalized;
+            pitchIntegral = steerKiAdjust * Vector3.Dot(directionIntegral, -vesselTransform.forward);
+            yawIntegral = 0.33f * steerKiAdjust * Vector3.Dot(directionIntegral, vesselTransform.right);
+            rollIntegral = 0.1f * steerKiAdjust * Mathf.Clamp(rollIntegral + rollError * Time.deltaTime, -1f, 1f);
 
-            lastPitchErrorSign = Math.Sign(pitchError);
-            lastYawErrorSign = Math.Sign(yawError);
-            lastRollErrorSign = Math.Sign(rollError);
+            var steerPitch = pitchProportional + pitchIntegral - pitchDamping;
+            var steerYaw = yawProportional + yawIntegral - yawDamping;
+            var steerRoll = rollProportional + rollIntegral - rollDamping;
+            #endregion
 
+            //v/q
+            float dynamicAdjustment = Mathf.Clamp(16 * (float)(vessel.srfSpeed / vessel.dynamicPressurekPa), 0, 1.2f);
             steerPitch *= dynamicAdjustment;
             steerYaw *= dynamicAdjustment;
+            steerRoll *= dynamicAdjustment;
 
-            float pitchKi = steerKiAdjust;
-            steerPitch += pitchIntegral * pitchKi; //Adds the integral component to the mix
-
-            float yawKi = steerKiAdjust;
-            steerYaw += yawIntegral * yawKi;
-
-            float rollKi = steerKiAdjust;
-            steerRoll += rollIntegral * rollKi;
-
-            s.roll = Mathf.Clamp(steerRoll, -maxSteer, maxSteer);
+            s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer); // finalMaxSteer for pitch and yaw, but not roll.
             s.yaw = Mathf.Clamp(steerYaw, -finalMaxSteer, finalMaxSteer);
-            s.pitch = Mathf.Clamp(steerPitch, Mathf.Min(-finalMaxSteer, -0.2f), finalMaxSteer);
+            s.roll = Mathf.Clamp(steerRoll, -maxSteer, maxSteer);
 
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
             {
-                var debugPitchP = 0.015f * steerMult * pitchError;
-                var debugPitchI = pitchIntegral * pitchKi;
-                var debugPitchD = -SteerDamping(Mathf.Abs(Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up)), Vector3.Angle(targetPosition - vesselTransform.position, vesselTransform.up), 1) * -localAngVel.x;
-                debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}, dynAdj: {3,7:F4}", debugPitchP, debugPitchI, debugPitchD, dynamicAdjustment));
+                debugString.AppendLine(String.Format("steerMode: {0}, rollError: {1,7:F4}, pitchError: {2,7:F4}, yawError: {3,7:F4}", steerMode, rollError, pitchError, yawError));
+                debugString.AppendLine($"finalMaxSteer: {finalMaxSteer:G3}, dynAdj: {dynamicAdjustment:G3}");
+                // debugString.AppendLine($"Bank Angle: " + bankAngle);
+                debugString.AppendLine(String.Format("Pitch: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", pitchProportional, pitchIntegral, pitchDamping));
+                debugString.AppendLine(String.Format("Yaw: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", yawProportional, yawIntegral, yawDamping));
+                debugString.AppendLine(String.Format("Roll: P: {0,7:F4}, I: {1,7:F4}, D: {2,7:F4}", rollProportional, rollIntegral, rollDamping));
             }
         }
 
@@ -2005,7 +1991,7 @@ namespace BDArmory.Modules
                         debugString.AppendLine($"Breaking from missile threat!");
 
                         // Break off at 90 deg to missile
-                        Vector3 threatDirection = weaponManager.incomingMissileVessel.transform.position - vesselTransform.position;
+                        Vector3 threatDirection = -1f * weaponManager.incomingMissileVessel.Velocity();
                         threatDirection = Vector3.ProjectOnPlane(threatDirection, upDirection);
                         float sign = Vector3.SignedAngle(threatDirection, Vector3.ProjectOnPlane(vessel.Velocity(), upDirection), upDirection);
                         Vector3 breakDirection = Vector3.ProjectOnPlane(Vector3.Cross(Mathf.Sign(sign) * upDirection, threatDirection), upDirection);
@@ -2285,8 +2271,8 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                // Finally, check the distance to sea-level as water doesn't act like a collider, so it's getting ignored.
-                if (vessel.mainBody.ocean)
+                // Finally, check the distance to sea-level as water doesn't act like a collider, so it's getting ignored. Also, for planets without surfaces.
+                if (vessel.mainBody.ocean || !vessel.mainBody.hasSolidSurface)
                 {
                     float sinTheta = Vector3.Dot(vessel.srf_vel_direction, upDirection); // sin(theta) (measured relative to the ocean surface).
                     if (sinTheta < 0f) // Heading downwards

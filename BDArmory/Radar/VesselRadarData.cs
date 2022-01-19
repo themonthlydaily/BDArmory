@@ -689,33 +689,45 @@ namespace BDArmory.Radar
             //rCount = 0;
             UnlinkAllExternalRadars();
 
-            using (var radar = VesselModuleRegistry.GetModules<ModuleRadar>(vessel).GetEnumerator())
-                while (radar.MoveNext())
-                {
-                    if (radar.Current == null) continue;
-                    radar.Current.DisableRadar();
-                }
+            var radars = VesselModuleRegistry.GetModules<ModuleRadar>(vessel);
+            if (radars != null)
+            {
+                using (var radar = radars.GetEnumerator())
+                    while (radar.MoveNext())
+                    {
+                        if (radar.Current == null) continue;
+                        radar.Current.DisableRadar();
+                    }
+            }
         }
 
         public void SlaveTurrets()
         {
-            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
-                while (mtc.MoveNext())
-                {
-                    if (mtc.Current == null) continue;
-                    mtc.Current.slaveTurrets = false;
-                }
-            slaveTurrets = true;
+            var targetingCameras = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
+            if (targetingCameras != null)
+            {
+                using (var mtc = targetingCameras.GetEnumerator())
+                    while (mtc.MoveNext())
+                    {
+                        if (mtc.Current == null) continue;
+                        mtc.Current.slaveTurrets = false;
+                    }
+                slaveTurrets = true;
+            }
         }
 
         public void UnslaveTurrets()
         {
-            using (var mtc = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel).GetEnumerator())
-                while (mtc.MoveNext())
-                {
-                    if (mtc.Current == null) continue;
-                    mtc.Current.slaveTurrets = false;
-                }
+            var targetingCameras = VesselModuleRegistry.GetModules<ModuleTargetingCamera>(vessel);
+            if (targetingCameras != null)
+            {
+                using (var mtc = targetingCameras.GetEnumerator())
+                    while (mtc.MoveNext())
+                    {
+                        if (mtc.Current == null) continue;
+                        mtc.Current.slaveTurrets = false;
+                    }
+            }
 
             slaveTurrets = false;
 

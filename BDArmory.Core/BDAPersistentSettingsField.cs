@@ -132,6 +132,14 @@ namespace BDArmory.Core
                     double z = double.Parse(strings[2]);
                     return new Vector3d(x, y, z);
                 }
+                else if (type == typeof(Vector2Int))
+                {
+                    char[] charsToTrim = { '(', ')', ' ' };
+                    string[] strings = value.Trim(charsToTrim).Split(',');
+                    int x = int.Parse(strings[0]);
+                    int y = int.Parse(strings[1]);
+                    return new Vector2Int(x, y);
+                }
                 else if (type == typeof(List<string>))
                 {
                     return value.Split(new string[] { "; " }, StringSplitOptions.RemoveEmptyEntries).ToList();

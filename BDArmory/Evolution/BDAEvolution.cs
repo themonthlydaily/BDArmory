@@ -96,12 +96,12 @@ namespace BDArmory.Evolution
     {
         public static BDAModuleEvolution Instance;
 
-        public static string configDirectory = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", "evolutions");
-        private static string workingDirectory = Path.Combine(configDirectory, "working");
-        private static string seedDirectory = Path.Combine(configDirectory, "seeds");
-        private static string adversaryDirectory = Path.Combine(configDirectory, "adversaries");
-        private static string weightMapFile = Path.Combine(configDirectory, "weights.cfg");
-        private static string stateFile = Path.Combine($"{configDirectory}", "evolution.state");
+        public static string configDirectory;
+        private static string workingDirectory;
+        private static string seedDirectory;
+        private static string adversaryDirectory;
+        private static string weightMapFile;
+        private static string stateFile;
 
         private Coroutine evoCoroutine = null;
 
@@ -148,6 +148,13 @@ namespace BDArmory.Evolution
             }
 
             Instance = this;
+
+            configDirectory = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", "evolutions");
+            workingDirectory = Path.Combine(configDirectory, "working");
+            seedDirectory = Path.Combine(configDirectory, "seeds");
+            adversaryDirectory = Path.Combine(configDirectory, "adversaries");
+            weightMapFile = Path.Combine(configDirectory, "weights.cfg");
+            stateFile = Path.Combine($"{configDirectory}", "evolution.state");
         }
 
         private void Start()

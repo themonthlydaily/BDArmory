@@ -51,6 +51,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public float HullMassAdjust = 0f;
         public float HullCostAdjust = 0f;
+        double resourceCost = 0;
 
         double resourceCost = 0;
 
@@ -923,7 +924,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     else
                     {
                     */
-                        ArmorTypeNum = 1; //reset to 'None'
+                    ArmorTypeNum = 1; //reset to 'None'
                     //}
                 }
                 if (isAI || part.IsMissile() || BDArmorySettings.RESET_ARMOUR)
@@ -1143,7 +1144,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                         if (res.Current == null) continue;
                         if (res.Current.resourceName == resource.resourceName)
                         {
-                            resourceCost += res.Current.info.unitCost * res.Current.maxAmount;
+                            resourceCost += res.Current.info.unitCost * res.Current.maxAmount; //turns out parts subtract res cost even if the tank starts empty
                         }
                     }
             }

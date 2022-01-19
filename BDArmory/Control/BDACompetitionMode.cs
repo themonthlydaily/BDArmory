@@ -494,6 +494,8 @@ namespace BDArmory.Control
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
 
+            if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN && VesselSpawner.Instance.vesselsSpawningContinuously) VesselSpawner.Instance.DumpContinuousSpawningScores();
+
             return true;
         }
 
@@ -1175,6 +1177,10 @@ namespace BDArmory.Control
         public void StopCompetition()
         {
             LogResults();
+            if (competitionIsActive && VesselSpawner.Instance.vesselsSpawningContinuously)
+            {
+                VesselSpawner.Instance.CancelVesselSpawn();
+            }
             if (competitionRoutine != null)
             {
                 StopCoroutine(competitionRoutine);
@@ -1289,10 +1295,14 @@ namespace BDArmory.Control
                     pilot.weaponManager.ToggleGuardMode();
                     pilot.weaponManager.SetTarget(null);
                 }
-                if (VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+                if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
                     VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
+                }
+                else if (BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
+                {
+                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel, false);
                 }
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
@@ -2269,10 +2279,14 @@ namespace BDArmory.Control
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
                             foreach (var pilot in pilots)
                             {
-                                if (VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                                if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                                 {
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
                                     VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
+                                }
+                                else if (BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
+                                {
+                                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel, false);
                                 }
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
@@ -3037,7 +3051,7 @@ namespace BDArmory.Control
             }
             // Debug.Log("[BDArmory.BDACompetitionMode" + CompetitionID.ToString() + "]: Done With Update");
 
-            if (!VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.COMPETITION_DURATION > 0 && now - competitionStartTime >= BDArmorySettings.COMPETITION_DURATION * 60d)
+            if (BDArmorySettings.COMPETITION_DURATION > 0 && now - competitionStartTime >= BDArmorySettings.COMPETITION_DURATION * 60d)
             {
                 LogResults("due to out-of-time");
                 StopCompetition();
@@ -3405,6 +3419,8 @@ namespace BDArmory.Control
                             rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetected = true; // The information is symmetric.
                             rammingInformation[vesselName].targetInformation[otherVesselName].partCountJustPriorToCollision = rammingInformation[otherVesselName].partCount;
                             rammingInformation[otherVesselName].targetInformation[vesselName].partCountJustPriorToCollision = rammingInformation[vesselName].partCount;
+                            rammingInformation[vesselName].targetInformation[otherVesselName].collisionDetectedTime = currentTime;
+                            rammingInformation[otherVesselName].targetInformation[vesselName].collisionDetectedTime = currentTime;
                             hitVessel = true;
                         }
                     }
