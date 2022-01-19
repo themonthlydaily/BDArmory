@@ -331,7 +331,7 @@ namespace BDArmory.Core.Extension
 
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
-                Debug.Log("[BDArmory.PartExtensions]: Armor volume Removed : " + massToReduce);
+                //Debug.Log("[BDArmory.PartExtensions]: Armor volume Removed : " + massToReduce);
             }
         }
 
@@ -346,7 +346,7 @@ namespace BDArmory.Core.Extension
             }
             else
             {
-                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
+                //if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[PartExtensions] GetArmorThickness; thickness is: " + armorthickness);
                 return armorthickness;
             }
             //return Dependencies.Get<DamageService>().GetPartArmor_svc(p);
@@ -552,9 +552,9 @@ namespace BDArmory.Core.Extension
                     //damage *= Mathf.Clamp(-0.0005f * armor + 1.025f, 0f, 0.5f); // Cap damage reduction at 50% (armor = 1050)					
                     if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
-                        Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
-                        Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000));
-                        Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : "
+                            + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
+                            + "; Damage After Armor : " + (damage / (1 + (((strength * (density / 1000)) * armor) / 1000000))));
                     }
                     damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
 
@@ -564,9 +564,9 @@ namespace BDArmory.Core.Extension
                     //identical to missile for now, since fuel/ammo explosions can be mitigated by armor mass			
                     if (BDArmorySettings.DRAW_ARMOR_LABELS)
                     {
-                        Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
-                        Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000));
-                        Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000)));
+                        Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : "
+                            + damage + "; Damage Reduction (%) : " + 1 + (((strength * (density / 1000)) * armor) / 1000000)
+                            + "; Damage After Armor : " + (damage / (1 + (((strength * (density / 1000)) * armor) / 1000000))));
                     }
                     damage /= 1 + (((strength * (density / 1000)) * armor) / 1000000); //500mm of DU yields about 95% reduction, 500mm steel = 80% reduction, Aramid = 73% reduction
 
@@ -593,9 +593,9 @@ namespace BDArmory.Core.Extension
 
                         if (BDArmorySettings.DRAW_ARMOR_LABELS)
                         {
-                            Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage);
-                            Debug.Log("[BDArmory.PartExtensions]: Damage Reduction (%) : " + 100 * (1 - Mathf.Clamp01((113f - _damageReduction) / 100f)));
-                            Debug.Log("[BDArmory.PartExtensions]: Damage After Armor : " + (damage *= Mathf.Clamp01((113f - _damageReduction) / 100f)));
+                            Debug.Log("[BDArmory.PartExtensions]: Damage Before Reduction : " + damage
+                                + "; Damage Reduction (%) : " + 100 * (1 - Mathf.Clamp01((113f - _damageReduction) / 100f))
+                                + "; Damage After Armor : " + (damage * Mathf.Clamp01((113f - _damageReduction) / 100f)));
                         }
 
                         damage *= Mathf.Clamp01((113f - _damageReduction) / 100f);
@@ -634,6 +634,7 @@ namespace BDArmory.Core.Extension
         /// <returns>true if the part is a kerbal on EVA.</returns>
         public static bool IsKerbalEVA(this Part part)
         {
+            if (part == null) return false;
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
                 return part.IsKerbalEVA_1_11();

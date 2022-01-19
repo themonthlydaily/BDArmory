@@ -269,7 +269,7 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                if (fuel == null && solid == null)
+                else if (fuel == null && solid == null)
                 {
                     Events["ToggleTankOption"].guiActiveEditor = false;
                     Events["ToggleInertOption"].guiActiveEditor = false;
@@ -295,8 +295,11 @@ namespace BDArmory.Modules
             else
             {
                 Events["ToggleInertOption"].guiName = Localizer.Format("#LOC_BDArmory_FIS_Off");//"Disable self-sealing tank"
-                FISmass = 0.2f;
+                FISmass = 0.15f;
+                Fields["FireBottles"].guiActiveEditor = false;
+                Fields["FBRemaining"].guiActive = false;
             }
+            Misc.Misc.RefreshAssociatedWindows(part);
             partmass = (FISmass + ArmorMass + FBmass);
             if (HighLogic.LoadedSceneIsEditor && EditorLogic.fetch != null)
                 GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
@@ -431,7 +434,7 @@ namespace BDArmory.Modules
         public void Extinguishtank()
         {
             isOnFire = true;
-            if (FireBottles > 0)
+            if (FireBottles > 0 || InertTank) //shouldn't be catching fire in the first place if interted, but just in case
             {
                 //if (engine != null && engine.EngineIgnited && engine.allowRestart)
                 //{
@@ -440,7 +443,15 @@ namespace BDArmory.Modules
                 //}
                 if (firebottleRoutine == null)
                 {
-                    firebottleRoutine = StartCoroutine(ExtinguishRoutine(4, true));
+                    if (InertTank)
+                    {
+                        firebottleRoutine = StartCoroutine(ExtinguishRoutine(0, false));
+                    }
+                    else
+                    {
+                        firebottleRoutine = StartCoroutine(ExtinguishRoutine(4, true));
+                    }
+                    Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Firebottles remaining: " + FireBottles);
                 }
             }
             else
@@ -454,6 +465,7 @@ namespace BDArmory.Modules
                         if (firebottleRoutine == null)
                         {
                             firebottleRoutine = StartCoroutine(ExtinguishRoutine(10, false));
+                            Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Toggling Engine");
                         }
                     }
                     //though if it is diving, then there isn't a second call to cycle engines. Add an Ienumerator to check once every couple sec?
@@ -462,14 +474,19 @@ namespace BDArmory.Modules
         }
         IEnumerator ExtinguishRoutine(float time, bool useBottle)
         {
+            Debug.Log("[SelfSealingTank] ExtinguishRoutine started. Time left: " + time);
             yield return new WaitForSeconds(time);
+            Debug.Log("[SelfSealingTank] Timer finished. Extinguishing");
             foreach (var existingFire in part.GetComponentsInChildren<FireFX>())
             {
-                if (!existingFire.surfaceFire) existingFire.burnTime = 0; //kill all fires
+                if (!existingFire.surfaceFire) existingFire.burnTime = 0.05f; //kill all fires
             }
             if (useBottle)
             {
                 FireBottles--;
+                FBRemaining = FireBottles;
+                Misc.Misc.RefreshAssociatedWindows(part);
+                Debug.Log("[SelfSealingTank] Consuming firebottle. FB remaining: " + FireBottles);
                 isOnFire = false;
             }
             ResetCoroutine();
@@ -529,7 +546,8 @@ namespace BDArmory.Modules
 
             if (BDArmorySettings.BD_FIRES_ENABLED && BDArmorySettings.BD_FIRE_HEATDMG)
             {
-                if (!isOnFire && !InertTank)
+                if (InertTank) return;
+                if (!isOnFire)
                 {
                     if ((fuel != null && fuel.amount > 0) && part.temperature > 493) //autoignition temp of kerosene is 220 c
                     {
@@ -545,6 +563,7 @@ namespace BDArmory.Modules
                         }
                         BulletHitFX.AttachFire(transform.position, part, 50, fireStarter);
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[SelfSealingTank] Fuel auto-ignition! " + part.name + " is on fire! Fuel quantity: " + fuel.amount + "; temperature: " + part.temperature);
+                        Extinguishtank();
                         isOnFire = true;
                     }
                 }

@@ -145,8 +145,9 @@ namespace BDArmory.Evolution
             }
 
             float fifth = _windowWidth / 5.0f;
+            offset += 0.25f * _lineHeight;
             GUI.Label(new Rect(_margin, offset, 2 * fifth, _lineHeight), $"{Localizer.Format("#LOC_BDArmory_Evolution_ID")}: ");
-            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _lineHeight), evolution.GetId());
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _lineHeight), evolution.EvolutionId);
             offset += _lineHeight;
             GUI.Label(new Rect(_margin, offset, 2 * fifth, _lineHeight), $"{Localizer.Format("#LOC_BDArmory_Evolution_Status")}: ");
             string statusLine;
@@ -158,8 +159,10 @@ namespace BDArmory.Evolution
             }
             GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _lineHeight), statusLine);
             offset += _lineHeight;
-            GUI.Label(new Rect(_margin, offset, 2 * fifth, _lineHeight), $"{Localizer.Format("#LOC_BDArmory_Evolution_Group")}: ");
-            GUI.Label(new Rect(_margin + 2 * fifth, offset, 3 * fifth, _lineHeight), evolution.GetGroupId().ToString());
+            GUI.Label(new Rect(_margin, offset, fifth, _lineHeight), $"{Localizer.Format("#LOC_BDArmory_Evolution_Group")}: ");
+            GUI.Label(new Rect(_margin + fifth, offset, fifth, _lineHeight), evolution.GroupId.ToString());
+            GUI.Label(new Rect(_margin + 2 * fifth, offset, fifth, _lineHeight), $"{Localizer.Format("#LOC_BDArmory_Evolution_Heat")}: ");
+            GUI.Label(new Rect(_margin + 3 * fifth, offset, fifth, _lineHeight), evolution.Heat.ToString());
             offset += _lineHeight;
             string buttonText;
             bool nextButton = false;

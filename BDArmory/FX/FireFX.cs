@@ -114,7 +114,7 @@ namespace BDArmory.FX
                     ModuleSelfSealingTank FBX;
                     FBX = parentPart.GetComponent<ModuleSelfSealingTank>();
                     FBX.Extinguishtank();
-                    if (FBX.InertTank) burnTime = 0;
+                    if (FBX.InertTank) burnTime = 0.01f; //check is looking for > 0, value of 0 not getting caught.
                     /*
                     if (FBX.FireBottles > 0)
                     {
@@ -347,7 +347,7 @@ namespace BDArmory.FX
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                 }
             }
-            if (disableTime < 0 && (!hasFuel || (burnTime > 0 && Time.time - startTime > burnTime)))
+            if (disableTime < 0 && (!hasFuel || (burnTime >= 0 && Time.time - startTime > burnTime)))
             {
                 disableTime = Time.time; //grab time when emission stops
                 foreach (var pe in pEmitters)
@@ -358,8 +358,8 @@ namespace BDArmory.FX
             {
                 foreach (var pe in pEmitters)
                 {
-                    pe.maxSize = burnScale;
-                    pe.minSize = burnScale * 1.2f;
+                    pe.minSize = burnScale;
+                    pe.maxSize = burnScale * 1.2f;
                 }
             }
             if (surfaceFire && parentPart.vessel.horizontalSrfSpeed > 120) //blow out surface fires if moving fast enough

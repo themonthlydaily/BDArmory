@@ -6,21 +6,12 @@ namespace BDArmory.Core.Extension
 {
     public static class VesselExtensions
     {
+        public static HashSet<Vessel.Situations> InOrbitSituations = new HashSet<Vessel.Situations> { Vessel.Situations.ORBITING, Vessel.Situations.SUB_ORBITAL, Vessel.Situations.ESCAPING };
+
         public static bool InOrbit(this Vessel v)
         {
-            try
-            {
-                if (v == null) return false;
-                return !v.LandedOrSplashed &&
-                           (v.situation == Vessel.Situations.ORBITING ||
-                            v.situation == Vessel.Situations.SUB_ORBITAL ||
-                            v.situation == Vessel.Situations.ESCAPING);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning("[BDArmory.VesselExtensions]: Exception thrown in InOrbit: " + e.Message + "\n" + e.StackTrace);
-                return false;
-            }
+            if (v == null) return false;
+            return InOrbitSituations.Contains(v.situation);
         }
 
         public static bool InVacuum(this Vessel v)

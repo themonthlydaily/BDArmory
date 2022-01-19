@@ -447,8 +447,9 @@ namespace BDArmory.UI
                                 if (BDTISetup.Instance.ColorAssignments.ContainsKey(teamManager.Item1))
                                 {
                                     BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManager.Item1];
-                                }
-                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:", BDTISetup.TILabel);
+                                }                                                                                                                                          
+                                GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManager.Item1}:" + (weaponManager.Team.Neutral ? (weaponManager.Team.Name != "Neutral" ? "(Neutral)" : "") : ""), BDTISetup.TILabel);
+
                                 teamNameShowing = true;
                                 height += _buttonHeight + _buttonGap;
                             }
@@ -475,7 +476,11 @@ namespace BDArmory.UI
                         if (weaponManager == null) continue;
                         if (BDArmorySettings.VESSEL_SWITCHER_WINDOW_OLD_DISPLAY_STYLE && !teamNameShowing)
                         {
-                            GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManagers.Key}:", BDArmorySetup.BDGuiSkin.label);
+                            if (BDTISetup.Instance.ColorAssignments.ContainsKey(teamManagers.Key))
+                            {
+                                BDTISetup.TILabel.normal.textColor = BDTISetup.Instance.ColorAssignments[teamManagers.Key];
+                            }
+                            GUI.Label(new Rect(_margin, height, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH - 2 * _margin, _buttonHeight), $"{teamManagers.Key}:" + (weaponManager.team != "Neutral" ? (weaponManager.Team.Neutral ? "(Neutral)" : "") : ""), BDTISetup.TILabel);
                             teamNameShowing = true;
                             height += _buttonHeight + _buttonGap;
                         }
@@ -758,7 +763,9 @@ namespace BDArmory.UI
                 }
                 else if (Event.current.button == 2)
                 {
-                    wm.SetTeam(BDTeam.Get("Neutral"));
+                    //wm.SetTeam(BDTeam.Get("Neutral"));
+                    //if (wm.Team.Name != "Neutral" && wm.Team.Name != "A" && wm.Team.Name != "B") wm.Team.Neutral = !wm.Team.Neutral;
+                    wm.NextTeam(true);
                 }
                 else
                 {
@@ -885,6 +892,7 @@ namespace BDArmory.UI
                 {
                     Debug.Log("[BDArmory.LoadedVesselSwitcher]: Vessel " + craftName + " was not specified to be part of a team, but is active. Assigning to team " + T.ToString() + ".");
                     weaponManagersByName[craftName].SetTeam(BDTeam.Get(T.ToString())); // Assign anyone who wasn't specified to a separate team.
+                    weaponManagersByName[craftName].Team.Neutral = false;
                 }
                 return;
             }
@@ -901,6 +909,7 @@ namespace BDArmory.UI
                         ++T;
                     }
                     weaponManager.SetTeam(BDTeam.Get(T.ToString())); // Otherwise, assign them to team T.
+                    weaponManager.Team.Neutral = false;
                     ++count;
                 }
                 return;
@@ -910,6 +919,7 @@ namespace BDArmory.UI
             {
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + T.ToString());
                 weaponManager.SetTeam(BDTeam.Get(T.ToString()));
+                weaponManager.Team.Neutral = false;
                 if (separateTeams) T++;
             }
         }

@@ -93,7 +93,7 @@ namespace BDArmory.Modules
                 }
                 Sourcevessel = part.vessel.GetName();
 
-                part.OnJustAboutToBeDestroyed += Detonate;
+                if (engineCore) part.OnJustAboutToBeDestroyed += Detonate;
                 GameEvents.onVesselPartCountChanged.Add(CheckAttached);
                 GameEvents.onVesselCreate.Add(CheckAttached);
             }
@@ -172,7 +172,7 @@ namespace BDArmory.Modules
             GameEvents.onVesselCreate.Remove(CheckAttached);
         }
 
-        void Detonate()
+        public void Detonate()
         {
             if (hasDetonated || FlightGlobals.currentMainBody == null || VesselSpawner.Instance.vesselsSpawning) // Don't trigger on scene changes or during spawning.
             {
@@ -185,7 +185,7 @@ namespace BDArmory.Modules
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModuleNuke]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
-            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, 0, thermalRadius, yield, fluence, isEMP, reportingName, "", "",blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath);
+            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, 0, thermalRadius, yield, fluence, isEMP, reportingName, "", blastSoundPath, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath);
             hasDetonated = true;
             if (part.vessel != null) // Already in the process of being destroyed.
                 part.Destroy();

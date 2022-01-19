@@ -371,10 +371,10 @@ namespace BDArmory.Modules
             {
                 explosive.Armed = true;
                 explosive.detonateAtMinimumDistance = DetonateAtMinimumDistance;
-                if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
-                {
-                    explosive.Shaped = true;
-                }
+                //if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
+                //{
+                //    explosive.Shaped = true; //Now configed in the part's BDExplosivePart Module Node
+                //}
             }
         }
 

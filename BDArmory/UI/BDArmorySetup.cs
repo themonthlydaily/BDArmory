@@ -1020,8 +1020,7 @@ namespace BDArmory.UI
                 }
 
                 GUIStyle teamButtonStyle = BDGuiSkin.box;
-                string teamText = $"{Localizer.Format("#LOC_BDArmory_WMWindow_TeamText")}: {ActiveWeaponManager.Team.Name}";//Team
-
+                string teamText = Localizer.Format("#LOC_BDArmory_WMWindow_TeamText") + ": " + ActiveWeaponManager.Team.Name + (ActiveWeaponManager.Team.Neutral ? (ActiveWeaponManager.Team.Name != "Neutral" ? "(N)" : "") : "");//Team
                 if (GUI.Button(new Rect(leftIndent + (contentWidth / 2), contentTop + (line * entryHeight), contentWidth / 2, entryHeight), teamText, teamButtonStyle))
                 {
                     if (Event.current.button == 1)
@@ -2750,6 +2749,7 @@ namespace BDArmory.UI
                             GUI.Label(SLeftSliderRect(++line, 1f), $"{Localizer.Format("#LOC_BDArmory_settings_FireRateHitMultiplier")}:  ({BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER})", leftLabel);//Fire Rate Hit Multiplier
                             BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER = Mathf.Round(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.FIRE_RATE_OVERRIDE_HIT_MULTIPLIER, 1f, 4f) * 10f) / 10f;
                         }
+                        // if (BDArmorySettings.RUNWAY_PROJECT_ROUND == 46) BDArmorySettings.NO_ENGINES = true;
                         if (CheatCodeGUI != (CheatCodeGUI = GUI.TextField(SLeftRect(++line, 1, true), CheatCodeGUI))) //if we need super-secret stuff
                         {
                             if (CheatCodeGUI == "ZombieMode")
@@ -2760,6 +2760,11 @@ namespace BDArmory.UI
                             else if (CheatCodeGUI == "DiscoInferno")
                             {
                                 BDArmorySettings.DISCO_MODE = !BDArmorySettings.DISCO_MODE;
+                                CheatCodeGUI = "";
+                            }
+                            else if (CheatCodeGUI == "NoEngines")
+                            {
+                                BDArmorySettings.NO_ENGINES = !BDArmorySettings.NO_ENGINES;
                                 CheatCodeGUI = "";
                             }
                         }
@@ -3008,6 +3013,11 @@ namespace BDArmory.UI
                 }
                 if (GUI.Button(SLeftRect(++line), "Test vessel position timing."))
                 { StartCoroutine(TestVesselPositionTiming()); }
+                if (GUI.Button(SLeftRect(++line), "FS engine status"))
+                {
+                    foreach (var vessel in FlightGlobals.VesselsLoaded)
+                        FireSpitter.CheckStatus(vessel);
+                }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
                     QuitKSP();
@@ -3186,6 +3196,9 @@ namespace BDArmory.UI
                                 case 33:
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartRapidDeployment");
                                     break;
+                                case 44:
+                                    startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_LowGravDeployment");
+                                    break;
                                 case 50: // FIXME temporary index, to be assigned later
                                     startCompetitionText = Localizer.Format("#LOC_BDArmory_Settings_StartOrbitalDeployment");
                                     break;
@@ -3201,6 +3214,9 @@ namespace BDArmory.UI
                                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                                 {
                                     case 33:
+                                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                                        break;
+                                    case 44:
                                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                                         break;
                                     case 50: // FIXME temporary index, to be assigned later

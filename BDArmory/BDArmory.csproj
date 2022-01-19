@@ -175,6 +175,7 @@
     <Compile Include="Misc\BDTeam.cs" />
     <Compile Include="Misc\BattleDamageHandler.cs" />
     <Compile Include="Misc\DecoupledBooster.cs" />
+    <Compile Include="Misc\FireSpitter.cs" />
     <Compile Include="Misc\IBDWeapon.cs" />
     <Compile Include="Misc\KSPForceApplier.cs" />
     <Compile Include="Misc\Misc.cs" />
@@ -187,6 +188,7 @@
     <Compile Include="Misc\WMTurretGroup.cs" />
     <Compile Include="Modules\Animation\BDALookConstraintUp.cs" />
     <Compile Include="Modules\Animation\BDAScaleByDistance.cs" />
+    <Compile Include="Modules\BDAdjustableArmor.cs" />
     <Compile Include="Modules\BDAdjustableRail.cs" />
     <Compile Include="Modules\BDAMutator.cs" />
     <Compile Include="Modules\BDExplosivePart.cs" />

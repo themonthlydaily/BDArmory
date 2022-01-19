@@ -51,6 +51,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public float HullMassAdjust = 0f;
         public float HullCostAdjust = 0f;
+        double resourceCost = 0;
 
         private bool IgnoreForArmorSetup = false;
 
@@ -332,10 +333,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     {
                         Armor = ArmorThickness;
                     }
-                    if (ArmorTypeNum == 1)
-                    {
-                        ArmorTypeNum = 2;
-                    }
+                    //if (ArmorTypeNum == 1)
+                    //{
+                    //    ArmorTypeNum = 2;
+                    //}
                 }
             }
             GameEvents.onEditorShipModified.Add(ShipModified);
@@ -407,6 +408,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             // {
             //     if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ARMOR] part mass is: " + (part.mass - armorMass) + "; Armor mass is: " + armorMass + "; hull mass adjust: " + HullmassAdjust + "; total: " + part.mass);
             // }
+            CalculateDryCost();
         }
 
         IEnumerator DelayedOnStart()
@@ -495,9 +497,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 {
                     HeartBleed();
                 }
-                if (part.skinTemperature > SafeUseTemp * 1.5f)
+                if (ArmorTypeNum > 1 || ArmorPanel)
                 {
-                    ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    if (part.skinTemperature > SafeUseTemp * 1.5f)
+                    {
+                        ReduceArmor((armorVolume * ((float)part.skinTemperature / SafeUseTemp)) * TimeWarp.fixedDeltaTime); //armor's melting off ship
+                    }
                 }
             }
         }
@@ -535,11 +540,19 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 var oldHullMassAdjust = HullMassAdjust; // We need to temporarily remove the HullmassAdjust and update the part.mass to get the correct value as KSP clamps the mass to > 1e-4.
                 HullMassAdjust = 0;
                 part.UpdateMass();
-                partMass = part.mass - armorMass - HullMassAdjust; //need to get ModuleSelfSealingTank mass adjustment. Could move the SST module to BDA.Core
-                if (isProcWing && part.Modules.Contains("ModuleSelfSealingTank"))
+                //partMass = part.mass - armorMass - HullMassAdjust; //part mass is taken from the part.cfg val, not current part mass; this overrides that
+                //need to get ModuleSelfSealingTank mass adjustment. Could move the SST module to BDA.Core
+                if (isProcWing)
                 {
-
+                    float Safetymass = 0;
+                    if (part.Modules.Contains("ModuleSelfSealingTank"))
+                    {
+                        var SST = part.Modules["ModuleSelfSealingTank"];
+                        Safetymass = SST.Fields["FBmass"].GetValue<float>(SST) + SST.Fields["FISmass"].GetValue<float>(SST);
+                    }
+                    partMass = part.mass - armorMass - HullMassAdjust - Safetymass;
                 }
+                CalculateDryCost(); //recalc if modify event added a fueltank -resource swap, etc
                 HullMassAdjust = oldHullMassAdjust; // Put the HullmassAdjust back so we can test against it when we update the hull mass.
                 if (oldPartMass != partMass)
                 {
@@ -794,7 +807,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         {
             if (BDArmorySettings.DRAW_ARMOR_LABELS)
             {
-                Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * (Density / 1000000000))); //g/m3
+                Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) + "kg"); //g/m3
             }
             float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
             if (armorMass > 0)
@@ -844,12 +857,14 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 {
                     Armor = ArmorThickness;
                 }
+                /*
                 UI_FloatRange armortypes = (UI_FloatRange)Fields["ArmorTypeNum"].uiControlEditor;
                 armortypes.minValue = 2f; //prevent panels from being switched to "None" armor type
                 if (ArmorTypeNum == 1)
                 {
                     ArmorTypeNum = 2;
                 }
+                */
             }
             if (maxSupportedArmor < 0) //hasn't been set in cfg
             {
@@ -879,7 +894,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             armorFieldFlight.maxValue = maxSupportedArmor;
             UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
             armorFieldEditor.maxValue = maxSupportedArmor;
-            armorFieldEditor.minValue = 0f;
+            armorFieldEditor.minValue = 1f;
             armorFieldEditor.onFieldChanged = ArmorModified;
             part.RefreshAssociatedWindows();
         }
@@ -890,6 +905,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 if ((ArmorTypeNum - 1) > ArmorInfo.armorNames.Count) //in case of trying to load a craft using a mod armor type that isn't installed and having a armorTypeNum larger than the index size
                 {
+                    /*
                     if (startsArmored || ArmorPanel)
                     {
                         if (ArmorTypeNum == 1)
@@ -899,8 +915,9 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     }
                     else
                     {
-                        ArmorTypeNum = 1; //reset to 'None'
-                    }
+                    */
+                    ArmorTypeNum = 1; //reset to 'None'
+                    //}
                 }
                 if (isAI || part.IsMissile() || BDArmorySettings.RESET_ARMOUR)
                 {
@@ -954,6 +971,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
                 armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost; //armor cost, tons
             }
+            if (ArmorTypeNum == 1 && ArmorPanel)
+            {
+                armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
+                guiArmorTypeString = "Aluminium";
+                SelectedArmorType = "None";
+            }
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
             if (OldArmorType != ArmorTypeNum || oldArmorMass != armorMass)
             {
@@ -972,7 +995,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             //if (isAI) return; //replace with newer implementation
             if (BDArmorySettings.LEGACY_ARMOR || BDArmorySettings.RESET_ARMOUR) return;
             if (part.IsMissile()) return;
-            if (ArmorTypeNum > 1)
+            if (ArmorTypeNum > 1 || ArmorPanel)
             {
                 /*
                 UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
@@ -988,7 +1011,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 {
                     armorReset = false;
                     armorFieldEditor.maxValue = maxSupportedArmor;
-                    armorFieldEditor.minValue = 0f;
+                    armorFieldEditor.minValue = 1f;
                 }
                 armorFieldEditor.onFieldChanged = ArmorModified;
                 if (!armorReset)
@@ -1002,7 +1025,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 Armor = 10;
                 UI_FloatRange armorFieldEditor = (UI_FloatRange)Fields["Armor"].uiControlEditor;
                 armorFieldEditor.maxValue = 10; //max none armor to 10 (simulate part skin of alimunium)
-                armorFieldEditor.minValue = 0;
+                armorFieldEditor.minValue = 10;
                 //UI_FloatRange armorFieldFlight = (UI_FloatRange)Fields["Armor"].uiControlFlight;
                 //armorFieldFlight.minValue = 0f;
                 //armorFieldFlight.maxValue = 10;
@@ -1063,7 +1086,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 HullMassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                HullCostAdjust = 0;//make wooden parts cheaper, somewhat.
+                HullCostAdjust = Mathf.Max((part.partInfo.cost - (float)resourceCost) / 2, part.partInfo.cost - 500) - (part.partInfo.cost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
             }
             else if (HullTypeNum == 2)
             {
@@ -1076,7 +1099,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 HullMassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                HullCostAdjust = 0; //make steel parts rather more expensive
+                HullCostAdjust = Mathf.Min((part.partInfo.cost - (float)resourceCost) * 2, (part.partInfo.cost - (float)resourceCost) + 1500); //make steel parts rather more expensive
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {
@@ -1088,6 +1111,33 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                     GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             }
             _hullConfigured = true;
+        }
+        private List<PartResource> GetResources()
+        {
+            List<PartResource> resources = new List<PartResource>();
+
+            foreach (PartResource resource in part.Resources)
+            {
+                if (!resources.Contains(resource)) { resources.Add(resource); }
+            }
+            return resources;
+        }
+        private void CalculateDryCost()
+        {
+            resourceCost = 0;
+            foreach (PartResource resource in GetResources())
+            {
+                var resources = part.Resources.ToList();
+                using (IEnumerator<PartResource> res = resources.GetEnumerator())
+                    while (res.MoveNext())
+                    {
+                        if (res.Current == null) continue;
+                        if (res.Current.resourceName == resource.resourceName)
+                        {
+                            resourceCost += res.Current.info.unitCost * res.Current.maxAmount; //turns out parts subtract res cost even if the tank starts empty
+                        }
+                    }
+            }
         }
         #endregion Armor
         public override string GetInfo()

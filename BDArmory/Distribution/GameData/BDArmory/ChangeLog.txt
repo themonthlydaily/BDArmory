@@ -1,4 +1,101 @@
 ﻿FIXES
+- Adds some checks for inerted tanks catching fire in some edge cases.
+- Fix firebottle gui not updating when they're used.
+- Make nukes detonate when fired.
+- Fixes for continuous spawning.
+- Only report scores to the remote API and stop the heat if the competition actually starts (avoids the empty result from a competition failing to start).
+- Register the collision detection time for the case where the other vessel has disappeared (fixes some invalid death times).
+- Move evolution path configuration from constructor to Awake to satisfy MonoBehaviour conditions.
+- Fix various NREs.
+IMPROVEMENTS
+- Restore ability to add firebottles to engines.
+- Tournaments:
+	- Add the savegame field to tournament.state on tournament generation.
+	- Add Auto-Quit at end of tournament hidden option (for automation: AUTO_QUIT_AT_END_OF_TOURNAMENT).
+	- Add custom max number of rounds to tournaments (edit the settings.cfg file to set it: TOURNAMENT_ROUNDS_CUSTOM).
+	- Make the auto-generated vessels-per-heat setting customisable (by editing the settings.cfg).
+	- Rename the summary plotting script and allow specifying the tournament folder.
+- Option for gliders. Specify 'NoEngines' in the RWP cheat-code box to toggle it for now, or just edit the settings.cfg file.
+- An updated continuous spawning log parser.
+- Adjust the ballistic trajectory simulation time-step multiplier based on the distance to the target to give improved debug lines/targeting line visuals.
+- Also avoid 0 altitude (terrain avoidance) for bodies without solid surfaces.
+
+v1.4.14.1
+FIXES
+- Fix typo in 2x1 legacy armour panel.
+- Fixes missile turret Cost.
+- Fixes missile RMB warhead info.
+- Fixes NRE with proc armor parts on loading a craft.
+- Nukes no longer explode when destroyed (if engineCore = false, so S3R1 Chernobyl functionality still present, just not all the time).
+- Account for starting resource cost modifier to part cost, fix discount to reduce up to 500 from cost.
+IMPROVEMENTS
+- Restores ability to set custom tracer stats in weapon.cfg. Use "tracerOverrideWidth = true" in the cfg to use override values instead of dynamically determined tracer settings.
+- BattleDamage fire chance on hit now editable in the settings config.
+- Teams:
+	- Adds ability to set teams to neutral in team selector/VesselSwitcher/WM.
+	- Right clicking on the team button in the Team Selector/WM will toggle non-default teams (A, B, Neutral) neutral status.
+	- Right clicking on the [t] button to the right of a vessel button in the VS will open the Team Selector.
+	- Left click will switch to next combat team, mouse-3 will switch to next neutral team.
+
+v1.4.14.0
+FIXES
+- Switch worlds to the spawn point before spawning if the spawn point is on a different world (fixes broken tournament resuming on other worlds).
+- Use GetRadarAltitudeAtPos instead of radarAltitude as the latter reads wrong for our purposes when underwater.
+- Fix the bad check preventing competition start if a vessel doesn't take off.
+- Fix NRE in CheckExtend.
+- Remove extraneous trajectory simulation when firing a bullet.
+- Fix infinite recursion bug in the evolution engine.
+- Compensate for the delay in calculating the effects of collisions and properly attribute deaths (including death order and time) due to ramming correctly.
+- Fix bug in part counting that was occassionally causing negative part counts in rams.
+- Handle EVA kerbal disappearing during KerbalSafety configuring.
+- Add null check to IsKerbalEVA extension.
+- Fixes .50 turret explosion model.
+- Fixes rocket aim reticle hovering a meter in front of muzzle.
+- Fixes some localization typos.
+- Fix Nuke FX scaling issue.
+- Fixes Fuel Inerting mass discrepancy.
+- Fix Inerted tanks still being able to catch fire.
+- Fix Firebottles not extinguishing fires.
+- Fix CASE II bug setting non-integer ammo amounts.
+- Fix Armor of pretty much any thickness completely stopping explosion damage.
+IMPROVEMENTS
+- AI/WM:
+	- Use CM threshold for determining missile closest approach instead of a fixed 2s value.
+	- Add alternate max for strafingSpeed.
+	- Switch turrets to use the Firing Angle instead of needing to be directly on-target.
+	- Added a nonlinear oscillation ("Evasion/Extension Nonlinearity" in the pilot AI) when extending or evading to avoid going in a straight line.
+	- Lasers now selectable by the AI for attacking ground targets.
+	- Adds some catches to AI MMG selection logic.
+- Armour:
+	- Abrams Turret can now support more than 10 armor.
+	- Armor type 'None' no longer takes damage/spalls.
+	- Armor Plates can now be set to armorType 'None', used as structural panels.
+	- Adds new BDAdjustableArmor module.
+	- Armor panels replaced with new procedural armor panels. Old panels moved to legacy to prevent breaking saved craft.
+- Weapons:
+	- Adds underwater rocket trajectory calcs to permit AI to aim underwater rocket weapons.
+	- Nuke damage falloff calcs corrected, blast radii no longer far larger than they should be.
+	- Nukes will no longer hit craft that have managed to get out of the blast zone before the blast wave arrives.
+	- Adds Clusterbomb rmb Info.
+	- Adds shaped charge and continuous rod warhead options to Rockets/Missiles/Bombs, use "warheadType = "shapedcharge" or "continuousrod" in the BDexplosivePart Module of the part.cfg, or setting "shaped = true" in the rocket config.
+	- BDA stock missiles updated with new warheads where appropriate - check RMB info in the editor.
+- Tournaments:
+	- Add option to auto-generate a tournament if auto-resuming and there isn't an incomplete tournament to run.
+- Parser:
+	- Use a more natural sorting order for rounds in the parser so the score-by-round is consistent.
+	- Use more precision in the csv file for the cumulative scores.
+- Evolution:
+	- Maintain evolution state and properly add in support for auto-resuming evolutions.
+	- Add current heat to the evolution window.
+	- Include rockets fired and rocket strikes in the evolution scoring metric.
+	- Update the set of parameters the evolution engine can modify for the latest pilot AI and remove invalid ones.
+	- Limit evolved control surface authority to 150% (i.e., in-game limits).
+	- Add auto-quit memory threshold between evolution groups.
+- Spawning:
+	- Add some checks for missing vessels during post-spawning.
+
+v1.4.13.2
+FIXES
 - Fix comboboxes triggering force close on themselves when they should be opening.
 - Use the correct spawn distance based on the spawn distance toggle for tournaments.
 - Don't extend from ground targets when using a weapon that doesn't target ground targets, immediately look for another target instead.
@@ -6,7 +103,7 @@ IMPROVEMENTS
 - Set the default evasionTimeThreshold to 0.1s.
 - Make all custom paths relative to the KSP install directory to remove dependence on running location (PRE needs fixing for this to be usable though).
 - Count rockets fired separately from shots fired and calculate rocket accuracy from the number of rocket strikes.
-- Disable guard mode on spawned vessels during spawning and clear their current target.
+- Disable guard mode on spawned vessels during spawning and clear their current target (prevents using AG10 to activate guard mode earlier than should be allowed).
 - Extend vessel easing during spawning until a vessel's cockpit is in the water (or it has stopped sinking) to allow it to settle a bit.
 
 v1.4.13.1

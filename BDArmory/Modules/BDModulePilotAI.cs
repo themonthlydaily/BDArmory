@@ -36,6 +36,10 @@ namespace BDArmory.Modules
             get { return extending || requestedExtend; }
         }
 
+        bool evading = false;
+        bool wasEvading = false;
+        public bool IsEvading => evading;
+
         public void StopExtending(string reason)
         {
             extending = false;
@@ -306,6 +310,12 @@ namespace BDArmory.Modules
             UI_FloatRange(minValue = 0f, maxValue = 1f, stepIncrement = .05f, scene = UI_Scene.All)]
         public float minEvasionTime = 0.2f;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionNonlinearity", advancedTweakable = true, // Evasion/Extension Nonlinearity
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 10f, stepIncrement = .1f, scene = UI_Scene.All)]
+        public float evasionNonlinearity = 2f;
+        float evasionNonlinearityDirection = 1;
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_EvasionThreshold", advancedTweakable = true, //Evade Threshold
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
             UI_FloatRange(minValue = 0f, maxValue = 100f, stepIncrement = 1f, scene = UI_Scene.All)]
@@ -412,11 +422,13 @@ namespace BDArmory.Modules
             { nameof(maxSpeed), 3000f },
             { nameof(takeOffSpeed), 2000f },
             { nameof(minSpeed), 2000f },
+            { nameof(strafingSpeed), 2000f },
             { nameof(idleSpeed), 3000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
             { nameof(extendMult), 200f },
             { nameof(minEvasionTime), 10f },
+            { nameof(evasionNonlinearity), 90f },
             { nameof(evasionThreshold), 300f },
             { nameof(evasionTimeThreshold), 3f },
             { nameof(vesselStandoffDistance), 5000f },
@@ -564,7 +576,7 @@ namespace BDArmory.Modules
         Vector3 flyingToPosition;
         Vector3 rollTarget;
 #if DEBUG
-        Vector3 rollTarget_DEBUG;
+        Vector3 DEBUG_vector;
 #endif
         Vector3 angVelRollTarget;
 
@@ -1108,6 +1120,8 @@ namespace BDArmory.Modules
             // Calculate threat rating from any threats
             float minimumEvasionTime = minEvasionTime;
             threatRating = evasionThreshold + 1f; // Don't evade by default
+            wasEvading = evading;
+            evading = false;
             if (weaponManager != null)
             {
                 if (weaponManager.incomingMissileTime <= weaponManager.cmThreshold)
@@ -1428,7 +1442,7 @@ namespace BDArmory.Modules
                                 steerMode = SteerModes.Aiming;
                             }
                         }
-                        else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is a long way away or behind us.
+                        else if (distanceToTarget > weaponManager.gunRange * 1.5f || Vector3.Dot(target - vesselTransform.position, vesselTransform.up) < 0) // Target is airborne a long way away or behind us.
                         {
                             target = v.CoM; // Don't bother with the off-by-one physics frame correction as this doesn't need to be so accurate here.
                         }
@@ -1437,6 +1451,7 @@ namespace BDArmory.Modules
                 else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < targetVessel.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
+                    if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude whiel we're outside our gun's range.
                     target = vesselTransform.position + GetLimitedClimbDirectionForSpeed(vectorToTarget);
                 }
                 else
@@ -1562,6 +1577,16 @@ namespace BDArmory.Modules
             {
                 float gRotVel = ((10f * maxAllowedGForce) / ((float)vessel.srfSpeed));
                 //currTargetDir = Vector3.RotateTowards(prevTargetDir, currTargetDir, gRotVel*Mathf.Deg2Rad, 0);
+            }
+            if (IsExtending || IsEvading) // If we're extending or evading, add a deviation to the fly-to direction to make us harder to hit.
+            {
+                var squigglySquidTime = 90f * (float)vessel.missionTime + 8f * Mathf.Sin((float)vessel.missionTime * 6.28f) + 16f * Mathf.Sin((float)vessel.missionTime * 3.14f); // Vary the rate around 90°/s to be more unpredictable.
+                var squigglySquidDirection = Quaternion.AngleAxis(evasionNonlinearityDirection * squigglySquidTime, currTargetDir) * Vector3.ProjectOnPlane(upDirection, currTargetDir).normalized;
+#if DEBUG
+                DEBUG_vector = squigglySquidDirection;
+#endif
+                debugString.AppendLine($"Squiggly Squid: {Vector3.Angle(currTargetDir, Vector3.RotateTowards(currTargetDir, squigglySquidDirection, evasionNonlinearity * Mathf.Deg2Rad, 0f))}° at {((squigglySquidTime) % 360f).ToString("G3")}°");
+                currTargetDir = Vector3.RotateTowards(currTargetDir, squigglySquidDirection, evasionNonlinearity * Mathf.Deg2Rad, 0f);
             }
             Vector3 targetAngVel = Vector3.Cross(prevTargetDir, currTargetDir) / Time.fixedDeltaTime;
             Vector3 localTargetAngVel = vesselTransform.InverseTransformVector(targetAngVel);
@@ -1696,9 +1721,6 @@ namespace BDArmory.Modules
             if (ramming)
                 rollTarget = Vector3.ProjectOnPlane(targetPosition - vesselTransform.position + rollUp * Mathf.Clamp((targetPosition - vesselTransform.position).magnitude / 500f, 0f, 1f) * upDirection, vesselTransform.up);
 
-#if DEBUG
-            rollTarget_DEBUG = rollTarget;
-#endif
             if (requiresLowAltitudeRollTargetCorrection) // Low altitude downwards loop prevention to avoid triggering terrain avoidance.
             {
                 // Set the roll target to be horizontal.
@@ -1797,6 +1819,7 @@ namespace BDArmory.Modules
             }
             if (checkType == ExtendChecks.RequestsOnly) return extending;
             if (extending && extendParametersSet) return true; // Already extending.
+            if (!wasEvading) evasionNonlinearityDirection = Mathf.Sign(UnityEngine.Random.Range(-1f, 1f)); // This applies to extending too.
 
             // Dropping a bomb.
             if (extending && weaponManager.CurrentMissile && weaponManager.CurrentMissile.GetWeaponClass() == WeaponClasses.Bomb) // Run away from the bomb!
@@ -1813,7 +1836,7 @@ namespace BDArmory.Modules
             {
                 var selectedGun = weaponManager.currentGun;
                 if (selectedGun == null && weaponManager.selectedWeapon == null) selectedGun = weaponManager.previousGun;
-                if (!selectedGun.engageGround) // Don't extend from ground targets when using a weapon that can't target ground targets.
+                if (selectedGun != null && !selectedGun.engageGround) // Don't extend from ground targets when using a weapon that can't target ground targets.
                 {
                     weaponManager.ForceScan(); // Look for another target instead.
                     return false;
@@ -1821,7 +1844,7 @@ namespace BDArmory.Modules
                 if (selectedGun != null) // If using a gun or no weapon is selected, take the extend multiplier into account.
                 {
                     extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
-                    desiredMinAltitude = minAltitude + 0.5f * selectedGun.engageRangeMax * extendMult; // Desired minimum altitude after extending. (30° attack vector plus min alt.)
+                    desiredMinAltitude = minAltitude + 0.5f * extendDistance; // Desired minimum altitude after extending. (30° attack vector plus min alt.)
                 }
                 else
                 {
@@ -1942,6 +1965,8 @@ namespace BDArmory.Modules
             SetStatus("Evading");
             debugString.AppendLine($"Evasive");
             debugString.AppendLine($"Threat Distance: {weaponManager.incomingMissileDistance}");
+            evading = true;
+            if (!wasEvading) evasionNonlinearityDirection = Mathf.Sign(UnityEngine.Random.Range(-1f, 1f));
 
             bool hasABEngines = (speedController.multiModeEngines.Count > 0);
 
@@ -2260,8 +2285,8 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                // Finally, check the distance to sea-level as water doesn't act like a collider, so it's getting ignored.
-                if (vessel.mainBody.ocean)
+                // Finally, check the distance to sea-level as water doesn't act like a collider, so it's getting ignored. Also, for planets without surfaces.
+                if (vessel.mainBody.ocean || !vessel.mainBody.hasSolidSurface)
                 {
                     float sinTheta = Vector3.Dot(vessel.srf_vel_direction, upDirection); // sin(theta) (measured relative to the ocean surface).
                     if (sinTheta < 0f) // Heading downwards
@@ -2994,7 +3019,7 @@ namespace BDArmory.Modules
 
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget, 2, Color.blue);
 #if DEBUG
-            BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + rollTarget_DEBUG / 2f, 4, Color.cyan);
+            if (IsEvading || IsExtending) BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position, vesselTransform.position + DEBUG_vector.normalized * 10, 5, Color.cyan);
 #endif
             BDGUIUtils.DrawLineBetweenWorldPositions(vesselTransform.position + (0.05f * vesselTransform.right), vesselTransform.position + (0.05f * vesselTransform.right) + angVelRollTarget, 2, Color.green);
             if (avoidingTerrain)

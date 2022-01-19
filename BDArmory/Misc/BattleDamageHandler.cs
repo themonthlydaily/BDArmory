@@ -40,6 +40,7 @@ namespace BDArmory.Misc
                     {
                         if (rubbertank.SSTank && part.GetDamagePercentage() > 0.5f) return;
                     }
+                    Debug.Log("[BDHandler] Hit on fueltank. SST = " + rubbertank.SSTank + "; inerting = " + rubbertank.InertTank);
                     if (penetrationFactor > 1.2)
                     {
                         if (alreadyburning != null)

@@ -1857,6 +1857,10 @@ namespace BDArmory.Modules
             {
                 part.FindModuleImplementing<BDExplosivePart>().DetonateIfPossible();
             }
+            else if (part.FindModuleImplementing<BDModuleNuke>() != null)
+            {
+                part.FindModuleImplementing<BDModuleNuke>().Detonate();
+            }
             else //TODO: Remove this backguard compatibility
             {
                 Vector3 position = transform.position;//+rigidbody.velocity*Time.fixedDeltaTime;
@@ -2276,9 +2280,16 @@ namespace BDArmory.Modules
                 if (partModules.Current == null) continue;
                 if (partModules.Current.moduleName == "BDExplosivePart")
                 {
+                    ((BDExplosivePart)partModules.Current).ParseWarheadType();
+                    if (clusterbomb > 1)
+                    {
+                        output.AppendLine($"Cluster Bomb:");
+                        output.AppendLine($"- Sub-Munition Count: {clusterbomb} ");
+                    }
                     float tntMass = ((BDExplosivePart)partModules.Current).tntMass;
                     output.AppendLine($"- Blast radius: {Math.Round(BlastPhysicsUtils.CalculateBlastRange(tntMass), 2)} m");
                     output.AppendLine($"- tnt Mass: {tntMass} kg");
+                    output.AppendLine($"- {((BDExplosivePart)partModules.Current).warheadReportingName} warhead");
                 }
                 else if (partModules.Current.moduleName == "ModuleEMP")
                 {
@@ -2293,7 +2304,7 @@ namespace BDArmory.Modules
                     output.AppendLine($"- Max radius: {radius} m");
                 }
                 else continue;
-                    break;
+                break;
             }
             partModules.Dispose();
 

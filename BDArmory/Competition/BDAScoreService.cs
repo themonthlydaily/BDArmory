@@ -274,13 +274,16 @@ namespace BDArmory.Competition
                     }
             }
 
-            status = StatusType.ReportingResults;
-            // report scores
-            yield return SendScores(hash, model);
+            if (competitionStarted) // Only report scores if the competition actually started.
+            {
+                status = StatusType.ReportingResults;
+                // report scores
+                yield return SendScores(hash, model);
 
-            status = StatusType.StoppingHeat;
-            // notify web service to stop heat
-            yield return client.StopHeat(hash, model);
+                status = StatusType.StoppingHeat;
+                // notify web service to stop heat
+                yield return client.StopHeat(hash, model);
+            }
 
             status = StatusType.Waiting;
             yield return RetryFind(hash);
@@ -346,6 +349,9 @@ namespace BDArmory.Competition
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                 {
                     case 33:
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                        break;
+                    case 44:
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     case 50: // FIXME temporary index, to be assigned later
