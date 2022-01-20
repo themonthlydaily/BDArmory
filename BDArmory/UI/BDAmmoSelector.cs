@@ -64,7 +64,11 @@ namespace BDArmory.UI
                 {
                     guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_SAP") + " ";
                 }
-                if (bulletInfo.explosive)
+                if (bulletInfo.nuclear)
+                {
+                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Nuclear") + " ";
+                }
+                if (bulletInfo.explosive && !bulletInfo.nuclear)
                 {
                     if (bulletInfo.fuzeType.ToLower() == "flak" || bulletInfo.fuzeType.ToLower() == "proximity")
                     {
@@ -75,6 +79,14 @@ namespace BDArmory.UI
                 if (bulletInfo.incendiary)
                 {
                     guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Incendiary") + " ";
+                }
+                if (bulletInfo.EMP && !bulletInfo.nuclear)
+                {
+                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_EMP") + " ";
+                }
+                if (bulletInfo.beehive)
+                {
+                    guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Beehive") + " ";
                 }
                 if (!bulletInfo.explosive && bulletInfo.apBulletMod <= 0.8)
                 {
@@ -141,7 +153,7 @@ namespace BDArmory.UI
             float ammolines = 0.1f;
             for (int i = 0; i < AList.Count; i++)
             {
-                string ammoname = AList[i];
+                string ammoname = BulletInfo.bullets[AList[i]].DisplayName;
                 if (GUI.Button(new Rect(margin * 2, (line + labelLines + ammolines) * buttonHeight, (width - 4 * margin), buttonHeight), ammoname, BDArmorySetup.BDGuiSkin.button))
                 {
                     beltString += ammoname;

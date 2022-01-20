@@ -30,7 +30,7 @@ namespace BDArmory.Core.Module
         [KSPField(advancedTweakable = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorThickness")]//armor Thickness
         public float Armour = 10f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Hitpoints
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Armor intregity
 UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.Flight, maxValue = 100, minValue = 0, requireFullControl = false)]
         public float ArmorRemaining;
 
@@ -216,14 +216,20 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 if (!_forceUpdateHitpointsUI && previousHitpoints == maxHitPoints_) return;
 
                 //Add Hitpoints
-                UI_ProgressBar damageFieldFlight = (UI_ProgressBar)Fields["Hitpoints"].uiControlFlight;
-                damageFieldFlight.maxValue = maxHitPoints_;
-                damageFieldFlight.minValue = 0f;
-
-                UI_ProgressBar damageFieldEditor = (UI_ProgressBar)Fields["Hitpoints"].uiControlEditor;
-                damageFieldEditor.maxValue = maxHitPoints_;
-                damageFieldEditor.minValue = 0f;
-
+                if (!ArmorPanel)
+                {
+                    UI_ProgressBar damageFieldFlight = (UI_ProgressBar)Fields["Hitpoints"].uiControlFlight;
+                    damageFieldFlight.maxValue = maxHitPoints_;
+                    damageFieldFlight.minValue = 0f;
+                    UI_ProgressBar damageFieldEditor = (UI_ProgressBar)Fields["Hitpoints"].uiControlEditor;
+                    damageFieldEditor.maxValue = maxHitPoints_;
+                    damageFieldEditor.minValue = 0f;
+                }
+                else
+                {
+                    Fields["Hitpoints"].guiActive = false;
+                    Fields["Hitpoints"].guiActiveEditor = false;
+                }
                 Hitpoints = maxHitPoints_;
                 ArmorRemaining = 100;
                 if (!ArmorSet) overrideArmorSetFromConfig();
@@ -764,7 +770,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             if (isAI) return;
             if (ArmorPanel)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitPointTracker] AddDamage(), hit part is armor panel, returning");
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.HitPointTracker] AddDamage(), hit part is armor panel, returning");
                 return;
             }
 
@@ -809,10 +815,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) + "kg"); //g/m3
             }
-            float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
+			float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
             if (armorMass > 0)
             {
-                Armor -= (reduceMass / armorMass) * Armor; //now properly reduces armor thickness
+                Armor -= ((reduceMass*2) / armorMass) * Armor; //armor that's 50% air isn't going to stop anything and could be considered 'destroyed' so lets reflect that by doubling armor loss (this will also nerf armor panels from 'god-tier' to merely 'very very good'
                 if (Armor < 0)
                 {
                     Armor = 0;
@@ -973,9 +979,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             }
             if (ArmorTypeNum == 1 && ArmorPanel)
             {
-                armorMass = (Armor / 1000) * armorVolume * Density / 1000; //armor mass in tons
+                armorMass = (Armor / 1000) * armorVolume * Density / 1000;
                 guiArmorTypeString = "Aluminium";
                 SelectedArmorType = "None";
+                armorCost = (Armor / 1000) * armorVolume * armorInfo.Cost;
             }
             //part.RefreshAssociatedWindows(); //having this fire every time a change happens prevents sliders from being used. Add delay timer?
             if (OldArmorType != ArmorTypeNum || oldArmorMass != armorMass)
@@ -1086,7 +1093,8 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
                 HullMassAdjust = partMass / 3 - partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Wood");
                 part.maxTemp = 770;
-                HullCostAdjust = Mathf.Max((part.partInfo.cost - (float)resourceCost) / 2, part.partInfo.cost - 500) - (part.partInfo.cost - (float)resourceCost);//make wooden parts up to 500 funds cheaper
+                HullCostAdjust = Mathf.Max(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) / 2, (part.partInfo.cost + part.partInfo.variant.Cost) - 500) - ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost);//make wooden parts up to 500 funds cheaper
+                //this returns cost of base variant, yielding part vairaints that are discounted by 50% or 500 of base varaint cost, not current variant. method to get currently selected variant?
             }
             else if (HullTypeNum == 2)
             {
@@ -1099,7 +1107,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 HullMassAdjust = partMass;
                 guiHullTypeString = Localizer.Format("#LOC_BDArmory_Steel");
-                HullCostAdjust = Mathf.Min((part.partInfo.cost - (float)resourceCost) * 2, (part.partInfo.cost - (float)resourceCost) + 1500); //make steel parts rather more expensive
+                HullCostAdjust = Mathf.Min(((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) * 2, ((part.partInfo.cost + part.partInfo.variant.Cost) - (float)resourceCost) + 1500); //make steel parts rather more expensive
             }
             if (OldHullType != HullTypeNum || OldHullMassAdjust != HullMassAdjust)
             {

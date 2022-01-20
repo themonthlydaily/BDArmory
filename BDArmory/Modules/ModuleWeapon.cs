@@ -379,11 +379,18 @@ namespace BDArmory.Modules
         [KSPField]
         public float maxTargetingRange = 2000; //max range for raycasting and sighting
 
+        [KSPField]
+        public float SpoolUpTime = -1; //barrel spin-up period for electric-driven rotary cannon and similar
+        float spooltime = 0;
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = true, guiName = "Rate of Fire"),
             UI_FloatRange(minValue = 100f, maxValue = 1500, stepIncrement = 25f, scene = UI_Scene.Editor, affectSymCounterparts = UI_Scene.All)]
         public float roundsPerMinute = 650; //rocket RoF slider
 
         public float baseRPM;
+
+        [KSPField]
+        public bool isChaingun = false; //does the gun have adjustable RoF
 
         [KSPField]
         public float maxDeviation = 1; //inaccuracy two standard deviations in degrees (two because backwards compatibility :)
@@ -484,7 +491,12 @@ namespace BDArmory.Modules
         //laser info
         [KSPField]
         public float laserDamage = 10000; //base damage/second of lasers
+        [KSPField]
+        public float laserMaxDamage = 10000; //maximum damage/second of lasers if laser growth enabled
         public float baseLaserdamage;
+        [KSPField]
+        public float LaserGrowTime = -1; //time laser to be fired to go from base to max damage
+        [KSPField] public bool DynamicBeamColor = false; //beam color changes longer laser fired, for growlasers
         [KSPField] public bool pulseLaser = false; //pulse vs beam
         public bool pulseInConfig = false; //record if pulse laser in config for resetting lasers post mutator
         [KSPField] public bool HEpulses = false; //do the pulses have blast damage
@@ -515,14 +527,15 @@ namespace BDArmory.Modules
 
         public float tntMass = 0;
 
-        public bool incendiary;
+
         public bool ImpulseInConfig = false; //record if impulse weapon in config for resetting weapons post mutator
         public bool GraviticInConfig = false; //record if gravitic weapon in config for resetting weapons post mutator
+        //public List<string> attributeList;
 
-        [KSPField]
+        public bool explosive = false;
+        public bool beehive = false;
+        public bool incendiary = false;
         public bool impulseWeapon = false;
-
-        [KSPField]
         public bool graviticWeapon = false;
 
         [KSPField]
@@ -557,6 +570,14 @@ namespace BDArmory.Modules
         [KSPField]
         public float tracerEndWidth = 0.2f;
 
+        [KSPField]
+        public float tracerMaxStartWidth = 0.5f; //set from bulletdefs, left for lasers
+
+        [KSPField]
+        public float tracerMaxEndWidth = 0.5f;
+
+        float tracerBaseSWidth = 0.25f; // for laser FX
+        float tracerBaseEWidth = 0.2f; // for laser FX
         [KSPField]
         public float tracerLength = 0;
         //if set to zero, tracer will be the length of the distance covered by the projectile in one physics timestep
@@ -886,6 +907,7 @@ namespace BDArmory.Modules
                     EffectBehaviour.AddParticleEmitter(emitter.Current);
                 }
             baseRPM = roundsPerMinute;
+
             if (roundsPerMinute >= 1500 || (eWeaponType == WeaponTypes.Laser && !pulseLaser))
             {
                 Events["ToggleRipple"].guiActiveEditor = false;
@@ -893,10 +915,17 @@ namespace BDArmory.Modules
                 useRippleFire = false;
             }
 
-            if (eWeaponType != WeaponTypes.Rocket)//disable rocket RoF slider for non rockets 
+            if (!(isChaingun || eWeaponType == WeaponTypes.Rocket))//disable rocket RoF slider for non rockets 
             {
                 Fields["roundsPerMinute"].guiActiveEditor = false;
             }
+			else
+			{
+				UI_FloatRange RPMEditor = (UI_FloatRange)Fields["roundsPerMinute"].uiControlEditor;
+                RPMEditor.maxValue = baseRPM;
+                RPMEditor.minValue = baseRPM / 2;
+                RPMEditor.onFieldChanged = AccAdjust;			
+			}
 
             int typecount = 0;
             ammoList = BDAcTools.ParseNames(bulletType);
@@ -991,7 +1020,8 @@ namespace BDArmory.Modules
                 Fields["guiAmmoTypeString"].guiActiveEditor = false; //ammoswap
                 Fields["guiAmmoTypeString"].guiActive = false;
                 Events["ToggleAmmoConfig"].guiActiveEditor = false;
-
+                tracerBaseSWidth = tracerStartWidth;
+                tracerBaseEWidth = tracerEndWidth;
             }
             muzzleFlashList = new List<List<KSPParticleEmitter>>();
             List<string> emitterList = BDAcTools.ParseNames(muzzleTransformName);
@@ -1249,7 +1279,7 @@ namespace BDArmory.Modules
         }
         public void PAWRefresh()
         {
-            if (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak)
+            if (eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak || eFuzeType == FuzeTypes.Timed || beehive)
             {
                 Fields["maxAirDetonationRange"].guiActive = true;
                 Fields["maxAirDetonationRange"].guiActiveEditor = true;
@@ -1312,6 +1342,11 @@ namespace BDArmory.Modules
         {
             maxAutoFireCosAngle = Mathf.Cos((FiringTolerance * Mathf.Deg2Rad));
         }
+        void AccAdjust(BaseField field, object obj)
+        {
+            maxDeviation = baseDeviation + ((baseDeviation / (baseRPM / roundsPerMinute)) - baseDeviation);
+            maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount/5, 1, 5); //modify deviation if shot vs slug
+        }
         public string WeaponStatusdebug()
         {
             string status = "Weapon Type: ";
@@ -1324,7 +1359,7 @@ namespace BDArmory.Modules
                 status += "Laser";
             status += "; RoF: " + roundsPerMinute + "; deviation: " + maxDeviation + "; instagib = " + instagib;
             */
-            status += "-Lead Offset: " + GetLeadOffset() + "; FinalAimTgt: " + finalAimTarget + "; tgt Pos: " + targetPosition + "; pointingAtSelf: " + pointingAtSelf + "; tgt CosAngle " + targetCosAngle + "; wpn CosAngle " + targetAdjustedMaxCosAngle + "; Wpn Autofire " + autoFire;
+            status += "-Lead Offset: " + GetLeadOffset() + "; FinalAimTgt: " + finalAimTarget + "; tgt: " + visualTargetVessel.GetName() + "; tgt Pos: " + targetPosition + "; pointingAtSelf: " + pointingAtSelf + "; tgt CosAngle " + targetCosAngle + "; wpn CosAngle " + targetAdjustedMaxCosAngle + "; Wpn Autofire " + autoFire;
 
             return status;
         }
@@ -1363,6 +1398,15 @@ namespace BDArmory.Modules
                         }
                         else if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Rocket) //WeaponTypes.Cannon is deprecated
                         {
+                            if (SpoolUpTime > 0)
+                            {
+                                if (spooltime < 1)
+                                {
+                                    spooltime += TimeWarp.deltaTime / SpoolUpTime;
+                                    spooltime = Mathf.Clamp01(spooltime);
+                                    roundsPerMinute = Mathf.Lerp((baseRPM / 10), baseRPM, spooltime);
+                                }
+                            }
                             finalFire = true;
                         }
                     }
@@ -1373,13 +1417,28 @@ namespace BDArmory.Modules
                             StartCoroutine(IncrementRippleIndex(0));
                             finalFire = false;
                         }
-
                         if (spinDownAnimation) spinningDown = true;
                         if (!oneShotSound && wasFiring)
                         {
                             audioSource.Stop();
                             wasFiring = false;
                             audioSource2.PlayOneShot(overheatSound);
+                        }
+                        if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
+                        {
+                            projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                            laserDamage = baseLaserdamage;
+                            tracerStartWidth = tracerBaseSWidth;
+                            tracerEndWidth = tracerBaseEWidth;
+                        }
+                        if (SpoolUpTime > 0)
+                        {
+                            if (spooltime > 0)
+                            {
+                                spooltime -= TimeWarp.deltaTime / SpoolUpTime;
+                                spooltime = Mathf.Clamp01(spooltime);
+                                roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM/10), spooltime);
+                            }
                         }
                     }
                 }
@@ -1458,7 +1517,30 @@ namespace BDArmory.Modules
                             }
                             else
                             {
+                                if (SpoolUpTime > 0)
+                                {
+                                    if (spooltime < 1)
+                                    {
+                                        spooltime += TimeWarp.deltaTime / SpoolUpTime;
+                                        spooltime = Mathf.Clamp01(spooltime);
+                                        roundsPerMinute = Mathf.Lerp((baseRPM / 10), baseRPM, spooltime);
+                                    }
+                                }
                                 finalFire = true;
+                                if (LaserGrowTime > 0)
+                                {
+                                    laserDamage = Mathf.Lerp(laserDamage, laserMaxDamage, 0.02f / LaserGrowTime);
+                                    tracerStartWidth = Mathf.Lerp(tracerStartWidth, tracerMaxStartWidth, 0.02f / LaserGrowTime);
+                                    tracerEndWidth = Mathf.Lerp(tracerEndWidth, tracerMaxEndWidth, 0.02f / LaserGrowTime);
+                                    if (DynamicBeamColor)
+                                    {
+                                        projectileColorC.r = Mathf.Lerp(startColorC.r, projectileColorC.r, 0.02f / LaserGrowTime);
+                                        projectileColorC.g = Mathf.Lerp(startColorC.g, projectileColorC.g, 0.02f / LaserGrowTime);
+                                        projectileColorC.b = Mathf.Lerp(startColorC.b, projectileColorC.b, 0.02f / LaserGrowTime);
+                                        projectileColorC.a = Mathf.Lerp(startColorC.a, projectileColorC.a, 0.02f / LaserGrowTime);
+                                    }
+                                    UpdateLaserSpecifics(true, false, false, true);
+                                }
                             }
                         }
                         else
@@ -1729,12 +1811,14 @@ namespace BDArmory.Modules
                                     pBullet.tracerLuminance = tracerLuminance;
                                     pBullet.bulletDrop = bulletDrop;
 
-                                    if (bulletInfo.explosive)
+                                    if (bulletInfo.tntMass > 0 || bulletInfo.beehive)
                                     {
                                         pBullet.explModelPath = explModelPath;
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
+                                        pBullet.maxAirDetonationRange = maxAirDetonationRange; 
+                                        pBullet.defaultDetonationRange = defaultDetonationRange;
                                         switch (eFuzeType)
                                         {
                                             case FuzeTypes.None:
@@ -1765,14 +1849,13 @@ namespace BDArmory.Modules
                                         pBullet.fuzeType = PooledBullet.BulletFuzeTypes.None;
                                         pBullet.sabot = SabotRound;
                                     }
-                                    if (impulseWeapon)
-                                    {
-                                        pBullet.impulse = Impulse;
-                                    }
-                                    if (graviticWeapon)
-                                    {
-                                        pBullet.massMod = massAdjustment;
-                                    }
+                                    pBullet.EMP = bulletInfo.EMP;
+                                    pBullet.nuclear = bulletInfo.nuclear;
+                                    pBullet.beehive = bulletInfo.beehive;
+                                    if (bulletInfo.beehive) pBullet.subMunitionType = BulletInfo.bullets[bulletInfo.subMunitionType];
+                                    //pBullet.homing = BulletInfo.homing;
+                                    pBullet.impulse = bulletInfo.impulse;
+                                    pBullet.massMod = bulletInfo.massMod;
                                     switch (bulletDragType)
                                     {
                                         case BulletDragTypes.None:
@@ -2199,7 +2282,7 @@ namespace BDArmory.Modules
 
                                 if (Time.time - timeFired > 6 / 120 && BDArmorySettings.BULLET_HITS)
                                 {
-                                    BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 0, 0, weaponManager.Team.Name);
+                                    BulletHitFX.CreateBulletHit(p, hit.point, hit, hit.normal, false, 10, 0, weaponManager.Team.Name);
                                 }
                             }
                         }
@@ -2300,7 +2383,6 @@ namespace BDArmory.Modules
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
             }
-
             if (Time.time - timeFired > timeGap && !isReloading || !pointingAtSelf && (aiControlled || !Misc.Misc.CheckMouseIsOnGui()) && WMgrAuthorized())
             {// fixes rocket ripple code for proper rippling
                 bool effectsShot = false;
@@ -2477,28 +2559,28 @@ namespace BDArmory.Modules
                         timeFired = Time.time - iTime;
                     }
                 }
-            }
-            if (useRippleFire)
-            {
-                if (fireState.Length > 1) //need to add clause for singlebarrel guns
+                if (useRippleFire)
                 {
-                    barrelIndex++;
-                    //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
-                    if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
+                    if (fireState.Length > 1) //need to add clause for singlebarrel guns
                     {
-                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
-                        if (barrelIndex + 1 > fireTransforms.Length)
+                        barrelIndex++;
+                        //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " is " + barrelIndex + "; total barrels " + fireTransforms.Length);
+                        if ((!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag))) && barrelIndex + 1 > fireTransforms.Length) //only advance ripple index if weapon isn't brustfire, has finished burst, or has fired with all barrels
                         {
-                            barrelIndex = 0;
-                            //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                            StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                            if (barrelIndex + 1 > fireTransforms.Length)
+                            {
+                                barrelIndex = 0;
+                                //Debug.Log("[BDArmory.ModuleWeapon]: barrelIndex for " + this.GetShortName() + " reset");
+                            }
                         }
                     }
-                }
-                else
-                {
-                    if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                    else
                     {
-                        StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                        if (!BurstFire || (BurstFire && (RoundsRemaining >= RoundsPerMag)))
+                        {
+                            StartCoroutine(IncrementRippleIndex(initialFireDelay * TimeWarp.CurrentRate));
+                        }
                     }
                 }
             }
@@ -3514,7 +3596,18 @@ namespace BDArmory.Modules
                     tgtShell = null;
                     tgtRocket = null;
                     autofireShotCount = 0;
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleWeapon]: shotcount reset; length: " + autofireShotCount);
+                    if (SpoolUpTime > 0)
+                    {
+                        roundsPerMinute = baseRPM / 10;
+                        spooltime = 0;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
+                    {
+                        projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                        laserDamage = baseLaserdamage;
+                        tracerStartWidth = tracerBaseSWidth;
+                        tracerEndWidth = tracerBaseEWidth;
+                    }
                 }
             }
             else
@@ -3526,6 +3619,18 @@ namespace BDArmory.Modules
                     visualTargetPart = null;
                     tgtShell = null;
                     tgtRocket = null;
+                    if (SpoolUpTime > 0)
+                    {
+                        roundsPerMinute = baseRPM / 10;
+                        spooltime = 0;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
+                    {
+                        projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                        laserDamage = baseLaserdamage;
+                        tracerStartWidth = tracerBaseSWidth;
+                        tracerEndWidth = tracerBaseEWidth;
+                    }
                 }
             }
         }
@@ -4148,6 +4253,7 @@ namespace BDArmory.Modules
                     }
                     targetVelocity -= Krakensbane.GetFrameVelocityV3f();
                     targetRadius = 1;
+
                     targetAcceleration = MissileTgt != null && MissileTgt.Vessel != null ? (Vector3)MissileTgt.Vessel.acceleration : Vector3.zero;
                     targetAcquired = true;
                     targetAcquisitionType = TargetAcquisitionType.Radar;
@@ -4574,6 +4680,7 @@ namespace BDArmory.Modules
                 ParseBulletDragType();
                 ParseBulletFuzeType(bulletInfo.fuzeType);
                 tntMass = bulletInfo.tntMass;
+                beehive = bulletInfo.beehive;
                 if (!tracerOverrideWidth)
                 {
                     tracerStartWidth = caliber / 300;
@@ -4595,7 +4702,8 @@ namespace BDArmory.Modules
                     if (bulletInfo.subProjectileCount > 1)
                     {
                         guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
-                        maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount, 2, 5); //modify deviation if shot vs slug
+                        //maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount/5, 2, 5); //modify deviation if shot vs slug
+                        AccAdjust(null,null);
                     }
                     if (bulletInfo.apBulletMod >= 1.1)
                     {
@@ -4605,7 +4713,11 @@ namespace BDArmory.Modules
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_SAP") + " ";
                     }
-                    if (bulletInfo.explosive)
+                    if (bulletInfo.nuclear)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Nuclear") + " ";
+                    }
+                    if (bulletInfo.explosive && !bulletInfo.nuclear)
                     {
                         if (eFuzeType == FuzeTypes.Timed || eFuzeType == FuzeTypes.Proximity || eFuzeType == FuzeTypes.Flak)
                         {
@@ -4616,6 +4728,14 @@ namespace BDArmory.Modules
                     if (bulletInfo.incendiary)
                     {
                         guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Incendiary") + " ";
+                    }
+                    if (bulletInfo.EMP && !bulletInfo.nuclear)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_EMP") + " ";
+                    }
+                    if (bulletInfo.beehive)
+                    {
+                        guiAmmoTypeString += Localizer.Format("#LOC_BDArmory_Ammo_Beehive") + " ";
                     }
                     if (!bulletInfo.explosive && bulletInfo.apBulletMod <= 0.8)
                     {
@@ -4742,7 +4862,7 @@ namespace BDArmory.Modules
 
         #region RMB Info
 
-        public override string GetInfo()
+        public override string GetInfo() 
         {
             ammoList = BDAcTools.ParseNames(bulletType);
             StringBuilder output = new StringBuilder();
@@ -4791,7 +4911,8 @@ namespace BDArmory.Modules
                 }
                 if (pulseLaser)
                 {
-                    output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
+                    output.AppendLine($"Rounds Per Minute: {baseRPM * (fireTransforms?.Length ?? 1)}");
+                    if (SpoolUpTime > 0) output.AppendLine($"Weapon requires {SpoolUpTime} seconds to come to max RPM");
                     if (HEpulses)
                     {
                         output.AppendLine($"Blast:");
@@ -4804,6 +4925,8 @@ namespace BDArmory.Modules
             else
             {
                 output.AppendLine($"Rounds Per Minute: {roundsPerMinute * (fireTransforms?.Length ?? 1)}");
+                if (SpoolUpTime > 0) output.AppendLine($"Weapon requires {SpoolUpTime} second" + (SpoolUpTime > 1 ? "s" : "") + " to come to max RPM");
+                output.AppendLine();
                 output.AppendLine($"Ammunition: {ammoName}");
                 if (ECPerShot > 0)
                 {
@@ -4823,16 +4946,16 @@ namespace BDArmory.Modules
                             continue;
                         }
                         ParseBulletFuzeType(binfo.fuzeType);
-                        output.AppendLine($"Bullet type: {ammoList[i]}");
+                        output.AppendLine($"Bullet type: {binfo.DisplayName}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
                         output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
-                        output.AppendLine($"Explosive: {binfo.explosive}");
+                        //output.AppendLine($"Explosive: {binfo.explosive}");
                         if (binfo.subProjectileCount > 1)
                         {
                             output.AppendLine($"Cannister Round");
                             output.AppendLine($" - Submunition count: {binfo.subProjectileCount}");
                         }
-                        if (binfo.explosive)
+                        if (binfo.explosive && !binfo.nuclear)
                         {
                             output.AppendLine($"Blast:");
                             output.AppendLine($"- tnt mass:  {Math.Round(binfo.tntMass, 3)} kg");
@@ -4848,23 +4971,39 @@ namespace BDArmory.Modules
                                 output.AppendLine($"Air detonation: False");
                             }
                         }
-                        if (impulseWeapon || graviticWeapon || incendiary)
+                        if (binfo.nuclear)
                         {
-                            output.AppendLine($"Special Weapon:");
-                            if (impulseWeapon)
+                            output.AppendLine($"Nuclear Shell:");
+                            output.AppendLine($"- yield:  {Math.Round(binfo.tntMass, 3)} kT");
+                            if (binfo.EMP)
                             {
-                                output.AppendLine($"Concussive:");
-                                output.AppendLine($"- Impulse to target:{Impulse}");
+                                output.AppendLine($"- generates EMP");
                             }
-                            if (graviticWeapon)
-                            {
-                                output.AppendLine($"Gravitic:");
-                                output.AppendLine($"- weight added per hit:{massAdjustment * 1000} kg");
-                            }
-                            if (incendiary)
-                            {
-                                output.AppendLine($"Incendiary:");
-                            }
+                        }
+                        if (binfo.EMP && !binfo.nuclear)
+                        {
+                            output.AppendLine($"BlueScreen:");
+                            output.AppendLine($"- EMP buildup per hit:{binfo.caliber * Mathf.Clamp(bulletMass - tntMass, 0.1f, 100)}");
+                        }
+                        if (binfo.impulse != 0)
+                        {
+                            output.AppendLine($"Concussive:");
+                            output.AppendLine($"- Impulse to target:{Impulse}");
+                        }
+                        if (binfo.massMod != 0)
+                        {
+                            output.AppendLine($"Gravitic:");
+                            output.AppendLine($"- weight added per hit:{massAdjustment * 1000} kg");
+                        }
+                        if (binfo.incendiary)
+                        {
+                            output.AppendLine($"Incendiary");
+                        }
+                        if (binfo.beehive)
+                        {
+                            output.AppendLine($"Beehive Shell:");
+                            BulletInfo sinfo = BulletInfo.bullets[binfo.subMunitionType.ToString()];
+                            output.AppendLine($"- deploys {sinfo.subProjectileCount}x {sinfo.DisplayName}");
                         }
                         output.AppendLine("");
                     }
@@ -4874,13 +5013,13 @@ namespace BDArmory.Modules
                     for (int i = 0; i < ammoList.Count; i++)
                     {
                         RocketInfo rinfo = RocketInfo.rockets[ammoList[i].ToString()];
-                        if (rinfo == null)
-                        {
-                            Debug.LogError("[BDArmory.ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
-                            output.AppendLine($"Rocket type: {ammoList[i]} - MISSING");
-                            output.AppendLine("");
-                            continue;
-                        }
+                            if (rinfo == null)
+                            {
+                                Debug.LogError("[BDArmory.ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
+                                output.AppendLine($"Rocket type: {ammoList[i]} - MISSING");
+                                output.AppendLine("");
+                                continue;
+                            }
                         output.AppendLine($"Rocket type: {ammoList[i]}");
                         output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass * 1000, 2)} kg");
                         //output.AppendLine($"Thrust: {thrust}kn"); mass and thrust don't really tell us the important bit, so lets replace that with accel

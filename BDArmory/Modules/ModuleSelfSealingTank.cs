@@ -225,11 +225,10 @@ namespace BDArmory.Modules
             {
                 procWing = true;
             }
-                if (HighLogic.LoadedSceneIsEditor)
+            if (HighLogic.LoadedSceneIsEditor)
             {
                 UI_FloatRange FBEditor = (UI_FloatRange)Fields["FireBottles"].uiControlEditor;
                 FBEditor.onFieldChanged = FBSetup;
-                FBSetup(null, null);
             }
             cockpit = part.FindModuleImplementing<ModuleCommand>();
             if (cockpit != null)
@@ -307,7 +306,10 @@ namespace BDArmory.Modules
             {
                 if (cockpit == null && engine == null && fuel == null) part.RemoveModule(this); //PWing with no tank
             }
+            FBSetup(null, null);
+            Debug.Log("[SelfSealingTank] SST: " + SSTank + "; Inerting: " + InertTank + "; armored cockpit: " + armoredCockpit);
         }
+        /*
         public override void OnLoad(ConfigNode node)
         {
             base.OnLoad(node);
@@ -371,7 +373,7 @@ namespace BDArmory.Modules
                             }
                             catch (Exception e)
                             {
-                                Debug.LogError("[BDArmory.ModuleSelfSealingTank]: Exception parsing InertTank: " + e.Message);
+                                Debug.LogError("[BDArmory.ModuleSelfSealingTank]: Exception parsing armoredCockpit: " + e.Message);
                             }
                         }
                         else
@@ -389,6 +391,7 @@ namespace BDArmory.Modules
                 }
             }
         }
+        */
         void FBSetup(BaseField field, object obj)
         {
             if (externallyCalled) return;

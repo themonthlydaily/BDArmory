@@ -43,9 +43,11 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool VESSEL_RELATIVE_BULLET_CHECKS = false;
         [BDAPersistentSettingsField] public static bool AIM_ASSIST = true;
         [BDAPersistentSettingsField] public static bool DRAW_AIMERS = true;
-        [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;
+        // Debug Labels
+        [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LINES = false;                   //AI/Weapon aim visualizers
         [BDAPersistentSettingsField] public static bool DRAW_DEBUG_LABELS = false;
         [BDAPersistentSettingsField] public static bool DRAW_ARMOR_LABELS = false;                 //armor only debug messages, for testing/debugging. remove/revert back to debug_labels later
+
         [BDAPersistentSettingsField] public static bool REMOTE_SHOOTING = false;
         [BDAPersistentSettingsField] public static bool BOMB_CLEARANCE_CHECK = false;
         [BDAPersistentSettingsField] public static bool SHOW_AMMO_GAUGES = false;
@@ -196,6 +198,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_DAMAGE = 5;            // Do fires do DoT
         [BDAPersistentSettingsField] public static bool BD_FIRE_HEATDMG = true;         // Do fires add heat to parts/are fires able to cook off fuel/ammo?
         [BDAPersistentSettingsField] public static bool BD_INTENSE_FIRES = false;       // Do fuel tank fires DoT get bigger over time?
+        [BDAPersistentSettingsField] public static bool BD_FIRE_FUELEX = true;          // Can fires detonate fuel tanks
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;

@@ -19,18 +19,29 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiName = "Coolant Remaining", guiActiveEditor = false), UI_Label(scene = UI_Scene.All)]
         public double fuelleft;
 
+        public static string defaultflashModelPath = "BDArmory/Models/explosion/nuke/nukeFlash";
         [KSPField]
-        public static string flashModelPath = "BDArmory/Models/explosion/nuke/nukeFlash";
+        public string flashModelPath = defaultflashModelPath;
+
+        public static string defaultShockModelPath = "BDArmory/Models/explosion/nuke/nukeShock";
         [KSPField]
-        public static string shockModelPath = "BDArmory/Models/explosion/nuke/nukeShock";
+        public string shockModelPath = defaultShockModelPath;
+
+        public static string defaultBlastModelPath = "BDArmory/Models/explosion/nuke/nukeBlast";
         [KSPField]
-        public static string blastModelPath = "BDArmory/Models/explosion/nuke/nukeBlast";
+        public string blastModelPath = defaultBlastModelPath;
+
+        public static string defaultPlumeModelPath = "BDArmory/Models/explosion/nuke/nukePlume";
         [KSPField]
-        public static string plumeModelPath = "BDArmory/Models/explosion/nuke/nukePlume";
+        public string plumeModelPath = defaultPlumeModelPath;
+
+        public static string defaultDebrisModelPath = "BDArmory/Models/explosion/nuke/nukeScatter";
         [KSPField]
-        public static string debrisModelPath = "BDArmory/Models/explosion/nuke/nukeScatter";
+        public string debrisModelPath = defaultDebrisModelPath;
+
+        public static string defaultBlastSoundPath = "BDArmory/Models/explosion/nuke/nukeBoom";
         [KSPField]
-        public static string blastSoundPath = "BDArmory/Models/explosion/nuke/nukeBoom";
+        public string blastSoundPath = defaultBlastSoundPath;
 
         [KSPField(isPersistant = true)]
         public float thermalRadius = 750;
@@ -64,7 +75,7 @@ namespace BDArmory.Modules
             get
             {
                 if (missile) return missile;
-                missile = missile = part.FindModuleImplementing<MissileLauncher>();
+                missile = part.FindModuleImplementing<MissileLauncher>();
                 return missile;
             }
         }
@@ -185,7 +196,7 @@ namespace BDArmory.Modules
             }
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDModuleNuke]: Running Detonate() on nukeModule in vessel " + Sourcevessel);
             //affect any nearby parts/vessels that aren't the source vessel
-            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, 0, thermalRadius, yield, fluence, isEMP, reportingName, "", blastSoundPath, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath);
+            NukeFX.CreateExplosion(part.transform.position, ExplosionSourceType.BattleDamage, Sourcevessel, reportingName, 0, thermalRadius, yield, fluence, isEMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");
             hasDetonated = true;
             if (part.vessel != null) // Already in the process of being destroyed.
                 part.Destroy();
@@ -201,7 +212,7 @@ namespace BDArmory.Modules
                 output.AppendLine($"Yield: {yield}");
                 output.AppendLine($"Generates EMP: {isEMP}");
             }
-            if (missile == null)
+            if (missile != null)
             {
                 output.AppendLine($"Nuclear Warhead");
                 output.AppendLine($"Yield: {yield}");
