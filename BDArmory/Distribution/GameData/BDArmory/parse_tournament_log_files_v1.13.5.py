@@ -494,7 +494,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             # Per round cumulative score
             if args.score and not args.no_cumulative:
                 name_length = max([len(name) for name in per_round_scores.keys()] + [23])
-                strings.append(f"\nName \\ Cumulative Score{' '*(name_length-23)}\t" + "\t".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
+                strings.append(f"\nName \\ Cumulative Score{' '*(name_length-22)}\t" + "\t".join(f"{r:>7d}" for r in range(len(next(iter(per_round_scores.values()))))))
                 strings.append('\n'.join(f"{craft}:{' '*(name_length-len(craft))}\t" + "\t".join(f"{s:>7.2f}" for s in cumsum(per_round_scores[craft])) for craft in sorted(per_round_scores, key=lambda craft: summary['craft'][craft]['score'], reverse=True)))
 
             # Print stuff to the console.
