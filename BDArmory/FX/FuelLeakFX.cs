@@ -119,7 +119,7 @@ namespace BDArmory.FX
                             fuelLeft++;
                         }
                     }
-                    PartResource ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
+                    ox = parentPart.Resources.Where(pr => pr.resourceName == "Oxidizer").FirstOrDefault();
                     if (ox != null)
                     {
                         if (ox.amount > 0)
@@ -131,7 +131,7 @@ namespace BDArmory.FX
                             fuelLeft++;
                         }
                     }
-                    PartResource mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
+                    mp = parentPart.Resources.Where(pr => pr.resourceName == "MonoPropellant").FirstOrDefault();
                     if (mp != null)
                     {
                         if (mp.amount >= 0)

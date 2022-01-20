@@ -297,7 +297,7 @@ namespace BDArmory.Modules
             }
             // Convert to world space, to deal with bizarre orientation relationships.
             // (ex: pushTarget is inverted, and our top node connects to its top node)
-            Vector3 worldSpaceTranslation = part.transform.TransformVector(translation);
+            Vector3 worldSpaceTranslation = part.transform.TransformVector(translation); //FIXME - fix transforms to yield relative to part, not SPH
             pushTarget.transform.Translate(worldSpaceTranslation, Space.World);
         }
         /// ///////////////////////////
@@ -325,7 +325,6 @@ namespace BDArmory.Modules
             if (armor != null && armorTransforms != null)
             {
                 armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);
-                if (isTriangularPanel && part.isMirrored) armorthickness = Mathf.Abs(armorthickness) * -1;
                 //if (!isCurvedPanel)
                 {
                     for (int i = 0; i < armorTransforms.Length; i++)
@@ -352,9 +351,13 @@ namespace BDArmory.Modules
                 if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
                 {
                     Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                    if (localSpace.y > Mathf.Abs(0.8f * ratio))
+                    if (localSpace.y > (0.9f * ratio))
                     {
                         TranslatePart(p, -armorTransforms[0].right * ratio);
+                    }
+                    if (localSpace.y < -(0.9f * ratio))
+                    {
+                        TranslatePart(p, armorTransforms[0].right * ratio);
                     }
                 }
                 Oldthickness = armorthickness;

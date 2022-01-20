@@ -30,7 +30,7 @@ namespace BDArmory.Core.Module
         [KSPField(advancedTweakable = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorThickness")]//armor Thickness
         public float Armour = 10f;
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Hitpoints
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Armor intregity
 UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.Flight, maxValue = 100, minValue = 0, requireFullControl = false)]
         public float ArmorRemaining;
 
@@ -770,7 +770,7 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             if (isAI) return;
             if (ArmorPanel)
             {
-                if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.HitPointTracker] AddDamage(), hit part is armor panel, returning");
+                if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[BDArmory.HitPointTracker] AddDamage(), hit part is armor panel, returning");
                 return;
             }
 
@@ -815,10 +815,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) + "kg"); //g/m3
             }
-            float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
+			float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
             if (armorMass > 0)
             {
-                Armor -= (reduceMass / armorMass) * Armor; //now properly reduces armor thickness
+                Armor -= ((reduceMass*2) / armorMass) * Armor; //armor that's 50% air isn't going to stop anything and could be considered 'destroyed' so lets reflect that by doubling armor loss (this will also nerf armor panels from 'god-tier' to merely 'very very good'
                 if (Armor < 0)
                 {
                     Armor = 0;
