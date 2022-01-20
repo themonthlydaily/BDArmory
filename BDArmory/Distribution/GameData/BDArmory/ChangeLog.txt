@@ -28,6 +28,12 @@ IMPROVEMENTS
 		- The integral is now vector valued to account for coupling between the yaw and pitch axes due to roll and the individual pitch and yaw components are projected out from this integral.
 		- The maximum contribution to the steering from the integral component is 1 (similar to the magnitude of the individual components before this change, but larger than the original 0.2 prior to the previous change).
 		- The internal yaw damping factor is increased from 0.2 to 0.33 to keep the internal ratios between the axes consistent for each of the P, I and D components (1:0.33:0.1 for pitch:yaw:roll).
+	- Use missile velocity vector for evasion instead of missile relative position to prevent turning into missiles when they are at close range. 
+	- Use soonest time to closest approach instead of closest distance to select highest threat missile. 
+	- Change closest approach point to ignore missile threats to 3 Blast Radius from 1.5 Blast Radius.
+
+Message #tea
+
 - Weapons:
 	- Adds Chaingun functionality; chainguns have user configurable RoF in the SPH/VAB.
 	- Adds Weapon Spool up time functionality (for Gatling guns, etc).
