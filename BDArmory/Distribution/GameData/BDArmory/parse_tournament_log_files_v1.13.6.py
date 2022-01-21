@@ -3,8 +3,10 @@
 # Standard library imports
 import argparse
 import json
+import re
 import sys
 from collections import Counter
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
 
@@ -81,6 +83,10 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
     if tournamentNumber > 0 and not args.quiet:
         print("")
     tournamentData = {}
+    tournamentMetadata = {}
+    m = re.search('Tournament (\d+)', str(tournamentDir))
+    if m is not None and len(m.groups()) > 0:
+        tournamentMetadata['ID'] = m.groups()[0]
     for round in sorted((roundDir for roundDir in tournamentDir.iterdir() if roundDir.is_dir()), key=naturalSortKey) if not args.current_dir else (tournamentDir,):
         if not args.current_dir and len(round.name) == 0:
             continue
@@ -98,7 +104,10 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         continue  # Ignore irrelevant lines
                     _, field = line.split(' ', 1)
                     if field.startswith('Dumping Results'):
-                        tournamentData[round.name][heat.name]['duration'] = float(field[field.find('(') + 4:field.find(')') - 1])
+                        duration = float(field[field.find('(') + 4:field.find(')') - 1])
+                        timestamp = datetime.fromisoformat(field[field.find(' at ') + 4:])
+                        tournamentData[round.name][heat.name]['duration']
+                        tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp - timedelta(seconds=duration)), max(tournamentMetadata['duration'][1], timestamp)) if 'duration' in tournamentMetadata else (timestamp - timedelta(seconds=duration), timestamp)
                     elif field.startswith('ALIVE:'):
                         state, craft = field.split(':', 1)
                         tournamentData[round.name][heat.name]['craft'][craft] = {'state': state}
@@ -225,6 +234,10 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
     teams = {team: members for round in tournamentData.values() for heat in round.values() if 'teams' in heat['result'] for team, members in heat['result']['teams'].items()}
     teams.update({team: members for round in tournamentData.values() for heat in round.values() if 'dead teams' in heat['result'] for team, members in heat['result']['dead teams'].items()})
     summary = {
+        'meta': {
+            'ID': tournamentMetadata.get('ID', 'unknown'),
+            'duration': [ts.isoformat() for ts in tournamentMetadata.get('duration', (datetime.now(), datetime.now()))],
+        },
         'craft': {
             craft: {
                 'wins': len([1 for round in tournamentData.values() for heat in round.values() if heat['result']['result'] == "Win" and craft in next(iter(heat['result']['teams'].values())).split(", ")]),
@@ -437,6 +450,8 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 
         if not args.quiet:  # Write results to console
             strings = []
+            if not args.current_dir and 'duration' in tournamentMetadata:
+                strings.append(f"Tournament {tournamentMetadata.get('ID', '???')} of duration {tournamentMetadata['duration'][1]-tournamentMetadata['duration'][0]} starting at {tournamentMetadata['duration'][0]}")
             headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
             if args.score:
                 headers.insert(1, 'Score')
