@@ -106,7 +106,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                     if field.startswith('Dumping Results'):
                         duration = float(field[field.find('(') + 4:field.find(')') - 1])
                         timestamp = datetime.fromisoformat(field[field.find(' at ') + 4:])
-                        tournamentData[round.name][heat.name]['duration']
+                        tournamentData[round.name][heat.name]['duration'] = duration
                         tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp - timedelta(seconds=duration)), max(tournamentMetadata['duration'][1], timestamp)) if 'duration' in tournamentMetadata else (timestamp - timedelta(seconds=duration), timestamp)
                     elif field.startswith('ALIVE:'):
                         state, craft = field.split(':', 1)
