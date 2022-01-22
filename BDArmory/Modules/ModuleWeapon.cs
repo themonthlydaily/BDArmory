@@ -919,13 +919,13 @@ namespace BDArmory.Modules
             {
                 Fields["roundsPerMinute"].guiActiveEditor = false;
             }
-			else
-			{
-				UI_FloatRange RPMEditor = (UI_FloatRange)Fields["roundsPerMinute"].uiControlEditor;
+            else
+            {
+                UI_FloatRange RPMEditor = (UI_FloatRange)Fields["roundsPerMinute"].uiControlEditor;
                 RPMEditor.maxValue = baseRPM;
                 RPMEditor.minValue = baseRPM / 2;
-                RPMEditor.onFieldChanged = AccAdjust;			
-			}
+                RPMEditor.onFieldChanged = AccAdjust;
+            }
 
             int typecount = 0;
             ammoList = BDAcTools.ParseNames(bulletType);
@@ -1345,7 +1345,7 @@ namespace BDArmory.Modules
         void AccAdjust(BaseField field, object obj)
         {
             maxDeviation = baseDeviation + ((baseDeviation / (baseRPM / roundsPerMinute)) - baseDeviation);
-            maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount/5, 1, 5); //modify deviation if shot vs slug
+            maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount / 5, 1, 5); //modify deviation if shot vs slug
         }
         public string WeaponStatusdebug()
         {
@@ -1379,68 +1379,9 @@ namespace BDArmory.Modules
                     }
                 }
 
-                if (weaponState == WeaponStates.Enabled &&
-                    (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
+                if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
-                    userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) &&
-                                  (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled &&
-                                  !aiControlled);
-                    if (((userFiring || agHoldFiring) && !isAPS) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
-                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
-                    {
-                        if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
-                        {
-                            if (useRippleFire) //old method wouldn't catch non-ripple guns (i.e. Vulcan) trying to fire at targets beyond fire range
-                            {
-                                StartCoroutine(IncrementRippleIndex(0));
-                            }
-                            finalFire = false;
-                        }
-                        else if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Rocket) //WeaponTypes.Cannon is deprecated
-                        {
-                            if (SpoolUpTime > 0)
-                            {
-                                if (spooltime < 1)
-                                {
-                                    spooltime += TimeWarp.deltaTime / SpoolUpTime;
-                                    spooltime = Mathf.Clamp01(spooltime);
-                                    roundsPerMinute = Mathf.Lerp((baseRPM / 10), baseRPM, spooltime);
-                                }
-                            }
-                            finalFire = true;
-                        }
-                    }
-                    else
-                    {
-                        if (weaponManager != null && weaponManager.gunRippleIndex == rippleIndex)
-                        {
-                            StartCoroutine(IncrementRippleIndex(0));
-                            finalFire = false;
-                        }
-                        if (spinDownAnimation) spinningDown = true;
-                        if (!oneShotSound && wasFiring)
-                        {
-                            audioSource.Stop();
-                            wasFiring = false;
-                            audioSource2.PlayOneShot(overheatSound);
-                        }
-                        if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
-                        {
-                            projectileColorC = Misc.Misc.ParseColor255(projectileColor);
-                            laserDamage = baseLaserdamage;
-                            tracerStartWidth = tracerBaseSWidth;
-                            tracerEndWidth = tracerBaseEWidth;
-                        }
-                        if (SpoolUpTime > 0)
-                        {
-                            if (spooltime > 0)
-                            {
-                                spooltime -= TimeWarp.deltaTime / SpoolUpTime;
-                                spooltime = Mathf.Clamp01(spooltime);
-                                roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM/10), spooltime);
-                            }
-                        }
-                    }
+                    userFiring = (BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY) && (vessel.isActiveVessel || BDArmorySettings.REMOTE_SHOOTING) && !MapView.MapIsEnabled && !aiControlled);
                 }
                 else
                 {
@@ -1501,63 +1442,6 @@ namespace BDArmory.Modules
                 if (weaponState == WeaponStates.Enabled && (TimeWarp.WarpMode != TimeWarp.Modes.HIGH || TimeWarp.CurrentRate == 1))
                 {
                     aimAndFireIfPossible = true; // Aim and fire in a later timing phase of FixedUpdate. This synchronises firing with the physics instead of waiting until the scene is rendered. It also occurs before Krakensbane adjustments have been made (in the Late timing phase).
-
-                    if (eWeaponType == WeaponTypes.Laser)
-                    {
-                        if (((userFiring || agHoldFiring) && !isAPS) || (autoFire && //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
-                        (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
-                        {
-                            if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
-                            {
-                                if (useRippleFire)
-                                {
-                                    StartCoroutine(IncrementRippleIndex(0));
-                                }
-                                finalFire = false;
-                            }
-                            else
-                            {
-                                if (SpoolUpTime > 0)
-                                {
-                                    if (spooltime < 1)
-                                    {
-                                        spooltime += TimeWarp.deltaTime / SpoolUpTime;
-                                        spooltime = Mathf.Clamp01(spooltime);
-                                        roundsPerMinute = Mathf.Lerp((baseRPM / 10), baseRPM, spooltime);
-                                    }
-                                }
-                                finalFire = true;
-                                if (LaserGrowTime > 0)
-                                {
-                                    laserDamage = Mathf.Lerp(laserDamage, laserMaxDamage, 0.02f / LaserGrowTime);
-                                    tracerStartWidth = Mathf.Lerp(tracerStartWidth, tracerMaxStartWidth, 0.02f / LaserGrowTime);
-                                    tracerEndWidth = Mathf.Lerp(tracerEndWidth, tracerMaxEndWidth, 0.02f / LaserGrowTime);
-                                    if (DynamicBeamColor)
-                                    {
-                                        projectileColorC.r = Mathf.Lerp(startColorC.r, projectileColorC.r, 0.02f / LaserGrowTime);
-                                        projectileColorC.g = Mathf.Lerp(startColorC.g, projectileColorC.g, 0.02f / LaserGrowTime);
-                                        projectileColorC.b = Mathf.Lerp(startColorC.b, projectileColorC.b, 0.02f / LaserGrowTime);
-                                        projectileColorC.a = Mathf.Lerp(startColorC.a, projectileColorC.a, 0.02f / LaserGrowTime);
-                                    }
-                                    UpdateLaserSpecifics(true, false, false, true);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
-                            {
-                                for (int i = 0; i < laserRenderers.Length; i++)
-                                {
-                                    laserRenderers[i].enabled = false;
-                                }
-                            }
-                            if (!pulseLaser || !oneShotSound)
-                            {
-                                audioSource.Stop();
-                            }
-                        }
-                    }
                 }
                 else if (eWeaponType == WeaponTypes.Laser)
                 {
@@ -1817,7 +1701,7 @@ namespace BDArmory.Modules
                                         pBullet.explSoundPath = explSoundPath;
                                         pBullet.tntMass = bulletInfo.tntMass;
                                         pBullet.detonationRange = detonationRange;
-                                        pBullet.maxAirDetonationRange = maxAirDetonationRange; 
+                                        pBullet.maxAirDetonationRange = maxAirDetonationRange;
                                         pBullet.defaultDetonationRange = defaultDetonationRange;
                                         switch (eFuzeType)
                                         {
@@ -3635,6 +3519,96 @@ namespace BDArmory.Modules
             }
         }
 
+        void CheckFinalFire()
+        {
+            finalFire = false;
+            //if user pulling the trigger || AI controlled and on target if turreted || finish a burstfire weapon's burst
+            if (((userFiring || agHoldFiring) && !isAPS) || (autoFire && (!turret || turret.TargetInRange(finalAimTarget, 10, float.MaxValue))) || (BurstFire && RoundsRemaining > 0 && RoundsRemaining < RoundsPerMag))
+            {
+                if ((pointingAtSelf || isOverheated || isReloading) || (aiControlled && engageRangeMax < targetDistance))// is weapon within set max range?
+                {
+                    if (useRippleFire) //old method wouldn't catch non-ripple guns (i.e. Vulcan) trying to fire at targets beyond fire range
+                    {
+                        StartCoroutine(IncrementRippleIndex(0));
+                    }
+                }
+                else if (eWeaponType == WeaponTypes.Ballistic || eWeaponType == WeaponTypes.Rocket || eWeaponType == WeaponTypes.Laser) // That's all of them...
+                {
+                    if (SpoolUpTime > 0)
+                    {
+                        if (spooltime < 1)
+                        {
+                            spooltime += TimeWarp.deltaTime / SpoolUpTime;
+                            spooltime = Mathf.Clamp01(spooltime);
+                            roundsPerMinute = Mathf.Lerp((baseRPM / 10), baseRPM, spooltime);
+                        }
+                    }
+                    if (!(!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)) // Don't fire rippling weapons when they're on the wrong part of the cycle. Spool up and grow lasers though.
+                    {
+                        finalFire = true;
+                    }
+                    if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
+                    {
+                        laserDamage = Mathf.Lerp(laserDamage, laserMaxDamage, 0.02f / LaserGrowTime);
+                        tracerStartWidth = Mathf.Lerp(tracerStartWidth, tracerMaxStartWidth, 0.02f / LaserGrowTime);
+                        tracerEndWidth = Mathf.Lerp(tracerEndWidth, tracerMaxEndWidth, 0.02f / LaserGrowTime);
+                        if (DynamicBeamColor)
+                        {
+                            projectileColorC.r = Mathf.Lerp(startColorC.r, projectileColorC.r, 0.02f / LaserGrowTime);
+                            projectileColorC.g = Mathf.Lerp(startColorC.g, projectileColorC.g, 0.02f / LaserGrowTime);
+                            projectileColorC.b = Mathf.Lerp(startColorC.b, projectileColorC.b, 0.02f / LaserGrowTime);
+                            projectileColorC.a = Mathf.Lerp(startColorC.a, projectileColorC.a, 0.02f / LaserGrowTime);
+                        }
+                        UpdateLaserSpecifics(true, false, false, true);
+                    }
+                }
+            }
+            else
+            {
+                if (weaponManager != null && weaponManager.gunRippleIndex == rippleIndex)
+                {
+                    StartCoroutine(IncrementRippleIndex(0));
+                }
+                if (spinDownAnimation) spinningDown = true;
+                if (!oneShotSound && wasFiring)
+                {
+                    audioSource.Stop();
+                    wasFiring = false;
+                    audioSource2.PlayOneShot(overheatSound);
+                }
+                if (eWeaponType == WeaponTypes.Laser)
+                {
+                    if (LaserGrowTime > 0)
+                    {
+                        projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                        laserDamage = baseLaserdamage;
+                        tracerStartWidth = tracerBaseSWidth;
+                        tracerEndWidth = tracerBaseEWidth;
+                    }
+                    if ((!pulseLaser && !BurstFire) || (!pulseLaser && BurstFire && (RoundsRemaining >= RoundsPerMag)) || (pulseLaser && Time.time - timeFired > beamDuration))
+                    {
+                        for (int i = 0; i < laserRenderers.Length; i++)
+                        {
+                            laserRenderers[i].enabled = false;
+                        }
+                    }
+                    if (!pulseLaser || !oneShotSound)
+                    {
+                        audioSource.Stop();
+                    }
+                }
+                if (SpoolUpTime > 0)
+                {
+                    if (spooltime > 0)
+                    {
+                        spooltime -= TimeWarp.deltaTime / SpoolUpTime;
+                        spooltime = Mathf.Clamp01(spooltime);
+                        roundsPerMinute = Mathf.Lerp(baseRPM, (baseRPM / 10), spooltime);
+                    }
+                }
+            }
+        }
+
         void AimAndFire()
         {
             // This runs in the FashionablyLate timing phase of FixedUpdate before Krakensbane corrections have been applied.
@@ -3661,22 +3635,14 @@ namespace BDArmory.Modules
             {
                 CheckWeaponSafety();
                 CheckAIAutofire();
+                CheckFinalFire();
                 // if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("DEBUG " + vessel.vesselName + " targeting visualTargetVessel: " + visualTargetVessel + ", finalFire: " + finalFire + ", pointingAtSelf: " + pointingAtSelf + ", targetDistance: " + targetDistance);
 
                 if (finalFire)
                 {
-                    if (!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)
+                    switch (eWeaponType)
                     {
-                        finalFire = false;
-                    }
-                    else
-                    {
-                        finalFire = true;
-                    }
-                    if (eWeaponType == WeaponTypes.Laser)
-                    {
-                        if (finalFire)
-                        {
+                        case WeaponTypes.Laser:
                             if (FireLaser())
                             {
                                 for (int i = 0; i < laserRenderers.Length; i++)
@@ -3702,40 +3668,21 @@ namespace BDArmory.Modules
                                     audioSource.Stop();
                                 }
                             }
-                        }
-                    }
-                    else
-                    {
-                        if (eWeaponType == WeaponTypes.Ballistic)
-                        {
-                            if (finalFire)
+                            break;
+                        case WeaponTypes.Ballistic:
+                            Fire();
+                            if (isAPS && (tgtShell != null || tgtRocket != null))
                             {
-                                Fire();
-                                if (isAPS && (tgtShell != null || tgtRocket != null))
-                                {
-                                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
-                                }
+                                StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                             }
-                        }
-                        if (eWeaponType == WeaponTypes.Rocket)
-                        {
-                            if (finalFire)
+                            break;
+                        case WeaponTypes.Rocket:
+                            FireRocket();
+                            if (isAPS && (tgtShell != null || tgtRocket != null))
                             {
-                                FireRocket();
-                                if (isAPS && (tgtShell != null || tgtRocket != null))
-                                {
-                                    StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
-                                }
+                                StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                             }
-                        }
-                    }
-                    if (BurstFire && (RoundsRemaining < RoundsPerMag))
-                    {
-                        finalFire = true;
-                    }
-                    else
-                    {
-                        finalFire = false;
+                            break;
                     }
                 }
             }
@@ -4010,7 +3957,7 @@ namespace BDArmory.Modules
                             }
                             targetparts = targetparts.OrderBy(w => w.mass).ToList(); //weight target part priority by part mass, also serves as a default 'target heaviest part' in case other options not selected
                             targetparts.Reverse(); //Order by mass is lightest to heaviest. We want H>L
-                            //targetparts.Shuffle(); //alternitively, increase the random range from maxtargetnum to targetparts.count, otherwise edge cases where lots of one thing (targeting command/mass) will be pulled before lighter things (weapons, maybe engines) if both selected
+                                                   //targetparts.Shuffle(); //alternitively, increase the random range from maxtargetnum to targetparts.count, otherwise edge cases where lots of one thing (targeting command/mass) will be pulled before lighter things (weapons, maybe engines) if both selected
                             if (turret)
                             {
                                 targetID = (int)UnityEngine.Random.Range(0, Mathf.Min(targetparts.Count, weaponManager.multiTargetNum));
@@ -4703,7 +4650,7 @@ namespace BDArmory.Modules
                     {
                         guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Shot") + " ";
                         //maxDeviation *= Mathf.Clamp(bulletInfo.subProjectileCount/5, 2, 5); //modify deviation if shot vs slug
-                        AccAdjust(null,null);
+                        AccAdjust(null, null);
                     }
                     if (bulletInfo.apBulletMod >= 1.1)
                     {
@@ -4862,7 +4809,7 @@ namespace BDArmory.Modules
 
         #region RMB Info
 
-        public override string GetInfo() 
+        public override string GetInfo()
         {
             ammoList = BDAcTools.ParseNames(bulletType);
             StringBuilder output = new StringBuilder();
@@ -5013,13 +4960,13 @@ namespace BDArmory.Modules
                     for (int i = 0; i < ammoList.Count; i++)
                     {
                         RocketInfo rinfo = RocketInfo.rockets[ammoList[i].ToString()];
-                            if (rinfo == null)
-                            {
-                                Debug.LogError("[BDArmory.ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
-                                output.AppendLine($"Rocket type: {ammoList[i]} - MISSING");
-                                output.AppendLine("");
-                                continue;
-                            }
+                        if (rinfo == null)
+                        {
+                            Debug.LogError("[BDArmory.ModuleWeapon]: The requested rocket type (" + ammoList[i].ToString() + ") does not exist.");
+                            output.AppendLine($"Rocket type: {ammoList[i]} - MISSING");
+                            output.AppendLine("");
+                            continue;
+                        }
                         output.AppendLine($"Rocket type: {ammoList[i]}");
                         output.AppendLine($"Rocket mass: {Math.Round(rinfo.rocketMass * 1000, 2)} kg");
                         //output.AppendLine($"Thrust: {thrust}kn"); mass and thrust don't really tell us the important bit, so lets replace that with accel
