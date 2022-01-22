@@ -3543,7 +3543,7 @@ namespace BDArmory.Modules
                             roundsPerMinute = Mathf.Lerp((baseRPM / 10), baseRPM, spooltime);
                         }
                     }
-                    if (!(!BurstFire && useRippleFire && weaponManager.gunRippleIndex != rippleIndex)) // Don't fire rippling weapons when they're on the wrong part of the cycle. Spool up and grow lasers though.
+                    if (BurstFire || !useRippleFire || weaponManager.gunRippleIndex == rippleIndex) // Don't fire rippling weapons when they're on the wrong part of the cycle. Spool up and grow lasers though.
                     {
                         finalFire = true;
                     }
