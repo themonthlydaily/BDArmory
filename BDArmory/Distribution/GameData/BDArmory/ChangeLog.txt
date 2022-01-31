@@ -1,4 +1,15 @@
-﻿v1.4.15.0
+﻿FIXES
+- Don't clamp values when switching from text input to sliders and the unclamped option has been toggled.
+- Fix wrong component type in BD check.
+IMPROVEMENTS
+- Weapons:
+	- Move finalFire checks into a single function that runs in AimAndFire during the FashionablyLate timing phase instead of being spread between Update and FixedUpdate.
+- Tournamements:
+	- Add some timestamp and duration output to the tournament summary.
+	- Adjust spacing in output from parsing script.
+	- Add an optional title to the summary plots.
+
+v1.4.15.0
 FIXES
 - Adds some checks for inerted tanks catching fire in some edge cases.
 - Fix firebottle gui not updating when they're used.
