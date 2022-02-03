@@ -1418,7 +1418,7 @@ namespace BDArmory.Modules
                     {
                         BDGUIUtils.DrawTextureOnWorldPos(VectorUtils.GetWorldSurfacePostion(designatedGPSCoords, vessel.mainBody), BDArmorySetup.Instance.greenSpikedPointCircleTexture, new Vector2(22, 22), 0);
                     }
-                }                
+                }
                 if (BDArmorySettings.DRAW_DEBUG_LABELS)
                 {
                     debugString.Length = 0;
@@ -2734,7 +2734,7 @@ namespace BDArmory.Modules
             if (!guardMode) return false;
             bool openingBays = false;
 
-            if (weaponIndex > 0 && CurrentMissile && guardTarget && Vector3.Dot(guardTarget.transform.position - CurrentMissile.transform.position, CurrentMissile.GetForwardTransform()) > 0)
+            if (weaponIndex > 0 && CurrentMissile && guardTarget)
             {
                 if (CurrentMissile.part.ShieldedFromAirstream)
                 {
@@ -2936,7 +2936,7 @@ namespace BDArmory.Modules
                     {
                         mt.Current.DisableTurret();
                     }
-                }           
+                }
         }
 
         public void CycleWeapon(bool forward)
@@ -3014,7 +3014,7 @@ namespace BDArmory.Modules
                             if (guidance != null)
                             { //We have set of parts not only a part
                                 if (guidance.GetShortName() != weaponArray[weaponIndex]?.GetShortName()) continue;
-                            }                                              
+                            }
                         }
                         if (firstMl == null) firstMl = ml.Current;
 
@@ -4309,7 +4309,7 @@ namespace BDArmory.Modules
                                     targetWeapon = item.Current;
                                 }
                             }
-                        }                        
+                        }
                         //Missiles are the preferred method of ground attack. use if available over other options
                         if (candidateClass == WeaponClasses.Missile) //don't use missiles underwater. That's what torpedoes are for
                         {
@@ -4724,7 +4724,7 @@ namespace BDArmory.Modules
                                         rd.Current.EnableRadar();
                                 }
                         return true;
-                    }                
+                    }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -4945,7 +4945,7 @@ namespace BDArmory.Modules
                 ml.TargetAcquired = true;
                 ml.targetGPSCoords = VectorUtils.WorldPositionToGeoCoords(antiRadiationTarget,
                         vessel.mainBody);
-            }            
+            }
         }
 
         #endregion Targeting
