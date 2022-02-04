@@ -16,7 +16,7 @@ parser.add_argument('-q', '--quiet', action='store_true', help="Don't print resu
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="0.1,0,0,-1,1,2e-3,2,1,2e-2,0,2e-4,1e-4,0.05,0,2e-3,0,1e-4,5e-5,0.5,0,0.01,0,2e-5,1e-5,0.01,0,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram').")
+parser.add_argument('-w', '--weights', type=str, default="0.1,0,0,-1,1,2e-3,2,1,2e-2,0,2e-4,1e-4,0.05,0,2e-3,0,1e-4,5e-5,0.5,0,0.01,0,2e-5,1e-5,0.01,0,0,0,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram', plus others). Use --show-weights to see them.")
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't display cumulative scores at the end.")
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
@@ -44,15 +44,15 @@ else:
         tournamentDirs = [Path(tournamentDir) for tournamentDir in args.tournament]  # Specified tournament dir
 
 if args.score:
+    score_fields = ('wins', 'survivedCount', 'miaCount', 'deathCount', 'deathOrder', 'deathTime', 'cleanKills', 'assists', 'hits', 'hitsTaken', 'bulletDamage', 'bulletDamageTaken', 'rocketHits', 'rocketHitsTaken', 'rocketPartsHit', 'rocketPartsHitTaken', 'rocketDamage', 'rocketDamageTaken', 'missileHits', 'missileHitsTaken', 'missilePartsHit', 'missilePartsHitTaken', 'missileDamage', 'missileDamageTaken', 'ramScore', 'ramScoreTaken', 'battleDamage', 'HPremaining', 'accuracy', 'rocket_accuracy')
     try:
         weights = list(float(w) for w in args.weights.split(','))
     except:
         weights = []
 
 if args.show_weights:
-    fields = ('wins', 'survivedCount', 'miaCount', 'deathCount', 'deathOrder', 'deathTime', 'cleanKills', 'assists', 'hits', 'hitsTaken', 'bulletDamage', 'bulletDamageTaken', 'rocketHits', 'rocketHitsTaken', 'rocketPartsHit', 'rocketPartsHitTaken', 'rocketDamage', 'rocketDamageTaken', 'missileHits', 'missileHitsTaken', 'missilePartsHit', 'missilePartsHitTaken', 'missileDamage', 'missileDamageTaken', 'ramScore', 'ramScoreTaken', 'battleDamage', 'HPremaining')
-    field_width = max(len(f) for f in fields)
-    for w, f in zip(weights, fields):
+    field_width = max(len(f) for f in score_fields)
+    for w, f in zip(weights, score_fields):
         print(f"{f}:{' '*(field_width - len(f))} {w}")
     sys.exit()
 
@@ -306,37 +306,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
 
     if args.score:
         for craft in summary['craft'].values():
-            craft.update({
-                'score':
-                weights[0] * craft['wins'] +
-                weights[1] * craft['survivedCount'] +
-                weights[2] * craft['miaCount'] +
-                weights[3] * craft['deathCount'][0] +
-                weights[4] * craft['deathOrder'] +
-                weights[5] * craft['deathTime'] +
-                weights[6] * craft['cleanKills'][0] +
-                weights[7] * craft['assists'] +
-                weights[8] * craft['hits'] +
-                weights[9] * craft['hitsTaken'] +
-                weights[10] * craft['bulletDamage'] +
-                weights[11] * craft['bulletDamageTaken'] +
-                weights[12] * craft['rocketHits'] +
-                weights[13] * craft['rocketHitsTaken'] +
-                weights[14] * craft['rocketPartsHit'] +
-                weights[15] * craft['rocketPartsHitTaken'] +
-                weights[16] * craft['rocketDamage'] +
-                weights[17] * craft['rocketDamageTaken'] +
-                weights[18] * craft['missileHits'] +
-                weights[19] * craft['missileHitsTaken'] +
-                weights[20] * craft['missilePartsHit'] +
-                weights[21] * craft['missilePartsHitTaken'] +
-                weights[22] * craft['missileDamage'] +
-                weights[23] * craft['missileDamageTaken'] +
-                weights[24] * craft['ramScore'] +
-                weights[25] * craft['ramScoreTaken'] +
-                weights[26] * craft['battleDamage'] +
-                weights[27] * craft['HPremaining']
-            })
+            craft.update({'score': sum(w * craft[f] if not isinstance(craft[f], tuple) else w * craft[f][0] for w, f in zip(weights, score_fields))})
         if args.zero_lowest_score and len(summary['craft']) > 0:
             offset = min(craft['score'] for craft in summary['craft'].values())
             for craft in summary['craft'].values():
@@ -416,36 +386,10 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             }
             per_round_scores = {
                 craft: [
-                    weights[0] * scores[round]['wins'] +
-                    weights[1] * scores[round]['survivedCount'] +
-                    weights[2] * scores[round]['miaCount'] +
-                    weights[3] * scores[round]['deathCount'][0] +
-                    weights[4] * scores[round]['deathOrder'] +
-                    weights[5] * scores[round]['deathTime'] +
-                    weights[6] * scores[round]['cleanKills'][0] +
-                    weights[7] * scores[round]['assists'] +
-                    weights[8] * scores[round]['hits'] +
-                    weights[9] * scores[round]['hitsTaken'] +
-                    weights[10] * scores[round]['bulletDamage'] +
-                    weights[11] * scores[round]['bulletDamageTaken'] +
-                    weights[12] * scores[round]['rocketHits'] +
-                    weights[13] * scores[round]['rocketHitsTaken'] +
-                    weights[14] * scores[round]['rocketPartsHit'] +
-                    weights[15] * scores[round]['rocketPartsHitTaken'] +
-                    weights[16] * scores[round]['rocketDamage'] +
-                    weights[17] * scores[round]['rocketDamageTaken'] +
-                    weights[18] * scores[round]['missileHits'] +
-                    weights[19] * scores[round]['missileHitsTaken'] +
-                    weights[20] * scores[round]['missilePartsHit'] +
-                    weights[21] * scores[round]['missilePartsHitTaken'] +
-                    weights[22] * scores[round]['missileDamage'] +
-                    weights[23] * scores[round]['missileDamageTaken'] +
-                    weights[24] * scores[round]['ramScore'] +
-                    weights[25] * scores[round]['ramScoreTaken'] +
-                    weights[26] * scores[round]['battleDamage'] +
-                    weights[27] * scores[round]['HPremaining']
-                    for round in range(len(scores))]
-                for craft, scores in per_round_summary.items()
+                    sum(
+                        w * scores[round][f] if not isinstance(scores[round][f], tuple) else w * scores[round][f][0] for w, f in zip(weights, score_fields)
+                    ) for round in range(len(scores))
+                ] for craft, scores in per_round_summary.items()
             }
 
         if not args.quiet:  # Write results to console
