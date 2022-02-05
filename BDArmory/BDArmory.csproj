@@ -288,6 +288,7 @@
     <Compile Include="Competition\TournamentCoordinator.cs" />
     <Compile Include="Competition\VesselSource.cs" />
     <Compile Include="Competition\ListSpawnStrategy.cs" />
+    <Compile Include="Competition\BodyExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BDArmory.Core\BDArmory.Core.csproj">

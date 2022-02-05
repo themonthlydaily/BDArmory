@@ -873,6 +873,12 @@ namespace BDArmory.Control
         public double tagLastUpdated = 0; // Time the tag time was last updated.
         #endregion
 
+        #region Waypoint
+        public int waypoints = 0; // Number of waypoints this vessel reached
+        public float deviation = 0f; // Total deviation from waypoint centers
+        public float elapsedTime = 0f; // Elapsed time at death or course completion
+        #endregion
+
         #region Misc
         public int previousPartCount; // Number of parts this vessel had last time we checked (for tracking when a vessel has lost parts).
         public double lastLostPartTime = 0; // Time of losing last part (up to granularity of the updateTickLength).
