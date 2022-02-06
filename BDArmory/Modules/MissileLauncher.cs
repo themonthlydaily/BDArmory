@@ -29,6 +29,7 @@ namespace BDArmory.Modules
 
         public MissileTurret missileTurret = null;
         public BDRotaryRail rotaryRail = null;
+        public BDDeployableRail deployableRail = null;
 
         [KSPField]
         public string exhaustPrefabPath;
@@ -278,6 +279,10 @@ namespace BDArmory.Modules
             {
                 rotaryRail.FireMissile(this);
             }
+            else if (deployableRail)
+            {
+                deployableRail.FireMissile(this);
+            }
             else
             {
                 FireMissile();
@@ -296,6 +301,10 @@ namespace BDArmory.Modules
             else if (rotaryRail)
             {
                 rotaryRail.FireMissile(this);
+            }
+            else if (deployableRail)
+            {
+                deployableRail.FireMissile(this);
             }
             else
             {

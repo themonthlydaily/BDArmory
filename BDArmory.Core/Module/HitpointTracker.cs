@@ -1060,12 +1060,6 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
-            if (IgnoreForArmorSetup) return;
-            if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
-            if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
-            {
-                HullTypeNum = 2;
-            }
             if (isProcWing)
             {
                 StartCoroutine(WaitForHullSetup());
@@ -1087,6 +1081,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         }
         void SetHullMass()
         {
+            if (IgnoreForArmorSetup) return;
+            if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
+            if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
+            {
+                HullTypeNum = 2;
+            }
             var OldHullMassAdjust = HullMassAdjust;
             if (HullTypeNum == 1)
             {

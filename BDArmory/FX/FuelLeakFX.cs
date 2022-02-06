@@ -68,9 +68,9 @@ namespace BDArmory.FX
                 }
         }
         void OnDisable()
-		{
-+           if (pEmitters != null) // Getting enabled when the parent part is null immediately disables it again before setting any of this up.
-			{
+        {
+            if (pEmitters != null) // Getting enabled when the parent part is null immediately disables it again before setting any of this up.
+            {
             BDArmorySetup.numberOfParticleEmitters--;
             foreach (var pe in pEmitters)
                 if (pe != null)

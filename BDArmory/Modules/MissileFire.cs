@@ -837,6 +837,11 @@ namespace BDArmory.Modules
                     {
                         if (weapon.Current == null) continue;
                         if (weapon.Current.GetShortName() != selectedWeaponString) continue;
+                        if (weapon.Current.GetWeaponClass() == WeaponClasses.Gun || weapon.Current.GetWeaponClass() == WeaponClasses.Rocket || weapon.Current.GetWeaponClass() == WeaponClasses.DefenseLaser)
+                        {
+                            var gun = weapon.Current.GetPart().FindModuleImplementing<ModuleWeapon>();
+                            if (gun.isReloading || gun.isOverheated || gun.pointingAtSelf || !(gun.ammoCount > 0 || BDArmorySettings.INFINITE_AMMO)) continue; //instead of returning the first weapon in a weapon group, return the first weapon in a group that actually can fire
+                        }
                         sw = weapon.Current;
                         break;
                     }
@@ -2358,6 +2363,10 @@ namespace BDArmory.Modules
                 {
                     ((MissileLauncher)ml).rotaryRail.FireMissile(((MissileLauncher)ml));
                 }
+                else if (ml is MissileLauncher && ((MissileLauncher)ml).deployableRail)
+                {
+                    ((MissileLauncher)ml).deployableRail.FireMissile(((MissileLauncher)ml));
+                }
                 else
                 {
                     SendTargetDataToMissile(ml);
@@ -2700,7 +2709,14 @@ namespace BDArmory.Modules
                         }
                         else
                         {
-                            weaponRpm = weapCnt.Current.roundsPerMinute;
+                            if (!weapCnt.Current.BurstFire)
+                            {
+                                weaponRpm = weapCnt.Current.roundsPerMinute;
+                            }
+                            else
+                            {
+                                weaponRpm = 60 / weapCnt.Current.ReloadTime;
+                            }
                         }
                         rippleWeapons.Add(weapCnt.Current);
                         counter += weaponRpm; // grab sum of weapons rpm
@@ -2725,6 +2741,7 @@ namespace BDArmory.Modules
 
             ToggleTurret();
             SetMissileTurrets();
+            SetDeployableRails();
             SetRotaryRails();
         }
 
@@ -2937,6 +2954,24 @@ namespace BDArmory.Modules
                         mt.Current.DisableTurret();
                     }
                 }           
+        }
+        void SetDeployableRails()
+        {
+            MissileLauncher cm = CurrentMissile as MissileLauncher;
+            using (var mt = VesselModuleRegistry.GetModules<BDDeployableRail>(vessel).GetEnumerator())
+                while (mt.MoveNext())
+                {
+                    if (mt.Current == null) continue;
+                    if (!mt.Current.isActiveAndEnabled) continue;
+                    if (weaponIndex > 0 && cm && mt.Current.ContainsMissileOfType(cm) && cm.deployableRail == mt.Current)
+                    {
+                        mt.Current.EnableRail();
+                    }
+                    else
+                    {
+                        mt.Current.DisableRail();
+                    }
+                }
         }
 
         public void CycleWeapon(bool forward)
