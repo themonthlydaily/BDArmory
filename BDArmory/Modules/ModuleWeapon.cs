@@ -3584,8 +3584,7 @@ namespace BDArmory.Modules
                                 startColorS[0] = Mathf.Lerp(Single.Parse(startColorS[0]), Single.Parse(endColorS[0]), 0.02f / LaserGrowTime).ToString();
                                 startColorS[1] = Mathf.Lerp(Single.Parse(startColorS[1]), Single.Parse(endColorS[1]), 0.02f / LaserGrowTime).ToString();
                                 startColorS[2] = Mathf.Lerp(Single.Parse(startColorS[2]), Single.Parse(endColorS[2]), 0.02f / LaserGrowTime).ToString();
-                                startColorS[3] = Mathf.Lerp(Single.Parse(startColorS[3]), Single.Parse(endColorS[3]), 0.02f / LaserGrowTime).ToString();
-                                Debug.Log("[:ASER DEBUG] DynColor: " + startColorS[0] + "," + startColorS[1] + "," + startColorS[2] + "; target: " + endColorS[0] + "," + endColorS[1] + "," + endColorS[2]);
+                                startColorS[3] = Mathf.Lerp(Single.Parse(startColorS[3]), Single.Parse(endColorS[3]), 0.02f / LaserGrowTime).ToString();                                
                             }
                             for (int i = 0; i < 4; i++)
                             {
@@ -3710,14 +3709,6 @@ namespace BDArmory.Modules
                                 StartCoroutine(KillIncomingProjectile(tgtShell, tgtRocket));
                             }
                             break;
-                    }
-                    if (BurstFire && (RoundsRemaining < RoundsPerMag))
-                    {
-                        finalFire = true; //otherwise only finalFire = true check is done when AI/player pulling trigger
-                    }
-                    else
-                    {
-                        finalFire = false; //and a finalFire = false reset every tick in CheckFinalFire would prevent burst-fire weapons from completing the burst
                     }
                 }
             }
