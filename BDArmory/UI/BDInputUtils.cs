@@ -209,7 +209,7 @@ namespace BDArmory.UI
             double newValue;
             if (double.TryParse(possibleValue, out newValue))
             {
-                currentValue = Math.Min(Math.Max(newValue, minValue), maxValue);
+                currentValue = Math.Min(Math.Max(newValue, minValue), Math.Max(maxValue, currentValue)); // Clamp the new value between the min and max, but not if it's been set higher with the unclamped tuning option. This still allows reducing the value while still above the clamp limit.
                 lastUpdated = Time.time;
             }
             possibleValue = currentValue.ToString("G6");

@@ -3705,14 +3705,6 @@ namespace BDArmory.Modules
                             }
                             break;
                     }
-                    if (BurstFire && (RoundsRemaining < RoundsPerMag))
-                    {
-                        finalFire = true; //otherwise only finalFire = true check is done when AI/player pulling trigger
-                    }
-                    else
-                    {
-                        finalFire = false; //and a finalFire = false reset every tick in CheckFinalFire would prevent burst-fire weapons from completing the burst
-                    }
                 }
             }
 
