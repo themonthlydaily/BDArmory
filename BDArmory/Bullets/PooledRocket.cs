@@ -60,11 +60,12 @@ namespace BDArmory.Bullets
         float lifeTime = 10;
 
         Vector3 prevPosition;
-        Vector3 currPosition;
+        public Vector3 currPosition;
         Vector3 startPosition;
         bool startUnderwater = false;
         Ray RocketRay;
         private float impactVelocity;
+        public Vector3 currentVelocity = Vector3.zero;
 
         public bool hasPenetrated = false;
         public bool hasDetonated = false;
@@ -74,6 +75,9 @@ namespace BDArmory.Bullets
         private float distanceFromStart = 0;
 
         //bool isThrusting = true;
+        public bool isAPSprojectile = false;
+        public PooledRocket tgtRocket = null;
+        public PooledBullet tgtShell = null;
 
         Rigidbody rb;
         public Rigidbody parentRB;
@@ -133,6 +137,7 @@ namespace BDArmory.Bullets
             rb.mass = rocketMass;
             rb.isKinematic = true;
             rb.velocity = Vector3.zero;
+            currentVelocity = Vector3.zero;
             if (!FlightGlobals.RefFrameIsRotating) rb.useGravity = false;
 
             rb.useGravity = false;
@@ -142,11 +147,11 @@ namespace BDArmory.Bullets
             dragVector = new Vector3();
             SetupAudio();
 
-            // Log shots fired.
+            // Log rockets fired.
             if (this.sourceVessel)
             {
                 sourceVesselName = sourceVessel.GetName(); // Set the source vessel name as the vessel might have changed its name or died by the time the rocket hits.
-                BDACompetitionMode.Instance.Scores.RegisterShot(sourceVesselName);
+                BDACompetitionMode.Instance.Scores.RegisterRocketFired(sourceVesselName);
             }
             else
             {
@@ -163,6 +168,10 @@ namespace BDArmory.Bullets
             else
             {
                 HERatio = 0;
+            }
+            if (caliber > 60)
+            {
+                BDATargetManager.FiredRockets.Add(this);
             }
         }
 
@@ -185,6 +194,13 @@ namespace BDArmory.Bullets
             sourceVesselName = null;
             spawnTransform = null;
             CurrentPart = null;
+            if (caliber > 60)
+            {
+                BDATargetManager.FiredRockets.Remove(this);
+            }
+            isAPSprojectile = false;
+            tgtRocket = null;
+            tgtShell = null;
         }
 
         void FixedUpdate()
@@ -255,6 +271,7 @@ namespace BDArmory.Bullets
                     //rb.AddRelativeForce(dragVector);
                     //Debug.Log("[ROCKETDRAG] current vel: " + rb.velocity.magnitude.ToString("0.0") + "; current dragforce: " + dragVector.magnitude + "; current atm density: " + atmosMultiplier.ToString("0.00"));
                 }
+                currentVelocity = rb.velocity;
             }
 
             if (Time.time - startTime > thrustTime)
@@ -329,7 +346,7 @@ namespace BDArmory.Bullets
                                 }
                                 else
                                 {
-                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true);
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, 1, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true, true, true);
                                 }
                                 ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
                                 Detonate(hit.point, false);
@@ -388,6 +405,7 @@ namespace BDArmory.Bullets
                                 float Strength = Armor.Strength;
                                 float safeTemp = Armor.SafeUseTemp;
                                 float Density = Armor.Density;
+                                int armorType = (int)Armor.ArmorTypeNum;
                                 if (BDArmorySettings.DRAW_ARMOR_LABELS)
                                 {
                                     Debug.Log("[PooledBUllet].ArmorVars found: Strength : " + Strength + "; Ductility: " + Ductility + "; Hardness: " + hardness + "; MaxTemp: " + safeTemp + "; Density: " + Density);
@@ -428,7 +446,7 @@ namespace BDArmory.Bullets
                                     }
                                     penetrationFactor = ProjectileUtils.CalculateArmorPenetration(hitPart, penetration, thickness); //RA stop round?
                                 }
-                                else ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName(), ExplosionSourceType.Rocket);
+                                else ProjectileUtils.CalculateArmorDamage(hitPart, penetrationFactor, caliber, hardness, Ductility, Density, impactVelocity, sourceVessel.GetName(), ExplosionSourceType.Rocket, armorType);
 
                                 //calculate return bullet post-pen vel
                                 //calculate armor damage
@@ -455,7 +473,9 @@ namespace BDArmory.Bullets
                                 }
                                 else
                                 {
-                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, true);
+                                    float cockpitPen = (float)(16f * impactVelocity * Mathf.Sqrt(rocketMass) / Mathf.Sqrt(caliber));
+                                    if (cockpitPen > Mathf.Max(20 / anglemultiplier, 1))
+                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, penTicker > 0 ? false : true, penTicker > 0 ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                                     if (!explosive)
                                     {
                                         BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName()); //if non-explosive hit, add rocketstrike, else ExplosionFX adds rocketstrike from HE detonation
@@ -464,7 +484,7 @@ namespace BDArmory.Bullets
                                 ProjectileUtils.StealResources(hitPart, sourceVessel, thief);
 
                                 penTicker += 1;
-                                ProjectileUtils.CheckPartForExplosion(hitPart);
+                                //ProjectileUtils.CheckPartForExplosion(hitPart);
 
                                 if (explosive || !viableBullet)
                                 {
@@ -555,7 +575,7 @@ namespace BDArmory.Bullets
         {
             bool detonate = false;
 
-            if (distanceFromStart <= blastRadius) return false;
+            if (distanceFromStart <= blastRadius*2) return false;
 
             if (!explosive || tntMass <= 0) return false;
 
@@ -585,6 +605,15 @@ namespace BDArmory.Bullets
                         {
                             Debug.LogWarning("[BDArmory.PooledRocket]: Exception thrown in ProximityAirDetonation: " + e.Message + "\n" + e.StackTrace);
                         }
+                    }
+                }
+                if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
+                {
+                    if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange/2)
+                    {
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                            Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
+                        return detonate = true;
                     }
                 }
             }
@@ -668,7 +697,7 @@ namespace BDArmory.Bullets
                                 float distance = Vector3.Distance(transform.position, hit.point);
                                 if (p != null)
                                 {
-                                    BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, false, true); //else apply fire to occluding part
+                                    BulletHitFX.AttachFire(hit.point, p, caliber, sourceVesselName, BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)), 1, true); //else apply fire to occluding part
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                                         Debug.Log("[BDArmory.Rocket]: Applying fire to " + p.name + " at distance " + distance + "m, for " + BDArmorySettings.WEAPON_FX_DURATION * (1 - (distance / blastRadius)) + " seconds"); ;
                                 }
@@ -725,7 +754,7 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult);
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard");
                     }
                 }
             }

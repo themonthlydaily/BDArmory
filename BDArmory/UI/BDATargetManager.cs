@@ -11,6 +11,7 @@ using BDArmory.Modules;
 using BDArmory.Parts;
 using BDArmory.Radar;
 using BDArmory.Targeting;
+using BDArmory.Bullets;
 using UnityEngine;
 
 namespace BDArmory.UI
@@ -22,6 +23,8 @@ namespace BDArmory.UI
         private static Dictionary<BDTeam, List<GPSTargetInfo>> GPSTargets;
         public static List<ModuleTargetingCamera> ActiveLasers;
         public static List<IBDWeapon> FiredMissiles;
+        public static List<PooledBullet> FiredBullets;
+        public static List<PooledRocket> FiredRockets;
         public static List<DestructibleBuilding> LoadedBuildings;
         public static List<Vessel> LoadedVessels;
         public static BDATargetManager Instance;
@@ -29,10 +32,11 @@ namespace BDArmory.UI
         private StringBuilder debugString = new StringBuilder();
         private float updateTimer = 0;
 
-        static string gpsTargetsCfg = "GameData/BDArmory/PluginData/gpsTargets.cfg";
+        static string gpsTargetsCfg;
 
         void Awake()
         {
+            gpsTargetsCfg = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/PluginData/gpsTargets.cfg");
             GameEvents.onGameStateLoad.Add(LoadGPSTargets);
             GameEvents.onGameStateSave.Add(SaveGPSTargets);
             LoadedBuildings = new List<DestructibleBuilding>();
@@ -79,6 +83,8 @@ namespace BDArmory.UI
             ActiveLasers = new List<ModuleTargetingCamera>();
 
             FiredMissiles = new List<IBDWeapon>();
+            FiredBullets = new List<PooledBullet>();
+            FiredRockets = new List<PooledRocket>();
         }
 
         public static List<GPSTargetInfo> GPSTargetList(BDTeam team)

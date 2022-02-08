@@ -84,7 +84,7 @@ namespace BDArmory.Modules
                 var HP = part.FindModuleImplementing<HitpointTracker>();
                 if (HP != null)
                 {
-                    HP.Hitpoints = Mathf.Clamp(HP.Hitpoints, -1, sectionsRemaining * 300f); //clamp max HP to remaiing sections instead of flat hp reduction
+                    HP.Hitpoints = Mathf.Clamp(HP.Hitpoints, 0, sectionsRemaining * 300f);
                 }
                 if (HP.Hitpoints < 0) part.Destroy();
             }

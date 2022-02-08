@@ -15,12 +15,13 @@ namespace BDArmory.FX
         private float Power { get; set; }
         private float emitTime { get; set; }
         private float maxTime { get; set; }
+        private bool overrideLifeTime { get; set; }
         public Vector3 Position { get; set; }
         public Vector3 Direction { get; set; }
         public float TimeIndex => Time.time - StartTime;
 
         private bool disabled = true;
-        public static string defaultModelPath = "BDArmory/Models/explosion/flakSmoke";
+        public static string defaultModelPath = "BDArmory/Models/explosion/explosion";
         public static string defaultSoundPath = "BDArmory/Sounds/explode1";
         private float particlesMaxEnergy;
         private float maxEnergy;
@@ -77,10 +78,13 @@ namespace BDArmory.FX
 
             if (!disabled && TimeIndex > emitTime && pEmitters != null)
             {
-                foreach (var pe in pEmitters)
+                if (!overrideLifeTime)
                 {
-                    if (pe == null) continue;
-                    pe.emit = false;
+                    foreach (var pe in pEmitters)
+                    {
+                        if (pe == null) continue;
+                        pe.emit = false;
+                    }
                 }
                 disabled = true;
             }
@@ -95,7 +99,7 @@ namespace BDArmory.FX
                 transform.position -= FloatingOrigin.OffsetNonKrakensbane;
             }
 
-            if (disabled && TimeIndex > particlesMaxEnergy)
+            if ((disabled || overrideLifeTime) && TimeIndex > particlesMaxEnergy)
             {
                 gameObject.SetActive(false);
                 return;
@@ -117,6 +121,11 @@ namespace BDArmory.FX
                 if (!String.IsNullOrEmpty(soundPath))
                 {
                     var soundClip = GameDatabase.Instance.GetAudioClip(soundPath);
+                    if (soundClip == null)
+                    {
+                        Debug.LogError("[BDArmory.FXBase]: " + soundPath + " was not found, using the default sound instead. Please fix your model.");
+                        soundClip = GameDatabase.Instance.GetAudioClip(defaultSoundPath);
+                    }
 
                     eFx.ExSound = soundClip;
                     eFx.audioSource = FXTemplate.AddComponent<AudioSource>();
@@ -130,7 +139,7 @@ namespace BDArmory.FX
             }
         }
 
-        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3), bool scaleEmitter = false)
+        public static void CreateFX(Vector3 position, float scale, string ModelPath, string soundPath, float time = 0.3f, float lifeTime = -1, Vector3 direction = default(Vector3), bool scaleEmitter = false, bool fixedLifetime = false)
         {
             CreateObjectPool(ModelPath, soundPath);
 
@@ -158,6 +167,7 @@ namespace BDArmory.FX
             eFx.Power = scale;
             eFx.emitTime = time;
             eFx.maxTime = lifeTime;
+            eFx.overrideLifeTime = fixedLifetime;
             eFx.pEmitters = newFX.GetComponentsInChildren<KSPParticleEmitter>();
             if (!String.IsNullOrEmpty(soundPath))
             {

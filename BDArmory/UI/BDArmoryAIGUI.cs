@@ -329,6 +329,7 @@ namespace BDArmory.UI
                         { "minSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minSpeed, 10, 200) },
                         { "strafingSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.strafingSpeed, 10, 200) },
                         { "idleSpeed", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.idleSpeed, 10, 200) },
+                        { "ABPriority", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.ABPriority, 0, 100) },
 
                         { "maxSteer", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxSteer, 0.1, 1) },
                         { "lowSpeedSwitch", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.lowSpeedSwitch, 10, 500) },
@@ -339,6 +340,7 @@ namespace BDArmory.UI
                         { "maxAllowedAoA", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.maxAllowedAoA, 0, 85) },
 
                         { "minEvasionTime", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.minEvasionTime, 0, 1) },
+                        { "evasionNonlinearity", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionNonlinearity, 0, 10) },
                         { "evasionThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionThreshold, 0, 100) },
                         { "evasionTimeThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.evasionTimeThreshold, 0, 1) },
                         { "collisionAvoidanceThreshold", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.collisionAvoidanceThreshold, 0, 50) },
@@ -410,6 +412,7 @@ namespace BDArmory.UI
                     inputFields["maxAllowedAoA"].maxValue = ActivePilot.UpToEleven ? 180 : 85;
 
                     inputFields["minEvasionTime"].maxValue = ActivePilot.UpToEleven ? 10 : 1;
+                    inputFields["evasionNonlinearity"].maxValue = ActivePilot.UpToEleven ? 90 : 10;
                     inputFields["evasionThreshold"].maxValue = ActivePilot.UpToEleven ? 300 : 100;
                     inputFields["evasionTimeThreshold"].maxValue = ActivePilot.UpToEleven ? 1 : 3;
                     inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
@@ -743,10 +746,11 @@ namespace BDArmory.UI
                             {
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_PilotAI_Speeds"), BoldLabel, Width(ColumnWidth - (leftIndent * 4) - 20)); //Speed header
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //speed explanation
-                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_min"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //min+mas speed desc
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_min"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //min+max speed desc
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_takeoff"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //takeoff speed
-                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_idle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //idle speed
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_gnd"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //strafe speed
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_idle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //idle speed
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_SpeedHelp_ABpriority"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //AB priority
                             }
                             if (showControl)
                             {
@@ -767,7 +771,8 @@ namespace BDArmory.UI
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVars"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target dist/angle/vel
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendAngle"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target angle
                                 GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendDist"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target dist
-                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVel"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //estend target velocity
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_ExtendVel"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //extend target velocity
+                                GUILayout.Label(Localizer.Format("#LOC_BDArmory_AIWindow_EvadeHelp_Nonlinearity"), infoLinkStyle, Width(ColumnWidth - (leftIndent * 4) - 20)); //evade/extend nonlinearity
                             }
                             if (showTerrain)
                             {
@@ -1273,109 +1278,86 @@ namespace BDArmory.UI
                         spdLines += 0.25f;
 
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_PilotAI_Speeds"), BoldLabel);//"Speed"
-                        spdLines++;
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.maxSpeed =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, spdLines, contentWidth),
-                                    ActivePilot.maxSpeed, 20, ActivePilot.UpToEleven ? 3000 : 800);
+                            ActivePilot.maxSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.maxSpeed, 20, ActivePilot.UpToEleven ? 3000 : 800);
                             ActivePilot.maxSpeed = Mathf.Round(ActivePilot.maxSpeed);
                         }
                         else
                         {
-                            inputFields["maxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["maxSpeed"].possibleValue, 5));
+                            inputFields["maxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["maxSpeed"].possibleValue, 5));
                             ActivePilot.maxSpeed = (float)inputFields["maxSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MaxSpeed") + " :" + ActivePilot.maxSpeed.ToString("0"), Label);//"max speed"
+                        if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"max speed"
 
-                        spdLines++;
-                        if (contextTipsEnabled)
-                        {
-                            GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"max speed"
-                            spdLines++;
-                        }
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.takeOffSpeed =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, spdLines, contentWidth),
-                                    ActivePilot.takeOffSpeed, 10f, ActivePilot.UpToEleven ? 2000 : 200);
+                            ActivePilot.takeOffSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.takeOffSpeed, 10f, ActivePilot.UpToEleven ? 2000 : 200);
                             ActivePilot.takeOffSpeed = Mathf.Round(ActivePilot.takeOffSpeed);
                         }
                         else
                         {
-                            inputFields["takeOffSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["takeOffSpeed"].possibleValue, 5));
+                            inputFields["takeOffSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["takeOffSpeed"].possibleValue, 5));
                             ActivePilot.takeOffSpeed = (float)inputFields["takeOffSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_TakeOffSpeed") + " :" + ActivePilot.takeOffSpeed.ToString("0"), Label);//"takeoff speed"
+                        if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_takeoff"), contextLabel);//"takeoff speed help"
 
-                        spdLines++;
-                        if (contextTipsEnabled)
-                        {
-                            GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_takeoff"), contextLabel);//"takeoff speed help"
-                            spdLines++;
-                        }
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.minSpeed =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, spdLines, contentWidth),
-                                    ActivePilot.minSpeed, 10, ActivePilot.UpToEleven ? 2000 : 200);
+                            ActivePilot.minSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.minSpeed, 10, ActivePilot.UpToEleven ? 2000 : 200);
                             ActivePilot.minSpeed = Mathf.Round(ActivePilot.minSpeed);
                         }
                         else
                         {
-                            inputFields["minSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["minSpeed"].possibleValue, 5));
+                            inputFields["minSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["minSpeed"].possibleValue, 5));
                             ActivePilot.minSpeed = (float)inputFields["minSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MinSpeed") + " :" + ActivePilot.minSpeed.ToString("0"), Label);//"min speed"
+                        if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_minSpeed"), contextLabel);//"min speed help"
 
-                        spdLines++;
-                        if (contextTipsEnabled)
-                        {
-                            GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_minSpeed"), contextLabel);//"min speed help"
-                            spdLines++;
-                        }
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.strafingSpeed =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, spdLines, contentWidth),
-                                    ActivePilot.strafingSpeed, 10, 200);
+                            ActivePilot.strafingSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.strafingSpeed, 10, 200);
                             ActivePilot.strafingSpeed = Mathf.Round(ActivePilot.strafingSpeed);
                         }
                         else
                         {
-                            inputFields["strafingSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["strafingSpeed"].possibleValue, 3));
+                            inputFields["strafingSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["strafingSpeed"].possibleValue, 3));
                             ActivePilot.strafingSpeed = (float)inputFields["strafingSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_StrafingSpeed") + " :" + ActivePilot.strafingSpeed.ToString("0"), Label);//"strafing speed"
+                        if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_atkSpeed"), contextLabel);//"strafe speed"
 
-                        spdLines++;
-                        if (contextTipsEnabled)
-                        {
-                            GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_atkSpeed"), contextLabel);//"strafe speed"
-                            spdLines++;
-                        }
                         if (!NumFieldsEnabled)
                         {
-                            ActivePilot.idleSpeed =
-                                GUI.HorizontalSlider(SettingSliderRect(leftIndent, spdLines, contentWidth),
-                                    ActivePilot.idleSpeed, 10, ActivePilot.UpToEleven ? 3000 : 200);
+                            ActivePilot.idleSpeed = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.idleSpeed, 10, ActivePilot.UpToEleven ? 3000 : 200);
                             ActivePilot.idleSpeed = Mathf.Round(ActivePilot.idleSpeed);
                         }
                         else
                         {
-                            inputFields["idleSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, spdLines, contentWidth), inputFields["idleSpeed"].possibleValue, 4));
+                            inputFields["idleSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["idleSpeed"].possibleValue, 4));
                             ActivePilot.idleSpeed = (float)inputFields["idleSpeed"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_IdleSpeed") + " :" + ActivePilot.idleSpeed.ToString("0"), Label);//"idle speed"
+                        if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"idle speed context help"
 
-                        spdLines++;
-                        if (contextTipsEnabled)
+                        if (!NumFieldsEnabled)
                         {
-                            GUI.Label(ContextLabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"idle speed context help"
-                            spdLines++;
+                            ActivePilot.ABPriority = GUI.HorizontalSlider(SettingSliderRect(leftIndent, ++spdLines, contentWidth), ActivePilot.ABPriority, 0, 100);
+                            ActivePilot.ABPriority = Mathf.Round(ActivePilot.ABPriority);
                         }
+                        else
+                        {
+                            inputFields["ABPriority"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["ABPriority"].possibleValue, 3));
+                            ActivePilot.ABPriority = (float)inputFields["ABPriority"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_ABPriority") + " :" + ActivePilot.ABPriority.ToString("0"), Label);//"AB priority"
+                        if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_ABPriority"), contextLabel);//"AB priority context help"
+
                         GUI.EndGroup();
-                        speedHeight = Mathf.Lerp(speedHeight, spdLines, 0.15f);
+                        speedHeight = Mathf.Lerp(speedHeight, ++spdLines, 0.15f);
                         spdLines += 0.1f;
                     }
 
@@ -1557,6 +1539,27 @@ namespace BDArmory.UI
                             ActivePilot.minEvasionTime = (float)inputFields["minEvasionTime"].currentValue;
                         }
                         GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_MinEvasionTime") + " :" + ActivePilot.minEvasionTime.ToString("0.00"), Label);//"dynamic damping min"
+
+                        evadeLines++;
+                        if (contextTipsEnabled)
+                        {
+                            GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvExNonlin"), contextLabel);
+                            evadeLines++;
+                        }
+                        if (!NumFieldsEnabled)
+                        {
+                            ActivePilot.evasionNonlinearity =
+                                GUI.HorizontalSlider(
+                                    SettingSliderRect(leftIndent, evadeLines, contentWidth),
+                                    ActivePilot.evasionNonlinearity, 0, ActivePilot.UpToEleven ? 90 : 10);
+                            ActivePilot.evasionNonlinearity = Mathf.Round(ActivePilot.evasionNonlinearity * 10f) / 10f;
+                        }
+                        else
+                        {
+                            inputFields["evasionNonlinearity"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["evasionNonlinearity"].possibleValue, 4));
+                            ActivePilot.evasionNonlinearity = (float)inputFields["evasionNonlinearity"].currentValue;
+                        }
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionNonlinearity") + " :" + ActivePilot.evasionNonlinearity.ToString("0.0"), Label);//"Evasion/Extension Nonlinearity"
 
                         evadeLines++;
                         if (contextTipsEnabled)

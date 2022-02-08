@@ -31,10 +31,18 @@ namespace BDArmory.Competition
         public Dictionary<string, double> longestHitDistance = new Dictionary<string, double>();
         public Dictionary<string, int> rammedPartsOut = new Dictionary<string, int>();
         public Dictionary<string, int> rammedPartsIn = new Dictionary<string, int>();
+        public Dictionary<string, int> missileStrikesOut = new Dictionary<string, int>();
+        public Dictionary<string, int> missileStrikesIn = new Dictionary<string, int>();
         public Dictionary<string, int> missilePartsOut = new Dictionary<string, int>();
         public Dictionary<string, int> missilePartsIn = new Dictionary<string, int>();
         public Dictionary<string, double> missileDamageOut = new Dictionary<string, double>();
         public Dictionary<string, double> missileDamageIn = new Dictionary<string, double>();
+        public Dictionary<string, int> rocketStrikesOut = new Dictionary<string, int>();
+        public Dictionary<string, int> rocketStrikesIn = new Dictionary<string, int>();
+        public Dictionary<string, int> rocketPartsOut = new Dictionary<string, int>();
+        public Dictionary<string, int> rocketPartsIn = new Dictionary<string, int>();
+        public Dictionary<string, double> rocketDamageOut = new Dictionary<string, double>();
+        public Dictionary<string, double> rocketDamageIn = new Dictionary<string, double>();
 
         public enum StatusType
         {
@@ -266,13 +274,16 @@ namespace BDArmory.Competition
                     }
             }
 
-            status = StatusType.ReportingResults;
-            // report scores
-            yield return SendScores(hash, model);
+            if (competitionStarted) // Only report scores if the competition actually started.
+            {
+                status = StatusType.ReportingResults;
+                // report scores
+                yield return SendScores(hash, model);
 
-            status = StatusType.StoppingHeat;
-            // notify web service to stop heat
-            yield return client.StopHeat(hash, model);
+                status = StatusType.StoppingHeat;
+                // notify web service to stop heat
+                yield return client.StopHeat(hash, model);
+            }
 
             status = StatusType.Waiting;
             yield return RetryFind(hash);
@@ -296,6 +307,10 @@ namespace BDArmory.Competition
             killsOnTarget.Clear();
             longestHitDistance.Clear();
             longestHitWeapon.Clear();
+            rocketDamageIn.Clear();
+            rocketDamageOut.Clear();
+            rocketPartsIn.Clear();
+            rocketPartsOut.Clear();
             missileDamageIn.Clear();
             missileDamageOut.Clear();
             missilePartsIn.Clear();
@@ -304,17 +319,19 @@ namespace BDArmory.Competition
             rammedPartsOut.Clear();
 
             status = StatusType.SpawningVessels;
-            var spawnConfig = new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, 0, null, null, hash);
+            var spawnConfig = new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, 0, null, null, hash);
             if (BDArmorySettings.RUNWAY_PROJECT)
             {
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                 {
                     case 33:
-                        spawnConfig = new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, 10f, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, 0, null, null, hash);
+                        spawnConfig = new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, 10f, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, 0, null, null, hash);
+                        break;
+                    case 50: // FIXME temporary index, to be assigned later
+                        spawnConfig = new VesselSpawner.SpawnConfig(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, FlightGlobals.currentMainBody.atmosphere ? (FlightGlobals.currentMainBody.atmosphereDepth + (FlightGlobals.currentMainBody.atmosphereDepth / 10)) : 50000, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, 0, null, null, hash);
                         break;
                 }
             }
-            // spawner.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, true, 0, null, null, hash);
             spawner.SpawnAllVesselsOnce(spawnConfig);
             while (spawner.vesselsSpawning)
                 yield return new WaitForFixedUpdate();
@@ -332,6 +349,12 @@ namespace BDArmory.Competition
                 switch (BDArmorySettings.RUNWAY_PROJECT_ROUND)
                 {
                     case 33:
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                        break;
+                    case 44:
+                        BDACompetitionMode.Instance.StartRapidDeployment(0);
+                        break;
+                    case 50: // FIXME temporary index, to be assigned later
                         BDACompetitionMode.Instance.StartRapidDeployment(0);
                         break;
                     default:
@@ -410,10 +433,18 @@ namespace BDArmory.Competition
                 record.dmg_in = ComputeTotalDamageIn(playerName);
                 record.ram_parts_out = ComputeTotalRammedPartsOut(playerName);
                 record.ram_parts_in = ComputeTotalRammedPartsIn(playerName);
+                record.mis_strikes_out = ComputeTotalMissileStrikesOut(playerName);
+                record.mis_strikes_in = ComputeTotalMissileStrikesIn(playerName);
                 record.mis_parts_out = ComputeTotalMissilePartsOut(playerName);
                 record.mis_parts_in = ComputeTotalMissilePartsIn(playerName);
                 record.mis_dmg_out = ComputeTotalMissileDamageOut(playerName);
                 record.mis_dmg_in = ComputeTotalMissileDamageIn(playerName);
+                record.roc_strikes_out = ComputeTotalRocketStrikesOut(playerName);
+                record.roc_strikes_in = ComputeTotalRocketStrikesIn(playerName);
+                record.roc_parts_out = ComputeTotalRocketPartsOut(playerName);
+                record.roc_parts_in = ComputeTotalRocketPartsIn(playerName);
+                record.roc_dmg_out = ComputeTotalRocketDamageOut(playerName);
+                record.roc_dmg_in = ComputeTotalRocketDamageIn(playerName);
                 record.wins = ComputeWins(playerName);
                 record.kills = ComputeTotalKills(playerName);
                 record.deaths = ComputeTotalDeaths(playerName);
@@ -486,6 +517,20 @@ namespace BDArmory.Competition
             return 0;
         }
 
+        private int ComputeTotalMissileStrikesOut(string playerName)
+        {
+            if (missileStrikesOut.ContainsKey(playerName))
+                return missileStrikesOut[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalMissileStrikesIn(string playerName)
+        {
+            if (missileStrikesIn.ContainsKey(playerName))
+                return missileStrikesIn[playerName];
+            return 0;
+        }
+
         private int ComputeTotalMissilePartsOut(string playerName)
         {
             if (missilePartsOut.ContainsKey(playerName))
@@ -511,6 +556,48 @@ namespace BDArmory.Competition
         {
             if (missileDamageIn.ContainsKey(playerName))
                 return missileDamageIn[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalRocketStrikesOut(string playerName)
+        {
+            if (rocketStrikesOut.ContainsKey(playerName))
+                return rocketStrikesOut[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalRocketStrikesIn(string playerName)
+        {
+            if (rocketStrikesIn.ContainsKey(playerName))
+                return rocketStrikesIn[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalRocketPartsOut(string playerName)
+        {
+            if (rocketPartsOut.ContainsKey(playerName))
+                return rocketPartsOut[playerName];
+            return 0;
+        }
+
+        private int ComputeTotalRocketPartsIn(string playerName)
+        {
+            if (rocketPartsIn.ContainsKey(playerName))
+                return rocketPartsIn[playerName];
+            return 0;
+        }
+
+        private double ComputeTotalRocketDamageOut(string playerName)
+        {
+            if (rocketDamageOut.ContainsKey(playerName))
+                return rocketDamageOut[playerName];
+            return 0;
+        }
+
+        private double ComputeTotalRocketDamageIn(string playerName)
+        {
+            if (rocketDamageIn.ContainsKey(playerName))
+                return rocketDamageIn[playerName];
             return 0;
         }
 
@@ -614,6 +701,32 @@ namespace BDArmory.Competition
             }
         }
 
+        public void TrackMissileStrike(string attacker, string target)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackMissileStrike by {0} on {1}", target, attacker));
+            }
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (missileStrikesOut.ContainsKey(attacker))
+            {
+                missileStrikesOut[attacker]++;
+            }
+            else
+            {
+                missileStrikesOut.Add(attacker, 1);
+            }
+            if (missileStrikesIn.ContainsKey(target))
+            {
+                missileStrikesIn[target]++;
+            }
+            else
+            {
+                missileStrikesIn.Add(target, 1);
+            }
+        }
+
         public void TrackMissileDamage(string attacker, string target, double damage)
         {
             if (BDArmorySettings.DRAW_DEBUG_LABELS)
@@ -656,6 +769,88 @@ namespace BDArmory.Competition
                 missilePartsIn[target] += count;
             else
                 missilePartsIn.Add(target, count);
+
+            if (timeOfLastHitOnTarget.ContainsKey(attacker))
+            {
+                if (timeOfLastHitOnTarget[attacker].ContainsKey(target))
+                    timeOfLastHitOnTarget[attacker][target] = now;
+                else
+                    timeOfLastHitOnTarget[attacker].Add(target, now);
+            }
+            else
+            {
+                timeOfLastHitOnTarget.Add(attacker, new Dictionary<string, double> { { target, now } });
+            }
+        }
+
+        public void TrackRocketStrike(string attacker, string target)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackRocketStrike by {0} on {1}", target, attacker));
+            }
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (rocketStrikesOut.ContainsKey(attacker))
+            {
+                rocketStrikesOut[attacker]++;
+            }
+            else
+            {
+                rocketStrikesOut.Add(attacker, 1);
+            }
+            if (rocketStrikesIn.ContainsKey(target))
+            {
+                rocketStrikesIn[target]++;
+            }
+            else
+            {
+                rocketStrikesIn.Add(target, 1);
+            }
+        }
+
+        public void TrackRocketDamage(string attacker, string target, double damage)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+            {
+                Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackRocketDamage by {0} on {1} for {2}hp", target, attacker, damage));
+            }
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (rocketDamageOut.ContainsKey(attacker))
+            {
+                rocketDamageOut[attacker] += damage;
+            }
+            else
+            {
+                rocketDamageOut.Add(attacker, damage);
+            }
+            if (rocketDamageIn.ContainsKey(target))
+            {
+                rocketDamageIn[target] += damage;
+            }
+            else
+            {
+                rocketDamageIn.Add(target, damage);
+            }
+        }
+
+        public void TrackRocketParts(string attacker, string target, int count)
+        {
+            if (BDArmorySettings.DRAW_DEBUG_LABELS)
+                Debug.Log(string.Format("[BDArmory.BDAScoreService] TrackRocketParts by {0} on {1} for {2}parts", target, attacker, count));
+
+            double now = Planetarium.GetUniversalTime();
+            activePlayers.Add(attacker);
+            activePlayers.Add(target);
+            if (rocketPartsOut.ContainsKey(attacker))
+                rocketPartsOut[attacker] += count;
+            else
+                rocketPartsOut.Add(attacker, count);
+            if (rocketPartsIn.ContainsKey(target))
+                rocketPartsIn[target] += count;
+            else
+                rocketPartsIn.Add(target, count);
 
             if (timeOfLastHitOnTarget.ContainsKey(attacker))
             {
@@ -843,7 +1038,7 @@ namespace BDArmory.Competition
             activePlayers.Add(target);
 
             IncrementKill(attacker, target);
-            ComputeAssists(target, attacker, 30);
+            // ComputeAssists(target, attacker, 30);
         }
 
         private void IncrementKill(string attacker, string target)
@@ -920,6 +1115,4 @@ namespace BDArmory.Competition
             }
         }
     }
-
-
 }

@@ -34,6 +34,14 @@ namespace BDArmory.Evolution
         }
     }
 
+    public class EvolutionWorkingState
+    {
+        public string savegame;
+        public string evolutionId;
+        public VesselSpawner.SpawnConfig spawnConfig;
+        // public Dictionary<string, Dictionary<string, float>> aggregateScores;
+    }
+
     public class VariantGroup
     {
         public int id;
@@ -88,11 +96,12 @@ namespace BDArmory.Evolution
     {
         public static BDAModuleEvolution Instance;
 
-        private static string workingDirectory = "AutoSpawn";
-        private static string configDirectory = string.Format("{0}/evolutions", workingDirectory);
-        private static string seedDirectory = string.Format("{0}/seeds", configDirectory);
-        private static string adversaryDirectory = string.Format("{0}/adversaries", configDirectory);
-        private static string weightMapFile = string.Format("{0}/weights.cfg", configDirectory);
+        public static string configDirectory;
+        private static string workingDirectory;
+        private static string seedDirectory;
+        private static string adversaryDirectory;
+        private static string weightMapFile;
+        private static string stateFile;
 
         private Coroutine evoCoroutine = null;
 
@@ -103,6 +112,9 @@ namespace BDArmory.Evolution
 
         private VariantEngine engine = null;
 
+        // Spawn settings
+        private static VesselSpawner.SpawnConfig spawnConfig;
+
         // config node for evolution details
         private ConfigNode config = null;
 
@@ -111,18 +123,21 @@ namespace BDArmory.Evolution
 
         // evolution id
         private string evolutionId = null;
-        public string GetId() { return evolutionId; }
+        public string EvolutionId { get { return evolutionId; } }
 
         // group id
         private int groupId = 0;
-        public int GetGroupId() { return groupId; }
+        public int GroupId { get { return groupId; } }
 
         // next variant id
         private int nextVariantId = 0;
 
+        private int heat = 0;
+        public int Heat { get { return heat; } }
+
         // private VariantOptions options;
 
-        private Dictionary<string, Dictionary<string, float>> aggregateScores = new Dictionary<string, Dictionary<string, float>>();
+        private static Dictionary<string, Dictionary<string, float>> aggregateScores = new Dictionary<string, Dictionary<string, float>>();
 
         void Awake()
         {
@@ -133,12 +148,24 @@ namespace BDArmory.Evolution
             }
 
             Instance = this;
+
+            configDirectory = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", "evolutions");
+            workingDirectory = Path.Combine(configDirectory, "working");
+            seedDirectory = Path.Combine(configDirectory, "seeds");
+            adversaryDirectory = Path.Combine(configDirectory, "adversaries");
+            weightMapFile = Path.Combine(configDirectory, "weights.cfg");
+            stateFile = Path.Combine($"{configDirectory}", "evolution.state");
         }
 
         private void Start()
         {
             // Debug.Log("[BDArmory.BDAEvolution]: Evolution start");
             engine = new VariantEngine();
+        }
+
+        private void OnDestroy()
+        {
+            SaveState();
         }
 
         public void StartEvolution()
@@ -155,11 +182,80 @@ namespace BDArmory.Evolution
             nextVariantId = 1;
             groupId = 1;
             evolutionId = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
+            spawnConfig = new VesselSpawner.SpawnConfig(
+                BDArmorySettings.VESSEL_SPAWN_WORLDINDEX,
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
+                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                true,
+                true,
+                0,
+                null,
+                null,
+                workingDirectory);
             evolutionState = new EvolutionState(evolutionId, status, new List<VariantGroup>());
 
             // create new config
             CreateEvolutionConfig();
 
+            evoCoroutine = StartCoroutine(ExecuteEvolution());
+        }
+
+        public void ResumeEvolution(EvolutionWorkingState state)
+        {
+            if (state == null) return; // No valid state given.
+            if (evoCoroutine != null) return; // Already running.
+
+            // Copy state to local state.
+            evolutionId = state.evolutionId;
+            spawnConfig = state.spawnConfig;
+            evolutionState = new EvolutionState(evolutionId, EvolutionStatus.Preparing, new List<VariantGroup>());
+            var configFile = Path.Combine(configDirectory, evolutionId + ".cfg");
+            ConfigNode existing = null;
+            if (File.Exists(configFile)) existing = ConfigNode.Load(configFile);
+            if (existing == null || !existing.HasNode("EVOLUTION"))
+            {
+                Debug.Log($"[BDArmory.BDAEvolution]: No pre-existing evolution found, starting a new one.");
+                StartEvolution(); // No pre-existing evolution, start a new one.
+                return;
+            }
+            ConfigNode evoNode = existing.GetNode("EVOLUTION");
+            // groupId = int.Parse(evoNode.GetValue("groupId"));
+            nextVariantId = int.Parse(evoNode.GetValue("nextVariantId"));
+            foreach (var groupNode in existing.GetNodes("GROUP"))
+            {
+                groupId = int.Parse(groupNode.GetValue("id"));
+                var seedName = groupNode.GetValue("seedName");
+                var referenceName = groupNode.GetValue("referenceName");
+                VariantGroup variantGroup = new VariantGroup(groupId, seedName, referenceName, new List<Variant>());
+
+                foreach (var variantNode in groupNode.GetNodes("VARIANT"))
+                {
+                    var varId = variantNode.GetValue("id");
+                    var varName = variantNode.GetValue("name");
+                    var variant = new Variant(varId, varName, new List<MutatedPart>(), "", 0); // key and direction don't seem to be used.
+
+                    foreach (var partNode in variantNode.GetNodes("MUTATION"))
+                    {
+                        var partName = partNode.GetValue("partName");
+                        var moduleName = partNode.GetValue("moduleName");
+                        var paramName = partNode.GetValue("paramName");
+                        var referenceValue = float.Parse(partNode.GetValue("referenceValue"));
+                        var value = float.Parse(partNode.GetValue("value"));
+                        variant.mutatedParts.Add(new MutatedPart(partName, moduleName, paramName, referenceValue, value));
+                    }
+                    variantGroup.variants.Add(variant);
+                }
+                evolutionState.groups.Add(variantGroup);
+            }
+            this.config = existing;
+            ++groupId;
+            Debug.Log($"[BDArmory.BDAEvolution]: Resuming evolutionId: {evolutionId}, groupId: {groupId}");
+
+            // Resume running.
             evoCoroutine = StartCoroutine(ExecuteEvolution());
         }
 
@@ -180,7 +276,8 @@ namespace BDArmory.Evolution
         private void CreateEvolutionConfig()
         {
             string configFile = string.Format("{0}/{1}.cfg", configDirectory, evolutionId);
-            ConfigNode existing = ConfigNode.Load(configFile);
+            ConfigNode existing = null;
+            if (File.Exists(configFile)) existing = ConfigNode.Load(configFile);
             if (existing == null)
             {
                 existing = new ConfigNode();
@@ -195,6 +292,45 @@ namespace BDArmory.Evolution
             evoNode.AddValue("nextVariantId", nextVariantId);
             existing.Save(configFile);
             this.config = existing;
+            SaveState();
+        }
+
+        private void SaveState()
+        {
+            if (spawnConfig == null) return; // No spawn config means it hasn't been runnning.
+            spawnConfig.craftFiles = null; // We don't want to include the specific craft files in the spawn config.
+            spawnConfig.teamCounts = null;
+            var workingState = new EvolutionWorkingState
+            {
+                savegame = HighLogic.SaveFolder,
+                evolutionId = evolutionId,
+                spawnConfig = spawnConfig,
+                // aggregateScores = aggregateScores
+            };
+            // Write everything to file.
+            File.WriteAllLines(stateFile, new List<string>{
+                JsonUtility.ToJson(workingState),
+                JsonUtility.ToJson(workingState.spawnConfig), // We need to do this separately as Unity's JSON is really simplistic.
+            });
+        }
+
+        public static EvolutionWorkingState LoadState()
+        {
+            var state = new EvolutionWorkingState();
+            if (File.Exists(stateFile))
+            {
+                try
+                {
+                    var strings = File.ReadAllLines(stateFile);
+                    state = JsonUtility.FromJson<EvolutionWorkingState>(strings[0]);
+                    state.spawnConfig = JsonUtility.FromJson<VesselSpawner.SpawnConfig>(strings[1]);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[BDArmory.BDAEvolution]: Failure to properly read evolution state file: " + e.Message);
+                }
+            }
+            return state;
         }
 
         private IEnumerator ExecuteEvolution()
@@ -204,17 +340,24 @@ namespace BDArmory.Evolution
             // 3. compute weighted centroid variant
             // 4. repeat from 1
 
-            status = EvolutionStatus.GeneratingVariants;
-            GenerateVariants();
-
-            status = EvolutionStatus.RunningTournament;
-            yield return ExecuteTournament();
-
-            status = EvolutionStatus.ProcessingResults;
-            InterpretResults();
-
             status = EvolutionStatus.Preparing;
-            yield return RepeatUntilStable();
+            while (status != EvolutionStatus.Idle) // Avoid unnecessary recursion.
+            {
+                Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution next group {0}", groupId));
+
+                status = EvolutionStatus.GeneratingVariants;
+                GenerateVariants();
+
+                status = EvolutionStatus.RunningTournament;
+                yield return ExecuteTournament();
+
+                status = EvolutionStatus.ProcessingResults;
+                InterpretResults();
+
+                if (TournamentAutoResume.Instance != null && TournamentAutoResume.Instance.CheckMemoryUsage()) yield break; // Auto-Quit before the next variants are generated.
+
+                ++groupId;
+            }
         }
 
         private void GenerateVariants()
@@ -250,6 +393,7 @@ namespace BDArmory.Evolution
         // deletes all craft files in the working directory
         private void ClearWorkingDirectory()
         {
+            if (!Directory.Exists(workingDirectory)) Directory.CreateDirectory(workingDirectory);
             var info = new DirectoryInfo(workingDirectory);
             var files = info.GetFiles("*.craft").ToList();
             foreach (var file in files)
@@ -345,25 +489,13 @@ namespace BDArmory.Evolution
                 }
             }
 
-            string configFile = string.Format("{0}/{1}.cfg", configDirectory, evolutionId);
+            var configFile = Path.Combine(configDirectory, evolutionId + ".cfg");
             config.Save(configFile);
         }
 
         private IEnumerator ExecuteTournament()
         {
             var spawner = VesselSpawner.Instance;
-            var spawnConfig = new VesselSpawner.SpawnConfig(
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
-                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
-                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
-                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR,
-                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
-                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
-                true,
-                true,
-                0,
-                null,
-                null);
 
             // clear scores
             aggregateScores.Clear();
@@ -372,22 +504,25 @@ namespace BDArmory.Evolution
             var specialKills = new HashSet<AliveState> { AliveState.CleanKill, AliveState.HeadShot, AliveState.KillSteal };
 
             // run N tournaments and aggregate their scores
-            for (var k = 0; k < BDArmorySettings.EVOLUTION_HEATS_PER_GROUP; k++)
+            for (heat = 0; heat < BDArmorySettings.EVOLUTION_HEATS_PER_GROUP; heat++)
             {
+                var wait = new WaitForFixedUpdate();
+                spawnConfig.craftFiles = null; // We don't want to include the specific craft files in the spawn config.
+                spawnConfig.teamCounts = null;
                 spawner.SpawnAllVesselsOnce(spawnConfig);
                 while (spawner.vesselsSpawning)
-                    yield return new WaitForFixedUpdate();
+                    yield return wait;
                 if (!spawner.vesselSpawnSuccess)
                 {
                     Debug.Log("[BDArmory.BDAEvolution]: Vessel spawning failed.");
                     yield break;
                 }
-                yield return new WaitForFixedUpdate();
+                yield return wait;
 
-                BDACompetitionMode.Instance.StartCompetitionMode(0);
+                BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
                 yield return new WaitForSeconds(5); // wait 5sec for stability
 
-                while (BDACompetitionMode.Instance.competitionIsActive)
+                while (BDACompetitionMode.Instance.competitionStarting || BDACompetitionMode.Instance.competitionIsActive)
                 {
                     // Wait for the competition to finish 
                     yield return new WaitForSeconds(1);
@@ -422,19 +557,19 @@ namespace BDArmory.Evolution
                     }
                     if (aggregateScores[name].ContainsKey("hits"))
                     {
-                        aggregateScores[name]["hits"] += scoreData.hits;
+                        aggregateScores[name]["hits"] += scoreData.hits + scoreData.rocketStrikes;
                     }
                     else
                     {
-                        aggregateScores[name]["hits"] = scoreData.hits;
+                        aggregateScores[name]["hits"] = scoreData.hits + scoreData.rocketStrikes;
                     }
                     if (aggregateScores[name].ContainsKey("shots"))
                     {
-                        aggregateScores[name]["shots"] += scoreData.shotsFired;
+                        aggregateScores[name]["shots"] += scoreData.shotsFired + scoreData.rocketsFired;
                     }
                     else
                     {
-                        aggregateScores[name]["shots"] = scoreData.shotsFired;
+                        aggregateScores[name]["shots"] = scoreData.shotsFired + scoreData.rocketsFired;
                     }
                     Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution aggregated score data for {0}. kills: {1}, hits: {2}, shots: {3}", name, aggregateScores[name]["kills"], aggregateScores[name]["hits"], aggregateScores[name]["shots"]));
                 }
@@ -618,15 +753,6 @@ namespace BDArmory.Evolution
             }
             Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution ScoreForPlayer({0} => {1}) raw: [{2}, {3}, {4}, {5}]", name, score, kills, shots, hits, accuracy));
             return score;
-        }
-
-        private IEnumerator RepeatUntilStable()
-        {
-            // TODO: evaluate stability and decide to continue or done
-            // for now, just continue until manually canceled
-            groupId += 1;
-            Debug.Log(string.Format("[BDArmory.BDAEvolution]: Evolution next group {0}", groupId));
-            yield return ExecuteEvolution();
         }
     }
 }

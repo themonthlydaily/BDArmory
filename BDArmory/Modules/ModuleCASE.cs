@@ -36,6 +36,8 @@ namespace BDArmory.Modules
         public bool hasDetonated = false;
         private float blastRadius = 0;
 
+        public bool externallyCalled = false;
+
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -56,6 +58,9 @@ namespace BDArmory.Modules
         UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = 1f, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
         public float CASELevel = 0; //tier of ammo storage. 0 = nothing, ammosplosion; 1 = base, ammosplosion contained(barely), 2 = blast safely shunted outside, minimal damage to surrounding parts
 
+        private float oldCaseLevel = 0;
+
+        private List<double> resourceAmount = new List<double>();
         public void Start()
         {
             if (HighLogic.LoadedSceneIsEditor)
@@ -68,6 +73,12 @@ namespace BDArmory.Modules
                 }
                 else
                 {
+                    using (IEnumerator<PartResource> resource = part.Resources.GetEnumerator())
+                        while (resource.MoveNext())
+                        {
+                            if (resource.Current == null) continue;
+                            resourceAmount.Add(resource.Current.maxAmount);
+                        }
                     UI_FloatRange ATrangeEditor = (UI_FloatRange)Fields["CASELevel"].uiControlEditor;
                     ATrangeEditor.onFieldChanged = CASESetup;
                     origMass = part.mass;
@@ -90,11 +101,78 @@ namespace BDArmory.Modules
 
         void CASESetup(BaseField field, object obj)
         {
-            CASEmass = ((origMass / 2) * CASELevel);
+            if (externallyCalled) return;
+            //CASEmass = ((origMass / 2) * CASELevel);
+            CASEmass = (0.05f * CASELevel); //+50kg per level
             //part.mass = CASEmass;
             CASEcost = (CASELevel * 1000);
             //part.transform.localScale = (Vector3.one * (origScale + (CASELevel/10)));
             //Debug.Log("[BDArmory.ModuleCASE] part.mass = " + part.mass + "; CASElevel = " + CASELevel + "; CASEMass = " + CASEmass + "; Scale = " + part.transform.localScale);
+
+            if (oldCaseLevel == 2 && CASELevel != oldCaseLevel)
+            {
+                int i = 0;
+                using (IEnumerator<PartResource> resource = part.Resources.GetEnumerator())
+                    while (resource.MoveNext())
+                    {
+                        if (resource.Current == null) continue;
+                        //if (resource.Current.maxAmount < 80) //original value < 100, at risk of fractional amount
+                        {
+                            resource.Current.maxAmount = resourceAmount[i];
+                        }
+                        //else resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.25);
+                        i++;
+                    }
+            }
+            if (oldCaseLevel != 2 && CASELevel == 2)
+            {
+                using (IEnumerator<PartResource> resource = part.Resources.GetEnumerator())
+                    while (resource.MoveNext())
+                    {
+                        if (resource.Current == null) continue;
+						resource.Current.maxAmount *= 0.8;
+                        resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount);
+                        resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                    }
+            }
+            using (List<Part>.Enumerator pSym = part.symmetryCounterparts.GetEnumerator())
+                while (pSym.MoveNext())
+                {
+                    if (pSym.Current == null) continue;
+
+                    var CASE = pSym.Current.FindModuleImplementing<ModuleCASE>();
+                    if (CASE == null) continue;
+                    CASE.externallyCalled = true;
+                    CASE.CASELevel = CASELevel;
+                    CASE.CASEmass = CASEmass;
+                    CASE.CASEcost = CASEcost;
+
+                    if (CASE.oldCaseLevel == 2 && CASE.CASELevel != CASE.oldCaseLevel)
+                    {
+                        using (IEnumerator<PartResource> resource = pSym.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
+                            {
+                                if (resource.Current == null) continue;
+                                resource.Current.maxAmount = Math.Floor(resource.Current.maxAmount * 1.25);
+                                resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                            }
+                    }
+                    if (CASE.oldCaseLevel != 2 && CASE.CASELevel == 2)
+                    {
+                        using (IEnumerator<PartResource> resource = pSym.Current.Resources.GetEnumerator())
+                            while (resource.MoveNext())
+                            {
+                                if (resource.Current == null) continue;
+                                resource.Current.maxAmount *= 0.8;
+                                resource.Current.amount = Math.Min(resource.Current.amount, resource.Current.maxAmount);
+                            }
+                    }
+                    CASE.oldCaseLevel = CASELevel;
+                    CASE.externallyCalled = false;
+                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                }
+            oldCaseLevel = CASELevel;
+            Misc.Misc.RefreshAssociatedWindows(part);
         }
         public override void OnLoad(ConfigNode node)
         {

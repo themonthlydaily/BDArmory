@@ -10,7 +10,6 @@ using UnityEngine;
 
 namespace BDArmory.UI
 {
-    //FIXME: need to figure out why this and the Radar RCS GUI can't be open at the same time. identical WindowIDs? -- DocNappers: No, they're different, I checked. At a guess, it's probably the encapsulating the ShipConstruct in two Vessels at the same time.
     [KSPAddon(KSPAddon.Startup.EditorAny, false)]
     internal class BDAEditorArmorWindow : MonoBehaviour
     {
@@ -50,10 +49,13 @@ namespace BDArmory.UI
         private float maxThickness = 60;
         private bool Visualizer = false;
         private bool HPvisualizer = false;
+        private bool HullVisualizer = false;
         private bool oldVisualizer = false;
         private bool oldHPvisualizer = false;
+        private bool oldHullVisualizer = false;
         private bool refreshVisualizer = false;
         private bool refreshHPvisualizer = false;
+        private bool refreshHullvisualizer = true;
         private bool isWood = false;
         private bool isSteel = false;
         private bool isAluminium = true;
@@ -129,10 +131,11 @@ namespace BDArmory.UI
                 {
                     CalcArmor = true;
                 }
-                if (Visualizer || HPvisualizer)
+                if (Visualizer || HPvisualizer || HullVisualizer)
                 {
                     refreshVisualizer = true;
                     refreshHPvisualizer = true;
+                    refreshHullvisualizer = true;
                 }
                 shipModifiedfromCalcArmor = false;
             }
@@ -162,7 +165,7 @@ namespace BDArmory.UI
 
         void AddToolbarButton()
         {
-            if (HighLogic.LoadedSceneIsEditor)
+            if (HighLogic.LoadedSceneIsEditor && !BDArmorySettings.LEGACY_ARMOR)
             {
                 if (toolbarButton == null)
                 {
@@ -184,6 +187,7 @@ namespace BDArmory.UI
             CalcArmor = false;
             Visualizer = false;
             HPvisualizer = false;
+            HullVisualizer = false;
             Visualize();
         }
 
@@ -219,175 +223,211 @@ namespace BDArmory.UI
             float line = 1.5f;
 
             style.fontStyle = FontStyle.Normal;
-            HPvisualizer = GUI.Toggle(new Rect(10, line * lineHeight, 280, lineHeight), HPvisualizer, Localizer.Format("#LOC_BDArmory_ArmorHPVisualizer"), HPvisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-            line += 1.5f;
 
-            Visualizer = GUI.Toggle(new Rect(10, line * lineHeight, 280, lineHeight), Visualizer, Localizer.Format("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-            line += 2;
-            if (Visualizer && HPvisualizer && !oldVisualizer && oldHPvisualizer)
+            if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHPVisualizer"), HPvisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
-                HPvisualizer = false;
-                oldHPvisualizer = false;
+                HPvisualizer = !HPvisualizer;
+                if (HPvisualizer)
+                {
+                    Visualizer = false;
+                    HullVisualizer = false;
+                }
             }
-            if (Visualizer && HPvisualizer && oldVisualizer && !oldHPvisualizer)
+            line += 1.25f;
+
+
+            if (!BDArmorySettings.RESET_ARMOUR)
             {
-                Visualizer = false;
-                oldVisualizer = false;
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorVisualizer"), Visualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                {
+                    Visualizer = !Visualizer;
+                    if (Visualizer)
+                    {
+                        HPvisualizer = false;
+                        HullVisualizer = false;
+                    }
+                }
+                line += 1.25f;
             }
-            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer))
+
+            if (!BDArmorySettings.RESET_HULL)
+            {
+                if (GUI.Button(new Rect(10, line * lineHeight, 280, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHullVisualizer"), HullVisualizer ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+                {
+                    HullVisualizer = !HullVisualizer;
+                    if (HullVisualizer)
+                    {
+                        HPvisualizer = false;
+                        Visualizer = false;
+                    }
+                }
+                line += 1.5f;
+            }
+
+            if ((refreshHPvisualizer || HPvisualizer != oldHPvisualizer) || (refreshVisualizer || Visualizer != oldVisualizer) || (refreshHullvisualizer || HullVisualizer != oldHullVisualizer))
             {
                 Visualize();
             }
 
-            GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
-            line++;
-            GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
-            line += 1.5f;
-            GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorThickness") + ": " + Thickness + "mm", style);
-            line++;
-            if (!useNumField)
+            if (!BDArmorySettings.RESET_ARMOUR)
             {
-                Thickness = GUI.HorizontalSlider(new Rect(20, line * lineHeight, 260, lineHeight), Thickness, 0, maxThickness);
-                //Thickness /= 5;
-                Thickness = Mathf.Round(Thickness);
-                //Thickness *= 5;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorThickness") + ": " + Thickness + "mm", style);
                 line++;
-            }
-            else
-            {
-                thicknessField["Thickness"].tryParseValue(GUI.TextField(new Rect(20, line * lineHeight, 260, lineHeight), thicknessField["Thickness"].possibleValue, 4));
-                Thickness = Mathf.Min((float)thicknessField["Thickness"].currentValue, maxThickness); // FIXME Mathf.Min shouldn't be necessary if the maxValue of the thicknessField has been updated for maxThickness
-                line++;
-            }
-            if (selectedArmor != "Mild Steel" || selectedArmor != "None")
-            {
-                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_EquivalentThickness") + ": " + relValue * Thickness + "mm", style);
-                line++;
-            }
-            if (Thickness != oldThickness)
-            {
-                oldThickness = Thickness;
-                SetThickness = true;
-                maxThickness = 10;
-                thicknessField["Thickness"].maxValue = maxThickness;
-                CalculateArmorMass();
-            }
-            GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorSelect"), style);
-            line++;
-            if (!armorslist)
-            {
-                FillArmorList();
-                GUIStyle listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
-                listStyle.fixedHeight = 18; //make list contents slightly smaller
-                armorBox = new BDGUIComboBox(new Rect(10, line * lineHeight, 280, lineHeight), new Rect(10, line * lineHeight, 280, lineHeight), armorBoxText, armorGUI, 120, listStyle);
-                armorslist = true;
-            }
-
-            int selected_index = armorBox.Show();
-            float armorLines = 0;
-            armorLines++;
-            if (armorBox.isOpen)
-            {
-                armorLines += 6;
-            }
-            if (selected_index != previous_index)
-            {
-                if (selected_index != -1)
+                if (!useNumField)
                 {
-                    selectedArmor = ArmorInfo.armors[selected_index].name;
-                    SetType = true;
-                    CalculateArmorMass();
-                    CalculateArmorStats();
+                    Thickness = GUI.HorizontalSlider(new Rect(20, line * lineHeight, 260, lineHeight), Thickness, 0, maxThickness);
+                    //Thickness /= 5;
+                    Thickness = Mathf.Round(Thickness);
+                    //Thickness *= 5;
+                    line++;
                 }
-                previous_index = selected_index;
-            }
-            line += 0.5f;
-            float StatLines = 0;
-            if (GameSettings.ADVANCED_TWEAKABLES)
-            {
-                ArmorStats = GUI.Toggle(new Rect(10, (line + armorLines) * lineHeight, 280, lineHeight), ArmorStats, Localizer.Format("#LOC_BDArmory_ArmorStats"), ArmorStats ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-                StatLines++;
-                if (ArmorStats)
+                else
                 {
-                    GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorStrength") + " " + ArmorStrength, style);
-                    //StatLines++;
-                    GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHardness") + " " + ArmorHardness, style);
-                    StatLines++;
-                    GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDuctility") + " " + ArmorDuctility, style);
-                    //StatLines++;
-                    GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDiffusivity") + " " + ArmorDiffusivity, style);
-                    StatLines++;
-                    GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorMaxTemp") + " " + ArmorMaxTemp + " K", style);
-                    //StatLines++;
-                    GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDensity") + " " + ArmorDensity + " kg/m3", style);
-                    StatLines++;
-                    GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorCost") + " " + ArmorCost + "/m3", style);
-                    StatLines++;
-                    if (selectedArmor != "None")
+                    thicknessField["Thickness"].tryParseValue(GUI.TextField(new Rect(20, line * lineHeight, 260, lineHeight), thicknessField["Thickness"].possibleValue, 4));
+                    Thickness = Mathf.Min((float)thicknessField["Thickness"].currentValue, maxThickness); // FIXME Mathf.Min shouldn't be necessary if the maxValue of the thicknessField has been updated for maxThickness
+                    line++;
+                }
+                line += 0.75f;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalMass") + ": " + totalArmorMass.ToString("0.00"), style);
+                line++;
+                GUI.Label(new Rect(10, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorTotalCost") + ": " + Mathf.Round(totalArmorCost), style);
+                line += 1.5f;
+            }
+            float StatLines = 0;
+            float armorLines = 0;
+            if (!BDArmorySettings.RESET_ARMOUR)
+            {
+                if (Thickness != oldThickness)
+                {
+                    oldThickness = Thickness;
+                    SetThickness = true;
+                    maxThickness = 10;
+                    thicknessField["Thickness"].maxValue = maxThickness;
+                    CalculateArmorMass();
+                }
+                GUI.Label(new Rect(40, line * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorSelect"), style);
+                line++;
+                if (!armorslist)
+                {
+                    FillArmorList();
+                    GUIStyle listStyle = new GUIStyle(BDArmorySetup.BDGuiSkin.button);
+                    listStyle.fixedHeight = 18; //make list contents slightly smaller
+                    armorBox = new BDGUIComboBox(new Rect(10, line * lineHeight, 280, lineHeight), new Rect(10, line * lineHeight, 280, lineHeight), armorBoxText, armorGUI, 120, listStyle);
+                    armorslist = true;
+                }
+
+                int selected_index = armorBox.Show();
+                armorLines++;
+                if (armorBox.isOpen)
+                {
+                    armorLines += 6;
+                }
+                if (selected_index != previous_index)
+                {
+                    if (selected_index != -1)
                     {
-                        GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_BulletResist") +": " + (relValue < 1.2 ? (relValue < 0.5 ? "* * * * *" : "* * * *") : (relValue > 3 ? (relValue > 5 ? "*" : "* *") : "* * *")), style);
+                        selectedArmor = ArmorInfo.armors[selected_index].name;
+                        SetType = true;
+                        CalculateArmorMass();
+                        CalculateArmorStats();
+                    }
+                    previous_index = selected_index;
+                }
+                line += 0.5f;
+                if (GameSettings.ADVANCED_TWEAKABLES)
+                {
+                    ArmorStats = GUI.Toggle(new Rect(10, (line + armorLines) * lineHeight, 280, lineHeight), ArmorStats, Localizer.Format("#LOC_BDArmory_ArmorStats"), ArmorStats ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
+                    StatLines++;
+                    if (ArmorStats)
+                    {
+                        GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorStrength") + " " + ArmorStrength, style);
+                        //StatLines++;
+                        GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorHardness") + " " + ArmorHardness, style);
                         StatLines++;
-
-                        GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ExplosionResist") +": "+ ((ArmorDuctility < 0.05f && ArmorHardness < 500) ? "* *" : (exploValue > 8000 ? (exploValue > 20000 ? "* * * * *" : "* * * *") : (exploValue < 4000 ? (exploValue < 2000 ? "*" : "* *") : "* * *"))), style);
+                        GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDuctility") + " " + ArmorDuctility, style);
+                        //StatLines++;
+                        GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDiffusivity") + " " + ArmorDiffusivity, style);
                         StatLines++;
-
-                        GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_LaserResist") + ": " + (ArmorDiffusivity > 150 ? (ArmorDiffusivity > 199 ? "* * * * *" : "* * * *") : (ArmorDiffusivity < 50 ? (ArmorDiffusivity < 10 ? "*" : "* *") : "* * *")), style);
+                        GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorMaxTemp") + " " + ArmorMaxTemp + " K", style);
+                        //StatLines++;
+                        GUI.Label(new Rect(135, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorDensity") + " " + ArmorDensity + " kg/m3", style);
                         StatLines++;
-
-                        if (ArmorDuctility < 0.05)
+                        GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 120, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorCost") + " " + ArmorCost + "/m3", style);
+                        StatLines++;
+                        if (selectedArmor != "None")
                         {
-                            if (ArmorHardness > 500) GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorShatterWarning"), style);
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_BulletResist") + ": " + (relValue < 1.2 ? (relValue < 0.5 ? "* * * * *" : "* * * *") : (relValue > 2.8 ? (relValue > 4 ? "*" : "* *") : "* * *")), style);
                             StatLines++;
+
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ExplosionResist") + ": " + ((ArmorDuctility < 0.05f && ArmorHardness < 500) ? "* *" : (exploValue > 8000 ? (exploValue > 20000 ? "* * * * *" : "* * * *") : (exploValue < 4000 ? (exploValue < 2000 ? "*" : "* *") : "* * *"))), style);
+                            StatLines++;
+
+                            GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_LaserResist") + ": " + (ArmorDiffusivity > 150 ? (ArmorDiffusivity > 199 ? "* * * * *" : "* * * *") : (ArmorDiffusivity < 50 ? (ArmorDiffusivity < 10 ? "*" : "* *") : "* * *")), style);
+                            StatLines++;
+
+                            if (ArmorDuctility < 0.05)
+                            {
+                                if (ArmorHardness > 500) GUI.Label(new Rect(15, (line + armorLines + StatLines) * lineHeight, 260, lineHeight), Localizer.Format("#LOC_BDArmory_ArmorShatterWarning"), style);
+                                StatLines++;
+                            }
+                        }
+                        if (selectedArmor != "Mild Steel" || selectedArmor != "None")
+                        {
+                            GUI.Label(new Rect(10, (line + armorLines + StatLines) * lineHeight, 300, lineHeight), Localizer.Format("#LOC_BDArmory_EquivalentThickness") + ": " + relValue * Thickness + "mm", style);
+                            line++;
                         }
                     }
                 }
             }
-            line += 0.5f;
             float HullLines = 0;
-            showHullMenu = GUI.Toggle(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight),
-                showHullMenu, Localizer.Format("#LOC_BDArmory_Armor_HullMat"), showHullMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
-            HullLines += 1.15f;
-
-            if (showHullMenu)
+            if (!BDArmorySettings.RESET_HULL)
             {
-                if (isSteel != (isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isSteel, Localizer.Format("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
-                {
-                    if (isSteel)
-                    {
-                        isWood = false;
-                        isAluminium = false;
-                        hullmat = 3;
-                        CalculateArmorMass(true);
-                    }
-                }
+                line += 0.5f;
+                showHullMenu = GUI.Toggle(new Rect(10, (line + armorLines + StatLines) * lineHeight, 280, lineHeight),
+                    showHullMenu, Localizer.Format("#LOC_BDArmory_Armor_HullMat"), showHullMenu ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
                 HullLines += 1.15f;
-                if (isWood != (isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
+
+                if (showHullMenu)
                 {
-                    if (isWood)
+                    if (isSteel != (isSteel = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isSteel, Localizer.Format("#LOC_BDArmory_Steel"), isSteel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                     {
-                        isAluminium = false;
-                        isSteel = false;
-                        hullmat = 1;
-                        CalculateArmorMass(true);
+                        if (isSteel)
+                        {
+                            isWood = false;
+                            isAluminium = false;
+                            hullmat = 3;
+                            CalculateArmorMass(true);
+                        }
                     }
-                }
-                HullLines += 1.15f;
-                if (isAluminium != (isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isAluminium, Localizer.Format("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
-                {
-                    if (isAluminium)
+                    HullLines += 1.15f;
+                    if (isWood != (isWood = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isWood, Localizer.Format("#LOC_BDArmory_Wood"), isWood ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
                     {
-                        isWood = false;
-                        isSteel = false;
+                        if (isWood)
+                        {
+                            isAluminium = false;
+                            isSteel = false;
+                            hullmat = 1;
+                            CalculateArmorMass(true);
+                        }
+                    }
+                    HullLines += 1.15f;
+                    if (isAluminium != (isAluminium = GUI.Toggle(new Rect(10, (line + armorLines + StatLines + HullLines) * lineHeight, 280, lineHeight), isAluminium, Localizer.Format("#LOC_BDArmory_Aluminium"), isAluminium ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button)))
+                    {
+                        if (isAluminium)
+                        {
+                            isWood = false;
+                            isSteel = false;
+                            hullmat = 2;
+                            CalculateArmorMass(true);
+                        }
+                    }
+                    HullLines += 1.15f;
+                    if (!isSteel && !isWood && !isAluminium)
+                    {
+                        isAluminium = true;
                         hullmat = 2;
                         CalculateArmorMass(true);
                     }
-                }
-                HullLines += 1.15f;
-                if (!isSteel && !isWood && !isAluminium)
-                {
-                    isAluminium = true;
-                    hullmat = 2;
-                    CalculateArmorMass(true);
                 }
             }
             line += 0.5f;
@@ -487,7 +527,7 @@ namespace BDArmory.UI
         {
             if (EditorLogic.RootPart == null)
                 return;
-            if (Visualizer || HPvisualizer)
+            if (Visualizer || HPvisualizer || HullVisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
@@ -500,6 +540,10 @@ namespace BDArmory.UI
                             if (Visualizer)
                             {
                                 VisualizerColor = Color.HSVToRGB(a.ArmorTypeNum / (ArmorInfo.armors.Count + 1), (a.Armor / maxThickness), 1f);
+                            }
+                            if (HullVisualizer)
+                            {
+                                VisualizerColor = Color.HSVToRGB(a.HullTypeNum / 3, 1, 1f);
                             }
                             var r = parts.Current.GetComponentsInChildren<Renderer>();
                             {
@@ -534,7 +578,7 @@ namespace BDArmory.UI
                         }
                     }
             }
-            if (!Visualizer && !HPvisualizer)
+            if (!Visualizer && !HPvisualizer && !HullVisualizer)
             {
                 using (List<Part>.Enumerator parts = EditorLogic.fetch.ship.Parts.GetEnumerator())
                     while (parts.MoveNext())
@@ -611,8 +655,10 @@ namespace BDArmory.UI
             }
             oldVisualizer = Visualizer;
             oldHPvisualizer = HPvisualizer;
+            oldHullVisualizer = HullVisualizer;
             refreshVisualizer = false;
             refreshHPvisualizer = false;
+            refreshHullvisualizer = false;
         }
 
         /// <summary>
@@ -653,17 +699,24 @@ namespace BDArmory.UI
 
         private void CalculateArmorStats()
         {
-            float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(0.388f, 1109);
-            var modifiedCaliber = (15) + (15) * (2f * ArmorDuctility * ArmorDuctility);
-            float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * ArmorStrength * (ArmorDensity / 7850f) * 30;
-            if (ArmorDuctility > 0.25f)
+            if (selectedArmor == "Mild Steel")
             {
-                yieldStrength *= 0.7f;
+                relValue = 1;
             }
-            float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, ArmorHardness, ArmorDensity, 0.19f, 0.8f);
-            armorValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, ArmorDuctility, ArmorDensity, ArmorStrength, 30, 0.8f, false);
-            relValue = Mathf.Round(armorValue / steelValue * 10) / 10; 
-            exploValue = ArmorStrength * (1 + ArmorDuctility) * (ArmorDensity / 1000);
+            else
+            {
+                float bulletEnergy = ProjectileUtils.CalculateProjectileEnergy(0.388f, 1109);
+                var modifiedCaliber = (15) + (15) * (2f * ArmorDuctility * ArmorDuctility);
+                float yieldStrength = modifiedCaliber * modifiedCaliber * Mathf.PI / 100f * ArmorStrength * (ArmorDensity / 7850f) * 30;
+                if (ArmorDuctility > 0.25f)
+                {
+                    yieldStrength *= 0.7f;
+                }
+                float newCaliber = ProjectileUtils.CalculateDeformation(yieldStrength, bulletEnergy, 30, 1109, ArmorHardness, ArmorDensity, 0.19f, 0.8f);
+                armorValue = ProjectileUtils.CalculatePenetration(30, newCaliber, 0.388f, 1109, ArmorDuctility, ArmorDensity, ArmorStrength, 30, 0.8f, false);
+                relValue = Mathf.Round(armorValue / steelValue * 10) / 10;
+                exploValue = ArmorStrength * (1 + ArmorDuctility) * (ArmorDensity / 1000);
+            }
         }
     }
 }

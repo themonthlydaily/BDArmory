@@ -109,6 +109,49 @@ namespace BDArmory.Modules
             UI_Toggle(disabledText = "#LOC_BDArmory_false", enabledText = "#LOC_BDArmory_true", affectSymCounterparts = UI_Scene.All)]//False--True
         public bool inCargoBay = false;
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_InCustomCargoBay"), // In custom/modded "cargo bay"
+            UI_ChooseOption(
+            options = new String[] {
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16"
+            },
+            display = new String[] {
+                "Disabled",
+                "AG1",
+                "AG2",
+                "AG3",
+                "AG4",
+                "AG5",
+                "AG6",
+                "AG7",
+                "AG8",
+                "AG9",
+                "AG10",
+                "Lights",
+                "RCS",
+                "SAS",
+                "Brakes",
+                "Abort",
+                "Gear"
+            }
+        )]
+        public string customBayGroup = "0";
+
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_DetonationTime"),//Detonation Time
             UI_FloatRange(minValue = 2f, maxValue = 30f, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
         public float detonationTime = 2;
@@ -328,10 +371,10 @@ namespace BDArmory.Modules
             {
                 explosive.Armed = true;
                 explosive.detonateAtMinimumDistance = DetonateAtMinimumDistance;
-                if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
-                {
-                    explosive.Shaped = true;
-                }
+                //if (GuidanceMode == GuidanceModes.AGM || GuidanceMode == GuidanceModes.AGMBallistic)
+                //{
+                //    explosive.Shaped = true; //Now configed in the part's BDExplosivePart Module Node
+                //}
             }
         }
 

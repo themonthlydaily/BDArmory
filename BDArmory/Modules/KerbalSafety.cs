@@ -281,6 +281,15 @@ namespace BDArmory.Modules
                 activeVesselBeforeEject = from;
             }
         }
+
+        public void ReconfigureInventories()
+        {
+            if (isEnabled)
+            {
+                foreach (var kerbal in kerbals.Values)
+                { kerbal.ReconfigureInventory(); }
+            }
+        }
     }
 
     public class KerbalSafety : MonoBehaviour
@@ -329,24 +338,30 @@ namespace BDArmory.Modules
             }
             var wait = new WaitForFixedUpdate();
             while (p.vessel != null && (!p.vessel.loaded || p.vessel.packed)) yield return wait; // Wait for the vessel to be loaded. (Avoids kerbals not being registered in seats.)
-            if (p.vessel == null) yield break;
+            if (p.vessel == null)
+            {
+                Destroy(this);
+                yield break;
+            }
             kerbalName = c.displayName;
             if (KerbalSafetyManager.Instance.kerbals.ContainsKey(kerbalName)) // Already managed
             {
                 Destroy(this);
                 yield break;
             }
-            this.crew = c;
+            crew = c;
             switch (BDArmorySettings.KERBAL_SAFETY_INVENTORY)
             {
                 case 1:
-                    this.crew.ResetInventory(true); // Reset the inventory to the default of a chute and a jetpack.
+                    crew.ResetInventory(true); // Reset the inventory to the default of a chute and a jetpack.
                     break;
                 case 2:
-                    this.crew.ResetInventory(false); // Reset the inventory to just a chute.
+                    crew.ResetInventory(false); // Reset the inventory to just a chute.
                     break;
             }
-            this.part = p;
+            if (p.isKerbalSeat()) // We were given the seat instead of the EVA kerbal.
+            { p = p.GetComponent<KerbalSeat>().Occupant; }
+            part = p;
             if (p.IsKerbalEVA())
             {
                 this.kerbalEVA = p.GetComponent<KerbalEVA>();
@@ -365,7 +380,9 @@ namespace BDArmory.Modules
                     if (!found)
                     {
                         Debug.LogWarning("[BDArmory.KerbalSafety]: Failed to find the kerbal seat that " + kerbalName + " occupies.");
-                        yield break;
+                        ejected = true;
+                        StartCoroutine(DelayedChuteDeployment());
+                        StartCoroutine(RecoverWhenPossible());
                     }
                 }
                 else // Free-falling EVA kerbal.
@@ -391,10 +408,18 @@ namespace BDArmory.Modules
             if ((Versioning.version_major == 1 && Versioning.version_minor > 10) || Versioning.version_major > 1) // Introduced in 1.11
             {
                 DisableConstructionMode(kerbalEVA);
-                if (BDArmorySettings.KERBAL_SAFETY_INVENTORY == 2)
-                    RemoveJetpack(kerbalEVA);
+                if (BDArmorySettings.KERBAL_SAFETY_INVENTORY > 0) kerbalEVA.ModuleInventoryPartReference.SetInventoryDefaults();
+                if (BDArmorySettings.KERBAL_SAFETY_INVENTORY == 2) RemoveJetpack(kerbalEVA);
             }
         }
+
+        public void ReconfigureInventory()
+        {
+            if (BDArmorySettings.KERBAL_SAFETY_INVENTORY == 0) return;
+            if (crew != null) crew.ResetInventory(BDArmorySettings.KERBAL_SAFETY_INVENTORY == 1);
+            if (kerbalEVA != null) ConfigureKerbalEVA(kerbalEVA);
+        }
+
         private void DisableConstructionMode(KerbalEVA kerbalEVA)
         {
             if (kerbalEVA.InConstructionMode)
@@ -578,7 +603,7 @@ namespace BDArmory.Modules
         public void OnVesselModified(Vessel vessel)
         {
             if (this == null) return;
-            if (vessel == null || !vessel.loaded) return;
+            if (part == null || vessel == null || !vessel.loaded) return;
             if (part.vessel == vessel) // It's this vessel.
             {
                 if (kerbalEVA != null)
