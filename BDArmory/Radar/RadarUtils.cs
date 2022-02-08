@@ -125,7 +125,7 @@ namespace BDArmory.Radar
         /// Force radar signature update
         /// Optionally, pass in a list of the vessels to update, otherwise all vessels in BDATargetManager.LoadedVessels get updated.
         /// 
-        /// FIXME this appears to cause a rather large amount of memory to leak.
+        /// This appears to cause a rather large amount of memory to be consumed (not actually a leak though).
         /// </summary>
         public static void ForceUpdateRadarCrossSections(List<Vessel> vessels = null)
         {
