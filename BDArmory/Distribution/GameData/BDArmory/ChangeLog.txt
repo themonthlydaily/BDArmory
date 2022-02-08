@@ -1,13 +1,29 @@
 ﻿FIXES
 - Don't clamp values when switching from text input to sliders and the unclamped option has been toggled.
 - Fix wrong component type in BD check.
+- Fix rocketpod RoF slider.
+- Fix barrage-firing burst-fire weapons; these will now properly ripple again.
 IMPROVEMENTS
+- AI:
+	- Tweaks to VacuumAI terrain avoidance.
 - Weapons:
 	- Move finalFire checks into a single function that runs in AimAndFire during the FashionablyLate timing phase instead of being spread between Update and FixedUpdate.
+	- Add check to AI when using a weapons group to grab the lead offset from a weapon that can fire (has ammo/not reloading/overheated/pointing at self), not merely the first weapon found.
+	- Reduce spin up times for Vulcan/Gaus.
+	- Fix shrapnel radius of missiles/bombs/shells using standard warheads.
+	- Add support for multiple laserbeamFX textures.
+	- Add DeployableRail module for missilebays.
+	- Explosions from impact-fuzed HE bullets/rockets that penetrate armor no longer have to still bypass armor in explosion calcs (phrasing needs work - explosion from penetrating HE rounds now properly bypass armor in explosion calcs, old way the penetrating HE round still did standard explosion pipeline which included a check to see if the explosion got through hit part's armor).
+- Armor:
+	- Add additional check to ArmorTool, can no longer make engines out of wood.
+	- Proc Armor panels no longer clamped to 0.5m increments.
+	- Fixes proc armor panels slightly shifting attached parts on load.
 - Tournamements:
 	- Add some timestamp and duration output to the tournament summary.
+	- Include damage taken in the console output of the parsing script.
 	- Adjust spacing in output from parsing script.
 	- Add an optional title to the summary plots.
+
 
 v1.4.15.0
 FIXES
