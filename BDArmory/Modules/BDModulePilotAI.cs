@@ -2308,27 +2308,25 @@ namespace BDArmory.Modules
                                              // First, aim up to maxAngle towards the surface normal.
                 if (BDArmorySettings.SPACE_HACKS) //no need to worry about stalling in null atmo
                 {
-                    FlyToPosition(s, vessel.transform.position + upDirection * 100); //so point nose stright up for maximum vertical thrust. Future SI - test out using terrainAlertNormal instead
+                    FlyToPosition(s, vessel.transform.position + terrainAlertNormal * 100); //so point nose perpendicular to surface for maximum vertical thrust.
                     // Update status and book keeping.
                     SetStatus("Terrain (" + (int)terrainAlertDistance + "m)");
                     terrainAlertCoolDown = 0.5f; // 0.5s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
                     return true;
                 }
-                else
-                {
-                    Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, maxAngle * adjustmentFactor, 0.0f);
-                    // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
-                    Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
-                    correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) * 0.8f * maxAngle) * adjustmentFactor, 0.0f); // Rotate up to 0.8*maxAngle back towards horizontal depending on speed < 120m/s.
-                    float alpha = Time.fixedDeltaTime * 2f; // 0.04 seems OK.
-                    float beta = Mathf.Pow(1.0f - alpha, terrainAlertTickerThreshold);
-                    terrainAlertCorrectionDirection = initialCorrection ? correctionDirection : (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames (if it's not the initial correction) due to changing terrain. (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
-                    FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
-                    // Update status and book keeping.
-                    SetStatus("Terrain (" + (int)terrainAlertDistance + "m)");
-                    terrainAlertCoolDown = 0.5f; // 0.5s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
-                    return true;
-                }
+
+                Vector3 correctionDirection = Vector3.RotateTowards(terrainAlertDirection, terrainAlertNormal, maxAngle * adjustmentFactor, 0.0f);
+                // Then, adjust the vertical pitch for our speed (to try to avoid stalling).
+                Vector3 horizontalCorrectionDirection = Vector3.ProjectOnPlane(correctionDirection, upDirection).normalized;
+                correctionDirection = Vector3.RotateTowards(correctionDirection, horizontalCorrectionDirection, Mathf.Max(0.0f, (1.0f - (float)vessel.srfSpeed / 120.0f) * 0.8f * maxAngle) * adjustmentFactor, 0.0f); // Rotate up to 0.8*maxAngle back towards horizontal depending on speed < 120m/s.
+                float alpha = Time.fixedDeltaTime * 2f; // 0.04 seems OK.
+                float beta = Mathf.Pow(1.0f - alpha, terrainAlertTickerThreshold);
+                terrainAlertCorrectionDirection = initialCorrection ? correctionDirection : (beta * terrainAlertCorrectionDirection + (1.0f - beta) * correctionDirection).normalized; // Update our target direction over several frames (if it's not the initial correction) due to changing terrain. (Expansion of N iterations of A = A*(1-a) + B*a. Not exact due to normalisation in the loop, but good enough.)
+                FlyToPosition(s, vessel.transform.position + terrainAlertCorrectionDirection * 100);
+                // Update status and book keeping.
+                SetStatus("Terrain (" + (int)terrainAlertDistance + "m)");
+                terrainAlertCoolDown = 0.5f; // 0.5s cool down after avoiding terrain or gaining altitude. (Only used for delaying "orbitting" for now.)
+                return true;
             }
 
             // Hurray, we've avoided the terrain!

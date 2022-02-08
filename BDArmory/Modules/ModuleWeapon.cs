@@ -2203,11 +2203,6 @@ namespace BDArmory.Modules
                     if (!grow && tracerStartWidth < 0.06f) grow = true;
                     UpdateLaserSpecifics(true, dynamicFX, true);
                 }
-                //if (cycleTexture)
-                if (dynamicFX)
-                {
-                    UpdateLaserSpecifics(false, true, false);
-                }
             }
         }
         public void SetupLaserSpecifics()
@@ -3585,7 +3580,6 @@ namespace BDArmory.Modules
                                 startColorS[1] = Mathf.Lerp(Single.Parse(startColorS[1]), Single.Parse(endColorS[1]), 0.02f / LaserGrowTime).ToString();
                                 startColorS[2] = Mathf.Lerp(Single.Parse(startColorS[2]), Single.Parse(endColorS[2]), 0.02f / LaserGrowTime).ToString();
                                 startColorS[3] = Mathf.Lerp(Single.Parse(startColorS[3]), Single.Parse(endColorS[3]), 0.02f / LaserGrowTime).ToString();
-                                Debug.Log("[:ASER DEBUG] DynColor: " + startColorS[0] + "," + startColorS[1] + "," + startColorS[2] + "; target: " + endColorS[0] + "," + endColorS[1] + "," + endColorS[2]);
                             }
                             for (int i = 0; i < 4; i++)
                             {
