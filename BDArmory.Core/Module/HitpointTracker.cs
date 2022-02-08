@@ -31,7 +31,7 @@ namespace BDArmory.Core.Module
         public float Armour = 10f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = false, guiName = "#LOC_BDArmory_ArmorRemaining"),//Armor intregity
-UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.Flight, maxValue = 100, minValue = 0, requireFullControl = false)]
+        UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, scene = UI_Scene.Flight, maxValue = 100, minValue = 0, requireFullControl = false)]
         public float ArmorRemaining;
 
         public float StartingArmor;
@@ -815,10 +815,10 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
             {
                 Debug.Log("[HPTracker] armor mass: " + armorMass + "; mass to reduce: " + (massToReduce * Math.Round((Density / 1000000), 3)) + "kg"); //g/m3
             }
-			float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
+            float reduceMass = (massToReduce * (Density / 1000000000)); //g/cm3 conversion to yield tons
             if (armorMass > 0)
             {
-                Armor -= ((reduceMass*2) / armorMass) * Armor; //armor that's 50% air isn't going to stop anything and could be considered 'destroyed' so lets reflect that by doubling armor loss (this will also nerf armor panels from 'god-tier' to merely 'very very good'
+                Armor -= ((reduceMass * 2) / armorMass) * Armor; //armor that's 50% air isn't going to stop anything and could be considered 'destroyed' so lets reflect that by doubling armor loss (this will also nerf armor panels from 'god-tier' to merely 'very very good'
                 if (Armor < 0)
                 {
                     Armor = 0;
@@ -1060,12 +1060,6 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
 
         public void HullSetup(BaseField field, object obj) //no longer needed for realtime HP calcs, but does need to be updated occasionally to give correct vessel mass
         {
-            if (IgnoreForArmorSetup) return;
-            if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
-            if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
-            {
-                HullTypeNum = 2;
-            }
             if (isProcWing)
             {
                 StartCoroutine(WaitForHullSetup());
@@ -1087,6 +1081,12 @@ UI_ProgressBar(affectSymCounterparts = UI_Scene.None, controlEnabled = false, sc
         }
         void SetHullMass()
         {
+            if (IgnoreForArmorSetup) return;
+            if (isAI || ArmorPanel || BDArmorySettings.RESET_HULL || BDArmorySettings.LEGACY_ARMOR) HullTypeNum = 2;
+            if ((part.isEngine() || part.IsWeapon()) && HullTypeNum < 2) //can armor engines, but not make them out of wood.
+            {
+                HullTypeNum = 2;
+            }
             var OldHullMassAdjust = HullMassAdjust;
             if (HullTypeNum == 1)
             {

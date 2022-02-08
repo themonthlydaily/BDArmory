@@ -1023,7 +1023,7 @@ namespace BDArmory.Bullets
                     else //impact by impact, Timed, Prox and Flak, if for whatever those last two have 0 proxi range
                     {
                         //Debug.Log("[BDArmory.PooledBullet]: impact Fuze detonation");
-                        ExplosiveDetonation(hitPart, hit, bulletRay);
+                        ExplosiveDetonation(hitPart, hit, bulletRay, true);
                         ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding 
                         hasDetonated = true;
                         KillBullet();
@@ -1033,7 +1033,7 @@ namespace BDArmory.Bullets
                     if (!viableBullet)
                     {
                         //Debug.Log("[BDArmory.PooledBullet]: !viable bullet, removing");
-                        ExplosiveDetonation(hitPart, hit, bulletRay);
+                        ExplosiveDetonation(hitPart, hit, bulletRay, true);
                         ProjectileUtils.CalculateShrapnelDamage(hitPart, hit, caliber, tntMass, 0, sourceVesselName, ExplosionSourceType.Bullet, bulletMass, penetrationFactor); //calc daamge from bullet exploding
                         hasDetonated = true;
                         KillBullet();
@@ -1308,7 +1308,7 @@ namespace BDArmory.Bullets
 
         }
 
-        private bool ExplosiveDetonation(Part hitPart, RaycastHit hit, Ray ray)
+        private bool ExplosiveDetonation(Part hitPart, RaycastHit hit, Ray ray, bool penetratingHit = false)
         {
             ///////////////////////////////////////////////////////////////////////
             // High Explosive Detonation
@@ -1335,7 +1335,7 @@ namespace BDArmory.Bullets
                     else
                     {
                         if (explosive)
-                            ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult);
+                            ExplosionFx.CreateExplosion(hit.point - (ray.direction * 0.1f), GetExplosivePower(), explModelPath, explSoundPath, ExplosionSourceType.Bullet, caliber, null, sourceVesselName, null, default, -1, false, bulletMass, -1, dmgMult, "standard", penetratingHit ? hitPart : null);
                         if (nuclear)
                         {
                             NukeFX.CreateExplosion(currPosition, ExplosionSourceType.BattleDamage, sourceVesselName, bullet.DisplayName, 0, tntMass * 200, tntMass, tntMass, EMP, blastSoundPath, flashModelPath, shockModelPath, blastModelPath, plumeModelPath, debrisModelPath, "", "");

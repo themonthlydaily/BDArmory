@@ -490,7 +490,7 @@ namespace BDArmory.Bullets
                                 {
                                     transform.position += (rb.velocity * Time.fixedDeltaTime) / 3;
 
-                                    Detonate(transform.position, false);
+                                    Detonate(transform.position, false, hitPart); //explode inside part
                                     hasDetonated = true;
                                 }
                             }
@@ -645,7 +645,7 @@ namespace BDArmory.Bullets
             }
         }
 
-        void Detonate(Vector3 pos, bool missed)
+        void Detonate(Vector3 pos, bool missed, Part PenetratingHit = null)
         {
             if (!missed)
             {
@@ -754,7 +754,7 @@ namespace BDArmory.Bullets
                     }
                     else
                     {
-                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard");
+                        ExplosionFx.CreateExplosion(pos, tntMass, explModelPath, explSoundPath, ExplosionSourceType.Rocket, caliber, null, sourceVesselName, null, direction, -1, false, rocketMass * 1000, -1, dmgMult, shaped ? "shapedcharge" : "standard", PenetratingHit);
                     }
                 }
             }
