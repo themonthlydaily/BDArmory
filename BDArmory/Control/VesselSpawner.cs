@@ -1642,6 +1642,15 @@ namespace BDArmory.Control
         }
         #endregion
 
+        #region Single craft spawning
+        // AUBRANIUM Stub for PointSpawnStrategy to get things to compile
+        public IEnumerator SpawnVessel(string craftUrl, double latitude, double longitude, double altitude, float heading, float pitch)
+        {
+            throw new NotImplementedException("[BDArmory.VesselSpawner]: FIXME Not implemented yet.");
+            // This will need to call most of what's in the main part of the continuous spawning coroutine (lines 1277—1503). (I think this is up-to-date with the current state of the regular single spawning, but there may be one or two edge cases.)
+            // Additionally, if ground spawning is also desired, then a fair bit of what's in the "Post-spawning" region of SpawnAllVesselsOnceCoroutine will also be needed.
+        }
+        #endregion
         [Serializable]
         public class SpawnConfig
         {
@@ -1777,6 +1786,12 @@ namespace BDArmory.Control
             if (spawnProbeLocation == null) return null;
             Vessel spawnProbe = SpawnVesselFromCraftFile(spawnProbeLocation, dummySpawnCoords, 0, 0f, out dummyVar);
             return spawnProbe;
+        }
+
+        // AUBRANIUM Stub for TournamentCoordinator to get things to compile
+        public IEnumerator RemoveAllVessels()
+        {
+            throw new NotImplementedException("[BDArmory.VesselSpawner]: FIXME Not implemented yet.");
         }
 
         public int removeVesselsPending = 0;

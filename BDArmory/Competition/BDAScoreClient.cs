@@ -20,7 +20,7 @@ namespace BDArmory.Competition
 
         public string vesselPath = "";
 
-        private string competitionHash = "";
+        public string competitionHash = "";
 
         public bool pendingRequest = false;
 

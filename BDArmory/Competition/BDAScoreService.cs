@@ -153,6 +153,12 @@ namespace BDArmory.Competition
             }
         }
 
+        // AUBRANIUM Stub for RankedFreeForAllStrategy to get things to compile
+        public void ClearScores()
+        {
+            throw new NotImplementedException("[BDArmory.BDAScoreService]: FIXME Not implemented yet.");
+        }
+
         public IEnumerator SynchronizeWithService(string hash)
         {
             if (pendingSync)

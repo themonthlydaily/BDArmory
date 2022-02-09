@@ -42,12 +42,20 @@ namespace BDArmory.Competition
                 true,
                 craftFiles: new List<string>(craftUrls)
             );
-            yield return spawner.SpawnAllVesselsOnceCoroutine(spawnConfig);
+            // AUBRANIUM Don't call these coroutines directly, use the regular functions as they set up other stuff before launching the coroutine (e.g., resetting various variables,
+            //  ensuring that only a single instance of the spawning coroutine is running, planetary body switching and camera location).
+            // If your planned further changes to the spawning routines include taking care of these things as a pre-spawn step (I expect some of this would be dependent on the spawn strategy being used),
+            //  then you could use those updated coroutines with yield return statements, in which case the "while (spawner.vesselsSpawning)" loop would become unnecessary
+            // yield return spawner.SpawnAllVesselsOnceCoroutine(spawnConfig);
+            spawner.SpawnAllVesselsOnce(spawnConfig);
 
-            while (spawner.vesselsSpawning)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return new WaitWhile(() => spawner.vesselsSpawning);
+            // AUBRANIUM The above wait function is more efficient since it avoids allocating a new WaitForFixedUpdate each frame.
+            // Another alternative that I've used in several places is to create a "var wait = new WaitForFixedUpdate();" variable and just yield it repeatedly in different locations within a function.
+            // while (spawner.vesselsSpawning)
+            // {
+            //     yield return new WaitForFixedUpdate();
+            // }
 
             if (!spawner.vesselSpawnSuccess)
             {
