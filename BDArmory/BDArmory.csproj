@@ -191,6 +191,7 @@
     <Compile Include="Modules\BDAdjustableArmor.cs" />
     <Compile Include="Modules\BDAdjustableRail.cs" />
     <Compile Include="Modules\BDAMutator.cs" />
+    <Compile Include="Modules\BDDeployableRail.cs" />
     <Compile Include="Modules\BDExplosivePart.cs" />
     <Compile Include="Modules\BDGenericAIBase.cs" />
     <Compile Include="Modules\BDMMLauncher.cs" />
