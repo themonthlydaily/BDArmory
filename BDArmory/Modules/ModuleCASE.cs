@@ -1,8 +1,7 @@
 using BDArmory.Competition;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -11,7 +10,6 @@ using System.Text;
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
-using System.Collections;
 
 namespace BDArmory.Modules
 {

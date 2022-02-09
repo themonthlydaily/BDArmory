@@ -1,5 +1,5 @@
 ﻿using System;
-namespace BDArmory.Competition
+namespace BDArmory.Competition.RemoteOrchestration
 {
     public interface VesselSource
     {

@@ -2,7 +2,7 @@
 using UnityEngine;
 using BDArmory.Core;
 using KSP.Localization;
-using BDArmory.Competition;
+using BDArmory.Competition.RemoteOrchestration;
 
 namespace BDArmory.UI
 {

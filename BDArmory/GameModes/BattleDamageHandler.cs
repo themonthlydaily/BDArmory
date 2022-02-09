@@ -1,14 +1,16 @@
-﻿using BDArmory.Core;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Core.Extension;
-using BDArmory.FX;
-using BDArmory.Modules;
-using BDArmory.Control;
-using BDArmory.Core.Module;
+using UnityEngine;
 
-namespace BDArmory.Misc
+using BDArmory.Competition;
+using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
+using BDArmory.Core;
+using BDArmory.FX;
+using BDArmory.Misc;
+using BDArmory.Modules;
+
+namespace BDArmory.GameModes
 {
     class BattleDamageHandler
     {

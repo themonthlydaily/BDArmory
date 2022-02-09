@@ -7,11 +7,12 @@ using KSP.UI.Screens;
 using UnityEngine;
 using BDArmory.Core;
 using BDArmory.Core.Utils;
+using BDArmory.GameModes;
 using BDArmory.Modules;
 using BDArmory.Misc;
 using BDArmory.UI;
 
-namespace BDArmory.Control
+namespace BDArmory.Competition.VesselSpawning
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class VesselSpawner : MonoBehaviour

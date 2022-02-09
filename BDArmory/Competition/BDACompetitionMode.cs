@@ -3,18 +3,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BDArmory.Core;
-using BDArmory.Core.Module;
+using BDArmory.Competition.RemoteOrchestration;
+using BDArmory.Competition.VesselSpawning;
+using BDArmory.Control;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
+using BDArmory.Core;
+using BDArmory.GameModes;
 using BDArmory.Misc;
 using BDArmory.Modules;
-using BDArmory.Competition;
 using BDArmory.Radar;
 using BDArmory.UI;
 using UnityEngine;
 using KSP.Localization;
 
-namespace BDArmory.Control
+namespace BDArmory.Competition
 {
     public class CompetitionScores
     {

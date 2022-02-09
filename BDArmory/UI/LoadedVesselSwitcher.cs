@@ -1,20 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using BDArmory.Competition.VesselSpawning;
+using BDArmory.Competition;
+using BDArmory.Core.Extension;
+using BDArmory.Core;
 using BDArmory.Misc;
 using BDArmory.Modules;
-using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using UnityEngine;
 using KSP.Localization;
-using KSP.UI.Screens;
-using BDArmory.FX;
-using Expansions;
-using System;
-using VehiclePhysics;
-using System.Net;
+using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Linq;
+using System;
+using UnityEngine;
 
 namespace BDArmory.UI
 {
@@ -598,7 +594,7 @@ namespace BDArmory.UI
             GUIStyle vButtonStyle = team == "IT" ? (wm.vessel.isActiveVessel ? ItVesselSelected : ItVessel) : wm.vessel.isActiveVessel ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button;
 
             string vesselName = wm.vessel.GetName();
-            BDArmory.Control.ScoringData scoreData = null;
+            ScoringData scoreData = null;
             string status = UpdateVesselStatus(wm, vButtonStyle);
             int currentScore = 0;
             int currentRocketScore = 0;

@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
-using BDArmory.UI;
-using BDArmory.Misc;
 using BDArmory.Evolution;
+using BDArmory.Misc;
+using BDArmory.UI;
 
-namespace BDArmory.Control
+namespace BDArmory.Competition
 {
     // A serializable configuration for loading and saving the tournament state.
     [Serializable]

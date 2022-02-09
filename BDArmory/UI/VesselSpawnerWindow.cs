@@ -1,4 +1,5 @@
-﻿using BDArmory.Control;
+﻿using BDArmory.Competition;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using KSP.Localization;
 using System.Collections;

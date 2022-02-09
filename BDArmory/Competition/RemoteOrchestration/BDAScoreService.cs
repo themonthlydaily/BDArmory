@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using BDArmory.UI;
 
-namespace BDArmory.Competition
+namespace BDArmory.Competition.RemoteOrchestration
 {
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
@@ -264,17 +264,17 @@ namespace BDArmory.Competition
             {
                 yield return ExecuteHeat(hash, model);
                 if (!competitionStarted)
-                    switch (Control.VesselSpawner.Instance.spawnFailureReason)
+                    switch (VesselSpawner.Instance.spawnFailureReason)
                     {
-                        case Control.VesselSpawner.SpawnFailureReason.None: // Successful spawning, but competition failed to start for some reason.
+                        case VesselSpawner.SpawnFailureReason.None: // Successful spawning, but competition failed to start for some reason.
                             BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + BDACompetitionMode.Instance.competitionStartFailureReason + ", trying again.");
                             break;
-                        case Control.VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
-                        case Control.VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
-                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + Control.VesselSpawner.Instance.spawnFailureReason + ", trying again.");
+                        case VesselSpawner.SpawnFailureReason.VesselLostParts: // Recoverable spawning failure.
+                        case VesselSpawner.SpawnFailureReason.TimedOut: // Recoverable spawning failure.
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", trying again.");
                             break;
                         default: // Spawning is unrecoverable.
-                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + Control.VesselSpawner.Instance.spawnFailureReason + ", aborting.");
+                            BDACompetitionMode.Instance.competitionStatus.Add("Failed to start heat due to " + VesselSpawner.Instance.spawnFailureReason + ", aborting.");
                             attempts = 3;
                             break;
                     }
@@ -298,7 +298,7 @@ namespace BDArmory.Competition
         private IEnumerator ExecuteHeat(string hash, HeatModel model)
         {
             Debug.Log(string.Format("[BDArmory.BDAScoreService] Running heat {0}/{1}", hash, model.order));
-            Control.VesselSpawner spawner = Control.VesselSpawner.Instance;
+            VesselSpawner spawner = VesselSpawner.Instance;
 
             // orchestrate the match
             activePlayers.Clear();

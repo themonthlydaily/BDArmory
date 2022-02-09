@@ -1,12 +1,14 @@
-﻿﻿using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
-using BDArmory.FX;
-using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Core.Extension;
+using BDArmory.Core.Module;
+using BDArmory.Core;
+using BDArmory.FX;
+using BDArmory.GameModes;
 
 namespace BDArmory.Misc
 {
@@ -441,7 +443,7 @@ namespace BDArmory.Misc
                 float Density = Armor.Density;
                 if (Armor.ArmorPanel) spallArea = Armor.armorVolume;
 
-				float ArmorTolerance = Strength * (1 + ductility) * (thickness/10); //FIXME - this is going to return a value an order of magnitude greater than blast
+                float ArmorTolerance = Strength * (1 + ductility) * (thickness/10); //FIXME - this is going to return a value an order of magnitude greater than blast
                                                                                     //Trying thickness /10, so the 10x increase in thickness in mm isn't massively increasing value
 
                 float blowthroughFactor = (float)BlastPressure / ArmorTolerance;

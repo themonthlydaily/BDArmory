@@ -2,10 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Control;
+using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Modules;
 using BDArmory.UI;
 using UnityEngine;
+
 namespace BDArmory.Competition
 {
     public class WaypointFollowingStrategy : OrchestrationStrategy

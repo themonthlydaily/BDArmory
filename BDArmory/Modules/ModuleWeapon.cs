@@ -1,23 +1,25 @@
-using System;
-using System.Collections;
+using KSP.Localization;
+using KSP.UI.Screens;
 using System.Collections.Generic;
+using System.Collections;
 using System.Text;
+using System;
+using UniLinq;
+using UnityEngine;
+
 using BDArmory.Bullets;
 using BDArmory.Competition;
 using BDArmory.Control;
-using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
+using BDArmory.Core;
 using BDArmory.FX;
+using BDArmory.GameModes;
 using BDArmory.Misc;
+using BDArmory.Radar;
 using BDArmory.Targeting;
 using BDArmory.UI;
-using KSP.UI.Screens;
-using KSP.Localization;
-using UniLinq;
-using UnityEngine;
-using BDArmory.Radar;
 
 namespace BDArmory.Modules
 {

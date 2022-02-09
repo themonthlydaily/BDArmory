@@ -1,5 +1,5 @@
 using BDArmory.Competition;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;

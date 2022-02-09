@@ -3,11 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BDArmory.Control;
+using BDArmory.Competition;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Evolution;
-using BDArmory.UI;
 using UnityEngine;
 
 namespace BDArmory.Evolution

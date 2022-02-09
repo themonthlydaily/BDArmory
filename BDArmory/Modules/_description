@@ -1,0 +1,2 @@
+Modules that get added to vessels or parts.
+- FIXME This should probably be broken down into sections (and merged with other sections) instead of having them clumped together, e.g., Control, Weapons (Guns, Missiles, Ammo, Other), Armour, GameModes, Radar, Targeting, Utilities (vessel/part utils), Utils (code utils).

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using UnityEngine;
 
-namespace BDArmory.Competition
+namespace BDArmory.Competition.SpawnStrategies
 {
     public class PointSpawnStrategy : SpawnStrategy
     {

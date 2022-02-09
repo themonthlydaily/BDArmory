@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using BDArmory.Competition.RemoteOrchestration;
 namespace BDArmory.Competition
 {
     public interface OrchestrationStrategy

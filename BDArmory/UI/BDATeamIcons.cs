@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
 using BDArmory.Modules;
 using UnityEngine;
-using BDArmory.Control;
+using BDArmory.Competition;
+using BDArmory.Competition.VesselSpawning;
 using System;
 
 namespace BDArmory.UI
@@ -340,7 +341,7 @@ namespace BDArmory.UI
 
                                             if (BDTISettings.SCORE)
                                             {
-                                                BDArmory.Control.ScoringData scoreData = null;
+                                                ScoringData scoreData = null;
                                                 int Score = 0;
 
                                                 if (BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(wm.Current.vessel.vesselName))

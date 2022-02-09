@@ -1,7 +1,6 @@
 ﻿﻿using System;
 using System.Collections.Generic;
 using BDArmory.Competition;
-using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;

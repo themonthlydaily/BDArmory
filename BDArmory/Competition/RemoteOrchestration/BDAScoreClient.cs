@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using BDArmory.Core;
 
-namespace BDArmory.Competition
+namespace BDArmory.Competition.RemoteOrchestration
 {
 
     public class BDAScoreClient

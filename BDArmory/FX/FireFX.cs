@@ -1,5 +1,5 @@
 ﻿using System;
-using BDArmory.Control;
+using BDArmory.Competition;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Utils;

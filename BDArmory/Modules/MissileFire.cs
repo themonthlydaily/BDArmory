@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using KSP.Localization;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
 
-namespace BDArmory.Control
+namespace BDArmory.Competition.VesselSpawning
 {
     public class SpawnLocation
     {

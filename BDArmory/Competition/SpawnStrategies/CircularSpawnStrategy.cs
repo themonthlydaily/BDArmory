@@ -2,11 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using UnityEngine;
-using static BDArmory.Control.VesselSpawner;
+using BDArmory.Competition.RemoteOrchestration;
+using static BDArmory.Competition.VesselSpawning.VesselSpawner;
 
-namespace BDArmory.Competition
+namespace BDArmory.Competition.SpawnStrategies
 {
     public class CircularSpawnStrategy : SpawnStrategy
     {
