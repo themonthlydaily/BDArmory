@@ -46,6 +46,7 @@ namespace BDArmory.UI
             open = true;
             selectedWeapon = weapon;
             windowLocation = position;
+            if (weapon.ammoBelt != "def") beltString = weapon.ammoBelt;
             AList = BDAcTools.ParseNames(weapon.bulletType);
             
             for (int a = 0; a < AList.Count; a++)
@@ -153,7 +154,7 @@ namespace BDArmory.UI
             float ammolines = 0.1f;
             for (int i = 0; i < AList.Count; i++)
             {
-                string ammoname = BulletInfo.bullets[AList[i]].DisplayName;
+                string ammoname = String.IsNullOrEmpty(BulletInfo.bullets[AList[i]].DisplayName) ? BulletInfo.bullets[AList[i]].name : BulletInfo.bullets[AList[i]].DisplayName;
                 if (GUI.Button(new Rect(margin * 2, (line + labelLines + ammolines) * buttonHeight, (width - 4 * margin), buttonHeight), ammoname, BDArmorySetup.BDGuiSkin.button))
                 {
                     beltString += ammoname;
