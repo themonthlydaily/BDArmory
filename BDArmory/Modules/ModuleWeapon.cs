@@ -2251,7 +2251,7 @@ namespace BDArmory.Modules
                 }
                 if (newTex)
                 {
-                    laserRenderers[i].material.mainTexture = GameDatabase.Instance.GetTexture(laserTexList[UnityEngine.Random.Range(0, laserTexList.Count-1)], false); //add support for multiple tex patchs, randomly cycle through
+                    laserRenderers[i].material.mainTexture = GameDatabase.Instance.GetTexture(laserTexList[UnityEngine.Random.Range(0, laserTexList.Count - 1)], false); //add support for multiple tex patchs, randomly cycle through
                     laserRenderers[i].material.SetTextureScale("_MainTex", new Vector2(beamScalar, 1));
                 }
                 if (newWidth)
@@ -3821,9 +3821,12 @@ namespace BDArmory.Modules
             {
                 isReloading = true;
                 autoFire = false;
-                for (int i = 0; i < laserRenderers.Length; i++)
+                if (eWeaponType == WeaponTypes.Laser)
                 {
-                    laserRenderers[i].enabled = false;
+                    for (int i = 0; i < laserRenderers.Length; i++)
+                    {
+                        laserRenderers[i].enabled = false;
+                    }
                 }
                 audioSource.Stop();
                 wasFiring = false;
