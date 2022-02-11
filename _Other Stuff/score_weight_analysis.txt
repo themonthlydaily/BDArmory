@@ -29,7 +29,7 @@ Average kda / hd: 1.114
 1.87 / 2.65 = 0.7057 : Tournament 66642576-missiles
 2.27 /  0.7 =  3.243 : Tournament 66651588-micro-planes
 0.47 / 2.66 = 0.1767 : Tournament 66667819-ramming
-2.98 / 1.49 =      2 : Tournament 66681234-mix-5-planes
- 2.3 / 1.49 =  1.544 : Tournament 66687119-mix-12-planes
+2.98 / 1.49 =      2 : Tournament 66681234-mix-5-planes (smallish)
+ 2.3 / 1.49 =  1.544 : Tournament 66687119-mix-12-planes (smallish)
 1.68 / 2.52 = 0.6667 : Tournament 66698855-missiles
 1.44 / 2.68 = 0.5373 : Tournament 66733324-rockets-8-planes
