@@ -1807,7 +1807,6 @@ namespace BDArmory.Modules
 
                                 heat += heatPerShot;
                                 //EC
-                                DrainECPerShot();
                                 RoundsRemaining++;
                                 if (BurstOverride)
                                 {
@@ -2548,16 +2547,15 @@ namespace BDArmory.Modules
         #endregion RocketFire
         //Shared FX and resource consumption code
         #region WeaponUtilities
-        void DrainECPerShot()
-        {
-            if (ECPerShot == 0) return;
-            //double drainAmount = ECPerShot * TimeWarp.fixedDeltaTime;
-            double drainAmount = ECPerShot;
-            double chargeAvailable = part.RequestResource("ElectricCharge", drainAmount, ResourceFlowMode.ALL_VESSEL);
-        }
 
         bool CanFire(float AmmoPerShot)
         {
+            if (!hasGunner)
+            {
+                ScreenMessages.PostScreenMessage("Weapon Requires Gunner", 5.0f, ScreenMessageStyle.UPPER_CENTER);
+                return false;
+            }
+            if (BDArmorySettings.INFINITE_AMMO) return true;
             if (ECPerShot != 0)
             {
                 double chargeAvailable = part.RequestResource("ElectricCharge", ECPerShot, ResourceFlowMode.ALL_VESSEL);
@@ -2566,14 +2564,9 @@ namespace BDArmory.Modules
                     ScreenMessages.PostScreenMessage("Weapon Requires EC", 5.0f, ScreenMessageStyle.UPPER_CENTER);
                     return false;
                 }
-                else return true;
+                //else return true; //this is causing weapons thath have ECPerShot + standard ammo (railguns, etc) to not consume ammo, only EC
             }
-            if (!hasGunner)
-            {
-                ScreenMessages.PostScreenMessage("Weapon Requires Gunner", 5.0f, ScreenMessageStyle.UPPER_CENTER);
-                return false;
-            }
-            if ((BDArmorySettings.INFINITE_AMMO || part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0))
+            if (part.RequestResource(ammoName.GetHashCode(), (double)AmmoPerShot) > 0)
             {
                 return true;
             }
@@ -4925,7 +4918,7 @@ namespace BDArmory.Modules
                             continue;
                         }
                         ParseBulletFuzeType(binfo.fuzeType);
-                        output.AppendLine($"Bullet type: {binfo.DisplayName}");
+                        output.AppendLine($"Bullet type: {(string.IsNullOrEmpty(binfo.DisplayName) ? binfo.name : binfo.DisplayName)}");
                         output.AppendLine($"Bullet mass: {Math.Round(binfo.bulletMass, 2)} kg");
                         output.AppendLine($"Muzzle velocity: {Math.Round(binfo.bulletVelocity, 2)} m/s");
                         //output.AppendLine($"Explosive: {binfo.explosive}");
@@ -4982,7 +4975,7 @@ namespace BDArmory.Modules
                         {
                             output.AppendLine($"Beehive Shell:");
                             BulletInfo sinfo = BulletInfo.bullets[binfo.subMunitionType.ToString()];
-                            output.AppendLine($"- deploys {sinfo.subProjectileCount}x {sinfo.DisplayName}");
+                            output.AppendLine($"- deploys {sinfo.subProjectileCount}x {(string.IsNullOrEmpty(sinfo.DisplayName) ? sinfo.name : sinfo.DisplayName)}");
                         }
                         output.AppendLine("");
                     }
