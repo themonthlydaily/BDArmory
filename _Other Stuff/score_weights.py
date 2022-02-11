@@ -9,7 +9,9 @@
 #  dmg ~= 4*dmgIn ~= 2*(str+hits) for rockets and missiles
 #  k+a-d = α * (dmg+hits+rams), where α ~= 1 for normal planes, α ~= 0.7 for tanky planes, α ~= 2 for small planes and α ~= 3 for micro planes.
 #
-# Tournaments to run: S4R1, S4R2, S4R3, S4R7, tmp/tmp10 (missiles), tmp/tmp6 (rockets/missiles), tmp/tmp9 (micro), tmp/tmp12 (ramming), tmp/tmp (mixed) (redo rockets with increased FiringTolerance tmp/tmp6)
+# Tournaments run to get the proposed weights:
+#   S4R1, S4R2, S4R3, S4R7 (x3), tmp/tmp10 (missiles) (x2 with other weapons, x2 without), tmp/tmp6 (rockets/missiles) (x2), tmp/tmp9 (micro), tmp/tmp12 (ramming), tmp/tmp (mixed) (x2)
+#   Total: 352 rounds, 800 heats.
 
 import argparse
 import sys
@@ -21,7 +23,7 @@ parser.add_argument('-f', '--full', action='store_true', help="Use the full comp
 parser.add_argument('-sw', '--show-weights', action='store_true', help="Show the weights, then quit.")
 args = parser.parse_args()
 
-weights = [1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1, 2e-3, 3, 0, 0, 0, 0, 1.5, 4e-3, 0, 1e-4, 4e-5, 0.035, 0, 6e-4, 0, 1.5e-4, 4.5e-5, 0.15, 0, 0.002, 0, 3e-5, 1.5e-5, 0.075, 0]
+weights = [1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1, 2e-3, 3, 0, 0, 0, 0, 1.5, 4e-3, 0, 1e-4, 4e-5, 0.035, 0, 6e-4, 0, 1.5e-4, 5e-5, 0.15, 0, 0.002, 0, 3e-5, 1.5e-5, 0.075, 0]
 entries = {'deaths': 3, 'kills': 12, 'assists': 17, 'hit': 18, 'dmg': 20, 'dmgIn': 21, 'Rstr': 22, 'Rhit': 24, 'Rdmg': 26, 'RdmgIn': 27, 'Mstr': 28, 'Mhit': 30, 'Mdmg': 32, 'MdmgIn': 33, 'ram': 34}
 if args.show_weights:
 	for k, v in entries.items():
