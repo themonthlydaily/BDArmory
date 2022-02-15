@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
 
+VERSION = "1.13.7"
+
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
 parser.add_argument('-q', '--quiet', action='store_true', help="Don't print results summary to console.")
@@ -24,8 +26,13 @@ parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't d
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
 parser.add_argument('-z', '--zero-lowest-score', action='store_true', help="Shift the scores so that the lowest is 0.")
 parser.add_argument('-sw', '--show-weights', action='store_true', help="Display the score weights.")
+parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
+
+if args.version:
+    print(f"Version: {VERSION}")
+    sys.exit()
 
 if args.current_dir and len(args.tournament) == 0:
     tournamentDirs = [Path('')]
@@ -109,7 +116,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         duration = float(field[field.find('(') + 4:field.find(')') - 1])
                         timestamp = datetime.fromisoformat(field[field.find(' at ') + 4:])
                         tournamentData[round.name][heat.name]['duration'] = duration
-                        tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp - timedelta(seconds=duration)), max(tournamentMetadata['duration'][1], timestamp)) if 'duration' in tournamentMetadata else (timestamp - timedelta(seconds=duration), timestamp)
+                        tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp), max(tournamentMetadata['duration'][1], timestamp + timedelta(seconds=duration))) if 'duration' in tournamentMetadata else (timestamp, timestamp + timedelta(seconds=duration))
                     elif field.startswith('ALIVE:'):
                         state, craft = field.split(':', 1)
                         tournamentData[round.name][heat.name]['craft'][craft] = {'state': state}
