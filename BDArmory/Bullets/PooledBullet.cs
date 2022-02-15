@@ -198,7 +198,7 @@ namespace BDArmory.Bullets
                     plumeModelPath = nuke.plumeModelPath;
                     debrisModelPath = nuke.debrisModelPath;
                     blastSoundPath = nuke.blastSoundPath;
-                }    
+                }
             }
             distanceTraveled = 0; // Reset the distance travelled for the bullet (since it comes from a pool).
 
@@ -801,7 +801,7 @@ namespace BDArmory.Bullets
                 if (emp == null)
                 {
                     emp = (ModuleDrainEC)hitPart.vessel.rootPart.AddModule("ModuleDrainEC");
-                } 
+                }
                 emp.incomingDamage += (caliber * Mathf.Clamp(bulletMass - tntMass, 0.1f, 101)); //soft EMP caps at 100; can always add a EMP amount value to bulletcfg later, but this should work for now
                 emp.softEMP = true;
             }
@@ -1205,11 +1205,11 @@ namespace BDArmory.Bullets
 
             if (distanceTraveled <= detonationRange * 2.5f && (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Timed)) return false; //bullet not past arming distance
 
-            if (!(((explosive || nuclear) && tntMass > 0) || beehive)) return false; 
+            if (!(((explosive || nuclear) && tntMass > 0) || beehive)) return false;
 
             if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
             {
-                if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange/2)
+                if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
@@ -1225,7 +1225,7 @@ namespace BDArmory.Bullets
             }
             if (fuzeType == BulletFuzeTypes.Proximity || fuzeType == BulletFuzeTypes.Flak)
             {
-                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
+                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
                 {
                     while (hitsEnu.MoveNext())
                     {
@@ -1348,7 +1348,7 @@ namespace BDArmory.Bullets
             }
             return false;
         }
-       
+
         public void UpdateWidth(Camera c, float resizeFactor)
         {
             if (c == null)

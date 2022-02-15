@@ -166,6 +166,9 @@ namespace BDArmory.Modules
         public bool targetWeapons = false;
         public bool targetMass = false;
 
+        int layerMask1 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
+        int layerMask2 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19); // Why 19 and why not the other layer mask?
+
         enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
         TargetAcquisitionType lastTargetAcquisitionType = TargetAcquisitionType.None;
@@ -2027,7 +2030,7 @@ namespace BDArmory.Modules
                     Ray ray = new Ray(tf.position, rayDirection);
                     lr.useWorldSpace = false;
                     lr.SetPosition(0, Vector3.zero);
-                    var hits = Physics.RaycastAll(ray, maxTargetingRange, 9076737);
+                    var hits = Physics.RaycastAll(ray, maxTargetingRange, layerMask1);
                     if (hits.Length > 0) // Find the first valid hit.
                     {
                         var orderedHits = hits.OrderBy(x => x.distance);
@@ -2124,7 +2127,7 @@ namespace BDArmory.Modules
                                 }
                                 if (HeatRay)
                                 {
-                                    using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+                                    using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), layerMask2).AsEnumerable().GetEnumerator())
                                     {
                                         while (hitsEnu2.MoveNext())
                                         {
@@ -2727,7 +2730,7 @@ namespace BDArmory.Modules
                 Ray ray = new Ray(fireTransforms[i].position, fireTransforms[i].forward);
                 RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
+                if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
                 {
                     KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                     Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -2926,7 +2929,7 @@ namespace BDArmory.Modules
                     Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
                     RaycastHit hit;
 
-                    if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
+                    if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
                     {
                         KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                         Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -3075,7 +3078,7 @@ namespace BDArmory.Modules
                 {
                     Ray ray = new Ray(fireTransform.position, fireTransform.forward);
                     RaycastHit rayHit;
-                    if (Physics.Raycast(ray, out rayHit, maxTargetingRange, 9076737))
+                    if (Physics.Raycast(ray, out rayHit, maxTargetingRange, layerMask1))
                     {
                         bulletPrediction = rayHit.point;
                     }
@@ -3171,7 +3174,7 @@ namespace BDArmory.Modules
                                 trajectoryPoints.Add(simCurrPos);
                             if (!aiControlled && !slaved)
                             {
-                                if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), 9076737))
+                                if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1))
                                 {
                                     /*
                                     Vessel hitVessel = null;
@@ -3296,7 +3299,7 @@ namespace BDArmory.Modules
                 ray.origin = position;
                 ray.direction = velocity;
                 var altitude = FlightGlobals.getAltitudeAtPos(position + velocity * timeStep);
-                if ((Physics.Raycast(ray, out hit, timeStep * velocity.magnitude, 9076737) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
+                if ((Physics.Raycast(ray, out hit, timeStep * velocity.magnitude, layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
                     || (!ignoreWater && altitude < 0)) // FIXME What colliders is this bit mask actually detecting? 2<<0, 2<<15, 2<<17, 2<<19, 2<<23?
                 {
                     switch (stage)

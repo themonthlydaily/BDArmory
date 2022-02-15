@@ -1,5 +1,6 @@
 ﻿using BDArmory.Control;
 using BDArmory.Core;
+using BDArmory.Core.Utils;
 using KSP.Localization;
 using System.Collections;
 using System.Collections.Generic;
@@ -360,7 +361,7 @@ namespace BDArmory.UI
                 {
                     Ray ray = new Ray(FlightCamera.fetch.mainCamera.transform.position, FlightCamera.fetch.mainCamera.transform.forward);
                     RaycastHit hit;
-                    if (Physics.Raycast(ray, out hit, 10000, 1 << 15))
+                    if (Physics.Raycast(ray, out hit, 10000, (int)LayerMasks.Scenery))
                     {
                         BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = FlightGlobals.currentMainBody.GetLatitudeAndLongitude(hit.point);
                         spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;

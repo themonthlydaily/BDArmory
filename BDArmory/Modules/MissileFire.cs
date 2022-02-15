@@ -7,6 +7,7 @@ using KSP.Localization;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Guidances;
 using BDArmory.Misc;
@@ -3128,6 +3129,7 @@ namespace BDArmory.Modules
                     return false;
                 }
 
+                int layerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19);
                 if (ml.dropTime >= 0.1f)
                 {
                     //debug lines
@@ -3191,7 +3193,7 @@ namespace BDArmory.Modules
                     using (IEnumerator<Ray> rt = rays.AsEnumerable().GetEnumerator())
                         while (rt.MoveNext())
                         {
-                            RaycastHit[] hits = Physics.RaycastAll(rt.Current, rayDistance, 557057);
+                            RaycastHit[] hits = Physics.RaycastAll(rt.Current, rayDistance, layerMask);
                             using (IEnumerator<RaycastHit> t1 = hits.AsEnumerable().GetEnumerator())
                                 while (t1.MoveNext())
                                 {
@@ -3207,7 +3209,7 @@ namespace BDArmory.Modules
                 }
 
                 //forward check for no-drop missiles
-                RaycastHit[] hitparts = Physics.RaycastAll(new Ray(ml.MissileReferenceTransform.position, ml.GetForwardTransform()), 50, 557057);
+                RaycastHit[] hitparts = Physics.RaycastAll(new Ray(ml.MissileReferenceTransform.position, ml.GetForwardTransform()), 50, layerMask);
                 using (IEnumerator<RaycastHit> t = hitparts.AsEnumerable().GetEnumerator())
                     while (t.MoveNext())
                     {
@@ -5859,6 +5861,7 @@ namespace BDArmory.Modules
             currPos = ml.MissileReferenceTransform.position;
 
             bombAimerPosition = Vector3.zero;
+            int aimerLayerMask = (int)(LayerMasks.Scenery | LayerMasks.EVA); // Why EVA?
 
             bool simulating = true;
             while (simulating)
@@ -5894,7 +5897,7 @@ namespace BDArmory.Modules
 
                 Ray ray = new Ray(prevPos, currPos - prevPos);
                 RaycastHit hitInfo;
-                if (Physics.Raycast(ray, out hitInfo, Vector3.Distance(prevPos, currPos), (1 << 15) | (1 << 17)))
+                if (Physics.Raycast(ray, out hitInfo, Vector3.Distance(prevPos, currPos), aimerLayerMask))
                 {
                     bombAimerPosition = hitInfo.point;
                     simulating = false;
