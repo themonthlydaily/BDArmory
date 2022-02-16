@@ -323,14 +323,17 @@ namespace BDArmory.UI
                         fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_Minimal");
                         break;
                     case 1:
-                        fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_Default");
+                        fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_Default"); // Full cockpits or the first combat seat if no cockpits are found.
                         break;
                     case 2:
+                        fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_AllControlPoints");
+                        break;
+                    case 3:
                         fillSeats = Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats_Cabins");
                         break;
                 }
                 GUI.Label(SLeftSliderRect(++line), $"{Localizer.Format("#LOC_BDArmory_Settings_SpawnFillSeats")}:  ({fillSeats})", leftLabel); // Fill Seats
-                BDArmorySettings.VESSEL_SPAWN_FILL_SEATS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_FILL_SEATS, 0f, 2f));
+                BDArmorySettings.VESSEL_SPAWN_FILL_SEATS = Mathf.RoundToInt(GUI.HorizontalSlider(SRightSliderRect(line), BDArmorySettings.VESSEL_SPAWN_FILL_SEATS, 0f, 3f));
 
                 string numberOfTeams;
                 switch (BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS)
