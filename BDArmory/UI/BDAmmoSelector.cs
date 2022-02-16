@@ -157,7 +157,7 @@ namespace BDArmory.UI
                 string ammoname = String.IsNullOrEmpty(BulletInfo.bullets[AList[i]].DisplayName) ? BulletInfo.bullets[AList[i]].name : BulletInfo.bullets[AList[i]].DisplayName;
                 if (GUI.Button(new Rect(margin * 2, (line + labelLines + ammolines) * buttonHeight, (width - 4 * margin), buttonHeight), ammoname, BDArmorySetup.BDGuiSkin.button))
                 {
-                    beltString += ammoname;
+                    beltString += BulletInfo.bullets[AList[i]].name;
                     beltString += "; ";
                     if (lastGUIstring != ammoname)
                     {

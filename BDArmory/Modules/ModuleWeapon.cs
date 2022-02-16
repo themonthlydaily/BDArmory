@@ -1407,7 +1407,10 @@ namespace BDArmory.Modules
                 }
                 else
                 {
-                    audioSource.Stop();
+                    if (!oneShotSound)
+                    {
+                        audioSource.Stop();
+                    }
                     autoFire = false;
                 }
 
@@ -1428,17 +1431,16 @@ namespace BDArmory.Modules
 
                     if (showReloadMeter)
                     {
-                        if (isReloading)
-                        {
-                            gauge.UpdateReloadMeter(ReloadTimer);
-                        }
-                        else
                         {
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                                 gauge.UpdateReloadMeter((Time.time - timeFired) * BDArmorySettings.FIRE_RATE_OVERRIDE / 60);
                             else
                                 gauge.UpdateReloadMeter((Time.time - timeFired) * roundsPerMinute / 60);
                         }
+                    }
+                    if (isReloading)
+                    {
+                        gauge.UpdateReloadMeter(ReloadTimer);
                     }
                     gauge.UpdateHeatMeter(heat / maxHeat);
                 }
@@ -1471,7 +1473,7 @@ namespace BDArmory.Modules
                     {
                         laserRenderers[i].enabled = false;
                     }
-                    audioSource.Stop();
+                    //audioSource.Stop();
                 }
                 vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); //ammo count was originally updating only for active vessel, while reload can be called by any loaded vessel, and needs current ammo count
                 ammoCount = ammoCurrent;
@@ -3794,7 +3796,7 @@ namespace BDArmory.Modules
             {
                 isOverheated = true;
                 autoFire = false;
-                audioSource.Stop();
+                if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
@@ -3825,7 +3827,7 @@ namespace BDArmory.Modules
                 {
                     laserRenderers[i].enabled = false;
                 }
-                audioSource.Stop();
+                if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 weaponManager.ResetGuardInterval();
                 showReloadMeter = true;
