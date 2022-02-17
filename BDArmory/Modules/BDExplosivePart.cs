@@ -237,7 +237,7 @@ namespace BDArmory.Modules
             {
                 OnUpdateEditor();
             }
-            if (hasDetonated)
+            if (hasDetonated) // FIXME PHYSX This should be in FixedUpdate
             {
                 this.part.explode();
             }

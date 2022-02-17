@@ -482,7 +482,7 @@ namespace BDArmory.Modules
 
         void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && radarEnabled)
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && radarEnabled) // FIXME PHYSX Is this just visual or is it physics related?
             {
                 if (omnidirectional)
                 {

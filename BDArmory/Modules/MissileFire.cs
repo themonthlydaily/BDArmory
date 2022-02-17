@@ -1176,13 +1176,13 @@ namespace BDArmory.Modules
 
                     DisplaySelectedWeaponMessage();
                 }
-                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
+                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex]) // FIXME PHYSX This should probably also be in FixedUpdate
                     selectedWeapon = weaponArray[weaponIndex];
 
                 //finding next rocket to shoot (for aimer)
                 //FindNextRocket();
 
-                //targeting
+                //targeting FIXME PHYSX this should occur in FixedUpdate (using a timer if it's to occur less often).
                 if (weaponIndex > 0 &&
                     (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
                     selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||

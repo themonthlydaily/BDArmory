@@ -495,6 +495,7 @@ namespace BDArmory.Radar
                 return;
             }
 
+            // FIXME PHYSX Most of this should be in FixedUpdate using a timer to lower the frequency if that's desired.
             UpdateReferenceTransform();
 
             if (radarCount > 0)

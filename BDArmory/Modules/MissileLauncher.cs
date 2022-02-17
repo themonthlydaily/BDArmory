@@ -710,7 +710,7 @@ namespace BDArmory.Modules
         void Update()
         {
             if (!HasFired)
-                CheckDetonationState();
+                CheckDetonationState(); // FIXME PHYSX Why is this even checked here before the missile is fired? Also, for consistent results this should occur in the FixedUpdate with a low-freq timer if it's intended not to run every frame. Same for the dropTime.
             if (HighLogic.LoadedSceneIsFlight)
             {
                 if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0) //#710
@@ -957,6 +957,24 @@ namespace BDArmory.Modules
                 try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch?: " + (FlightCamera.fetch == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG FlightCamera.fetch: " + e2.Message); }
                 try { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch.mainCamera?: " + (FlightCamera.fetch.mainCamera == null)); } catch (Exception e2) { Debug.LogError("[BDArmory.MissileLauncher]: DEBUG FlightCamera.fetch.mainCamera: " + e2.Message); }
                 throw; // Re-throw the exception so behaviour is unchanged so we see it.
+                /* FIXME
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG Object reference not set to an instance of an object 
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null part?: False
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null part.rb?: False
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null vessel?: False
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null audioSource?: False
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null sfAudioSource?: False
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null FlightGlobals.ActiveVessel?: False
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch?: False
+                    [ERR 12:27:07.687] [BDArmory.MissileLauncher]: DEBUG null FlightCamera.fetch.mainCamera?: False
+
+                    [ERR 12:27:07.696] Module MissileLauncher threw during OnFixedUpdate: System.NullReferenceException: Object reference not set to an instance of an object
+                        at BDArmory.Radar.RadarUtils.RadarUpdateMissileLock (UnityEngine.Ray ray, System.Single fov, BDArmory.Targeting.TargetSignatureData[]& dataArray, System.Single dataPersistTime, BDArmory.Modules.MissileBase missile) [0x00066] in <f09276216814494e99bc0ae1d023f3e6>:0 
+                        at BDArmory.Modules.MissileBase.UpdateRadarTarget () [0x00328] in <f09276216814494e99bc0ae1d023f3e6>:0 
+                        at BDArmory.Modules.MissileLauncher.UpdateGuidance () [0x000a0] in <f09276216814494e99bc0ae1d023f3e6>:0 
+                        at BDArmory.Modules.MissileLauncher.OnFixedUpdate () [0x00457] in <f09276216814494e99bc0ae1d023f3e6>:0 
+                        at Part.ModulesOnFixedUpdate () [0x000bd] in <4deecb19beb547f19b1ff89b4c59bd84>:0 
+                */
             }
         }
 

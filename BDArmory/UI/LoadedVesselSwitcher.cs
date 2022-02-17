@@ -170,7 +170,7 @@ namespace BDArmory.UI
                     _showGui = BDArmorySetup.Instance.showVesselSwitcherGUI;
                     if (_showGui && updateTimer < 0)
                     {
-                        UpdateList();
+                        UpdateList(); // FIXME PHYSX updating the list should occur in FixedUpdate and happen regardless of whether the GUI is visible as other things rely on this list.
                         updateTimer = 0.5f;    //next update in half a sec only
                     }
                 }

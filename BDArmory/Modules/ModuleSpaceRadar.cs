@@ -4,7 +4,7 @@ namespace BDArmory.Modules
 {
     public class ModuleSpaceRadar : ModuleRadar
     {
-        public void Update() // runs every frame
+        public void Update() // runs every frame FIXME PHYSX This should be in FixedUpdate
         {
             if (HighLogic.LoadedSceneIsFlight) // if in the flight scene
             {

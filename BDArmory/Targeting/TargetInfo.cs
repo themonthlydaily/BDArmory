@@ -256,7 +256,7 @@ namespace BDArmory.Targeting
             }
             else
             {
-                if ((vessel.vesselType == VesselType.Debris) && (weaponManager == null))
+                if ((vessel.vesselType == VesselType.Debris) && (weaponManager == null)) // FIXME PHYSX This ought to be in FixedUpdate
                 {
                     BDATargetManager.RemoveTarget(this);
                     Team = null;
