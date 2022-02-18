@@ -1082,6 +1082,8 @@ namespace BDArmory.Modules
                     TakeOff(s);
                     turningTimer = 0;
                 }
+                else // Have taken off, but is in Follow mode.
+                { UpdateCommand(s); }
             }
             else
             {
