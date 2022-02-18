@@ -7,6 +7,7 @@ using System.Text;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.Guidances;
 using BDArmory.Misc;
 using BDArmory.Targeting;
@@ -424,6 +425,8 @@ namespace BDArmory.Modules
             { nameof(minSpeed), 2000f },
             { nameof(strafingSpeed), 2000f },
             { nameof(idleSpeed), 3000f },
+            { nameof(lowSpeedSwitch), 3000f },
+            { nameof(cornerSpeed), 3000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
             { nameof(extendMult), 200f },
@@ -1081,6 +1084,8 @@ namespace BDArmory.Modules
                     TakeOff(s);
                     turningTimer = 0;
                 }
+                else // Have taken off, but is in Follow mode.
+                { UpdateCommand(s); }
             }
             else
             {
@@ -2148,9 +2153,9 @@ namespace BDArmory.Modules
             Vector3 forwardDirection = (vessel.horizontalSrfSpeed < 10 ? vesselTransform.up : (Vector3)vessel.srf_vel_direction) * 100; // Forward direction not adjusted for terrain.
             Vector3 forwardPoint = vessel.transform.position + forwardDirection * 100; // Forward point not adjusted for terrain.
             Ray ray = new Ray(forwardPoint, relativeVelocityDownDirection); // Check ahead and below.
-            Vector3 terrainBelowAheadNormal = (Physics.Raycast(ray, out rayHit, minAltitude + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below point ahead.
+            Vector3 terrainBelowAheadNormal = (Physics.Raycast(ray, out rayHit, minAltitude + 1.0f, (int)LayerMasks.Scenery)) ? rayHit.normal : upDirection; // Terrain normal below point ahead.
             ray = new Ray(vessel.transform.position, relativeVelocityDownDirection); // Check here below.
-            Vector3 terrainBelowNormal = (Physics.Raycast(ray, out rayHit, minAltitude + 1.0f, 1 << 15)) ? rayHit.normal : upDirection; // Terrain normal below here.
+            Vector3 terrainBelowNormal = (Physics.Raycast(ray, out rayHit, minAltitude + 1.0f, (int)LayerMasks.Scenery)) ? rayHit.normal : upDirection; // Terrain normal below here.
             Vector3 normalToUse = Vector3.Dot(vessel.srf_vel_direction, terrainBelowNormal) < Vector3.Dot(vessel.srf_vel_direction, terrainBelowAheadNormal) ? terrainBelowNormal : terrainBelowAheadNormal; // Use the normal that has the steepest slope relative to our velocity.
             forwardPoint = vessel.transform.position + Vector3.ProjectOnPlane(forwardDirection, normalToUse).normalized * 100; // Forward point adjusted for terrain.
             float rise = Mathf.Clamp((float)vessel.srfSpeed * 0.215f, 5, 100); // Up to 45° rise angle above terrain changes at 465m/s.
@@ -2191,22 +2196,22 @@ namespace BDArmory.Modules
                 Ray rayForwardLeft = new Ray(vessel.transform.position, (vessel.srf_vel_direction - relativeVelocityRightDirection).normalized);
                 Ray rayForwardRight = new Ray(vessel.transform.position, (vessel.srf_vel_direction + relativeVelocityRightDirection).normalized);
                 RaycastHit rayHit;
-                if (Physics.Raycast(rayForwardDown, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15)) // sqrt(2) should be sufficient, so 1.5 will cover it.
+                if (Physics.Raycast(rayForwardDown, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery)) // sqrt(2) should be sufficient, so 1.5 will cover it.
                 {
                     terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
                 }
-                if (Physics.Raycast(rayForwardUp, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
+                if (Physics.Raycast(rayForwardUp, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
                     terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
                 }
-                if (Physics.Raycast(rayForwardLeft, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
+                if (Physics.Raycast(rayForwardLeft, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
                     terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
                 }
-                if (Physics.Raycast(rayForwardRight, out rayHit, 1.5f * terrainAlertDetectionRadius, 1 << 15) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
+                if (Physics.Raycast(rayForwardRight, out rayHit, 1.5f * terrainAlertDetectionRadius, (int)LayerMasks.Scenery) && (terrainAlertDistance < 0.0f || rayHit.distance < terrainAlertDistance))
                 {
                     terrainAlertDistance = rayHit.distance * -Vector3.Dot(rayHit.normal, vessel.srf_vel_direction);
                     terrainAlertNormal = rayHit.normal;
@@ -2220,7 +2225,7 @@ namespace BDArmory.Modules
                 {
                     // Next, cast a sphere forwards to check for upcoming dangers.
                     Ray ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
-                    if (Physics.SphereCast(ray, terrainAlertDetectionRadius, out rayHit, terrainAlertThreatRange, 1 << 15)) // Found something. 
+                    if (Physics.SphereCast(ray, terrainAlertDetectionRadius, out rayHit, terrainAlertThreatRange, (int)LayerMasks.Scenery)) // Found something. 
                     {
                         // Check if there's anything directly ahead.
                         ray = new Ray(vessel.transform.position, vessel.srf_vel_direction);
@@ -2231,7 +2236,7 @@ namespace BDArmory.Modules
                             terrainAlertDebugPos = rayHit.point;
                             terrainAlertDebugDir = rayHit.normal;
                         }
-                        if (!Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15)) // Nothing directly ahead, so we're just barely avoiding terrain.
+                        if (!Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, (int)LayerMasks.Scenery)) // Nothing directly ahead, so we're just barely avoiding terrain.
                         {
                             // Change the terrain normal and direction as we want to just fly over it instead of banking away from it.
                             terrainAlertNormal = upDirection;
@@ -2254,7 +2259,7 @@ namespace BDArmory.Modules
                             ray = new Ray(vessel.transform.position, upcoming);
                             if (BDArmorySettings.DRAW_DEBUG_LINES)
                                 terrainAlertDebugDraw2 = false;
-                            if (Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, 1 << 15))
+                            if (Physics.Raycast(ray, out rayHit, terrainAlertThreatRange, (int)LayerMasks.Scenery))
                             {
                                 if (rayHit.distance < terrainAlertDistance / Mathf.Sin(phi)) // Hit terrain closer than expected => terrain slope is increasing relative to our velocity direction.
                                 {
@@ -2829,11 +2834,10 @@ namespace BDArmory.Modules
             if ((float)vessel.radarAltitude < 20) return false;
 
             direction = direction.normalized;
-            int layerMask = 1 << 15;
             Ray ray = new Ray(vesselTransform.position + (50 * vesselTransform.up), direction);
             float distance = Mathf.Clamp((float)vessel.srfSpeed * 4f, 125f, 2500);
             RaycastHit hit;
-            if (!Physics.SphereCast(ray, 10, out hit, distance, layerMask)) return false;
+            if (!Physics.SphereCast(ray, 10, out hit, distance, (int)LayerMasks.Scenery)) return false;
             Rigidbody otherRb = hit.collider.attachedRigidbody;
             if (otherRb)
             {

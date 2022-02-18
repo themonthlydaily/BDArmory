@@ -511,7 +511,7 @@ namespace BDArmory.Competition.VesselSpawning
                     {
                         lastTerrainDistance = terrainDistance;
                         yield return new WaitForFixedUpdate();
-                        terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15) ? hit.distance : -1f; // Oceans shouldn't be more than 10km deep...
+                        terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)(spawnConfig.altitude + distanceToCoMainBody), (int)LayerMasks.Scenery) ? hit.distance : -1f; // Oceans shouldn't be more than 10km deep...
                         if (terrainDistance < 0f) // Raycast is failing to find terrain.
                         {
                             if (Planetarium.GetUniversalTime() - startTime < 1) continue; // Give the terrain renderer a chance to spawn the terrain.
@@ -729,7 +729,7 @@ namespace BDArmory.Competition.VesselSpawning
                 ray = new Ray(craftSpawnPosition, -localRadialUnitVector);
                 var distanceToCoMainBody = (craftSpawnPosition - FlightGlobals.currentMainBody.transform.position).magnitude;
                 float distance;
-                if (terrainAltitude > 0 && Physics.Raycast(ray, out hit, (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15))
+                if (terrainAltitude > 0 && Physics.Raycast(ray, out hit, (float)(spawnConfig.altitude + distanceToCoMainBody), (int)LayerMasks.Scenery))
                 {
                     distance = hit.distance;
                     localSurfaceNormal = hit.normal;
@@ -1212,7 +1212,7 @@ namespace BDArmory.Competition.VesselSpawning
                     {
                         lastTerrainDistance = terrainDistance;
                         yield return new WaitForFixedUpdate();
-                        terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)(spawnConfig.altitude + distanceToCoMainBody), 1 << 15) ? hit.distance : -1f; // Oceans shouldn't be more than 10km deep...
+                        terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)(spawnConfig.altitude + distanceToCoMainBody), (int)LayerMasks.Scenery) ? hit.distance : -1f; // Oceans shouldn't be more than 10km deep...
                         if (terrainDistance < 0f || Math.Abs(lastTerrainDistance - terrainDistance) > 0.1f)
                             lastStableTimeStart = Planetarium.GetUniversalTime(); // Reset the stable time tracker.
                         stableTime = Planetarium.GetUniversalTime() - lastStableTimeStart;
@@ -2003,16 +2003,33 @@ namespace BDArmory.Competition.VesselSpawning
                 switch (BDArmorySettings.VESSEL_SPAWN_FILL_SEATS)
                 {
                     case 0: // Minimal plus crewable weapons.
-                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved).ToList(); // Crewed weapons.
-                        var part = shipConstruct.parts.Find(p => p.protoModuleCrew.Count < p.CrewCapacity && !p.FindModuleImplementing<ModuleWeapon>() && (p.FindModuleImplementing<ModuleCommand>() || p.FindModuleImplementing<KerbalSeat>())); // A non-weapon crewed command part.
-                        if (part) crewParts.Add(part);
-                        break;
-                    case 1: // All crewable control points plus crewable weapons.
-                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (p.FindModuleImplementing<ModuleCommand>() || p.FindModuleImplementing<KerbalSeat>() || ((crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved))).ToList();
-                        break;
-                    case 2: // All crewable parts.
-                        crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity).ToList();
-                        break;
+                        {
+                            crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved).ToList(); // Crewed weapons.
+                            var part = shipConstruct.parts.Find(p => p.protoModuleCrew.Count < p.CrewCapacity && !p.FindModuleImplementing<ModuleWeapon>() && (p.FindModuleImplementing<ModuleCommand>() || p.FindModuleImplementing<KerbalSeat>())); // A non-weapon crewed command part.
+                            if (part) crewParts.Add(part);
+                            break;
+                        }
+                    case 1: // All cockpits or the first combat seat if no cockpits are found, plus crewable weapons.
+                        {
+                            crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && p.FindModuleImplementing<ModuleCommand>()).ToList(); // Crewable cockpits.
+                            if (crewParts.Count() == 0)
+                            {
+                                var part = shipConstruct.parts.Find(p => p.protoModuleCrew.Count < p.CrewCapacity && p.FindModuleImplementing<KerbalSeat>() && p.FindModuleImplementing<MissileFire>()); // The first combat seat if no cockpits were found.
+                                if (part) crewParts.Add(part);
+                            }
+                            crewParts.AddRange(shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && ((crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved))); // Crewable weapons.
+                            break;
+                        }
+                    case 2: // All crewable control points plus crewable weapons.
+                        {
+                            crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity && (p.FindModuleImplementing<ModuleCommand>() || p.FindModuleImplementing<KerbalSeat>() || ((crewedWeapon = p.FindModuleImplementing<ModuleWeapon>()) && crewedWeapon.crewserved))).ToList();
+                            break;
+                        }
+                    case 3: // All crewable parts.
+                        {
+                            crewParts = shipConstruct.parts.FindAll(p => p.protoModuleCrew.Count < p.CrewCapacity).ToList();
+                            break;
+                        }
                     default:
                         throw new IndexOutOfRangeException("Invalid Fill Seats value");
                 }

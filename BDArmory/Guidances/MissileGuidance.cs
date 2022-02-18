@@ -2,6 +2,7 @@ using System;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using UnityEngine;
@@ -282,7 +283,7 @@ namespace BDArmory.Guidances
                 Ray terrainRay = new Ray(missileVessel.transform.position, tRayDirection);
                 RaycastHit rayHit;
 
-                if (Physics.Raycast(terrainRay, out rayHit, 8000, (1 << 15) | (1 << 17)))
+                if (Physics.Raycast(terrainRay, out rayHit, 8000, (int)(LayerMasks.Scenery | LayerMasks.EVA))) // Why EVA?
                 {
                     float detectedAlt =
                         Vector3.Project(rayHit.point - missileVessel.transform.position, upDirection).magnitude;
@@ -467,7 +468,7 @@ namespace BDArmory.Guidances
             }
 
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, rayDistance, (1 << 15) | (1 << 17)))
+            if (Physics.Raycast(ray, out rayHit, rayDistance, (int)(LayerMasks.Scenery | LayerMasks.EVA))) // Why EVA?
             {
                 return rayHit.distance;
             }

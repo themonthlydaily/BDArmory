@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.Misc;
 using UniLinq;
@@ -177,6 +178,7 @@ namespace BDArmory.Modules
         float startTime;
 
         Rigidbody rb;
+        private int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);
 
         void Start()
         {
@@ -215,7 +217,7 @@ namespace BDArmory.Modules
                 Ray ray = new Ray(prevPosition, currPosition - prevPosition);
                 RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, dist, 9076737))
+                if (Physics.Raycast(ray, out hit, dist, explosionLayerMask))
                 {
                     Part hitPart = null;
                     try
@@ -281,6 +283,7 @@ namespace BDArmory.Modules
         float startTime;
 
         Rigidbody rb;
+        private int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);
 
         void Start()
         {
@@ -305,7 +308,7 @@ namespace BDArmory.Modules
                 float dist = (currPosition - prevPosition).magnitude;
                 Ray ray = new Ray(prevPosition, currPosition - prevPosition);
                 RaycastHit hit;
-                if (Physics.Raycast(ray, out hit, dist, 9076737))
+                if (Physics.Raycast(ray, out hit, dist, explosionLayerMask))
                 {
                     Destroy(gameObject);
                 }

@@ -168,6 +168,9 @@ namespace BDArmory.Modules
         public bool targetWeapons = false;
         public bool targetMass = false;
 
+        int layerMask1 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
+        int layerMask2 = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19); // Why 19 and why not the other layer mask?
+
         enum TargetAcquisitionType { None, Visual, Slaved, Radar, AutoProxy };
         TargetAcquisitionType targetAcquisitionType = TargetAcquisitionType.None;
         TargetAcquisitionType lastTargetAcquisitionType = TargetAcquisitionType.None;
@@ -917,6 +920,16 @@ namespace BDArmory.Modules
                 Events["ToggleRipple"].guiActiveEditor = false;
                 Fields["useRippleFire"].guiActiveEditor = false;
                 useRippleFire = false;
+                using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator()) //set other weapons in the group to ripple = false if the group contains a weapon with RPM > 1500, should fix the brownings+GAU WG, GAU no longer overheats exploit
+                {
+                    using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                        while (weapon.MoveNext())
+                        {
+                            if (weapon.Current == null) continue;
+                            if (weapon.Current.GetShortName() != this.GetShortName()) continue;
+                            weapon.Current.useRippleFire = false;
+                        }
+                }
             }
 
             if (!(isChaingun || eWeaponType == WeaponTypes.Rocket))//disable rocket RoF slider for non rockets 
@@ -1409,7 +1422,10 @@ namespace BDArmory.Modules
                 }
                 else
                 {
-                    audioSource.Stop();
+                    if (!oneShotSound)
+                    {
+                        audioSource.Stop();
+                    }
                     autoFire = false;
                 }
 
@@ -1430,17 +1446,16 @@ namespace BDArmory.Modules
 
                     if (showReloadMeter)
                     {
-                        if (isReloading)
-                        {
-                            gauge.UpdateReloadMeter(ReloadTimer);
-                        }
-                        else
                         {
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                                 gauge.UpdateReloadMeter((Time.time - timeFired) * BDArmorySettings.FIRE_RATE_OVERRIDE / 60);
                             else
                                 gauge.UpdateReloadMeter((Time.time - timeFired) * roundsPerMinute / 60);
                         }
+                    }
+                    if (isReloading)
+                    {
+                        gauge.UpdateReloadMeter(ReloadTimer);
                     }
                     gauge.UpdateHeatMeter(heat / maxHeat);
                 }
@@ -1473,7 +1488,7 @@ namespace BDArmory.Modules
                     {
                         laserRenderers[i].enabled = false;
                     }
-                    audioSource.Stop();
+                    //audioSource.Stop();
                 }
                 vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); //ammo count was originally updating only for active vessel, while reload can be called by any loaded vessel, and needs current ammo count
                 ammoCount = ammoCurrent;
@@ -2029,7 +2044,7 @@ namespace BDArmory.Modules
                     Ray ray = new Ray(tf.position, rayDirection);
                     lr.useWorldSpace = false;
                     lr.SetPosition(0, Vector3.zero);
-                    var hits = Physics.RaycastAll(ray, maxTargetingRange, 9076737);
+                    var hits = Physics.RaycastAll(ray, maxTargetingRange, layerMask1);
                     if (hits.Length > 0) // Find the first valid hit.
                     {
                         var orderedHits = hits.OrderBy(x => x.distance);
@@ -2126,7 +2141,7 @@ namespace BDArmory.Modules
                                 }
                                 if (HeatRay)
                                 {
-                                    using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), 557057).AsEnumerable().GetEnumerator())
+                                    using (var hitsEnu2 = Physics.OverlapSphere(hit.point, (Mathf.Sin(maxDeviation) * (tf.position - laserPoint).magnitude), layerMask2).AsEnumerable().GetEnumerator())
                                     {
                                         while (hitsEnu2.MoveNext())
                                         {
@@ -2729,7 +2744,7 @@ namespace BDArmory.Modules
                 Ray ray = new Ray(fireTransforms[i].position, fireTransforms[i].forward);
                 RaycastHit hit;
 
-                if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
+                if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
                 {
                     KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                     Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -2928,7 +2943,7 @@ namespace BDArmory.Modules
                     Ray ray = FlightCamera.fetch.mainCamera.ViewportPointToRay(mouseAim);
                     RaycastHit hit;
 
-                    if (Physics.Raycast(ray, out hit, maxTargetingRange, 9076737))
+                    if (Physics.Raycast(ray, out hit, maxTargetingRange, layerMask1))
                     {
                         KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                         Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -3077,7 +3092,7 @@ namespace BDArmory.Modules
                 {
                     Ray ray = new Ray(fireTransform.position, fireTransform.forward);
                     RaycastHit rayHit;
-                    if (Physics.Raycast(ray, out rayHit, maxTargetingRange, 9076737))
+                    if (Physics.Raycast(ray, out rayHit, maxTargetingRange, layerMask1))
                     {
                         bulletPrediction = rayHit.point;
                     }
@@ -3173,7 +3188,7 @@ namespace BDArmory.Modules
                                 trajectoryPoints.Add(simCurrPos);
                             if (!aiControlled && !slaved)
                             {
-                                if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), 9076737))
+                                if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1))
                                 {
                                     /*
                                     Vessel hitVessel = null;
@@ -3298,7 +3313,7 @@ namespace BDArmory.Modules
                 ray.origin = position;
                 ray.direction = velocity;
                 var altitude = FlightGlobals.getAltitudeAtPos(position + velocity * timeStep);
-                if ((Physics.Raycast(ray, out hit, timeStep * velocity.magnitude, 9076737) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
+                if ((Physics.Raycast(ray, out hit, timeStep * velocity.magnitude, layerMask1) && (hit.collider != null && hit.collider.gameObject != null && hit.collider.gameObject.GetComponentInParent<Part>() != part)) // Ignore the part firing the projectile.
                     || (!ignoreWater && altitude < 0)) // FIXME What colliders is this bit mask actually detecting? 2<<0, 2<<15, 2<<17, 2<<19, 2<<23?
                 {
                     switch (stage)
@@ -3796,7 +3811,7 @@ namespace BDArmory.Modules
             {
                 isOverheated = true;
                 autoFire = false;
-                audioSource.Stop();
+                if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
@@ -3830,7 +3845,7 @@ namespace BDArmory.Modules
                         laserRenderers[i].enabled = false;
                     }
                 }
-                audioSource.Stop();
+                if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 weaponManager.ResetGuardInterval();
                 showReloadMeter = true;

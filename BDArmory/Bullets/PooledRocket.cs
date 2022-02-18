@@ -4,6 +4,7 @@ using BDArmory.Competition;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
+using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -70,6 +71,8 @@ namespace BDArmory.Bullets
         public bool hasDetonated = false;
         public int penTicker = 0;
         private Part CurrentPart = null;
+        private int collisionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
+        private int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19); // Why 19 and not EVA?
 
         private float distanceFromStart = 0;
 
@@ -302,7 +305,7 @@ namespace BDArmory.Bullets
                 currPosition = transform.position;
                 float dist = (currPosition - prevPosition).magnitude;
                 RocketRay = new Ray(prevPosition, currPosition - prevPosition);
-                var hits = Physics.RaycastAll(RocketRay, dist, 9076737);
+                var hits = Physics.RaycastAll(RocketRay, dist, collisionLayerMask);
                 if (hits.Length > 0)
                 {
                     var orderedHits = hits.OrderBy(x => x.distance);
@@ -383,7 +386,7 @@ namespace BDArmory.Bullets
                             if (concussion && hitPart.rb != null || BDArmorySettings.PAINTBALL_MODE)
                             {
                                 if (concussion && hitPart.rb != null)
-                                        {
+                                {
                                     hitPart.rb.AddForceAtPosition(impactVector.normalized * impulse, hit.point, ForceMode.Acceleration);
                                 }
                                 BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName());
@@ -474,7 +477,7 @@ namespace BDArmory.Bullets
                                 {
                                     float cockpitPen = (float)(16f * impactVelocity * Mathf.Sqrt(rocketMass) / Mathf.Sqrt(caliber));
                                     if (cockpitPen > Mathf.Max(20 / anglemultiplier, 1))
-                                    ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, penTicker > 0 ? false : true, penTicker > 0 ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
+                                        ProjectileUtils.ApplyDamage(hitPart, hit, dmgMult, penetrationFactor, caliber, rocketMass * 1000, impactVelocity, bulletDmgMult, distanceFromStart, explosive, incendiary, false, sourceVessel, rocketName, team, ExplosionSourceType.Rocket, penTicker > 0 ? false : true, penTicker > 0 ? false : true, (cockpitPen > Mathf.Max(20 / anglemultiplier, 1)) ? true : false);
                                     if (!explosive)
                                     {
                                         BDACompetitionMode.Instance.Scores.RegisterRocketStrike(sourceVesselName, hitPart.vessel.GetName()); //if non-explosive hit, add rocketstrike, else ExplosionFX adds rocketstrike from HE detonation
@@ -574,13 +577,13 @@ namespace BDArmory.Bullets
         {
             bool detonate = false;
 
-            if (distanceFromStart <= blastRadius*2) return false;
+            if (distanceFromStart <= blastRadius * 2) return false;
 
             if (!explosive || tntMass <= 0) return false;
 
             if (flak)
             {
-                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, 557057).AsEnumerable().GetEnumerator())
+                using (var hitsEnu = Physics.OverlapSphere(transform.position, detonationRange, explosionLayerMask).AsEnumerable().GetEnumerator())
                 {
                     while (hitsEnu.MoveNext())
                     {
@@ -608,7 +611,7 @@ namespace BDArmory.Bullets
                 }
                 if (isAPSprojectile && (tgtShell != null || tgtRocket != null))
                 {
-                    if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange/2)
+                    if (Vector3.Distance(transform.position, tgtShell != null ? tgtShell.transform.position : tgtRocket.transform.position) < detonationRange / 2)
                     {
                         if (BDArmorySettings.DRAW_DEBUG_LABELS)
                             Debug.Log("[BDArmory.PooledRocket]: rocket proximity to APS target | Distance overlap = " + detonationRange + "| tgt name = " + tgtShell != null ? tgtShell.name : tgtRocket.name);
@@ -657,7 +660,7 @@ namespace BDArmory.Bullets
                     }
                     if (gravitic)
                     {
-                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, 557057).AsEnumerable().GetEnumerator())
+                        using (var hitsEnu = Physics.OverlapSphere(transform.position, blastRadius, explosionLayerMask).AsEnumerable().GetEnumerator())
                         {
                             while (hitsEnu.MoveNext())
                             {
@@ -689,7 +692,7 @@ namespace BDArmory.Bullets
                         {
                             Ray LoSRay = new Ray(transform.position, VectorUtils.GaussianDirectionDeviation(transform.forward, 170));
                             RaycastHit hit;
-                            if (Physics.Raycast(LoSRay, out hit, blastRadius * 1.2f, 9076737)) // only add fires to parts in LoS of blast
+                            if (Physics.Raycast(LoSRay, out hit, blastRadius * 1.2f, collisionLayerMask)) // only add fires to parts in LoS of blast
                             {
                                 KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                 Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -707,7 +710,7 @@ namespace BDArmory.Bullets
                     }
                     if (concussion || EMP || choker)
                     {
-                        using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, 557057).AsEnumerable().GetEnumerator())
+                        using (var hitsEnu = Physics.OverlapSphere(transform.position, 25, explosionLayerMask).AsEnumerable().GetEnumerator())
                         {
                             var craftHit = new HashSet<Vessel>();
                             while (hitsEnu.MoveNext())

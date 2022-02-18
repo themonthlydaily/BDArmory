@@ -911,7 +911,6 @@ namespace BDArmory.Competition
 
         // Competition flags and variables
         public int CompetitionID; // time competition was started
-        bool competitionShouldBeRunning = false;
         public double competitionStartTime = -1;
         public double MutatorResetTime = -1;
         public double competitionPreStartTime = -1;
@@ -1174,6 +1173,8 @@ namespace BDArmory.Competition
                     KerbalSafetyManager.Instance.CheckAllVesselsForKerbals();
                 if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                     LoadedVesselSwitcher.Instance.StartVesselTracing();
+                if (BDArmorySettings.TIME_OVERRIDE && BDArmorySettings.TIME_SCALE != 0)
+                { Time.timeScale = BDArmorySettings.TIME_SCALE; }
             }
         }
 
@@ -1197,7 +1198,6 @@ namespace BDArmory.Competition
             competitionIsActive = false;
             sequencedCompetitionStarting = false;
             competitionStartTime = -1;
-            competitionShouldBeRunning = false;
             if (PhysicsGlobals.GraviticForceMultiplier != 1)
             {
                 lastGravityMultiplier = 1f;
@@ -1215,6 +1215,8 @@ namespace BDArmory.Competition
             deadOrAlive = "";
             if (BDArmorySettings.TRACE_VESSELS_DURING_COMPETITIONS)
                 LoadedVesselSwitcher.Instance.StopVesselTracing();
+            if (BDArmorySettings.TIME_OVERRIDE)
+            { Time.timeScale = 1f; }
         }
 
         void CompetitionStarted()
@@ -2624,13 +2626,17 @@ namespace BDArmory.Competition
         }
         #endregion
 
-        // This is called every Time.fixedDeltaTime.
         void FixedUpdate()
         {
-            if (competitionIsActive)
-                LogRamming();
             s4r1FiringRateUpdatedFromShotThisFrame = false;
             s4r1FiringRateUpdatedFromHitThisFrame = false;
+            if (competitionIsActive)
+            {
+                //Do the per-frame stuff.
+                LogRamming();
+                // Do the lower frequency stuff.
+                DoUpdate();
+            }
         }
 
         // the competition update system
@@ -2641,14 +2647,7 @@ namespace BDArmory.Competition
         HashSet<string> alive = new HashSet<string>();
         public void DoUpdate()
         {
-            // should be called every frame during flight scenes
-            if (competitionStartTime < 0) return;
-            if (competitionIsActive)
-                competitionShouldBeRunning = true;
-            if (competitionShouldBeRunning && !competitionIsActive)
-            {
-                competitionShouldBeRunning = false;
-            }
+            if (competitionStartTime < 0) return; // Note: this is the same condition as competitionIsActive and could probably be dropped.
             // Example usage of UpcomingCollisions(). Note that the timeToCPA values are only updated after an interval of half the current timeToCPA.
             // if (competitionIsActive)
             //     foreach (var upcomingCollision in UpcomingCollisions(100f).Take(3))

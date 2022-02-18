@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using System.Linq;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -1407,7 +1407,7 @@ namespace BDArmory.Radar
         {
             if (!BDArmorySettings.IGNORE_TERRAIN_CHECK)
             {
-                return Physics.Linecast(start, end, 1 << 15);
+                return Physics.Linecast(start, end, (int)LayerMasks.Scenery);
             }
 
             return false;
