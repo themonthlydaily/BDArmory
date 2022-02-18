@@ -32,7 +32,6 @@ IMPROVEMENTS
 	- Fix shrapnel radius of missiles/bombs/shells using standard warheads.
 	- Add support for multiple laserbeamFX textures.
 	- Add DeployableRail module for missilebays.
-	- Explosions from impact-fuzed HE bullets/rockets that penetrate armor no longer have to still bypass armor in explosion calcs (phrasing needs work - explosion from penetrating HE rounds now properly bypass armor in explosion calcs, old way the penetrating HE round still did standard explosion pipeline which included a check to see if the explosion got through hit part's armor).
 	- Explosions from impact-fuzed HE bullets now properly bypass armor when calculating damage to the hit part.
 	- Add weapon priority slider allowing setting custom weapon selection order for Missiles/Bombs.
 - Armor:
