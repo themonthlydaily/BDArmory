@@ -425,6 +425,8 @@ namespace BDArmory.Modules
             { nameof(minSpeed), 2000f },
             { nameof(strafingSpeed), 2000f },
             { nameof(idleSpeed), 3000f },
+            { nameof(lowSpeedSwitch), 3000f },
+            { nameof(cornerSpeed), 3000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
             { nameof(extendMult), 200f },
@@ -1082,6 +1084,8 @@ namespace BDArmory.Modules
                     TakeOff(s);
                     turningTimer = 0;
                 }
+                else // Have taken off, but is in Follow mode.
+                { UpdateCommand(s); }
             }
             else
             {
