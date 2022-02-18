@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.16.0
+FIXES
 - Don't clamp values when switching from text input to sliders and the unclamped option has been toggled.
 - Fix wrong component type in BD check.
 - Fix rocketpod RoF slider.
