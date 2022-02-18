@@ -8,17 +8,17 @@
 - Fix various NREs.
 IMPROVEMENTS
 - General:
-	- Add the script for evaluating the score weights and the old dmg_analysis (for .50cal, 20mm and 30mm ammo) to '_Other Stuff'.
-	- Remove executable status of the vessel-trace plotting script.
 	- Add Waterfall config for the Saturn engine.
 	- Increase the HP of the combat seat to the same as a kerbal (500).
-	- Move the main competition update loop (death checks, etc.) to be run consistently from the physics updates instead of from the rendering updates to remove results bias due to computer performance when PHYSICS_FRAME_DT_LIMIT is large.
 	- Add a time scaling option to the GamePlay section of the settings for speeding up/slowing down the game rate while competitions are active.
 		- This does not affect the physics time-step, which remains at 0.02, but simply tries to make the in-game clock go faster with respect to a wall clock, so it should not affect the physics (if they're implemented correctly).
 		- WARNING: This is likely to mess with any other mod that adjusts the time rate, e.g., TimeControl, if they're active at the same time.
-		- WARNING: Consistency of the results (compared to running at normal speed) is not yet verified, but it initial results look promising.
+		- WARNING: Consistency of the results (compared to running at normal speed) is not yet verified, but initial results look promising.
 - Internal:
+	- Add the script for evaluating the score weights and the old dmg_analysis (for .50cal, 20mm and 30mm ammo) to '_Other Stuff'.
+	- Remove executable status of the vessel-trace plotting script.
 	- Replace hard-coded layer mask numbers in raycasts and similar with bitwise combinations of the LayerMasks enum. Many of these raycast include questionable/unknown layers.
+	- Move the main competition update loop (death checks, etc.) to be run consistently from the physics updates instead of from the rendering updates to remove results bias due to computer performance when PHYSICS_FRAME_DT_LIMIT is large.
 - AI:
 	- Tweaks to VacuumAI terrain avoidance.
 	- Add the off-by-one frame fix to ramming and missile guidance.
