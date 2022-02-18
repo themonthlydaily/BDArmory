@@ -185,8 +185,6 @@ namespace BDArmory.UI
                 {
                     UpdateCamera();
                 }
-
-                BDACompetitionMode.Instance.DoUpdate();
             }
         }
 

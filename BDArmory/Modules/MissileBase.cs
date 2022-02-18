@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Control;
 using BDArmory.FX;
@@ -759,7 +760,7 @@ namespace BDArmory.Modules
                         if (radarLOAL)
                         {
                             radarLOALSearching = true;
-                            TargetAcquired = true;    
+                            TargetAcquired = true;
                             if (weaponClass == WeaponClasses.SLW)
                             {
                                 TargetPosition = radarTarget.predictedPosition + (radarTarget.velocity * Time.fixedDeltaTime);
@@ -1012,7 +1013,7 @@ namespace BDArmory.Modules
             {
                 case DetonationDistanceStates.NotSafe:
                     //Lets check if we are at a safe distance from the source vessel
-                    using (var hitsEnu = Physics.OverlapSphere(futureMissilePosition, GetBlastRadius() * 3f, 557057).AsEnumerable().GetEnumerator())
+                    using (var hitsEnu = Physics.OverlapSphere(futureMissilePosition, GetBlastRadius() * 3f, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
                     {
                         while (hitsEnu.MoveNext())
                         {
@@ -1070,7 +1071,7 @@ namespace BDArmory.Modules
 
                             Ray rayFuturePosition = new Ray(vessel.CoM, futureMissilePosition);
 
-                            var hitsFuture = Physics.RaycastAll(rayFuturePosition, (float)missileDistancePerFrame.magnitude, 557057).AsEnumerable();
+                            var hitsFuture = Physics.RaycastAll(rayFuturePosition, (float)missileDistancePerFrame.magnitude, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable();
 
                             using (var hitsEnu = hitsFuture.GetEnumerator())
                             {
@@ -1107,7 +1108,7 @@ namespace BDArmory.Modules
                     else
                     {
                         float optimalDistance = (float)(Math.Max(DetonationDistance, relativeSpeed));
-                        using (var hitsEnu = Physics.OverlapSphere(vessel.CoM, optimalDistance, 557057).AsEnumerable().GetEnumerator())
+                        using (var hitsEnu = Physics.OverlapSphere(vessel.CoM, optimalDistance, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)).AsEnumerable().GetEnumerator())
                         {
                             while (hitsEnu.MoveNext())
                             {

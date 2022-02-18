@@ -10,20 +10,29 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Union
 
+VERSION = "1.13.7"
+
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
 parser.add_argument('-q', '--quiet', action='store_true', help="Don't print results summary to console.")
 parser.add_argument('-n', '--no-files', action='store_true', help="Don't create summary files.")
 parser.add_argument('-s', '--score', action='store_false', help="Compute scores.")
 parser.add_argument('-so', '--scores-only', action='store_true', help="Only display the scores in the summary on the console.")
-parser.add_argument('-w', '--weights', type=str, default="0.1,0,0,-1,1,2e-3,2,1,2e-2,0,2e-4,1e-4,0.05,0,2e-3,0,1e-4,5e-5,0.5,0,0.01,0,2e-5,1e-5,0.01,0,0,0,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram', plus others). Use --show-weights to see them.")
+parser.add_argument('-w', '--weights', type=str, default="1,0,0,-1,1,2e-3,3,1.5,4e-3,0,1e-4,4e-5,0.035,0,6e-4,0,1.5e-4,5e-5,0.15,0,0.002,0,3e-5,1.5e-5,0.075,0,0,0,0,0", help="Score weights (in order of main columns from 'Wins' to 'Ram', plus others). Use --show-weights to see them.")
+# Note: in non-ranked FFA tournaments, a 'Wins' weight of 1 is good, but in ranked rounds this pushes the top ranked plane's score extra high, so a lower value should be used, e.g., 0.25.
+# Old weights: 0.1,0,0,-1,1,2e-3,2,1,2e-2,0,2e-4,1e-4,0.05,0,2e-3,0,1e-4,5e-5,0.5,0,0.01,0,2e-5,1e-5,0.01,0,0,0,0,0
 parser.add_argument('-c', '--current-dir', action='store_true', help="Parse the logs in the current directory as if it was a tournament without the folder structure.")
 parser.add_argument('-nc', '--no-cumulative', action='store_true', help="Don't display cumulative scores at the end.")
 parser.add_argument('-N', type=int, help="Only the first N logs in the folder (in -c mode).")
 parser.add_argument('-z', '--zero-lowest-score', action='store_true', help="Shift the scores so that the lowest is 0.")
-parser.add_argument('--show-weights', action='store_true', help="Display the score weights.")
+parser.add_argument('-sw', '--show-weights', action='store_true', help="Display the score weights.")
+parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
 args.score = args.score or args.scores_only
+
+if args.version:
+    print(f"Version: {VERSION}")
+    sys.exit()
 
 if args.current_dir and len(args.tournament) == 0:
     tournamentDirs = [Path('')]
@@ -107,7 +116,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         duration = float(field[field.find('(') + 4:field.find(')') - 1])
                         timestamp = datetime.fromisoformat(field[field.find(' at ') + 4:])
                         tournamentData[round.name][heat.name]['duration'] = duration
-                        tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp - timedelta(seconds=duration)), max(tournamentMetadata['duration'][1], timestamp)) if 'duration' in tournamentMetadata else (timestamp - timedelta(seconds=duration), timestamp)
+                        tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp), max(tournamentMetadata['duration'][1], timestamp + timedelta(seconds=duration))) if 'duration' in tournamentMetadata else (timestamp, timestamp + timedelta(seconds=duration))
                     elif field.startswith('ALIVE:'):
                         state, craft = field.split(':', 1)
                         tournamentData[round.name][heat.name]['craft'][craft] = {'state': state}
@@ -396,7 +405,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             strings = []
             if not args.current_dir and 'duration' in tournamentMetadata:
                 strings.append(f"Tournament {tournamentMetadata.get('ID', '???')} of duration {tournamentMetadata['duration'][1]-tournamentMetadata['duration'][0]} starting at {tournamentMetadata['duration'][0]}")
-            headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
+            headers = ['Name', 'Wins', 'Survive', 'MIA', 'Deaths (BRMRAS)', 'D.Order', 'D.Time', 'Kills (BRMR)', 'Assists', 'Hits', 'Damage', 'DmgTaken', 'RocHits', 'RocParts', 'RocDmg', 'HitByRoc', 'MisHits', 'MisParts', 'MisDmg', 'HitByMis', 'Ram', 'BD dealt', 'BD taken', 'Acc%', 'RktAcc%', 'HP%', 'Dmg/Hit', 'Hits/Sp', 'Dmg/Sp'] if not args.scores_only else ['Name']
             if args.score:
                 headers.insert(1, 'Score')
             summary_strings = {'header': {field: field for field in headers}}
@@ -416,6 +425,7 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
                         'Assists': f"{tmp['assists']}",
                         'Hits': f"{tmp['hits']}",
                         'Damage': f"{tmp['bulletDamage']:.0f}",
+                        'DmgTaken': f"{tmp['bulletDamageTaken']:.0f}",
                         'RocHits': f"{tmp['rocketHits']}",
                         'RocParts': f"{tmp['rocketPartsHit']}",
                         'RocDmg': f"{tmp['rocketDamage']:.0f}",

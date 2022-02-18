@@ -1162,6 +1162,7 @@ namespace BDArmory.Control
                 Debug.LogWarning($"[BDArmory.BDATournament]: Unable to load the save game: {savegame}");
                 return false;
             }
+            Debug.Log($"[BDArmory.BDATournament]: Loaded save game: {savegame}");
             KSPUpgradePipeline.Process(gameNode, game, SaveUpgradePipeline.LoadContext.SFS, OnLoadDialogPiplelineFinished, (opt, n) => Debug.LogWarning($"[BDArmory.BDATournament]: KSPUpgradePipeline finished with error: {savegame}"));
             return true;
         }
