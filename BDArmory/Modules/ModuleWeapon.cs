@@ -918,6 +918,16 @@ namespace BDArmory.Modules
                 Events["ToggleRipple"].guiActiveEditor = false;
                 Fields["useRippleFire"].guiActiveEditor = false;
                 useRippleFire = false;
+                using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator()) //set other weapons in the group to ripple = false if the group contains a weapon with RPM > 1500, should fix the brownings+GAU WG, GAU no longer overheats exploit
+                {
+                    using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                        while (weapon.MoveNext())
+                        {
+                            if (weapon.Current == null) continue;
+                            if (weapon.Current.GetShortName() != this.GetShortName()) continue;
+                            weapon.Current.useRippleFire = false;
+                        }
+                }
             }
 
             if (!(isChaingun || eWeaponType == WeaponTypes.Rocket))//disable rocket RoF slider for non rockets 
@@ -1410,7 +1420,10 @@ namespace BDArmory.Modules
                 }
                 else
                 {
-                    audioSource.Stop();
+                    if (!oneShotSound)
+                    {
+                        audioSource.Stop();
+                    }
                     autoFire = false;
                 }
 
@@ -1431,17 +1444,16 @@ namespace BDArmory.Modules
 
                     if (showReloadMeter)
                     {
-                        if (isReloading)
-                        {
-                            gauge.UpdateReloadMeter(ReloadTimer);
-                        }
-                        else
                         {
                             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == 41)
                                 gauge.UpdateReloadMeter((Time.time - timeFired) * BDArmorySettings.FIRE_RATE_OVERRIDE / 60);
                             else
                                 gauge.UpdateReloadMeter((Time.time - timeFired) * roundsPerMinute / 60);
                         }
+                    }
+                    if (isReloading)
+                    {
+                        gauge.UpdateReloadMeter(ReloadTimer);
                     }
                     gauge.UpdateHeatMeter(heat / maxHeat);
                 }
@@ -1474,7 +1486,7 @@ namespace BDArmory.Modules
                     {
                         laserRenderers[i].enabled = false;
                     }
-                    audioSource.Stop();
+                    //audioSource.Stop();
                 }
                 vessel.GetConnectedResourceTotals(AmmoID, out double ammoCurrent, out double ammoMax); //ammo count was originally updating only for active vessel, while reload can be called by any loaded vessel, and needs current ammo count
                 ammoCount = ammoCurrent;
@@ -3797,7 +3809,7 @@ namespace BDArmory.Modules
             {
                 isOverheated = true;
                 autoFire = false;
-                audioSource.Stop();
+                if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 audioSource2.PlayOneShot(overheatSound);
                 weaponManager.ResetGuardInterval();
@@ -3831,7 +3843,7 @@ namespace BDArmory.Modules
                         laserRenderers[i].enabled = false;
                     }
                 }
-                audioSource.Stop();
+                if (!oneShotSound) audioSource.Stop();
                 wasFiring = false;
                 weaponManager.ResetGuardInterval();
                 showReloadMeter = true;
