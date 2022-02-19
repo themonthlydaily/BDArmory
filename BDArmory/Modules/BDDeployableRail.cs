@@ -21,6 +21,9 @@ namespace BDArmory.Modules
         bool deployed = false;
         [KSPField] public float rotationDelay = 0.15f;
 
+        [KSPField]
+        public bool hideMissiles = false;
+
         public int missileCount;
         MissileLauncher[] missileChildren;
         Transform[] missileTransforms;
@@ -105,7 +108,9 @@ namespace BDArmory.Modules
                     if (p.Current == null) continue;
                     if (p.Current != part)
                     {
-                        p.Current.FindModuleImplementing<BDDeployableRail>().DeployRail(true);
+                        var rail = p.Current.FindModuleImplementing<BDDeployableRail>();
+                        rail.UpdateMissileChildren();
+                        rail.DeployRail(true);
                     }
                 }
         }
@@ -119,6 +124,13 @@ namespace BDArmory.Modules
         {
             deployState.enabled = true;
             deployState.speed = 1;
+            for (int i = 0; i < missileChildren.Length; i++)
+            {
+                if (!missileTransforms[i] || !missileChildren[i] || missileChildren[i].HasFired) continue;
+                Part missilePart = missileChildren[i].part;
+                missilePart.ShieldedFromAirstream = false;
+                if (hideMissiles) missilePart.SetOpacity(1);
+            }
             while (deployState.normalizedTime < 1) 
             {
                 UpdateChildrenPos();
@@ -175,6 +187,13 @@ namespace BDArmory.Modules
             deployState.enabled = false;
             deployed = false;
             setupComplete = true;
+            for (int i = 0; i < missileChildren.Length; i++)
+            {
+                if (!missileTransforms[i] || !missileChildren[i] || missileChildren[i].HasFired) continue;
+                Part missilePart = missileChildren[i].part;
+                missilePart.ShieldedFromAirstream = true;
+                if (hideMissiles) missilePart.SetOpacity(0);
+            }
         }
         public void StopRoutines()
         {
@@ -365,7 +384,6 @@ namespace BDArmory.Modules
                 missileChildren[missileIndex].FireMissile();
 
                 rdyMissile = null;
-                rdyToFire = false;
 
                 UpdateMissileChildren();
 

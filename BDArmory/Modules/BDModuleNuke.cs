@@ -132,7 +132,7 @@ namespace BDArmory.Modules
                         var engine = part.FindModuleImplementing<ModuleEngines>();
                         if (engine != null)
                         {
-                            if (!engine.isEnabled || !engine.EngineIgnited)
+                            if (!engine.isEnabled || !engine.EngineIgnited) //so this is getting tripped by multimode engines toggling from wet/dry
                             {
                                 if (!hasDetonated)
                                 {

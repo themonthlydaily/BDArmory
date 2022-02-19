@@ -1,5 +1,10 @@
-﻿FIXES
-- Fix for tournament.state files with craft filenames containing commas.
+﻿v1.4.16.1
+FIXES
+- Fix for tournament.state files with craft filenames containing commas (don't use filenames containing '],['!).
+- Fixes issue breaking some guns in v1.4.16.0.
+IMPROVEMENTS
+- Adds localization for various parts.
+- Adds Deployable Missile Rail demo part.
 
 v1.4.16.0
 FIXES
