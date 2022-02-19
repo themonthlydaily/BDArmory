@@ -4,12 +4,19 @@ import re
 import sys
 from pathlib import Path
 
+VERSION = "2.0"
+
 parser = argparse.ArgumentParser(description="Log-file parser for continuous spawning logs.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("logs", nargs='*', help="Log-files to parse. If none are given, all valid log-files are parsed.")
 parser.add_argument("-n", "--no-file", action='store_true', help="Don't create a csv file.")
 parser.add_argument("-w", "--weights", type=str, default="2,1,-1,0.02,2e-5,0.05,2e-3,1e-4,0.5,0.01,2e-5,0,0", help="Score weights.")
 parser.add_argument("--show-weights", action='store_true', help="Show the score weights.")
+parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
+
+if args.version:
+    print(f"Version: {VERSION}")
+    sys.exit()
 
 log_dir = Path(__file__).parent / "Logs" if len(args.logs) == 0 else Path('.')
 output_log_file = log_dir / "results.csv"

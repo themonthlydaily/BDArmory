@@ -3,13 +3,21 @@
 # Standard library imports
 import argparse
 import json
+import sys
 from collections import Counter
 from pathlib import Path
+
+VERSION = "1.0"
 
 parser = argparse.ArgumentParser(description="Parse results.json of a N-choose-K style tournament producing a table of who-beat-who.", formatter_class=argparse.ArgumentDefaultsHelpFormatter, epilog="Note: this also works on FFA style tournaments, but may not be meaningful.")
 parser.add_argument('results', type=str, nargs='?', help="results.json file to parse.")
 parser.add_argument('-o', '--output', default="n-choose-k.csv", help="File to output CSV to.")
+parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
+
+if args.version:
+    print(f"Version: {VERSION}")
+    sys.exit()
 
 if args.results is None:
     logsDir = Path(__file__).parent / "Logs"

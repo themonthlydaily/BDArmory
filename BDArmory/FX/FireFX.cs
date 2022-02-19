@@ -37,6 +37,7 @@ namespace BDArmory.FX
         public string SourceVessel;
         private string explModelPath = "BDArmory/Models/explosion/explosion";
         private string explSoundPath = "BDArmory/Sounds/explode1";
+        int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
 
         PartResource fuel;
         PartResource solid;
@@ -426,7 +427,7 @@ namespace BDArmory.FX
                 if (excessFuel)
                 {
                     float blastRadius = BlastPhysicsUtils.CalculateBlastRange(tntMassEquivalent);
-                    using (var blastHits = Physics.OverlapSphere(parentPart.transform.position, blastRadius, 9076737).AsEnumerable().GetEnumerator())
+                    using (var blastHits = Physics.OverlapSphere(parentPart.transform.position, blastRadius, explosionLayerMask).AsEnumerable().GetEnumerator())
                         while (blastHits.MoveNext())
                         {
                             if (blastHits.Current == null) continue;
@@ -442,7 +443,7 @@ namespace BDArmory.FX
 
                                     Ray LoSRay = new Ray(parentPart.transform.position, partHit.transform.position - parentPart.transform.position);
                                     RaycastHit hit;
-                                    if (Physics.Raycast(LoSRay, out hit, distToG0.magnitude, 9076737))
+                                    if (Physics.Raycast(LoSRay, out hit, distToG0.magnitude, explosionLayerMask))
                                     {
                                         KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                                         Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();

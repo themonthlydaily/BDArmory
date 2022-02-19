@@ -45,7 +45,8 @@ namespace BDArmory.FX
         private bool disabled = true;
 
         float blastRange;
-		
+        int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
+
         Queue<BlastHitEvent> explosionEvents = new Queue<BlastHitEvent>();
         List<BlastHitEvent> explosionEventsPreProcessing = new List<BlastHitEvent>();
         List<Part> explosionEventsPartsAdded = new List<Part>();
@@ -182,7 +183,7 @@ namespace BDArmory.FX
             if (warheadType == WarheadTypes.ShapedCharge)
             {
                 Ray SCRay = new Ray(Position, (Direction.normalized * Range));
-                var hits = Physics.RaycastAll(SCRay, Range, 9076737);
+                var hits = Physics.RaycastAll(SCRay, Range, explosionLayerMask);
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ExplosionFX] SC plasmaJet raycast hits: " + hits.Length);
                 if (hits.Length > 0)
                 {
@@ -246,10 +247,10 @@ namespace BDArmory.FX
                     }
                 }
             }
-            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(Position, blastRange, overlapSphereColliders, 9076737);
+            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(Position, blastRange, overlapSphereColliders, explosionLayerMask);
             if (overlapSphereColliderCount == overlapSphereColliders.Length)
             {
-                overlapSphereColliders = Physics.OverlapSphere(Position, blastRange, 9076737);
+                overlapSphereColliders = Physics.OverlapSphere(Position, blastRange, explosionLayerMask);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
             using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).ToList().GetEnumerator())
@@ -346,7 +347,7 @@ namespace BDArmory.FX
         {
             Ray ray = new Ray(Position, building.transform.position - Position);
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, Range, 9076737))
+            if (Physics.Raycast(ray, out rayHit, Range, explosionLayerMask))
             {
                 //TODO: Maybe we are not hitting building because we are hitting explosive parts.
 
@@ -432,18 +433,18 @@ namespace BDArmory.FX
         {
             Ray partRay = new Ray(Position, part.transform.position - Position);
 
-            var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, blastRange, 9076737);
+            var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, blastRange, explosionLayerMask);
             if (hitCount == lineOfSightHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
-                lineOfSightHits = Physics.RaycastAll(partRay, blastRange, 9076737);
+                lineOfSightHits = Physics.RaycastAll(partRay, blastRange, explosionLayerMask);
                 hitCount = lineOfSightHits.Length;
             }
             int reverseHitCount = 0;
             //check if explosion is originating inside a part
-            reverseHitCount = Physics.RaycastNonAlloc(new Ray(part.transform.position - Position, Position), reverseHits, blastRange, 9076737);
+            reverseHitCount = Physics.RaycastNonAlloc(new Ray(part.transform.position - Position, Position), reverseHits, blastRange, explosionLayerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(new Ray(part.transform.position - Position, Position), blastRange, 9076737);
+                reverseHits = Physics.RaycastAll(new Ray(part.transform.position - Position, Position), blastRange, explosionLayerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
@@ -775,7 +776,7 @@ namespace BDArmory.FX
                         }
                         else
                         {
-                            if ((part == hitpart && part.name.ToLower().Contains("armor") ) || !ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough or bullet detonating inside part
+                            if ((part == hitpart && part.name.ToLower().Contains("armor")) || !ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough or bullet detonating inside part
                             {
                                 if (RA != null && !RA.NXRA) //blast wave triggers RA; detonate all remaining RA sections
                                 {
