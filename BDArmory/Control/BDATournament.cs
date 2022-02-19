@@ -44,7 +44,22 @@ namespace BDArmory.Control
                 var teams = serializedTeams.Substring(1, serializedTeams.Length - 2).Split(new string[] { "],[" }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim(new char[] { '[', ']' })).ToList();
                 foreach (var team in teams)
                 {
-                    var files = team.Split(',').ToList();
+                    var files_tmp = team.Split(',').ToList();
+                    // Fix for filenames with commas in them.
+                    List<string> files = new List<string>();
+                    string current_file = "";
+                    foreach (var file in files_tmp)
+                    {
+                        if (string.IsNullOrEmpty(current_file))
+                            current_file = file;
+                        else
+                            current_file += "," + file;
+                        if (current_file.EndsWith(".craft"))
+                        {
+                            files.Add(current_file);
+                            current_file = "";
+                        }
+                    }
                     if (files.Count > 0)
                         teamsSpecific.Add(files);
                 }
