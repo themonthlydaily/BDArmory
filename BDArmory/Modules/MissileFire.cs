@@ -4348,8 +4348,15 @@ namespace BDArmory.Modules
                             // only useful if we are flying
                             float candidateYield = ((MissileBase)item.Current).GetBlastRadius();
                             int candidateCluster = ((MissileBase)item.Current).clusterbomb;
+                            bool EMP = ((MissileLauncher)item.Current).EMP;
+                            int candidatePriority = Mathf.RoundToInt(((MissileLauncher)item.Current).priority);
                             double srfSpeed = currentTarget.Vessel.horizontalSrfSpeed;
 
+                            if (EMP) continue;
+                            if (targetWeapon != null && targetWeaponPriority > candidatePriority)
+                                continue; //keep higher priority weapon
+                            if (distance < candidateYield) 
+                                continue;// don't drop bombs when within blast radius
                             bool candidateUnguided = false;
                             if (!vessel.LandedOrSplashed)
                             {
@@ -4360,26 +4367,59 @@ namespace BDArmory.Modules
 
                                 if (((MissileBase)item.Current).GuidanceMode == MissileBase.GuidanceModes.None)
                                 {
-                                    if (targetBombYield > candidateYield) continue; //prioritized by biggest boom
-                                    if (distance < candidateYield) continue;// don't drop bombs when within blast radius
-                                    targetBombYield = candidateYield;
-                                    targetWeapon = item.Current;
+                                    if (targetWeaponPriority < candidatePriority) //use priority bomb
+                                    {
+                                        targetWeapon = item.Current;
+                                        targetBombYield = candidateYield;
+                                        targetWeaponPriority = candidatePriority;
+                                    }
+                                    else //if equal priority, use standard weighting
+                                    {
+                                        if (targetBombYield < candidateYield)//prioritized by biggest boom
+                                        {
+                                            targetWeapon = item.Current;
+                                            targetBombYield = candidateYield;
+                                            targetWeaponPriority = candidatePriority;
+                                        }
+                                    }
                                     candidateUnguided = true;
                                 }
                                 if (srfSpeed > 1) //prioritize cluster bombs for moving targets
                                 {
-                                    if (distance < candidateYield) continue;// don't drop bombs when within blast radius
                                     candidateYield *= (candidateCluster * 2);
-                                    if (targetBombYield > candidateYield) continue; //prioritized by biggest boom
-                                    targetBombYield = candidateYield;
-                                    targetWeapon = item.Current;
+                                    if (targetWeaponPriority < candidatePriority) //use priority bomb
+                                    {
+                                        targetWeapon = item.Current;
+                                        targetBombYield = candidateYield;
+                                        targetWeaponPriority = candidatePriority;
+                                    }
+                                    else //if equal priority, use standard weighting
+                                    {
+                                        if (targetBombYield < candidateYield)//prioritized by biggest boom
+                                        {
+                                            targetWeapon = item.Current;
+                                            targetBombYield = candidateYield;
+                                            targetWeaponPriority = candidatePriority;
+                                        }
+                                    }
                                 }
                                 if (((MissileBase)item.Current).GuidanceMode == MissileBase.GuidanceModes.AGMBallistic)
                                 {
-                                    if ((candidateUnguided ? targetBombYield / 2 : targetBombYield) > candidateYield) continue; //prioritize biggest Boom, but preference guided bombs
-                                    if (distance < candidateYield) continue;// don't drop bombs when within blast radius
-                                    targetBombYield = candidateYield;
-                                    targetWeapon = item.Current;
+                                    if (targetWeaponPriority < candidatePriority) //use priority bomb
+                                    {
+                                        targetWeapon = item.Current;
+                                        targetBombYield = candidateYield;
+                                        targetWeaponPriority = candidatePriority;
+                                    }
+                                    else //if equal priority, use standard weighting
+                                    {
+                                        if ((candidateUnguided ? targetBombYield / 2 : targetBombYield) < candidateYield) //prioritize biggest Boom, but preference guided bombs
+                                        {
+                                            targetWeapon = item.Current;
+                                            targetBombYield = candidateYield;
+                                            targetWeaponPriority = candidatePriority;
+                                        }
+                                    }
                                 }
                             }
                         }

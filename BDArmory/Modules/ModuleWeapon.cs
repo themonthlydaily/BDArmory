@@ -745,7 +745,7 @@ namespace BDArmory.Modules
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Ammo_LoadedAmmo")]//Status
         public string guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Slug");
 
-        [KSPField(isPersistant = true)]
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true)]
         private bool canHotSwap = false; //for select weapons that it makes sense to be able to swap ammo types while in-flight, like the Abrams turret
 
         //auto proximity tracking
@@ -920,15 +920,19 @@ namespace BDArmory.Modules
                 Events["ToggleRipple"].guiActiveEditor = false;
                 Fields["useRippleFire"].guiActiveEditor = false;
                 useRippleFire = false;
-                using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator()) //set other weapons in the group to ripple = false if the group contains a weapon with RPM > 1500, should fix the brownings+GAU WG, GAU no longer overheats exploit
+                if (HighLogic.LoadedSceneIsFlight)
                 {
-                    using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
-                        while (weapon.MoveNext())
-                        {
-                            if (weapon.Current == null) continue;
-                            if (weapon.Current.GetShortName() != this.GetShortName()) continue;
-                            weapon.Current.useRippleFire = false;
-                        }
+                    using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator()) //set other weapons in the group to ripple = false if the group contains a weapon with RPM > 1500, should fix the brownings+GAU WG, GAU no longer overheats exploit
+                    {
+                        using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
+                            while (weapon.MoveNext())
+                            {
+                                if (weapon.Current == null) continue;
+                                if (weapon.Current.GetShortName() != this.GetShortName()) continue;
+                                if (weapon.Current.roundsPerMinute >= 1500 || (weapon.Current.eWeaponType == WeaponTypes.Laser && !weapon.Current.pulseLaser)) continue;
+                                weapon.Current.useRippleFire = false;
+                            }
+                    }
                 }
             }
 
