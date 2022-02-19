@@ -1600,7 +1600,7 @@ namespace BDArmory.Modules
 
             //test poststall
             float AoA = Vector3.Angle(vessel.ReferenceTransform.up, vessel.Velocity());
-            if (AoA > 30f)
+            if (AoA > maxAllowedAoA)
             {
                 steerMode = SteerModes.Aiming;
             }
