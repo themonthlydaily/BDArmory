@@ -127,7 +127,7 @@ namespace BDArmory.Modules
             railLengthTransform.localScale = new Vector3(1, railLength, 1);
         }
 
-        public void UpdateStackNode(bool updateChild)
+        public void UpdateStackNode(bool updateChild) //borrow this for deployable rail(if aincluding scalability), adjsutable armor
         {
             Vector3 delta = Vector3.zero;
             List<AttachNode>.Enumerator stackNode = part.attachNodes.GetEnumerator();
