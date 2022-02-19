@@ -1,6 +1,7 @@
 ﻿IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
+	- Add hotkey option for time scaling.
 - AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
 

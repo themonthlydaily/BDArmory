@@ -622,6 +622,12 @@ namespace BDArmory.UI
                 {
                     windowBDAToolBarEnabled = !windowBDAToolBarEnabled;
                 }
+
+                if (BDInputUtils.GetKeyDown(BDInputSettingsFields.TIME_SCALING))
+                {
+                    BDArmorySettings.TIME_OVERRIDE = !BDArmorySettings.TIME_OVERRIDE;
+                    Time.timeScale = BDArmorySettings.TIME_OVERRIDE ? BDArmorySettings.TIME_SCALE : 1f;
+                }
             }
             else if (HighLogic.LoadedSceneIsEditor)
             {
@@ -3352,6 +3358,10 @@ namespace BDArmory.UI
 
             GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_Tournament") + " -", centerLabel);//Tournament
             InputSettingsList("TOURNAMENT_", ref inputID, ref line);
+            ++line;
+
+            GUI.Label(SLineRect(line++), "- " + Localizer.Format("#LOC_BDArmory_InputSettings_TimeScaling") + " -", centerLabel);//Time Scaling
+            InputSettingsList("TIME_", ref inputID, ref line);
             GUI.EndScrollView();
 
             line = settingsHeight / settingsLineHeight;
