@@ -1,5 +1,7 @@
 ﻿IMPROVEMENTS
--AI:
+- General:
+	- Add in the remaining localisations for parts.
+- AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
 
 v1.4.16.1
