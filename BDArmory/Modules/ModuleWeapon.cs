@@ -931,7 +931,6 @@ namespace BDArmory.Modules
                                 weapon.Current.useRippleFire = false;
                             }
                     }
-                    Debug.Log("[AMMO DEBUG] successfully executed gatling barrage fix");
                 }
             }
 
@@ -952,11 +951,9 @@ namespace BDArmory.Modules
 
             int typecount = 0;
             ammoList = BDAcTools.ParseNames(bulletType);
-            Debug.Log("[AMMO DEBUG] ammos found for " + this.GetShortName() + ": " + ammoList.Count);
             for (int i = 0; i < ammoList.Count; i++)
             {
                 typecount++;
-                Debug.Log("[AMMO DEBUG] typecount: " + typecount);
             }
             if (ammoList.Count > 1)
             {
