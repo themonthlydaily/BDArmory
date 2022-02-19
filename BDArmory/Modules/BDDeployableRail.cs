@@ -108,7 +108,9 @@ namespace BDArmory.Modules
                     if (p.Current == null) continue;
                     if (p.Current != part)
                     {
-                        p.Current.FindModuleImplementing<BDDeployableRail>().DeployRail(true);
+                        var rail = p.Current.FindModuleImplementing<BDDeployableRail>();
+                        rail.UpdateMissileChildren();
+                        rail.DeployRail(true);
                     }
                 }
         }
