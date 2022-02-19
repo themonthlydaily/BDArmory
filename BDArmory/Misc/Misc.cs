@@ -1,5 +1,6 @@
 using BDArmory.Core.Extension;
 using BDArmory.Core;
+using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.Modules;
 using BDArmory.UI;
@@ -16,8 +17,7 @@ namespace BDArmory.Misc
 {
     public static class Misc
     {
-        public static Texture2D resizeTexture =
-          GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "resizeSquare", false);
+        public static Texture2D resizeTexture = GameDatabase.Instance.GetTexture(BDArmorySetup.textureDir + "resizeSquare", false);
 
         public static Color ParseColor255(string color)
         {
@@ -199,6 +199,7 @@ namespace BDArmory.Misc
             return curve;
         }
 
+        private static int lineOfSightLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);
         public static bool CheckSightLine(Vector3 origin, Vector3 target, float maxDistance, float threshold,
             float startDistance)
         {
@@ -206,7 +207,7 @@ namespace BDArmory.Misc
             Ray ray = new Ray(origin, target - origin);
             ray.origin += ray.direction * startDistance;
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, dist, 9076737))
+            if (Physics.Raycast(ray, out rayHit, dist, lineOfSightLayerMask))
             {
                 if ((target - rayHit.point).sqrMagnitude < threshold * threshold)
                 {
@@ -229,7 +230,7 @@ namespace BDArmory.Misc
             ray.origin += ray.direction * startDistance;
             RaycastHit rayHit;
 
-            if (Physics.Raycast(ray, out rayHit, dist, 9076737))
+            if (Physics.Raycast(ray, out rayHit, dist, lineOfSightLayerMask))
             {
                 if ((target - rayHit.point).sqrMagnitude < threshold * threshold)
                 {

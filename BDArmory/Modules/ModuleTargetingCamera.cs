@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
 using BDArmory.Parts;
@@ -1300,7 +1301,7 @@ namespace BDArmory.Modules
 
             RaycastHit rayHit;
             Ray ray = new Ray(cameraParentTransform.position + (50 * cameraParentTransform.forward), cameraParentTransform.forward);
-            bool raycasted = Physics.Raycast(ray, out rayHit, maxRayDistance - 50, 9076737);
+            bool raycasted = Physics.Raycast(ray, out rayHit, maxRayDistance - 50, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23));
             if (raycasted)
             {
                 if (FlightGlobals.getAltitudeAtPos(rayHit.point) < 0)
@@ -1376,7 +1377,7 @@ namespace BDArmory.Modules
 
             RaycastHit rayHit;
             Ray ray = new Ray(cameraParentTransform.position + (50 * cameraParentTransform.forward), cameraParentTransform.forward);
-            if (Physics.Raycast(ray, out rayHit, maxRayDistance - 50, 9076737))
+            if (Physics.Raycast(ray, out rayHit, maxRayDistance - 50, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23)))
             {
                 targetPointPosition = rayHit.point;
 
