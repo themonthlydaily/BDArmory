@@ -384,7 +384,6 @@ namespace BDArmory.Modules
                 missileChildren[missileIndex].FireMissile();
 
                 rdyMissile = null;
-                rdyToFire = false;
 
                 UpdateMissileChildren();
 
