@@ -489,13 +489,24 @@ namespace BDArmory.Radar
 
         private void Update()
         {
+            if (radarCount > 0)
+            {
+                UpdateInputs();
+            }
+
+            drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && rCount > 0 &&
+                       vessel.isActiveVessel && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled);
+        }
+
+        void FixedUpdate()
+        {
             if (!vessel)
             {
                 Destroy(this);
                 return;
             }
 
-            // FIXME PHYSX Most of this should be in FixedUpdate using a timer to lower the frequency if that's desired.
+            // FIXME Use a timer to lower the frequency if that's desired, not putting this in Update.
             UpdateReferenceTransform();
 
             if (radarCount > 0)
@@ -509,8 +520,6 @@ namespace BDArmory.Radar
                   Vector3.ProjectOnPlane(vessel.transform.up, vessel.upAxis), vessel.upAxis);
 
                 CleanDisplayedContacts();
-
-                UpdateInputs();
 
                 UpdateSlaveData();
             }
@@ -533,9 +542,6 @@ namespace BDArmory.Radar
                 UpdateRangeCapability();
                 rangeCapabilityDirty = false;
             }
-
-            drawGUI = (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && !vessel.packed && rCount > 0 &&
-                       vessel.isActiveVessel && BDArmorySetup.GAME_UI_ENABLED && !MapView.MapIsEnabled);
 
             if (!vessel.loaded && radarCount == 0)
             {

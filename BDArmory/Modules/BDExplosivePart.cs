@@ -237,10 +237,6 @@ namespace BDArmory.Modules
             {
                 OnUpdateEditor();
             }
-            if (hasDetonated) // FIXME PHYSX This should be in FixedUpdate
-            {
-                this.part.explode();
-            }
         }
 
         public override void OnFixedUpdate()
@@ -277,6 +273,10 @@ namespace BDArmory.Modules
                         }
                     }
                 }
+            }
+            if (hasDetonated)
+            {
+                this.part.explode();
             }
         }
 

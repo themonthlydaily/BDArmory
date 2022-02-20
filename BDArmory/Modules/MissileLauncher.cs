@@ -707,21 +707,6 @@ namespace BDArmory.Modules
             }
         }
 
-        void Update()
-        {
-            if (!HasFired)
-                CheckDetonationState(); // FIXME PHYSX Why is this even checked here before the missile is fired? Also, for consistent results this should occur in the FixedUpdate with a low-freq timer if it's intended not to run every frame. Same for the dropTime.
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0) //#710
-                {
-                    float a = (float)FlightGlobals.getGeeForceAtPosition(part.transform.position).magnitude;
-                    float d = FlightGlobals.getAltitudeAtPos(part.transform.position);
-                    dropTime = ((float)Math.Sqrt(a * (a + (8 * d))) - a) / (2 * a) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
-                }// adjusts droptime to delay the MissileRoutine IEnum so torps won't start boosting until splashdown 
-            }
-        }
-
         void OnDestroy()
         {
             DetachExhaustPrefabs();
@@ -873,6 +858,17 @@ namespace BDArmory.Modules
 
         public override void OnFixedUpdate()
         {
+            if (!HighLogic.LoadedSceneIsFlight) return;
+
+            if (!HasFired)
+                CheckDetonationState(); // FIXME Why is this even checked before the missile is fired? (Moved here from Update for time-scaling.)
+            if (weaponClass == WeaponClasses.SLW && FlightGlobals.getAltitudeAtPos(part.transform.position) > 0) //#710
+            {
+                float a = (float)FlightGlobals.getGeeForceAtPosition(part.transform.position).magnitude;
+                float d = FlightGlobals.getAltitudeAtPos(part.transform.position);
+                dropTime = ((float)Math.Sqrt(a * (a + (8 * d))) - a) / (2 * a) - (Time.fixedDeltaTime * 1.5f); //quadratic equation for accel to find time from known force and vel
+            }// adjusts droptime to delay the MissileRoutine IEnum so torps won't start boosting until splashdown 
+
             try // FIXME Remove this once the fix is sufficiently tested.
             {
                 debugString.Length = 0;

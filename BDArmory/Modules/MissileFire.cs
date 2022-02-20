@@ -1165,40 +1165,10 @@ namespace BDArmory.Modules
             }
 
             base.OnUpdate();
-            if (!vessel.packed)
-            {
-                if (weaponIndex >= weaponArray.Length)
-                {
-                    hasSingleFired = true;
-                    triggerTimer = 0;
-
-                    weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
-
-                    DisplaySelectedWeaponMessage();
-                }
-                if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex]) // FIXME PHYSX This should probably also be in FixedUpdate
-                    selectedWeapon = weaponArray[weaponIndex];
-
-                //finding next rocket to shoot (for aimer)
-                //FindNextRocket();
-
-                //targeting FIXME PHYSX this should occur in FixedUpdate (using a timer if it's to occur less often).
-                if (weaponIndex > 0 &&
-                    (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
-                    selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
-                     selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
-                {
-                    SearchForLaserPoint();
-                    SearchForHeatTarget();
-                    SearchForRadarSource();
-                }
-
-                CalculateMissilesAway();
-            }
 
             UpdateTargetingAudio();
 
-            if (vessel.isActiveVessel)
+            if (vessel.isActiveVessel) // Manual firing.
             {
                 if (!CheckMouseIsOnGui() && isArmed && BDInputUtils.GetKey(BDInputSettingsFields.WEAP_FIRE_KEY))
                 {
@@ -1251,6 +1221,38 @@ namespace BDArmory.Modules
             }
         }
 
+        void UpdateWeaponIndex()
+        {
+            if (weaponIndex >= weaponArray.Length)
+            {
+                hasSingleFired = true;
+                triggerTimer = 0;
+
+                weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
+
+                DisplaySelectedWeaponMessage();
+            }
+            if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
+                selectedWeapon = weaponArray[weaponIndex];
+
+            //finding next rocket to shoot (for aimer)
+            //FindNextRocket();
+        }
+
+        void UpdateGuidanceTargets()
+        {
+            if (weaponIndex > 0 &&
+                   (selectedWeapon.GetWeaponClass() == WeaponClasses.Missile ||
+                   selectedWeapon.GetWeaponClass() == WeaponClasses.SLW ||
+                    selectedWeapon.GetWeaponClass() == WeaponClasses.Bomb))
+            {
+                SearchForLaserPoint();
+                SearchForHeatTarget();
+                SearchForRadarSource();
+            }
+            CalculateMissilesAway();
+        }
+
         private void CalculateMissilesAway() //for multi-missile targeting, would need to change this from a list of all missile fired; instead track missile launch vessel, and missiletarget
         { //then ask for num of misiles fired at currentTarget, instead of total. And some code to swap targets if missilesAway > limit
             int tempMissilesAway = 0;
@@ -1274,7 +1276,9 @@ namespace BDArmory.Modules
 
         public override void OnFixedUpdate()
         {
-            if (vessel == null) return;
+            if (vessel == null || vessel.packed) return;
+            UpdateWeaponIndex();
+            UpdateGuidanceTargets();
             if (guardMode && vessel.IsControllable)
             {
                 GuardMode();
@@ -4354,7 +4358,7 @@ namespace BDArmory.Modules
                             if (EMP) continue;
                             if (targetWeapon != null && targetWeaponPriority > candidatePriority)
                                 continue; //keep higher priority weapon
-                            if (distance < candidateYield) 
+                            if (distance < candidateYield)
                                 continue;// don't drop bombs when within blast radius
                             bool candidateUnguided = false;
                             if (!vessel.LandedOrSplashed)

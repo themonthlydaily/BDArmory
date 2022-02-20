@@ -4,7 +4,7 @@ namespace BDArmory.Modules
 {
     public class ModuleSpaceRadar : ModuleRadar
     {
-        public void Update() // runs every frame FIXME PHYSX This should be in FixedUpdate
+        public void FixedUpdate() // runs every frame FIXME If this should run slower, then use a timer, not Update.
         {
             if (HighLogic.LoadedSceneIsFlight) // if in the flight scene
             {
@@ -17,13 +17,9 @@ namespace BDArmory.Modules
         private void UpdateRadar()
         {
             if (vessel.atmDensity >= 0.007) // below an atm density of 0.007 the radar will not work
-            {
-                List<ModuleSpaceRadar> radarParts = new List<ModuleSpaceRadar>(200); // creates a list of parts with this module
-
-                foreach (Part p in vessel.Parts) // checks each part in the vessel
-                {
-                    radarParts.AddRange(p.FindModulesImplementing<ModuleSpaceRadar>()); // adds the part to the list if this module is present in the part
-                }
+            { // FIXME Everything below here is going to run every frame when in atmosphere. There must be a more efficient way of doing this.
+                var radarParts = VesselModuleRegistry.GetModules<ModuleSpaceRadar>(vessel);
+                if (radarParts == null) return;
                 foreach (ModuleSpaceRadar radarPart in radarParts) // for each of the parts in the list do the following
                 {
                     if (radarPart != null && radarPart.radarEnabled)
