@@ -552,6 +552,11 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightThreat = 1f;
 
+        private string targetProtectTeammateLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectTeammate");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectTeammate", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect Teammates
+         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightProtectTeammate = 0f;
+
         private string targetProtectVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect VIPs
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -3630,6 +3635,7 @@ namespace BDArmory.Modules
             var TargetMassFields = Fields["targetWeightMass"];
             var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
             var TargetThreatFields = Fields["targetWeightThreat"];
+            var TargetProtectTeammateFields = Fields["targetWeightProtectTeammate"];
             var TargetProtectVIPFields = Fields["targetWeightProtectVIP"];
             var TargetAttackVIPFields = Fields["targetWeightAttackVIP"];
 
@@ -3644,7 +3650,8 @@ namespace BDArmory.Modules
             float targetMassValue = target.TargetPriMass(target.weaponManager, this);
             float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this);
             float targetThreatValue = target.TargetPriThreat(target.weaponManager, this);
-            float targetProtectVIPValue = target.TargetPriProtectVIP(target.weaponManager);
+            float targetProtectTeammateValue = target.TargetPriProtectTeammate(target.weaponManager, this);
+            float targetProtectVIPValue = target.TargetPriProtectVIP(target.weaponManager, this);
             float targetAttackVIPValue = target.TargetPriAttackVIP(target.weaponManager);
 
             // Calculate total target score
@@ -3658,6 +3665,7 @@ namespace BDArmory.Modules
                 targetWeightFriendliesEngaging * targetFriendliesEngagingValue +
                 targetWeightThreat * targetThreatValue +
                 targetWeightAoD * targetAoDValue +
+                targetWeightProtectTeammate * targetProtectTeammateValue +
                 targetWeightProtectVIP * targetProtectVIPValue +
                 targetWeightAttackVIP * targetAttackVIPValue);
 
@@ -3672,6 +3680,7 @@ namespace BDArmory.Modules
             TargetMassFields.guiName = targetMassLabel + ": " + targetMassValue.ToString("0.00");
             TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
             TargetThreatFields.guiName = targetThreatLabel + ": " + targetThreatValue.ToString("0.00");
+            TargetProtectTeammateFields.guiName = targetProtectTeammateLabel + ": " + targetProtectTeammateValue.ToString("0.00");
             TargetProtectVIPFields.guiName = targetProtectVIPLabel + ": " + targetProtectVIPValue.ToString("0.00");
             TargetAttackVIPFields.guiName = targetAttackVIPLabel + ": " + targetAttackVIPValue.ToString("0.00");
 

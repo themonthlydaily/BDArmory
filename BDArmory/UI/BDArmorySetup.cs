@@ -756,6 +756,7 @@ namespace BDArmory.UI
                 { "targetWeightMass", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightMass,-10, 10) },
                 { "targetWeightFriendliesEngaging", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightFriendliesEngaging, -10, 10) },
                 { "targetWeightThreat", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightThreat, -10, 10) },
+                { "targetWeightProtectTeammate", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightProtectTeammate, -10, 10) },
                 { "targetWeightProtectVIP", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightProtectVIP, -10, 10) },
                 { "targetWeightAttackVIP", gameObject.AddComponent<NumericInputField>().Initialise(0, ActiveWeaponManager.targetWeightAttackVIP, -10, 10) },
             };
@@ -1723,6 +1724,24 @@ namespace BDArmory.UI
                     }
                     GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
                         ActiveWeaponManager.targetWeightThreat.ToString(), leftLabel);
+                    priorityLines++;
+
+                    GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_defendTeammate"), leftLabel); //defend teammate"
+                    if (!NumFieldsEnabled)
+                    {
+                        ActiveWeaponManager.targetWeightProtectTeammate =
+                            GUI.HorizontalSlider(
+                                new Rect(leftIndent + (150), (priorityLines * entryHeight), contentWidth - 150 - 38, entryHeight),
+                                ActiveWeaponManager.targetWeightProtectTeammate, -10, 10);
+                        ActiveWeaponManager.targetWeightProtectTeammate = Mathf.Round(ActiveWeaponManager.targetWeightProtectTeammate * 10) / 10;
+                    }
+                    else
+                    {
+                        textNumFields["targetWeightProtectTeammate"].tryParseValue(GUI.TextField(new Rect(leftIndent + (90), (priorityLines * entryHeight), contentWidth - 90 - 38, entryHeight), textNumFields["targetWeightProtectTeammate"].possibleValue, 4));
+                        ActiveWeaponManager.targetWeightProtectTeammate = (float)textNumFields["targetWeightProtectTeammate"].currentValue;
+                    }
+                    GUI.Label(new Rect(leftIndent + (contentWidth - 35), (priorityLines * entryHeight), 35, entryHeight),
+                        ActiveWeaponManager.targetWeightProtectTeammate.ToString(), leftLabel);
                     priorityLines++;
 
                     GUI.Label(new Rect(leftIndent, (priorityLines * entryHeight), 85, entryHeight), Localizer.Format("#LOC_BDArmory_WMWindow_defendVIP"), leftLabel); //target proximity"
