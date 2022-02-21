@@ -330,6 +330,8 @@ namespace BDArmory.Evolution
                     Debug.LogError($"[BDArmory.BDAEvolution]: Failure to properly read evolution state file: " + e.Message);
                 }
             }
+            else
+            { Debug.LogError($"[BDArmory.BDAEvolution]: Failed to find evolution.state file {stateFile}"); }
             return state;
         }
 
