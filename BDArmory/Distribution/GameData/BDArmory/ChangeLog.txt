@@ -1,6 +1,11 @@
 ﻿IMPROVEMENTS
--AI:
+- General:
+	- Add in the remaining localisations for parts.
+	- Add hotkey option for time scaling.
+- AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
+- GameModes:
+	- Add options for respecting the flow state of stealing (in)/stolen (out) resources.
 
 v1.4.16.1
 FIXES

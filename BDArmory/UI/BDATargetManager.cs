@@ -943,7 +943,8 @@ namespace BDArmory.UI
                             mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf) +
                             mf.targetWeightThreat * target.Current.TargetPriThreat(target.Current.weaponManager, mf) +
                             mf.targetWeightAoD * target.Current.TargetPriAoD(mf) +
-                            mf.targetWeightProtectVIP * target.Current.TargetPriProtectVIP(target.Current.weaponManager) +
+                            mf.targetWeightProtectTeammate * target.Current.TargetPriProtectTeammate(target.Current.weaponManager, mf) +
+                            mf.targetWeightProtectVIP * target.Current.TargetPriProtectVIP(target.Current.weaponManager, mf) +
                             mf.targetWeightAttackVIP * target.Current.TargetPriAttackVIP(target.Current.weaponManager));
                         if (finalTarget == null || targetScore > finalTargetScore)
                         {
