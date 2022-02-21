@@ -960,11 +960,11 @@ namespace BDArmory.Misc
 
             // identify all parts on source vessel with resource
             Dictionary<string, HashSet<PartResource>> srcParts = new Dictionary<string, HashSet<PartResource>>();
-            DeepFind(src.rootPart, resourceNames, srcParts);
+            DeepFind(src.rootPart, resourceNames, srcParts, BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_OUT);
 
             // identify all parts on destination vessel with resource
             Dictionary<string, HashSet<PartResource>> dstParts = new Dictionary<string, HashSet<PartResource>>();
-            DeepFind(dst.rootPart, resourceNames, dstParts);
+            DeepFind(dst.rootPart, resourceNames, dstParts, BDArmorySettings.RESOURCE_STEAL_RESPECT_FLOWSTATE_IN);
 
             foreach (var resourceName in resourceNames)
             {
@@ -1059,12 +1059,13 @@ namespace BDArmory.Misc
             }
         }
 
-        private static void DeepFind(Part p, HashSet<string> resourceNames, Dictionary<string, HashSet<PartResource>> accumulator)
+        private static void DeepFind(Part p, HashSet<string> resourceNames, Dictionary<string, HashSet<PartResource>> accumulator, bool respectFlowState)
         {
             foreach (PartResource r in p.Resources)
             {
                 if (resourceNames.Contains(r.resourceName))
                 {
+                    if (respectFlowState && !r.flowState) continue; // Ignore locked resources.
                     if (!accumulator.ContainsKey(r.resourceName))
                         accumulator[r.resourceName] = new HashSet<PartResource>();
                     accumulator[r.resourceName].Add(r);
@@ -1072,7 +1073,7 @@ namespace BDArmory.Misc
             }
             foreach (Part child in p.children)
             {
-                DeepFind(child, resourceNames, accumulator);
+                DeepFind(child, resourceNames, accumulator, respectFlowState);
             }
         }
     }
