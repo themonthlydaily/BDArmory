@@ -1734,7 +1734,8 @@ namespace BDArmory.Modules
                 finalMaxSteer *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteerAtMaxSpeed, maxSteer); // Linearly varies between two limits, clamped at limit values
             else
                 finalMaxSteer *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteer, maxSteerAtMaxSpeed); // Linearly varies between two limits, clamped at limit values
-            finalMaxSteer = Mathf.Max(finalMaxSteer, 0.1f); // added just in case to ensure some input is retained no matter what happens
+            finalMaxSteer *= 1.225f / (float)vessel.atmDensity; // Scale based on atmospheric density relative to sea level Kerbin (since dynamic pressure depends on density)
+            finalMaxSteer = Mathf.Clamp(finalMaxSteer, 0.1f, 1f); // added just in case to ensure some input is retained no matter what happens
 
             //roll
             Vector3 currentRoll = -vesselTransform.forward;

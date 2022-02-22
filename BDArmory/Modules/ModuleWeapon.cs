@@ -743,6 +743,49 @@ namespace BDArmory.Modules
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Ammo_LoadedAmmo")]//Status
         public string guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Slug");
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DeployableWeapon"), // In custom/modded "cargo bay"
+            UI_ChooseOption(
+            options = new String[] {
+                "0",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16"
+            },
+            display = new String[] {
+                "Disabled",
+                "AG1",
+                "AG2",
+                "AG3",
+                "AG4",
+                "AG5",
+                "AG6",
+                "AG7",
+                "AG8",
+                "AG9",
+                "AG10",
+                "Lights",
+                "RCS",
+                "SAS",
+                "Brakes",
+                "Abort",
+                "Gear"
+            }
+        )]
+        public string deployWepGroup = "0";
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true)]
         private bool canHotSwap = false; //for select weapons that it makes sense to be able to swap ammo types while in-flight, like the Abrams turret
 
