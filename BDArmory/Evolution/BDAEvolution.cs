@@ -154,7 +154,7 @@ namespace BDArmory.Evolution
             seedDirectory = Path.Combine(configDirectory, "seeds");
             adversaryDirectory = Path.Combine(configDirectory, "adversaries");
             weightMapFile = Path.Combine(configDirectory, "weights.cfg");
-            stateFile = Path.Combine($"{configDirectory}", "evolution.state");
+            stateFile = Path.Combine(configDirectory, "evolution.state");
         }
 
         private void Start()
