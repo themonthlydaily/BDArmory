@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -219,7 +220,7 @@ namespace BDArmory.UI
             Ray ray = new Ray(missilePosition, groundTargetPosition - missilePosition);
             ray.origin += 10 * ray.direction;
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, dist, 557057))
+            if (Physics.Raycast(ray, out rayHit, dist, (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.Unknown19)))
             {
                 if ((rayHit.point - groundTargetPosition).sqrMagnitude < 200)
                 {
@@ -942,7 +943,8 @@ namespace BDArmory.UI
                             mf.targetWeightFriendliesEngaging * target.Current.TargetPriFriendliesEngaging(mf) +
                             mf.targetWeightThreat * target.Current.TargetPriThreat(target.Current.weaponManager, mf) +
                             mf.targetWeightAoD * target.Current.TargetPriAoD(mf) +
-                            mf.targetWeightProtectVIP * target.Current.TargetPriProtectVIP(target.Current.weaponManager) +
+                            mf.targetWeightProtectTeammate * target.Current.TargetPriProtectTeammate(target.Current.weaponManager, mf) +
+                            mf.targetWeightProtectVIP * target.Current.TargetPriProtectVIP(target.Current.weaponManager, mf) +
                             mf.targetWeightAttackVIP * target.Current.TargetPriAttackVIP(target.Current.weaponManager));
                         if (finalTarget == null || targetScore > finalTargetScore)
                         {

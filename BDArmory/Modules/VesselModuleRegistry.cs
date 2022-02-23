@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using BDArmory.Core;
+using BDArmory.Competition;
 using BDArmory.Control;
 using BDArmory.Misc;
 
@@ -35,7 +36,7 @@ namespace BDArmory.Modules
         static public Dictionary<Vessel, List<IBDAIControl>> registryIBDAIControl;
         static public Dictionary<Vessel, List<ModuleWeapon>> registryModuleWeapon;
         static public Dictionary<Vessel, List<IBDWeapon>> registryIBDWeapon;
-		static public Dictionary<Vessel, List<ModuleEngines>> registryModuleEngines;
+        static public Dictionary<Vessel, List<ModuleEngines>> registryModuleEngines;
         static public Dictionary<Vessel, List<ModuleResourceIntake>> registryModuleIntakes;
         static public Dictionary<Vessel, List<ModuleCommand>> registryModuleCommand;
         static public Dictionary<Vessel, List<KerbalSeat>> registryKerbalSeat;
@@ -252,7 +253,7 @@ namespace BDArmory.Modules
             if (typeof(T) == typeof(BDModuleSurfaceAI)) { return GetBDModuleSurfaceAIs(vessel) as List<T>; }
             if (typeof(T) == typeof(ModuleWeapon)) { return GetModuleWeapons(vessel) as List<T>; }
             if (typeof(T) == typeof(IBDWeapon)) { return GetIBDWeapons(vessel) as List<T>; }
-			if (typeof(T) == typeof(ModuleEngines)) { return GetModuleEngines(vessel) as List<T>; }
+            if (typeof(T) == typeof(ModuleEngines)) { return GetModuleEngines(vessel) as List<T>; }
             if (typeof(T) == typeof(ModuleResourceIntake)) { return GetModuleIntakes(vessel) as List<T>; }
             if (typeof(T) == typeof(ModuleCommand)) { return GetModuleCommands(vessel) as List<T>; }
             if (typeof(T) == typeof(KerbalSeat)) { return GetKerbalSeats(vessel) as List<T>; }

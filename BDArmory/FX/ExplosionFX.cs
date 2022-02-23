@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Bullets;
+using UnityEngine;
+
 using BDArmory.Competition;
-using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
+using BDArmory.GameModes;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.UI;
-using UnityEngine;
 
 namespace BDArmory.FX
 {
@@ -38,9 +38,14 @@ namespace BDArmory.FX
         public bool isFX { get; set; }
         public float CASEClamp { get; set; }
         public float dmgMult { get; set; }
+
+        public Part hitpart { get; set; }
         public float TimeIndex => Time.time - StartTime;
 
         private bool disabled = true;
+
+        float blastRange;
+        int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
 
         Queue<BlastHitEvent> explosionEvents = new Queue<BlastHitEvent>();
         List<BlastHitEvent> explosionEventsPreProcessing = new List<BlastHitEvent>();
@@ -81,6 +86,7 @@ namespace BDArmory.FX
             StartTime = Time.time;
             disabled = false;
             MaxTime = Mathf.Sqrt((Range / ExplosionVelocity) * 3f) * 2f; // Scale MaxTime to get a reasonable visualisation of the explosion.
+            blastRange = warheadType == WarheadTypes.Standard ? Range * 2 : Range; //to properly account for shrapnel hits when compiling list of hit parts from the spherecast
             if (!isFX)
             {
                 CalculateBlastEvents();
@@ -177,7 +183,7 @@ namespace BDArmory.FX
             if (warheadType == WarheadTypes.ShapedCharge)
             {
                 Ray SCRay = new Ray(Position, (Direction.normalized * Range));
-                var hits = Physics.RaycastAll(SCRay, Range, 9076737);
+                var hits = Physics.RaycastAll(SCRay, Range, explosionLayerMask);
                 if (BDArmorySettings.DRAW_ARMOR_LABELS) Debug.Log("[ExplosionFX] SC plasmaJet raycast hits: " + hits.Length);
                 if (hits.Length > 0)
                 {
@@ -241,10 +247,10 @@ namespace BDArmory.FX
                     }
                 }
             }
-            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(Position, Range, overlapSphereColliders, 9076737);
+            var overlapSphereColliderCount = Physics.OverlapSphereNonAlloc(Position, blastRange, overlapSphereColliders, explosionLayerMask);
             if (overlapSphereColliderCount == overlapSphereColliders.Length)
             {
-                overlapSphereColliders = Physics.OverlapSphere(Position, Range, 9076737);
+                overlapSphereColliders = Physics.OverlapSphere(Position, blastRange, explosionLayerMask);
                 overlapSphereColliderCount = overlapSphereColliders.Length;
             }
             using (var hitCollidersEnu = overlapSphereColliders.Take(overlapSphereColliderCount).ToList().GetEnumerator())
@@ -341,7 +347,7 @@ namespace BDArmory.FX
         {
             Ray ray = new Ray(Position, building.transform.position - Position);
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, Range, 9076737))
+            if (Physics.Raycast(ray, out rayHit, Range, explosionLayerMask))
             {
                 //TODO: Maybe we are not hitting building because we are hitting explosive parts.
 
@@ -381,7 +387,7 @@ namespace BDArmory.FX
                         withinAngleofEffect = angleOverride ? true : (IsAngleAllowed(Direction, hit, part))
                     });
                 }
-                if (warheadType == WarheadTypes.Standard && ProjMass > 0 && distance <= Range * 2)
+                if (warheadType == WarheadTypes.Standard && ProjMass > 0 && distance <= blastRange) //maybe move this to ExecutePartBlastHitEvent so shrap hits aren't instantaneous
                 {
                     ProjectileUtils.CalculateShrapnelDamage(part, hit, Caliber, Power, distance, sourceVesselName, ExplosionSource, ProjMass); //part hit by shrapnel, but not pressure wave
                 }
@@ -427,22 +433,22 @@ namespace BDArmory.FX
         {
             Ray partRay = new Ray(Position, part.transform.position - Position);
 
-            var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, Range, 9076737);
+            var hitCount = Physics.RaycastNonAlloc(partRay, lineOfSightHits, blastRange, explosionLayerMask);
             if (hitCount == lineOfSightHits.Length) // If there's a whole bunch of stuff in the way (unlikely), then we need to increase the size of our hits buffer.
             {
-                lineOfSightHits = Physics.RaycastAll(partRay, Range, 9076737);
+                lineOfSightHits = Physics.RaycastAll(partRay, blastRange, explosionLayerMask);
                 hitCount = lineOfSightHits.Length;
             }
             int reverseHitCount = 0;
             //check if explosion is originating inside a part
-            reverseHitCount = Physics.RaycastNonAlloc(new Ray(part.transform.position - Position, Position), reverseHits, Range, 9076737);
+            reverseHitCount = Physics.RaycastNonAlloc(new Ray(part.transform.position - Position, Position), reverseHits, blastRange, explosionLayerMask);
             if (reverseHitCount == reverseHits.Length)
             {
-                reverseHits = Physics.RaycastAll(new Ray(part.transform.position - Position, Position), Range, 9076737);
+                reverseHits = Physics.RaycastAll(new Ray(part.transform.position - Position, Position), blastRange, explosionLayerMask);
                 reverseHitCount = reverseHits.Length;
             }
             for (int i = 0; i < reverseHitCount; ++i)
-            { reverseHits[i].distance = Range - reverseHits[i].distance; }
+            { reverseHits[i].distance = blastRange - reverseHits[i].distance; }
 
             intermediateParts = new List<Tuple<float, float, float>>();
 
@@ -770,7 +776,7 @@ namespace BDArmory.FX
                         }
                         else
                         {
-                            if (!ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough
+                            if ((part == hitpart && part.name.ToLower().Contains("armor")) || !ProjectileUtils.CalculateExplosiveArmorDamage(part, blastInfo.TotalPressure, SourceVesselName, eventToExecute.Hit, ExplosionSource)) //false = armor blowthrough or bullet detonating inside part
                             {
                                 if (RA != null && !RA.NXRA) //blast wave triggers RA; detonate all remaining RA sections
                                 {
@@ -790,7 +796,7 @@ namespace BDArmory.FX
                         {
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
-                                Misc.BattleDamageHandler.CheckDamageFX(part, Caliber, penetrationFactor, true, warheadType == WarheadTypes.ShapedCharge ? true : false, SourceVesselName, eventToExecute.Hit);
+                                BattleDamageHandler.CheckDamageFX(part, Caliber, penetrationFactor, true, warheadType == WarheadTypes.ShapedCharge ? true : false, SourceVesselName, eventToExecute.Hit);
                             }
                             // Update scoring structures
                             //damage = Mathf.Clamp(damage, 0, part.Damage()); //if we want to clamp overkill score inflation
@@ -871,7 +877,7 @@ namespace BDArmory.FX
         }
 
         public static void CreateExplosion(Vector3 position, float tntMassEquivalent, string explModelPath, string soundPath, ExplosionSourceType explosionSourceType,
-            float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard")
+            float caliber = 120, Part explosivePart = null, string sourceVesselName = null, string sourceWeaponName = null, Vector3 direction = default(Vector3), float angle = 100f, bool isfx = false, float projectilemass = 0, float caseLimiter = -1, float dmgMutator = 1, string type = "standard", Part Hitpart = null)
         {
             CreateObjectPool(explModelPath, soundPath);
 
@@ -901,6 +907,7 @@ namespace BDArmory.FX
             eFx.ProjMass = projectilemass;
             eFx.CASEClamp = caseLimiter;
             eFx.dmgMult = dmgMutator;
+            eFx.hitpart = Hitpart;
             eFx.pEmitters = newExplosion.GetComponentsInChildren<KSPParticleEmitter>();
             eFx.audioSource = newExplosion.GetComponent<AudioSource>();
             type = type.ToLower();

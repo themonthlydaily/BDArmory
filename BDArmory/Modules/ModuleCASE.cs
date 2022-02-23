@@ -1,8 +1,7 @@
 using BDArmory.Competition;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
 using BDArmory.Core.Utils;
 using BDArmory.FX;
 using BDArmory.Misc;
@@ -11,7 +10,6 @@ using System.Text;
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
-using System.Collections;
 
 namespace BDArmory.Modules
 {
@@ -35,6 +33,7 @@ namespace BDArmory.Modules
         public string SourceVessel = "";
         public bool hasDetonated = false;
         private float blastRadius = 0;
+        int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23);
 
         public bool externallyCalled = false;
 
@@ -247,7 +246,7 @@ namespace BDArmory.Modules
                 ExplosionFx.CreateExplosion(part.transform.position, (float)ammoExplosionYield / 4f, shuntExploModelPath, explSoundPath, ExplosionSourceType.BattleDamage, 30, part, SourceVessel, "Ammunition (CASE-II)", direction, -1, true);
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.ModuleCASE] CASE II explosion, tntMassEquivilent: " + ammoExplosionYield);
                 Ray BlastRay = new Ray(part.transform.position, part.transform.up);
-                var hits = Physics.RaycastAll(BlastRay, blastRadius, 9076737);
+                var hits = Physics.RaycastAll(BlastRay, blastRadius, explosionLayerMask);
                 if (hits.Length > 0)
                 {
                     var orderedHits = hits.OrderBy(x => x.distance);
@@ -290,7 +289,7 @@ namespace BDArmory.Modules
 
                                     Ray LoSRay = new Ray(part.transform.position, hitPart.transform.position - part.transform.position);
                                     RaycastHit LOShit;
-                                    if (Physics.Raycast(LoSRay, out LOShit, dist.magnitude, 9076737))
+                                    if (Physics.Raycast(LoSRay, out LOShit, dist.magnitude, explosionLayerMask))
                                     {
                                         if (FlightGlobals.currentMainBody == null || LOShit.collider.gameObject != FlightGlobals.currentMainBody.gameObject)
                                         {

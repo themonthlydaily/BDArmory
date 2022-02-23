@@ -29,6 +29,7 @@ namespace BDArmory.Modules
 
         public MissileTurret missileTurret = null;
         public BDRotaryRail rotaryRail = null;
+        public BDDeployableRail deployableRail = null;
 
         [KSPField]
         public string exhaustPrefabPath;
@@ -161,6 +162,11 @@ namespace BDArmory.Modules
 
         public string explSoundPath = "BDArmory/Sounds/explode1";
 
+        //weapon specifications
+        [KSPField(advancedTweakable = true, isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "#LOC_BDArmory_FiringPriority"),
+            UI_FloatRange(minValue = 0, maxValue = 10, stepIncrement = 1, scene = UI_Scene.All, affectSymCounterparts = UI_Scene.All)]
+        public float priority = 0; //per-weapon priority selection override
+
         [KSPField]
         public bool spoolEngine = false;
 
@@ -278,6 +284,10 @@ namespace BDArmory.Modules
             {
                 rotaryRail.FireMissile(this);
             }
+            else if (deployableRail)
+            {
+                deployableRail.FireMissile(this);
+            }
             else
             {
                 FireMissile();
@@ -296,6 +306,10 @@ namespace BDArmory.Modules
             else if (rotaryRail)
             {
                 rotaryRail.FireMissile(this);
+            }
+            else if (deployableRail)
+            {
+                deployableRail.FireMissile(this);
             }
             else
             {

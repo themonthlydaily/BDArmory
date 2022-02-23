@@ -2,6 +2,7 @@ using System;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using UnityEngine;
@@ -161,7 +162,7 @@ namespace BDArmory.Guidances
             // Ease in velocity from 16s to 8s, ease in acceleration from 8s to 2s using the logistic function to give smooth adjustments to target point.
             float easeAccel = Mathf.Clamp01(1.1f / (1f + Mathf.Exp((timeToCPA - 5f))) - 0.05f);
             float easeVel = Mathf.Clamp01(2f - timeToCPA / 8f);
-            return AIUtils.PredictPosition(targetPosition, targetVelocity * easeVel, targetAcceleration * easeAccel, timeToCPA);
+            return AIUtils.PredictPosition(targetPosition, targetVelocity * easeVel, targetAcceleration * easeAccel, timeToCPA + TimeWarp.fixedDeltaTime); // Compensate for the off-by-one frame issue.
         }
 
         /// <summary>
@@ -282,7 +283,7 @@ namespace BDArmory.Guidances
                 Ray terrainRay = new Ray(missileVessel.transform.position, tRayDirection);
                 RaycastHit rayHit;
 
-                if (Physics.Raycast(terrainRay, out rayHit, 8000, (1 << 15) | (1 << 17)))
+                if (Physics.Raycast(terrainRay, out rayHit, 8000, (int)(LayerMasks.Scenery | LayerMasks.EVA))) // Why EVA?
                 {
                     float detectedAlt =
                         Vector3.Project(rayHit.point - missileVessel.transform.position, upDirection).magnitude;
@@ -467,7 +468,7 @@ namespace BDArmory.Guidances
             }
 
             RaycastHit rayHit;
-            if (Physics.Raycast(ray, out rayHit, rayDistance, (1 << 15) | (1 << 17)))
+            if (Physics.Raycast(ray, out rayHit, rayDistance, (int)(LayerMasks.Scenery | LayerMasks.EVA))) // Why EVA?
             {
                 return rayHit.distance;
             }

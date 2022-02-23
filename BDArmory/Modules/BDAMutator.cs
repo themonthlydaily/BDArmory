@@ -1,5 +1,6 @@
 ﻿using BDArmory.Core;
-using BDArmory.Control;
+using BDArmory.Competition;
+using BDArmory.GameModes;
 using BDArmory.Misc;
 using System.Collections.Generic;
 using UnityEngine;
@@ -144,11 +145,11 @@ namespace BDArmory.Modules
                 }
                 if (mutatorInfo.Vampirism > 0)
                 {
-                    Vampirism = mutatorInfo.Vampirism;
+                    Vampirism += mutatorInfo.Vampirism;
                 }
                 if (mutatorInfo.Regen != 0)
                 {
-                    Regen = mutatorInfo.Regen;
+                    Regen += mutatorInfo.Regen;
                 }
                 using (List<Part>.Enumerator part = vessel.Parts.GetEnumerator())
                     while (part.MoveNext())
@@ -172,7 +173,7 @@ namespace BDArmory.Modules
                                 {
                                     MM.duration = BDArmorySettings.COMPETITION_DURATION;
                                 }
-                                MM.massMod = mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
+                                MM.massMod += mutatorInfo.MassMod / vessel.Parts.Count; //evenly distribute mass change across entire vessel
                             }
                         }
                     }
@@ -251,6 +252,8 @@ namespace BDArmory.Modules
                 {
                     var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
                     HPT.defenseMutator = 1;
+                    var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
+                    part.Current.RemoveModule(MM);
                 }
             if (Vengeance)
             {

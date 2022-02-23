@@ -2,9 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Control;
+using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Modules;
+using BDArmory.UI;
 using UnityEngine;
+
 namespace BDArmory.Competition
 {
     public class WaypointFollowingStrategy : OrchestrationStrategy
@@ -41,7 +43,10 @@ namespace BDArmory.Competition
             Debug.Log("[BDArmory.WaypointFollowingStrategy] Started");
             var startedAt = Planetarium.GetUniversalTime();
 
-            var vessels = VesselSpawner.Instance.spawnedVessels;
+
+            // var vessels = VesselSpawner.Instance.spawnedVessels;
+            // AUBRANIUM The usual approach to getting the active vessels is via their weapon managers in the LoadedVesselSwitcher (the spawning routines wait for them to appear there as part of ensuring that the vessels actually spawned and are valid), i.e.,
+            var vessels = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).ToList();
             if( vessels.Any() )
             {
                 this.vessel = vessels.First();

@@ -1,13 +1,15 @@
-﻿using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
+using BDArmory.Core;
+using BDArmory.GameModes;
+using BDArmory.Misc;
+using BDArmory.Modules;
 
 namespace BDArmory.FX
 {
@@ -57,6 +59,7 @@ namespace BDArmory.FX
 
         private float EMPRadius = 100;
         private float scale = 1;
+        int explosionLayerMask = (int)(LayerMasks.Parts | LayerMasks.Scenery | LayerMasks.EVA | LayerMasks.Unknown19 | LayerMasks.Unknown23); // Why 19 and 23?
 
         static RaycastHit[] lineOfSightHits;
         static RaycastHit[] reverseHits;
@@ -163,7 +166,7 @@ namespace BDArmory.FX
             explosionEventsBuildingAdded.Clear();
             explosionEventsVesselsHit.Clear();
 
-            using (var hitCollidersEnu = Physics.OverlapSphere(Position, thermalRadius * 2, 9076737).AsEnumerable().GetEnumerator())
+            using (var hitCollidersEnu = Physics.OverlapSphere(Position, thermalRadius * 2, explosionLayerMask).AsEnumerable().GetEnumerator())
             {
                 while (hitCollidersEnu.MoveNext())
                 {
@@ -190,7 +193,7 @@ namespace BDArmory.FX
                                     Ray ray = new Ray(Position, building.transform.position - Position);
                                     var distance = Vector3.Distance(building.transform.position, Position);
                                     RaycastHit rayHit;
-                                    if (Physics.Raycast(ray, out rayHit, thermalRadius, 9076737))
+                                    if (Physics.Raycast(ray, out rayHit, thermalRadius, explosionLayerMask))
                                     {
                                         DestructibleBuilding destructibleBuilding = rayHit.collider.gameObject.GetComponentUpwards<DestructibleBuilding>();
 
@@ -247,7 +250,7 @@ namespace BDArmory.FX
             Ray LoSRay = new Ray(transform.position, part.transform.position - transform.position);
             RaycastHit hit;
             var distToG0 = Math.Max((transform.position - part.transform.position).magnitude, 1f);
-            if (Physics.Raycast(LoSRay, out hit, distToG0, 9076737)) // only add impulse to parts with line of sight to detonation
+            if (Physics.Raycast(LoSRay, out hit, distToG0, explosionLayerMask)) // only add impulse to parts with line of sight to detonation
             {
                 KerbalEVA eva = hit.collider.gameObject.GetComponentUpwards<KerbalEVA>();
                 Part p = eva ? eva.part : hit.collider.gameObject.GetComponentInParent<Part>();
@@ -415,7 +418,7 @@ namespace BDArmory.FX
                         {
                             EMP = (ModuleDrainEC)part.vessel.rootPart.AddModule("ModuleDrainEC");
                         }
-						EMP.incomingDamage = ((EMPRadius / realDistance) * 100); //this way craft at edge of blast might only get disabled instead of bricked
+                        EMP.incomingDamage = ((EMPRadius / realDistance) * 100); //this way craft at edge of blast might only get disabled instead of bricked
                         //work on a better EMP damage value, in case of configs with very large thermalRadius
                         EMP.softEMP = false;
                     }
@@ -462,7 +465,7 @@ namespace BDArmory.FX
                         {
                             if (BDArmorySettings.BATTLEDAMAGE)
                             {
-                                Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
+                                BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
                             }
                             // Update scoring structures
                             if (BDACompetitionMode.Instance) //moving this here - only give scores to stuff still inside blast radius when blastfront arrives

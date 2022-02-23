@@ -1,5 +1,5 @@
 using BDArmory.Competition;
-using BDArmory.Control;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
 using BDArmory.Core.Module;
@@ -132,7 +132,7 @@ namespace BDArmory.Modules
                         var engine = part.FindModuleImplementing<ModuleEngines>();
                         if (engine != null)
                         {
-                            if (!engine.isEnabled || !engine.EngineIgnited)
+                            if (!engine.isEnabled || !engine.EngineIgnited) //so this is getting tripped by multimode engines toggling from wet/dry
                             {
                                 if (!hasDetonated)
                                 {

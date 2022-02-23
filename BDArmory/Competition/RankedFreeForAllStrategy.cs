@@ -5,7 +5,8 @@ using System.Linq;
 using BDArmory.Control;
 using BDArmory.Core;
 using UnityEngine;
-using static BDArmory.Competition.BDAScoreService;
+using BDArmory.Competition.RemoteOrchestration;
+using static BDArmory.Competition.RemoteOrchestration.BDAScoreService;
 
 namespace BDArmory.Competition
 {

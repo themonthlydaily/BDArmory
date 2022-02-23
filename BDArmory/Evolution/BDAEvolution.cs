@@ -3,11 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using BDArmory.Control;
+using BDArmory.Competition;
+using BDArmory.Competition.VesselSpawning;
 using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Evolution;
-using BDArmory.UI;
 using UnityEngine;
 
 namespace BDArmory.Evolution
@@ -139,6 +137,16 @@ namespace BDArmory.Evolution
 
         private static Dictionary<string, Dictionary<string, float>> aggregateScores = new Dictionary<string, Dictionary<string, float>>();
 
+        public static void ConfigurePaths()
+        {
+            configDirectory = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", "evolutions");
+            workingDirectory = Path.Combine(configDirectory, "working");
+            seedDirectory = Path.Combine(configDirectory, "seeds");
+            adversaryDirectory = Path.Combine(configDirectory, "adversaries");
+            weightMapFile = Path.Combine(configDirectory, "weights.cfg");
+            stateFile = Path.Combine(configDirectory, "evolution.state");
+        }
+
         void Awake()
         {
             // Debug.Log("[BDArmory.BDAEvolution]: Evolution awake");
@@ -148,13 +156,7 @@ namespace BDArmory.Evolution
             }
 
             Instance = this;
-
-            configDirectory = Path.Combine(KSPUtil.ApplicationRootPath, "AutoSpawn", "evolutions");
-            workingDirectory = Path.Combine(configDirectory, "working");
-            seedDirectory = Path.Combine(configDirectory, "seeds");
-            adversaryDirectory = Path.Combine(configDirectory, "adversaries");
-            weightMapFile = Path.Combine(configDirectory, "weights.cfg");
-            stateFile = Path.Combine($"{configDirectory}", "evolution.state");
+            if (string.IsNullOrEmpty(configDirectory)) ConfigurePaths();
         }
 
         private void Start()
@@ -317,6 +319,7 @@ namespace BDArmory.Evolution
         public static EvolutionWorkingState LoadState()
         {
             var state = new EvolutionWorkingState();
+            if (string.IsNullOrEmpty(configDirectory)) ConfigurePaths();
             if (File.Exists(stateFile))
             {
                 try
@@ -330,6 +333,8 @@ namespace BDArmory.Evolution
                     Debug.LogError($"[BDArmory.BDAEvolution]: Failure to properly read evolution state file: " + e.Message);
                 }
             }
+            else
+            { Debug.LogError($"[BDArmory.BDAEvolution]: Failed to find evolution.state file {stateFile}"); }
             return state;
         }
 
