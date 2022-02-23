@@ -1180,6 +1180,7 @@ namespace BDArmory.Modules
 
                     weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
 
+                    SetDeployableWeapons();
                     DisplaySelectedWeaponMessage();
                 }
                 if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
@@ -1527,6 +1528,11 @@ namespace BDArmory.Modules
 
         IEnumerator GuardTurretRoutine()
         {
+            if (SetDeployableWeapons())
+            {
+                yield return new WaitForSeconds(2f);
+            }
+
             if (gameObject.activeInHierarchy)
             //target is out of visual range, try using sensors
             {
@@ -2567,6 +2573,7 @@ namespace BDArmory.Modules
 
                 if (vessel.isActiveVessel && weaponIndex != 0)
                 {
+                    SetDeployableWeapons();
                     DisplaySelectedWeaponMessage();
                 }
             }
@@ -2887,6 +2894,55 @@ namespace BDArmory.Modules
             return openingBays;
         }
 
+        private HashSet<uint> wepsDeployed = new HashSet<uint>();
+        private bool SetDeployableWeapons()
+        {
+            bool deployingWeapon = false;
+
+            if (weaponIndex > 0 && currentGun)
+            {
+                if (uint.Parse(currentGun.deployWepGroup) > 0) // Weapon uses a deploy action group, activate it to fire
+                {
+                    uint deployWepGroup = uint.Parse(currentGun.deployWepGroup);
+                    if (!wepsDeployed.Contains(deployWepGroup)) // We haven't deployed this weapon yet
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)deployWepGroup]);
+                        deployingWeapon = true;
+                        wepsDeployed.Add(deployWepGroup);
+                    }
+                    else
+                    {
+                        foreach (var wep in wepsDeployed.Where(e => e <= 16).ToList()) // Store other Weapons that might be deployed 
+                        {
+                            if (wep != deployWepGroup)
+                            {
+                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)wep]);
+                                wepsDeployed.Remove(wep); // Weapon is no longer deployed
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var wep in wepsDeployed.Where(e => e <= 16).ToList()) // Store weapons
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)wep]);
+                        wepsDeployed.Remove(wep); // Weapon is no longer deployed
+                    }
+                }
+            }
+            else
+            {
+                foreach (var wep in wepsDeployed.Where(e => e <= 16).ToList()) // Store weapons
+                {
+                    vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)wep]);
+                    wepsDeployed.Remove(wep); // Weapon is no longer deployed
+                }
+            }
+
+            return deployingWeapon;
+        }
+
         void SetRotaryRails()
         {
             if (weaponIndex == 0) return;
@@ -2991,7 +3047,7 @@ namespace BDArmory.Modules
             triggerTimer = 0;
 
             UpdateList();
-
+            SetDeployableWeapons();
             DisplaySelectedWeaponMessage();
 
             if (vessel.isActiveVessel && !guardMode)
@@ -3013,7 +3069,7 @@ namespace BDArmory.Modules
             if (vessel.isActiveVessel && !guardMode)
             {
                 audioSource.PlayOneShot(clickSound);
-
+                SetDeployableWeapons();
                 DisplaySelectedWeaponMessage();
             }
         }
@@ -4696,6 +4752,7 @@ namespace BDArmory.Modules
                 }
 
                 PrepareWeapons();
+                SetDeployableWeapons();
                 DisplaySelectedWeaponMessage();
                 return true;
             }
@@ -5181,6 +5238,7 @@ namespace BDArmory.Modules
                     if (guardTarget == null || selectedWeapon == null)
                     {
                         SetCargoBays();
+                        SetDeployableWeapons();
                         return;
                     }
 
@@ -5246,6 +5304,7 @@ namespace BDArmory.Modules
                     }
                 }
                 SetCargoBays();
+                SetDeployableWeapons();
             }
 
             if (overrideTimer > 0)
