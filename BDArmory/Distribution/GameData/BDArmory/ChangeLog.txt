@@ -1,4 +1,6 @@
-﻿IMPROVEMENTS
+﻿FIXES
+- Fix auto-resume evolution not finding the evolution.state file.
+IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
 	- Add hotkey option for time scaling.
