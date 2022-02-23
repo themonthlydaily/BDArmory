@@ -11,12 +11,12 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy
 
-VERSION = "1.2"
+VERSION = "1.3"
 
 parser = argparse.ArgumentParser(description="Plot the scores of a tournament as they accumulated per round", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("tournament", nargs="?", type=str, help="The tournament to plot (optional).")
 parser.add_argument('-t', '--title', type=str, help="A title.")
-parser.add_argument('-s', '--save', action='store_true', help="Save a PNG image instead of displaying the graph.")
+parser.add_argument('-s', '--save', type=str, nargs='?', const='tmp', help="Save a PNG image instead of displaying the graph.")
 parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
 
@@ -41,7 +41,10 @@ plt.legend(names, loc='upper left')
 if args.title is not None:
     plt.title(args.title)
 if args.save:
-    fd, filename = tempfile.mkstemp(suffix='.png')
+    if args.save == 'tmp':
+        fd, filename = tempfile.mkstemp(suffix='.png')
+    else:
+        filename = args.save
     plt.savefig(filename, dpi='figure', bbox_inches='tight')
     print(f"Image saved to {filename}")
 else:
