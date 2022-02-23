@@ -8,13 +8,13 @@ namespace BDArmory.Modules
     public class BDAdjustableArmor : PartModule
     {
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorWidth"),//Engage Range Min
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
+ UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Width = 1;
 
         private float OldWidth = 1;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ArmorLength"),//Engage Range Min
- UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.5f, scene = UI_Scene.Editor)]
+ UI_FloatRange(minValue = 0.5f, maxValue = 16, stepIncrement = 0.1f, scene = UI_Scene.Editor)]
         public float Length = 1;
 
         private float OldLength = 1;
@@ -97,7 +97,7 @@ namespace BDArmory.Modules
                 N4Transform = part.FindModelTransform(Node4Name);
                 N4.nodeType = AttachNode.NodeType.Stack;
             }
-            UpdateThickness();
+            UpdateThickness(true);
         }
         public override void OnLoad(ConfigNode node)
         {
@@ -320,7 +320,7 @@ namespace BDArmory.Modules
             }
             armor.ArmorSetup(null, null);
         }
-        void UpdateThickness()
+        void UpdateThickness(bool onLoad = false)
         {
             if (armor != null && armorTransforms != null)
             {
@@ -345,6 +345,7 @@ namespace BDArmory.Modules
                 if (armorTransforms == null) Debug.Log("[BDAAdjustableArmor] No ArmorTransform found! aborting UpdateThickness()!");
                 return;
             }
+            if (onLoad) return; //don't adjust part placement on load
             float ratio = (armorthickness - Oldthickness) / 100;
             foreach (Part p in part.children)
             {

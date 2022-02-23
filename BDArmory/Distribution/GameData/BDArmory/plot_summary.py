@@ -3,15 +3,24 @@
 # Standard library imports
 import argparse
 import csv
+import sys
 from pathlib import Path
 
 # Third party imports
 import matplotlib.pyplot as plt
 import numpy
 
+VERSION = "1.2"
+
 parser = argparse.ArgumentParser(description="Plot the scores of a tournament as they accumulated per round", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("tournament", nargs="?", type=str, help="The tournament to plot (optional).")
+parser.add_argument('-t', '--title', type=str, help="A title.")
+parser.add_argument("--version", action='store_true', help="Show the script version, then exit.")
 args = parser.parse_args()
+
+if args.version:
+    print(f"Version: {VERSION}")
+    sys.exit()
 
 if args.tournament is None:
     tournamentFolders = sorted(list(dir for dir in ((Path(__file__).parent / "Logs").resolve().glob("Tournament*")) if dir.is_dir()))
@@ -27,4 +36,6 @@ scores = numpy.array([[float(v) for v in data[row][1:]] for row in range(len(dat
 plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(scores.transpose(), linewidth=5)
 plt.legend(names)
+if args.title is not None:
+    plt.title(args.title)
 plt.show(block=True)

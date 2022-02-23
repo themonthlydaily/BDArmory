@@ -386,7 +386,7 @@ namespace BDArmory.Misc
                         isru = part.GetComponent<ModuleResourceConverter>(); //could reduce efficiency, increase heat per hit
                         part.RemoveModule(isru);
                     }
-                    if (part.GetComponent<ModuleResourceConverter>() != null)
+                    if (part.GetComponent<ModuleTurret>() != null)
                     {
                         ModuleTurret turret;
                         turret = part.GetComponent<ModuleTurret>(); //could reduce traverse speed, range per hit

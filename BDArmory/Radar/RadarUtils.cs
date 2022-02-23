@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using System.Linq;
 using BDArmory.Control;
 using BDArmory.Core;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
 using BDArmory.Misc;
 using BDArmory.Modules;
@@ -125,7 +125,7 @@ namespace BDArmory.Radar
         /// Force radar signature update
         /// Optionally, pass in a list of the vessels to update, otherwise all vessels in BDATargetManager.LoadedVessels get updated.
         /// 
-        /// FIXME this appears to cause a rather large amount of memory to leak.
+        /// This appears to cause a rather large amount of memory to be consumed (not actually a leak though).
         /// </summary>
         public static void ForceUpdateRadarCrossSections(List<Vessel> vessels = null)
         {
@@ -1407,7 +1407,7 @@ namespace BDArmory.Radar
         {
             if (!BDArmorySettings.IGNORE_TERRAIN_CHECK)
             {
-                return Physics.Linecast(start, end, 1 << 15);
+                return Physics.Linecast(start, end, (int)LayerMasks.Scenery);
             }
 
             return false;

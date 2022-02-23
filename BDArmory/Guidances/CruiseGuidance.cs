@@ -1,5 +1,6 @@
 ﻿using System;
 using BDArmory.Core.Extension;
+using BDArmory.Core.Utils;
 using BDArmory.Misc;
 using BDArmory.Modules;
 using UnityEngine;
@@ -32,7 +33,7 @@ namespace BDArmory.Guidances
     public class CruiseGuidance : IGuidance
     {
         private readonly MissileBase _missile;
-       
+
 
         private float _pitchAngle;
         private double _futureAltitude;
@@ -206,7 +207,7 @@ namespace BDArmory.Guidances
         //    var terrainRay = new Ray(position, tRayDirection);
         //    RaycastHit rayHit;
 
-        //    if (Physics.Raycast(terrainRay, out rayHit, 30000, (1 << 15) | (1 << 17)))
+        //    if (Physics.Raycast(terrainRay, out rayHit, 30000, (int)(LayerMasks.Scenery | LayerMasks.EVA))) // Why EVA?
         //    {
         //        var detectedAlt =
         //            Vector3.Project(rayHit.point - position, upDirection).magnitude;
@@ -220,7 +221,7 @@ namespace BDArmory.Guidances
         {
             var terrainRay = new Ray(this._missile.vessel.CoM, this._missile.vessel.Velocity());
             RaycastHit hit;
-            return Physics.Raycast(terrainRay, out hit, (float)(this._missile.vessel.srfSpeed * predictionTime), (1 << 15) | (1 << 17));
+            return Physics.Raycast(terrainRay, out hit, (float)(this._missile.vessel.srfSpeed * predictionTime), (int)(LayerMasks.Scenery | LayerMasks.EVA)); // Why EVA?
         }
 
         private void MakeDecisionAboutThrottle(MissileBase missile)
