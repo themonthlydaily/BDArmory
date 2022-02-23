@@ -1,11 +1,16 @@
-﻿IMPROVEMENTS
+﻿FIXES
+- Fix auto-resume evolution not finding the evolution.state file.
+IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
 	- Add hotkey option for time scaling.
 - AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
+	- Tweak the clamped altitude and speed min/max values to give more usable sliders.
 - GameModes:
 	- Add options for respecting the flow state of stealing (in)/stolen (out) resources.
+- UI:
+	- Add a "Slider Resolution" slider to the pilot AI (currently just PID, Altitudes and Speeds) to allow finer or coarser adjustments to those sliders in the PAW (not the AI GUI for now).
 
 v1.4.16.1
 FIXES

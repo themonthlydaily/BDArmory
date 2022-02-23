@@ -212,17 +212,17 @@ namespace BDArmory.Modules
         #region Altitudes
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude", //Default Alt.
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 100f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 50f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
         public float defaultAltitude = 2000;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude", //Min Altitude
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 25f, maxValue = 6000, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 1000, stepIncrement = 10f, scene = UI_Scene.All)]
         public float minAltitude = 200f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxAltitude", //Max Altitude
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 100f, maxValue = 15000, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 100f, maxValue = 10000, stepIncrement = 100f, scene = UI_Scene.All)]
         public float maxAltitude = 7500f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxAltitude", advancedTweakable = true,
@@ -234,7 +234,7 @@ namespace BDArmory.Modules
         #region Speeds
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed", //Max Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 20f, maxValue = 800f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 50f, maxValue = 800f, stepIncrement = 5.0f, scene = UI_Scene.All)]
         public float maxSpeed = 350;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TakeOffSpeed", //TakeOff Speed
@@ -403,6 +403,11 @@ namespace BDArmory.Modules
         public float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
         #endregion
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SliderResolution", advancedTweakable = true), // Slider Resolution
+            UI_ChooseOption(options = new string[4] { "Low", "Normal", "High", "Insane" }, scene = UI_Scene.All)]
+        public string sliderResolution = "Normal";
+        string previousSliderResolution = "Normal";
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_Starboard", disabledText = "#LOC_BDArmory_Orbit_Port", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
         public bool ClockwiseOrbit = true;
@@ -414,8 +419,8 @@ namespace BDArmory.Modules
         Dictionary<string, float> altMaxValues = new Dictionary<string, float>
         {
             { nameof(defaultAltitude), 100000f },
-            { nameof(minAltitude), 60000f },
-            { nameof(maxAltitude), 100000f },
+            { nameof(minAltitude), 100000f },
+            { nameof(maxAltitude), 150000f },
             { nameof(steerMult), 200f },
             { nameof(steerKiAdjust), 20f },
             { nameof(steerDamping), 100f },
@@ -450,7 +455,6 @@ namespace BDArmory.Modules
             { nameof(DynamicDampingRollMin), 100f },
             { nameof(DynamicDampingRollMax), 100f },
             { nameof(dynamicSteerDampingRollFactor), 100f }
-
         };
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
@@ -882,6 +886,73 @@ namespace BDArmory.Modules
             maxAltitudeToggleField.guiActiveEditor = true;
         }
 
+        protected void SetupSliderResolution()
+        {
+            var sliderResolutionField = (UI_ChooseOption)Fields["sliderResolution"].uiControlEditor;
+            sliderResolutionField.onFieldChanged = OnSliderResolutionUpdated;
+            sliderResolutionField = (UI_ChooseOption)Fields["sliderResolution"].uiControlFlight;
+            sliderResolutionField.onFieldChanged = OnSliderResolutionUpdated;
+            OnSliderResolutionUpdated(null, null);
+        }
+        public float sliderResolutionAsFloat(string res, float factor = 10f)
+        {
+            switch (res)
+            {
+                case "Low": return factor;
+                case "High": return 1f / factor;
+                case "Insane": return 1f / factor / factor;
+                default: return 1f;
+            }
+        }
+        void OnSliderResolutionUpdated(BaseField field, object obj)
+        {
+            if (previousSliderResolution != sliderResolution)
+            {
+                var factor = Mathf.Pow(10f, Mathf.Round(Mathf.Log10(sliderResolutionAsFloat(sliderResolution) / sliderResolutionAsFloat(previousSliderResolution))));
+                foreach (var PIDField in Fields)
+                {
+                    if (PIDField.group.name == "pilotAI_PID")
+                    {
+                        var uiControl = HighLogic.LoadedSceneIsFlight ? PIDField.uiControlFlight : PIDField.uiControlEditor;
+                        if (uiControl.GetType() == typeof(UI_FloatRange))
+                        {
+                            var slider = (UI_FloatRange)uiControl;
+                            var alsoMinValue = (slider.minValue == slider.stepIncrement);
+                            slider.stepIncrement *= factor;
+                            var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                            if (alsoMinValue) slider.minValue = slider.stepIncrement;
+                        }
+                    }
+                    if (PIDField.group.name == "pilotAI_Altitudes")
+                    {
+                        var uiControl = HighLogic.LoadedSceneIsFlight ? PIDField.uiControlFlight : PIDField.uiControlEditor;
+                        if (uiControl.GetType() == typeof(UI_FloatRange))
+                        {
+                            var slider = (UI_FloatRange)uiControl;
+                            var alsoMinValue = (slider.minValue == slider.stepIncrement);
+                            slider.stepIncrement *= factor;
+                            var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                            if (alsoMinValue) slider.minValue = slider.stepIncrement;
+                        }
+                    }
+                    if (PIDField.group.name == "pilotAI_Speeds")
+                    {
+                        var uiControl = HighLogic.LoadedSceneIsFlight ? PIDField.uiControlFlight : PIDField.uiControlEditor;
+                        if (uiControl.GetType() == typeof(UI_FloatRange))
+                        {
+                            var slider = (UI_FloatRange)uiControl;
+                            slider.stepIncrement *= factor;
+                            var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                        }
+                    }
+                }
+                previousSliderResolution = sliderResolution;
+            }
+        }
+
         protected override void Start()
         {
             base.Start();
@@ -895,6 +966,7 @@ namespace BDArmory.Modules
                 dynDecayRate = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 60f); // Decay rate for a half-life of 60s.
             }
 
+            SetupSliderResolution();
             SetSliderClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
             // SetSliderClamps("DynamicDampingMin", "DynamicDampingMax");
             // SetSliderClamps("DynamicDampingPitchMin", "DynamicDampingPitchMax");
