@@ -1372,12 +1372,11 @@ namespace BDArmory.Modules
             }
 
             // Adjust some values for asteroids.
-            var threshold = collisionAvoidanceThreshold;
+            var targetRadius = v.GetRadius(true);
+            var threshold = collisionAvoidanceThreshold + targetRadius; // Add the target's average radius to the threshold.
             if (v.vesselType == VesselType.SpaceObject) // Give asteroids some extra room.
             {
-                var radius = v.GetRadius();
-                threshold += radius;
-                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax);
+                maxTime += targetRadius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax);
             }
 
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
@@ -2550,7 +2549,7 @@ namespace BDArmory.Modules
                     while (vs.MoveNext())
                     {
                         if (vs.Current == null) continue;
-                        if (vs.Current == vessel || vs.Current.Landed) continue; // || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
+                        if (vs.Current == vessel || vs.Current.Landed) continue;
                         if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out collisionAvoidDirection)) continue;
                         if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
                         {
