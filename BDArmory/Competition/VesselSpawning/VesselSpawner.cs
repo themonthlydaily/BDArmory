@@ -1706,8 +1706,8 @@ namespace BDArmory.Competition.VesselSpawning
         #endregion
 
         #region Single craft spawning
-        // AUBRANIUM Stub for PointSpawnStrategy to get things to compile
-        // public IEnumerator SpawnVessel(string craftUrl, double latitude, double longitude, double altitude, float heading, float pitch)
+        // AUBRANIUM For spawning craft one-at-a time (as opposed to a single group), I think a new region would help. I want to clean up this file and organise it better once your spawn strategies are merged in.
+        // public IEnumerator SpawnVessel(string craftUrl, double latitude, double longitude, double altitude, float heading, float pitch) // This was the stub for the SpawnVessel above, but I haven't removed it as the comments are still relative and I haven't looked at the above SpawnVessel in detail yet.
         // {
         //     throw new NotImplementedException("[BDArmory.VesselSpawner]: FIXME Not implemented yet.");
         //     // This will need to call most of what's in the main part of the continuous spawning coroutine (lines 1277—1503). (I think this is up-to-date with the current state of the regular single spawning, but there may be one or two edge cases.)
