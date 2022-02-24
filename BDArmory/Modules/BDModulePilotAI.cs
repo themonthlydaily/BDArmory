@@ -1195,7 +1195,7 @@ namespace BDArmory.Modules
 
         void UpdateAI(FlightCtrlState s)
         {
-            if( activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0 )
+            if( activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0 ) // FIXME AUBRANIUM This should go after the evasion, before the extend checks. This will allow planes to evade attackers while still trying to follow the waypoints. (See the FIXME below)
             {
                 var waypoint = waypoints[activeWaypointIndex];
                 var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
@@ -1282,6 +1282,11 @@ namespace BDArmory.Modules
                     evasiveTimer = 0;
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
                 }
+            }
+            else if (!extending && command == PilotCommands.Waypoints)
+            {
+                // FIXME AUBRANIUM Waypoint following should go in here 
+                // It should include a check for circling the waypoint for too long, in which case the plane should RequestExtend away from the waypoint (possibly in the direction of the previous waypoint?).
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
             {
@@ -2083,14 +2088,14 @@ namespace BDArmory.Modules
                 dRange = 0;
                 if( activeWaypointIndex >= waypoints.Count )
                 {
-                    Debug.Log("[BDArmory.BDModulePilotAI] Waypoints complete");
+                    Debug.Log("[BDArmory.BDModulePilotAI] Waypoints complete"); // FIXME AUBRANIUM On reaching the last waypoint, you should call ReleaseCommand()
                     activeWaypointIndex = -1;
                     waypoints = null;
                     return;
                 }
             }
             lastRange = rangeToTarget;
-            FlyToNext(s);
+            FlyToNext(s); // FIXME AUBRANIUM FlyToNext recomputes many of the same values as are already available here. This should either call FlyToPosition if the activeWaypointIndex hasn't changed or call itself with the new activeWaypointIndex.
         }
 
         private void FlyToNext(FlightCtrlState s)
@@ -2203,6 +2208,7 @@ namespace BDArmory.Modules
                     debugString.Append($"Dodging gunfire");
                     float threatDirectionFactor = Vector3.Dot(vesselTransform.up, threatRelativePosition.normalized);
                     //Vector3 axis = -Vector3.Cross(vesselTransform.up, threatRelativePosition);
+                    // FIXME AUBRANIUM When evading while in waypoint following mode, the breakTarget ought to be roughly in the direction of the waypoint.
 
                     Vector3 breakTarget = threatRelativePosition * 2f;       //for the most part, we want to turn _towards_ the threat in order to increase the rel ang vel and get under its guns
 
@@ -2649,6 +2655,7 @@ namespace BDArmory.Modules
             // if (maxPosG > maxDynPresGRecorded)
             //     maxDynPresGRecorded = maxPosG;
 
+            // FIXME AUBRANIUM For waypoint following, we don't need to decay the max recorded dynamic pressure so fast (it determines the turn radius), so it'd be better to use 1-(1-dynDecayRate)/2 here instead of dynDecayRate.
             dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
