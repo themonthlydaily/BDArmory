@@ -1,6 +1,8 @@
 ﻿FIXES
 - Fix auto-resume evolution not finding the evolution.state file.
 - Fix localization for target priority on weapons manager.
+- Configure the paths when loading the statefile if they're not configured.
+- Avoid NRE in ModuleResourceDrain due to detonating on part parent destroy.
 IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
@@ -9,12 +11,17 @@ IMPROVEMENTS
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
 	- Tweak the clamped altitude and speed min/max values to give more usable sliders.
 	- Scale steer limiter based on atmospheric density in order to account how dynamic pressure will vary based on this value.
+	- Add the target's average radius to the vessel-avoidance detection.
 - GameModes:
 	- Add options for respecting the flow state of stealing (in)/stolen (out) resources.
 - UI:
 	- Add a "Slider Resolution" slider to the pilot AI (currently just PID, Altitudes and Speeds) to allow finer or coarser adjustments to those sliders in the PAW (not the AI GUI for now).
 - Weapons:
 	- Add in option to set an action group toggled for when weapons are selected/deselected (can be used for deploying weapons or for other actions).
+- Tournamements:
+	- Add option to save the summary plot to a PNG file. Use '-s' to save to a random tempfile, use '-s fig.png' to specify the file.
+- Internal:
+	- Add option to use average radius in Vessel.GetRadius instead of max.
 
 v1.4.16.1
 FIXES
