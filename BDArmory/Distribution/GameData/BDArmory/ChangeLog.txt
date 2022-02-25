@@ -21,6 +21,7 @@ IMPROVEMENTS
 	- Add in option to set an action group toggled for when weapons are selected/deselected (can be used for deploying weapons or for other actions).
 - Tournamements:
 	- Add option to save the summary plot to a PNG file. Use '-s' to save to a random tempfile, use '-s fig.png' to specify the file.
+	- Tweak the auto-vessels-per-heat optimisation for when we're just over the limit.
 - Internal:
 	- Add option to use average radius in Vessel.GetRadius instead of max.
 

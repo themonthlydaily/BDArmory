@@ -428,7 +428,9 @@ namespace BDArmory.Control
         Tuple<int, int> OptimiseVesselsPerHeat(int count)
         {
             if (BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y < BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x) BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y = BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x;
-            var options = count < 11 ? new List<int> { 8, 7, 6, 5 } : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1).Reverse().ToList();
+            var options = count > BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y && count < 2 * BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x - 1 ?
+                Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2 + 1).Reverse().ToList() // Tweak the range when just over the upper limit to give more balanced heats.
+                : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1).Reverse().ToList();
             foreach (var val in options)
             {
                 if (count % val == 0)
