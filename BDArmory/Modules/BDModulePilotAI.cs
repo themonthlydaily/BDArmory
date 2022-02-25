@@ -28,6 +28,7 @@ namespace BDArmory.Modules
         float extendDistance;
         float desiredMinAltitude;
         public string extendingReason = "";
+        public Vessel extendTarget = null;
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
@@ -45,19 +46,24 @@ namespace BDArmory.Modules
         {
             extending = false;
             extendingReason = "";
+            extendTarget = null;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} stopped extending due to {reason}.");
         }
 
-        public void RequestExtend(Vector3 tPosition, Vessel target = null, string reason = "requested")
+        /// <summary>
+        ///  Request extending away from a target position or vessel.
+        ///  If a vessel is specified, it overrides the specified position.
+        /// </summary>
+        /// <param name="reason">Reason for extending</param>
+        /// <param name="target">The target to extend from</param>
+        /// <param name="tPosition">The position to extend from if the target is null</param>
+        public void RequestExtend(string reason = "requested", Vessel target = null, Vector3 tPosition = default)
         {
             requestedExtend = true;
-            requestedExtendTpos = tPosition;
+            extendTarget = target;
+            requestedExtendTpos = extendTarget != null ? target.CoM : tPosition;
             extendingReason = reason;
-            if (target != null)
-                extendTarget = target;
         }
-
-        public Vessel extendTarget = null;
 
         public override bool CanEngage()
         {
@@ -1275,7 +1281,7 @@ namespace BDArmory.Modules
                     Vector3 targetVesselRelPos = targetVessel.vesselTransform.position - vesselTransform.position;
                     if (canExtend && vessel.altitude < defaultAltitude && Vector3.Angle(targetVesselRelPos, -upDirection) < 35) // Target is at a steep angle below us and we're below default altitude, extend to get a better angle instead of attacking now.
                     {
-                        RequestExtend(targetVessel.vesselTransform.position, targetVessel, "too steeply below");
+                        RequestExtend("too steeply below", targetVessel);
                     }
 
                     if (Vector3.Angle(targetVessel.vesselTransform.position - vesselTransform.position, vesselTransform.up) > 35) // If target is outside of 35° cone ahead of us then keep flying straight.
@@ -1295,12 +1301,12 @@ namespace BDArmory.Modules
                     float extendTargetDot = Mathf.Cos(extendTargetAngle * Mathf.Deg2Rad);
                     if (canExtend && targetVelFrac < extendTargetVel && targetForwardDot < extendTargetDot && targetVesselRelPos.sqrMagnitude < extendTargetDist * extendTargetDist) // Default values: Target is outside of ~78° cone ahead, closer than 400m and slower than us, so we won't be able to turn to attack it now.
                     {
-                        RequestExtend(targetVessel.vesselTransform.position - vessel.Velocity(), targetVessel, "can't turn fast enough"); //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
+                        RequestExtend("can't turn fast enough", targetVessel);
                         weaponManager.ForceScan();
                     }
                     if (canExtend && turningTimer > 15)
                     {
-                        RequestExtend(targetVessel.vesselTransform.position, targetVessel, "turning too long"); //extend if turning circles for too long
+                        RequestExtend("turning too long", targetVessel); //extend if turning circles for too long
                         turningTimer = 0;
                         weaponManager.ForceScan();
                     }
@@ -1524,7 +1530,7 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < targetVessel.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
+                else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < v.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
                     if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude whiel we're outside our gun's range.
@@ -1572,7 +1578,7 @@ namespace BDArmory.Modules
                 && distanceToTarget < MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange
                 && vessel.srfSpeed > idleSpeed)
             {
-                RequestExtend(targetVessel.transform.position, targetVessel, "too close for missile"); // Get far enough away to use the missile.
+                RequestExtend("too close for missile", v); // Get far enough away to use the missile.
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -1883,7 +1889,12 @@ namespace BDArmory.Modules
                 lastTargetPosition = requestedExtendTpos;
             }
             if (checkType == ExtendChecks.RequestsOnly) return extending;
-            if (extending && extendParametersSet) return true; // Already extending.
+            if (extending && extendParametersSet)
+            {
+                if (extendTarget != null) // Update the last known target position.
+                { lastTargetPosition = extendTarget.CoM; }
+                return true; // Already extending.
+            }
             if (!wasEvading) evasionNonlinearityDirection = Mathf.Sign(UnityEngine.Random.Range(-1f, 1f)); // This applies to extending too.
 
             // Dropping a bomb.

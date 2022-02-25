@@ -13,6 +13,7 @@ IMPROVEMENTS
 	- Scale steer limiter based on atmospheric density in order to account how dynamic pressure will vary based on this value.
 	- Add the target's average radius to the vessel-avoidance detection.
 	- Use an average of the recent speed instead of the max speed in determining the turn radius.
+	- Adjust the extending to update the extend-from position when the extend-from target is a vessel.
 - GameModes:
 	- Add options for respecting the flow state of stealing (in)/stolen (out) resources.
 - UI:
