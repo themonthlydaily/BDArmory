@@ -372,7 +372,7 @@ namespace BDArmory.FX
             }
         }
 
-        void Detonate(bool parentDestroyed = false)
+        void Detonate()
         {
             if (surfaceFire) return;
             if (!BDArmorySettings.BD_FIRE_FUELEX) return;
@@ -416,8 +416,7 @@ namespace BDArmory.FX
                     tntMassEquivalent += tntEC;
                     ec.maxAmount = 0;
                     ec.isVisible = false;
-                    if (!parentDestroyed) // Calling RemoveResource on a part that's being destroyed causes an NRE in ModuleResourceDrain.OnPartResourceListChanged.
-                        parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
+                    parentPart.RemoveResource(ec);//destroy battery. not calling part.destroy, since some batteries in cockpits.
                     Misc.Misc.RefreshAssociatedWindows(parentPart);
                 }
                 //tntMassEquivilent *= BDArmorySettings.BD_AMMO_DMG_MULT; //handled by EXP_DMG_MOD_BATTLE_DAMAGE
@@ -501,7 +500,7 @@ namespace BDArmory.FX
             {
                 parentPart.OnJustAboutToDie -= OnParentDestroy;
                 parentPart.OnJustAboutToBeDestroyed -= OnParentDestroy;
-                if (!surfaceFire) Detonate(true);
+                if (!surfaceFire) Detonate();
                 else Deactivate();
             }
         }
