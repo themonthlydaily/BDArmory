@@ -518,9 +518,10 @@ namespace BDArmory.Modules
 
         //manueuverability and g loading data
         // float maxDynPresGRecorded;
-        float dynDynPresGRecorded = 1.0f; // Start at reasonable non-zero value.
-        float dynMaxVelocityMagSqr = 1.0f; // Start at reasonable non-zero value.
-        float dynDecayRate = 1.0f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
+        float dynDynPresGRecorded = 1f; // Start at reasonable non-zero value.
+        float dynVelocityMagSqr = 1f; // Start at reasonable non-zero value.
+        float dynDecayRate = 1f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
+        float dynVelSmoothingCoef = 1f; // Decay rate for smoothing the dynVelocityMagSqr
 
         float maxAllowedCosAoA;
         float lastAllowedAoA;
@@ -964,6 +965,7 @@ namespace BDArmory.Modules
                 GameEvents.onVesselPartCountChanged.Add(UpdateTerrainAlertDetectionRadius);
                 UpdateTerrainAlertDetectionRadius(vessel);
                 dynDecayRate = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 60f); // Decay rate for a half-life of 60s.
+                dynVelSmoothingCoef = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 5f); // Smoothing rate with a half-life of 5s.
             }
 
             SetupSliderResolution();
@@ -2551,9 +2553,10 @@ namespace BDArmory.Modules
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
 
-            dynMaxVelocityMagSqr *= dynDecayRate; // Decay the max recorded squared velocity at the same rate as the dynamic pressure G-force decays to keep the turnRadius constant if they otherwise haven't changed.
-            if (!vessel.LandedOrSplashed && (float)vessel.Velocity().sqrMagnitude > dynMaxVelocityMagSqr)
-                dynMaxVelocityMagSqr = (float)vessel.Velocity().sqrMagnitude;
+            if (!vessel.LandedOrSplashed)
+            {
+                dynVelocityMagSqr = dynVelocityMagSqr * dynVelSmoothingCoef + (1f - dynVelSmoothingCoef) * (float)vessel.Velocity().sqrMagnitude; // Smooth the recently measured speed for determining the turn radius.
+            }
 
             float aoADiff = cosAoAAtMaxPosG - cosAoAAtMaxNegG;
 
@@ -2717,7 +2720,7 @@ namespace BDArmory.Modules
 
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
-            turnRadius = dynMaxVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
+            turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
         }
 
         Vector3 DefaultAltPosition()
