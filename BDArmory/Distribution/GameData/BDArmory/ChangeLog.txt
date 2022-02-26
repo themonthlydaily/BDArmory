@@ -2,7 +2,7 @@
 - Fix auto-resume evolution not finding the evolution.state file.
 - Fix localization for target priority on weapons manager.
 - Configure the paths when loading the statefile if they're not configured.
-- Avoid NRE in ModuleResourceDrain due to detonating on part parent destroy.
+- Avoid NRE in ModuleResourceDrain due to detonating when the parent part is being destroyed.
 IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
@@ -14,6 +14,7 @@ IMPROVEMENTS
 	- Add the target's average radius to the vessel-avoidance detection.
 	- Use an average of the recent speed instead of the max speed in determining the turn radius.
 	- Adjust the extending to update the extend-from position when the extend-from target is a vessel.
+	- Replace the extend multiplier with explicit extend distances for air-to-air, air-to-ground (guns) and air-to-ground.
 - GameModes:
 	- Add options for respecting the flow state of stealing (in)/stolen (out) resources.
 - UI:
@@ -25,6 +26,7 @@ IMPROVEMENTS
 	- Tweak the auto-vessels-per-heat optimisation for when we're just over the limit.
 - Internal:
 	- Add option to use average radius in Vessel.GetRadius instead of max.
+	- Rename Misc.Misc to Misc.Utils to fix naming conflict between namespace and class.
 
 v1.4.16.1
 FIXES
