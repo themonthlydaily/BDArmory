@@ -2,9 +2,8 @@
 using UnityEngine;
 using BDArmory.Core;
 using KSP.Localization;
-using BDArmory.Competition;
+using BDArmory.Misc;
 using BDArmory.UI;
-using System;
 
 namespace BDArmory.Evolution
 {
@@ -89,7 +88,7 @@ namespace BDArmory.Evolution
                 Localizer.Format("#LOC_BDArmory_Evolution_Title"),//"BDA Evolution"
                 BDArmorySetup.BDGuiSkin.window
             );
-            Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectEvolution, _guiCheckIndex);
+            Utils.UpdateGUIRect(BDArmorySetup.WindowRectEvolution, _guiCheckIndex);
         }
 
         private void SetNewHeight(float windowHeight)
@@ -108,7 +107,7 @@ namespace BDArmory.Evolution
             // Debug.Log("EvolutionWindow ready");
             BDArmorySetup.Instance.hasEvolution = true;
             ready = true;
-            _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
+            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
         }
 
         private void WindowEvolution(int id)

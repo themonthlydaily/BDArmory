@@ -1,4 +1,6 @@
 using KSP.Localization;
+using BDArmory.Misc;
+
 namespace BDArmory.Modules
 {
     public abstract class EngageableWeapon : PartModule, IEngageService
@@ -58,7 +60,7 @@ namespace BDArmory.Modules
             Fields["engageSLW"].guiActive = engageEnabled;
             Fields["engageSLW"].guiActiveEditor = engageEnabled;
 
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
         public void HideEngageOptions()
         {
@@ -77,7 +79,7 @@ namespace BDArmory.Modules
             Fields["engageSLW"].guiActive = false;
             Fields["engageSLW"].guiActiveEditor = false;
 
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
         public void OnRangeUpdated(BaseField field, object obj)
         {

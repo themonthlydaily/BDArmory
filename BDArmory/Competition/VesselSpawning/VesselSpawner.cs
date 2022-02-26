@@ -894,7 +894,7 @@ namespace BDArmory.Competition.VesselSpawning
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
                             var vessel = spawnedVessels[vesselName].Item1;
-                            if (vessel.LandedOrSplashed && Misc.Misc.GetRadarAltitudeAtPos(vessel.transform.position) <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
+                            if (vessel.LandedOrSplashed && Utils.GetRadarAltitudeAtPos(vessel.transform.position) <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
                             {
                                 vesselsHaveLanded[vesselName] = 2;
                             }
@@ -903,7 +903,7 @@ namespace BDArmory.Competition.VesselSpawning
                             if (vesselsHaveLanded[vesselName] == 1 && Vector3.Dot(vessel.srf_velocity, radialUnitVector) >= 0) // Check if the vessel has landed.
                             {
                                 vesselsHaveLanded[vesselName] = 2;
-                                if (Misc.Misc.GetRadarAltitudeAtPos(vessel.transform.position) > 0)
+                                if (Utils.GetRadarAltitudeAtPos(vessel.transform.position) > 0)
                                     vessel.Landed = true; // Tell KSP that the vessel is landed.
                                 else
                                     vessel.Splashed = true; // Tell KSP that the vessel is splashed.

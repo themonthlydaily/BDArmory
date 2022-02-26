@@ -168,10 +168,10 @@ namespace BDArmory.Modules
                     }
                     CASE.oldCaseLevel = CASELevel;
                     CASE.externallyCalled = false;
-                    Misc.Misc.RefreshAssociatedWindows(pSym.Current);
+                    Utils.RefreshAssociatedWindows(pSym.Current);
                 }
             oldCaseLevel = CASELevel;
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
         public override void OnLoad(ConfigNode node)
         {

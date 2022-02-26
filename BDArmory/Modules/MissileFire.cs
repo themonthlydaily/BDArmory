@@ -1471,7 +1471,7 @@ namespace BDArmory.Modules
 
         bool CheckMouseIsOnGui()
         {
-            return Misc.Misc.CheckMouseIsOnGui();
+            return Utils.CheckMouseIsOnGui();
         }
 
         #endregion KSP Events
@@ -1959,7 +1959,7 @@ namespace BDArmory.Modules
                     if (targetDist < Mathf.Max(radius * 2, 800f) &&
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
-                        pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "too close to bomb");
+                        pilotAI.RequestExtend("too close to bomb", guardTarget); // Extend from target vessel.
                         break;
                     }
                     yield return null;
@@ -1988,7 +1988,7 @@ namespace BDArmory.Modules
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
-                                pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "bombs away!");
+                                pilotAI.RequestExtend("bombs away!", null, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
                             }
                         }
                     }

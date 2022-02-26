@@ -1416,7 +1416,7 @@ namespace BDArmory.Competition
             for (var i = 0; i < leaders.Count; ++i)
             {
                 var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(leaders[i].vessel, true); // Adjust initial fly-to point for terrain and default altitudes.
-                var startPosition = center + startDirection + (pilotAI != null ? (pilotAI.defaultAltitude - Misc.Misc.GetRadarAltitudeAtPos(center + startDirection, false)) * VectorUtils.GetUpDirection(center + startDirection) : Vector3.zero);
+                var startPosition = center + startDirection + (pilotAI != null ? (pilotAI.defaultAltitude - Utils.GetRadarAltitudeAtPos(center + startDirection, false)) * VectorUtils.GetUpDirection(center + startDirection) : Vector3.zero);
                 leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startPosition, FlightGlobals.currentMainBody));
                 startDirection = directionStep * startDirection;
             }
@@ -2123,7 +2123,7 @@ namespace BDArmory.Competition
                             // activate stage
                             foreach (var pilot in pilots)
                             {
-                                Misc.Misc.fireNextNonEmptyStage(pilot.vessel);
+                                Utils.fireNextNonEmptyStage(pilot.vessel);
                             }
                             break;
                         }
@@ -2412,7 +2412,7 @@ namespace BDArmory.Competition
                 Scores.RegisterDeath(vesselName, GMKillReason.GM);
                 competitionStatus.Add(vesselName + " was killed by the GM for being too slow.");
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: GM killing " + vesselName + " for being too slow.");
-                Misc.Misc.ForceDeadVessel(worstVessel);
+                Utils.ForceDeadVessel(worstVessel);
             }
             ResetSpeeds();
         }
@@ -2436,7 +2436,7 @@ namespace BDArmory.Competition
                         competitionStatus.Add(weaponManager.vessel.vesselName + " flew too high!");
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
                         if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
-                        Misc.Misc.ForceDeadVessel(weaponManager.vessel);
+                        Utils.ForceDeadVessel(weaponManager.vessel);
                     }
                 }
             }
@@ -2463,7 +2463,7 @@ namespace BDArmory.Competition
                         competitionStatus.Add(weaponManager.vessel.vesselName + " flew too low!");
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
                         if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
-                        Misc.Misc.ForceDeadVessel(weaponManager.vessel);
+                        Utils.ForceDeadVessel(weaponManager.vessel);
                     }
                 }
             }
@@ -3040,7 +3040,7 @@ namespace BDArmory.Competition
                 }
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
                 if (KillTimer.ContainsKey(vesselName)) KillTimer.Remove(vesselName);
-                Misc.Misc.ForceDeadVessel(vessel);
+                Utils.ForceDeadVessel(vessel);
             }
 
             if (!(BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY > 60))
