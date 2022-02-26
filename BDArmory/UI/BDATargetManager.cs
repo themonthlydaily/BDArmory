@@ -364,7 +364,7 @@ namespace BDArmory.UI
 
                     if (!allAspect)
                     {
-                        if (!Misc.Misc.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
+                        if (!Utils.CheckSightLineExactDistance(ray.origin, vessel.CoM + vessel.Velocity(), Vector3.Distance(vessel.CoM, ray.origin), 5, 5))
                             continue;
                     }
 
@@ -635,14 +635,14 @@ namespace BDArmory.UI
         //format: very mangled json :(
         private string GPSListToString()
         {
-            return Misc.Misc.JsonCompat(JsonUtility.ToJson(new SerializableGPSData(GPSTargets)));
+            return Utils.JsonCompat(JsonUtility.ToJson(new SerializableGPSData(GPSTargets)));
         }
 
         private void StringToGPSList(string listString)
         {
             try
             {
-                GPSTargets = JsonUtility.FromJson<SerializableGPSData>(Misc.Misc.JsonDecompat(listString)).Load();
+                GPSTargets = JsonUtility.FromJson<SerializableGPSData>(Utils.JsonDecompat(listString)).Load();
 
                 Debug.Log("[BDArmory.BDATargetManager]: Loaded GPS Targets.");
             }

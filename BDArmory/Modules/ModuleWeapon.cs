@@ -719,7 +719,7 @@ namespace BDArmory.Modules
                 Fields["AmmoTypeNum"].guiActiveEditor = true;
                 useCustomBelt = false;
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
         [KSPField(advancedTweakable = true, isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_useBelt")]//Using Custom Loadout
         public bool useCustomBelt = false;
@@ -886,7 +886,7 @@ namespace BDArmory.Modules
 
         IEnumerator FireHoldRoutine(KSPActionGroup group)
         {
-            KeyBinding key = Misc.Misc.AGEnumToKeybinding(group);
+            KeyBinding key = Utils.AGEnumToKeybinding(group);
             if (key == null)
             {
                 yield break;
@@ -1178,10 +1178,10 @@ namespace BDArmory.Modules
                     }
 
                 //setup projectile colors
-                projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                projectileColorC = Utils.ParseColor255(projectileColor);
                 endColorS = projectileColor.Split(","[0]);
 
-                startColorC = Misc.Misc.ParseColor255(startColor);
+                startColorC = Utils.ParseColor255(startColor);
                 startColorS = startColor.Split(","[0]);
 
                 //init and zero points
@@ -1260,7 +1260,7 @@ namespace BDArmory.Modules
             //setup animations
             if (hasDeployAnim)
             {
-                deployState = Misc.Misc.SetUpSingleAnimation(deployAnimName, part);
+                deployState = Utils.SetUpSingleAnimation(deployAnimName, part);
                 deployState.normalizedTime = 0;
                 deployState.speed = 0;
                 deployState.enabled = true;
@@ -1268,7 +1268,7 @@ namespace BDArmory.Modules
             }
             if (hasReloadAnim)
             {
-                reloadState = Misc.Misc.SetUpSingleAnimation(reloadAnimName, part);
+                reloadState = Utils.SetUpSingleAnimation(reloadAnimName, part);
                 reloadState.normalizedTime = 0;
                 reloadState.speed = 0;
                 reloadState.enabled = true;
@@ -1281,7 +1281,7 @@ namespace BDArmory.Modules
                 {
                     try
                     {
-                        fireState[i] = Misc.Misc.SetUpSingleAnimation(animList[i].ToString(), part);
+                        fireState[i] = Utils.SetUpSingleAnimation(animList[i].ToString(), part);
                         //Debug.Log("[BDArmory.ModuleWeapon] Added fire anim " + i);
                         fireState[i].enabled = false;
                     }
@@ -1370,7 +1370,7 @@ namespace BDArmory.Modules
                 Fields["detonationRange"].guiActive = false;
                 Fields["detonationRange"].guiActiveEditor = false;
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
 
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_FireAngleOverride_Enable", active = true)]//Disable fire angle override
@@ -1390,7 +1390,7 @@ namespace BDArmory.Modules
             Fields["FiringTolerance"].guiActive = FireAngleOverride;
             Fields["FiringTolerance"].guiActiveEditor = FireAngleOverride;
 
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
         [KSPEvent(advancedTweakable = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_BurstLengthOverride_Enable", active = true)]//Burst length override
         public void ToggleBurstLengthOverride()
@@ -1409,7 +1409,7 @@ namespace BDArmory.Modules
             Fields["fireBurstLength"].guiActive = BurstOverride;
             Fields["fireBurstLength"].guiActiveEditor = BurstOverride;
 
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
         void FAOCos(BaseField field, object obj)
         {
@@ -1686,7 +1686,7 @@ namespace BDArmory.Modules
                 && !isOverheated
                 && !isReloading
                 && !pointingAtSelf
-                && (aiControlled || !Misc.Misc.CheckMouseIsOnGui())
+                && (aiControlled || !Utils.CheckMouseIsOnGui())
                 && WMgrAuthorized())
             {
                 bool effectsShot = false;
@@ -1954,7 +1954,7 @@ namespace BDArmory.Modules
             }
             beamDuration = Math.Min(timeGap * 0.8f, 0.1f);
             if ((!pulseLaser || ((Time.time - timeFired > timeGap) && pulseLaser))
-                && !pointingAtSelf && !Misc.Misc.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
+                && !pointingAtSelf && !Utils.CheckMouseIsOnGui() && WMgrAuthorized() && !isOverheated) // && !isReloading)
             {
                 if (CanFire(chargeAmount))
                 {
@@ -2283,7 +2283,7 @@ namespace BDArmory.Modules
             {
                 Transform tf = fireTransforms[i];
                 laserRenderers[i] = tf.gameObject.AddOrGetComponent<LineRenderer>();
-                Color laserColor = Misc.Misc.ParseColor255(projectileColor);
+                Color laserColor = Utils.ParseColor255(projectileColor);
                 laserColor.a = laserColor.a / 2;
                 laserRenderers[i].material = new Material(Shader.Find("KSP/Particles/Alpha Blended"));
                 laserRenderers[i].material.SetColor("_TintColor", laserColor);
@@ -2343,7 +2343,7 @@ namespace BDArmory.Modules
             {
                 timeGap /= fireTransforms.Length; //to maintain RPM if only firing one barrel at a time
             }
-            if (Time.time - timeFired > timeGap && !isReloading || !pointingAtSelf && (aiControlled || !Misc.Misc.CheckMouseIsOnGui()) && WMgrAuthorized())
+            if (Time.time - timeFired > timeGap && !isReloading || !pointingAtSelf && (aiControlled || !Utils.CheckMouseIsOnGui()) && WMgrAuthorized())
             {// fixes rocket ripple code for proper rippling
                 bool effectsShot = false;
                 for (float iTime = Mathf.Min(Time.time - timeFired - timeGap, TimeWarp.fixedDeltaTime); iTime >= 0; iTime -= timeGap)
@@ -3557,7 +3557,7 @@ namespace BDArmory.Modules
                     }
                     if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
                     {
-                        projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                        projectileColorC = Utils.ParseColor255(projectileColor);
                         startColorS = startColor.Split(","[0]);
                         laserDamage = baseLaserdamage;
                         tracerStartWidth = tracerBaseSWidth;
@@ -3581,7 +3581,7 @@ namespace BDArmory.Modules
                     }
                     if (eWeaponType == WeaponTypes.Laser && LaserGrowTime > 0)
                     {
-                        projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                        projectileColorC = Utils.ParseColor255(projectileColor);
                         startColorS = startColor.Split(","[0]);
                         laserDamage = baseLaserdamage;
                         tracerStartWidth = tracerBaseSWidth;
@@ -3657,7 +3657,7 @@ namespace BDArmory.Modules
                 {
                     if (LaserGrowTime > 0)
                     {
-                        projectileColorC = Misc.Misc.ParseColor255(projectileColor);
+                        projectileColorC = Utils.ParseColor255(projectileColor);
                         startColorS = startColor.Split(","[0]);
                         laserDamage = baseLaserdamage;
                         tracerStartWidth = tracerBaseSWidth;
@@ -4706,8 +4706,8 @@ namespace BDArmory.Modules
                 bulletMass = bulletInfo.bulletMass;
                 ProjectileCount = bulletInfo.subProjectileCount;
                 bulletDragTypeName = bulletInfo.bulletDragTypeName;
-                projectileColorC = Misc.Misc.ParseColor255(bulletInfo.projectileColor);
-                startColorC = Misc.Misc.ParseColor255(bulletInfo.startColor);
+                projectileColorC = Utils.ParseColor255(bulletInfo.projectileColor);
+                startColorC = Utils.ParseColor255(bulletInfo.startColor);
                 fadeColor = bulletInfo.fadeColor;
                 ParseBulletDragType();
                 ParseBulletFuzeType(bulletInfo.fuzeType);

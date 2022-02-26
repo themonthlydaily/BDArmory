@@ -981,7 +981,7 @@ namespace BDArmory.Radar
             {
                 Vector3 localUp = vessel.ReferenceTransform.InverseTransformDirection(referenceTransform.up);
                 localUp = Vector3.ProjectOnPlane(localUp, Vector3.up).normalized;
-                float rollAngle = -Misc.Misc.SignedAngle(-Vector3.forward, localUp, Vector3.right);
+                float rollAngle = -Utils.SignedAngle(-Vector3.forward, localUp, Vector3.right);
                 GUIUtility.RotateAroundPivot(rollAngle, scanRect.center);
                 GUI.DrawTexture(scanRect, rollIndicatorTexture, ScaleMode.StretchToFill, true);
                 GUI.matrix = Matrix4x4.identity;
@@ -1004,7 +1004,7 @@ namespace BDArmory.Radar
             // Resizing code block.
             RADARresizeRect =
                 new Rect(BDArmorySetup.WindowRectRadar.width - 18, BDArmorySetup.WindowRectRadar.height - 19, 16, 16);
-            GUI.DrawTexture(RADARresizeRect, Misc.Misc.resizeTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(RADARresizeRect, Utils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && RADARresizeRect.Contains(Event.current.mousePosition))
             {
                 resizingWindow = true;
