@@ -135,11 +135,11 @@ namespace BDArmory.UI
                         width,
                         scrollable ? Screen.height / 2 + buttonHeight + buttonGap + 2 * margin : height);
                     window = GUI.Window(10591029, clientRect, TeamSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
-                    Misc.Misc.UpdateGUIRect(window, guiCheckIndex);
+                    Utils.UpdateGUIRect(window, guiCheckIndex);
                 }
                 else
                 {
-                    Misc.Misc.UpdateGUIRect(new Rect(), guiCheckIndex);
+                    Utils.UpdateGUIRect(new Rect(), guiCheckIndex);
                 }
             }
         }
@@ -167,7 +167,7 @@ namespace BDArmory.UI
                 yield return null;
 
             ready = true;
-            guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
+            guiCheckIndex = Utils.RegisterGUIRect(new Rect());
         }
     }
 }

@@ -1,11 +1,13 @@
-﻿using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Utils;
-using KSP.Localization;
+﻿using KSP.Localization;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+
+using BDArmory.Control;
+using BDArmory.Core;
+using BDArmory.Core.Utils;
+using BDArmory.Misc;
 
 namespace BDArmory.UI
 {
@@ -131,7 +133,7 @@ namespace BDArmory.UI
                 yield return null;
 
             BDArmorySetup.Instance.hasVesselSpawner = true;
-            _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
+            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
             _ready = true;
         }
 
@@ -174,7 +176,7 @@ namespace BDArmory.UI
                 Localizer.Format("#LOC_BDArmory_BDAVesselSpawner_Title"),//"BDA Vessel Spawner"
                 BDArmorySetup.BDGuiSkin.window
             );
-            Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectVesselSpawner, _guiCheckIndex);
+            Utils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSpawner, _guiCheckIndex);
         }
 
         void HotKeys()

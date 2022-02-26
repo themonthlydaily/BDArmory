@@ -3,7 +3,7 @@ from typing import Tuple
 
 
 def OptimiseVesselsPerHeat(count: int, limits: Tuple[int, int] = (6, 10)) -> Tuple[int, int]:
-    options = (8, 7, 6, 5) if count < 11 else reversed(list(range(limits[0], limits[1] + 1)))
+    options = reversed(list(range(limits[1]//2, limits[1] + 1))) if count > limits[1] and count < 2*limits[0]-1 else reversed(list(range(limits[0], limits[1] + 1)))
     for val in options:
         if count % val == 0:
             return val, 0

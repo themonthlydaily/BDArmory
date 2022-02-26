@@ -73,32 +73,16 @@ namespace BDArmory.Core.Extension
         }
 
         // Get a vessel's "radius".
-        public static float GetRadius(this Vessel vessel)
+        public static float GetRadius(this Vessel vessel, bool average = false)
         {
-            //get vessel size
+            // Get vessel size.
             Vector3 size = vessel.vesselSize;
 
-            //get largest dimension
-            float radius;
+            if (average) // Get the average of the dimensions.
+                return (size.x + size.y + size.z) / 6f;
 
-            if (size.x > size.y && size.x > size.z)
-            {
-                radius = size.x / 2;
-            }
-            else if (size.y > size.x && size.y > size.z)
-            {
-                radius = size.y / 2;
-            }
-            else if (size.z > size.x && size.z > size.y)
-            {
-                radius = size.z / 2;
-            }
-            else
-            {
-                radius = size.x / 2;
-            }
-
-            return radius;
+            // Get largest dimension.
+            return Mathf.Max(Mathf.Max(size.x, size.y), size.z) / 2f;
         }
     }
 }

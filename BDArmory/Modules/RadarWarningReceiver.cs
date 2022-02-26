@@ -408,7 +408,7 @@ namespace BDArmory.Modules
             // Resizing code block.
             RWRresizeRect =
                 new Rect(BDArmorySetup.WindowRectRwr.width - 18, BDArmorySetup.WindowRectRwr.height - 18, 16, 16);
-            GUI.DrawTexture(RWRresizeRect, Misc.Misc.resizeTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(RWRresizeRect, Utils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && RWRresizeRect.Contains(Event.current.mousePosition))
             {
                 resizingWindow = true;

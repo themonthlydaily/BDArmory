@@ -240,6 +240,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float HEART_BLEED_THRESHOLD = 10f;
 
         // Resource steal
+        [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_IN = true;     // Respect resource flow state in (stealing).
+        [BDAPersistentSettingsField] public static bool RESOURCE_STEAL_RESPECT_FLOWSTATE_OUT = false;   // Respect resource flow state out (stolen).
         [BDAPersistentSettingsField] public static float RESOURCE_STEAL_FUEL_RATION = 0.2f;
         [BDAPersistentSettingsField] public static float RESOURCE_STEAL_AMMO_RATION = 0.2f;
         [BDAPersistentSettingsField] public static float RESOURCE_STEAL_CM_RATION = 0f;

@@ -178,7 +178,7 @@
     <Compile Include="Misc\FireSpitter.cs" />
     <Compile Include="Misc\IBDWeapon.cs" />
     <Compile Include="Misc\KSPForceApplier.cs" />
-    <Compile Include="Misc\Misc.cs" />
+    <Compile Include="Misc\Utils.cs" />
     <Compile Include="Misc\MissileLaunchParams.cs" />
     <Compile Include="Misc\ObjectPool.cs" />
     <Compile Include="Misc\ProjectileUtils.cs" />

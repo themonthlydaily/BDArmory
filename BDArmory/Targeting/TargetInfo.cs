@@ -484,12 +484,19 @@ namespace BDArmory.Targeting
             }
         }
 
-        public float TargetPriProtectVIP(MissileFire mf) // If target is attacking our VIP(s)
+        public float TargetPriProtectTeammate(MissileFire mf, MissileFire myMf) // If target is attacking one of our teammates. 1 if true, 0 if false.
         {
-            if (mf == null) return 0;
+            if (myMf == null) return 0;
+            if (mf == null || mf.currentTarget == null || mf.currentTarget.weaponManager == null) return 0;
+            return (mf.currentTarget.weaponManager != myMf && mf.currentTarget.weaponManager.Team == myMf.Team) ? 1 : 0; // Not us, but on the same team.
+        }
+
+        public float TargetPriProtectVIP(MissileFire mf, MissileFire myMf) // If target is attacking our VIP(s)
+        {
+            if (mf == null || myMf == null) return 0;
             if ((mf.vessel != null) && (mf.currentTarget != null) && (mf.currentTarget.weaponManager != null))
             {
-                bool attackingOurVIPs = mf.currentTarget.weaponManager.isVIP;
+                bool attackingOurVIPs = mf.currentTarget.weaponManager.isVIP && (myMf.Team == mf.currentTarget.weaponManager.Team);
                 return ((attackingOurVIPs == true) ? 1 : -1); // Ranges -1 to 1, 1 if target is attacking our VIP(s), -1 if it is not
             }
             else

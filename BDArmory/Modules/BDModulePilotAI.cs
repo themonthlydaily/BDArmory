@@ -26,8 +26,10 @@ namespace BDArmory.Modules
         bool extending;
         bool extendParametersSet = false;
         float extendDistance;
+        bool extendHorizontally = true; // Measure the extendDistance horizonally (for A2G) or not (for A2A).
         float desiredMinAltitude;
         public string extendingReason = "";
+        public Vessel extendTarget = null;
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
@@ -45,19 +47,24 @@ namespace BDArmory.Modules
         {
             extending = false;
             extendingReason = "";
+            extendTarget = null;
             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} stopped extending due to {reason}.");
         }
 
-        public void RequestExtend(Vector3 tPosition, Vessel target = null, string reason = "requested")
+        /// <summary>
+        ///  Request extending away from a target position or vessel.
+        ///  If a vessel is specified, it overrides the specified position.
+        /// </summary>
+        /// <param name="reason">Reason for extending</param>
+        /// <param name="target">The target to extend from</param>
+        /// <param name="tPosition">The position to extend from if the target is null</param>
+        public void RequestExtend(string reason = "requested", Vessel target = null, Vector3 tPosition = default)
         {
             requestedExtend = true;
-            requestedExtendTpos = tPosition;
+            extendTarget = target;
+            requestedExtendTpos = extendTarget != null ? target.CoM : tPosition;
             extendingReason = reason;
-            if (target != null)
-                extendTarget = target;
         }
-
-        public Vessel extendTarget = null;
 
         public override bool CanEngage()
         {
@@ -212,17 +219,17 @@ namespace BDArmory.Modules
         #region Altitudes
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_DefaultAltitude", //Default Alt.
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 100f, maxValue = 15000f, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 50f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
         public float defaultAltitude = 2000;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MinAltitude", //Min Altitude
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 25f, maxValue = 6000, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 10f, maxValue = 1000, stepIncrement = 10f, scene = UI_Scene.All)]
         public float minAltitude = 200f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxAltitude", //Max Altitude
             groupName = "pilotAI_Altitudes", groupDisplayName = "#LOC_BDArmory_PilotAI_Altitudes", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 100f, maxValue = 15000, stepIncrement = 25f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 100f, maxValue = 10000, stepIncrement = 100f, scene = UI_Scene.All)]
         public float maxAltitude = 7500f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxAltitude", advancedTweakable = true,
@@ -234,7 +241,7 @@ namespace BDArmory.Modules
         #region Speeds
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_MaxSpeed", //Max Speed
             groupName = "pilotAI_Speeds", groupDisplayName = "#LOC_BDArmory_PilotAI_Speeds", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 20f, maxValue = 800f, stepIncrement = 1.0f, scene = UI_Scene.All)]
+            UI_FloatRange(minValue = 50f, maxValue = 800f, stepIncrement = 5.0f, scene = UI_Scene.All)]
         public float maxSpeed = 350;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TakeOffSpeed", //TakeOff Speed
@@ -353,10 +360,25 @@ namespace BDArmory.Modules
 
         public float vesselStandoffDistance = 200f; // try to avoid getting closer than 200m
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendMultiplier", advancedTweakable = true, //Extend Distance Multiplier
+        // [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendMultiplier", advancedTweakable = true, //Extend Distance Multiplier
+        //     groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+        //     UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
+        // public float extendMult = 1f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendDistanceAirToAir", advancedTweakable = true, //Extend Distance Air-To-Air
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
-            UI_FloatRange(minValue = 0f, maxValue = 2f, stepIncrement = .1f, scene = UI_Scene.All)]
-        public float extendMult = 1f;
+            UI_FloatRange(minValue = 0f, maxValue = 2000f, stepIncrement = 10f, scene = UI_Scene.All)]
+        public float extendDistanceAirToAir = 300f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendDistanceAirToGroundGuns", advancedTweakable = true, //Extend Distance Air-To-Ground (Guns)
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
+        public float extendDistanceAirToGroundGuns = 1500f;
+
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendDistanceAirToGround", advancedTweakable = true, //Extend Distance Air-To-Ground
+            groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
+            UI_FloatRange(minValue = 0f, maxValue = 5000f, stepIncrement = 50f, scene = UI_Scene.All)]
+        public float extendDistanceAirToGround = 2500f;
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_ExtendTargetVel", advancedTweakable = true, //Extend Target Velocity Factor
             groupName = "pilotAI_EvadeExtend", groupDisplayName = "#LOC_BDArmory_PilotAI_EvadeExtend", groupStartCollapsed = true),
@@ -403,6 +425,11 @@ namespace BDArmory.Modules
         public float controlSurfaceLag = 0.01f; // Lag time in response of control surfaces.
         #endregion
 
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_SliderResolution", advancedTweakable = true), // Slider Resolution
+            UI_ChooseOption(options = new string[4] { "Low", "Normal", "High", "Insane" }, scene = UI_Scene.All)]
+        public string sliderResolution = "Normal";
+        string previousSliderResolution = "Normal";
+
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Orbit", advancedTweakable = true),//Orbit 
             UI_Toggle(enabledText = "#LOC_BDArmory_Orbit_Starboard", disabledText = "#LOC_BDArmory_Orbit_Port", scene = UI_Scene.All),]//Starboard (CW)--Port (CCW)
         public bool ClockwiseOrbit = true;
@@ -414,8 +441,8 @@ namespace BDArmory.Modules
         Dictionary<string, float> altMaxValues = new Dictionary<string, float>
         {
             { nameof(defaultAltitude), 100000f },
-            { nameof(minAltitude), 60000f },
-            { nameof(maxAltitude), 100000f },
+            { nameof(minAltitude), 100000f },
+            { nameof(maxAltitude), 150000f },
             { nameof(steerMult), 200f },
             { nameof(steerKiAdjust), 20f },
             { nameof(steerDamping), 100f },
@@ -429,7 +456,10 @@ namespace BDArmory.Modules
             { nameof(cornerSpeed), 3000f },
             { nameof(maxAllowedGForce), 1000f },
             { nameof(maxAllowedAoA), 180f },
-            { nameof(extendMult), 200f },
+            // { nameof(extendMult), 200f },
+            { nameof(extendDistanceAirToAir), 20000f },
+            { nameof(extendDistanceAirToGroundGuns), 20000f },
+            { nameof(extendDistanceAirToGround), 20000f },
             { nameof(minEvasionTime), 10f },
             { nameof(evasionNonlinearity), 90f },
             { nameof(evasionThreshold), 300f },
@@ -450,7 +480,6 @@ namespace BDArmory.Modules
             { nameof(DynamicDampingRollMin), 100f },
             { nameof(DynamicDampingRollMax), 100f },
             { nameof(dynamicSteerDampingRollFactor), 100f }
-
         };
 
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_StandbyMode"),//Standby Mode
@@ -514,9 +543,10 @@ namespace BDArmory.Modules
 
         //manueuverability and g loading data
         // float maxDynPresGRecorded;
-        float dynDynPresGRecorded = 1.0f; // Start at reasonable non-zero value.
-        float dynMaxVelocityMagSqr = 1.0f; // Start at reasonable non-zero value.
-        float dynDecayRate = 1.0f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
+        float dynDynPresGRecorded = 1f; // Start at reasonable non-zero value.
+        float dynVelocityMagSqr = 1f; // Start at reasonable non-zero value.
+        float dynDecayRate = 1f; // Decay rate for dynamic measurements. Set to a half-life of 60s in Start.
+        float dynVelSmoothingCoef = 1f; // Decay rate for smoothing the dynVelocityMagSqr
 
         float maxAllowedCosAoA;
         float lastAllowedAoA;
@@ -882,6 +912,91 @@ namespace BDArmory.Modules
             maxAltitudeToggleField.guiActiveEditor = true;
         }
 
+        protected void SetupSliderResolution()
+        {
+            var sliderResolutionField = (UI_ChooseOption)Fields["sliderResolution"].uiControlEditor;
+            sliderResolutionField.onFieldChanged = OnSliderResolutionUpdated;
+            sliderResolutionField = (UI_ChooseOption)Fields["sliderResolution"].uiControlFlight;
+            sliderResolutionField.onFieldChanged = OnSliderResolutionUpdated;
+            OnSliderResolutionUpdated(null, null);
+        }
+        public float sliderResolutionAsFloat(string res, float factor = 10f)
+        {
+            switch (res)
+            {
+                case "Low": return factor;
+                case "High": return 1f / factor;
+                case "Insane": return 1f / factor / factor;
+                default: return 1f;
+            }
+        }
+        void OnSliderResolutionUpdated(BaseField field, object obj)
+        {
+            if (previousSliderResolution != sliderResolution)
+            {
+                var factor = Mathf.Pow(10f, Mathf.Round(Mathf.Log10(sliderResolutionAsFloat(sliderResolution) / sliderResolutionAsFloat(previousSliderResolution))));
+                foreach (var PIDField in Fields)
+                {
+                    if (PIDField.group.name == "pilotAI_PID")
+                    {
+                        var uiControl = HighLogic.LoadedSceneIsFlight ? PIDField.uiControlFlight : PIDField.uiControlEditor;
+                        if (uiControl.GetType() == typeof(UI_FloatRange))
+                        {
+                            var slider = (UI_FloatRange)uiControl;
+                            var alsoMinValue = (slider.minValue == slider.stepIncrement);
+                            slider.stepIncrement *= factor;
+                            slider.stepIncrement = Utils.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
+                            // var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            // slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                            if (alsoMinValue) slider.minValue = slider.stepIncrement;
+                        }
+                    }
+                    if (PIDField.group.name == "pilotAI_Altitudes")
+                    {
+                        var uiControl = HighLogic.LoadedSceneIsFlight ? PIDField.uiControlFlight : PIDField.uiControlEditor;
+                        if (uiControl.GetType() == typeof(UI_FloatRange))
+                        {
+                            var slider = (UI_FloatRange)uiControl;
+                            var alsoMinValue = (slider.minValue == slider.stepIncrement);
+                            slider.stepIncrement *= factor;
+                            slider.stepIncrement = Utils.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
+                            // var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            // slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                            if (alsoMinValue) slider.minValue = slider.stepIncrement;
+                        }
+                    }
+                    if (PIDField.group.name == "pilotAI_Speeds")
+                    {
+                        var uiControl = HighLogic.LoadedSceneIsFlight ? PIDField.uiControlFlight : PIDField.uiControlEditor;
+                        if (uiControl.GetType() == typeof(UI_FloatRange))
+                        {
+                            var slider = (UI_FloatRange)uiControl;
+                            slider.stepIncrement *= factor;
+                            slider.stepIncrement = Utils.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
+                            // var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            // slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                        }
+                    }
+                    if (PIDField.group.name == "pilotAI_EvadeExtend")
+                    {
+                        if (PIDField.name.StartsWith("extendDistance"))
+                        {
+                            var uiControl = HighLogic.LoadedSceneIsFlight ? PIDField.uiControlFlight : PIDField.uiControlEditor;
+                            if (uiControl.GetType() == typeof(UI_FloatRange))
+                            {
+                                var slider = (UI_FloatRange)uiControl;
+                                slider.stepIncrement *= factor;
+                                slider.stepIncrement = Utils.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
+                                // var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                                // slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                            }
+                        }
+                    }
+                }
+                previousSliderResolution = sliderResolution;
+            }
+        }
+
         protected override void Start()
         {
             base.Start();
@@ -893,8 +1008,10 @@ namespace BDArmory.Modules
                 GameEvents.onVesselPartCountChanged.Add(UpdateTerrainAlertDetectionRadius);
                 UpdateTerrainAlertDetectionRadius(vessel);
                 dynDecayRate = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 60f); // Decay rate for a half-life of 60s.
+                dynVelSmoothingCoef = Mathf.Exp(Mathf.Log(0.5f) * Time.fixedDeltaTime / 5f); // Smoothing rate with a half-life of 5s.
             }
 
+            SetupSliderResolution();
             SetSliderClamps("turnRadiusTwiddleFactorMin", "turnRadiusTwiddleFactorMax");
             // SetSliderClamps("DynamicDampingMin", "DynamicDampingMax");
             // SetSliderClamps("DynamicDampingPitchMin", "DynamicDampingPitchMax");
@@ -1201,7 +1318,7 @@ namespace BDArmory.Modules
                     Vector3 targetVesselRelPos = targetVessel.vesselTransform.position - vesselTransform.position;
                     if (canExtend && vessel.altitude < defaultAltitude && Vector3.Angle(targetVesselRelPos, -upDirection) < 35) // Target is at a steep angle below us and we're below default altitude, extend to get a better angle instead of attacking now.
                     {
-                        RequestExtend(targetVessel.vesselTransform.position, targetVessel, "too steeply below");
+                        RequestExtend("too steeply below", targetVessel);
                     }
 
                     if (Vector3.Angle(targetVessel.vesselTransform.position - vesselTransform.position, vesselTransform.up) > 35) // If target is outside of 35° cone ahead of us then keep flying straight.
@@ -1221,12 +1338,12 @@ namespace BDArmory.Modules
                     float extendTargetDot = Mathf.Cos(extendTargetAngle * Mathf.Deg2Rad);
                     if (canExtend && targetVelFrac < extendTargetVel && targetForwardDot < extendTargetDot && targetVesselRelPos.sqrMagnitude < extendTargetDist * extendTargetDist) // Default values: Target is outside of ~78° cone ahead, closer than 400m and slower than us, so we won't be able to turn to attack it now.
                     {
-                        RequestExtend(targetVessel.vesselTransform.position - vessel.Velocity(), targetVessel, "can't turn fast enough"); //we'll set our last target pos based on the enemy vessel and where we were 1 seconds ago
+                        RequestExtend("can't turn fast enough", targetVessel);
                         weaponManager.ForceScan();
                     }
                     if (canExtend && turningTimer > 15)
                     {
-                        RequestExtend(targetVessel.vesselTransform.position, targetVessel, "turning too long"); //extend if turning circles for too long
+                        RequestExtend("turning too long", targetVessel); //extend if turning circles for too long
                         turningTimer = 0;
                         weaponManager.ForceScan();
                     }
@@ -1277,12 +1394,11 @@ namespace BDArmory.Modules
             }
 
             // Adjust some values for asteroids.
-            var threshold = collisionAvoidanceThreshold;
+            var targetRadius = v.GetRadius(true);
+            var threshold = collisionAvoidanceThreshold + targetRadius; // Add the target's average radius to the threshold.
             if (v.vesselType == VesselType.SpaceObject) // Give asteroids some extra room.
             {
-                var radius = v.GetRadius();
-                threshold += radius;
-                maxTime += radius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax);
+                maxTime += targetRadius / (float)vessel.srfSpeed * (turnRadiusTwiddleFactorMin + turnRadiusTwiddleFactorMax);
             }
 
             // Use the nearest time to closest point of approach to check separation instead of iteratively sampling. Should give faster, more accurate results.
@@ -1451,7 +1567,7 @@ namespace BDArmory.Modules
                         }
                     }
                 }
-                else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < targetVessel.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
+                else if (planarDistanceToTarget > weaponManager.gunRange * 1.25f && (vessel.altitude < v.altitude || (float)vessel.radarAltitude < defaultAltitude)) //climb to target vessel's altitude if lower and still too far for guns
                 {
                     finalMaxSteer = GetSteerLimiterForSpeedAndPower();
                     if (v.LandedOrSplashed) vectorToTarget += upDirection * defaultAltitude; // If the target is landed or splashed, aim for the default altitude whiel we're outside our gun's range.
@@ -1499,7 +1615,7 @@ namespace BDArmory.Modules
                 && distanceToTarget < MissileLaunchParams.GetDynamicLaunchParams(missile, v.Velocity(), v.transform.position).minLaunchRange
                 && vessel.srfSpeed > idleSpeed)
             {
-                RequestExtend(targetVessel.transform.position, targetVessel, "too close for missile"); // Get far enough away to use the missile.
+                RequestExtend("too close for missile", v); // Get far enough away to use the missile.
             }
 
             if (regainEnergy && angleToTarget > 30f)
@@ -1662,7 +1778,8 @@ namespace BDArmory.Modules
                 finalMaxSteer *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteerAtMaxSpeed, maxSteer); // Linearly varies between two limits, clamped at limit values
             else
                 finalMaxSteer *= Mathf.Clamp((maxSteerAtMaxSpeed - maxSteer) / (cornerSpeed - lowSpeedSwitch + 0.001f) * ((float)vessel.srfSpeed - lowSpeedSwitch) + maxSteer, maxSteer, maxSteerAtMaxSpeed); // Linearly varies between two limits, clamped at limit values
-            finalMaxSteer = Mathf.Max(finalMaxSteer, 0.1f); // added just in case to ensure some input is retained no matter what happens
+            finalMaxSteer *= 1.225f / (float)vessel.atmDensity; // Scale based on atmospheric density relative to sea level Kerbin (since dynamic pressure depends on density)
+            finalMaxSteer = Mathf.Clamp(finalMaxSteer, 0.1f, 1f); // added just in case to ensure some input is retained no matter what happens
 
             //roll
             Vector3 currentRoll = -vesselTransform.forward;
@@ -1737,7 +1854,7 @@ namespace BDArmory.Modules
                 rollTarget = Vector3.RotateTowards(horizonNormal, rollTarget, maxBank / 180 * Mathf.PI, 0.0f);
             bankAngle = Vector3.SignedAngle(horizonNormal, rollTarget, vesselTransform.up);
 
-            float rollError = Misc.Misc.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
+            float rollError = Utils.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
             if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && evasiveTimer == 0 && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or evading or avoiding other vessels as we need a quick reaction
             {
                 //premature dive fix
@@ -1801,7 +1918,11 @@ namespace BDArmory.Modules
                 StopExtending("target override");
                 return false;
             }
-            if (!extending) extendParametersSet = false; // Reset this flag for new extends.
+            if (!extending)
+            {
+                extendParametersSet = false; // Reset this flag for new extends.
+                extendHorizontally = true;
+            }
             if (requestedExtend)
             {
                 requestedExtend = false;
@@ -1809,7 +1930,12 @@ namespace BDArmory.Modules
                 lastTargetPosition = requestedExtendTpos;
             }
             if (checkType == ExtendChecks.RequestsOnly) return extending;
-            if (extending && extendParametersSet) return true; // Already extending.
+            if (extending && extendParametersSet)
+            {
+                if (extendTarget != null) // Update the last known target position.
+                { lastTargetPosition = extendTarget.CoM; }
+                return true; // Already extending.
+            }
             if (!wasEvading) evasionNonlinearityDirection = Mathf.Sign(UnityEngine.Random.Range(-1f, 1f)); // This applies to extending too.
 
             // Dropping a bomb.
@@ -1834,13 +1960,16 @@ namespace BDArmory.Modules
                 }
                 if (selectedGun != null) // If using a gun or no weapon is selected, take the extend multiplier into account.
                 {
-                    extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
+                    // extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 500, 4000) * extendMult; // General extending distance.
+                    extendDistance = extendDistanceAirToGroundGuns;
                     desiredMinAltitude = minAltitude + 0.5f * extendDistance; // Desired minimum altitude after extending. (30° attack vector plus min alt.)
                 }
                 else
                 {
-                    extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
-                    desiredMinAltitude = (float)vessel.radarAltitude + (defaultAltitude - (float)vessel.radarAltitude) * extendMult; // Desired minimum altitude after extending.
+                    // extendDistance = Mathf.Clamp(weaponManager.guardRange - 1800, 2500, 4000);
+                    // desiredMinAltitude = (float)vessel.radarAltitude + (defaultAltitude - (float)vessel.radarAltitude) * extendMult; // Desired minimum altitude after extending.
+                    extendDistance = extendDistanceAirToGround;
+                    desiredMinAltitude = defaultAltitude; // Desired minimum altitude after extending.
                 }
                 float srfDist = (GetSurfacePosition(targetVessel.transform.position) - GetSurfacePosition(vessel.transform.position)).sqrMagnitude;
                 if (srfDist < extendDistance * extendDistance && Vector3.Angle(vesselTransform.up, targetVessel.transform.position - vessel.transform.position) > 45)
@@ -1859,8 +1988,9 @@ namespace BDArmory.Modules
             // Air target (from requests, where extendParameters haven't been set yet).
             if (extending && extendTarget != null && !extendTarget.LandedOrSplashed) // We have a flying target, only extend a short distance and don't climb.
             {
-                extendDistance = 300 * extendMult; // The effect of this is generally to extend for only 1 frame.
-                desiredMinAltitude = minAltitude;
+                extendDistance = extendDistanceAirToAir;
+                extendHorizontally = false;
+                desiredMinAltitude = (float)vessel.radarAltitude * 0.95f; // Extend mostly horizontally
                 extendParametersSet = true;
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log($"[BDArmory.BDModulePilotAI]: {vessel.vesselName} is extending due to an air target ({extendingReason}).");
                 return true;
@@ -1872,10 +2002,10 @@ namespace BDArmory.Modules
 
         void FlyExtend(FlightCtrlState s, Vector3 tPosition)
         {
-            Vector3 srfVector = Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection);
-            if (srfVector.sqrMagnitude < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
+            var extendVector = extendHorizontally ? Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection): vessel.transform.position - tPosition;
+            if (extendVector.sqrMagnitude < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
             {
-                Vector3 targetDirection = srfVector.normalized * extendDistance;
+                Vector3 targetDirection = extendVector.normalized * extendDistance;
                 Vector3 target = vessel.transform.position + targetDirection; // Target extend position horizontally.
                 target = GetTerrainSurfacePosition(target) + (vessel.upAxis * Mathf.Min(defaultAltitude, MissileGuidance.GetRaycastRadarAltitude(vesselTransform.position))); // Adjust for terrain changes at target extend position.
                 target = FlightPosition(target, desiredMinAltitude); // Further adjustments for speed, situation, etc. and desired minimum altitude after extending.
@@ -1891,7 +2021,7 @@ namespace BDArmory.Modules
             }
             else // We're far enough away, stop extending.
             {
-                StopExtending($"gone far enough (" + srfVector.magnitude + " of " + extendDistance + ")");
+                StopExtending($"gone far enough (" + extendVector.magnitude + " of " + extendDistance + ")");
             }
         }
 
@@ -2370,7 +2500,7 @@ namespace BDArmory.Modules
                     while (vs.MoveNext())
                     {
                         if (vs.Current == null) continue;
-                        if (vs.Current == vessel || vs.Current.Landed) continue; // || !(Vector3.Dot(vs.Current.transform.position - vesselTransform.position, vesselTransform.up) > 0)) continue;
+                        if (vs.Current == vessel || vs.Current.Landed) continue;
                         if (!PredictCollisionWithVessel(vs.Current, vesselCollisionAvoidanceLookAheadPeriod, out collisionAvoidDirection)) continue;
                         if (!VesselModuleRegistry.ignoredVesselTypes.Contains(vs.Current.vesselType))
                         {
@@ -2479,9 +2609,10 @@ namespace BDArmory.Modules
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
 
-            dynMaxVelocityMagSqr *= dynDecayRate; // Decay the max recorded squared velocity at the same rate as the dynamic pressure G-force decays to keep the turnRadius constant if they otherwise haven't changed.
-            if (!vessel.LandedOrSplashed && (float)vessel.Velocity().sqrMagnitude > dynMaxVelocityMagSqr)
-                dynMaxVelocityMagSqr = (float)vessel.Velocity().sqrMagnitude;
+            if (!vessel.LandedOrSplashed)
+            {
+                dynVelocityMagSqr = dynVelocityMagSqr * dynVelSmoothingCoef + (1f - dynVelSmoothingCoef) * (float)vessel.Velocity().sqrMagnitude; // Smooth the recently measured speed for determining the turn radius.
+            }
 
             float aoADiff = cosAoAAtMaxPosG - cosAoAAtMaxNegG;
 
@@ -2645,7 +2776,7 @@ namespace BDArmory.Modules
 
             maxLiftAcceleration = Mathf.Clamp(maxLiftAcceleration, bodyGravity, maxAllowedGForce * bodyGravity); //limit it to whichever is smaller, what we can provide or what we can handle. Assume minimum of 1G to avoid extremely high turn radiuses.
 
-            turnRadius = dynMaxVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
+            turnRadius = dynVelocityMagSqr / maxLiftAcceleration; //radius that we can turn in assuming constant velocity, assuming simple circular motion (this is a terrible assumption, the AI usually turns on afterboosters!)
         }
 
         Vector3 DefaultAltPosition()
@@ -2708,7 +2839,7 @@ namespace BDArmory.Modules
                 targetPosition += upDirection * Math.Min(distance, 1000) * vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection)));
                 if (maxAltitudeEnabled)
                 {
-                    var targetRadarAlt = Misc.Misc.GetRadarAltitudeAtPos(targetPosition);
+                    var targetRadarAlt = Utils.GetRadarAltitudeAtPos(targetPosition);
                     if (targetRadarAlt > maxAltitude)
                     {
                         targetPosition -= (targetRadarAlt - maxAltitude) * upDirection;

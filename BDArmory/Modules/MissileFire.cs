@@ -552,6 +552,11 @@ namespace BDArmory.Modules
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
         public float targetWeightThreat = 1f;
 
+        private string targetProtectTeammateLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectTeammate");
+        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectTeammate", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect Teammates
+         UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
+        public float targetWeightProtectTeammate = 0f;
+
         private string targetProtectVIPLabel = Localizer.Format("#LOC_BDArmory_TargetPriority_TargetProtectVIP");
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_TargetPriority_TargetProtectVIP", advancedTweakable = true, groupName = "targetPriority", groupDisplayName = "#LOC_BDArmory_TargetPriority_Settings", groupStartCollapsed = true),//Protect VIPs
          UI_FloatRange(minValue = -10f, maxValue = 10f, stepIncrement = 0.1f, scene = UI_Scene.All)]
@@ -1230,6 +1235,7 @@ namespace BDArmory.Modules
 
                 weaponIndex = Mathf.Clamp(weaponIndex, 0, weaponArray.Length - 1);
 
+                SetDeployableWeapons();
                 DisplaySelectedWeaponMessage();
             }
             if (weaponArray.Length > 0 && selectedWeapon != weaponArray[weaponIndex])
@@ -1468,7 +1474,7 @@ namespace BDArmory.Modules
 
         bool CheckMouseIsOnGui()
         {
-            return Misc.Misc.CheckMouseIsOnGui();
+            return Utils.CheckMouseIsOnGui();
         }
 
         #endregion KSP Events
@@ -1525,6 +1531,11 @@ namespace BDArmory.Modules
 
         IEnumerator GuardTurretRoutine()
         {
+            if (SetDeployableWeapons())
+            {
+                yield return new WaitForSeconds(2f);
+            }
+
             if (gameObject.activeInHierarchy)
             //target is out of visual range, try using sensors
             {
@@ -1951,7 +1962,7 @@ namespace BDArmory.Modules
                     if (targetDist < Mathf.Max(radius * 2, 800f) &&
                         Vector3.Dot(guardTarget.CoM - bombAimerPosition, guardTarget.CoM - transform.position) < 0)
                     {
-                        pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "too close to bomb");
+                        pilotAI.RequestExtend("too close to bomb", guardTarget); // Extend from target vessel.
                         break;
                     }
                     yield return null;
@@ -1980,7 +1991,7 @@ namespace BDArmory.Modules
                             yield return new WaitForSeconds(1f);
                             if (pilotAI)
                             {
-                                pilotAI.RequestExtend(guardTarget.CoM, guardTarget, "bombs away!");
+                                pilotAI.RequestExtend("bombs away!", null, guardTarget.CoM); // Extend from the place the bomb is expected to fall.
                             }
                         }
                     }
@@ -2565,6 +2576,7 @@ namespace BDArmory.Modules
 
                 if (vessel.isActiveVessel && weaponIndex != 0)
                 {
+                    SetDeployableWeapons();
                     DisplaySelectedWeaponMessage();
                 }
             }
@@ -2885,6 +2897,55 @@ namespace BDArmory.Modules
             return openingBays;
         }
 
+        private HashSet<uint> wepsDeployed = new HashSet<uint>();
+        private bool SetDeployableWeapons()
+        {
+            bool deployingWeapon = false;
+
+            if (weaponIndex > 0 && currentGun)
+            {
+                if (uint.Parse(currentGun.deployWepGroup) > 0) // Weapon uses a deploy action group, activate it to fire
+                {
+                    uint deployWepGroup = uint.Parse(currentGun.deployWepGroup);
+                    if (!wepsDeployed.Contains(deployWepGroup)) // We haven't deployed this weapon yet
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)deployWepGroup]);
+                        deployingWeapon = true;
+                        wepsDeployed.Add(deployWepGroup);
+                    }
+                    else
+                    {
+                        foreach (var wep in wepsDeployed.Where(e => e <= 16).ToList()) // Store other Weapons that might be deployed 
+                        {
+                            if (wep != deployWepGroup)
+                            {
+                                vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)wep]);
+                                wepsDeployed.Remove(wep); // Weapon is no longer deployed
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var wep in wepsDeployed.Where(e => e <= 16).ToList()) // Store weapons
+                    {
+                        vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)wep]);
+                        wepsDeployed.Remove(wep); // Weapon is no longer deployed
+                    }
+                }
+            }
+            else
+            {
+                foreach (var wep in wepsDeployed.Where(e => e <= 16).ToList()) // Store weapons
+                {
+                    vessel.ActionGroups.ToggleGroup(BDACompetitionMode.KM_dictAG[(int)wep]);
+                    wepsDeployed.Remove(wep); // Weapon is no longer deployed
+                }
+            }
+
+            return deployingWeapon;
+        }
+
         void SetRotaryRails()
         {
             if (weaponIndex == 0) return;
@@ -2989,7 +3050,7 @@ namespace BDArmory.Modules
             triggerTimer = 0;
 
             UpdateList();
-
+            SetDeployableWeapons();
             DisplaySelectedWeaponMessage();
 
             if (vessel.isActiveVessel && !guardMode)
@@ -3011,7 +3072,7 @@ namespace BDArmory.Modules
             if (vessel.isActiveVessel && !guardMode)
             {
                 audioSource.PlayOneShot(clickSound);
-
+                SetDeployableWeapons();
                 DisplaySelectedWeaponMessage();
             }
         }
@@ -3634,6 +3695,7 @@ namespace BDArmory.Modules
             var TargetMassFields = Fields["targetWeightMass"];
             var TargetFriendliesEngagingFields = Fields["targetWeightFriendliesEngaging"];
             var TargetThreatFields = Fields["targetWeightThreat"];
+            var TargetProtectTeammateFields = Fields["targetWeightProtectTeammate"];
             var TargetProtectVIPFields = Fields["targetWeightProtectVIP"];
             var TargetAttackVIPFields = Fields["targetWeightAttackVIP"];
 
@@ -3648,7 +3710,8 @@ namespace BDArmory.Modules
             float targetMassValue = target.TargetPriMass(target.weaponManager, this);
             float targetFriendliesEngagingValue = target.TargetPriFriendliesEngaging(this);
             float targetThreatValue = target.TargetPriThreat(target.weaponManager, this);
-            float targetProtectVIPValue = target.TargetPriProtectVIP(target.weaponManager);
+            float targetProtectTeammateValue = target.TargetPriProtectTeammate(target.weaponManager, this);
+            float targetProtectVIPValue = target.TargetPriProtectVIP(target.weaponManager, this);
             float targetAttackVIPValue = target.TargetPriAttackVIP(target.weaponManager);
 
             // Calculate total target score
@@ -3662,6 +3725,7 @@ namespace BDArmory.Modules
                 targetWeightFriendliesEngaging * targetFriendliesEngagingValue +
                 targetWeightThreat * targetThreatValue +
                 targetWeightAoD * targetAoDValue +
+                targetWeightProtectTeammate * targetProtectTeammateValue +
                 targetWeightProtectVIP * targetProtectVIPValue +
                 targetWeightAttackVIP * targetAttackVIPValue);
 
@@ -3676,6 +3740,7 @@ namespace BDArmory.Modules
             TargetMassFields.guiName = targetMassLabel + ": " + targetMassValue.ToString("0.00");
             TargetFriendliesEngagingFields.guiName = targetFriendliesEngagingLabel + ": " + targetFriendliesEngagingValue.ToString("0.00");
             TargetThreatFields.guiName = targetThreatLabel + ": " + targetThreatValue.ToString("0.00");
+            TargetProtectTeammateFields.guiName = targetProtectTeammateLabel + ": " + targetProtectTeammateValue.ToString("0.00");
             TargetProtectVIPFields.guiName = targetProtectVIPLabel + ": " + targetProtectVIPValue.ToString("0.00");
             TargetAttackVIPFields.guiName = targetAttackVIPLabel + ": " + targetAttackVIPValue.ToString("0.00");
 
@@ -4690,6 +4755,7 @@ namespace BDArmory.Modules
                 }
 
                 PrepareWeapons();
+                SetDeployableWeapons();
                 DisplaySelectedWeaponMessage();
                 return true;
             }
@@ -5175,6 +5241,7 @@ namespace BDArmory.Modules
                     if (guardTarget == null || selectedWeapon == null)
                     {
                         SetCargoBays();
+                        SetDeployableWeapons();
                         return;
                     }
 
@@ -5240,6 +5307,7 @@ namespace BDArmory.Modules
                     }
                 }
                 SetCargoBays();
+                SetDeployableWeapons();
             }
 
             if (overrideTimer > 0)

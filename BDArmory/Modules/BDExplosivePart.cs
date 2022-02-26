@@ -85,7 +85,7 @@ namespace BDArmory.Modules
                 Fields["detonationRange"].guiActiveEditor = false;
                 Fields["detonationRange"].guiActive = false;
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
 
         [KSPField]
@@ -228,7 +228,7 @@ namespace BDArmory.Modules
                 Fields["detonateAtMinimumDistance"].guiActiveEditor = false;
                 Fields["detonateAtMinimumDistance"].guiActive = false;
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
 
         public void Update()
