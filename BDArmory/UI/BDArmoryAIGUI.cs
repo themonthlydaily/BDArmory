@@ -348,7 +348,10 @@ namespace BDArmory.UI
                         { "vesselCollisionAvoidanceLookAheadPeriod", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceLookAheadPeriod, 0, 3) },
                         { "vesselCollisionAvoidanceStrength", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselCollisionAvoidanceStrength, 0, 2) },
                         { "vesselStandoffDistance", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.vesselStandoffDistance, 0, 1000) },
-                        { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
+                        // { "extendMult", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendMult, 0, 2) },
+                        { "extendDistanceAirToAir", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToAir, 0, 2000) },
+                        { "extendDistanceAirToGroundGuns", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToGroundGuns, 0, 5000) },
+                        { "extendDistanceAirToGround", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendDistanceAirToGround, 0, 5000) },
                         { "extendTargetVel", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetVel, 0, 2) },
                         { "extendTargetAngle", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetAngle, 0, 180) },
                         { "extendTargetDist", gameObject.AddComponent<NumericInputField>().Initialise(0, ActivePilot.extendTargetDist, 0, 5000) },
@@ -417,7 +420,10 @@ namespace BDArmory.UI
                     inputFields["evasionThreshold"].maxValue = ActivePilot.UpToEleven ? 300 : 100;
                     inputFields["evasionTimeThreshold"].maxValue = ActivePilot.UpToEleven ? 1 : 3;
                     inputFields["vesselStandoffDistance"].maxValue = ActivePilot.UpToEleven ? 5000 : 1000;
-                    inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
+                    // inputFields["extendMult"].maxValue = ActivePilot.UpToEleven ? 200 : 2;
+                    inputFields["extendAirToAir"].maxValue = ActivePilot.UpToEleven ? 20000 : 2000;
+                    inputFields["extendAirToGroundGuns"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
+                    inputFields["extendAirToGround"].maxValue = ActivePilot.UpToEleven ? 20000 : 5000;
 
                     inputFields["turnRadiusTwiddleFactorMin"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
                     inputFields["turnRadiusTwiddleFactorMax"].maxValue = ActivePilot.UpToEleven ? 10 : 5;
@@ -1694,26 +1700,86 @@ namespace BDArmory.UI
                         }
                         if (ActivePilot.canExtend)
                         {
+                            // if (!NumFieldsEnabled)
+                            // {
+                            //     ActivePilot.extendMult =
+                            //         GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
+                            //             ActivePilot.extendMult, 0, ActivePilot.UpToEleven ? 200 : 2);
+                            //     ActivePilot.extendMult = Mathf.Round(ActivePilot.extendMult * 10f) / 10f;
+                            // }
+                            // else
+                            // {
+                            //     inputFields["extendMult"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendMult"].possibleValue, 6));
+                            //     ActivePilot.extendMult = (float)inputFields["extendMult"].currentValue;
+                            // }
+                            // GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendMultiplier") + ": " + ActivePilot.extendMult.ToString("0.0"), Label);//"dynamic damping min"
+                            // evadeLines++;
+                            // if (contextTipsEnabled)
+                            // {
+                            //     GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendMult"), contextLabel);//"dynamic damp min"
+                            //     evadeLines++;
+                            // }
+
                             if (!NumFieldsEnabled)
                             {
-                                ActivePilot.extendMult =
+                                ActivePilot.extendDistanceAirToAir =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
-                                        ActivePilot.extendMult, 0, ActivePilot.UpToEleven ? 200 : 2);
-                                ActivePilot.extendMult = Mathf.Round(ActivePilot.extendMult * 10f) / 10f;
+                                        ActivePilot.extendDistanceAirToAir, 0, ActivePilot.UpToEleven ? 20000 : 2000);
+                                ActivePilot.extendDistanceAirToAir = Utils.RoundToUnit(ActivePilot.extendDistanceAirToAir, 50f);
                             }
                             else
                             {
-                                inputFields["extendMult"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendMult"].possibleValue, 6));
-                                ActivePilot.extendMult = (float)inputFields["extendMult"].currentValue;
+                                inputFields["extendDistanceAirToAir"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendDistanceAirToAir"].possibleValue, 6));
+                                ActivePilot.extendDistanceAirToAir = (float)inputFields["extendDistanceAirToAir"].currentValue;
                             }
-                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendMultiplier") + " :" + ActivePilot.extendMult.ToString("0.0"), Label);//"dynamic damping min"
-
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToAir") + ": " + ActivePilot.extendDistanceAirToAir.ToString("0"), Label); // Extend Distance Air-To-Air
                             evadeLines++;
                             if (contextTipsEnabled)
                             {
-                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendMult"), contextLabel);//"dynamic damp min"
+                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToAir_Context"), contextLabel);
                                 evadeLines++;
                             }
+
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.extendDistanceAirToGroundGuns =
+                                    GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
+                                        ActivePilot.extendDistanceAirToGroundGuns, 0, ActivePilot.UpToEleven ? 20000 : 5000);
+                                ActivePilot.extendDistanceAirToGroundGuns = Utils.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 100f);
+                            }
+                            else
+                            {
+                                inputFields["extendDistanceAirToGroundGuns"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendDistanceAirToGroundGuns"].possibleValue, 6));
+                                ActivePilot.extendDistanceAirToGroundGuns = (float)inputFields["extendDistanceAirToGroundGuns"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGroundGuns") + ": " + ActivePilot.extendDistanceAirToGroundGuns.ToString("0"), Label); // Extend Distance Air-To-Ground (Guns)
+                            evadeLines++;
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGroundGuns_Context"), contextLabel);
+                                evadeLines++;
+                            }
+
+                            if (!NumFieldsEnabled)
+                            {
+                                ActivePilot.extendDistanceAirToGround =
+                                    GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
+                                        ActivePilot.extendDistanceAirToGround, 0, ActivePilot.UpToEleven ? 20000 : 5000);
+                                ActivePilot.extendDistanceAirToGround = Utils.RoundToUnit(ActivePilot.extendDistanceAirToGround, 100f);
+                            }
+                            else
+                            {
+                                inputFields["extendDistanceAirToGround"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendDistanceAirToGround"].possibleValue, 6));
+                                ActivePilot.extendDistanceAirToGround = (float)inputFields["extendDistanceAirToGround"].currentValue;
+                            }
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGround") + ": " + ActivePilot.extendDistanceAirToGround.ToString("0"), Label); // Extend Distance Air-To-Ground
+                            evadeLines++;
+                            if (contextTipsEnabled)
+                            {
+                                GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendDistanceAirToGround_Context"), contextLabel);
+                                evadeLines++;
+                            }
+
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendTargetVel =
