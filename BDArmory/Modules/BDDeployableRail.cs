@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UniLinq;
 using UnityEngine;
+using BDArmory.Misc;
 
 namespace BDArmory.Modules
 {
@@ -70,7 +71,7 @@ namespace BDArmory.Modules
             part.force_activate();
             setupComplete = false;
             deployTransform = part.FindModelTransform(deployTransformName);
-            deployState = Misc.Misc.SetUpSingleAnimation(deployAnimName, part);
+            deployState = Utils.SetUpSingleAnimation(deployAnimName, part);
 
             deployState.enabled = true;
             deployState.speed = 0;

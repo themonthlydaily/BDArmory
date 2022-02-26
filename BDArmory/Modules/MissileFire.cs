@@ -1470,7 +1470,7 @@ namespace BDArmory.Modules
 
         bool CheckMouseIsOnGui()
         {
-            return Misc.Misc.CheckMouseIsOnGui();
+            return Utils.CheckMouseIsOnGui();
         }
 
         #endregion KSP Events

@@ -160,7 +160,7 @@ namespace BDArmory.UI
                         width,
                         height);
                     window = GUI.Window(10591029, clientRect, TargetingSelectorWindow, "", BDArmorySetup.BDGuiSkin.window);
-                    Misc.Misc.UpdateGUIRect(window, guiCheckIndex);
+                    Utils.UpdateGUIRect(window, guiCheckIndex);
             }
         }
 
@@ -187,7 +187,7 @@ namespace BDArmory.UI
                 yield return null;
 
             ready = true;
-            guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
+            guiCheckIndex = Utils.RegisterGUIRect(new Rect());
         }
     }
 }

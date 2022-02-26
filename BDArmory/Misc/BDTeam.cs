@@ -55,7 +55,7 @@ namespace BDArmory.Misc
                 return BDTeam.Get("B");
             try
             {
-                BDTeam team = UnityEngine.JsonUtility.FromJson<BDTeam>(Misc.JsonDecompat(teamString));
+                BDTeam team = UnityEngine.JsonUtility.FromJson<BDTeam>(Utils.JsonDecompat(teamString));
                 if (!BDArmorySetup.Instance.Teams.ContainsKey(team.Name))
                 {
                     BDArmorySetup.Instance.Teams.Add(team.Name, team);
@@ -71,7 +71,7 @@ namespace BDArmory.Misc
 
         public string Serialize()
         {
-            return Misc.JsonCompat(UnityEngine.JsonUtility.ToJson(this));
+            return Utils.JsonCompat(UnityEngine.JsonUtility.ToJson(this));
         }
 
         public override int GetHashCode() => Name.GetHashCode();

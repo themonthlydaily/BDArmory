@@ -573,7 +573,7 @@ namespace BDArmory.Modules
 
             if (deployAnimationName != "")
             {
-                deployStates = Misc.Misc.SetUpAnimation(deployAnimationName, part);
+                deployStates = Utils.SetUpAnimation(deployAnimationName, part);
             }
             else
             {
@@ -582,7 +582,7 @@ namespace BDArmory.Modules
 
             if (flightAnimationName != "")
             {
-                animStates = Misc.Misc.SetUpAnimation(flightAnimationName, part);
+                animStates = Utils.SetUpAnimation(flightAnimationName, part);
             }
 
             SetInitialDetonationDistance();

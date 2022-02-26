@@ -926,8 +926,9 @@ namespace BDArmory.Modules
                             var slider = (UI_FloatRange)uiControl;
                             var alsoMinValue = (slider.minValue == slider.stepIncrement);
                             slider.stepIncrement *= factor;
-                            var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
-                            slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                            slider.stepIncrement = Utils.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
+                            // var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            // slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
                             if (alsoMinValue) slider.minValue = slider.stepIncrement;
                         }
                     }
@@ -939,8 +940,9 @@ namespace BDArmory.Modules
                             var slider = (UI_FloatRange)uiControl;
                             var alsoMinValue = (slider.minValue == slider.stepIncrement);
                             slider.stepIncrement *= factor;
-                            var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
-                            slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
+                            slider.stepIncrement = Utils.RoundToUnit(slider.stepIncrement, slider.stepIncrement);
+                            // var precision = Mathf.Pow(10, -Mathf.Floor(Mathf.Log10(slider.stepIncrement)) + 1);
+                            // slider.stepIncrement = Mathf.Round(precision * slider.stepIncrement) / precision;
                             if (alsoMinValue) slider.minValue = slider.stepIncrement;
                         }
                     }
@@ -1817,7 +1819,7 @@ namespace BDArmory.Modules
                 rollTarget = Vector3.RotateTowards(horizonNormal, rollTarget, maxBank / 180 * Mathf.PI, 0.0f);
             bankAngle = Vector3.SignedAngle(horizonNormal, rollTarget, vesselTransform.up);
 
-            float rollError = Misc.Misc.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
+            float rollError = Utils.SignedAngle(currentRoll, rollTarget, vesselTransform.right);
             if (steerMode == SteerModes.NormalFlight && !avoidingTerrain && evasiveTimer == 0 && currentlyAvoidedVessel == null) // Don't apply this fix while avoiding terrain, makes it difficult for craft to exit dives; or evading or avoiding other vessels as we need a quick reaction
             {
                 //premature dive fix
@@ -2794,7 +2796,7 @@ namespace BDArmory.Modules
                 targetPosition += upDirection * Math.Min(distance, 1000) * vertFactor * Mathf.Clamp01(0.7f - Math.Abs(Vector3.Dot(projectedTargetDirection, projectedDirection)));
                 if (maxAltitudeEnabled)
                 {
-                    var targetRadarAlt = Misc.Misc.GetRadarAltitudeAtPos(targetPosition);
+                    var targetRadarAlt = Utils.GetRadarAltitudeAtPos(targetPosition);
                     if (targetRadarAlt > maxAltitude)
                     {
                         targetPosition -= (targetRadarAlt - maxAltitude) * upDirection;

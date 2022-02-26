@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BDArmory.Core;
 using BDArmory.Core.Utils;
 using BDArmory.Guidances;
+using BDArmory.Misc;
 using UniLinq;
 using UnityEngine;
 
@@ -242,7 +243,7 @@ namespace BDArmory.Modules
             if (!string.IsNullOrEmpty(deployAnimationName))
             {
                 hasDeployAnimation = true;
-                deployAnimState = Misc.Misc.SetUpSingleAnimation(deployAnimationName, part);
+                deployAnimState = Utils.SetUpSingleAnimation(deployAnimationName, part);
                 if (state == StartState.Editor)
                 {
                     Events["EditorToggleAnimation"].guiActiveEditor = true;

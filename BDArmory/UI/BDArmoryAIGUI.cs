@@ -9,6 +9,7 @@ using static UnityEngine.GUILayout;
 using System;
 using System.Collections.Generic;
 using static BDArmory.UI.VesselSpawnerWindow;
+using BDArmory.Misc;
 
 namespace BDArmory.UI
 {
@@ -827,7 +828,7 @@ namespace BDArmory.UI
                             inputFields["steerMult"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines, contentWidth), inputFields["steerMult"].possibleValue, 6));
                             ActivePilot.steerMult = (float)inputFields["steerMult"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerFactor") + " :" + ActivePilot.steerMult.ToString("0.0"), Label);//"Steer Mult"
+                        GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerFactor") + ": " + ActivePilot.steerMult.ToString("0.0"), Label);//"Steer Mult"
 
 
                         pidLines++;
@@ -849,7 +850,7 @@ namespace BDArmory.UI
                             inputFields["steerKiAdjust"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines, contentWidth), inputFields["steerKiAdjust"].possibleValue, 6));
                             ActivePilot.steerKiAdjust = (float)inputFields["steerKiAdjust"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerKi") + " :" + ActivePilot.steerKiAdjust.ToString("0.00"), Label);//"Steer Ki"
+                        GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerKi") + ": " + ActivePilot.steerKiAdjust.ToString("0.00"), Label);//"Steer Ki"
                         pidLines++;
 
                         if (contextTipsEnabled)
@@ -870,7 +871,7 @@ namespace BDArmory.UI
                             inputFields["steerDamping"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines, contentWidth), inputFields["steerDamping"].possibleValue, 6));
                             ActivePilot.steerDamping = (float)inputFields["steerDamping"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerDamping") + " :" + ActivePilot.steerDamping.ToString("0.00"), Label);//"Steer Damping"
+                        GUI.Label(SettinglabelRect(leftIndent, pidLines), Localizer.Format("#LOC_BDArmory_SteerDamping") + ": " + ActivePilot.steerDamping.ToString("0.00"), Label);//"Steer Damping"
 
                         pidLines++;
                         if (contextTipsEnabled)
@@ -909,7 +910,7 @@ namespace BDArmory.UI
                                     inputFields["DynamicDampingMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingMin"].possibleValue, 6));
                                     ActivePilot.DynamicDampingMin = (float)inputFields["DynamicDampingMin"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMin") + " :" + ActivePilot.DynamicDampingMin.ToString("0.0"), Label);//"dynamic damping min"
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMin") + ": " + ActivePilot.DynamicDampingMin.ToString("0.0"), Label);//"dynamic damping min"
                                 dynPidLines++;
                                 if (contextTipsEnabled)
                                 {
@@ -928,7 +929,7 @@ namespace BDArmory.UI
                                     inputFields["DynamicDampingMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingMax"].possibleValue, 6));
                                     ActivePilot.DynamicDampingMax = (float)inputFields["DynamicDampingMax"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + " :" + ActivePilot.DynamicDampingMax.ToString("0.0"), Label);//"dynamic damping max"
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + ": " + ActivePilot.DynamicDampingMax.ToString("0.0"), Label);//"dynamic damping max"
 
                                 dynPidLines++;
                                 if (contextTipsEnabled)
@@ -948,7 +949,7 @@ namespace BDArmory.UI
                                     inputFields["dynamicSteerDampingFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingFactor"].possibleValue, 6));
                                     ActivePilot.dynamicSteerDampingFactor = (float)inputFields["dynamicSteerDampingFactor"].currentValue;
                                 }
-                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult") + " :" + ActivePilot.dynamicSteerDampingFactor.ToString("0.0"), Label);//"dynamic damping mult"
+                                GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_AIWindow_DynDampMult") + ": " + ActivePilot.dynamicSteerDampingFactor.ToString("0.0"), Label);//"dynamic damping mult"
 
                                 dynPidLines++;
                                 if (contextTipsEnabled)
@@ -977,7 +978,7 @@ namespace BDArmory.UI
                                         inputFields["DynamicDampingPitchMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingPitchMin"].possibleValue, 6));
                                         ActivePilot.DynamicDampingPitchMin = (float)inputFields["DynamicDampingPitchMin"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchMin") + " :" + ActivePilot.DynamicDampingPitchMin.ToString("0.0"), Label);//"dynamic damping min"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchMin") + ": " + ActivePilot.DynamicDampingPitchMin.ToString("0.0"), Label);//"dynamic damping min"
                                     dynPidLines++;
                                     if (contextTipsEnabled)
                                     {
@@ -996,7 +997,7 @@ namespace BDArmory.UI
                                         inputFields["DynamicDampingPitchMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingPitchMax"].possibleValue, 6));
                                         ActivePilot.DynamicDampingPitchMax = (float)inputFields["DynamicDampingPitchMax"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + " :" + ActivePilot.DynamicDampingPitchMax.ToString("0.0"), Label);//"dynamic damping max"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingMax") + ": " + ActivePilot.DynamicDampingPitchMax.ToString("0.0"), Label);//"dynamic damping max"
 
                                     dynPidLines++;
                                     if (contextTipsEnabled)
@@ -1016,7 +1017,7 @@ namespace BDArmory.UI
                                         inputFields["dynamicSteerDampingPitchFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingPitchFactor"].possibleValue, 6));
                                         ActivePilot.dynamicSteerDampingPitchFactor = (float)inputFields["dynamicSteerDampingPitchFactor"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchFactor") + " :" + ActivePilot.dynamicSteerDampingPitchFactor.ToString("0.0"), Label);//"dynamic damping mult"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingPitchFactor") + ": " + ActivePilot.dynamicSteerDampingPitchFactor.ToString("0.0"), Label);//"dynamic damping mult"
 
                                     dynPidLines++;
                                     if (contextTipsEnabled)
@@ -1043,7 +1044,7 @@ namespace BDArmory.UI
                                         inputFields["DynamicDampingYawMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingYawMin"].possibleValue, 6));
                                         ActivePilot.DynamicDampingYawMin = (float)inputFields["DynamicDampingYawMin"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMin") + " :" + ActivePilot.DynamicDampingYawMin.ToString("0.0"), Label);//"dynamic damping min"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMin") + ": " + ActivePilot.DynamicDampingYawMin.ToString("0.0"), Label);//"dynamic damping min"
 
                                     dynPidLines++;
                                     if (contextTipsEnabled)
@@ -1063,7 +1064,7 @@ namespace BDArmory.UI
                                         inputFields["DynamicDampingYawMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingYawMax"].possibleValue, 6));
                                         ActivePilot.DynamicDampingYawMax = (float)inputFields["DynamicDampingYawMax"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMax") + " :" + ActivePilot.DynamicDampingYawMax.ToString("0.0"), Label);//"dynamic damping max"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawMax") + ": " + ActivePilot.DynamicDampingYawMax.ToString("0.0"), Label);//"dynamic damping max"
 
                                     dynPidLines++;
                                     if (contextTipsEnabled)
@@ -1083,7 +1084,7 @@ namespace BDArmory.UI
                                         inputFields["dynamicSteerDampingYawFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingYawFactor"].possibleValue, 6));
                                         ActivePilot.dynamicSteerDampingYawFactor = (float)inputFields["dynamicSteerDampingYawFactor"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawFactor") + " :" + ActivePilot.dynamicSteerDampingYawFactor.ToString("0.0"), Label);//"dynamic damping yaw mult"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingYawFactor") + ": " + ActivePilot.dynamicSteerDampingYawFactor.ToString("0.0"), Label);//"dynamic damping yaw mult"
 
                                     dynPidLines++;
                                     if (contextTipsEnabled)
@@ -1110,7 +1111,7 @@ namespace BDArmory.UI
                                         inputFields["DynamicDampingRollMin"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingRollMin"].possibleValue, 6));
                                         ActivePilot.DynamicDampingRollMin = (float)inputFields["DynamicDampingRollMin"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMin") + " :" + ActivePilot.DynamicDampingRollMin.ToString("0.0"), Label);//"dynamic damping min"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMin") + ": " + ActivePilot.DynamicDampingRollMin.ToString("0.0"), Label);//"dynamic damping min"
 
                                     dynPidLines++;
                                     if (contextTipsEnabled)
@@ -1130,7 +1131,7 @@ namespace BDArmory.UI
                                         inputFields["DynamicDampingRollMax"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["DynamicDampingRollMax"].possibleValue, 6));
                                         ActivePilot.DynamicDampingRollMax = (float)inputFields["DynamicDampingRollMax"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMax") + " :" + ActivePilot.DynamicDampingRollMax.ToString("0.0"), Label);//"dynamic damping max"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollMax") + ": " + ActivePilot.DynamicDampingRollMax.ToString("0.0"), Label);//"dynamic damping max"
 
                                     dynPidLines++;
                                     if (contextTipsEnabled)
@@ -1150,7 +1151,7 @@ namespace BDArmory.UI
                                         inputFields["dynamicSteerDampingRollFactor"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, pidLines + dynPidLines, contentWidth), inputFields["dynamicSteerDampingRollFactor"].possibleValue, 6));
                                         ActivePilot.dynamicSteerDampingRollFactor = (float)inputFields["dynamicSteerDampingRollFactor"].currentValue;
                                     }
-                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollFactor") + " :" + ActivePilot.dynamicSteerDampingRollFactor.ToString("0.0"), Label);//"dynamic damping roll mult"
+                                    GUI.Label(SettinglabelRect(leftIndent, pidLines + dynPidLines), Localizer.Format("#LOC_BDArmory_DynamicDampingRollFactor") + ": " + ActivePilot.dynamicSteerDampingRollFactor.ToString("0.0"), Label);//"dynamic damping roll mult"
                                     dynPidLines++;
                                     if (contextTipsEnabled)
                                     {
@@ -1197,7 +1198,7 @@ namespace BDArmory.UI
                             inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
                             inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_DefaultAltitude") + " :" + ActivePilot.defaultAltitude.ToString("0"), Label);//"default altitude"
+                        GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_DefaultAltitude") + ": " + ActivePilot.defaultAltitude.ToString("0"), Label);//"default altitude"
                         altLines++;
                         if (contextTipsEnabled)
                         {
@@ -1223,7 +1224,7 @@ namespace BDArmory.UI
                             inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
                             inputFields["maxAltitude"].currentValue = ActivePilot.maxAltitude;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MinAltitude") + " :" + ActivePilot.minAltitude.ToString("0"), Label);//"min altitude"
+                        GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MinAltitude") + ": " + ActivePilot.minAltitude.ToString("0"), Label);//"min altitude"
                         altLines++;
                         if (contextTipsEnabled)
                         {
@@ -1256,7 +1257,7 @@ namespace BDArmory.UI
                                 inputFields["minAltitude"].currentValue = ActivePilot.minAltitude;
                                 inputFields["defaultAltitude"].currentValue = ActivePilot.defaultAltitude;
                             }
-                            GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MaxAltitude") + " :" + ActivePilot.maxAltitude.ToString("0"), Label);//"max altitude"
+                            GUI.Label(SettinglabelRect(leftIndent, altLines), Localizer.Format("#LOC_BDArmory_MaxAltitude") + ": " + ActivePilot.maxAltitude.ToString("0"), Label);//"max altitude"
                             altLines++;
                             if (contextTipsEnabled)
                             {
@@ -1288,7 +1289,7 @@ namespace BDArmory.UI
                             inputFields["maxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["maxSpeed"].possibleValue, 6));
                             ActivePilot.maxSpeed = (float)inputFields["maxSpeed"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MaxSpeed") + " :" + ActivePilot.maxSpeed.ToString("0"), Label);//"max speed"
+                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MaxSpeed") + ": " + ActivePilot.maxSpeed.ToString("0"), Label);//"max speed"
                         if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_maxSpeed"), contextLabel);//"max speed"
 
                         if (!NumFieldsEnabled)
@@ -1301,7 +1302,7 @@ namespace BDArmory.UI
                             inputFields["takeOffSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["takeOffSpeed"].possibleValue, 6));
                             ActivePilot.takeOffSpeed = (float)inputFields["takeOffSpeed"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_TakeOffSpeed") + " :" + ActivePilot.takeOffSpeed.ToString("0"), Label);//"takeoff speed"
+                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_TakeOffSpeed") + ": " + ActivePilot.takeOffSpeed.ToString("0"), Label);//"takeoff speed"
                         if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_takeoff"), contextLabel);//"takeoff speed help"
 
                         if (!NumFieldsEnabled)
@@ -1314,7 +1315,7 @@ namespace BDArmory.UI
                             inputFields["minSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["minSpeed"].possibleValue, 6));
                             ActivePilot.minSpeed = (float)inputFields["minSpeed"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MinSpeed") + " :" + ActivePilot.minSpeed.ToString("0"), Label);//"min speed"
+                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_MinSpeed") + ": " + ActivePilot.minSpeed.ToString("0"), Label);//"min speed"
                         if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_minSpeed"), contextLabel);//"min speed help"
 
                         if (!NumFieldsEnabled)
@@ -1327,7 +1328,7 @@ namespace BDArmory.UI
                             inputFields["strafingSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["strafingSpeed"].possibleValue, 6));
                             ActivePilot.strafingSpeed = (float)inputFields["strafingSpeed"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_StrafingSpeed") + " :" + ActivePilot.strafingSpeed.ToString("0"), Label);//"strafing speed"
+                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_StrafingSpeed") + ": " + ActivePilot.strafingSpeed.ToString("0"), Label);//"strafing speed"
                         if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_atkSpeed"), contextLabel);//"strafe speed"
 
                         if (!NumFieldsEnabled)
@@ -1340,7 +1341,7 @@ namespace BDArmory.UI
                             inputFields["idleSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["idleSpeed"].possibleValue, 6));
                             ActivePilot.idleSpeed = (float)inputFields["idleSpeed"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_IdleSpeed") + " :" + ActivePilot.idleSpeed.ToString("0"), Label);//"idle speed"
+                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_IdleSpeed") + ": " + ActivePilot.idleSpeed.ToString("0"), Label);//"idle speed"
                         if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_idleSpeed"), contextLabel);//"idle speed context help"
 
                         if (!NumFieldsEnabled)
@@ -1353,7 +1354,7 @@ namespace BDArmory.UI
                             inputFields["ABPriority"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ++spdLines, contentWidth), inputFields["ABPriority"].possibleValue, 6));
                             ActivePilot.ABPriority = (float)inputFields["ABPriority"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_ABPriority") + " :" + ActivePilot.ABPriority.ToString("0"), Label);//"AB priority"
+                        GUI.Label(SettinglabelRect(leftIndent, spdLines), Localizer.Format("#LOC_BDArmory_ABPriority") + ": " + ActivePilot.ABPriority.ToString("0"), Label);//"AB priority"
                         if (contextTipsEnabled) GUI.Label(ContextLabelRect(leftIndent, ++spdLines), Localizer.Format("#LOC_BDArmory_AIWindow_ABPriority"), contextLabel);//"AB priority context help"
 
                         GUI.EndGroup();
@@ -1383,7 +1384,7 @@ namespace BDArmory.UI
                             inputFields["maxSteer"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxSteer"].possibleValue, 6));
                             ActivePilot.maxSteer = (float)inputFields["maxSteer"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedSteerLimiter") + " :" + ActivePilot.maxSteer.ToString("0.00"), Label);//"Low speed Limiter"
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedSteerLimiter") + ": " + ActivePilot.maxSteer.ToString("0.00"), Label);//"Low speed Limiter"
 
                         ctrlLines++;
                         if (contextTipsEnabled)
@@ -1403,7 +1404,7 @@ namespace BDArmory.UI
                             inputFields["lowSpeedSwitch"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["lowSpeedSwitch"].possibleValue, 6));
                             ActivePilot.lowSpeedSwitch = (float)inputFields["lowSpeedSwitch"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedLimiterSpeed") + " :" + ActivePilot.lowSpeedSwitch.ToString("0"), Label);//"dynamic damping max"
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_LowSpeedLimiterSpeed") + ": " + ActivePilot.lowSpeedSwitch.ToString("0"), Label);//"dynamic damping max"
 
                         ctrlLines++;
                         if (contextTipsEnabled)
@@ -1423,7 +1424,7 @@ namespace BDArmory.UI
                             inputFields["maxSteerAtMaxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxSteerAtMaxSpeed"].possibleValue, 6));
                             ActivePilot.maxSteerAtMaxSpeed = (float)inputFields["maxSteerAtMaxSpeed"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HighSpeedSteerLimiter") + " :" + ActivePilot.maxSteerAtMaxSpeed.ToString("0.00"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HighSpeedSteerLimiter") + ": " + ActivePilot.maxSteerAtMaxSpeed.ToString("0.00"), Label);//"dynamic damping min"
 
                         ctrlLines++;
                         if (contextTipsEnabled)
@@ -1443,7 +1444,7 @@ namespace BDArmory.UI
                             inputFields["cornerSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["cornerSpeed"].possibleValue, 6));
                             ActivePilot.cornerSpeed = (float)inputFields["cornerSpeed"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HighSpeedLimiterSpeed") + " :" + ActivePilot.cornerSpeed.ToString("0"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_AIWindow_HighSpeedLimiterSpeed") + ": " + ActivePilot.cornerSpeed.ToString("0"), Label);//"dynamic damping min"
 
                         ctrlLines++;
                         if (contextTipsEnabled)
@@ -1463,7 +1464,7 @@ namespace BDArmory.UI
                             inputFields["maxBank"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxBank"].possibleValue, 6));
                             ActivePilot.maxBank = (float)inputFields["maxBank"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_BankLimiter") + " :" + ActivePilot.maxBank.ToString("0"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_BankLimiter") + ": " + ActivePilot.maxBank.ToString("0"), Label);//"dynamic damping min"
 
                         ctrlLines++;
                         if (contextTipsEnabled)
@@ -1483,7 +1484,7 @@ namespace BDArmory.UI
                             inputFields["maxAllowedGForce"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxAllowedGForce"].possibleValue, 6));
                             ActivePilot.maxAllowedGForce = (float)inputFields["maxAllowedGForce"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_maxAllowedGForce") + " :" + ActivePilot.maxAllowedGForce.ToString("0.00"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_maxAllowedGForce") + ": " + ActivePilot.maxAllowedGForce.ToString("0.00"), Label);//"dynamic damping min"
 
                         ctrlLines++;
                         if (contextTipsEnabled)
@@ -1503,7 +1504,7 @@ namespace BDArmory.UI
                             inputFields["maxAllowedAoA"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ctrlLines, contentWidth), inputFields["maxAllowedAoA"].possibleValue, 6));
                             ActivePilot.maxAllowedAoA = (float)inputFields["maxAllowedAoA"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_maxAllowedAoA") + " :" + ActivePilot.maxAllowedAoA.ToString("0.0"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, ctrlLines), Localizer.Format("#LOC_BDArmory_maxAllowedAoA") + ": " + ActivePilot.maxAllowedAoA.ToString("0.0"), Label);//"dynamic damping min"
 
                         ctrlLines++;
                         if (contextTipsEnabled)
@@ -1538,7 +1539,7 @@ namespace BDArmory.UI
                             inputFields["minEvasionTime"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["minEvasionTime"].possibleValue, 6));
                             ActivePilot.minEvasionTime = (float)inputFields["minEvasionTime"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_MinEvasionTime") + " :" + ActivePilot.minEvasionTime.ToString("0.00"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_MinEvasionTime") + ": " + ActivePilot.minEvasionTime.ToString("0.00"), Label);//"dynamic damping min"
 
                         evadeLines++;
                         if (contextTipsEnabled)
@@ -1559,7 +1560,7 @@ namespace BDArmory.UI
                             inputFields["evasionNonlinearity"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["evasionNonlinearity"].possibleValue, 4));
                             ActivePilot.evasionNonlinearity = (float)inputFields["evasionNonlinearity"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionNonlinearity") + " :" + ActivePilot.evasionNonlinearity.ToString("0.0"), Label);//"Evasion/Extension Nonlinearity"
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionNonlinearity") + ": " + ActivePilot.evasionNonlinearity.ToString("0.0"), Label);//"Evasion/Extension Nonlinearity"
 
                         evadeLines++;
                         if (contextTipsEnabled)
@@ -1580,7 +1581,7 @@ namespace BDArmory.UI
                             inputFields["evasionThreshold"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["evasionThreshold"].possibleValue, 6));
                             ActivePilot.evasionThreshold = (float)inputFields["evasionThreshold"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionThreshold") + " :" + ActivePilot.evasionThreshold.ToString("0"), Label);//"dynamic damping max"
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionThreshold") + ": " + ActivePilot.evasionThreshold.ToString("0"), Label);//"dynamic damping max"
 
                         evadeLines++;
                         if (contextTipsEnabled)
@@ -1600,7 +1601,7 @@ namespace BDArmory.UI
                             inputFields["evasionTimeThreshold"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["evasionTimeThreshold"].possibleValue, 6));
                             ActivePilot.evasionTimeThreshold = (float)inputFields["evasionTimeThreshold"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionTimeThreshold") + " :" + ActivePilot.evasionTimeThreshold.ToString("0.00"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_EvasionTimeThreshold") + ": " + ActivePilot.evasionTimeThreshold.ToString("0.00"), Label);//"dynamic damping min"
 
                         evadeLines++;
                         ActivePilot.evasionIgnoreMyTargetTargetingMe = GUI.Toggle(ToggleButtonRect(leftIndent, evadeLines, contentWidth), ActivePilot.evasionIgnoreMyTargetTargetingMe, Localizer.Format("#LOC_BDArmory_EvasionIgnoreMyTargetTargetingMe"), ActivePilot.evasionIgnoreMyTargetTargetingMe ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button);
@@ -1623,7 +1624,7 @@ namespace BDArmory.UI
                             inputFields["collisionAvoidanceThreshold"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["collisionAvoidanceThreshold"].possibleValue, 6));
                             ActivePilot.collisionAvoidanceThreshold = (float)inputFields["collisionAvoidanceThreshold"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceThreshold") + " :" + ActivePilot.collisionAvoidanceThreshold.ToString("0"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceThreshold") + ": " + ActivePilot.collisionAvoidanceThreshold.ToString("0"), Label);//"dynamic damping min"
 
                         evadeLines++;
                         if (contextTipsEnabled)
@@ -1643,7 +1644,7 @@ namespace BDArmory.UI
                             inputFields["vesselCollisionAvoidanceLookAheadPeriod"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselCollisionAvoidanceLookAheadPeriod"].possibleValue, 6));
                             ActivePilot.vesselCollisionAvoidanceLookAheadPeriod = (float)inputFields["vesselCollisionAvoidanceLookAheadPeriod"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceLookAheadPeriod") + " :" + ActivePilot.vesselCollisionAvoidanceLookAheadPeriod.ToString("0.0"), Label);
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceLookAheadPeriod") + ": " + ActivePilot.vesselCollisionAvoidanceLookAheadPeriod.ToString("0.0"), Label);
 
                         evadeLines++;
                         if (contextTipsEnabled)
@@ -1663,7 +1664,7 @@ namespace BDArmory.UI
                             inputFields["vesselCollisionAvoidanceStrength"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselCollisionAvoidanceStrength"].possibleValue, 6));
                             ActivePilot.vesselCollisionAvoidanceStrength = (float)inputFields["vesselCollisionAvoidanceStrength"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceStrength") + " :" + ActivePilot.vesselCollisionAvoidanceStrength.ToString("0.0"), Label);
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_CollisionAvoidanceStrength") + ": " + ActivePilot.vesselCollisionAvoidanceStrength.ToString("0.0"), Label);
 
                         evadeLines++;
                         if (contextTipsEnabled)
@@ -1683,7 +1684,7 @@ namespace BDArmory.UI
                             inputFields["vesselStandoffDistance"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["vesselStandoffDistance"].possibleValue, 6));
                             ActivePilot.vesselStandoffDistance = (float)inputFields["vesselStandoffDistance"].currentValue;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_StandoffDistance") + " :" + ActivePilot.vesselStandoffDistance.ToString("0"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_StandoffDistance") + ": " + ActivePilot.vesselStandoffDistance.ToString("0"), Label);//"dynamic damping min"
 
                         evadeLines++;
                         if (contextTipsEnabled)
@@ -1725,14 +1726,14 @@ namespace BDArmory.UI
                                 inputFields["extendTargetVel"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetVel"].possibleValue, 6));
                                 ActivePilot.extendTargetVel = (float)inputFields["extendTargetVel"].currentValue;
                             }
-                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetVel") + " :" + ActivePilot.extendTargetVel.ToString("0.0"), Label);//"dynamic damping min"
-
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetVel") + ": " + ActivePilot.extendTargetVel.ToString("0.0"), Label);//"dynamic damping min"
                             evadeLines++;
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_Extendvel"), contextLabel);//"dynamic damp min"
                                 evadeLines++;
                             }
+
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendTargetAngle =
@@ -1745,14 +1746,14 @@ namespace BDArmory.UI
                                 inputFields["extendTargetAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetAngle"].possibleValue, 6));
                                 ActivePilot.extendTargetAngle = (float)inputFields["extendTargetAngle"].currentValue;
                             }
-                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetAngle") + " :" + ActivePilot.extendTargetAngle.ToString("0"), Label);// "dynamic damping min"
-
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetAngle") + ": " + ActivePilot.extendTargetAngle.ToString("0"), Label);// "dynamic damping min"
                             evadeLines++;
                             if (contextTipsEnabled)
                             {
                                 GUI.Label(ContextLabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendAngle"), contextLabel);//"dynamic damp min"
                                 evadeLines++;
                             }
+
                             if (!NumFieldsEnabled)
                             {
                                 ActivePilot.extendTargetDist =
@@ -1765,8 +1766,7 @@ namespace BDArmory.UI
                                 inputFields["extendTargetDist"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, evadeLines, contentWidth), inputFields["extendTargetDist"].possibleValue, 6));
                                 ActivePilot.extendTargetDist = (float)inputFields["extendTargetDist"].currentValue;
                             }
-                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetDist") + " :" + ActivePilot.extendTargetDist.ToString("0.00"), Label);//"dynamic damping min"
-
+                            GUI.Label(SettinglabelRect(leftIndent, evadeLines), Localizer.Format("#LOC_BDArmory_AIWindow_ExtendTargetDist") + ": " + ActivePilot.extendTargetDist.ToString("0.00"), Label);//"dynamic damping min"
                             evadeLines++;
                             if (contextTipsEnabled)
                             {
@@ -1810,7 +1810,7 @@ namespace BDArmory.UI
                             ActivePilot.OnMinUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMax"].currentValue = ActivePilot.turnRadiusTwiddleFactorMax;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + " :" + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMin") + ": " + ActivePilot.turnRadiusTwiddleFactorMin.ToString("0.0"), Label); //"dynamic damping min"
 
                         gndLines++;
                         if (contextTipsEnabled)
@@ -1836,7 +1836,7 @@ namespace BDArmory.UI
                             ActivePilot.OnMaxUpdated(null, null);
                             inputFields["turnRadiusTwiddleFactorMin"].currentValue = ActivePilot.turnRadiusTwiddleFactorMin;
                         }
-                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + " :" + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
+                        GUI.Label(SettinglabelRect(leftIndent, gndLines), Localizer.Format("#LOC_BDArmory_AIWindow_TurnRadiusMax") + ": " + ActivePilot.turnRadiusTwiddleFactorMax.ToString("0.0"), Label);//"dynamic damping min"
 
                         gndLines++;
                         if (contextTipsEnabled)
@@ -1878,7 +1878,7 @@ namespace BDArmory.UI
                                 inputFields["controlSurfaceLag"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, ramLines, contentWidth), inputFields["controlSurfaceLag"].possibleValue, 6));
                                 ActivePilot.controlSurfaceLag = (float)inputFields["controlSurfaceLag"].currentValue;
                             }
-                            GUI.Label(SettinglabelRect(leftIndent, ramLines), Localizer.Format("#LOC_BDArmory_AIWindow_ControlSurfaceLag") + " :" + ActivePilot.controlSurfaceLag.ToString("0.00"), Label);//"dynamic damping min"
+                            GUI.Label(SettinglabelRect(leftIndent, ramLines), Localizer.Format("#LOC_BDArmory_AIWindow_ControlSurfaceLag") + ": " + ActivePilot.controlSurfaceLag.ToString("0.00"), Label);//"dynamic damping min"
 
                             ramLines++;
                             if (contextTipsEnabled)
@@ -2015,7 +2015,7 @@ namespace BDArmory.UI
                         inputFields["MaxSlopeAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSlopeAngle"].possibleValue, 6));
                         ActiveDriver.MaxSlopeAngle = (float)inputFields["MaxSlopeAngle"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxSlopeAngle") + " :" + ActiveDriver.MaxSlopeAngle.ToString("0"), Label);//"Steer Ki"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxSlopeAngle") + ": " + ActiveDriver.MaxSlopeAngle.ToString("0"), Label);//"Steer Ki"
                     driverLines++;
 
                     if (contextTipsEnabled)
@@ -2035,7 +2035,7 @@ namespace BDArmory.UI
                         inputFields["CruiseSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["CruiseSpeed"].possibleValue, 6));
                         ActiveDriver.CruiseSpeed = (float)inputFields["CruiseSpeed"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_CruiseSpeed") + " :" + ActiveDriver.CruiseSpeed.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_CruiseSpeed") + ": " + ActiveDriver.CruiseSpeed.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2055,7 +2055,7 @@ namespace BDArmory.UI
                         inputFields["MaxSpeed"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxSpeed"].possibleValue, 6));
                         ActiveDriver.MaxSpeed = (float)inputFields["MaxSpeed"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxSpeed") + " :" + ActiveDriver.MaxSpeed.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxSpeed") + ": " + ActiveDriver.MaxSpeed.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2075,7 +2075,7 @@ namespace BDArmory.UI
                         inputFields["MaxDrift"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxDrift"].possibleValue, 6));
                         ActiveDriver.MaxDrift = (float)inputFields["MaxDrift"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxDrift") + " :" + ActiveDriver.MaxDrift.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MaxDrift") + ": " + ActiveDriver.MaxDrift.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2095,7 +2095,7 @@ namespace BDArmory.UI
                         inputFields["TargetPitch"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["TargetPitch"].possibleValue, 6));
                         ActiveDriver.TargetPitch = (float)inputFields["TargetPitch"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_TargetPitch") + " :" + ActiveDriver.TargetPitch.ToString("0.0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_TargetPitch") + ": " + ActiveDriver.TargetPitch.ToString("0.0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2115,7 +2115,7 @@ namespace BDArmory.UI
                         inputFields["BankAngle"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["BankAngle"].possibleValue, 6));
                         ActiveDriver.BankAngle = (float)inputFields["BankAngle"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_BankAngle") + " :" + ActiveDriver.BankAngle.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_BankAngle") + ": " + ActiveDriver.BankAngle.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2135,7 +2135,7 @@ namespace BDArmory.UI
                         inputFields["steerMult"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["steerMult"].possibleValue, 6));
                         ActiveDriver.steerMult = (float)inputFields["steerMult"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_SteerFactor") + " :" + ActiveDriver.steerMult.ToString("0.0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_SteerFactor") + ": " + ActiveDriver.steerMult.ToString("0.0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2155,7 +2155,7 @@ namespace BDArmory.UI
                         inputFields["steerDamping"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["steerDamping"].possibleValue, 6));
                         ActiveDriver.steerDamping = (float)inputFields["steerDamping"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_SteerDamping") + " :" + ActiveDriver.steerDamping.ToString("0.0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_SteerDamping") + ": " + ActiveDriver.steerDamping.ToString("0.0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2184,7 +2184,7 @@ namespace BDArmory.UI
                         inputFields["MinEngagementRange"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MinEngagementRange"].possibleValue, 6));
                         ActiveDriver.MinEngagementRange = (float)inputFields["MinEngagementRange"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_EngageRangeMin") + " :" + ActiveDriver.MinEngagementRange.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_EngageRangeMin") + ": " + ActiveDriver.MinEngagementRange.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2204,7 +2204,7 @@ namespace BDArmory.UI
                         inputFields["MaxEngagementRange"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["MaxEngagementRange"].possibleValue, 6));
                         ActiveDriver.MaxEngagementRange = (float)inputFields["MaxEngagementRange"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_EngageRangeMax") + " :" + ActiveDriver.MaxEngagementRange.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_EngageRangeMax") + ": " + ActiveDriver.MaxEngagementRange.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)
@@ -2233,7 +2233,7 @@ namespace BDArmory.UI
                         inputFields["AvoidMass"].tryParseValue(GUI.TextField(SettingTextRect(leftIndent, driverLines, contentWidth), inputFields["AvoidMass"].possibleValue, 7));
                         ActiveDriver.AvoidMass = (float)inputFields["AvoidMass"].currentValue;
                     }
-                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MinObstacleMass") + " :" + ActiveDriver.AvoidMass.ToString("0"), Label);//"Steer Damping"
+                    GUI.Label(SettinglabelRect(leftIndent, driverLines), Localizer.Format("#LOC_BDArmory_MinObstacleMass") + ": " + ActiveDriver.AvoidMass.ToString("0"), Label);//"Steer Damping"
 
                     driverLines++;
                     if (contextTipsEnabled)

@@ -54,7 +54,7 @@ namespace BDArmory.Bullets
         public string sourceVesselName;
         public Part sourceWeapon;
         public string team;
-        public Color lightColor = Misc.Misc.ParseColor255("255, 235, 145, 255");
+        public Color lightColor = Utils.ParseColor255("255, 235, 145, 255");
         public Color projectileColor;
         public string bulletTexturePath;
         public bool fadeColor;
@@ -1143,8 +1143,8 @@ namespace BDArmory.Bullets
                 pBullet.sourceVessel = sourceVessel;
                 pBullet.team = team;
                 pBullet.bulletTexturePath = bulletTexturePath;
-                pBullet.projectileColor = Misc.Misc.ParseColor255(subMunitionType.projectileColor);
-                pBullet.startColor = Misc.Misc.ParseColor255(subMunitionType.startColor);
+                pBullet.projectileColor = Utils.ParseColor255(subMunitionType.projectileColor);
+                pBullet.startColor = Utils.ParseColor255(subMunitionType.startColor);
                 pBullet.fadeColor = subMunitionType.fadeColor;
                 pBullet.tracerStartWidth = subMunitionType.caliber / 300;
                 pBullet.tracerEndWidth = subMunitionType.caliber / 750;

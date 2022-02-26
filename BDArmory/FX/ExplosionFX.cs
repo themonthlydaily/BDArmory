@@ -111,7 +111,7 @@ namespace BDArmory.FX
                 Debug.Log("[BDArmory.ExplosionFX]: Explosion started tntMass: {" + Power + "}  BlastRadius: {" + Range + "} StartTime: {" + StartTime + "}, Duration: {" + MaxTime + "}");
             }
             /*
-            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && Misc.Misc.GetRadarAltitudeAtPos(transform.position) > Caliber / 60)
+            if (BDArmorySettings.PERSISTENT_FX && Caliber > 30 && Utils.GetRadarAltitudeAtPos(transform.position) > Caliber / 60)
             {
                 if (FlightGlobals.getAltitudeAtPos(transform.position) > Caliber / 60)
                 {
@@ -868,7 +868,7 @@ namespace BDArmory.FX
                 eFx.audioSource.maxDistance = 5500;
                 eFx.audioSource.spatialBlend = 1;
                 eFx.LightFx = explosionFXTemplate.AddComponent<Light>();
-                eFx.LightFx.color = Misc.Misc.ParseColor255("255,238,184,255");
+                eFx.LightFx.color = Utils.ParseColor255("255,238,184,255");
                 eFx.LightFx.intensity = 8;
                 eFx.LightFx.shadows = LightShadows.None;
                 explosionFXTemplate.SetActive(false);
