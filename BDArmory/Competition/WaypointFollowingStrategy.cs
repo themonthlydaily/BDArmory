@@ -74,19 +74,15 @@ namespace BDArmory.Competition
             Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Setting {0} waypoints", mappedWaypoints.Count));
             this.pilot.SetWaypoints(mappedWaypoints);
 
-            yield return new WaitForFixedUpdate();
-            while(this.pilot.IsFlyingWaypoints())
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return new WaitWhile(() => pilot.IsFlyingWaypoints());
 
             var endedAt = Planetarium.GetUniversalTime();
             var elapsedTime = endedAt - startedAt;
             var deviation = pilot.GetWaypointScores().Sum();
-            var waypointCount = pilot.GetWaypointIndex() + 1;
+            var waypointCount = pilot.GetWaypointIndex();
             service.TrackWaypoint(vessel.GetName(), (float)elapsedTime, waypointCount, deviation);
 
-            Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Finished {0}, {1}, {2}, {3}", vessel.GetName(), elapsedTime, waypointCount, deviation));
+            Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Finished {0}, elapsed={1:0.00}, count={2}, deviation={3:0.00}", vessel.GetName(), elapsedTime, waypointCount, deviation));
         }
 
         //private IEnumerator WaitForArrival(Waypoint location)

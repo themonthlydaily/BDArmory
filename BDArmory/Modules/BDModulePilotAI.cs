@@ -1213,7 +1213,7 @@ namespace BDArmory.Modules
             }
             else
             {
-                if (command != PilotCommands.Free)
+                if (command != PilotCommands.Free && command != PilotCommands.Waypoints)
                 { UpdateCommand(s); }
                 else
                 { UpdateAI(s); }
@@ -1240,17 +1240,6 @@ namespace BDArmory.Modules
 
         void UpdateAI(FlightCtrlState s)
         {
-            if( activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0 ) // FIXME AUBRANIUM This should go after the evasion, before the extend checks. This will allow planes to evade attackers while still trying to follow the waypoints. (See the FIXME below)
-            {
-                var waypoint = waypoints[activeWaypointIndex];
-                var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-                var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-                var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
-                SetStatus(string.Format("Waypoint {0} ({1})", activeWaypointIndex, rangeToTarget));
-                FlyWaypoints(s);
-                return;
-            }
-
             SetStatus("Free");
 
             CheckExtend(ExtendChecks.RequestsOnly);
@@ -1330,6 +1319,15 @@ namespace BDArmory.Modules
             }
             else if (!extending && command == PilotCommands.Waypoints)
             {
+                if (activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0)
+                {
+                    var waypoint = waypoints[activeWaypointIndex];
+                    var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+                    var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+                    var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
+                    SetStatus(string.Format("Waypoint {0} ({1})", activeWaypointIndex, rangeToTarget));
+                    FlyWaypoints(s);
+                }
                 // FIXME AUBRANIUM Waypoint following should go in here 
                 // It should include a check for circling the waypoint for too long, in which case the plane should RequestExtend away from the waypoint (possibly in the direction of the previous waypoint?).
             }
@@ -2106,6 +2104,7 @@ namespace BDArmory.Modules
             this.waypoints = waypoints;
             this.waypointScores = new List<float>();
             this.activeWaypointIndex = 0;
+            this.command = PilotCommands.Waypoints;
         }
         public bool IsFlyingWaypoints()
         {
@@ -2145,14 +2144,14 @@ namespace BDArmory.Modules
                 dRange = 0;
                 if( activeWaypointIndex >= waypoints.Count )
                 {
-                    Debug.Log("[BDArmory.BDModulePilotAI] Waypoints complete"); // FIXME AUBRANIUM On reaching the last waypoint, you should call ReleaseCommand()
-                    activeWaypointIndex = -1;
+                    Debug.Log("[BDArmory.BDModulePilotAI] Waypoints complete");
                     waypoints = null;
+                    ReleaseCommand();
                     return;
                 }
             }
             lastRange = rangeToTarget;
-            FlyToNext(s); // FIXME AUBRANIUM FlyToNext recomputes many of the same values as are already available here. This should either call FlyToPosition if the activeWaypointIndex hasn't changed or call itself with the new activeWaypointIndex.
+            FlyToPosition(s, waypointPosition, false);
         }
 
         private void FlyToNext(FlightCtrlState s)
