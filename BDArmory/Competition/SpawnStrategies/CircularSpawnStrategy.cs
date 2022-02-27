@@ -13,16 +13,18 @@ namespace BDArmory.Competition.SpawnStrategies
     {
         private VesselSource vesselSource;
         private List<int> vesselIds;
+        private int bodyIndex;
         private double latitude;
         private double longitude;
         private double altitude;
         private float radius;
         private bool success = false;
 
-        public CircularSpawnStrategy(VesselSource vesselSource, List<int> vesselIds, double latitude, double longitude, double altitude, float radius)
+        public CircularSpawnStrategy(VesselSource vesselSource, List<int> vesselIds, int bodyIndex, double latitude, double longitude, double altitude, float radius)
         {
             this.vesselSource = vesselSource;
             this.vesselIds = vesselIds;
+            this.bodyIndex = bodyIndex;
             this.latitude = latitude;
             this.longitude = longitude;
             this.altitude = altitude;
@@ -35,7 +37,7 @@ namespace BDArmory.Competition.SpawnStrategies
             var craftUrls = vesselIds.Select(e => vesselSource.GetLocalPath(e));
             // spawn all craftUrls in a circle around the center point
             SpawnConfig spawnConfig = new SpawnConfig(
-                0,
+                bodyIndex,
                 latitude,
                 longitude,
                 altitude,

@@ -65,11 +65,13 @@ namespace BDArmory.Competition
             var activeVesselIds = scoreClient.activeVessels.ToList();
             var craftUrls = activeVesselModels.Select(e => e.craft_url);
             // TODO: need coords from descriptor, or fallback to local settings
+            var kerbin = FlightGlobals.GetBodyByName("Kerbin");
+            var bodyIndex = FlightGlobals.GetBodyIndex(kerbin);
             var latitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
             var longitude = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
             var altitude = BDArmorySettings.VESSEL_SPAWN_ALTITUDE;
             var spawnRadius = BDArmorySettings.VESSEL_SPAWN_DISTANCE;
-            var spawnStrategy = new CircularSpawnStrategy(scoreClient.AsVesselSource(), activeVesselIds, latitude, longitude, altitude, spawnRadius);
+            var spawnStrategy = new CircularSpawnStrategy(scoreClient.AsVesselSource(), activeVesselIds, bodyIndex, latitude, longitude, altitude, spawnRadius);
             var orchestrationStrategy = new RankedFreeForAllStrategy();
             return new TournamentCoordinator(spawnStrategy, orchestrationStrategy);
         }
