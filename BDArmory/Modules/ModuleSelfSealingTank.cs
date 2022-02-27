@@ -307,7 +307,7 @@ namespace BDArmory.Modules
                 if (cockpit == null && engine == null && fuel == null) part.RemoveModule(this); //PWing with no tank
             }
             FBSetup(null, null);
-            Debug.Log("[SelfSealingTank] SST: " + SSTank + "; Inerting: " + InertTank + "; armored cockpit: " + armoredCockpit);
+            //Debug.Log("[SelfSealingTank] SST: " + SSTank + "; Inerting: " + InertTank + "; armored cockpit: " + armoredCockpit);
         }
         /*
         public override void OnLoad(ConfigNode node)
@@ -454,7 +454,7 @@ namespace BDArmory.Modules
                     {
                         firebottleRoutine = StartCoroutine(ExtinguishRoutine(4, true));
                     }
-                    Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Firebottles remaining: " + FireBottles);
+                    //Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Firebottles remaining: " + FireBottles);
                 }
             }
             else
@@ -468,7 +468,7 @@ namespace BDArmory.Modules
                         if (firebottleRoutine == null)
                         {
                             firebottleRoutine = StartCoroutine(ExtinguishRoutine(10, false));
-                            Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Toggling Engine");
+                            //Debug.Log("[SelfSealingTank] Fire detected; beginning ExtinguishRoutine. Toggling Engine");
                         }
                     }
                     //though if it is diving, then there isn't a second call to cycle engines. Add an Ienumerator to check once every couple sec?
@@ -477,9 +477,9 @@ namespace BDArmory.Modules
         }
         IEnumerator ExtinguishRoutine(float time, bool useBottle)
         {
-            Debug.Log("[SelfSealingTank] ExtinguishRoutine started. Time left: " + time);
+            //Debug.Log("[SelfSealingTank] ExtinguishRoutine started. Time left: " + time);
             yield return new WaitForSeconds(time);
-            Debug.Log("[SelfSealingTank] Timer finished. Extinguishing");
+            //Debug.Log("[SelfSealingTank] Timer finished. Extinguishing");
             foreach (var existingFire in part.GetComponentsInChildren<FireFX>())
             {
                 if (!existingFire.surfaceFire) existingFire.burnTime = 0.05f; //kill all fires
@@ -489,7 +489,7 @@ namespace BDArmory.Modules
                 FireBottles--;
                 FBRemaining = FireBottles;
                 Misc.Misc.RefreshAssociatedWindows(part);
-                Debug.Log("[SelfSealingTank] Consuming firebottle. FB remaining: " + FireBottles);
+                //Debug.Log("[SelfSealingTank] Consuming firebottle. FB remaining: " + FireBottles);
                 isOnFire = false;
             }
             ResetCoroutine();

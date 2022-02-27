@@ -279,8 +279,8 @@ namespace BDArmory.Modules
 
         public string GetSubLabel() //think BDArmorySetup only calls this for the first instance of a particular ShortName, so this probably won't result in a group of n guns having n GetSublabelCalls per frame
         {
-            using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
-            {
+            //using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator())
+            //{
                 ammoLeft = "Ammo Left: " + ammoCount.ToString("0");
                 int lastAmmoID = this.AmmoID;
                 using (var weapon = VesselModuleRegistry.GetModules<ModuleWeapon>(vessel).GetEnumerator())
@@ -295,7 +295,7 @@ namespace BDArmory.Modules
                             lastAmmoID = weapon.Current.AmmoID;
                         }
                     }
-            }
+            //}
             return ammoLeft;
         }
         public string GetMissileType()
@@ -743,8 +743,8 @@ namespace BDArmory.Modules
         [KSPField(guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Ammo_LoadedAmmo")]//Status
         public string guiAmmoTypeString = Localizer.Format("#LOC_BDArmory_Ammo_Slug");
 
-        [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true)]
-        private bool canHotSwap = false; //for select weapons that it makes sense to be able to swap ammo types while in-flight, like the Abrams turret
+        [KSPField(isPersistant = true)]
+        public bool canHotSwap = false; //for select weapons that it makes sense to be able to swap ammo types while in-flight, like the Abrams turret
 
         //auto proximity tracking
         [KSPField]
@@ -3135,7 +3135,7 @@ namespace BDArmory.Modules
                     if (eWeaponType == WeaponTypes.Ballistic && bulletDrop)
                     {
                         var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, targetDistance), maxTargetingRange / bulletVelocity, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
-                        bulletPrediction = simCurrPos;
+                        //bulletPrediction = simCurrPos;
                         // Debug.Log("DEBUG prediction: " + bulletPrediction.ToString("0.0") + " at time " + timeOfFlight.ToString("0.000") + " and distance " + (simCurrPos - simStartPos).magnitude.ToString("0.0"));
                     }
                     else
@@ -3336,12 +3336,14 @@ namespace BDArmory.Modules
                                 timeStep *= currentAltitude / (currentAltitude - altitude);
                                 elapsedTime += timeStep;
                                 position += timeStep * velocity;
+                                bulletPrediction = position; //make sure the bulletPrediction for reticle position is actually set when using bulletdrop ballistic weapons
                                 // Debug.Log("DEBUG breaking trajectory sim due to water at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
                             }
                             else
                             {
                                 elapsedTime += (hit.point - position).magnitude / velocity.magnitude;
                                 position = hit.point;
+                                bulletPrediction = position;
                                 // Debug.Log("DEBUG breaking trajectory sim due to hit at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
                             }
                             break;
@@ -3357,6 +3359,7 @@ namespace BDArmory.Modules
                 if ((startPosition - position).sqrMagnitude > maxDistanceSqr)
                 {
                     // Debug.Log("DEBUG breaking trajectory sim due to max distance: " + maxDistance.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
+                    bulletPrediction = position;
                     break;
                 }
             }
