@@ -30,10 +30,7 @@ namespace BDArmory.Competition.SpawnStrategies
             yield return spawner.SpawnVessel(craftUrl, latitude, longitude, altitude, heading, pitch);
 
             // wait for spawner to finish
-            while (spawner.vesselsSpawning)
-            {
-                yield return new WaitForFixedUpdate();
-            }
+            yield return new WaitWhile(() => spawner.vesselsSpawning);
 
             if (!spawner.vesselSpawnSuccess)
             {

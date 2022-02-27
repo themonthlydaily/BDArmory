@@ -41,6 +41,8 @@ namespace BDArmory.Competition.VesselSpawning
         [VesselSpawnerField] public static bool UpdateSpawnLocations = true;
         [VesselSpawnerField] public static List<SpawnLocation> spawnLocations;
 
+        private readonly WaitForFixedUpdate waitFixedUpdate = new WaitForFixedUpdate();
+
         private string message;
         void Awake()
         {
@@ -129,12 +131,11 @@ namespace BDArmory.Competition.VesselSpawning
             // spawnProbe.IgnoreGForces(240);
             yield return new WaitWhile(() => spawnProbe != null && (!spawnProbe.loaded || spawnProbe.packed));
             FlightGlobals.ForceSetActiveVessel(spawnProbe);
-            var wait = new WaitForFixedUpdate();
             while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
             {
                 spawnProbe.SetWorldVelocity(Vector3d.zero);
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
-                yield return wait;
+                yield return waitFixedUpdate;
             }
             ShowSpawnPoint(worldIndex, latitude, longitude, altitude, distance, spawning, false);
         }
@@ -436,7 +437,7 @@ namespace BDArmory.Competition.VesselSpawning
                 BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset competition scores.
                 BDACompetitionMode.Instance.RemoveDebrisNow(); // Remove debris and space junk.
             }
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
             #endregion
 
             #region Pre-spawning
@@ -461,7 +462,7 @@ namespace BDArmory.Competition.VesselSpawning
                 while (spawnProbe != null && FlightGlobals.ActiveVessel != spawnProbe)
                 {
                     LoadedVesselSwitcher.Instance.ForceSwitchVessel(spawnProbe);
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
                 }
                 // Kill all other vessels (including debris).
                 foreach (var vessel in vesselsToKill)
@@ -471,7 +472,7 @@ namespace BDArmory.Competition.VesselSpawning
                 originalTeams.Clear();
             }
             while (removeVesselsPending > 0)
-                yield return new WaitForFixedUpdate();
+                yield return waitFixedUpdate;
             #endregion
 
             #region Spawning
@@ -510,7 +511,7 @@ namespace BDArmory.Competition.VesselSpawning
                     do
                     {
                         lastTerrainDistance = terrainDistance;
-                        yield return new WaitForFixedUpdate();
+                        yield return waitFixedUpdate;
                         terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)(spawnConfig.altitude + distanceToCoMainBody), (int)LayerMasks.Scenery) ? hit.distance : -1f; // Oceans shouldn't be more than 10km deep...
                         if (terrainDistance < 0f) // Raycast is failing to find terrain.
                         {
@@ -667,7 +668,7 @@ namespace BDArmory.Competition.VesselSpawning
             }
 
             // Wait for an update so that the vessels' parts list gets updated.
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
 
             // Count the vessels' parts for checking later.
             var spawnedVesselPartCounts = new Dictionary<string, int>();
@@ -675,7 +676,7 @@ namespace BDArmory.Competition.VesselSpawning
                 spawnedVesselPartCounts.Add(vesselName, spawnedVessels[vesselName].Item1.parts.Count);
 
             // Wait another update so that the reference transforms get updated.
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
 
             // Now rotate them and put them at the right altitude.
             var finalSpawnPositions = new Dictionary<string, Vector3d>();
@@ -683,7 +684,7 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 var startTime = Time.time;
                 // Sometimes if a vessel camera switch occurs, the craft appears unloaded for a couple of frames. This avoids NREs for control surfaces triggered by the change in reference transform.
-                while (spawnedVessels.Values.All(vessel => vessel.Item1 != null && (vessel.Item1.ReferenceTransform == null || vessel.Item1.rootPart == null || vessel.Item1.rootPart.GetReferenceTransform() == null)) && (Time.time - startTime < 1f)) yield return new WaitForFixedUpdate();
+                while (spawnedVessels.Values.All(vessel => vessel.Item1 != null && (vessel.Item1.ReferenceTransform == null || vessel.Item1.rootPart == null || vessel.Item1.rootPart.GetReferenceTransform() == null)) && (Time.time - startTime < 1f)) yield return waitFixedUpdate;
                 var nullVessels = spawnedVessels.Where(kvp => kvp.Value.Item1 == null).Select(kvp => kvp.Key).ToList();
                 if (nullVessels.Count() > 0)
                 {
@@ -791,7 +792,7 @@ namespace BDArmory.Competition.VesselSpawning
             #endregion
 
             #region Post-spawning
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
             // Revert the camera and focus on one as it lowers to the terrain.
             RevertSpawnLocationCamera(true);
             if ((FlightGlobals.ActiveVessel == null || FlightGlobals.ActiveVessel.state == Vessel.State.DEAD) && spawnedVessels.Count > 0)
@@ -810,7 +811,7 @@ namespace BDArmory.Competition.VesselSpawning
                 // Check that the spawned vessels are valid craft
                 do
                 {
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
                     invalidVessels = vesselsToCheck.Select(vessel => new Tuple<string, BDACompetitionMode.InvalidVesselReason>(vessel.vesselName, BDACompetitionMode.Instance.IsValidVessel(vessel))).Where(t => t.Item2 != BDACompetitionMode.InvalidVesselReason.None).ToList();
                 } while (invalidVessels.Count > 0 && Planetarium.GetUniversalTime() - postSpawnCheckStartTime < 1); // Give it up to 1s for KSP to populate the vessel's AI and WM.
                 if (invalidVessels.Count > 0)
@@ -823,7 +824,7 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     do
                     {
-                        yield return new WaitForFixedUpdate();
+                        yield return waitFixedUpdate;
                         CheckForRenamedVessels(spawnedVessels);
 
                         // Check that none of the vessels have lost parts.
@@ -887,7 +888,7 @@ namespace BDArmory.Competition.VesselSpawning
                     var landingStartTime = Planetarium.GetUniversalTime();
                     do
                     {
-                        yield return new WaitForFixedUpdate();
+                        yield return waitFixedUpdate;
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
                             var vessel = spawnedVessels[vesselName].Item1;
@@ -999,7 +1000,7 @@ namespace BDArmory.Competition.VesselSpawning
                             spawnConfig.teamCounts.Add(numberPerTeam + (team < residue ? 1 : 0));
                     }
                     LoadedVesselSwitcher.Instance.MassTeamSwitch(true, useOriginalTeamNames, spawnConfig.teamCounts, teamVesselNames);
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
                 }
             }
 
@@ -1040,17 +1041,17 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 SpawnAllVesselsOnce(spawnConfig);
                 while (vesselsSpawning)
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
                 if (!vesselSpawnSuccess)
                 {
                     vesselsSpawningOnceContinuously = false;
                     yield break;
                 }
-                yield return new WaitForFixedUpdate();
+                yield return waitFixedUpdate;
 
                 // NOTE: runs in separate coroutine
                 BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
-                yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
+                yield return waitFixedUpdate; // Give the competition start a frame to get going.
 
                 // start timer coroutine for the duration specified in settings UI
                 var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
@@ -1058,7 +1059,7 @@ namespace BDArmory.Competition.VesselSpawning
                 Debug.Log("[BDArmory.VesselSpawner]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);
                 while (BDACompetitionMode.Instance.competitionStarting)
-                    yield return new WaitForFixedUpdate(); // Wait for the competition to actually start.
+                    yield return waitFixedUpdate; // Wait for the competition to actually start.
                 if (!BDACompetitionMode.Instance.competitionIsActive)
                 {
                     var message = "Competition failed to start.";
@@ -1116,9 +1117,9 @@ namespace BDArmory.Competition.VesselSpawning
             vessel.Landed = false;
             vessel.ResumeStaging();
 
-            yield return new WaitForFixedUpdate();
-            yield return new WaitForFixedUpdate();
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
+            yield return waitFixedUpdate;
+            yield return waitFixedUpdate;
 
             // wait for loaded vessel switcher
             var result = new List<Vessel> { vessel };
@@ -1224,7 +1225,7 @@ namespace BDArmory.Competition.VesselSpawning
                 BDACompetitionMode.Instance.ResetCompetitionStuff(); // Reset competition scores.
             }
             vesselsToActivate.Clear(); // Clear any pending vessel activations.
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
             #endregion
 
             #region Pre-spawning
@@ -1236,7 +1237,7 @@ namespace BDArmory.Competition.VesselSpawning
                     RemoveVessel(vessel);
             }
             while (removeVesselsPending > 0)
-                yield return new WaitForFixedUpdate();
+                yield return waitFixedUpdate;
             #endregion
 
             #region Spawning
@@ -1270,7 +1271,7 @@ namespace BDArmory.Competition.VesselSpawning
                     do
                     {
                         lastTerrainDistance = terrainDistance;
-                        yield return new WaitForFixedUpdate();
+                        yield return waitFixedUpdate;
                         terrainDistance = Physics.Raycast(ray, out hit, 2f * (float)(spawnConfig.altitude + distanceToCoMainBody), (int)LayerMasks.Scenery) ? hit.distance : -1f; // Oceans shouldn't be more than 10km deep...
                         if (terrainDistance < 0f || Math.Abs(lastTerrainDistance - terrainDistance) > 0.1f)
                             lastStableTimeStart = Planetarium.GetUniversalTime(); // Reset the stable time tracker.
@@ -1401,15 +1402,15 @@ namespace BDArmory.Competition.VesselSpawning
                     }
 
                     // Wait for a couple of updates so that the spawned vessels' parts list and reference transform gets updated.
-                    yield return new WaitForFixedUpdate();
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
+                    yield return waitFixedUpdate;
 
                     // Fix control point orientation by setting the reference transformations to that of the root parts and re-orient the vessels accordingly.
                     foreach (var vessel in vesselsToActivate)
                     {
                         int count = 0;
                         // Sometimes if a vessel camera switch occurs, the craft appears unloaded for a couple of frames. This avoids NREs for control surfaces triggered by the change in reference transform.
-                        while (vessel != null && vessel.rootPart != null && (vessel.ReferenceTransform == null || vessel.rootPart.GetReferenceTransform() == null) && ++count < 5) yield return new WaitForFixedUpdate();
+                        while (vessel != null && vessel.rootPart != null && (vessel.ReferenceTransform == null || vessel.rootPart.GetReferenceTransform() == null) && ++count < 5) yield return waitFixedUpdate;
                         if (vessel == null || vessel.rootPart == null)
                         {
                             Debug.Log($"[BDArmory.VesselSpawner]: " + (vessel == null ? "Spawned vessel was destroyed before it could be activated!" : $"{vessel.vesselName} has no root part!"));
@@ -1441,7 +1442,7 @@ namespace BDArmory.Competition.VesselSpawning
                 if (vesselsToActivate.Count > 0)
                 {
                     // Wait for an update so that the spawned vessels' FindPart... functions have time to have their internal data updated.
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
 
                     var weaponManagers = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).ToList();
                     var vesselsToCheck = vesselsToActivate.ToList(); // Take a copy to avoid modifying the original while iterating over it.
@@ -1568,12 +1569,12 @@ namespace BDArmory.Competition.VesselSpawning
 
                 // Wait for any pending vessel removals.
                 while (removeVesselsPending > 0)
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
 
                 if (BDACompetitionMode.Instance.competitionIsActive)
                 {
                     yield return new WaitUntil(() => Planetarium.GetUniversalTime() > currentUpdateTick); // Wait for the current update tick in BDACompetitionMode so that spawning occurs after checks for dead vessels there.
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
                 }
                 else
                 {
@@ -1796,7 +1797,7 @@ namespace BDArmory.Competition.VesselSpawning
                 // LoadedVesselSwitcher.Instance.MassTeamSwitch(false); // Reset everyone to team 'A' so that the order doesn't get messed up.
                 killAllFirst = false;
             }
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
             SaveTeams(); // Save the teams in case they've been pre-configured.
             LoadedVesselSwitcher.Instance.MassTeamSwitch(false, false, spawnCounts); // Assign teams based on the groups of spawns. Right click the 'T' to revert to the original team names if they were defined.
             if (startCompetition) // Start the competition.
@@ -1807,12 +1808,12 @@ namespace BDArmory.Competition.VesselSpawning
                     var timeLeft = competitionStartDelay - (Planetarium.GetUniversalTime() - competitionStartDelayStart);
                     if ((int)(timeLeft - Time.fixedDeltaTime) < (int)timeLeft)
                         BDACompetitionMode.Instance.competitionStatus.Add("Competition starting in T-" + timeLeft.ToString("0") + "s");
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
                 }
                 BDACompetitionMode.Instance.StartCompetitionMode(BDArmorySettings.COMPETITION_DISTANCE);
                 if (startCompetitionNow)
                 {
-                    yield return new WaitForFixedUpdate();
+                    yield return waitFixedUpdate;
                     BDACompetitionMode.Instance.StartCompetitionNow();
                 }
             }
@@ -1878,14 +1879,14 @@ namespace BDArmory.Competition.VesselSpawning
                     if (cometVessel) { Destroy(cometVessel); }
                 }
                 vessel.Die(); // Kill the vessel
-                yield return new WaitForFixedUpdate();
+                yield return waitFixedUpdate;
                 if (vessel != null)
                 {
                     var partsToKill = vessel.parts.ToList(); // If it left any parts, kill them. (This occurs when the currently focussed vessel gets killed.)
                     foreach (var part in partsToKill)
                         part.Die();
                 }
-                yield return new WaitForFixedUpdate();
+                yield return waitFixedUpdate;
             }
             --removeVesselsPending;
         }
@@ -1898,7 +1899,7 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 RemoveVessel(vessel);
             }
-            yield return new WaitForFixedUpdate();
+            yield return waitFixedUpdate;
             yield return new WaitWhile(() => removeVesselsPending > 0);
         }
 
@@ -2001,7 +2002,7 @@ namespace BDArmory.Competition.VesselSpawning
                     }
                 }
                 checkedVessels.ForEach(e => remainingVessels.Remove(e));
-                yield return new WaitForFixedUpdate();
+                yield return waitFixedUpdate;
                 timeoutElapsed = Planetarium.GetUniversalTime() > timeoutAt;
             }
 
@@ -2053,7 +2054,7 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     checkResultAI = true;
                 }
-                yield return new WaitForFixedUpdate();
+                yield return waitFixedUpdate;
                 timeoutElapsed = Planetarium.GetUniversalTime() > timeoutAt;
             }
 
