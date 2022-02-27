@@ -49,7 +49,7 @@ namespace BDArmory.Competition
                 case "ffa":
                     return BuildFFA();
                 case "path":
-                    return BuildGauntletCanyonWaypoint();
+                    return BuildShortCanyonWaypoint();
                 case "chase":
                     return BuildChase();
             }
