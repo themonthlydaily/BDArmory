@@ -295,6 +295,7 @@ namespace BDArmory.Competition.RemoteOrchestration
                 Debug.Log("[BDArmory.BDAScoreService] Failed to build tournament coordinator");
                 yield break;
             }
+            status = StatusType.RunningHeat;
             yield return coordinator.Execute();
 
             status = StatusType.ReportingResults;

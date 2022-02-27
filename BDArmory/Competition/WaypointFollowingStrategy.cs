@@ -74,7 +74,7 @@ namespace BDArmory.Competition
             Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Setting {0} waypoints", mappedWaypoints.Count));
             this.pilot.SetWaypoints(mappedWaypoints);
 
-            yield return new WaitWhile(() => pilot.IsFlyingWaypoints());
+            yield return new WaitWhile(() => pilot.IsFlyingWaypoints() && !(pilot.vessel.Landed || pilot.vessel.Splashed));
 
             var endedAt = Planetarium.GetUniversalTime();
             var elapsedTime = endedAt - startedAt;
