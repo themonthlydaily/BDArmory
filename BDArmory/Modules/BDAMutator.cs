@@ -360,7 +360,7 @@ namespace BDArmory.Modules
 
                             iconPath = MutatorInfo.mutators[mutators[i]].icon;
                             iconcolor = MutatorInfo.mutators[mutators[i]].iconColor;
-                            iconColor = Misc.Misc.ParseColor255(iconcolor);
+                            iconColor = Utils.ParseColor255(iconcolor);
                             switch (iconPath)
                             {
                                 case "IconAccuracy":

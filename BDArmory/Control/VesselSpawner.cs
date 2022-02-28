@@ -740,9 +740,6 @@ namespace BDArmory.Control
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.VesselSpawner]: failed to find terrain for spawn adjustments");
                 }
 
-                // Fix control point orientation by setting the reference transformation to that of the root part.
-                spawnedVessels[vesselName].Item1.SetReferenceTransform(spawnedVessels[vesselName].Item1.rootPart);
-
                 if (!spawnAirborne || BDArmorySettings.SF_GRAVITY) //spawn parallel to ground if surface or space spawning
                 {
                     vessel.SetRotation(Quaternion.FromToRotation(shipFacility == EditorFacility.SPH ? -vessel.ReferenceTransform.forward : vessel.ReferenceTransform.up, localSurfaceNormal) * vessel.transform.rotation); // Re-orient the vessel to the terrain normal.
@@ -893,7 +890,7 @@ namespace BDArmory.Control
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
                             var vessel = spawnedVessels[vesselName].Item1;
-                            if (vessel.LandedOrSplashed && Misc.Misc.GetRadarAltitudeAtPos(vessel.transform.position) <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
+                            if (vessel.LandedOrSplashed && Utils.GetRadarAltitudeAtPos(vessel.transform.position) <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
                             {
                                 vesselsHaveLanded[vesselName] = 2;
                             }
@@ -902,7 +899,7 @@ namespace BDArmory.Control
                             if (vesselsHaveLanded[vesselName] == 1 && Vector3.Dot(vessel.srf_velocity, radialUnitVector) >= 0) // Check if the vessel has landed.
                             {
                                 vesselsHaveLanded[vesselName] = 2;
-                                if (Misc.Misc.GetRadarAltitudeAtPos(vessel.transform.position) > 0)
+                                if (Utils.GetRadarAltitudeAtPos(vessel.transform.position) > 0)
                                     vessel.Landed = true; // Tell KSP that the vessel is landed.
                                 else
                                     vessel.Splashed = true; // Tell KSP that the vessel is splashed.

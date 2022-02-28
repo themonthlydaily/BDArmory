@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using BDArmory.Core;
+using BDArmory.Misc;
 using KSP.Localization;
 using BDArmory.Competition;
 
@@ -65,7 +66,7 @@ namespace BDArmory.UI
                 Localizer.Format("#LOC_BDArmory_BDARemoteOrchestration_Title"),//"BDA Remote Orchestration"
                 BDArmorySetup.BDGuiSkin.window
             );
-            Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectRemoteOrchestration, _guiCheckIndex);
+            Utils.UpdateGUIRect(BDArmorySetup.WindowRectRemoteOrchestration, _guiCheckIndex);
         }
 
         private void SetNewHeight(float windowHeight)
@@ -98,7 +99,7 @@ namespace BDArmory.UI
             service = BDAScoreService.Instance;
             UpdateClientStatus();
             ready = true;
-            _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
+            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
         }
 
         private void WindowRemoteOrchestration(int id)

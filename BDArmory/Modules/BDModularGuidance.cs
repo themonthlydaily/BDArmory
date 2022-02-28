@@ -168,7 +168,7 @@ namespace BDArmory.Modules
                 Fields["SoftAscent"].guiActive = GuidanceMode == GuidanceModes.AGMBallistic;
                 Fields["SoftAscent"].guiActiveEditor = GuidanceMode == GuidanceModes.AGMBallistic;
             }
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
 
         public override void OnFixedUpdate()
@@ -528,7 +528,7 @@ namespace BDArmory.Modules
             TargetingMode = newTargetingMode;
             _targetingLabel = newTargetingMode.ToString();
 
-            Misc.Misc.RefreshAssociatedWindows(part);
+            Utils.RefreshAssociatedWindows(part);
         }
 
         private void OnDestroy()
@@ -977,7 +977,7 @@ namespace BDArmory.Modules
                 guidanceActive = true;
                 MissileState = MissileStates.Drop;
 
-                Misc.Misc.RefreshAssociatedWindows(part);
+                Utils.RefreshAssociatedWindows(part);
 
                 HasFired = true;
                 DetonationDistanceState = DetonationDistanceStates.NotSafe;
