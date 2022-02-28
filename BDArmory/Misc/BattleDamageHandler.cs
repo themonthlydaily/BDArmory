@@ -276,7 +276,7 @@ namespace BDArmory.Misc
                 {
                     HEBonus = 2; //explosive rounds blow bigger holes in wings
                 }                
-                HEBonus /= Mathf.Clamp(penetrationFactor, 0.5f, 1.5f); //faster rounds punch cleaner holes
+                HEBonus *= Mathf.Clamp(penetrationFactor, 0.5f, 1.5f); //faster rounds punch cleaner holes
                 float liftDam = ((caliber / 20000) * HEBonus) * BDArmorySettings.BD_LIFT_LOSS_RATE;
                 if (part.GetComponent<ModuleLiftingSurface>() != null)
                 {
