@@ -50,6 +50,9 @@ namespace BDArmory.UI
         public static BDInputInfo GUI_WM_TOGGLE = new BDInputInfo("[*]", "Toggle WM GUI");
         public static BDInputInfo GUI_AI_TOGGLE = new BDInputInfo("[/]", "Toggle AI GUI");
 
+        // TIME SCALING
+        public static BDInputInfo TIME_SCALING = new BDInputInfo("Toggle Time Scaling");
+
         public static void SaveSettings()
         {
             ConfigNode fileNode = ConfigNode.Load(BDArmorySettings.settingsConfigURL);

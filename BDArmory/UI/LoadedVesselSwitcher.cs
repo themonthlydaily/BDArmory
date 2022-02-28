@@ -1,20 +1,16 @@
-﻿using System.Collections;
+﻿using KSP.Localization;
 using System.Collections.Generic;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using UnityEngine;
-using KSP.Localization;
-using KSP.UI.Screens;
-using BDArmory.FX;
-using Expansions;
-using System;
-using VehiclePhysics;
-using System.Net;
+using System.Collections;
 using System.IO;
 using System.Linq;
+using System;
+using UnityEngine;
+
+using BDArmory.Control;
+using BDArmory.Core.Extension;
+using BDArmory.Core;
+using BDArmory.Misc;
+using BDArmory.Modules;
 
 namespace BDArmory.UI
 {
@@ -144,7 +140,7 @@ namespace BDArmory.UI
 
             _ready = true;
             BDArmorySetup.Instance.hasVesselSwitcher = true;
-            _guiCheckIndex = Misc.Misc.RegisterGUIRect(new Rect());
+            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
         }
 
         private void MissileFireOnToggleTeam(MissileFire wm, BDTeam team)
@@ -260,7 +256,7 @@ namespace BDArmory.UI
                 if (_autoPilotEnabled)
                 {
                     weaponManager.AI.ActivatePilot();
-                    BDArmory.Misc.Misc.fireNextNonEmptyStage(weaponManager.vessel);
+                    Utils.fireNextNonEmptyStage(weaponManager.vessel);
                 }
                 else
                 {
@@ -283,11 +279,11 @@ namespace BDArmory.UI
                     // this Rect initialization ensures any save issues with height or width of the window are resolved
                     BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, _windowHeight);
                     BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
-                    Misc.Misc.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
+                    Utils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
                 }
                 else
                 {
-                    Misc.Misc.UpdateGUIRect(new Rect(), _guiCheckIndex);
+                    Utils.UpdateGUIRect(new Rect(), _guiCheckIndex);
                 }
             }
         }
@@ -800,7 +796,7 @@ namespace BDArmory.UI
                         BDACompetitionMode.Instance.Scores.RegisterDeath(vesselName, GMKillReason.BigRedButton); // Indicate that it was us who killed it.
                         BDACompetitionMode.Instance.competitionStatus.Add(vesselName + " was killed by the BIG RED BUTTON.");
                     }
-                    Misc.Misc.ForceDeadVessel(wm.vessel);
+                    Utils.ForceDeadVessel(wm.vessel);
                 }
             }
         }

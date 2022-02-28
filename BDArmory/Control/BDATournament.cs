@@ -428,7 +428,9 @@ namespace BDArmory.Control
         Tuple<int, int> OptimiseVesselsPerHeat(int count)
         {
             if (BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y < BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x) BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y = BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x;
-            var options = count < 11 ? new List<int> { 8, 7, 6, 5 } : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1).Reverse().ToList();
+            var options = count > BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y && count < 2 * BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x - 1 ?
+                Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y / 2 + 1).Reverse().ToList() // Tweak the range when just over the upper limit to give more balanced heats.
+                : Enumerable.Range(BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x, BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.y - BDArmorySettings.TOURNAMENT_AUTO_VESSELS_PER_HEAT_RANGE.x + 1).Reverse().ToList();
             foreach (var val in options)
             {
                 if (count % val == 0)
@@ -940,7 +942,7 @@ namespace BDArmory.Control
             }
             var up = VectorUtils.GetUpDirection(spawnProbe.transform.position);
             var refDirection = Math.Abs(Vector3.Dot(Vector3.up, up)) < 0.71f ? Vector3.up : Vector3.forward; // Avoid that the reference direction is colinear with the local surface normal.
-            spawnProbe.SetPosition(spawnProbe.transform.position - Misc.Misc.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+            spawnProbe.SetPosition(spawnProbe.transform.position - Utils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
             if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
             else spawnProbe.Splashed = true;
             spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
@@ -973,7 +975,7 @@ namespace BDArmory.Control
                     TimeWarp.fetch.CancelAutoWarp();
                     TimeWarp.SetRate(0, true, false);
                     while (TimeWarp.CurrentRate > 1) yield return null; // Wait for the warping to stop.
-                    spawnProbe.SetPosition(spawnProbe.transform.position - Misc.Misc.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
+                    spawnProbe.SetPosition(spawnProbe.transform.position - Utils.GetRadarAltitudeAtPos(spawnProbe.transform.position) * up);
                     if (spawnProbe.altitude > 0) spawnProbe.Landed = true;
                     else spawnProbe.Splashed = true;
                     spawnProbe.SetWorldVelocity(Vector3d.zero); // Set the velocity to zero so that warp goes in high mode.
@@ -1062,6 +1064,7 @@ namespace BDArmory.Control
             yield return new WaitForSeconds(0.5f);
             var tic = Time.realtimeSinceStartup;
             yield return new WaitUntil(() => (BDArmorySettings.ready || Time.realtimeSinceStartup - tic > 10)); // Wait until the settings are ready or timed out.
+            Debug.Log($"[BDArmory.BDATournament]: BDArmory settings loaded, auto-resume tournaments: {BDArmorySettings.AUTO_RESUME_TOURNAMENT}, auto-resume evolution: {BDArmorySettings.AUTO_RESUME_EVOLUTION}.");
             if (BDArmorySettings.AUTO_RESUME_TOURNAMENT || BDArmorySettings.AUTO_RESUME_EVOLUTION)
             { yield return StartCoroutine(AutoResumeTournament()); }
         }
@@ -1072,6 +1075,7 @@ namespace BDArmory.Control
             EvolutionWorkingState evolutionState = null;
             if (BDArmorySettings.AUTO_RESUME_EVOLUTION) // Auto-resume evolution overrides auto-resume tournament.
             {
+                Debug.Log("[BDArmory.BDATournament]: Attempting to auto-resume evolution.");
                 evolutionState = BDAModuleEvolution.LoadState();
                 if (string.IsNullOrEmpty(evolutionState.savegame)) { Debug.Log($"[BDArmory.BDATournament]: No savegame found in evolution state."); yield break; }
                 if (string.IsNullOrEmpty(evolutionState.evolutionId) || !File.Exists(Path.Combine(BDAModuleEvolution.configDirectory, evolutionState.evolutionId + ".cfg"))) { Debug.Log($"[BDArmory.BDATournament]: No saved evolution configured."); yield break; }
