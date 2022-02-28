@@ -12,6 +12,7 @@ IMPROVEMENTS
 	- Tweak the clamped altitude and speed min/max values to give more usable sliders.
 	- Scale steer limiter based on atmospheric density in order to account how dynamic pressure will vary based on this value.
 	- Add the target's average radius to the vessel-avoidance detection.
+	- Adjust the default vessel-avoidance values and increase the upper limit of the avoidance strength slider.
 	- Use an average of the recent speed instead of the max speed in determining the turn radius.
 	- Adjust the extending to update the extend-from position when the extend-from target is a vessel.
 	- Replace the extend multiplier with explicit extend distances for air-to-air, air-to-ground (guns) and air-to-ground.
