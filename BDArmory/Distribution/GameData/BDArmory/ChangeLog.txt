@@ -12,6 +12,7 @@ IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
 	- Add hotkey option for time scaling.
+	- Add options (in Radar Settings section) to invert the mouse in the targeting window.
 - AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
 	- Tweak the clamped altitude and speed min/max values to give more usable sliders.

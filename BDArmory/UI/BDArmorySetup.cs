@@ -2200,6 +2200,11 @@ namespace BDArmory.UI
             return new Rect(settingsMargin + (pos % 4) * (settingsWidth - 2f * settingsMargin) / 4f, (line + (int)(pos / 4)) * settingsLineHeight, (settingsWidth - 2.5f * settingsMargin) / 4f, settingsLineHeight);
         }
 
+        Rect SEighthRect(float line, int pos)
+        {
+            return new Rect(settingsMargin + (pos % 8) * (settingsWidth - 2f * settingsMargin) / 8f, (line + (int)(pos / 8)) * settingsLineHeight, (settingsWidth - 2.5f * settingsMargin) / 8f, settingsLineHeight);
+        }
+
         List<Rect> SRight2Rects(float line)
         {
             var rectGap = settingsMargin / 2;
@@ -2938,6 +2943,10 @@ namespace BDArmory.UI
                 {
                     ResizeTargetWindow(targetScale);
                 }
+
+                GUI.Label(SLeftRect(++line), Localizer.Format("#LOC_BDArmory_Settings_TargetWindowInvertMouse"), leftLabel);
+                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X = GUI.Toggle(SEighthRect(line,5), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X, "X");
+                BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y = GUI.Toggle(SEighthRect(line,6), BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y, "Y");
 
                 line += 0.5f;
             }

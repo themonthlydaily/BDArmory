@@ -145,6 +145,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float TARGET_WINDOW_SCALE_MAX = 2f;
         [BDAPersistentSettingsField] public static float TARGET_CAM_RESOLUTION = 1024f;
         [BDAPersistentSettingsField] public static bool BW_TARGET_CAM = true;
+        [BDAPersistentSettingsField] public static bool TARGET_WINDOW_INVERT_MOUSE_X = false;
+        [BDAPersistentSettingsField] public static bool TARGET_WINDOW_INVERT_MOUSE_Y = false;
 
         // Game modes
         [BDAPersistentSettingsField] public static bool PEACE_MODE = false;
