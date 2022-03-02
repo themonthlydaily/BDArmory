@@ -8,11 +8,13 @@
 - Fixes gun reticles floating a few meters in front of the weapon.
 - Fix subMunitionCount = 0 in custom bullet/rocket defs breaking weapons.
 - Fix Protect VIP(s) target priority for when there are more than 2 teams.
+- Give default gpsTargetName as Unknown instead of empty to avoid KSP's flightstate autosave from complaining.
 IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
 	- Add hotkey option for time scaling.
 	- Add options (in Radar Settings section) to invert the mouse in the targeting window.
+	- Add an Auto-Load-To-KSC option.
 - AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
 	- Tweak the clamped altitude and speed min/max values to give more usable sliders.
@@ -41,6 +43,7 @@ IMPROVEMENTS
 	- Add option to use average radius in Vessel.GetRadius instead of max.
 	- Rename Misc.Misc to Misc.Utils to fix naming conflict between namespace and class.
 	- Some debug message cleanup to reduce log spam.
+	- Replace loading a clean.sfs save file with generating a new clean sandbox game.
 
 v1.4.16.1
 FIXES
