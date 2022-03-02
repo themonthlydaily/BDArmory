@@ -1,4 +1,5 @@
-﻿FIXES
+﻿v1.4.17.0
+FIXES
 - Fix auto-resume evolution not finding the evolution.state file.
 - Fix localization for target priority on weapons manager.
 - Configure the paths when loading the statefile if they're not configured.
