@@ -1,4 +1,8 @@
-﻿v1.4.17.0
+﻿FIXES
+- Add checks to only adjust scores when a competition is active.
+IMPROVEMENTS
+
+v1.4.17.0
 FIXES
 - Fix auto-resume evolution not finding the evolution.state file.
 - Fix localization for target priority on weapons manager.
