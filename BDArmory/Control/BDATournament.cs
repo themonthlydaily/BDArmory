@@ -1177,10 +1177,16 @@ namespace BDArmory.Control
 
         bool LoadGame()
         {
+            // Grab the scenarios from the previous persistent game.
+            HighLogic.CurrentGame = GamePersistence.LoadGame("persistent", game, true, false);
+            var scenarios = HighLogic.CurrentGame.scenarios;
+
+            // Generate a new clean game and add in the scenarios.
             HighLogic.CurrentGame = new Game();
             HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
             HighLogic.CurrentGame.Mode = Game.Modes.SANDBOX;
             HighLogic.SaveFolder = game;
+            foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
 
             // Generate the default roster and make them all badass pilots.
             HighLogic.CurrentGame.CrewRoster = KerbalRoster.GenerateInitialCrewRoster(HighLogic.CurrentGame.Mode);
@@ -1190,29 +1196,31 @@ namespace BDArmory.Control
                 KerbalRoster.SetExperienceTrait(kerbal, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
                 KerbalRoster.SetExperienceLevel(kerbal, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
             }
-            HighLogic.CurrentGame.AddProtoScenarioModule(typeof(AlarmClockScenario), new GameScenes[] { GameScenes.SPACECENTER, GameScenes.EDITOR, GameScenes.FLIGHT, GameScenes.TRACKSTATION }); // Avoid an AlarmClockScenario NRE.
-            CheckForTimeControl(); // TimeControl uses scenarios to add itself, so we need to re-inject it here. This will need to be done for any other mod that uses Scenarios.
 
+            // Update the game state and save it to the persistent save (sine that's what eventually ends up getting loaded when we call Start()).
             HighLogic.CurrentGame.Updated();
-            GamePersistence.SaveGame("persistent", game, SaveMode.OVERWRITE); // Overwrite the persistent.sfs file as that's what actually ends up being loaded when we call Start()!
+            GamePersistence.SaveGame("persistent", game, SaveMode.OVERWRITE);
             HighLogic.CurrentGame.Start();
             return true;
         }
 
-        void CheckForTimeControl()
+        /// <summary>
+        /// Look for the scenario in the currently loaded assemblies and add the scenario to the requested scenes.
+        /// These come from a previous persistent.sfs save.
+        /// </summary>
+        /// <param name="scenarioName">Name of the scenario.</param>
+        /// <param name="targetScenes">The scenes the scenario should be present in.</param>
+        void CheckForScenario(string scenarioName, List<GameScenes> targetScenes)
         {
             foreach (var assy in AssemblyLoader.loadedAssemblies)
             {
-                if (assy.assembly.FullName.Contains("TimeControl"))
+                foreach (var type in assy.assembly.GetTypes())
                 {
-                    foreach (var type in assy.assembly.GetTypes())
+                    if (type == null) continue;
+                    if (type.Name == scenarioName)
                     {
-                        if (type == null) continue;
-                        if (type.Name == "TimeControlScenario")
-                        {
-                            HighLogic.CurrentGame.AddProtoScenarioModule(type, new GameScenes[] { GameScenes.SPACECENTER, GameScenes.EDITOR, GameScenes.FLIGHT, GameScenes.TRACKSTATION });
-                            return;
-                        }
+                        HighLogic.CurrentGame.AddProtoScenarioModule(type, targetScenes.ToArray());
+                        return;
                     }
                 }
             }
