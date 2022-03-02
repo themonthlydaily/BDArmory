@@ -15,7 +15,7 @@ IMPROVEMENTS
 	- Add in the remaining localisations for parts.
 	- Add hotkey option for time scaling.
 	- Add options (in Radar Settings section) to invert the mouse in the targeting window.
-	- Add an Auto-Load-To-KSC option.
+	- Add an Auto-Load-To-KSC option (in the GamePlay settings section).
 - AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
 	- Tweak the clamped altitude and speed min/max values to give more usable sliders.
@@ -37,7 +37,7 @@ IMPROVEMENTS
 	- Abrams can now properly select ammo types in flight.
 - Armor:
 	- Configurable Armor panels should cause less lag on loading in.
-- Tournamements:
+- Tournaments:
 	- Add option to save the summary plot to a PNG file. Use '-s' to save to a random tempfile, use '-s fig.png' to specify the file.
 	- Tweak the auto-vessels-per-heat optimisation for when we're just over the limit.
 - Internal:
