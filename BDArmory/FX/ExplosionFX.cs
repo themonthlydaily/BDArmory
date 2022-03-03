@@ -712,7 +712,7 @@ namespace BDArmory.FX
                             eventToExecute.HitPoint + rb.velocity * TimeIndex);
                     }
                     var damage = 0f;
-                    float penetrationFactor = 0;
+                    float penetrationFactor = 0.5f;
                     if (dmgMult < 0)
                     {
                         part.AddInstagibDamage();
@@ -788,6 +788,7 @@ namespace BDArmory.FX
                                 else
                                 {
                                     damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
+                                    penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the breater the blowthrough
                                     if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
                                 }
                             }

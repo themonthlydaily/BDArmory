@@ -327,9 +327,12 @@ namespace BDArmory.Modules
                 armorthickness = Mathf.Clamp((armor.Armor / 10), 0.1f, 1500);
                 //if (!isCurvedPanel)
                 {
-                    for (int i = 0; i < armorTransforms.Length; i++)
+                    if (armorthickness != Oldthickness)
                     {
-                        armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                        for (int i = 0; i < armorTransforms.Length; i++)
+                        {
+                            armorTransforms[i].localScale = new Vector3(Width, Length, armorthickness);
+                        }
                     }
                 }
                 /*
@@ -341,24 +344,27 @@ namespace BDArmory.Modules
             }
             else
             {
-                if (armor == null) Debug.Log("[BDAAdjustableArmor] No HitpointTracker found! aborting UpdateThickness()!");
-                if (armorTransforms == null) Debug.Log("[BDAAdjustableArmor] No ArmorTransform found! aborting UpdateThickness()!");
+                //if (armor == null) Debug.Log("[BDAAdjustableArmor] No HitpointTracker found! aborting UpdateThickness()!");
+                //if (armorTransforms == null) Debug.Log("[BDAAdjustableArmor] No ArmorTransform found! aborting UpdateThickness()!");
                 return;
             }
             if (onLoad) return; //don't adjust part placement on load
-            float ratio = (armorthickness - Oldthickness) / 100;
-            foreach (Part p in part.children)
+            if (armorthickness != Oldthickness)
             {
-                if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
+                float ratio = (armorthickness - Oldthickness) / 100;
+                foreach (Part p in part.children)
                 {
-                    Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
-                    if (localSpace.y > (0.9f * ratio))
+                    if (p.FindAttachNodeByPart(part) is AttachNode node && node.nodeType == AttachNode.NodeType.Surface)
                     {
-                        TranslatePart(p, -armorTransforms[0].right * ratio);
-                    }
-                    if (localSpace.y < -(0.9f * ratio))
-                    {
-                        TranslatePart(p, armorTransforms[0].right * ratio);
+                        Vector3 localSpace = part.transform.InverseTransformPoint(node.owner.transform.TransformPoint(node.position));
+                        if (localSpace.y > (0.9f * ratio))
+                        {
+                            TranslatePart(p, -armorTransforms[0].right * ratio);
+                        }
+                        if (localSpace.y < -(0.9f * ratio))
+                        {
+                            TranslatePart(p, armorTransforms[0].right * ratio);
+                        }
                     }
                 }
                 Oldthickness = armorthickness;

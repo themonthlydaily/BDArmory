@@ -1,32 +1,54 @@
 ﻿FIXES
+- Add checks to only adjust scores when a competition is active.
+IMPROVEMENTS
+
+v1.4.17.0
+FIXES
 - Fix auto-resume evolution not finding the evolution.state file.
 - Fix localization for target priority on weapons manager.
 - Configure the paths when loading the statefile if they're not configured.
 - Avoid NRE in ModuleResourceDrain due to detonating when the parent part is being destroyed.
+- Fixes Ammo belt Configuration, can no longer be used to stick ammo from one gun into the belt of another.
+- Fixes Weapon Manager GUI weapon selection glitch.
+- Fixes gun reticles floating a few meters in front of the weapon.
+- Fix subMunitionCount = 0 in custom bullet/rocket defs breaking weapons.
+- Fix Protect VIP(s) target priority for when there are more than 2 teams.
+- Give default gpsTargetName as Unknown instead of empty to avoid KSP's flightstate autosave from complaining.
 IMPROVEMENTS
 - General:
 	- Add in the remaining localisations for parts.
 	- Add hotkey option for time scaling.
+	- Add options (in Radar Settings section) to invert the mouse in the targeting window.
+	- Add an Auto-Load-To-KSC option (in the GamePlay settings section).
 - AI:
 	- Use maxAllowedAoA in post-stall test in FlyToPosition instead of hard-coded 30°.
 	- Tweak the clamped altitude and speed min/max values to give more usable sliders.
 	- Scale steer limiter based on atmospheric density in order to account how dynamic pressure will vary based on this value.
 	- Add the target's average radius to the vessel-avoidance detection.
+	- Adjust the default vessel-avoidance values and increase the upper limit of the avoidance strength slider.
 	- Use an average of the recent speed instead of the max speed in determining the turn radius.
 	- Adjust the extending to update the extend-from position when the extend-from target is a vessel.
 	- Replace the extend multiplier with explicit extend distances for air-to-air, air-to-ground (guns) and air-to-ground.
+- WM:
+	- Add a Protect Teammates target priority.
 - GameModes:
 	- Add options for respecting the flow state of stealing (in)/stolen (out) resources.
 - UI:
 	- Add a "Slider Resolution" slider to the pilot AI (currently just PID, Altitudes and Speeds) to allow finer or coarser adjustments to those sliders in the PAW (not the AI GUI for now).
 - Weapons:
 	- Add in option to set an action group toggled for when weapons are selected/deselected (can be used for deploying weapons or for other actions).
-- Tournamements:
+	- Ammo belt tool now loads in existing belts, if present.
+	- Abrams can now properly select ammo types in flight.
+- Armor:
+	- Configurable Armor panels should cause less lag on loading in.
+- Tournaments:
 	- Add option to save the summary plot to a PNG file. Use '-s' to save to a random tempfile, use '-s fig.png' to specify the file.
 	- Tweak the auto-vessels-per-heat optimisation for when we're just over the limit.
 - Internal:
 	- Add option to use average radius in Vessel.GetRadius instead of max.
 	- Rename Misc.Misc to Misc.Utils to fix naming conflict between namespace and class.
+	- Some debug message cleanup to reduce log spam.
+	- Replace loading a clean.sfs save file with generating a new clean sandbox game.
 
 v1.4.16.1
 FIXES

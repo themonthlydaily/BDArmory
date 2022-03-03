@@ -15,8 +15,9 @@ namespace BDArmory.GameModes
     class BattleDamageHandler
     {
         public static void CheckDamageFX(Part part, float caliber, float penetrationFactor, bool explosivedamage, bool incendiary, string attacker, RaycastHit hitLoc, bool firsthit = true, bool cockpitPen = false)
-        {
+        {      
             if (!BDArmorySettings.BATTLEDAMAGE || BDArmorySettings.PAINTBALL_MODE) return;
+            if (penetrationFactor <= 0) penetrationFactor = 0.01f;
             if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.ZOMBIE_MODE)
             //if (BDArmorySettings.RUNWAY_PROJECT && BDArmorySettings.RUNWAY_PROJECT_ROUND == -1)
             {
@@ -276,9 +277,8 @@ namespace BDArmory.GameModes
                 if (explosivedamage)
                 {
                     HEBonus = 2; //explosive rounds blow bigger holes in wings
-                }
-                Mathf.Clamp(penetrationFactor, 0.1f, 3);
-                HEBonus /= penetrationFactor; //faster rounds punch cleaner holes
+                }                
+                HEBonus *= Mathf.Clamp(penetrationFactor, 0.5f, 1.5f); //faster rounds punch cleaner holes
                 float liftDam = ((caliber / 20000) * HEBonus) * BDArmorySettings.BD_LIFT_LOSS_RATE;
                 if (part.GetComponent<ModuleLiftingSurface>() != null)
                 {
@@ -287,9 +287,9 @@ namespace BDArmory.GameModes
                     //2x4m wing board = 2 Lift, 0.25 Lift/m2. 20mm round = 20*20=400/20000= 0.02 Lift reduced per hit, 100 rounds to reduce lift to 0. mind you, it only takes ~15 rounds to destroy the wing...
                     if (wing.deflectionLiftCoeff > ((part.mass * 5) + liftDam)) //stock mass/lift ratio is 10; 0.2t wing has 2.0 lift; clamp lift lost at half
                     {
-                        wing.deflectionLiftCoeff -= liftDam;
+						wing.deflectionLiftCoeff -= liftDam;                        
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "hit by " + caliber + " round, penFactor " + penetrationFactor + "; took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                     }
-                    if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BattleDamageHandler]: " + part.name + "took lift damage: " + liftDam + ", current lift: " + wing.deflectionLiftCoeff);
                 }
                 if (BDArmorySettings.BD_CTRL_SRF && firsthit)
                 {

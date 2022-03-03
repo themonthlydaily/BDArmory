@@ -96,7 +96,7 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "impulse", typeof(float)),
                         (string)ParseField(node, "fuzeType", typeof(string)),
                         (float)ParseField(node, "apBulletMod", typeof(float)),
-                        (int)ParseField(node, "subProjectileCount", typeof(int)),
+                        Math.Max((int)ParseField(node, "subProjectileCount", typeof(int)), 1),
                         (string)ParseField(node, "bulletDragTypeName", typeof(string)),
                         (string)ParseField(node, "projectileColor", typeof(string)),
                         (string)ParseField(node, "startColor", typeof(string)),
