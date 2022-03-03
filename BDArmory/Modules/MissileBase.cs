@@ -405,7 +405,7 @@ namespace BDArmory.Modules
         public Vector3 assignedGPSCoords;
 
         [KSPField(isPersistant = true, guiName = "#LOC_BDArmory_GPSTarget")]//GPS Target
-        public string gpsTargetName = "";
+        public string gpsTargetName = "Unknown"; // Can't have an empty name as it breaks KSP's flightstate autosave.
 
 
 

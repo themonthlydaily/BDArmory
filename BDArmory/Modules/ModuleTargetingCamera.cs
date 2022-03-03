@@ -1176,9 +1176,8 @@ namespace BDArmory.Modules
         IEnumerator SlewMouseCamRoutine(Vector3 direction)
         {
             radarLock = false;
-            //invert the x axis.  makes the mouse action more intutitve
-            direction.x = -direction.x;
-            //direction.y = -direction.y;
+            if (!BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_X) direction.x = -direction.x; // Invert the x-axis by default (original defaults).
+            if (BDArmorySettings.TARGET_WINDOW_INVERT_MOUSE_Y) direction.y = -direction.y;
             float velocity = Mathf.Abs(direction.x) > Mathf.Abs(direction.y) ? Mathf.Abs(direction.x) : Mathf.Abs(direction.y);
             Vector3 rotationAxis = Matrix4x4.TRS(Vector3.zero, Quaternion.LookRotation(cameraParentTransform.forward, vessel.upAxis), Vector3.one)
                 .MultiplyVector(Quaternion.AngleAxis(90, Vector3.forward) * direction);

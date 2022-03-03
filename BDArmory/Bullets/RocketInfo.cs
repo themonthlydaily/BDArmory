@@ -82,7 +82,7 @@ namespace BDArmory.Bullets
                         (bool)ParseField(node, "explosive", typeof(bool)),
                         (bool)ParseField(node, "incendiary", typeof(bool)),
                         (float)ParseField(node, "tntMass", typeof(float)),
-                        (int)ParseField(node, "subProjectileCount", typeof(int)),
+                        Math.Max((int)ParseField(node, "subProjectileCount", typeof(int)), 1),
                         (float)ParseField(node, "thrustDeviation", typeof(float)),
                         (string)ParseField(node, "rocketModelPath", typeof(string))
                     );
