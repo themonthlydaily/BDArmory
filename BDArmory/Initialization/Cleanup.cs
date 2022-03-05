@@ -10,16 +10,19 @@ namespace BDArmory.Initialization
     [KSPAddon(KSPAddon.Startup.MainMenu, false)]
     public class Cleanup : MonoBehaviour
     {
+        bool hasRun = false;
         bool inhibitAutoFunctions = false;
         void Awake()
         {
+            if (hasRun) return;
+            hasRun = true;
             var BDArmoryCoreFiles = Directory.GetFiles(Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Plugins"))).Where(f => Path.GetFileName(f).StartsWith("BDArmory.Core")).ToList();
             if (BDArmoryCoreFiles.Count > 0)
             {
                 inhibitAutoFunctions = true;
                 var message = new List<string>();
                 message.Add("BDArmory has moved to using a single DLL. The following old BDArmory.Core files will be removed:");
-                foreach(var BDArmoryCoreFile in BDArmoryCoreFiles) message.Add("\t" + BDArmoryCoreFile);
+                foreach (var BDArmoryCoreFile in BDArmoryCoreFiles) message.Add("\t" + BDArmoryCoreFile);
                 message.Add("Please restart KSP to avoid any potential issues.");
                 Debug.LogWarning(string.Join("\n", message.Select(s => "[BDArmory.Initialization]: " + s)));
                 PopupDialog.SpawnPopupDialog(
