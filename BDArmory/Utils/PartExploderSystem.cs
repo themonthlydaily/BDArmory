@@ -1,0 +1,39 @@
+﻿using System.Collections.Generic;
+using UnityEngine;
+
+namespace BDArmory.Utils
+{
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    public class PartExploderSystem : MonoBehaviour
+    {
+        private static readonly Queue<Part> ExplodingPartsQueue = new Queue<Part>();
+
+        public static void AddPartToExplode(Part p)
+        {
+            if (p != null && !ExplodingPartsQueue.Contains(p))
+            {
+                ExplodingPartsQueue.Enqueue(p);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            ExplodingPartsQueue.Clear();
+        }
+
+        public void Update()
+        {
+            if (ExplodingPartsQueue.Count == 0) return;
+
+            do
+            {
+                Part part = ExplodingPartsQueue.Dequeue();
+
+                if (part != null)
+                {
+                    part.explode(); // This calls part.Die() internally.
+                }
+            } while (ExplodingPartsQueue.Count > 0);
+        }
+    }
+}

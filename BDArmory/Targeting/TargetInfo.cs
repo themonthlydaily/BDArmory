@@ -1,12 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using BDArmory.UI;
 using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.Extensions;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
+using BDArmory.Weapons;
+using BDArmory.WeaponMounts;
 
 namespace BDArmory.Targeting
 {

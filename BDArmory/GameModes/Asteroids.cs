@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
 using BDArmory.Competition;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
+using BDArmory.Extensions;
+using BDArmory.Settings;
 using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.GameModes
 {
@@ -244,7 +245,7 @@ namespace BDArmory.GameModes
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
             }
             upDirection = (spawnPoint - FlightGlobals.currentMainBody.transform.position).normalized;
-            spawnPoint += (altitude - Utils.GetRadarAltitudeAtPos(spawnPoint, false)) * upDirection; // Adjust for terrain height.
+            spawnPoint += (altitude - BodyUtils.GetRadarAltitudeAtPos(spawnPoint, false)) * upDirection; // Adjust for terrain height.
             refDirection = Math.Abs(Vector3d.Dot(Vector3.up, upDirection)) < 0.71f ? Vector3d.up : Vector3d.forward; // Avoid that the reference direction is colinear with the local surface normal.
 
             var a = -(float)FlightGlobals.getGeeForceAtPosition(FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude)).magnitude / 2f;
@@ -371,12 +372,12 @@ namespace BDArmory.GameModes
             {
                 spawnPoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition(geoCoords.x, geoCoords.y, altitude);
                 var position = spawnPoint + offset;
-                position += (altitude - Utils.GetRadarAltitudeAtPos(position, false)) * upDirection;
+                position += (altitude - BodyUtils.GetRadarAltitudeAtPos(position, false)) * upDirection;
                 asteroid.transform.position = position;
                 asteroid.SetWorldVelocity(initialSpeed * upDirection);
                 // Apply a gaussian random torque to the asteroid.
                 asteroid.rootPart.Rigidbody.angularVelocity = Vector3.zero;
-                asteroid.rootPart.Rigidbody.AddTorque(Misc.VectorUtils.GaussianVector3d(Vector3d.zero, 300 * Vector3d.one), ForceMode.Acceleration);
+                asteroid.rootPart.Rigidbody.AddTorque(VectorUtils.GaussianVector3d(Vector3d.zero, 300 * Vector3d.one), ForceMode.Acceleration);
             }
         }
 
@@ -717,7 +718,7 @@ namespace BDArmory.GameModes
                 var distance = Mathf.Sqrt(1f - x) * radius;
                 var height = RNG.NextDouble() * (altitude - 50f) + 50f;
                 var position = spawnPoint + direction * distance;
-                position += (height - Utils.GetRadarAltitudeAtPos(position)) * upDirection;
+                position += (height - BodyUtils.GetRadarAltitudeAtPos(position)) * upDirection;
                 var asteroid = GetAsteroid();
                 if (asteroid != null)
                 {
@@ -775,7 +776,7 @@ namespace BDArmory.GameModes
             if (asteroid != null && asteroid.gameObject.activeInHierarchy)
             {
                 asteroid.rootPart.Rigidbody.angularVelocity = Vector3.zero;
-                asteroid.rootPart.Rigidbody.AddTorque(Misc.VectorUtils.GaussianVector3d(Vector3d.zero, 50 * Vector3d.one), ForceMode.Acceleration); // Apply a gaussian random torque to each asteroid.
+                asteroid.rootPart.Rigidbody.AddTorque(VectorUtils.GaussianVector3d(Vector3d.zero, 50 * Vector3d.one), ForceMode.Acceleration); // Apply a gaussian random torque to each asteroid.
             }
         }
 

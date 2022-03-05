@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BDArmory.Competition.RemoteOrchestration;
-using BDArmory.Modules;
-using BDArmory.UI;
 using UnityEngine;
+
+using BDArmory.Competition.RemoteOrchestration;
+using BDArmory.Control;
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.Competition
 {

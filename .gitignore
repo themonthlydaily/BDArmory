@@ -22,7 +22,6 @@ BahaTurret/BahaTurret.userprefs
 BahaTurret/bin/Release
 
 BDArmory/.vs
-BDArmory.Core/.vs
 
 BDArmory/obj
 BDArmory/bin/Debug/
@@ -35,26 +34,15 @@ BDArmory/LocalDev/ksp_production_dir.txt
 BDArmory/LocalDev/mono_exe.txt
 BDArmory/LocalDev/pdb2mdb_exe.txt
 BDArmory/BahaTurret.userprefs
-BDArmory/Distribution/GameData/BDArmory/Plugins/BDArmory.Core.dll
 BDArmory/Distribution/GameData/BDArmory/Plugins/BDArmory.dll
 
 BDArmory/packages
 
-BDArmory.Core/obj/Debug/BDArmory.Core.csproj.FileListAbsolute.txt
-BDArmory.Core/obj/Release/BDArmory.Core.csproj.FileListAbsolute.txt
 BDArmory/bin/Debug
-BDArmory.Core/obj/
-BDArmory.Core/.vs
-BDArmory.Core/packages.config
 BDArmory/packages.config
 BDArmory.Multiplayer/obj
-BDArmory.Core/bin/Debug/Assembly-CSharp.dll
-BDArmory.Core/bin/Debug/BDArmory.Core.dll
-BDArmory.Core/bin/Debug/KSPAssets.dll
-BDArmory.Core/bin/Debug/UnityEngine.dll
 BahaTurret/BDArmory.sln.DotSettings.user
 BahaTurret/BDArmory.csproj.user
-BDArmory.Core/bin/Debug/UnityEngine.UI.dll
 
 
 #######################################
@@ -122,18 +110,10 @@ Icon
 /.vs/BDArmory_JRODRIGV/v15
 /.vs/slnx.sqlite
 /BahaTurret/bin/Release
-/BDArmory.Core/obj/Debug/BDArmory.Core.csproj.FileListAbsolute.txt
-/BDArmory.Core/obj/Release/BDArmory.Core.csproj.FileListAbsolute.txt
 /BDArmory/bin/Debug
-BDArmory.Core/obj/
 /BDArmory.Multiplayer/obj
-BDArmory.Core/bin/Debug/Assembly-CSharp.dll
-BDArmory.Core/bin/Debug/BDArmory.Core.dll
-BDArmory.Core/bin/Debug/KSPAssets.dll
-BDArmory.Core/bin/Debug/UnityEngine.dll
 BahaTurret/BDArmory.sln.DotSettings.user
 BahaTurret/BDArmory.csproj.user
-BDArmory.Core/bin/Debug/UnityEngine.UI.dll
 BDArmory/LocalDev/Refs/UnityEngine.UI.dll
 BDArmory/LocalDev/Refs/KSPAssets.dll
 BDArmory/LocalDev/Refs/Assembly-CSharp.dll
@@ -142,8 +122,7 @@ BDArmory/LocalDev/Refs/UnityEngine.dll
 /BDArmory/UpgradeLog3.htm
 /BDArmory/UpgradeLog2.htm
 /BDArmory/UpgradeLog.htm
-/BDArmory/bin/Release
-/BDArmory.Core/bin
+/BDArmory/bin
 /BDArmory.Guidance/bin/Release
 /BDArmory.Guidance/obj/Release
 /BDArmory/BDArmory.sln.DotSettings.user

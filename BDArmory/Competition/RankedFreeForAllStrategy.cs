@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using BDArmory.Control;
-using BDArmory.Core;
+﻿using System.Collections;
 using UnityEngine;
+
+using BDArmory.Settings;
 using BDArmory.Competition.RemoteOrchestration;
 using static BDArmory.Competition.RemoteOrchestration.BDAScoreService;
 
@@ -45,7 +42,7 @@ namespace BDArmory.Competition
             yield return new WaitForFixedUpdate(); // Give the competition start a frame to get going.
 
             // start timer coroutine for the duration specified in settings UI
-            var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60d;
+            var duration = BDArmorySettings.COMPETITION_DURATION * 60d;
             var message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
             Debug.Log("[BDArmory.BDAScoreService]: " + message);
             BDACompetitionMode.Instance.competitionStatus.Add(message);

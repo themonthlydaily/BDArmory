@@ -1,13 +1,12 @@
-using System.Collections;
-using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.Modules;
-using UnityEngine;
 using KSP.Localization;
 using System.Collections.Generic;
-using static UnityEngine.GUILayout;
-using BDArmory.Bullets;
 using System;
+using UnityEngine;
+using static UnityEngine.GUILayout;
+
+using BDArmory.Bullets;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.UI
 {
@@ -250,7 +249,7 @@ namespace BDArmory.UI
             height = Mathf.Lerp(height, (line + labelLines + ammolines) * buttonHeight, 0.15f);
             windowRect.height = height;
             GUI.DragWindow();
-            BDGUIUtils.RepositionWindow(ref windowRect);
+            GUIUtils.RepositionWindow(ref windowRect);
         }
 
         private void Awake()

@@ -3,19 +3,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine;
+using KSP.Localization;
+
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Control;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
-using BDArmory.Core;
+using BDArmory.Damage;
+using BDArmory.Extensions;
 using BDArmory.GameModes;
-using BDArmory.Misc;
 using BDArmory.Modules;
 using BDArmory.Radar;
+using BDArmory.Settings;
 using BDArmory.UI;
-using UnityEngine;
-using KSP.Localization;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.Competition
 {
@@ -1435,7 +1437,7 @@ namespace BDArmory.Competition
             for (var i = 0; i < leaders.Count; ++i)
             {
                 var pilotAI = VesselModuleRegistry.GetBDModulePilotAI(leaders[i].vessel, true); // Adjust initial fly-to point for terrain and default altitudes.
-                var startPosition = center + startDirection + (pilotAI != null ? (pilotAI.defaultAltitude - Utils.GetRadarAltitudeAtPos(center + startDirection, false)) * VectorUtils.GetUpDirection(center + startDirection) : Vector3.zero);
+                var startPosition = center + startDirection + (pilotAI != null ? (pilotAI.defaultAltitude - BodyUtils.GetRadarAltitudeAtPos(center + startDirection, false)) * VectorUtils.GetUpDirection(center + startDirection) : Vector3.zero);
                 leaders[i].CommandFlyTo(VectorUtils.WorldPositionToGeoCoords(startPosition, FlightGlobals.currentMainBody));
                 startDirection = directionStep * startDirection;
             }
@@ -2142,7 +2144,7 @@ namespace BDArmory.Competition
                             // activate stage
                             foreach (var pilot in pilots)
                             {
-                                Utils.fireNextNonEmptyStage(pilot.vessel);
+                                VesselUtils.fireNextNonEmptyStage(pilot.vessel);
                             }
                             break;
                         }
@@ -2431,7 +2433,7 @@ namespace BDArmory.Competition
                 Scores.RegisterDeath(vesselName, GMKillReason.GM);
                 competitionStatus.Add(vesselName + " was killed by the GM for being too slow.");
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: GM killing " + vesselName + " for being too slow.");
-                Utils.ForceDeadVessel(worstVessel);
+                VesselUtils.ForceDeadVessel(worstVessel);
             }
             ResetSpeeds();
         }
@@ -2455,7 +2457,7 @@ namespace BDArmory.Competition
                         competitionStatus.Add(weaponManager.vessel.vesselName + " flew too high!");
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
                         if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
-                        Utils.ForceDeadVessel(weaponManager.vessel);
+                        VesselUtils.ForceDeadVessel(weaponManager.vessel);
                     }
                 }
             }
@@ -2482,7 +2484,7 @@ namespace BDArmory.Competition
                         competitionStatus.Add(weaponManager.vessel.vesselName + " flew too low!");
                         if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + weaponManager.vessel.vesselName + ":REMOVED:" + killerName);
                         if (KillTimer.ContainsKey(weaponManager.vessel.vesselName)) KillTimer.Remove(weaponManager.vessel.vesselName);
-                        Utils.ForceDeadVessel(weaponManager.vessel);
+                        VesselUtils.ForceDeadVessel(weaponManager.vessel);
                     }
                 }
             }
@@ -3059,7 +3061,7 @@ namespace BDArmory.Competition
                 }
                 if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + vesselName + ":REMOVED:" + killerName);
                 if (KillTimer.ContainsKey(vesselName)) KillTimer.Remove(vesselName);
-                Utils.ForceDeadVessel(vessel);
+                VesselUtils.ForceDeadVessel(vessel);
             }
 
             if (!(BDArmorySettings.COMPETITION_NONCOMPETITOR_REMOVAL_DELAY > 60))

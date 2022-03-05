@@ -1,15 +1,15 @@
-﻿using System.Collections;
-using BDArmory.Core;
+﻿using KSP.Localization;
+using KSP.UI.Screens;
+using System.Collections.Generic;
+using System.Collections;
+using System;
+using UnityEngine;
+using static UnityEngine.GUILayout;
+
 using BDArmory.Control;
 using BDArmory.Modules;
-using UnityEngine;
-using KSP.Localization;
-using KSP.UI.Screens;
-using static UnityEngine.GUILayout;
-using System;
-using System.Collections.Generic;
-using static BDArmory.UI.VesselSpawnerWindow;
-using BDArmory.Misc;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -555,7 +555,7 @@ namespace BDArmory.UI
             if (!windowBDAAIGUIEnabled || (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor)) return;
             //BDArmorySetup.WindowRectAI = new Rect(BDArmorySetup.WindowRectAI.x, BDArmorySetup.WindowRectAI.y, WindowWidth, WindowHeight);
             BDArmorySetup.WindowRectAI = GUI.Window(GetInstanceID(), BDArmorySetup.WindowRectAI, WindowRectAI, "", BDArmorySetup.BDGuiSkin.window);//"BDA Weapon Manager"
-            BDGUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
+            GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectAI);
         }
 
         float pidHeight;
@@ -1725,7 +1725,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToAir =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToAir, 0, ActivePilot.UpToEleven ? 20000 : 2000);
-                                ActivePilot.extendDistanceAirToAir = Utils.RoundToUnit(ActivePilot.extendDistanceAirToAir, 50f);
+                                ActivePilot.extendDistanceAirToAir = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToAir, 50f);
                             }
                             else
                             {
@@ -1745,7 +1745,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToGroundGuns =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGroundGuns, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGroundGuns = Utils.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 100f);
+                                ActivePilot.extendDistanceAirToGroundGuns = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGroundGuns, 100f);
                             }
                             else
                             {
@@ -1765,7 +1765,7 @@ namespace BDArmory.UI
                                 ActivePilot.extendDistanceAirToGround =
                                     GUI.HorizontalSlider(SettingSliderRect(leftIndent, evadeLines, contentWidth),
                                         ActivePilot.extendDistanceAirToGround, 0, ActivePilot.UpToEleven ? 20000 : 5000);
-                                ActivePilot.extendDistanceAirToGround = Utils.RoundToUnit(ActivePilot.extendDistanceAirToGround, 100f);
+                                ActivePilot.extendDistanceAirToGround = BDAMath.RoundToUnit(ActivePilot.extendDistanceAirToGround, 100f);
                             }
                             else
                             {
@@ -2338,7 +2338,7 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectAI.width = WindowWidth;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && WindowHeight < previousWindowHeight && Mathf.Round(BDArmorySetup.WindowRectAI.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectAI.y = Screen.height - BDArmorySetup.WindowRectAI.height;
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectAI);
         }
         #endregion GUI
 

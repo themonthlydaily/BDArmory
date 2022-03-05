@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Module;
-using BDArmory.Misc;
 using KSP.Localization;
 using KSP.UI.Screens;
 using UnityEngine;
+
+using BDArmory.Armor;
+using BDArmory.Damage;
+using BDArmory.Extensions;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -434,7 +436,7 @@ namespace BDArmory.UI
             GUI.DragWindow();
             height = Mathf.Lerp(height, (line + armorLines + StatLines + HullLines) * lineHeight, 0.15f);
             windowRect.height = height;
-            BDGUIUtils.RepositionWindow(ref windowRect);
+            GUIUtils.RepositionWindow(ref windowRect);
         }
 
         void CalculateArmorMass(bool vesselmass = false)

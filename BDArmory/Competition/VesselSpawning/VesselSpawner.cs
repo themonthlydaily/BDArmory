@@ -5,12 +5,15 @@ using System.IO;
 using System.Linq;
 using KSP.UI.Screens;
 using UnityEngine;
-using BDArmory.Core;
-using BDArmory.Core.Utils;
+
+using BDArmory.Control;
+using BDArmory.Extensions;
 using BDArmory.GameModes;
 using BDArmory.Modules;
-using BDArmory.Misc;
+using BDArmory.Settings;
 using BDArmory.UI;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.Competition.VesselSpawning
 {
@@ -108,7 +111,7 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     spawnLocationCamera.SetActive(true);
                     originalCameraParentTransform = flightCamera.transform.parent;
-                    originalCameraNearClipPlane = BDGUIUtils.GetMainCamera().nearClipPlane;
+                    originalCameraNearClipPlane = GUIUtils.GetMainCamera().nearClipPlane;
                 }
                 spawnLocationCamera.transform.position = spawnPoint;
                 spawnLocationCamera.transform.rotation = Quaternion.LookRotation(-cameraPosition, radialUnitVector);
@@ -151,10 +154,10 @@ namespace BDArmory.Competition.VesselSpawning
                 {
                     originalCameraParentTransform.position = flightCamera.transform.parent.position;
                     originalCameraParentTransform.rotation = flightCamera.transform.parent.rotation;
-                    originalCameraNearClipPlane = BDGUIUtils.GetMainCamera().nearClipPlane;
+                    originalCameraNearClipPlane = GUIUtils.GetMainCamera().nearClipPlane;
                 }
                 flightCamera.transform.parent = originalCameraParentTransform;
-                BDGUIUtils.GetMainCamera().nearClipPlane = originalCameraNearClipPlane;
+                GUIUtils.GetMainCamera().nearClipPlane = originalCameraNearClipPlane;
             }
             if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.state != Vessel.State.DEAD)
                 LoadedVesselSwitcher.Instance.ForceSwitchVessel(FlightGlobals.ActiveVessel); // Update the camera.
@@ -892,7 +895,7 @@ namespace BDArmory.Competition.VesselSpawning
                         foreach (var vesselName in spawnedVessels.Keys)
                         {
                             var vessel = spawnedVessels[vesselName].Item1;
-                            if (vessel.LandedOrSplashed && Utils.GetRadarAltitudeAtPos(vessel.transform.position) <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
+                            if (vessel.LandedOrSplashed && BodyUtils.GetRadarAltitudeAtPos(vessel.transform.position) <= 0) // Wait for the vessel to settle a bit in the water. The 15s buffer should be more than sufficient.
                             {
                                 vesselsHaveLanded[vesselName] = 2;
                             }
@@ -901,7 +904,7 @@ namespace BDArmory.Competition.VesselSpawning
                             if (vesselsHaveLanded[vesselName] == 1 && Vector3.Dot(vessel.srf_velocity, radialUnitVector) >= 0) // Check if the vessel has landed.
                             {
                                 vesselsHaveLanded[vesselName] = 2;
-                                if (Utils.GetRadarAltitudeAtPos(vessel.transform.position) > 0)
+                                if (BodyUtils.GetRadarAltitudeAtPos(vessel.transform.position) > 0)
                                     vessel.Landed = true; // Tell KSP that the vessel is landed.
                                 else
                                     vessel.Splashed = true; // Tell KSP that the vessel is splashed.
@@ -1054,7 +1057,7 @@ namespace BDArmory.Competition.VesselSpawning
                 yield return waitFixedUpdate; // Give the competition start a frame to get going.
 
                 // start timer coroutine for the duration specified in settings UI
-                var duration = Core.BDArmorySettings.COMPETITION_DURATION * 60f;
+                var duration = BDArmorySettings.COMPETITION_DURATION * 60f;
                 message = "Starting " + (duration > 0 ? "a " + duration.ToString("F0") + "s" : "an unlimited") + " duration competition.";
                 Debug.Log("[BDArmory.VesselSpawner]: " + message);
                 BDACompetitionMode.Instance.competitionStatus.Add(message);

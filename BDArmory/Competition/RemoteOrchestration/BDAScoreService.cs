@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
-using BDArmory.Competition.VesselSpawning;
-using BDArmory.Core;
+
+using BDArmory.Settings;
 using BDArmory.UI;
 
 namespace BDArmory.Competition.RemoteOrchestration
@@ -114,7 +114,7 @@ namespace BDArmory.Competition.RemoteOrchestration
 
         void Update()
         {
-            if (syncActive && !Core.BDArmorySettings.REMOTE_LOGGING_ENABLED)
+            if (syncActive && !BDArmorySettings.REMOTE_LOGGING_ENABLED)
             {
                 Debug.Log("[BDArmory.BDAScoreService] Cancel due to disable");
                 syncActive = false;

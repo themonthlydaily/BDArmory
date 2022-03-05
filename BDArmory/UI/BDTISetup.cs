@@ -1,12 +1,15 @@
-﻿using System;
-using System.Collections;
-using UnityEngine;
+﻿using KSP.Localization;
 using KSP.UI.Screens;
 using System.Collections.Generic;
-using BDArmory.Modules;
-using BDArmory.Misc;
+using System.Collections;
 using System.Linq;
-using KSP.Localization;
+using System;
+using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Control;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 /*
 * *Milestone 6: Figure out how to have TI activation toggle the F4 SHOW_LABELS (or is it Flt_Show_labels?) method to sim a keypress?

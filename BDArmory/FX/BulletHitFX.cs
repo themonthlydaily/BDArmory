@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using BDArmory.Core;
-using BDArmory.Core.Module;
-using BDArmory.Core.Extension;
-using BDArmory.Misc;
-using BDArmory.UI;
-using BDArmory.Modules;
 using UniLinq;
 using UnityEngine;
+
+using BDArmory.Damage;
+using BDArmory.Extensions;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.FX
 {

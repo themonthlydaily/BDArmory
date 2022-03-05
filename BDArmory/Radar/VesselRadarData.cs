@@ -1,11 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using BDArmory.Core;
-using BDArmory.Misc;
+using UnityEngine;
+
+using BDArmory.Competition;
+using BDArmory.Control;
 using BDArmory.Modules;
+using BDArmory.Settings;
 using BDArmory.Targeting;
 using BDArmory.UI;
-using UnityEngine;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.Radar
 {
@@ -766,18 +770,18 @@ namespace BDArmory.Radar
                 {
                     if (weaponManager && weaponManager.Team.IsFriendly(lockedTarget.Team))
                     {
-                        BDGUIUtils.DrawTextureOnWorldPos(lockedTarget.predictedPosition,
+                        GUIUtils.DrawTextureOnWorldPos(lockedTarget.predictedPosition,
                             BDArmorySetup.Instance.crossedGreenSquare, new Vector2(20, 20), 0);
                     }
                     else
                     {
-                        BDGUIUtils.DrawTextureOnWorldPos(lockedTarget.predictedPosition,
+                        GUIUtils.DrawTextureOnWorldPos(lockedTarget.predictedPosition,
                             BDArmorySetup.Instance.openGreenSquare, new Vector2(20, 20), 0);
                     }
                 }
                 else
                 {
-                    BDGUIUtils.DrawTextureOnWorldPos(lockedTarget.predictedPosition,
+                    GUIUtils.DrawTextureOnWorldPos(lockedTarget.predictedPosition,
                         BDArmorySetup.Instance.greenDiamondTexture, new Vector2(17, 17), 0);
                 }
             }
@@ -788,7 +792,7 @@ namespace BDArmory.Radar
             }
             const string windowTitle = "Radar";
             BDArmorySetup.WindowRectRadar = GUI.Window(524141, BDArmorySetup.WindowRectRadar, WindowRadar, windowTitle, GUI.skin.window);
-            BDGUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectRadar);
+            GUIUtils.UseMouseEventInRect(BDArmorySetup.WindowRectRadar);
 
             if (linkWindowOpen && canReceiveRadarData)
             {
@@ -796,7 +800,7 @@ namespace BDArmory.Radar
                     16 + (numberOfAvailableLinks * linkRectEntryHeight));
                 LinkRadarWindow();
 
-                BDGUIUtils.UseMouseEventInRect(linkWindowRect);
+                GUIUtils.UseMouseEventInRect(linkWindowRect);
             }
         }
 
@@ -881,7 +885,7 @@ namespace BDArmory.Radar
                         }
                         else
                         {
-                            BDGUIUtils.DrawRectangle(
+                            GUIUtils.DrawRectangle(
                                 new Rect(scanRect.x + (scanRect.width / 2) - 1, scanRect.y, 2, scanRect.height / 2),
                                 new Color(0, 1, 0, 0.35f));
                         }
@@ -895,10 +899,10 @@ namespace BDArmory.Radar
                     Rect verticalLineRect = new Rect(scanRect.center.x - (lineWidth / 2), 0, lineWidth,
                       scanRect.center.y);
                     GUIUtility.RotateAroundPivot(dAngle + fovAngle + radarAngle, scanRect.center);
-                    BDGUIUtils.DrawRectangle(verticalLineRect, new Color(0, 1, 0, 0.6f));
+                    GUIUtils.DrawRectangle(verticalLineRect, new Color(0, 1, 0, 0.6f));
                     GUI.matrix = Matrix4x4.identity;
                     GUIUtility.RotateAroundPivot(dAngle - fovAngle + radarAngle, scanRect.center);
-                    BDGUIUtils.DrawRectangle(verticalLineRect, new Color(0, 1, 0, 0.4f));
+                    GUIUtils.DrawRectangle(verticalLineRect, new Color(0, 1, 0, 0.4f));
                     GUI.matrix = Matrix4x4.identity;
                 }
             }
@@ -958,8 +962,8 @@ namespace BDArmory.Radar
                 Rect sLeftRect = new Rect(selectorRect.x, selectorRect.y, selectorSize / 6, selectorRect.height);
                 Rect sRightRect = new Rect(selectorRect.x + selectorRect.width - (selectorSize / 6), selectorRect.y,
                     selectorSize / 6, selectorRect.height);
-                BDGUIUtils.DrawRectangle(sLeftRect, Color.green);
-                BDGUIUtils.DrawRectangle(sRightRect, Color.green);
+                GUIUtils.DrawRectangle(sLeftRect, Color.green);
+                GUIUtils.DrawRectangle(sRightRect, Color.green);
             }
 
             //missile data
@@ -981,7 +985,7 @@ namespace BDArmory.Radar
             {
                 Vector3 localUp = vessel.ReferenceTransform.InverseTransformDirection(referenceTransform.up);
                 localUp = Vector3.ProjectOnPlane(localUp, Vector3.up).normalized;
-                float rollAngle = -Utils.SignedAngle(-Vector3.forward, localUp, Vector3.right);
+                float rollAngle = -BDAMath.SignedAngle(-Vector3.forward, localUp, Vector3.right);
                 GUIUtility.RotateAroundPivot(rollAngle, scanRect.center);
                 GUI.DrawTexture(scanRect, rollIndicatorTexture, ScaleMode.StretchToFill, true);
                 GUI.matrix = Matrix4x4.identity;
@@ -1004,7 +1008,7 @@ namespace BDArmory.Radar
             // Resizing code block.
             RADARresizeRect =
                 new Rect(BDArmorySetup.WindowRectRadar.width - 18, BDArmorySetup.WindowRectRadar.height - 19, 16, 16);
-            GUI.DrawTexture(RADARresizeRect, Utils.resizeTexture, ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(RADARresizeRect, GUIUtils.resizeTexture, ScaleMode.StretchToFill, true);
             if (Event.current.type == EventType.MouseDown && RADARresizeRect.Contains(Event.current.mousePosition))
             {
                 resizingWindow = true;
@@ -1021,7 +1025,7 @@ namespace BDArmory.Radar
             }
             // End Resizing code.
 
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRadar);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectRadar);
         }
 
         internal static void UpdateRadarScale(float diff)
@@ -1689,7 +1693,7 @@ namespace BDArmory.Radar
                             displayedTargets[i].detectedByRadar.directionalFieldOfView / 2);
                     }
 
-                    //BDGUIUtils.DrawRectangle(new Rect(pingPosition.x-(4),pingPosition.y-(4),8, 8), Color.green);
+                    //GUIUtils.DrawRectangle(new Rect(pingPosition.x-(4),pingPosition.y-(4),8, 8), Color.green);
                     float vAngle = Vector3.Angle(Vector3.ProjectOnPlane(lockedTarget.velocity, referenceTransform.up),
                         referenceTransform.forward);
                     if (referenceTransform.InverseTransformVector(lockedTarget.velocity).x < 0)
@@ -1770,30 +1774,30 @@ namespace BDArmory.Radar
                                     float lineWidth = 2;
                                     float dlzX = RadarDisplayRect.width - dlzWidth - lineWidth;
 
-                                    BDGUIUtils.DrawRectangle(new Rect(dlzX, 0, dlzWidth, RadarDisplayRect.height), Color.black);
+                                    GUIUtils.DrawRectangle(new Rect(dlzX, 0, dlzWidth, RadarDisplayRect.height), Color.black);
 
                                     Rect maxRangeVertLineRect = new Rect(RadarDisplayRect.width - lineWidth,
                                         Mathf.Clamp(RadarDisplayRect.height - (dlz.maxLaunchRange * rangeToPixels), 0,
                                             RadarDisplayRect.height), lineWidth,
                                         Mathf.Clamp(dlz.maxLaunchRange * rangeToPixels, 0, RadarDisplayRect.height));
-                                    BDGUIUtils.DrawRectangle(maxRangeVertLineRect, Color.green);
+                                    GUIUtils.DrawRectangle(maxRangeVertLineRect, Color.green);
 
                                     Rect maxRangeTickRect = new Rect(dlzX, maxRangeVertLineRect.y, dlzWidth, lineWidth);
-                                    BDGUIUtils.DrawRectangle(maxRangeTickRect, Color.green);
+                                    GUIUtils.DrawRectangle(maxRangeTickRect, Color.green);
 
                                     Rect minRangeTickRect = new Rect(dlzX,
                                         Mathf.Clamp(RadarDisplayRect.height - (dlz.minLaunchRange * rangeToPixels), 0,
                                             RadarDisplayRect.height), dlzWidth, lineWidth);
-                                    BDGUIUtils.DrawRectangle(minRangeTickRect, Color.green);
+                                    GUIUtils.DrawRectangle(minRangeTickRect, Color.green);
 
                                     Rect rTrTickRect = new Rect(dlzX,
                                         Mathf.Clamp(RadarDisplayRect.height - (dlz.rangeTr * rangeToPixels), 0, RadarDisplayRect.height),
                                         dlzWidth, lineWidth);
-                                    BDGUIUtils.DrawRectangle(rTrTickRect, Color.green);
+                                    GUIUtils.DrawRectangle(rTrTickRect, Color.green);
 
                                     Rect noEscapeLineRect = new Rect(dlzX, rTrTickRect.y, lineWidth,
                                         minRangeTickRect.y - rTrTickRect.y);
-                                    BDGUIUtils.DrawRectangle(noEscapeLineRect, Color.green);
+                                    GUIUtils.DrawRectangle(noEscapeLineRect, Color.green);
 
                                     float targetDistIconSize = 16 * BDArmorySettings.RADAR_WINDOW_SCALE;
                                     float targetDistY;
@@ -1966,7 +1970,7 @@ namespace BDArmory.Radar
                             if (jammed ||
                                 !weaponManager.Team.IsFriendly(displayedTargets[i].targetData.Team))
                             {
-                                BDGUIUtils.DrawRectangle(jammedRect, iconColor - new Color(0, 0, 0, minusAlpha));
+                                GUIUtils.DrawRectangle(jammedRect, iconColor - new Color(0, 0, 0, minusAlpha));
                             }
                             else
                             {

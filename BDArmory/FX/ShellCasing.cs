@@ -1,6 +1,7 @@
-using BDArmory.Core;
-using BDArmory.Core.Utils;
 using UnityEngine;
+
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.FX
 {

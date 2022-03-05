@@ -1,15 +1,15 @@
 using System.Collections.Generic;
+using UnityEngine;
+
 using BDArmory.Control;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
 using BDArmory.CounterMeasure;
-using BDArmory.Misc;
-using BDArmory.Modules;
+using BDArmory.Extensions;
+using BDArmory.Settings;
 using BDArmory.Shaders;
 using BDArmory.Targeting;
 using BDArmory.UI;
-using UnityEngine;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.Radar
 {
@@ -1403,7 +1403,7 @@ namespace BDArmory.Radar
         /// <summary>
         /// Helper method: check if line intersects terrain
         /// </summary>
-		public static bool TerrainCheck(Vector3 start, Vector3 end)
+        public static bool TerrainCheck(Vector3 start, Vector3 end)
         {
             if (!BDArmorySettings.IGNORE_TERRAIN_CHECK)
             {

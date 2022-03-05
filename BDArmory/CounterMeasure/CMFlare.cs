@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
-using BDArmory.Core;
-using BDArmory.FX;
-using BDArmory.Misc;
-using BDArmory.UI;
 using UniLinq;
 using UnityEngine;
+
+using BDArmory.FX;
+using BDArmory.Settings;
+using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.CounterMeasure
 {

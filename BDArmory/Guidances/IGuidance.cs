@@ -1,5 +1,6 @@
-﻿using BDArmory.Modules;
-using UnityEngine;
+﻿using UnityEngine;
+
+using BDArmory.Weapons;
 
 namespace BDArmory.Guidances
 {

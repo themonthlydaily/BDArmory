@@ -4,12 +4,12 @@ using System.Linq;
 using UnityEngine;
 
 using BDArmory.Competition;
-using BDArmory.Core.Extension;
-using BDArmory.Core.Utils;
-using BDArmory.Core;
+using BDArmory.Damage;
+using BDArmory.Extensions;
 using BDArmory.GameModes;
-using BDArmory.Misc;
-using BDArmory.Modules;
+using BDArmory.Settings;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.FX
 {
@@ -305,7 +305,7 @@ namespace BDArmory.FX
                             if (!string.IsNullOrWhiteSpace(blastModelPath))
                             FXEmitter.CreateFX(transform.position, scale, blastModelPath, blastSoundPath, 1.5f, Mathf.Clamp(30 * scale, 30f, 90f), default, true);
                         }
-                        if (Utils.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
+                        if (BodyUtils.GetRadarAltitudeAtPos(transform.position) < 200 * scale)
                         {
                             double latitudeAtPos = FlightGlobals.currentMainBody.GetLatitude(transform.position);
                             double longitudeAtPos = FlightGlobals.currentMainBody.GetLongitude(transform.position);
@@ -549,7 +549,7 @@ namespace BDArmory.FX
                 eFx.audioSource.spatialBlend = 1;
                 eFx.audioSource.volume = 5;
                 eFx.LightFx = templateFX.AddComponent<Light>();
-                eFx.LightFx.color = Utils.ParseColor255("255,238,184,255");
+                eFx.LightFx.color = GUIUtils.ParseColor255("255,238,184,255");
                 eFx.LightFx.intensity = radius / 3;
                 eFx.LightFx.shadows = LightShadows.None;
                 templateFX.SetActive(false);

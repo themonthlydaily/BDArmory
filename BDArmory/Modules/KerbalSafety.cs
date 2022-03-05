@@ -2,10 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
+
 using BDArmory.Competition;
+using BDArmory.Extensions;
+using BDArmory.Settings;
 using BDArmory.UI;
+using BDArmory.Utils;
 
 namespace BDArmory.Modules
 {

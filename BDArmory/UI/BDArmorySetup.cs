@@ -5,22 +5,26 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
+using KSP.Localization;
+using KSP.UI.Screens;
+
+using BDArmory.Armor;
 using BDArmory.Bullets;
 using BDArmory.Competition;
 using BDArmory.Competition.RemoteOrchestration;
 using BDArmory.Competition.VesselSpawning;
-using BDArmory.GameModes;
-using BDArmory.Core;
-using BDArmory.Core.Extension;
+using BDArmory.Control;
 using BDArmory.CounterMeasure;
+using BDArmory.Extensions;
 using BDArmory.FX;
-using BDArmory.Misc;
+using BDArmory.GameModes;
 using BDArmory.Modules;
-using BDArmory.Parts;
 using BDArmory.Radar;
-using UnityEngine;
-using KSP.Localization;
-using KSP.UI.Screens;
+using BDArmory.Settings;
+using BDArmory.Targeting;
+using BDArmory.Utils;
+using BDArmory.Weapons;
 
 namespace BDArmory.UI
 {
@@ -599,15 +603,15 @@ namespace BDArmory.UI
 
         private void CheckIfWindowsSettingsAreWithinScreen()
         {
-            BDGUIUtils.RepositionWindow(ref WindowRectEvolution);
-            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
-            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
-            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-            BDGUIUtils.RepositionWindow(ref WindowRectRwr);
-            BDGUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
-            BDGUIUtils.RepositionWindow(ref WindowRectWingCommander);
-            BDGUIUtils.RepositionWindow(ref WindowRectTargetingCam);
-            BDGUIUtils.RepositionWindow(ref WindowRectAI);
+            GUIUtils.RepositionWindow(ref WindowRectEvolution);
+            GUIUtils.UseMouseEventInRect(WindowRectSettings);
+            GUIUtils.RepositionWindow(ref WindowRectToolbar);
+            GUIUtils.RepositionWindow(ref WindowRectSettings);
+            GUIUtils.RepositionWindow(ref WindowRectRwr);
+            GUIUtils.RepositionWindow(ref WindowRectVesselSwitcher);
+            GUIUtils.RepositionWindow(ref WindowRectWingCommander);
+            GUIUtils.RepositionWindow(ref WindowRectTargetingCam);
+            GUIUtils.RepositionWindow(ref WindowRectAI);
         }
 
         void Update()
@@ -693,7 +697,7 @@ namespace BDArmory.UI
             if (HighLogic.LoadedSceneIsFlight)
             {
                 drawCursor = false;
-                if (!MapView.MapIsEnabled && !Utils.CheckMouseIsOnGui() && !PauseMenu.isOpen)
+                if (!MapView.MapIsEnabled && !GUIUtils.CheckMouseIsOnGui() && !PauseMenu.isOpen)
                 {
                     if (ActiveWeaponManager.selectedWeapon != null && ActiveWeaponManager.weaponIndex > 0 &&
                         !ActiveWeaponManager.guardMode)
@@ -824,15 +828,15 @@ namespace BDArmory.UI
 
             if (!windowBDAToolBarEnabled || !HighLogic.LoadedSceneIsFlight) return;
             WindowRectToolbar = GUI.Window(321, WindowRectToolbar, WindowBDAToolbar, "", BDGuiSkin.window);//"BDA Weapon Manager"
-            BDGUIUtils.UseMouseEventInRect(WindowRectToolbar);
+            GUIUtils.UseMouseEventInRect(WindowRectToolbar);
             if (showWindowGPS && ActiveWeaponManager)
             {
                 //gpsWindowRect = GUI.Window(424333, gpsWindowRect, GPSWindow, "", GUI.skin.box);
-                BDGUIUtils.UseMouseEventInRect(WindowRectGps);
+                GUIUtils.UseMouseEventInRect(WindowRectGps);
                 using (var coord = BDATargetManager.GPSTargetList(ActiveWeaponManager.Team).GetEnumerator())
                     while (coord.MoveNext())
                     {
-                        BDGUIUtils.DrawTextureOnWorldPos(coord.Current.worldPos, Instance.greenDotTexture, new Vector2(8, 8), 0);
+                        GUIUtils.DrawTextureOnWorldPos(coord.Current.worldPos, Instance.greenDotTexture, new Vector2(8, 8), 0);
                     }
             }
 
@@ -1182,7 +1186,7 @@ namespace BDArmory.UI
 
                         if (i < ActiveWeaponManager.weaponArray.Length - 1)
                         {
-                            BDGUIUtils.DrawRectangle(
+                            GUIUtils.DrawRectangle(
                                 new Rect(weaponButtonRect.x, weaponButtonRect.y + weaponButtonRect.height,
                                     weaponButtonRect.width, 1), Color.white);
                         }
@@ -2012,7 +2016,7 @@ namespace BDArmory.UI
             numberOfButtons = buttonNumber + 1;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && toolWindowHeight < previousWindowHeight && Mathf.Round(WindowRectToolbar.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 WindowRectToolbar.y = Screen.height - WindowRectToolbar.height;
-            BDGUIUtils.RepositionWindow(ref WindowRectToolbar);
+            GUIUtils.RepositionWindow(ref WindowRectToolbar);
         }
 
         bool validGPSName = true;
@@ -2036,7 +2040,7 @@ namespace BDArmory.UI
             if (ActiveWeaponManager.designatedGPSCoords != Vector3d.zero)
             {
                 GUI.Label(new Rect(0, gpsEntryCount * gpsEntryHeight, listRect.width - gpsEntryHeight, gpsEntryHeight),
-                    Utils.FormattedGeoPos(ActiveWeaponManager.designatedGPSCoords, true), BDGuiSkin.box);
+                    BodyUtils.FormattedGeoPos(ActiveWeaponManager.designatedGPSCoords, true), BDGuiSkin.box);
                 if (
                     GUI.Button(
                         new Rect(listRect.width - gpsEntryHeight, gpsEntryCount * gpsEntryHeight, gpsEntryHeight,
@@ -2066,7 +2070,7 @@ namespace BDArmory.UI
                         GUI.color = XKCDColors.LightOrange;
                     }
 
-                    string label = Utils.FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
+                    string label = BodyUtils.FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
                     float nameWidth = 100;
                     if (editingGPSName && index == editingGPSNameIndex)
                     {
@@ -3310,8 +3314,8 @@ namespace BDArmory.UI
             line += 1.5f; // Bottom internal margin
             settingsHeight = (line * settingsLineHeight);
             WindowRectSettings.height = settingsHeight;
-            BDGUIUtils.RepositionWindow(ref WindowRectSettings);
-            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
+            GUIUtils.RepositionWindow(ref WindowRectSettings);
+            GUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
         void CloseSettingsWindow()
@@ -3407,7 +3411,7 @@ namespace BDArmory.UI
 
             settingsHeight = origSettingsHeight;
             WindowRectSettings.height = origSettingsHeight;
-            BDGUIUtils.UseMouseEventInRect(WindowRectSettings);
+            GUIUtils.UseMouseEventInRect(WindowRectSettings);
         }
 
         void InputSettingsList(string prefix, ref int id, ref float line)

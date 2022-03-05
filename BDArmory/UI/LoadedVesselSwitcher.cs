@@ -8,10 +8,10 @@ using UnityEngine;
 
 using BDArmory.Competition;
 using BDArmory.Competition.VesselSpawning;
-using BDArmory.Core.Extension;
-using BDArmory.Core;
-using BDArmory.Misc;
-using BDArmory.Modules;
+using BDArmory.Control;
+using BDArmory.Extensions;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -141,7 +141,7 @@ namespace BDArmory.UI
 
             _ready = true;
             BDArmorySetup.Instance.hasVesselSwitcher = true;
-            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
+            _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
         }
 
         private void MissileFireOnToggleTeam(MissileFire wm, BDTeam team)
@@ -257,7 +257,7 @@ namespace BDArmory.UI
                 if (_autoPilotEnabled)
                 {
                     weaponManager.AI.ActivatePilot();
-                    Utils.fireNextNonEmptyStage(weaponManager.vessel);
+                    VesselUtils.fireNextNonEmptyStage(weaponManager.vessel);
                 }
                 else
                 {
@@ -280,11 +280,11 @@ namespace BDArmory.UI
                     // this Rect initialization ensures any save issues with height or width of the window are resolved
                     BDArmorySetup.WindowRectVesselSwitcher = new Rect(BDArmorySetup.WindowRectVesselSwitcher.x, BDArmorySetup.WindowRectVesselSwitcher.y, BDArmorySettings.VESSEL_SWITCHER_WINDOW_WIDTH, _windowHeight);
                     BDArmorySetup.WindowRectVesselSwitcher = GUI.Window(10293444, BDArmorySetup.WindowRectVesselSwitcher, WindowVesselSwitcher, windowTitle, BDArmorySetup.BDGuiSkin.window); //"BDA Vessel Switcher"
-                    Utils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
+                    GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSwitcher, _guiCheckIndex);
                 }
                 else
                 {
-                    Utils.UpdateGUIRect(new Rect(), _guiCheckIndex);
+                    GUIUtils.UpdateGUIRect(new Rect(), _guiCheckIndex);
                 }
             }
         }
@@ -295,7 +295,7 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectVesselSwitcher.height = windowHeight;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && windowHeight < previousWindowHeight && Mathf.RoundToInt(BDArmorySetup.WindowRectVesselSwitcher.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectVesselSwitcher.y = Screen.height - BDArmorySetup.WindowRectVesselSwitcher.height;
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSwitcher);
         }
 
         private void WindowVesselSwitcher(int id)
@@ -797,7 +797,7 @@ namespace BDArmory.UI
                         BDACompetitionMode.Instance.Scores.RegisterDeath(vesselName, GMKillReason.BigRedButton); // Indicate that it was us who killed it.
                         BDACompetitionMode.Instance.competitionStatus.Add(vesselName + " was killed by the BIG RED BUTTON.");
                     }
-                    Utils.ForceDeadVessel(wm.vessel);
+                    VesselUtils.ForceDeadVessel(wm.vessel);
                 }
             }
         }

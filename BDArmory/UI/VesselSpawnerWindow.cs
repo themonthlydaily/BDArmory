@@ -6,9 +6,8 @@ using UnityEngine;
 
 using BDArmory.Competition.VesselSpawning;
 using BDArmory.Competition;
-using BDArmory.Core.Utils;
-using BDArmory.Core;
-using BDArmory.Misc;
+using BDArmory.Settings;
+using BDArmory.Utils;
 
 namespace BDArmory.UI
 {
@@ -134,7 +133,7 @@ namespace BDArmory.UI
                 yield return null;
 
             BDArmorySetup.Instance.hasVesselSpawner = true;
-            _guiCheckIndex = Utils.RegisterGUIRect(new Rect());
+            _guiCheckIndex = GUIUtils.RegisterGUIRect(new Rect());
             _ready = true;
         }
 
@@ -177,7 +176,7 @@ namespace BDArmory.UI
                 Localizer.Format("#LOC_BDArmory_BDAVesselSpawner_Title"),//"BDA Vessel Spawner"
                 BDArmorySetup.BDGuiSkin.window
             );
-            Utils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSpawner, _guiCheckIndex);
+            GUIUtils.UpdateGUIRect(BDArmorySetup.WindowRectVesselSpawner, _guiCheckIndex);
         }
 
         void HotKeys()
@@ -205,7 +204,7 @@ namespace BDArmory.UI
             BDArmorySetup.WindowRectVesselSpawner.height = windowHeight;
             if (BDArmorySettings.STRICT_WINDOW_BOUNDARIES && windowHeight < previousWindowHeight && Mathf.RoundToInt(BDArmorySetup.WindowRectVesselSpawner.y + previousWindowHeight) == Screen.height) // Window shrunk while being at edge of screen.
                 BDArmorySetup.WindowRectVesselSpawner.y = Screen.height - BDArmorySetup.WindowRectVesselSpawner.height;
-            BDGUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSpawner);
+            GUIUtils.RepositionWindow(ref BDArmorySetup.WindowRectVesselSpawner);
         }
 
         private void WindowVesselSpawner(int id)

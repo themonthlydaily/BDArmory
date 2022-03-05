@@ -3,8 +3,8 @@
 // This will only be live in debug builds
 using System;
 using UnityEngine;
-using BDArmory.Core;
-using BDArmory.Misc;
+
+using BDArmory.Settings;
 
 namespace BDArmory.UI
 {
