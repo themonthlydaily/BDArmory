@@ -58,7 +58,6 @@ namespace BDArmory.Evolution
             "vesselCollisionAvoidanceLookAheadPeriod",
             "vesselCollisionAvoidanceStrength",
             "vesselStandoffDistance",
-            // "extendMult",
             "extendDistanceAirToAir",
             "extendDistanceAirToGroundGuns",
             "extendDistanceAirToGround",
