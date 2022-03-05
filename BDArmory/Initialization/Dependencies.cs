@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace BDArmory.Utils
+namespace BDArmory.Initialization
 {
     public static class Dependencies
     {

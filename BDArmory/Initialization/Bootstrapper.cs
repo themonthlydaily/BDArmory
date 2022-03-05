@@ -2,7 +2,7 @@
 
 using BDArmory.Damage;
 
-namespace BDArmory.Utils
+namespace BDArmory.Initialization
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class Bootstrapper : MonoBehaviour

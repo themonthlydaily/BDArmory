@@ -216,6 +216,9 @@
     <Compile Include="Guidances\CruiseGuidance.cs" />
     <Compile Include="Guidances\IGuidance.cs" />
     <Compile Include="Guidances\MissileGuidance.cs" />
+    <Compile Include="Initialization\Bootstrapper.cs" />
+    <Compile Include="Initialization\Cleanup.cs" />
+    <Compile Include="Initialization\Dependencies.cs" />
     <Compile Include="Modules\CFEnable.cs" />
     <Compile Include="Modules\KerbalSafety.cs" />
     <Compile Include="Modules\ModuleMovingPart.cs" />
@@ -275,12 +278,10 @@
     <Compile Include="Utils\BDKeyBinder.cs" />
     <Compile Include="Utils\BlastPhysicsUtils.cs" />
     <Compile Include="Utils\BodyUtils.cs" />
-    <Compile Include="Utils\Bootstrapper.cs" />
     <Compile Include="Utils\BulletPhysics.cs" />
     <Compile Include="Utils\ConfigNodeUtils.cs" />
     <Compile Include="Utils\DebugUtils.cs" />
     <Compile Include="Utils\DecoupledBooster.cs" />
-    <Compile Include="Utils\Dependencies.cs" />
     <Compile Include="Utils\FireSpitterUtils.cs" />
     <Compile Include="Utils\GUIUtils.cs" />
     <Compile Include="Utils\KSPForceApplier.cs" />

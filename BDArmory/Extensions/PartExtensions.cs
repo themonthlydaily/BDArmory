@@ -2,8 +2,8 @@
 using UnityEngine;
 
 using BDArmory.Damage;
+using BDArmory.Initialization;
 using BDArmory.Settings;
-using BDArmory.Utils;
 
 namespace BDArmory.Extensions
 {

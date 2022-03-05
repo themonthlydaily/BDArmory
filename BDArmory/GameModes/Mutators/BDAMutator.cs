@@ -7,7 +7,6 @@ using BDArmory.Competition;
 using BDArmory.Damage;
 using BDArmory.Extensions;
 using BDArmory.FX;
-using BDArmory.Modules;
 using BDArmory.Settings;
 using BDArmory.UI;
 using BDArmory.Utils;
