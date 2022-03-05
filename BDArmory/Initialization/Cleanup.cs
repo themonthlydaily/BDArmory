@@ -14,13 +14,11 @@ namespace BDArmory.Initialization
         void Awake()
         {
             var BDArmoryCoreFiles = Directory.GetFiles(Path.GetFullPath(Path.Combine(KSPUtil.ApplicationRootPath, "GameData", "BDArmory", "Plugins"))).Where(f => Path.GetFileName(f).StartsWith("BDArmory.Core")).ToList();
-            Debug.Log("DEBUG Found: " + string.Join(", ", BDArmoryCoreFiles));
             if (BDArmoryCoreFiles.Count > 0)
             {
                 inhibitAutoFunctions = true;
                 var message = new List<string>();
-                message.Add("BDArmory has moved to using a single DLL.");
-                message.Add("The following old BDArmory.Core files will be removed:");
+                message.Add("BDArmory has moved to using a single DLL. The following old BDArmory.Core files will be removed:");
                 foreach(var BDArmoryCoreFile in BDArmoryCoreFiles) message.Add("\t" + BDArmoryCoreFile);
                 message.Add("Please restart KSP to avoid any potential issues.");
                 Debug.LogWarning(string.Join("\n", message.Select(s => "[BDArmory.Initialization]: " + s)));
