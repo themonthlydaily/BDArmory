@@ -3078,6 +3078,10 @@ namespace BDArmory.UI
                     foreach (var vessel in FlightGlobals.VesselsLoaded)
                         FireSpitter.CheckStatus(vessel);
                 }
+                if (GUI.Button(SLeftRect(++line), "Spawn spawn probe here."))
+                {
+                    VesselSpawner.Instance.SpawnSpawnProbe();
+                }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
                     QuitKSP();

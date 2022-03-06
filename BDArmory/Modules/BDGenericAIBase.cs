@@ -410,7 +410,11 @@ namespace BDArmory.Modules
 
         public virtual void CommandFollowWaypoints()
         {
-            ActivatePilot();
+            // AUBRANIUM, I've updated this to follow the pattern of the other Command... functions. Call this function instead of setting "command = PilotCommands.Waypoints" elsewhere in the code (I've also changed this).
+            if (!pilotEnabled) return; // Do nothing if we haven't taken off (or activated with airspawn) yet.
+
+            if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDGenericAIBase]:" + vessel.vesselName + " was commanded to follow waypoints.");
+            command = PilotCommands.Waypoints;
         }
 
         #endregion WingCommander

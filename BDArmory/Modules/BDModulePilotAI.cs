@@ -31,7 +31,7 @@ namespace BDArmory.Modules
         public string extendingReason = "";
         public Vessel extendTarget = null;
 
-        public FlightCtrlState lastState;
+        public FlightCtrlState lastState; // AUBRANIUM, this is only assigned to and never read. Is there a future purpose for this or can it be removed?
 
         bool requestedExtend;
         Vector3 requestedExtendTpos;
@@ -606,7 +606,7 @@ namespace BDArmory.Modules
         List<Vector3> waypoints = null;
         int activeWaypointIndex = -1;
         Vector3 lastTargetPosition;
-        List<float> waypointScores = null;
+        List<float> waypointScores = null; // AUBRANIUM, this would be better located in the Scores in BDACompetitionMode.cs.
 
         LineRenderer lr;
         Vector3 flyingToPosition;
@@ -1317,19 +1317,15 @@ namespace BDArmory.Modules
                     collisionDetectionTicker = vesselCollisionAvoidanceTickerFreq + 1; //check for collision again after exiting evasion routine
                 }
             }
-            else if (!extending && command == PilotCommands.Waypoints)
+            else if (!extending && IsFlyingWaypoints)
             {
-                if (activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0)
-                {
-                    var waypoint = waypoints[activeWaypointIndex];
-                    var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-                    var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
-                    var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
-                    SetStatus(string.Format("Waypoint {0} ({1})", activeWaypointIndex, rangeToTarget));
-                    FlyWaypoints(s);
-                }
-                // FIXME AUBRANIUM Waypoint following should go in here 
-                // It should include a check for circling the waypoint for too long, in which case the plane should RequestExtend away from the waypoint (possibly in the direction of the previous waypoint?).
+                // FIXME To avoid getting stuck circling a waypoint, a check should be made (maybe use the turningTimer for this?), in which case the plane should RequestExtend away from the waypoint.
+                var waypoint = waypoints[activeWaypointIndex];
+                var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
+                var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
+                var rangeToTarget = (vesselTransform.position - waypointPosition).magnitude;
+                SetStatus(string.Format("Waypoint {0} ({1})", activeWaypointIndex, rangeToTarget));
+                FlyWaypoints(s);
             }
             else if (!extending && weaponManager && targetVessel != null && targetVessel.transform != null)
             {
@@ -1689,7 +1685,8 @@ namespace BDArmory.Modules
         Vector3 debugPos;
         bool useVelRollTarget;
 
-        public void FlyToPosition(FlightCtrlState s, Vector3 targetPosition, bool overrideThrottle = false)
+        // AUBRANIUM, this shouldn't be public (I removed the attribute). Nothing should call it from outside the AI as it'll mess with the AI's internal logic.
+        void FlyToPosition(FlightCtrlState s, Vector3 targetPosition, bool overrideThrottle = false)
         {
             if (!belowMinAltitude) // Includes avoidingTerrain
             {
@@ -2023,7 +2020,7 @@ namespace BDArmory.Modules
 
         void FlyExtend(FlightCtrlState s, Vector3 tPosition)
         {
-            var extendVector = extendHorizontally ? Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection): vessel.transform.position - tPosition;
+            var extendVector = extendHorizontally ? Vector3.ProjectOnPlane(vessel.transform.position - tPosition, upDirection) : vessel.transform.position - tPosition;
             if (extendVector.sqrMagnitude < extendDistance * extendDistance) // Extend from position is closer (horizontally) than the extend distance.
             {
                 Vector3 targetDirection = extendVector.normalized * extendDistance;
@@ -2085,6 +2082,7 @@ namespace BDArmory.Modules
             FlyToPosition(s, targetPosition);
         }
 
+        #region Waypoints
         public void ClearWaypoints()
         {
             Debug.Log("[BDArmory.BDModulePilotAI] Cleared waypoints");
@@ -2093,7 +2091,7 @@ namespace BDArmory.Modules
         }
         public void SetWaypoints(List<Vector3> waypoints)
         {
-            if( waypoints == null || waypoints.Count == 0 )
+            if (waypoints == null || waypoints.Count == 0)
             {
                 this.activeWaypointIndex = -1;
                 this.waypoints = null;
@@ -2104,13 +2102,11 @@ namespace BDArmory.Modules
             this.waypoints = waypoints;
             this.waypointScores = new List<float>();
             this.activeWaypointIndex = 0;
-            this.command = PilotCommands.Waypoints;
+            CommandFollowWaypoints();
         }
-        public bool IsFlyingWaypoints()
-        {
-            return this.activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
-        }
-        public List<float> GetWaypointScores()
+        public bool IsFlyingWaypoints => command == PilotCommands.Waypoints && activeWaypointIndex >= 0 && waypoints != null && waypoints.Count > 0;
+
+        public List<float> GetWaypointScores() // AUBRANIUM, this should use CompetitionScores in BDACompetitionMode.cs.
         {
             return this.waypointScores;
         }
@@ -2123,8 +2119,9 @@ namespace BDArmory.Modules
         private double dRange = 0;
         void FlyWaypoints(FlightCtrlState s)
         {
-            if( activeWaypointIndex < 0 || waypoints == null || waypoints.Count == 0 )
+            if (activeWaypointIndex < 0 || waypoints == null || waypoints.Count == 0)
             {
+                if (command == PilotCommands.Waypoints) ReleaseCommand();
                 return;
             }
             var waypoint = waypoints[activeWaypointIndex];
@@ -2138,15 +2135,20 @@ namespace BDArmory.Modules
             {
                 // moving away, proceed to next point
                 Debug.Log(string.Format("[BDArmory.BDModulePilotAI] Reached waypoint {0} with range {1}", activeWaypointIndex, rangeToTarget));
-                this.waypointScores.Add((float)rangeToTarget);
+                this.waypointScores.Add((float)rangeToTarget); // AUBRANIUM, this should use CompetitionScores in BDACompetitionMode.cs
                 this.activeWaypointIndex += 1;
                 lastRange = 999;
                 dRange = 0;
-                if( activeWaypointIndex >= waypoints.Count )
+                if (activeWaypointIndex >= waypoints.Count)
                 {
                     Debug.Log("[BDArmory.BDModulePilotAI] Waypoints complete");
                     waypoints = null;
                     ReleaseCommand();
+                    return;
+                }
+                else
+                {
+                    FlyWaypoints(s); // Call ourselves again for the new waypoint to follow.
                     return;
                 }
             }
@@ -2154,9 +2156,10 @@ namespace BDArmory.Modules
             FlyToPosition(s, waypointPosition, false);
         }
 
+        // AUBRANIUM, FlyToNext is no longer called, can we remove it or do you have other plans for it?
         private void FlyToNext(FlightCtrlState s)
         {
-            if( activeWaypointIndex < 0 || waypoints == null || activeWaypointIndex >= waypoints.Count )
+            if (activeWaypointIndex < 0 || waypoints == null || activeWaypointIndex >= waypoints.Count)
             {
                 Debug.Log("[BDArmory.BDModulePilotAI] Skipping FlyToNext without valid waypoint data");
                 return;
@@ -2164,10 +2167,10 @@ namespace BDArmory.Modules
             // compute Vector3 from waypoint lat/lng/alt and command fly-to
             var waypoint = waypoints[activeWaypointIndex];
             var terrainAltitude = FlightGlobals.currentMainBody.TerrainAltitude(waypoint.x, waypoint.y);
-            var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z+terrainAltitude);
+            var waypointPosition = FlightGlobals.currentMainBody.GetWorldSurfacePosition(waypoint.x, waypoint.y, waypoint.z + terrainAltitude);
             FlyToPosition(s, waypointPosition, false);
         }
-
+        #endregion
 
         //sends target speed to speedController
         void AdjustThrottle(float targetSpeed, bool useBrakes, bool allowAfterburner = true, bool forceAfterburner = false, float throttleOverride = -1f)
@@ -2711,8 +2714,8 @@ namespace BDArmory.Modules
             // if (maxPosG > maxDynPresGRecorded)
             //     maxDynPresGRecorded = maxPosG;
 
-            // FIXME AUBRANIUM For waypoint following, we don't need to decay the max recorded dynamic pressure so fast (it determines the turn radius), so it'd be better to use 1-(1-dynDecayRate)/2 here instead of dynDecayRate.
-            dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
+            if (command != PilotCommands.Waypoints) // Don't decay the highest recorded G-force when following waypoints as we're likely to be heading in straight lines for longer periods.
+                dynDynPresGRecorded *= dynDecayRate; // Decay the highest observed G-force from dynamic pressure (we want a fairly recent value in case the planes dynamics have changed).
             if (!vessel.LandedOrSplashed && Math.Abs(gLoadMovingAvg) > dynDynPresGRecorded)
                 dynDynPresGRecorded = Math.Abs(gLoadMovingAvg);
 
@@ -3230,8 +3233,8 @@ namespace BDArmory.Modules
 
         public override void CommandFollowWaypoints()
         {
+            if (standbyMode) CommandTakeOff();
             base.CommandFollowWaypoints();
-            standbyMode = false;
         }
 
         protected override void OnGUI()
