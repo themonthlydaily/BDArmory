@@ -281,7 +281,7 @@ namespace BDArmory.Competition.VesselSpawning
 
         public enum SpawnFailureReason { None, NoCraft, NoTerrain, InvalidVessel, VesselLostParts, VesselFailedToSpawn, TimedOut };
         public SpawnFailureReason spawnFailureReason = SpawnFailureReason.None;
-        public bool vesselsSpawning = false;
+        public bool vesselsSpawning = false; // Note: do not mess with this variable! In addition to being used in many places in BDArmory, CameraTools also looks for it to automatically inhibit the camera modes during spawning.
         public bool vesselSpawnSuccess = false;
         public int spawnedVesselCount = 0;
 
