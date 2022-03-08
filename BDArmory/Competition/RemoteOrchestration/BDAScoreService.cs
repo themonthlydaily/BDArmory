@@ -44,7 +44,7 @@ namespace BDArmory.Competition.RemoteOrchestration
         public Dictionary<string, double> rocketDamageOut = new Dictionary<string, double>();
         public Dictionary<string, double> rocketDamageIn = new Dictionary<string, double>();
         public Dictionary<string, int> waypoints = new Dictionary<string, int>();
-        public Dictionary<string, double> elapsedTime = new Dictionary<string, double>();
+        public Dictionary<string, double> elapsedTime = new Dictionary<string, double>(); // AUBRANIUM, I'd recommend renaming elapsedTime and deviation as waypointsElapsedTime and waypointsDeviation for clarity. Similarly for the Compute... functions.
         public Dictionary<string, double> deviation = new Dictionary<string, double>();
 
         public enum StatusType
@@ -234,7 +234,7 @@ namespace BDArmory.Competition.RemoteOrchestration
             return BDArmorySettings.REMOTE_INTERHEAT_DELAY - (Planetarium.GetUniversalTime() - waitStartedAt);
         }
 
-        private IEnumerator WaitBetweenHeats(string hash)
+        private IEnumerator WaitBetweenHeats(string hash) // AUBRANIUM, is hash used in some code yet to be committed? Otherwise, it's superfluous here.
         {
             yield return new WaitForSeconds(BDArmorySettings.REMOTE_INTERHEAT_DELAY);
         }

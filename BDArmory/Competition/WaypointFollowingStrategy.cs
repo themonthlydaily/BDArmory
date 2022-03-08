@@ -44,9 +44,6 @@ namespace BDArmory.Competition
             Debug.Log("[BDArmory.WaypointFollowingStrategy] Started");
             var startedAt = Planetarium.GetUniversalTime();
 
-
-            // var vessels = VesselSpawner.Instance.spawnedVessels;
-            // AUBRANIUM The usual approach to getting the active vessels is via their weapon managers in the LoadedVesselSwitcher (the spawning routines wait for them to appear there as part of ensuring that the vessels actually spawned and are valid), i.e.,
             var vessels = LoadedVesselSwitcher.Instance.WeaponManagers.SelectMany(tm => tm.Value).Select(wm => wm.vessel).ToList();
             if( vessels.Any() )
             {
@@ -75,8 +72,9 @@ namespace BDArmory.Competition
             Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Setting {0} waypoints", mappedWaypoints.Count));
             this.pilot.SetWaypoints(mappedWaypoints);
 
-            yield return new WaitWhile(() => pilot.IsFlyingWaypoints() && !(pilot.vessel.Landed || pilot.vessel.Splashed));
+            yield return new WaitWhile(() => pilot != null && pilot.IsFlyingWaypoints && !(pilot.vessel.Landed || pilot.vessel.Splashed));
 
+            // AUBRANIUM, this needs to handle the case of pilot being null (if they kill themselves while running the waypoints), which is another reason for the waypoint scoring to use the Scores in BDACompetitionMode.cs
             var endedAt = Planetarium.GetUniversalTime();
             var elapsedTime = endedAt - startedAt;
             var deviation = pilot.GetWaypointScores().Sum();
