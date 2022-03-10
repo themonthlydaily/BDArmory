@@ -349,11 +349,11 @@ namespace BDArmory.UI
                                                     scoreData = BDACompetitionMode.Instance.Scores.ScoreData[wm.Current.vessel.vesselName];
                                                     Score = scoreData.hits;
                                                 }
-                                                if (VesselSpawner.Instance.vesselsSpawningContinuously)
+                                                if (ContinuousSpawning.Instance.vesselsSpawningContinuously)
                                                 {
-                                                    if (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.Current.vessel.vesselName))
+                                                    if (ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(wm.Current.vessel.vesselName))
                                                     {
-                                                        Score += VesselSpawner.Instance.continuousSpawningScores[wm.Current.vessel.vesselName].cumulativeHits;
+                                                        Score += ContinuousSpawning.Instance.continuousSpawningScores[wm.Current.vessel.vesselName].cumulativeHits;
                                                     }
                                                 }
 

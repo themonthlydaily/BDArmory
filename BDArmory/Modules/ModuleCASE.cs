@@ -340,7 +340,7 @@ namespace BDArmory.Modules
 
         void OnDestroy()
         {
-            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !(VesselSpawner.Instance != null && VesselSpawner.Instance.vesselsSpawning))
+            if (BDArmorySettings.BATTLEDAMAGE && BDArmorySettings.BD_AMMOBINS && BDArmorySettings.BD_VOLATILE_AMMO && HighLogic.LoadedSceneIsFlight && !VesselSpawnerStatus.vesselsSpawning)
             {
                 if (!hasDetonated) DetonateIfPossible();
             }

@@ -510,7 +510,7 @@ namespace BDArmory.Competition
                 { BDAScoreService.Instance.ComputeAssists(vesselName, "", now - BDACompetitionMode.Instance.competitionStartTime); }
             }
 
-            if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN && VesselSpawner.Instance.vesselsSpawningContinuously) VesselSpawner.Instance.DumpContinuousSpawningScores();
+            if (BDArmorySettings.VESSEL_SPAWN_DUMP_LOG_EVERY_SPAWN && ContinuousSpawning.Instance.vesselsSpawningContinuously) ContinuousSpawning.Instance.DumpContinuousSpawningScores();
 
             return true;
         }
@@ -1205,9 +1205,9 @@ namespace BDArmory.Competition
         public void StopCompetition()
         {
             LogResults();
-            if (competitionIsActive && VesselSpawner.Instance.vesselsSpawningContinuously)
+            if (competitionIsActive && ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
-                VesselSpawner.Instance.CancelVesselSpawn();
+                SpawnUtils.CancelSpawning();
             }
             if (competitionRoutine != null)
             {
@@ -1280,7 +1280,7 @@ namespace BDArmory.Competition
             decisionTick = BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY > 60 ? -1 : competitionStartTime + BDArmorySettings.COMPETITION_KILLER_GM_FREQUENCY; // every 60 seconds we do nasty things
             FX.BulletHitFX.CleanPartsOnFireInfo();
             Scores.ConfigurePlayers(GetAllPilots().Select(p => p.vessel).ToList()); // Get the competitors.
-            if (VesselSpawner.Instance.originalTeams.Count == 0) VesselSpawner.Instance.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
+            if (SpawnUtils.originalTeams.Count == 0) SpawnUtils.SaveTeams(); // If the vessels weren't spawned in with Vessel Spawner, save the current teams.
         }
 
         IEnumerator DogfightCompetitionModeRoutine(float distance)
@@ -1324,14 +1324,14 @@ namespace BDArmory.Competition
                     pilot.weaponManager.ToggleGuardMode();
                     pilot.weaponManager.SetTarget(null);
                 }
-                if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
+                if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(pilot.vessel) == 0) // Find vessels that didn't activate their engines on AG10 and fire their next stage.
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.vesselName + " didn't activate engines on AG10! Activating ALL their engines.");
-                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
+                    SpawnUtils.ActivateAllEngines(pilot.vessel);
                 }
-                else if (BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
+                else if (BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
                 {
-                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel, false);
+                    SpawnUtils.ActivateAllEngines(pilot.vessel, false);
                 }
                 if (BDArmorySettings.MUTATOR_MODE && BDArmorySettings.MUTATOR_LIST.Count > 0)
                 {
@@ -1351,7 +1351,7 @@ namespace BDArmory.Competition
                 }
                 if (BDArmorySettings.HACK_INTAKES)
                 {
-                    VesselSpawner.Instance.HackIntakes(pilot.vessel, true);
+                    SpawnUtils.HackIntakes(pilot.vessel, true);
                 }
             }
 
@@ -2308,18 +2308,18 @@ namespace BDArmory.Competition
                             if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: Activating engines.");
                             foreach (var pilot in pilots)
                             {
-                                if (!BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
+                                if (!BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(pilot.vessel) == 0) // If the vessel didn't activate their engines on AG10, then activate all their engines and hope for the best.
                                 {
                                     if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.BDACompetitionMode:" + CompetitionID.ToString() + "]: " + pilot.vessel.GetName() + " didn't activate engines on AG10! Activating ALL their engines.");
-                                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel);
+                                    SpawnUtils.ActivateAllEngines(pilot.vessel);
                                 }
-                                else if (BDArmorySettings.NO_ENGINES && VesselSpawner.Instance.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
+                                else if (BDArmorySettings.NO_ENGINES && SpawnUtils.CountActiveEngines(pilot.vessel) > 0) // Shutdown engines
                                 {
-                                    VesselSpawner.Instance.ActivateAllEngines(pilot.vessel, false);
+                                    SpawnUtils.ActivateAllEngines(pilot.vessel, false);
                                 }
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
-                                    VesselSpawner.Instance.HackIntakes(pilot.vessel, true);
+                                    SpawnUtils.HackIntakes(pilot.vessel, true);
                                 }
                             }
                             break;
@@ -2628,7 +2628,7 @@ namespace BDArmory.Competition
                 {
                     if (BDArmorySettings.DRAW_DEBUG_LABELS)
                         Debug.Log("[BDArmory.BDACompetitionMode]: Removing " + vessel.vesselName);
-                    yield return VesselSpawner.Instance.RemoveVesselCoroutine(vessel);
+                    yield return SpawnUtilsInstance.Instance.RemoveVesselCoroutine(vessel);
                 }
             }
             if (nonCompetitorsToRemove.Contains(vessel))
@@ -3014,7 +3014,7 @@ namespace BDArmory.Competition
             deadOrAlive = deadOrAliveString;
 
             var numberOfCompetitiveTeams = LoadedVesselSwitcher.Instance.WeaponManagers.Count;
-            if (now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD && (numberOfCompetitiveVessels < 2 || (!BDArmorySettings.TAG_MODE && numberOfCompetitiveTeams < 2)) && !VesselSpawner.Instance.vesselsSpawningContinuously)
+            if (now - competitionStartTime > BDArmorySettings.COMPETITION_INITIAL_GRACE_PERIOD && (numberOfCompetitiveVessels < 2 || (!BDArmorySettings.TAG_MODE && numberOfCompetitiveTeams < 2)) && !ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
                 if (finalGracePeriodStart < 0)
                     finalGracePeriodStart = now;
@@ -3033,10 +3033,10 @@ namespace BDArmory.Competition
             //Reset gravity
             if (BDArmorySettings.GRAVITY_HACKS && competitionIsActive)
             {
-                int maxVesselsActive = (VesselSpawner.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0) ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS : Scores.Players.Count;
+                int maxVesselsActive = (ContinuousSpawning.Instance.vesselsSpawningContinuously && BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS > 0) ? BDArmorySettings.VESSEL_SPAWN_CONCURRENT_VESSELS : Scores.Players.Count;
                 double time = now - competitionStartTime;
                 gravityMultiplier = 1f + 7f * (float)(Scores.deathCount % maxVesselsActive) / (float)(maxVesselsActive - 1); // From 1G to 8G.
-                gravityMultiplier += VesselSpawner.Instance.vesselsSpawningContinuously ? Mathf.Sqrt(5f - 5f * Mathf.Cos((float)time / 600f * Mathf.PI)) : Mathf.Sqrt((float)time / 60f); // Plus up to 3.16G.
+                gravityMultiplier += ContinuousSpawning.Instance.vesselsSpawningContinuously ? Mathf.Sqrt(5f - 5f * Mathf.Cos((float)time / 600f * Mathf.PI)) : Mathf.Sqrt((float)time / 60f); // Plus up to 3.16G.
                 PhysicsGlobals.GraviticForceMultiplier = (double)gravityMultiplier;
                 VehiclePhysics.Gravity.Refresh();
                 if (Mathf.RoundToInt(10 * gravityMultiplier) != Mathf.RoundToInt(10 * lastGravityMultiplier)) // Only write a message when it shows something different.
@@ -3125,9 +3125,9 @@ namespace BDArmory.Competition
             }
             // RunDebugChecks();
             // CheckMemoryUsage();
-            if (VesselSpawner.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
+            if (ContinuousSpawning.Instance.vesselsSpawningContinuously) // Dump continuous spawning scores instead.
             {
-                VesselSpawner.Instance.DumpContinuousSpawningScores(tag);
+                ContinuousSpawning.Instance.DumpContinuousSpawningScores(tag);
                 return;
             }
 

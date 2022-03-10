@@ -397,8 +397,8 @@ namespace BDArmory.UI
                 if (BDArmorySettings.TAG_MODE)
                 { // Sort vessels based on total tag time or tag scores.
                     var orderedWMs = weaponManagers.SelectMany(tm => tm.Value, (tm, weaponManager) => new Tuple<string, MissileFire>(tm.Key, weaponManager)).ToList(); // Use a local copy.
-                    if (VesselSpawner.Instance.vesselsSpawningContinuously && orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(mf.Item2.vessel.vesselName) && VesselSpawner.Instance.continuousSpawningScores.ContainsKey(mf.Item2.vessel.vesselName)))
-                        orderedWMs.Sort((mf1, mf2) => ((VesselSpawner.Instance.continuousSpawningScores[mf2.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores.ScoreData[mf2.Item2.vessel.vesselName].tagTotalTime).CompareTo(VesselSpawner.Instance.continuousSpawningScores[mf1.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores.ScoreData[mf1.Item2.vessel.vesselName].tagTotalTime)));
+                    if (ContinuousSpawning.Instance.vesselsSpawningContinuously && orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(mf.Item2.vessel.vesselName) && ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(mf.Item2.vessel.vesselName)))
+                        orderedWMs.Sort((mf1, mf2) => ((ContinuousSpawning.Instance.continuousSpawningScores[mf2.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores.ScoreData[mf2.Item2.vessel.vesselName].tagTotalTime).CompareTo(ContinuousSpawning.Instance.continuousSpawningScores[mf1.Item2.vessel.vesselName].cumulativeTagTime + BDACompetitionMode.Instance.Scores.ScoreData[mf1.Item2.vessel.vesselName].tagTotalTime)));
                     else if (orderedWMs.All(mf => mf != null && BDACompetitionMode.Instance.Scores.ScoreData.ContainsKey(mf.Item2.vessel.vesselName)))
                         orderedWMs.Sort((mf1, mf2) => (BDACompetitionMode.Instance.Scores.ScoreData[mf2.Item2.vessel.vesselName].tagScore.CompareTo(BDACompetitionMode.Instance.Scores.ScoreData[mf1.Item2.vessel.vesselName].tagScore)));
                     foreach (var weaponManagerPair in orderedWMs)
@@ -418,11 +418,11 @@ namespace BDArmory.UI
                 else // Sorting of teams by hit counts.
                 {
                     var orderedTeamManagers = weaponManagers.Select(tm => new Tuple<string, List<MissileFire>>(tm.Key, tm.Value)).ToList();
-                    if (VesselSpawner.Instance.vesselsSpawningContinuously)
+                    if (ContinuousSpawning.Instance.vesselsSpawningContinuously)
                     {
                         foreach (var teamManager in orderedTeamManagers)
-                            teamManager.Item2.Sort((wm1, wm2) => ((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm2.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm2.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm2.vessel.vesselName].hits : 0)).CompareTo((VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm1.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm1.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm1.vessel.vesselName].hits : 0))); // Sort within each team by cumulative hits.
-                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].hits : 0)).CompareTo(tm1.Item2.Sum(wm => (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].hits : 0))))); // Sort teams by total cumulative hits.
+                            teamManager.Item2.Sort((wm1, wm2) => ((ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(wm2.vessel.vesselName) ? ContinuousSpawning.Instance.continuousSpawningScores[wm2.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm2.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm2.vessel.vesselName].hits : 0)).CompareTo((ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(wm1.vessel.vesselName) ? ContinuousSpawning.Instance.continuousSpawningScores[wm1.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm1.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm1.vessel.vesselName].hits : 0))); // Sort within each team by cumulative hits.
+                        orderedTeamManagers.Sort((tm1, tm2) => (tm2.Item2.Sum(wm => (ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? ContinuousSpawning.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].hits : 0)).CompareTo(tm1.Item2.Sum(wm => (ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName) ? ContinuousSpawning.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeHits : 0) + (BDACompetitionMode.Instance.Scores.Players.Contains(wm.vessel.vesselName) ? BDACompetitionMode.Instance.Scores.ScoreData[wm.vessel.GetName()].hits : 0))))); // Sort teams by total cumulative hits.
                     }
                     else
                     {
@@ -493,7 +493,7 @@ namespace BDArmory.UI
 
             height += _margin;
             // add all the lost pilots at the bottom
-            if (!VesselSpawner.Instance.vesselsSpawningContinuously) // Don't show the dead vessels when continuously spawning. (Especially as command seats trigger all vessels as showing up as dead.)
+            if (!ContinuousSpawning.Instance.vesselsSpawningContinuously) // Don't show the dead vessels when continuously spawning. (Especially as command seats trigger all vessels as showing up as dead.)
             {
                 foreach (var player in BDACompetitionMode.Instance.Scores.deathOrder)
                 {
@@ -506,7 +506,7 @@ namespace BDArmory.UI
                         statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToMissiles;
                     if (BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRamming > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].totalDamagedPartsDueToRamming;
-                    if (VesselSpawner.Instance.vesselsSpawningContinuously && BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime > 0)
+                    if (ContinuousSpawning.Instance.vesselsSpawningContinuously && BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].tagTotalTime.ToString("0.0");
                     else if (BDACompetitionMode.Instance.Scores.ScoreData[player].tagScore > 0)
                         statusString += ", " + BDACompetitionMode.Instance.Scores.ScoreData[player].tagScore.ToString("0.0");
@@ -617,17 +617,17 @@ namespace BDArmory.UI
                     currentTimesIt = scoreData.tagTimesIt;
                 }
             }
-            if (VesselSpawner.Instance.vesselsSpawningContinuously)
+            if (ContinuousSpawning.Instance.vesselsSpawningContinuously)
             {
-                if (VesselSpawner.Instance.continuousSpawningScores.ContainsKey(vesselName))
+                if (ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(vesselName))
                 {
-                    currentScore += VesselSpawner.Instance.continuousSpawningScores[vesselName].cumulativeHits;
-                    currentRocketScore += VesselSpawner.Instance.continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRockets;
-                    currentRamScore += VesselSpawner.Instance.continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRamming;
-                    currentMissileScore += VesselSpawner.Instance.continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToMissiles;
+                    currentScore += ContinuousSpawning.Instance.continuousSpawningScores[vesselName].cumulativeHits;
+                    currentRocketScore += ContinuousSpawning.Instance.continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRockets;
+                    currentRamScore += ContinuousSpawning.Instance.continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToRamming;
+                    currentMissileScore += ContinuousSpawning.Instance.continuousSpawningScores[vesselName].cumulativeDamagedPartsDueToMissiles;
                 }
-                if (BDArmorySettings.TAG_MODE && VesselSpawner.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName))
-                    currentTagTime += VesselSpawner.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeTagTime;
+                if (BDArmorySettings.TAG_MODE && ContinuousSpawning.Instance.continuousSpawningScores.ContainsKey(wm.vessel.vesselName))
+                    currentTagTime += ContinuousSpawning.Instance.continuousSpawningScores[wm.vessel.vesselName].cumulativeTagTime;
             }
 
             // current target 
@@ -651,7 +651,7 @@ namespace BDArmory.UI
             if (currentRamScore > 0) postStatus += ", " + currentRamScore.ToString();
             if (currentMissileScore > 0) postStatus += ", " + currentMissileScore.ToString();
             if (BDArmorySettings.TAG_MODE)
-                postStatus += ", " + (VesselSpawner.Instance.vesselsSpawningContinuously ? currentTagTime.ToString("0.0") : currentTagScore.ToString("0.0"));
+                postStatus += ", " + (ContinuousSpawning.Instance.vesselsSpawningContinuously ? currentTagTime.ToString("0.0") : currentTagScore.ToString("0.0"));
             postStatus += ")";
 
             if (wm.AI != null && wm.AI.currentStatus != null)
@@ -859,10 +859,10 @@ namespace BDArmory.UI
             {
                 foreach (var weaponManager in weaponManagers.SelectMany(tm => tm.Value).Where(wm => wm != null).ToList()) // Get a copy in case activating stages causes the weaponManager list to change.
                 {
-                    if (VesselSpawner.Instance.originalTeams.ContainsKey(weaponManager.vessel.vesselName))
+                    if (SpawnUtils.originalTeams.ContainsKey(weaponManager.vessel.vesselName))
                     {
-                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]);
-                        weaponManager.SetTeam(BDTeam.Get(VesselSpawner.Instance.originalTeams[weaponManager.vessel.vesselName]));
+                        if (BDArmorySettings.DRAW_DEBUG_LABELS) Debug.Log("[BDArmory.LoadedVesselSwitcher]: assigning " + weaponManager.vessel.GetDisplayName() + " to team " + SpawnUtils.originalTeams[weaponManager.vessel.vesselName]);
+                        weaponManager.SetTeam(BDTeam.Get(SpawnUtils.originalTeams[weaponManager.vessel.vesselName]));
                     }
                 }
                 return;

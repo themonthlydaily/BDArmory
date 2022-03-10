@@ -15,19 +15,19 @@ namespace BDArmory.Competition
     {
         private SpawnStrategy spawnStrategy;
         private OrchestrationStrategy orchestrator;
+        private VesselSpawner vesselSpawner;
 
-        public TournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator)
+        public TournamentCoordinator(SpawnStrategy spawner, OrchestrationStrategy orchestrator, VesselSpawner vesselSpawner)
         {
             this.spawnStrategy = spawner;
             this.orchestrator = orchestrator;
+            this.vesselSpawner = vesselSpawner;
         }
 
         public IEnumerator Execute()
         {
-            var vesselSpawner = VesselSpawner.Instance;
-
             // clear all vessels
-            yield return vesselSpawner.RemoveAllVessels();
+            yield return SpawnUtils.RemoveAllVessels();
 
             // first, spawn vessels
             yield return spawnStrategy.Spawn(vesselSpawner);
@@ -73,7 +73,8 @@ namespace BDArmory.Competition
             var spawnRadius = BDArmorySettings.VESSEL_SPAWN_DISTANCE;
             var spawnStrategy = new CircularSpawnStrategy(scoreClient.AsVesselSource(), activeVesselIds, bodyIndex, latitude, longitude, altitude, spawnRadius);
             var orchestrationStrategy = new RankedFreeForAllStrategy();
-            return new TournamentCoordinator(spawnStrategy, orchestrationStrategy);
+            var vesselSpawner = CircularSpawning.Instance;
+            return new TournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
 
         private static TournamentCoordinator BuildShortCanyonWaypoint()
@@ -112,7 +113,8 @@ namespace BDArmory.Competition
                 new Waypoint(30.83f, -41.26f, altitude),
             };
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
-            return new TournamentCoordinator(spawnStrategy, orchestrationStrategy);
+            var vesselSpawner = SingleVesselSpawning.Instance;
+            return new TournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
 
         private static TournamentCoordinator BuildLongCanyonWaypoint()
@@ -169,7 +171,8 @@ namespace BDArmory.Competition
                 new Waypoint(30.83f, -41.26f, altitude),
             };
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
-            return new TournamentCoordinator(spawnStrategy, orchestrationStrategy);
+            var vesselSpawner = SingleVesselSpawning.Instance;
+            return new TournamentCoordinator(spawnStrategy, orchestrationStrategy, vesselSpawner);
         }
 
         private static TournamentCoordinator BuildGauntletCanyonWaypoint()
@@ -266,7 +269,8 @@ namespace BDArmory.Competition
             };
             var orchestrationStrategy = new WaypointFollowingStrategy(waypoints);
             var listStrategy = new ListSpawnStrategy(strategies);
-            return new TournamentCoordinator(listStrategy, orchestrationStrategy);
+            var vesselSpawner = SingleVesselSpawning.Instance;
+            return new TournamentCoordinator(listStrategy, orchestrationStrategy, vesselSpawner);
         }
 
         private static TournamentCoordinator BuildChase()

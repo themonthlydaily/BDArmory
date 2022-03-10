@@ -185,7 +185,7 @@ namespace BDArmory.Modules
 
         public void Detonate()
         {
-            if (hasDetonated || FlightGlobals.currentMainBody == null || VesselSpawner.Instance.vesselsSpawning) // Don't trigger on scene changes or during spawning.
+            if (hasDetonated || FlightGlobals.currentMainBody == null || VesselSpawnerStatus.vesselsSpawning) // Don't trigger on scene changes or during spawning.
             {
                 return;
             }

@@ -387,7 +387,7 @@ namespace BDArmory.UI
                 if (GUI.Button(SLeftButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_SaveSpawnLoc"), BDArmorySetup.BDGuiSkin.button))
                 {
                     string newName = string.IsNullOrEmpty(txtName.Trim()) ? "New Location" : txtName.Trim();
-                    VesselSpawner.spawnLocations.Add(new SpawnLocation(newName, new Vector2d(spawnFields["lat"].currentValue, spawnFields["lon"].currentValue), selected_index));
+                    SpawnLocations.spawnLocations.Add(new SpawnLocation(newName, new Vector2d(spawnFields["lat"].currentValue, spawnFields["lon"].currentValue), selected_index));
                     VesselSpawnerField.Save();
                 }
 
@@ -424,7 +424,7 @@ namespace BDArmory.UI
                 selected_index = planetBox.Show();
                 if (GUI.Button(SRightButtonRect(line), Localizer.Format("#LOC_BDArmory_Settings_WarpHere"), BDArmorySetup.BDGuiSkin.button))
                 {
-                    VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
+                    SpawnUtils.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
                 }
                 line += 1.3f;
                 if (planetBox.isOpen)
@@ -448,7 +448,7 @@ namespace BDArmory.UI
                 }
                 ////////////////////
                 int i = 0;
-                foreach (var spawnLocation in VesselSpawner.spawnLocations)
+                foreach (var spawnLocation in SpawnLocations.spawnLocations)
                 {
                     if (spawnLocation.worldIndex != selected_index) continue;
                     if (GUI.Button(SQuarterRect(line, i++), spawnLocation.name, BDArmorySetup.BDGuiSkin.button))
@@ -456,14 +456,14 @@ namespace BDArmory.UI
                         switch (Event.current.button)
                         {
                             case 1: // right click
-                                VesselSpawner.spawnLocations.Remove(spawnLocation);
+                                SpawnLocations.spawnLocations.Remove(spawnLocation);
                                 break;
                             default:
                                 BDArmorySettings.VESSEL_SPAWN_GEOCOORDS = spawnLocation.location;
                                 BDArmorySettings.VESSEL_SPAWN_WORLDINDEX = spawnLocation.worldIndex;
                                 spawnFields["lat"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x;
                                 spawnFields["lon"].currentValue = BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y;
-                                VesselSpawner.Instance.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
+                                SpawnUtils.ShowSpawnPoint(selected_index, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, 20);
                                 break;
                         }
                     }
@@ -573,38 +573,38 @@ namespace BDArmory.UI
             {
                 BDATournament.Instance.StopTournament();
                 ParseAllSpawnFieldsNow();
-                if (!_vesselsSpawned && !VesselSpawner.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
+                if (!_vesselsSpawned && !ContinuousSpawning.Instance.vesselsSpawningContinuously && Event.current.button == 0) // Left click
                 {
                     if (BDArmorySettings.VESSEL_SPAWN_CONTINUE_SINGLE_SPAWNING)
-                        VesselSpawner.Instance.SpawnAllVesselsOnceContinuously(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS, null, null, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels.
+                        CircularSpawning.Instance.SpawnAllVesselsOnceContinuously(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS, null, null, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels.
                     else
-                        VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS, null, null, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels.
+                        CircularSpawning.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, true, BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, BDArmorySettings.VESSEL_SPAWN_NUMBER_OF_TEAMS, null, null, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels.
                     _vesselsSpawned = true;
                 }
                 else if (Event.current.button == 2) // Middle click, add a new spawn of vessels to the currently spawned vessels.
                 {
-                    VesselSpawner.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, false, 0, null, null, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels, without killing off other vessels or changing camera positions.
+                    CircularSpawning.Instance.SpawnAllVesselsOnce(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED, false, false, 0, null, null, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels, without killing off other vessels or changing camera positions.
                 }
             }
-            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_ContinuousSpawning"), VesselSpawner.Instance.vesselsSpawningContinuously ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
+            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_ContinuousSpawning"), ContinuousSpawning.Instance.vesselsSpawningContinuously ? BDArmorySetup.BDGuiSkin.box : BDArmorySetup.BDGuiSkin.button))
             {
                 BDATournament.Instance.StopTournament();
                 ParseAllSpawnFieldsNow();
-                if (!VesselSpawner.Instance.vesselsSpawningContinuously && !_vesselsSpawned && Event.current.button == 0) // Left click
+                if (!ContinuousSpawning.Instance.vesselsSpawningContinuously && !_vesselsSpawned && Event.current.button == 0) // Left click
                 {
-                    VesselSpawner.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, true, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels continuously at 1km above terrain.
+                    ContinuousSpawning.Instance.SpawnVesselsContinuously(BDArmorySettings.VESSEL_SPAWN_WORLDINDEX, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE ? BDArmorySettings.VESSEL_SPAWN_DISTANCE : BDArmorySettings.VESSEL_SPAWN_DISTANCE_FACTOR, BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE, true, BDArmorySettings.VESSEL_SPAWN_FILES_LOCATION); // Spawn vessels continuously at 1km above terrain.
                 }
             }
 
-            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || VesselSpawner.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
+            if (GUI.Button(SLineRect(++line), Localizer.Format("#LOC_BDArmory_Settings_CancelSpawning"), (_vesselsSpawned || ContinuousSpawning.Instance.vesselsSpawningContinuously) ? BDArmorySetup.BDGuiSkin.button : BDArmorySetup.BDGuiSkin.box))
             {
                 if (_vesselsSpawned)
                     Debug.Log("[BDArmory.VesselSpawnerWindow]: Resetting spawning vessel button.");
                 _vesselsSpawned = false;
-                if (VesselSpawner.Instance.vesselsSpawningContinuously)
+                if (ContinuousSpawning.Instance.vesselsSpawningContinuously)
                     Debug.Log("[BDArmory.VesselSpawnerWindow]: Resetting continuous spawning button.");
                 BDATournament.Instance.StopTournament();
-                VesselSpawner.Instance.CancelVesselSpawn();
+                SpawnUtils.CancelSpawning();
             }
 
             line += 1.25f; // Bottom internal margin

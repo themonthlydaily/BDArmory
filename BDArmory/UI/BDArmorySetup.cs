@@ -2384,13 +2384,13 @@ namespace BDArmory.UI
                 {
                     if (HighLogic.LoadedSceneIsFlight)
                     {
-                        VesselSpawner.Instance.HackIntakesOnNewVessels(BDArmorySettings.HACK_INTAKES);
+                        SpawnUtils.HackIntakesOnNewVessels(BDArmorySettings.HACK_INTAKES);
                         if (BDArmorySettings.HACK_INTAKES) // Add the hack to all in-game intakes.
                         {
                             foreach (var vessel in FlightGlobals.Vessels)
                             {
                                 if (vessel == null || !vessel.loaded) continue;
-                                VesselSpawner.Instance.HackIntakes(vessel, true);
+                                SpawnUtils.HackIntakes(vessel, true);
                             }
                         }
                         else // Reset all the in-game intakes back to their part-defined settings.
@@ -2398,7 +2398,7 @@ namespace BDArmory.UI
                             foreach (var vessel in FlightGlobals.Vessels)
                             {
                                 if (vessel == null || !vessel.loaded) continue;
-                                VesselSpawner.Instance.HackIntakes(vessel, false);
+                                SpawnUtils.HackIntakes(vessel, false);
                             }
                         }
                     }
@@ -3080,7 +3080,7 @@ namespace BDArmory.UI
                 }
                 if (GUI.Button(SLeftRect(++line), "Spawn spawn probe here."))
                 {
-                    VesselSpawner.Instance.SpawnSpawnProbe();
+                    SpawnUtils.SpawnSpawnProbe();
                 }
                 if (GUI.Button(SLeftRect(++line), "Quit KSP."))
                 {
