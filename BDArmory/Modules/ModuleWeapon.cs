@@ -801,6 +801,8 @@ namespace BDArmory.Modules
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "#LOC_BDArmory_Barrage")]//Barrage
         public bool useRippleFire = true;
 
+        public bool canRippleFire = true;
+
         [KSPEvent(guiActive = false, guiActiveEditor = true, guiName = "#LOC_BDArmory_ToggleBarrage")]//Toggle Barrage
         public void ToggleRipple()
         {
@@ -961,6 +963,7 @@ namespace BDArmory.Modules
                 Events["ToggleRipple"].guiActiveEditor = false;
                 Fields["useRippleFire"].guiActiveEditor = false;
                 useRippleFire = false;
+                canRippleFire = false;
                 if (HighLogic.LoadedSceneIsFlight)
                 {
                     using (List<Part>.Enumerator craftPart = vessel.parts.GetEnumerator()) //set other weapons in the group to ripple = false if the group contains a weapon with RPM > 1500, should fix the brownings+GAU WG, GAU no longer overheats exploit
@@ -971,6 +974,7 @@ namespace BDArmory.Modules
                                 if (weapon.Current == null) continue;
                                 if (weapon.Current.GetShortName() != this.GetShortName()) continue;
                                 if (weapon.Current.roundsPerMinute >= 1500 || (weapon.Current.eWeaponType == WeaponTypes.Laser && !weapon.Current.pulseLaser)) continue;
+                                weapon.Current.canRippleFire = false;
                                 weapon.Current.useRippleFire = false;
                             }
                     }
@@ -2346,7 +2350,8 @@ namespace BDArmory.Modules
                                 Transform currentRocketTfm = rockets[rocketsLeft - 1];
                                 GameObject rocketObj = rocketPool[SelectedAmmoType].GetPooledObject();
                                 rocketObj.transform.position = currentRocketTfm.position;
-                                rocketObj.transform.rotation = currentRocketTfm.rotation;
+                                //rocketObj.transform.rotation = currentRocketTfm.rotation;
+                                rocketObj.transform.rotation = currentRocketTfm.parent.rotation;
                                 rocketObj.transform.localScale = part.rescaleFactor * Vector3.one;
                                 PooledRocket rocket = rocketObj.GetComponent<PooledRocket>();
                                 rocket.explModelPath = explModelPath;
@@ -2423,7 +2428,8 @@ namespace BDArmory.Modules
                                             Transform currentRocketTfm = fireTransforms[i];
                                             GameObject rocketObj = rocketPool[SelectedAmmoType].GetPooledObject();
                                             rocketObj.transform.position = currentRocketTfm.position;
-                                            rocketObj.transform.rotation = currentRocketTfm.rotation;
+                                            //rocketObj.transform.rotation = currentRocketTfm.rotation;
+                                            rocketObj.transform.rotation = currentRocketTfm.parent.rotation;
                                             rocketObj.transform.localScale = part.rescaleFactor * Vector3.one;
                                             PooledRocket rocket = rocketObj.GetComponent<PooledRocket>();
                                             rocket.explModelPath = explModelPath;

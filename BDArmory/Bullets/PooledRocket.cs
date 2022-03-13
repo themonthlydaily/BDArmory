@@ -57,7 +57,7 @@ namespace BDArmory.Bullets
         public string rocketSoundPath;
 
         float startTime;
-        float stayTime = 2 * Time.fixedDeltaTime;
+        float stayTime = 0.04f;
         float lifeTime = 10;
 
         Vector3 prevPosition;
@@ -129,6 +129,7 @@ namespace BDArmory.Bullets
             currPosition = transform.position;
             startPosition = transform.position;
             startTime = Time.time;
+            stayTime = 2 * Time.fixedDeltaTime;
             if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
             {
                 startUnderwater = true;
