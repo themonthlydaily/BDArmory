@@ -1,6 +1,8 @@
 ﻿FIXES
 - Add checks to only adjust scores when a competition is active.
 IMPROVEMENTS
+- Tournamements:
+	- Use base64 encoded vessel names internally in the parser to avoid issues with craft naming (e.g., craft with ':' in the name).
 
 v1.4.17.0
 FIXES
