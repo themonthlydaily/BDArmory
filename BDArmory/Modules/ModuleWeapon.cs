@@ -28,7 +28,7 @@ namespace BDArmory.Modules
         public static ObjectPool bulletPool;
 
         public static Dictionary<string, ObjectPool> rocketPool = new Dictionary<string, ObjectPool>(); //for ammo switching
-        public static ObjectPool shellPool;
+        public static ObjectPool shellPool; 
 
         Coroutine startupRoutine;
         Coroutine shutdownRoutine;
@@ -1956,7 +1956,6 @@ namespace BDArmory.Modules
             {
                 if (CanFire(chargeAmount))
                 {
-
                     var aName = vessel.GetName();
                     if (pulseLaser)
                     {
@@ -1965,10 +1964,6 @@ namespace BDArmory.Modules
                             timeFired = Time.time - iTime;
                             BDACompetitionMode.Instance.Scores.RegisterShot(aName);
                             LaserBeam(aName);
-                            if (hasFireAnimation)
-                            {
-                                PlayFireAnim();
-                            }
                         }
                         heat += heatPerShot;
                         if (useRippleFire)
@@ -2038,29 +2033,7 @@ namespace BDArmory.Modules
                 }
                 return;
             }
-            if (oneShotSound)
-            {
-                audioSource.Stop();
-                audioSource.PlayOneShot(fireSound);
-            }
-            else
-            {
-                wasFiring = true;
-                if (!audioSource.isPlaying)
-                {
-                    audioSource.clip = fireSound;
-                    audioSource.loop = false;
-                    audioSource.time = 0;
-                    audioSource.Play();
-                }
-                else
-                {
-                    if (audioSource.time >= fireSound.length)
-                    {
-                        audioSource.time = soundRepeatTime;
-                    }
-                }
-            }
+            WeaponFX();
             for (int i = 0; i < fireTransforms.Length; i++)
             {
                 if ((!useRippleFire || !pulseLaser || fireState.Length == 1) || (useRippleFire && i == barrelIndex))
@@ -2234,7 +2207,8 @@ namespace BDArmory.Modules
                                     {
                                         ScoreAccumulator = 0;
                                         BDACompetitionMode.Instance.Scores.RegisterBulletHit(aName, tName, WeaponName, distance);
-                                        if (!pulseLaser) if (pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false);
+                                        if (!pulseLaser) BattleDamageHandler.CheckDamageFX(p, caliber, 1 + (damage / initialDamage), HEpulses, false, part.vessel.GetName(), hit, false, false);
+										//pulse lasers check battle damage earlier in the code
                                     }
                                     else
                                     {
@@ -3178,7 +3152,7 @@ namespace BDArmory.Modules
                     if (eWeaponType == WeaponTypes.Ballistic && bulletDrop)
                     {
                         var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, targetDistance), maxTargetingRange / bulletVelocity, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
-                        //bulletPrediction = simCurrPos;
+                        bulletPrediction = simCurrPos;
                         // Debug.Log("DEBUG prediction: " + bulletPrediction.ToString("0.0") + " at time " + timeOfFlight.ToString("0.000") + " and distance " + (simCurrPos - simStartPos).magnitude.ToString("0.0"));
                     }
                     else
@@ -3200,6 +3174,9 @@ namespace BDArmory.Modules
                                 if (simTime > thrustTime)
                                 {
                                     simDeltaTime = 0.1f;
+                                    //var timeOfFlight = BallisticTrajectorySimulation(ref simCurrPos, simVelocity, Mathf.Min(maxTargetingRange, targetDistance), ((simStartPos - simCurrPos).magnitude - maxTargetingRange) / simVelocity.magnitude, simDeltaTime, FlightGlobals.getAltitudeAtPos(targetPosition) < 0);
+                                    //bulletPrediction = simCurrPos;
+                                    //break;
                                 }
 
                                 if (simTime > 0.04f)
@@ -3233,7 +3210,7 @@ namespace BDArmory.Modules
                                 trajectoryPoints.Add(simCurrPos);
                             if (!aiControlled && !slaved)
                             {
-                                if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1))
+                                if (simTime > 0.1f && Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1))
                                 {
                                     /*
                                     Vessel hitVessel = null;
@@ -3266,6 +3243,7 @@ namespace BDArmory.Modules
                                         {
                                             bulletPrediction = hit.point;
                                             simulating = false;
+                                            break;
                                         }
                                         else
                                         {
@@ -3276,6 +3254,7 @@ namespace BDArmory.Modules
                                             {
                                                 bulletPrediction = hit.point;
                                                 simulating = false;
+                                                break;
                                             }
                                         }
                                     }
@@ -3320,6 +3299,14 @@ namespace BDArmory.Modules
                                 {
                                     trajectoryRenderer.SetPosition(i++, point.Current);
                                 }
+                        }
+                        else
+                        {
+                            if (trajectoryRenderer != null)
+                            {
+                                trajectoryRenderer.enabled = false;
+                                trajectoryRenderer = null;
+                            }
                         }
                     }
                     Vector3 pointingPos = fireTransform.position + (fireTransform.forward * targetDistance);
@@ -3379,14 +3366,12 @@ namespace BDArmory.Modules
                                 timeStep *= currentAltitude / (currentAltitude - altitude);
                                 elapsedTime += timeStep;
                                 position += timeStep * velocity;
-                                bulletPrediction = position; //make sure the bulletPrediction for reticle position is actually set when using bulletdrop ballistic weapons
                                 // Debug.Log("DEBUG breaking trajectory sim due to water at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
                             }
                             else
                             {
                                 elapsedTime += (hit.point - position).magnitude / velocity.magnitude;
                                 position = hit.point;
-                                bulletPrediction = position;
                                 // Debug.Log("DEBUG breaking trajectory sim due to hit at " + position.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
                             }
                             break;
@@ -3402,7 +3387,6 @@ namespace BDArmory.Modules
                 if ((startPosition - position).sqrMagnitude > maxDistanceSqr)
                 {
                     // Debug.Log("DEBUG breaking trajectory sim due to max distance: " + maxDistance.ToString("F6") + " at altitude " + FlightGlobals.getAltitudeAtPos(position));
-                    bulletPrediction = position;
                     break;
                 }
             }
@@ -3671,10 +3655,10 @@ namespace BDArmory.Modules
                             laserRenderers[i].enabled = false;
                         }
                     }
-                    if (!pulseLaser || !oneShotSound)
-                    {
-                        audioSource.Stop();
-                    }
+                    //if (!pulseLaser || !oneShotSound)
+                    //{
+                    //    audioSource.Stop();
+                    //}
                 }
                 if (SpoolUpTime > 0)
                 {
@@ -3742,10 +3726,10 @@ namespace BDArmory.Modules
                                         laserRenderers[i].enabled = false;
                                     }
                                 }
-                                if (!pulseLaser || !oneShotSound)
-                                {
-                                    audioSource.Stop();
-                                }
+                                //if (!pulseLaser || !oneShotSound)
+                                //{
+                                //    audioSource.Stop();
+                                //}
                             }
                             break;
                         case WeaponTypes.Ballistic:

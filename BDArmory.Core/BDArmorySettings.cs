@@ -202,7 +202,14 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
-        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+		[BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
+        [BDAPersistentSettingsField] public static string HALL_OF_SHAME = "";
+        [BDAPersistentSettingsField] public static float HOS_FIRE = 0;
+        [BDAPersistentSettingsField] public static float HOS_MASS = 0;
+        [BDAPersistentSettingsField] public static float HOS_DMG = 0;
+        [BDAPersistentSettingsField] public static float HOS_THRUST = 0;
+        [BDAPersistentSettingsField] public static string HOS_BADGE = "";
 
         // Remote logging
         [BDAPersistentSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle

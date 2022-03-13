@@ -788,7 +788,7 @@ namespace BDArmory.FX
                                 else
                                 {
                                     damage = part.AddExplosiveDamage(blastInfo.Damage, Caliber, ExplosionSource, dmgMult);
-                                    penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the breater the blowthrough
+                                    penetrationFactor = damage / 10; //closer to the explosion/greater magnitude of the explosion at point blank, the greater the blowthrough
                                     if (float.IsNaN(damage)) Debug.LogError("DEBUG NaN damage!");
                                 }
                             }
