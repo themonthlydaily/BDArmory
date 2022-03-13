@@ -57,7 +57,7 @@ namespace BDArmory.Bullets
         public string rocketSoundPath;
 
         float startTime;
-        float stayTime = 0.04f;
+        float stayTime = 2 * Time.fixedDeltaTime;
         float lifeTime = 10;
 
         Vector3 prevPosition;
@@ -204,6 +204,7 @@ namespace BDArmory.Bullets
             isAPSprojectile = false;
             tgtRocket = null;
             tgtShell = null;
+            rb.isKinematic = true;
         }
 
         void FixedUpdate()
@@ -297,7 +298,7 @@ namespace BDArmory.Bullets
                     audioSource.Stop();
                 }
             }
-            if (Time.time - startTime > 0.1f + stayTime)
+            if (Time.time - startTime > stayTime)
             {
                 hasPenetrated = true;
                 hasDetonated = false;

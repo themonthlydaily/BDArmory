@@ -3179,7 +3179,7 @@ namespace BDArmory.Modules
                                     //break;
                                 }
 
-                                if (simTime > 0.04f)
+                                if (simTime > (2 * Time.fixedDeltaTime)) //waiting 2 physics steps because the rocket doesn't start having thrust forces applied to it until 2 phys steps after spawn in the rocket code
                                 {
                                     ///simDeltaTime = 0.02f;
                                     simDeltaTime = Time.fixedDeltaTime;
@@ -3210,7 +3210,7 @@ namespace BDArmory.Modules
                                 trajectoryPoints.Add(simCurrPos);
                             if (!aiControlled && !slaved)
                             {
-                                if (simTime > 0.1f && Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1))
+                                if (Physics.Raycast(simPrevPos, simCurrPos - simPrevPos, out hit, Vector3.Distance(simPrevPos, simCurrPos), layerMask1))
                                 {
                                     /*
                                     Vessel hitVessel = null;

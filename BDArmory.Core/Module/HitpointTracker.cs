@@ -957,7 +957,7 @@ namespace BDArmory.Core.Module
                 Strength = 940;
                 SafeUseTemp = 2500;
             }
-            else if (BDArmorySettings.RESET_ARMOUR && ArmorThickness <= 10) //don't reset armor panels
+            else if (BDArmorySettings.RESET_ARMOUR) //don't reset armor panels
             {
                 guiArmorTypeString = "None";
                 SelectedArmorType = "None";
@@ -967,7 +967,8 @@ namespace BDArmory.Core.Module
                 Hardness = 300;
                 Strength = 200;
                 SafeUseTemp = 993;
-                Armor = 10;
+				Armor = 10;
+                if (ArmorPanel) Armor = 25;
             }
             var oldArmorMass = armorMass;
             armorMass = 0;
