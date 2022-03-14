@@ -78,6 +78,7 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
         [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
         [BDAPersistentSettingsField] public static bool COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = false; // Close the settings window when clicking the start competition button.
+        [BDAPersistentSettingsField] public static bool AUTO_LOAD_TO_KSC = false;                      // Automatically load the last used save (using the clean save file if possible) and go to the KSC.
 
         // General slider settings
         [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -145,6 +146,8 @@ namespace BDArmory.Core
         [BDAPersistentSettingsField] public static float TARGET_WINDOW_SCALE_MAX = 2f;
         [BDAPersistentSettingsField] public static float TARGET_CAM_RESOLUTION = 1024f;
         [BDAPersistentSettingsField] public static bool BW_TARGET_CAM = true;
+        [BDAPersistentSettingsField] public static bool TARGET_WINDOW_INVERT_MOUSE_X = false;
+        [BDAPersistentSettingsField] public static bool TARGET_WINDOW_INVERT_MOUSE_Y = false;
 
         // Game modes
         [BDAPersistentSettingsField] public static bool PEACE_MODE = false;
