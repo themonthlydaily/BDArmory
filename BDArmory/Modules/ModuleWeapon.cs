@@ -521,6 +521,7 @@ namespace BDArmory.Modules
         public float rocketMass = 1;
         public float thrust = 1;
         public float thrustTime = 1;
+        public float stayTime = 0.04f;
         public float blastRadius = 1;
         public bool choker = false;
         public bool descendingOrder = true;
@@ -2362,6 +2363,7 @@ namespace BDArmory.Modules
                                 rocket.blastRadius = blastRadius;
                                 rocket.thrust = thrust;
                                 rocket.thrustTime = thrustTime;
+                                rocket.stayTime = stayTime;
                                 rocket.flak = proximityDetonation;
                                 rocket.detonationRange = detonationRange;
                                 rocket.maxAirDetonationRange = maxAirDetonationRange;
@@ -2440,6 +2442,7 @@ namespace BDArmory.Modules
                                             rocket.blastRadius = blastRadius;
                                             rocket.thrust = thrust;
                                             rocket.thrustTime = thrustTime;
+                                            rocket.stayTime = stayTime;
                                             rocket.flak = proximityDetonation;
                                             rocket.detonationRange = detonationRange;
                                             rocket.maxAirDetonationRange = maxAirDetonationRange;
@@ -3185,7 +3188,7 @@ namespace BDArmory.Modules
                                     //break;
                                 }
 
-                                if (simTime > (2 * Time.fixedDeltaTime)) //waiting 2 physics steps because the rocket doesn't start having thrust forces applied to it until 2 phys steps after spawn in the rocket code
+                                if (simTime > stayTime) //waiting 2 physics steps because the rocket doesn't start having thrust forces applied to it until 2 phys steps after spawn in the rocket code
                                 {
                                     ///simDeltaTime = 0.02f;
                                     simDeltaTime = Time.fixedDeltaTime;
@@ -4783,6 +4786,7 @@ namespace BDArmory.Modules
                 caliber = rocketInfo.caliber;
                 thrust = rocketInfo.thrust;
                 thrustTime = rocketInfo.thrustTime;
+                stayTime = rocketInfo.stayTime;
                 ProjectileCount = rocketInfo.subProjectileCount;
                 rocketModelPath = rocketInfo.rocketModelPath;
                 SelectedAmmoType = rocketInfo.name; //store selected ammo name as string for retrieval by web orc filter/later GUI implementation
