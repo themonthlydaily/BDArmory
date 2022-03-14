@@ -1083,7 +1083,7 @@ namespace BDArmory.Control
             // Load saved game.
             var tic = Time.time;
             sceneLoaded = false;
-            if (!LoadGame()) yield break;
+            if (!(BDArmorySettings.GENERATE_CLEAN_SAVE ? GenerateCleanGame() : LoadGame())) yield break;
             yield return new WaitUntil(() => (sceneLoaded || Time.time - tic > 10));
             if (!sceneLoaded) { Debug.Log("[BDArmory.BDATournament]: Failed to load scene."); yield break; }
             if (!(resumingEvolution || resumingTournament)) yield break; // Just load to the KSC.
@@ -1175,33 +1175,67 @@ namespace BDArmory.Control
             return true;
         }
 
-        bool LoadGame()
+        bool GenerateCleanGame()
         {
             // Grab the scenarios from the previous persistent game.
             HighLogic.CurrentGame = GamePersistence.LoadGame("persistent", game, true, false);
             var scenarios = HighLogic.CurrentGame.scenarios;
 
-            // Generate a new clean game and add in the scenarios.
-            HighLogic.CurrentGame = new Game();
-            HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
-            HighLogic.CurrentGame.Mode = Game.Modes.SANDBOX;
-            HighLogic.SaveFolder = game;
-            foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
-
-            // Generate the default roster and make them all badass pilots.
-            HighLogic.CurrentGame.CrewRoster = KerbalRoster.GenerateInitialCrewRoster(HighLogic.CurrentGame.Mode);
-            foreach (var kerbal in HighLogic.CurrentGame.CrewRoster.Kerbals(ProtoCrewMember.RosterStatus.Available))
+            if (BDArmorySettings.GENERATE_CLEAN_SAVE)
             {
-                kerbal.isBadass = true; // Make them badass.
-                KerbalRoster.SetExperienceTrait(kerbal, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
-                KerbalRoster.SetExperienceLevel(kerbal, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
-            }
+                // Generate a new clean game and add in the scenarios.
+                HighLogic.CurrentGame = new Game();
+                HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
+                HighLogic.CurrentGame.Mode = Game.Modes.SANDBOX;
+                HighLogic.SaveFolder = game;
+                foreach (var scenario in scenarios) { CheckForScenario(scenario.moduleName, scenario.targetScenes); }
 
+                // Generate the default roster and make them all badass pilots.
+                HighLogic.CurrentGame.CrewRoster = KerbalRoster.GenerateInitialCrewRoster(HighLogic.CurrentGame.Mode);
+                foreach (var kerbal in HighLogic.CurrentGame.CrewRoster.Kerbals(ProtoCrewMember.RosterStatus.Available))
+                {
+                    kerbal.isBadass = true; // Make them badass.
+                    KerbalRoster.SetExperienceTrait(kerbal, KerbalRoster.pilotTrait); // Make the kerbal a pilot (so they can use SAS properly).
+                    KerbalRoster.SetExperienceLevel(kerbal, KerbalRoster.GetExperienceMaxLevel()); // Make them experienced.
+                }
+            }
+            else
+            {
+                GamePersistence.UpdateScenarioModules(HighLogic.CurrentGame);
+            }
             // Update the game state and save it to the persistent save (sine that's what eventually ends up getting loaded when we call Start()).
             HighLogic.CurrentGame.Updated();
             GamePersistence.SaveGame("persistent", game, SaveMode.OVERWRITE);
             HighLogic.CurrentGame.Start();
             return true;
+        }
+
+        bool LoadGame()
+        {
+            var gameNode = GamePersistence.LoadSFSFile(save, game);
+            if (gameNode == null)
+            {
+                Debug.LogWarning($"[BDArmory.BDATournament]: Unable to load the save game: {savegame}");
+                return false;
+            }
+            Debug.Log($"[BDArmory.BDATournament]: Loaded save game: {savegame}");
+            KSPUpgradePipeline.Process(gameNode, game, SaveUpgradePipeline.LoadContext.SFS, OnLoadDialogPiplelineFinished, (opt, n) => Debug.LogWarning($"[BDArmory.BDATournament]: KSPUpgradePipeline finished with error: {savegame}"));
+            return true;
+        }
+
+        void OnLoadDialogPiplelineFinished(ConfigNode node)
+        {
+            HighLogic.CurrentGame = GamePersistence.LoadGameCfg(node, game, true, false);
+            if (HighLogic.CurrentGame == null) return;
+            if (GamePersistence.UpdateScenarioModules(HighLogic.CurrentGame))
+            {
+                if (node != null)
+                { GameEvents.onGameStatePostLoad.Fire(node); }
+                GamePersistence.SaveGame(HighLogic.CurrentGame, save, game, SaveMode.OVERWRITE);
+            }
+            HighLogic.CurrentGame.startScene = GameScenes.SPACECENTER;
+            HighLogic.SaveFolder = game;
+            HighLogic.CurrentGame.Start();
         }
 
         /// <summary>
