@@ -12,7 +12,6 @@ namespace BDArmory.Bullets
         public float caliber { get; private set; }
         public float thrust { get; private set; }
         public float thrustTime { get; private set; }
-        public float stayTime { get; private set; }
         public bool shaped { get; private set; }
         public bool flak { get; private set; }
         public bool EMP { get; private set; }
@@ -30,7 +29,7 @@ namespace BDArmory.Bullets
         public static HashSet<string> rocketNames;
         public static RocketInfo defaultRocket;
 
-        public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime, float stayTime,
+        public RocketInfo(string name, float rocketMass, float caliber, float thrust, float thrustTime,
                          bool shaped, bool flak, bool EMP, bool choker, bool gravitic, bool impulse, bool explosive, bool incendiary, float tntMass, int subProjectileCount, float thrustDeviation, string rocketModelPath)
         {
             this.name = name;
@@ -38,7 +37,6 @@ namespace BDArmory.Bullets
             this.caliber = caliber;
             this.thrust = thrust;
             this.thrustTime = thrustTime;
-            this.stayTime = stayTime;
             this.shaped = shaped;
             this.flak = flak;
             this.EMP = EMP;
@@ -75,7 +73,6 @@ namespace BDArmory.Bullets
                         (float)ParseField(node, "caliber", typeof(float)),
                         (float)ParseField(node, "thrust", typeof(float)),
                         (float)ParseField(node, "thrustTime", typeof(float)),
-                        (float)ParseField(node, "stayTime", typeof(float)),
                         (bool)ParseField(node, "shaped", typeof(bool)),
                         (bool)ParseField(node, "flak", typeof(bool)),
                         (bool)ParseField(node, "EMP", typeof(bool)),
@@ -117,7 +114,6 @@ namespace BDArmory.Bullets
                             (float)ParseField(node, "caliber", typeof(float)),
                             (float)ParseField(node, "thrust", typeof(float)),
                             (float)ParseField(node, "thrustTime", typeof(float)),
-                            (float)ParseField(node, "stayTime", typeof(float)),
                             (bool)ParseField(node, "shaped", typeof(bool)),
                             (bool)ParseField(node, "flak", typeof(bool)),
                             (bool)ParseField(node, "EMP", typeof(bool)),
