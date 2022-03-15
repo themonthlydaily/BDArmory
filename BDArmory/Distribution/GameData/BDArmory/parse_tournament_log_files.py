@@ -5,12 +5,13 @@ import argparse
 import json
 import re
 import sys
+from base64 import b64decode, b64encode
 from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Union
+from typing import Dict, List, Tuple, Union
 
-VERSION = "1.13.7"
+VERSION = "1.14.0"
 
 parser = argparse.ArgumentParser(description="Tournament log parser", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('tournament', type=str, nargs='*', help="Tournament folder to parse.")
@@ -88,6 +89,40 @@ def naturalSortKey(key: Union[str, Path]):
         return key  # Otherwise, just use the key.
 
 
+def encode_names(log_lines: List[str]) -> Tuple[Dict[str, str], List[str]]:
+    """ Encode the craft names in base64 to avoid issues with naming.
+
+    Args:
+        log_lines (List[str]): The log lines.
+
+    Returns:
+        Tuple[Dict[str, str], List[str]]: The dictionary of encoded names to actual names and the modified log lines.
+    """
+    craft_names = set()
+    for line in log_lines:
+        if 'BDArmory.BDACompetitionMode' not in line:
+            continue
+        _, line = line.split(' ', 1)
+        field, entry = line.split(':', 1)
+        if field not in ('DEAD', 'MIA', 'ALIVE'):
+            continue
+        if field == 'DEAD':
+            order, time, craft = entry.split(':', 2)
+            craft_names.add(craft)
+        if field == 'MIA':
+            craft_names.add(entry)
+        if field == 'ALIVE':
+            craft_names.add(entry)
+    craft_names.update({json.dumps(name)[1:-1] for name in craft_names})
+    craft_names = {cn: b64encode(cn.encode()) for cn in craft_names}
+    sorted_craft_names = list(sorted(craft_names, key=lambda k: len(k), reverse=True))  # Sort the craft names from longest to shortest to avoid accidentally replacing substrings.
+    for i in range(len(log_lines)):
+        for name in sorted_craft_names:
+            log_lines[i] = log_lines[i].replace(name, craft_names[name].decode())
+    encoded_craft_names = {v.decode(): k for k, v in craft_names.items()}
+    return encoded_craft_names, log_lines
+
+
 for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
     if tournamentNumber > 0 and not args.quiet:
         print("")
@@ -106,131 +141,132 @@ for tournamentNumber, tournamentDir in enumerate(tournamentDirs):
             continue
         for heat in logFiles if args.N == None else logFiles[:args.N]:
             with open(heat, "r") as logFile:
-                tournamentData[round.name][heat.name] = {'result': None, 'duration': 0, 'craft': {}}
-                for line in logFile:
-                    line = line.strip()
-                    if 'BDArmory.BDACompetitionMode' not in line:
-                        continue  # Ignore irrelevant lines
-                    _, field = line.split(' ', 1)
-                    if field.startswith('Dumping Results'):
-                        duration = float(field[field.find('(') + 4:field.find(')') - 1])
-                        timestamp = datetime.fromisoformat(field[field.find(' at ') + 4:])
-                        tournamentData[round.name][heat.name]['duration'] = duration
-                        tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp), max(tournamentMetadata['duration'][1], timestamp + timedelta(seconds=duration))) if 'duration' in tournamentMetadata else (timestamp, timestamp + timedelta(seconds=duration))
-                    elif field.startswith('ALIVE:'):
-                        state, craft = field.split(':', 1)
-                        tournamentData[round.name][heat.name]['craft'][craft] = {'state': state}
-                    elif field.startswith('DEAD:'):
-                        state, order, time, craft = field.split(':', 3)
-                        tournamentData[round.name][heat.name]['craft'][craft] = {'state': state, 'deathOrder': int(order), 'deathTime': float(time)}
-                    elif field.startswith('MIA:'):
-                        state, craft = field.split(':', 1)
-                        tournamentData[round.name][heat.name]['craft'][craft] = {'state': state}
-                    elif field.startswith('WHOSHOTWHOWITHGUNS:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'hitsBy': {player: int(hits) for player, hits in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHODAMAGEDWHOWITHGUNS:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'bulletDamageBy': {player: float(damage) for player, damage in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHOHITWHOWITHMISSILES:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'missileHitsBy': {player: int(hits) for player, hits in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHOPARTSHITWHOWITHMISSILES:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'missilePartsHitBy': {player: int(hits) for player, hits in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHODAMAGEDWHOWITHMISSILES:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'missileDamageBy': {player: float(damage) for player, damage in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHOHITWHOWITHROCKETS:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'rocketHitsBy': {player: int(hits) for player, hits in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHOPARTSHITWHOWITHROCKETS:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'rocketPartsHitBy': {player: int(hits) for player, hits in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHODAMAGEDWHOWITHROCKETS:'):
-                        _, craft, shooters = field.split(':', 2)
-                        data = shooters.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'rocketDamageBy': {player: float(damage) for player, damage in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHORAMMEDWHO:'):
-                        _, craft, rammers = field.split(':', 2)
-                        data = rammers.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'rammedPartsLostBy': {player: int(partsLost) for player, partsLost in zip(data[1::2], data[::2])}})
-                    elif field.startswith('WHODAMAGEDWHOWITHBATTLEDAMAGE'):
-                        _, craft, rammers = field.split(':', 2)
-                        data = rammers.split(':')
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'battleDamageBy': {player: float(damage) for player, damage in zip(data[1::2], data[::2])}})
-                    elif field.startswith('CLEANKILLGUNS:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
-                    elif field.startswith('CLEANKILLROCKETS:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRocketKillBy': killer})
-                    elif field.startswith('CLEANKILLMISSILES:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
-                    elif field.startswith('CLEANKILLRAMMING:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
-                    elif field.startswith('HEADSHOTGUNS:'):  # FIXME make head-shots separate from clean-kills
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
-                    elif field.startswith('HEADSHOTROCKETS:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRocketKillBy': killer})
-                    elif field.startswith('HEADSHOTMISSILES:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
-                    elif field.startswith('HEADSHOTRAMMING:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
-                    elif field.startswith('KILLSTEALGUNS:'):  # FIXME make kill-steals separate from clean-kills
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanKillBy': killer})
-                    elif field.startswith('KILLSTEALROCKETS:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRocketKillBy': killer})
-                    elif field.startswith('KILLSTEALMISSILES:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanMissileKillBy': killer})
-                    elif field.startswith('KILLSTEALRAMMING:'):
-                        _, craft, killer = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'cleanRamKillBy': killer})
-                    elif field.startswith('GMKILL'):
-                        _, craft, reason = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'GMKillReason': reason})
-                    elif field.startswith('HPLEFT:'):
-                        _, craft, hp = field.split(':', 2)
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'HPremaining': float(hp)})
-                    elif field.startswith('ACCURACY:'):
-                        _, craft, accuracy, rocket_accuracy = field.split(':', 3)
-                        hits, shots = accuracy.split('/')
-                        rocket_strikes, rockets_fired = rocket_accuracy.split('/')
-                        accuracy = CalculateAccuracy(int(hits), int(shots))
-                        rocket_accuracy = CalculateAccuracy(int(rocket_strikes), int(rockets_fired))
-                        tournamentData[round.name][heat.name]['craft'][craft].update({'accuracy': accuracy, 'hits': int(hits), 'shots': int(shots), 'rocket_accuracy': rocket_accuracy, 'rocket_strikes': int(rocket_strikes), 'rockets_fired': int(rockets_fired)})
-                    elif field.startswith('RESULT:'):
-                        heat_result = field.split(':', 2)
-                        result_type = heat_result[1]
-                        if (len(heat_result) > 2):
-                            teams = json.loads(heat_result[2])
-                            if isinstance(teams, dict):  # Win, single team
-                                tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {teams['team']: ', '.join(teams['members'])}}
-                            elif isinstance(teams, list):  # Draw, multiple teams
-                                tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {team['team']: ', '.join(team['members']) for team in teams}}
-                        else:  # Mutual Annihilation
-                            tournamentData[round.name][heat.name]['result'] = {'result': result_type}
-                    elif field.startswith('DEADTEAMS:'):
-                        dead_teams = json.loads(field.split(':', 1)[1])
-                        if len(dead_teams) > 0:
-                            tournamentData[round.name][heat.name]['result'].update({'dead teams': {team['team']: ', '.join(team['members']) for team in dead_teams}})
-                    # Ignore Tag mode for now.
+                log_lines = [line.strip() for line in logFile]
+            tournamentData[round.name][heat.name] = {'result': None, 'duration': 0, 'craft': {}}
+            encoded_craft_names, log_lines = encode_names(log_lines)
+            for line in log_lines:
+                if 'BDArmory.BDACompetitionMode' not in line:
+                    continue  # Ignore irrelevant lines
+                _, field = line.split(' ', 1)
+                if field.startswith('Dumping Results'):
+                    duration = float(field[field.find('(') + 4:field.find(')') - 1])
+                    timestamp = datetime.fromisoformat(field[field.find(' at ') + 4:])
+                    tournamentData[round.name][heat.name]['duration'] = duration
+                    tournamentMetadata['duration'] = (min(tournamentMetadata['duration'][0], timestamp), max(tournamentMetadata['duration'][1], timestamp + timedelta(seconds=duration))) if 'duration' in tournamentMetadata else (timestamp, timestamp + timedelta(seconds=duration))
+                elif field.startswith('ALIVE:'):
+                    state, craft = field.split(':', 1)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]] = {'state': state}
+                elif field.startswith('DEAD:'):
+                    state, order, time, craft = field.split(':', 3)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]] = {'state': state, 'deathOrder': int(order), 'deathTime': float(time)}
+                elif field.startswith('MIA:'):
+                    state, craft = field.split(':', 1)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]] = {'state': state}
+                elif field.startswith('WHOSHOTWHOWITHGUNS:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'hitsBy': {encoded_craft_names[player]: int(hits) for player, hits in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHODAMAGEDWHOWITHGUNS:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'bulletDamageBy': {encoded_craft_names[player]: float(damage) for player, damage in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHOHITWHOWITHMISSILES:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'missileHitsBy': {encoded_craft_names[player]: int(hits) for player, hits in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHOPARTSHITWHOWITHMISSILES:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'missilePartsHitBy': {encoded_craft_names[player]: int(hits) for player, hits in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHODAMAGEDWHOWITHMISSILES:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'missileDamageBy': {encoded_craft_names[player]: float(damage) for player, damage in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHOHITWHOWITHROCKETS:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'rocketHitsBy': {encoded_craft_names[player]: int(hits) for player, hits in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHOPARTSHITWHOWITHROCKETS:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'rocketPartsHitBy': {encoded_craft_names[player]: int(hits) for player, hits in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHODAMAGEDWHOWITHROCKETS:'):
+                    _, craft, shooters = field.split(':', 2)
+                    data = shooters.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'rocketDamageBy': {encoded_craft_names[player]: float(damage) for player, damage in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHORAMMEDWHO:'):
+                    _, craft, rammers = field.split(':', 2)
+                    data = rammers.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'rammedPartsLostBy': {encoded_craft_names[player]: int(partsLost) for player, partsLost in zip(data[1::2], data[::2])}})
+                elif field.startswith('WHODAMAGEDWHOWITHBATTLEDAMAGE'):
+                    _, craft, rammers = field.split(':', 2)
+                    data = rammers.split(':')
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'battleDamageBy': {encoded_craft_names[player]: float(damage) for player, damage in zip(data[1::2], data[::2])}})
+                elif field.startswith('CLEANKILLGUNS:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanKillBy': encoded_craft_names[killer]})
+                elif field.startswith('CLEANKILLROCKETS:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanRocketKillBy': encoded_craft_names[killer]})
+                elif field.startswith('CLEANKILLMISSILES:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanMissileKillBy': encoded_craft_names[killer]})
+                elif field.startswith('CLEANKILLRAMMING:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanRamKillBy': encoded_craft_names[killer]})
+                elif field.startswith('HEADSHOTGUNS:'):  # FIXME make head-shots separate from clean-kills
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanKillBy': encoded_craft_names[killer]})
+                elif field.startswith('HEADSHOTROCKETS:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanRocketKillBy': encoded_craft_names[killer]})
+                elif field.startswith('HEADSHOTMISSILES:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanMissileKillBy': encoded_craft_names[killer]})
+                elif field.startswith('HEADSHOTRAMMING:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanRamKillBy': encoded_craft_names[killer]})
+                elif field.startswith('KILLSTEALGUNS:'):  # FIXME make kill-steals separate from clean-kills
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanKillBy': encoded_craft_names[killer]})
+                elif field.startswith('KILLSTEALROCKETS:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanRocketKillBy': encoded_craft_names[killer]})
+                elif field.startswith('KILLSTEALMISSILES:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanMissileKillBy': encoded_craft_names[killer]})
+                elif field.startswith('KILLSTEALRAMMING:'):
+                    _, craft, killer = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'cleanRamKillBy': encoded_craft_names[killer]})
+                elif field.startswith('GMKILL'):
+                    _, craft, reason = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'GMKillReason': reason})
+                elif field.startswith('HPLEFT:'):
+                    _, craft, hp = field.split(':', 2)
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'HPremaining': float(hp)})
+                elif field.startswith('ACCURACY:'):
+                    _, craft, accuracy, rocket_accuracy = field.split(':', 3)
+                    hits, shots = accuracy.split('/')
+                    rocket_strikes, rockets_fired = rocket_accuracy.split('/')
+                    accuracy = CalculateAccuracy(int(hits), int(shots))
+                    rocket_accuracy = CalculateAccuracy(int(rocket_strikes), int(rockets_fired))
+                    tournamentData[round.name][heat.name]['craft'][encoded_craft_names[craft]].update({'accuracy': accuracy, 'hits': int(hits), 'shots': int(shots), 'rocket_accuracy': rocket_accuracy, 'rocket_strikes': int(rocket_strikes), 'rockets_fired': int(rockets_fired)})
+                elif field.startswith('RESULT:'):
+                    heat_result = field.split(':', 2)
+                    result_type = heat_result[1]
+                    if (len(heat_result) > 2):
+                        teams = json.loads(heat_result[2])
+                        if isinstance(teams, dict):  # Win, single team
+                            tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {teams['team']: ', '.join(teams['members'])}}
+                        elif isinstance(teams, list):  # Draw, multiple teams
+                            tournamentData[round.name][heat.name]['result'] = {'result': result_type, 'teams': {team['team']: ', '.join(team['members']) for team in teams}}
+                    else:  # Mutual Annihilation
+                        tournamentData[round.name][heat.name]['result'] = {'result': result_type}
+                elif field.startswith('DEADTEAMS:'):
+                    dead_teams = json.loads(field.split(':', 1)[1])
+                    if len(dead_teams) > 0:
+                        tournamentData[round.name][heat.name]['result'].update({'dead teams': {team['team']: ', '.join(team['members']) for team in dead_teams}})
+                # Ignore Tag mode for now.
 
     if not args.no_files and len(tournamentData) > 0:
         with open(tournamentDir / 'results.json', 'w') as outFile:

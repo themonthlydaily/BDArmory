@@ -79,6 +79,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterShot(string shooter)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
             if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].shotsFired;
@@ -103,6 +104,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterBulletHit(string attacker, string victim, string weaponName = "", double distanceTraveled = 0)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -161,6 +163,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterBulletDamage(string attacker, string victim, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
             if (float.IsNaN(damage))
@@ -186,6 +189,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterRocketFired(string shooter)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (shooter == null || !ScoreData.ContainsKey(shooter)) return false;
             if (ScoreData[shooter].aliveState != AliveState.Alive) return false; // Ignore shots fired after the vessel is dead.
             ++ScoreData[shooter].rocketsFired;
@@ -200,6 +204,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterRocketStrike(string attacker, string victim)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -223,6 +228,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterRocketHit(string attacker, string victim, int partsHit = 1)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -261,6 +267,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterRocketDamage(string attacker, string victim, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
@@ -283,6 +290,7 @@ namespace BDArmory.Control
         /// <returns></returns>
         public bool RegisterBattleDamage(string attacker, Vessel victimVessel, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (victimVessel == null) return false;
             var victim = victimVessel.vesselName;
             if (damage <= 0 || attacker == null || victim == null || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false; // Note: we allow attacker=victim here to track self damage.
@@ -304,6 +312,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterRam(string attacker, string victim, double timeOfCollision, int partsLost)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (partsLost <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore rams after the victim is dead.
 
@@ -347,6 +356,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterMissileStrike(string attacker, string victim)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -369,6 +379,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterMissileHit(string attacker, string victim, int partsHit = 1)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (partsHit <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore hits after the victim is dead.
 
@@ -407,6 +418,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterMissileDamage(string attacker, string victim, float damage)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (damage <= 0 || attacker == null || victim == null || attacker == victim || !ScoreData.ContainsKey(attacker) || !ScoreData.ContainsKey(victim)) return false;
             if (ScoreData[victim].aliveState != AliveState.Alive) return false; // Ignore damage after the victim is dead.
 
@@ -427,6 +439,7 @@ namespace BDArmory.Control
         /// <returns>true if successfully registered, false otherwise</returns>
         public bool RegisterDeath(string vesselName, GMKillReason gmKillReason = GMKillReason.None, double timeOfDeath = -1)
         {
+            if (!BDACompetitionMode.Instance.competitionIsActive) return false;
             if (vesselName == null || !ScoreData.ContainsKey(vesselName)) return false;
             if (ScoreData[vesselName].aliveState != AliveState.Alive) return false; // They're already dead!
 
