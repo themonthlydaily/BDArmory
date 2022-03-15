@@ -16,6 +16,7 @@ using BDArmory.Radar;
 using BDArmory.UI;
 using UnityEngine;
 using KSP.Localization;
+using BDArmory.FX;
 
 namespace BDArmory.Competition
 {
@@ -1031,12 +1032,23 @@ namespace BDArmory.Competition
                             var vesselName = FlightGlobals.ActiveVessel.GetName();
                             string postFix = "";
                             if (pilotActions.ContainsKey(vesselName))
+                            {
                                 postFix = pilotActions[vesselName];
+                            }
                             if (Scores.Players.Contains(vesselName))
                             {
                                 ScoringData vData = Scores.ScoreData[vesselName];
                                 if (Planetarium.GetUniversalTime() - vData.lastDamageTime < 2)
+                                {
                                     postFix = " is taking damage from " + vData.lastPersonWhoDamagedMe;
+                                    if (BDArmorySettings.ENABLE_HOS && vData.lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME)
+                                    {
+                                        if (!string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                        {
+                                            postFix += "(" + BDArmorySetup.Instance.HoSTag + ")";
+                                        }
+                                    }
+                                }
                             }
                             if (postFix != "" || vesselName != competitionStatus.lastActiveVessel)
                                 currentVesselStatus = vesselName + postFix;
@@ -1337,6 +1349,41 @@ namespace BDArmory.Competition
                     {
                         MM.EnableMutator(); //random mutator
                     }
+                }
+                if (BDArmorySettings.ENABLE_HOS && !string.IsNullOrEmpty(BDArmorySettings.HALL_OF_SHAME))
+                {
+                    if (pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
+                    using (List<Part>.Enumerator part = pilot.vessel.Parts.GetEnumerator())
+                        while (part.MoveNext())
+                        {
+                            if (BDArmorySettings.HOS_FIRE > 0.1f)
+                            {
+                                BulletHitFX.AttachFire(part.Current.transform.position, part.Current, BDArmorySettings.HOS_FIRE * 50, "GM", BDArmorySettings.COMPETITION_DURATION * 60, 1, true);
+                            }
+                            if (BDArmorySettings.HOS_MASS  != 0)
+                            {
+                                var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
+                                if (MM == null)
+                                {
+                                    MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
+                                }
+                                MM.duration = BDArmorySettings.COMPETITION_DURATION * 60;
+                                MM.massMod += (float)(BDArmorySettings.HOS_MASS / pilot.vessel.Parts.Count); //evenly distribute mass change across entire vessel
+                            }
+							if (BDArmorySettings.HOS_DMG != 1)
+							{
+								var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
+								HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
+							}
+                            if (BDArmorySettings.HOS_THRUST != 100)
+                            {
+                                using (var engine = VesselModuleRegistry.GetModuleEngines(pilot.vessel).GetEnumerator())
+                                    while (engine.MoveNext())
+                                    {
+                                        engine.Current.thrustPercentage = BDArmorySettings.HOS_THRUST;
+                                    }
+                            }
+                        }
                 }
                 if (BDArmorySettings.HACK_INTAKES)
                 {
@@ -2238,6 +2285,33 @@ namespace BDArmory.Competition
                                             MM.EnableMutator(); //random mutator
                                         }
                                     }
+                                    if (BDArmorySettings.ENABLE_HOS && !string.IsNullOrEmpty(BDArmorySettings.HALL_OF_SHAME))
+                                    {
+                                        if (pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
+                                        using (List<Part>.Enumerator part = pilot.vessel.Parts.GetEnumerator())
+                                            while (part.MoveNext())
+                                            {
+                                                if (BDArmorySettings.HOS_FIRE > 0.1f)
+                                                {
+                                                    BulletHitFX.AttachFire(part.Current.transform.position, part.Current, BDArmorySettings.HOS_FIRE * 50, "GM", BDArmorySettings.COMPETITION_DURATION * 60, 1, true);
+                                                }
+                                                if (BDArmorySettings.HOS_MASS != 0)
+                                                {
+                                                    var MM = part.Current.FindModuleImplementing<ModuleMassAdjust>();
+                                                    if (MM == null)
+                                                    {
+                                                        MM = (ModuleMassAdjust)part.Current.AddModule("ModuleMassAdjust");
+                                                    }
+                                                    MM.duration = BDArmorySettings.COMPETITION_DURATION * 60;
+                                                    MM.massMod += (BDArmorySettings.HOS_MASS / pilot.vessel.Parts.Count); //evenly distribute mass change across entire vessel
+                                                }
+                                                if (BDArmorySettings.HOS_DMG != 1)
+                                                {
+                                                    var HPT = part.Current.FindModuleImplementing<HitpointTracker>();
+                                                    HPT.defenseMutator = (float)(1 / BDArmorySettings.HOS_DMG);
+                                                }
+                                            }
+                                    }
                                 }
                             }
 
@@ -2309,6 +2383,18 @@ namespace BDArmory.Competition
                                 if (BDArmorySettings.HACK_INTAKES)
                                 {
                                     VesselSpawner.Instance.HackIntakes(pilot.vessel, true);
+                                }
+                                if (BDArmorySettings.ENABLE_HOS && !string.IsNullOrEmpty(BDArmorySettings.HALL_OF_SHAME))
+                                {
+                                    if(pilot.vessel.GetName() != BDArmorySettings.HALL_OF_SHAME) continue;
+                                    if (BDArmorySettings.HOS_THRUST != 100)
+                                    {
+                                        using (var engine = VesselModuleRegistry.GetModuleEngines(pilot.vessel).GetEnumerator())
+                                            while (engine.MoveNext())
+                                            {
+                                                engine.Current.thrustPercentage = BDArmorySettings.HOS_THRUST;
+                                            }
+                                    }
                                 }
                             }
                             break;
@@ -2918,8 +3004,12 @@ namespace BDArmory.Competition
                                 break;
                         }
                         Scores.RegisterDeath(player, GMKillReason.None, timeOfDeath);
-                        pilotActions[player] = " is Dead";
-                        var statusMessage = player;
+						pilotActions[player] = " is Dead";
+						var statusMessage = player;
+                        if (BDArmorySettings.ENABLE_HOS && player == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                        {
+                            statusMessage += $" ({BDArmorySetup.Instance.HoSTag})";
+                        }
                         switch (Scores.ScoreData[player].lastDamageWasFrom)
                         {
                             case DamageFrom.Guns:
@@ -2945,15 +3035,36 @@ namespace BDArmory.Competition
                         switch (Scores.ScoreData[player].aliveState)
                         {
                             case AliveState.CleanKill: // Damaged recently and only ever took damage from the killer.
-                                statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (NAILED 'EM! CLEAN KILL!)";
+                                }
+                                else
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (NAILED 'EM! CLEAN KILL!)";
+                                }
                                 canAssignMutator = true;
                                 break;
                             case AliveState.HeadShot: // Damaged recently, but took damage a while ago from someone else.
-                                statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (BOOM! HEAD SHOT!)";
+                                }
+                                else
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (BOOM! HEAD SHOT!)";
+                                }
                                 canAssignMutator = true;
                                 break;
                             case AliveState.KillSteal: // Damaged recently, but took damage from someone else recently too.
-                                statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
+                                if (BDArmorySettings.ENABLE_HOS && Scores.ScoreData[player].lastPersonWhoDamagedMe == BDArmorySettings.HALL_OF_SHAME && !string.IsNullOrEmpty(BDArmorySetup.Instance.HoSTag))
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + "(" + BDArmorySetup.Instance.HoSTag + ")" + " (KILL STEAL!)";
+                                }
+                                else
+                                {
+                                    statusMessage += Scores.ScoreData[player].lastPersonWhoDamagedMe + " (KILL STEAL!)";
+                                }
                                 canAssignMutator = true;
                                 break;
                             case AliveState.AssistedKill: // Assist (not damaged recently or GM kill).

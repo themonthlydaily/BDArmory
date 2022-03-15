@@ -338,7 +338,12 @@ namespace BDArmory.FX
                     }
                     else
                     {
-                        parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
+                        if (BDArmorySettings.ENABLE_HOS && parentPart.vessel.GetName() == BDArmorySettings.HALL_OF_SHAME)
+                        {
+                            parentPart.AddDamage(BDArmorySettings.HOS_FIRE * Time.deltaTime);
+                        }
+                        else
+                            parentPart.AddDamage(BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
                     }
 
                     BDACompetitionMode.Instance.Scores.RegisterBattleDamage(SourceVessel, parentPart.vessel, BDArmorySettings.BD_FIRE_DAMAGE * Time.deltaTime);
