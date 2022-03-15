@@ -21,6 +21,9 @@ namespace BDArmory.Armor
         public bool NXRA = false; //non-explosive reactive armor?
 
         [KSPField]
+        public float SectionHP = 300; //non-explosive reactive armor?
+
+        [KSPField]
         public float sensitivity = 30; //minimum caliber to trigger RA
 
         [KSPField]
@@ -37,7 +40,7 @@ namespace BDArmory.Armor
 
         public void Start()
         {
-            MakeArmorSectionArray();
+            if (!NXRA) MakeArmorSectionArray(); //non-reactive armor doesn't need to compartmentalize HP into sections
             //UpdateSectionScales();
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -60,8 +63,8 @@ namespace BDArmory.Armor
             var HP = part.FindModuleImplementing<HitpointTracker>();
             if (HP != null)
             {
-                HP.maxHitPoints = (sectionsCount * 300f); //set HP based on number of sections
-                HP.Hitpoints = (sectionsCount * 300f); 
+                HP.maxHitPoints = (sectionsCount * SectionHP); //set HP based on number of sections
+                HP.Hitpoints = (sectionsCount * SectionHP); 
                 HP.SetupPrefab(); //and update hitpoint slider
             }
         }
@@ -82,7 +85,7 @@ namespace BDArmory.Armor
                 var HP = part.FindModuleImplementing<HitpointTracker>();
                 if (HP != null)
                 {
-                    HP.Hitpoints = Mathf.Clamp(HP.Hitpoints, 0, sectionsRemaining * 300f);
+                    HP.Hitpoints = Mathf.Clamp(HP.Hitpoints, 0, sectionsRemaining * SectionHP);
                 }
                 if (HP.Hitpoints < 0) part.Destroy();
             }

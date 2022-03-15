@@ -83,38 +83,5 @@ namespace BDArmory.Competition
 
             Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Finished {0}, elapsed={1:0.00}, count={2}, deviation={3:0.00}", vessel.GetName(), elapsedTime, waypointCount, deviation));
         }
-
-        //private IEnumerator WaitForArrival(Waypoint location)
-        //{
-        //    Debug.Log(string.Format("[BDArmory.WaypointFollowingStrategy] Waiting for arrival at ({0}, {1}, {2})", location.latitude, location.longitude, location.altitude));
-
-        //    // define arrival expectation
-        //    expectedArrival = DateTimeOffset.Now.ToUnixTimeSeconds() + expectedWaypointTraversalDuration;
-
-        //    UpdateDistance(location);
-        //    // find the inflection point where the time derivative of distance to target flips to positive
-        //    while (DateTimeOffset.Now.ToUnixTimeSeconds() < expectedArrival)
-        //    {
-        //        yield return new WaitForFixedUpdate();
-        //        UpdateDistance(location);
-        //        if( dError > 0 )
-        //        {
-        //            break;
-        //        }
-        //    }
-        //    Debug.Log("[BDArmory.WaypointFollowingStrategy] Arrived");
-        //}
-
-        //private void UpdateDistance(Waypoint location)
-        //{
-        //    // compute pseudo-distance from vessel to location
-        //    double dlat = location.latitude - vessel.latitude;
-        //    double dlng = location.longitude - vessel.longitude;
-        //    double dalt = location.altitude - vessel.radarAltitude;
-        //    double newError = dlat * dlat + dlng * dlng + dalt * dalt;
-
-        //    dError = newError - error;
-        //    error = newError;
-        //}
     }
 }

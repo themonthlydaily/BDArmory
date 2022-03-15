@@ -62,7 +62,8 @@ namespace BDArmory.Competition.RemoteOrchestration
                     try
                     {
                         string[] values = lines[k].Split(',');
-                        // string[] values = lines[k].Split(',').Select(v => Encoding.UTF8.GetString(Convert.FromBase64String(v))).ToArray(); // AUBRANIUM, please consider encoding the player and vessel names on the API in base64 in the CSV file. This would allow any UTF8 character to be used for the player and vessel names (they would still need to be stripped of leading and trailing whitespace). Similarly for VesselModel. Not required for HeatModel. This uses System.Linq and System.Text.
+                        // AUBRANIUM, please consider encoding the player and vessel names on the API in base64 in the CSV file. This would allow any UTF8 character to be used for the player and vessel names (they would still need to be stripped of leading and trailing whitespace). Similarly for VesselModel. Not required for HeatModel. This uses System.Linq and System.Text.
+                        // string[] values = lines[k].Split(',').Select(v => Encoding.UTF8.GetString(Convert.FromBase64String(v))).ToArray();
                         if (values.Length > 0)
                         {
                             PlayerModel model = new PlayerModel();

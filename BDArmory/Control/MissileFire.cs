@@ -1248,7 +1248,7 @@ namespace BDArmory.Control
                          selectedWeapon != null &&
                          ((selectedWeapon.GetWeaponClass() == WeaponClasses.Gun
                          || selectedWeapon.GetWeaponClass() == WeaponClasses.Rocket
-                         || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) && currentGun.useRippleFire ))//&& currentGun.roundsPerMinute < 1500)) //set this based on if the WG can ripple vs if first weapon in the WG happens to be > 1500 RPM
+                         || selectedWeapon.GetWeaponClass() == WeaponClasses.DefenseLaser) && currentGun.canRippleFire ))//&& currentGun.roundsPerMinute < 1500)) //set this based on if the WG can ripple vs if first weapon in the WG happens to be > 1500 RPM
                 {
                     canRipple = true;
                 }
@@ -5769,7 +5769,7 @@ namespace BDArmory.Control
                         }
                     case WeaponClasses.Rocket:
                         {
-                            var effectiveRocketSpeed = (turret.part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (weapon.thrust * weapon.thrustTime / weapon.rocketMass) * direction.normalized).magnitude;
+                            var effectiveRocketSpeed = (turret.part.rb.velocity + Krakensbane.GetFrameVelocityV3f() + (weapon.thrust * (weapon.thrustTime - weapon.stayTime) / weapon.rocketMass) * direction.normalized).magnitude;
                             var timeOfFlight = direction.magnitude / effectiveRocketSpeed;
                             direction -= 0.5f * FlightGlobals.getGeeForceAtPosition(vessel.transform.position) * timeOfFlight * timeOfFlight;
                             break;

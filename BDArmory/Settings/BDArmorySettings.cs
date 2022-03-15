@@ -78,7 +78,8 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static bool LEGACY_ARMOR = false;
         [BDAPersistentSettingsField] public static bool HACK_INTAKES = false;
         [BDAPersistentSettingsField] public static bool COMPETITION_CLOSE_SETTINGS_ON_COMPETITION_START = false; // Close the settings window when clicking the start competition button.
-        [BDAPersistentSettingsField] public static bool AUTO_LOAD_TO_KSC = false;                      // Automatically load the last used save (using the clean save file if possible) and go to the KSC.
+        [BDAPersistentSettingsField] public static bool AUTO_LOAD_TO_KSC = false;                      // Automatically load the last used save and go to the KSC.
+        [BDAPersistentSettingsField] public static bool GENERATE_CLEAN_SAVE = false;                   // Use a clean save instead of the persistent one when loading to the KSC.
 
         // General slider settings
         [BDAPersistentSettingsField] public static int COMPETITION_DURATION = 5;                       // Competition duration in minutes
@@ -205,7 +206,14 @@ namespace BDArmory.Settings
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_TRACER = 10;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_HE = 25;
         [BDAPersistentSettingsField] public static float BD_FIRE_CHANCE_INCENDIARY = 90;
-        [BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+		[BDAPersistentSettingsField] public static bool ALLOW_ZOMBIE_BD = false;          // Allow battle damage to proc when using zombie mode?
+        [BDAPersistentSettingsField] public static bool ENABLE_HOS = false;
+        [BDAPersistentSettingsField] public static string HALL_OF_SHAME = "";
+        [BDAPersistentSettingsField] public static float HOS_FIRE = 0;
+        [BDAPersistentSettingsField] public static float HOS_MASS = 0;
+        [BDAPersistentSettingsField] public static float HOS_DMG = 0;
+        [BDAPersistentSettingsField] public static float HOS_THRUST = 0;
+        [BDAPersistentSettingsField] public static string HOS_BADGE = "";
 
         // Remote logging
         [BDAPersistentSettingsField] public static bool REMOTE_LOGGING_VISIBLE = false;                                   // Show/hide the remote orchestration toggle

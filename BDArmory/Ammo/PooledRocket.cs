@@ -31,6 +31,7 @@ namespace BDArmory.Bullets
         private Vector3 thrustVector;
         private Vector3 dragVector;
         public float thrustTime;
+        public float stayTime;
         public bool shaped;
         public float maxAirDetonationRange;
         public bool flak;
@@ -57,7 +58,6 @@ namespace BDArmory.Bullets
         public string rocketSoundPath;
 
         float startTime;
-        float stayTime = 0.04f;
         float lifeTime = 10;
 
         Vector3 prevPosition;
@@ -128,6 +128,7 @@ namespace BDArmory.Bullets
             prevPosition = transform.position;
             currPosition = transform.position;
             startPosition = transform.position;
+            transform.rotation = transform.parent.rotation;
             startTime = Time.time;
             if (FlightGlobals.getAltitudeAtPos(transform.position) < 0)
             {
@@ -204,6 +205,7 @@ namespace BDArmory.Bullets
             isAPSprojectile = false;
             tgtRocket = null;
             tgtShell = null;
+            rb.isKinematic = true;
         }
 
         void FixedUpdate()
@@ -297,7 +299,7 @@ namespace BDArmory.Bullets
                     audioSource.Stop();
                 }
             }
-            if (Time.time - startTime > 0.1f + stayTime)
+            if (Time.time - startTime > stayTime)
             {
                 hasPenetrated = true;
                 hasDetonated = false;

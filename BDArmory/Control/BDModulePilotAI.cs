@@ -31,8 +31,6 @@ namespace BDArmory.Control
         public string extendingReason = "";
         public Vessel extendTarget = null;
 
-        public FlightCtrlState lastState; // AUBRANIUM, this is only assigned to and never read. Is there a future purpose for this or can it be removed?
-
         bool requestedExtend;
         Vector3 requestedExtendTpos;
 
@@ -1139,8 +1137,6 @@ namespace BDArmory.Control
         // This is triggered every Time.fixedDeltaTime.
         protected override void AutoPilot(FlightCtrlState s)
         {
-            this.lastState = s;
-
             finalMaxSteer = 1f; // Reset finalMaxSteer, is adjusted in subsequent methods
 
             if (terrainAlertCoolDown > 0)

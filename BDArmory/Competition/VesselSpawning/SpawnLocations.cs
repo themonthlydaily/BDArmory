@@ -6,6 +6,30 @@ using UnityEngine;
 
 namespace BDArmory.Competition.VesselSpawning
 {
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    public class SpawnLocations : MonoBehaviour
+    {
+        private static SpawnLocations Instance;
+
+        // Interesting spawn locations on Kerbin.
+        [VesselSpawnerField] public static bool UpdateSpawnLocations = true;
+        [VesselSpawnerField] public static List<SpawnLocation> spawnLocations;
+
+        void Awake()
+        {
+            if (Instance != null)
+                Destroy(Instance);
+            Instance = this;
+
+            VesselSpawnerField.Load();
+        }
+
+        void OnDestroy()
+        {
+            VesselSpawnerField.Save();
+        }
+    }
+
     public class SpawnLocation
     {
         public static string oldSpawnLocationsCfg = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/BDArmory/spawn_locations.cfg");
@@ -89,7 +113,7 @@ namespace BDArmory.Competition.VesselSpawning
                 fileNode.AddNode("Config");
 
             ConfigNode settings = fileNode.GetNode("Config");
-            foreach (var field in typeof(VesselSpawner).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly))
+            foreach (var field in typeof(SpawnLocations).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly))
             {
                 if (field == null || !field.IsDefined(typeof(VesselSpawnerField), false)) continue;
                 if (field.Name == "spawnLocations") continue; // We'll do the spawn locations separately.
@@ -103,7 +127,7 @@ namespace BDArmory.Competition.VesselSpawning
             ConfigNode spawnLocations = fileNode.GetNode("BDASpawnLocations");
 
             spawnLocations.ClearValues();
-            foreach (var spawnLocation in VesselSpawner.spawnLocations)
+            foreach (var spawnLocation in SpawnLocations.spawnLocations)
                 spawnLocations.AddValue("LOCATION", spawnLocation.ToString());
 
             if (!Directory.GetParent(SpawnLocation.spawnLocationsCfg).Exists)
@@ -120,13 +144,13 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 fileNode = ConfigNode.Load(SpawnLocation.oldSpawnLocationsCfg); // Try the old location.
             }
-            VesselSpawner.spawnLocations = new List<SpawnLocation>();
+            SpawnLocations.spawnLocations = new List<SpawnLocation>();
             if (fileNode != null)
             {
                 if (fileNode.HasNode("Config"))
                 {
                     ConfigNode settings = fileNode.GetNode("Config");
-                    foreach (var field in typeof(VesselSpawner).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly))
+                    foreach (var field in typeof(SpawnLocations).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly))
                     {
                         if (field == null || !field.IsDefined(typeof(VesselSpawnerField), false)) continue;
                         if (field.Name == "spawnLocations") continue; // We'll do the spawn locations separately.
@@ -147,18 +171,18 @@ namespace BDArmory.Competition.VesselSpawning
                         var parsedValue = (SpawnLocation)ParseValue(typeof(SpawnLocation), spawnLocation);
                         if (parsedValue != null)
                         {
-                            VesselSpawner.spawnLocations.Add(parsedValue);
+                            SpawnLocations.spawnLocations.Add(parsedValue);
                         }
                     }
                 }
             }
 
             // Add defaults if they're missing and we're not instructed not to.
-            if (VesselSpawner.UpdateSpawnLocations)
+            if (SpawnLocations.UpdateSpawnLocations)
             {
                 foreach (var location in defaultLocations.ToList())
-                    if (!VesselSpawner.spawnLocations.Select(l => l.name).ToList().Contains(location.name))
-                        VesselSpawner.spawnLocations.Add(location);
+                    if (!SpawnLocations.spawnLocations.Select(l => l.name).ToList().Contains(location.name))
+                        SpawnLocations.spawnLocations.Add(location);
             }
         }
 
@@ -208,7 +232,7 @@ namespace BDArmory.Competition.VesselSpawning
             {
                 Debug.LogException(e);
             }
-            Debug.LogError("[BDArmory.VesselSpawnerField]: Failed to parse settings field of type " + type + " and value " + value);
+            Debug.LogError("[BDArmory.SpawnLocations]: Failed to parse settings field of type " + type + " and value " + value);
             return null;
         }
     }

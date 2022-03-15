@@ -45,8 +45,7 @@ namespace BDArmory.Competition.SpawnStrategies
                 true,
                 craftFiles: new List<string>(craftUrls)
             );
-            // AUBRANIUM I've added in a coroutine version of the SpawnAllVesselsOnce function that you can call here that handles the required initialisation.
-            yield return spawner.SpawnAllVesselsOnceAsCoroutine(spawnConfig);
+            yield return spawner.Spawn(spawnConfig);
 
             if (!spawner.vesselSpawnSuccess)
             {

@@ -150,8 +150,14 @@
     <Compile Include="Competition\SpawnStrategies\PointSpawnStrategy.cs" />
     <Compile Include="Competition\SpawnStrategies\SpawnStrategy.cs" />
     <Compile Include="Competition\TournamentCoordinator.cs" />
+    <Compile Include="Competition\VesselSpawning\CircularSpawning.cs" />
+    <Compile Include="Competition\VesselSpawning\ContinuousSpawning.cs" />
+    <Compile Include="Competition\VesselSpawning\SingleVesselSpawning.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnConfig.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnLocations.cs" />
+    <Compile Include="Competition\VesselSpawning\SpawnUtils.cs" />
+    <Compile Include="Competition\VesselSpawning\VesselLoader.cs" />
     <Compile Include="Competition\VesselSpawning\VesselSpawner.cs" />
-    <Compile Include="Competition\VesselSpawning\VesselSpawnerField.cs" />
     <Compile Include="Competition\WaypointFollowingStrategy.cs" />
     <Compile Include="Control\BDAirspeedControl.cs" />
     <Compile Include="Control\BDGenericAIBase.cs" />
