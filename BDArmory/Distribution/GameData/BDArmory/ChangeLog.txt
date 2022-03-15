@@ -10,7 +10,7 @@ IMPROVEMENTS
 - Armor:
 	- Explosive Reactive Armor HP is now customizable.
 - Weapons:
-	- Add stayTime as a configurable rocket parameter.
+	- Remove the 0.04s delay on firing a rocket.
 	- Add explModelPath and explSoundPath to Sidam.
 	- Clean up rocket aiming, switch it to use the more accurate leap-frog numerical integrator and use ballistic aiming once the thrust period is over.
 	- Set laser weapons to use standard FX pipeline.
