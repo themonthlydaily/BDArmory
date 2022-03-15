@@ -467,7 +467,7 @@ namespace BDArmory.FX
                             {
                                 if (BDArmorySettings.BATTLEDAMAGE)
                                 {
-                                    Misc.BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
+                                    BattleDamageHandler.CheckDamageFX(part, 50, 0.5f, true, false, SourceVesselName, eventToExecute.Hit);
                                 }
                                 // Update scoring structures
                                 if (BDACompetitionMode.Instance) //moving this here - only give scores to stuff still inside blast radius when blastfront arrives
